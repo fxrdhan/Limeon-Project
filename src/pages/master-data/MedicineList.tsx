@@ -21,7 +21,7 @@ interface Medicine {
 const MedicineList = () => {
     const [medicines, setMedicines] = useState<Medicine[]>([]);
     const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState(""); 
+    const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
@@ -33,7 +33,7 @@ const MedicineList = () => {
             setDebouncedSearch(search);
             setCurrentPage(1); // Reset ke halaman pertama saat pencarian berubah
         }, 500);
-        
+
         return () => clearTimeout(timer);
     }, [search]);
 
@@ -70,19 +70,19 @@ const MedicineList = () => {
             let countQuery = supabase
                 .from("medicines")
                 .select('id', { count: 'exact' });
-                
+
             // Tambahkan pencarian jika ada
             if (searchTerm) {
                 countQuery = countQuery.ilike('name', `%${searchTerm}%`);
             }
-                
+
             const { count, error: countError } = await countQuery;
             if (countError) throw countError;
 
             // Tambahkan pagination
             const from = (page - 1) * limit;
             const to = from + limit - 1;
-            
+
             const { data, error } = await query
                 .order('name')
                 .range(from, to);
@@ -91,12 +91,12 @@ const MedicineList = () => {
                 console.error("Error fetching medicines:", error);
                 throw error;
             }
-            
+
             // Ambil data referensi
             const { data: categories } = await supabase.from("medicine_categories").select("id, name");
             const { data: types } = await supabase.from("medicine_types").select("id, name");
             const { data: units } = await supabase.from("medicine_units").select("id, name");
-            
+
             // Gabungkan data
             const completedData = (data || []).map(item => ({
                 id: item.id,
@@ -104,8 +104,9 @@ const MedicineList = () => {
                 buy_price: item.buy_price,
                 sell_price: item.sell_price,
                 stock: item.stock,
-                category: { 
-                    name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
+                category: {
+                    name: categories?.find(cat => cat.id === item.category_id)?.name || ""
+                },
                 type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
                 unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
             }));
@@ -133,28 +134,28 @@ const MedicineList = () => {
     const Pagination = () => {
         const pageNumbers = [];
         const maxPageDisplay = 5;
-        
+
         let startPage = Math.max(1, currentPage - Math.floor(maxPageDisplay / 2));
         const endPage = Math.min(totalPages, startPage + maxPageDisplay - 1);
-        
+
         if (endPage - startPage + 1 < maxPageDisplay) {
             startPage = Math.max(1, endPage - maxPageDisplay + 1);
         }
-        
+
         for (let i = startPage; i <= endPage; i++) {
             pageNumbers.push(i);
         }
-        
+
         return (
             <div className="flex justify-between items-center mt-4">
                 <div className="text-sm text-gray-600">
                     Menampilkan {medicines.length} dari {totalItems} obat
                 </div>
-                
+
                 <div className="flex items-center">
                     <div className="mr-4">
-                        <select 
-                            value={itemsPerPage} 
+                        <select
+                            value={itemsPerPage}
                             onChange={handleItemsPerPageChange}
                             className="border rounded-md p-2"
                         >
@@ -164,7 +165,7 @@ const MedicineList = () => {
                             <option value={50}>50 per halaman</option>
                         </select>
                     </div>
-                    
+
                     <div className="flex">
                         <button
                             onClick={() => handlePageChange(1)}
@@ -180,19 +181,18 @@ const MedicineList = () => {
                         >
                             &lt;
                         </button>
-                        
+
                         {pageNumbers.map(number => (
                             <button
                                 key={number}
                                 onClick={() => handlePageChange(number)}
-                                className={`px-3 py-2 mx-1 rounded-md border ${
-                                    currentPage === number ? 'bg-primary text-emerald-500' : ''
-                                }`}
+                                className={`px-3 py-2 mx-1 rounded-md border ${currentPage === number ? 'bg-primary text-white' : ''
+                                    }`}
                             >
                                 {number}
                             </button>
                         ))}
-                        
+
                         <button
                             onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages || totalPages === 0}
@@ -243,79 +243,79 @@ const MedicineList = () => {
                 <Loading />
             ) : (
                 <>
-                  <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableHeader>Nama Obat</TableHeader>
-                            <TableHeader>Kategori</TableHeader>
-                            <TableHeader>Jenis</TableHeader>
-                            <TableHeader>Satuan</TableHeader>
-                            <TableHeader className="text-right">Harga Beli</TableHeader>
-                            <TableHeader className="text-right">Harga Jual</TableHeader>
-                            <TableHeader className="text-right">Stok</TableHeader>
-                            <TableHeader className="text-center">Aksi</TableHeader>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {medicines.length === 0 ? (
+                    <Table>
+                        <TableHead>
                             <TableRow>
-                                <TableCell
-                                    colSpan={8}
-                                    className="text-center text-gray-600"
-                                >
-                                    {debouncedSearch ? `Tidak ada obat dengan nama "${debouncedSearch}"` : "Tidak ada data obat yang ditemukan"}
-                                </TableCell>
+                                <TableHeader>Nama Obat</TableHeader>
+                                <TableHeader>Kategori</TableHeader>
+                                <TableHeader>Jenis</TableHeader>
+                                <TableHeader>Satuan</TableHeader>
+                                <TableHeader className="text-right">Harga Beli</TableHeader>
+                                <TableHeader className="text-right">Harga Jual</TableHeader>
+                                <TableHeader className="text-right">Stok</TableHeader>
+                                <TableHeader className="text-center">Aksi</TableHeader>
                             </TableRow>
-                        ) : (
-                            medicines.map((medicine) => (
-                                <TableRow key={medicine.id}>
-                                    <TableCell>{medicine.name}</TableCell>
-                                    <TableCell>{medicine.category.name}</TableCell>
-                                    <TableCell>{medicine.type.name}</TableCell>
-                                    <TableCell>{medicine.unit.name}</TableCell>
-                                    <TableCell className="text-right">
-                                        {medicine.buy_price.toLocaleString("id-ID", {
-                                            style: "currency",
-                                            currency: "IDR",
-                                        })}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {medicine.sell_price.toLocaleString("id-ID", {
-                                            style: "currency",
-                                            currency: "IDR",
-                                        })}
-                                    </TableCell>
-                                    <TableCell className="text-right">{medicine.stock}</TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="flex justify-center space-x-2">
-                                            <Link
-                                                to={`/master-data/medicines/edit/${medicine.id}`}
-                                            >
-                                                <Button variant="secondary" size="sm">
-                                                    <FaEdit />
-                                                </Button>
-                                            </Link>
-                                            <Button 
-                                                variant="danger" 
-                                                size="sm"
-                                                onClick={() => handleDelete(medicine.id)}
-                                            >
-                                                <FaTrash />
-                                            </Button>
-                                        </div>
+                        </TableHead>
+                        <TableBody>
+                            {medicines.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={8}
+                                        className="text-center text-gray-600"
+                                    >
+                                        {debouncedSearch ? `Tidak ada obat dengan nama "${debouncedSearch}"` : "Tidak ada data obat yang ditemukan"}
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-                
-                <Pagination />
+                            ) : (
+                                medicines.map((medicine) => (
+                                    <TableRow key={medicine.id}>
+                                        <TableCell>{medicine.name}</TableCell>
+                                        <TableCell>{medicine.category.name}</TableCell>
+                                        <TableCell>{medicine.type.name}</TableCell>
+                                        <TableCell>{medicine.unit.name}</TableCell>
+                                        <TableCell className="text-right">
+                                            {medicine.buy_price.toLocaleString("id-ID", {
+                                                style: "currency",
+                                                currency: "IDR",
+                                            })}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {medicine.sell_price.toLocaleString("id-ID", {
+                                                style: "currency",
+                                                currency: "IDR",
+                                            })}
+                                        </TableCell>
+                                        <TableCell className="text-right">{medicine.stock}</TableCell>
+                                        <TableCell className="text-center">
+                                            <div className="flex justify-center space-x-2">
+                                                <Link
+                                                    to={`/master-data/medicines/edit/${medicine.id}`}
+                                                >
+                                                    <Button variant="secondary" size="sm">
+                                                        <FaEdit />
+                                                    </Button>
+                                                </Link>
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(medicine.id)}
+                                                >
+                                                    <FaTrash />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+
+                    <Pagination />
                 </>
             )}
         </Card>
     );
-    
+
     async function handleDelete(id: string) {
         if (window.confirm("Apakah Anda yakin ingin menghapus obat ini?")) {
             try {
@@ -323,9 +323,9 @@ const MedicineList = () => {
                     .from("medicines")
                     .delete()
                     .eq("id", id);
-                
+
                 if (error) throw error;
-                
+
                 // Refresh data
                 fetchMedicines(currentPage, debouncedSearch, itemsPerPage);
             } catch (error) {

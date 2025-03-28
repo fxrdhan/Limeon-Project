@@ -516,7 +516,7 @@ const AddMedicine = () => {
                                         </label>
                                         <div className="mt-1 text-sm text-gray-500">
                                             Jika dicentang, obat ini akan menggunakan metode FEFO
-                                            (First Expired First Out) untuk pengeluaran stok.
+                                            (First Expired First Out)
                                         </div>
                                     </div>
                                 </div>

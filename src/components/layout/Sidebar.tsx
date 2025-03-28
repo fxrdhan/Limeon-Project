@@ -33,7 +33,7 @@ const Sidebar = () => {
     return (
         <aside className="w-64 bg-white shadow-md">
             <div className="p-4 bg-primary text-white">
-                <h2 className="text-xl font-bold">Apotek & Klinik</h2>
+                <h2 className="text-xl font-bold">Apotek App</h2>
             </div>
 
             <nav className="mt-6">
