@@ -59,7 +59,7 @@ const CATEGORY_CODE_MAP: CodeMap = {
     "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a": "AH", // Antihipertensi
 };
 
-const AddMedicine = () => {
+const AddItem = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -86,6 +86,7 @@ const AddMedicine = () => {
         sell_price: 0,
         min_stock: 10,
         is_active: true,
+        is_medicine: true,
         has_expiry_date: false,
     });
 
@@ -129,7 +130,7 @@ const AddMedicine = () => {
             // Cek database untuk mendapatkan urutan terakhir
             try {
                 const { data } = await supabase
-                    .from("medicines")
+                    .from("items")
                     .select("code")
                     .ilike("code", `${codePrefix}%`)
                     .order("code", { ascending: false });
@@ -170,19 +171,19 @@ const AddMedicine = () => {
         try {
             // Fetch categories
             const { data: categoriesData } = await supabase
-                .from("medicine_categories")
+                .from("item_categories")
                 .select("id, name")
                 .order("name");
 
             // Fetch types
             const { data: typesData } = await supabase
-                .from("medicine_types")
+                .from("item_types")
                 .select("id, name")
                 .order("name");
 
             // Fetch units
             const { data: unitsData } = await supabase
-                .from("medicine_units")
+                .from("item_units")
                 .select("id, name")
                 .order("name");
 
@@ -247,19 +248,19 @@ const AddMedicine = () => {
         try {
             // Check jika nama obat sudah ada
             const { data: existingMedicine } = await supabase
-                .from("medicines")
+                .from("items")
                 .select("name")
                 .eq("name", formData.name)
                 .maybeSingle();
 
             if (existingMedicine) {
-                alert("Nama obat sudah terdaftar. Gunakan nama lain.");
+                alert("Nama item sudah terdaftar. Gunakan nama lain.");
                 setSaving(false);
                 return;
             }
 
             // Insert data obat baru
-            const { error } = await supabase.from("medicines").insert({
+            const { error } = await supabase.from("items").insert({
                 name: formData.name,
                 category_id: formData.category_id,
                 type_id: formData.type_id,
@@ -272,16 +273,17 @@ const AddMedicine = () => {
                 is_active: formData.is_active,
                 rack: formData.rack || null,
                 code: formData.code,
+                is_medicine: formData.is_medicine,
                 has_expiry_date: formData.has_expiry_date,
             });
 
             if (error) throw error;
 
             // Redirect ke halaman daftar obat
-            navigate("/master-data/medicines");
+            navigate("/master-data/items");
         } catch (error) {
-            console.error("Error saving medicine:", error);
-            alert("Gagal menyimpan data obat. Silakan coba lagi.");
+            console.error("Error saving item:", error);
+            alert("Gagal menyimpan data item. Silakan coba lagi.");
         } finally {
             setSaving(false);
         }
@@ -291,7 +293,7 @@ const AddMedicine = () => {
         <div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Tambah Data Obat Baru</CardTitle>
+                    <CardTitle>Tambah Data Item Baru</CardTitle>
                 </CardHeader>
 
                 {loading ? (
@@ -443,6 +445,34 @@ const AddMedicine = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Jenis Produk
+                                        </label>
+                                        <div className="space-x-6">
+                                            <label className="inline-flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="is_medicine"
+                                                    checked={formData.is_medicine}
+                                                    onChange={() => setFormData({ ...formData, is_medicine: true })}
+                                                    className="form-radio h-5 w-5 text-primary"
+                                                />
+                                                <span className="ml-2">Obat</span>
+                                            </label>
+                                            <label className="inline-flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="is_medicine"
+                                                    checked={!formData.is_medicine}
+                                                    onChange={() => setFormData({ ...formData, is_medicine: false, has_expiry_date: false })}
+                                                    className="form-radio h-5 w-5 text-primary"
+                                                />
+                                                <span className="ml-2">Non-Obat</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Keterangan
                                         </label>
                                         <textarea
@@ -547,12 +577,13 @@ const AddMedicine = () => {
                                         </div>
                                     </div>
 
-                                    <div>
+                                    <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
                                         <label className="inline-flex items-center">
                                             <input
                                                 type="checkbox"
                                                 name="has_expiry_date"
                                                 checked={formData.has_expiry_date}
+                                                disabled={!formData.is_medicine}
                                                 onChange={handleChange}
                                                 className="form-checkbox h-5 w-5 text-primary"
                                             />
@@ -571,7 +602,7 @@ const AddMedicine = () => {
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => navigate("/master-data/medicines")}
+                                onClick={() => navigate("/master-data/items")}
                             >
                                 <div className="flex items-center">
                                     <FaTimes className="mr-2" /> <span>Batal</span>
@@ -591,4 +622,4 @@ const AddMedicine = () => {
     );
 };
 
-export default AddMedicine;
+export default AddItem;

@@ -7,11 +7,11 @@ import { useAuthStore } from './store/authStore';
 
 // Lazy load pages
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
-const MedicineList = lazy(() => import('./pages/master-data/MedicineList'));
+const ItemList = lazy(() => import('./pages/master-data/ItemList'));
 const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
 const UnitList = lazy(() => import('./pages/master-data/UnitList'));
 const TypeList = lazy(() => import('./pages/master-data/TypeList'));
-const AddMedicine = lazy(() => import('./pages/master-data/AddMedicine'));
+const AddItem = lazy(() => import('./pages/master-data/AddItem'));
 // Tambahkan halaman lain sesuai kebutuhan
 
 function App() {
@@ -40,14 +40,14 @@ function App() {
           } />
           
           <Route path="master-data">
-            <Route path="medicines" element={
+            <Route path="items" element={
               <Suspense fallback={<div>Loading...</div>}>
-                <MedicineList />
+                <ItemList />
               </Suspense>
             } />
-            <Route path="medicines/add" element={
+            <Route path="items/add" element={
               <Suspense fallback={<div>Loading...</div>}>
-                <AddMedicine />
+                <AddItem />
               </Suspense>
             } />
             <Route path="categories" element={

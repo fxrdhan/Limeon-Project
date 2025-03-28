@@ -26,7 +26,7 @@ const CategoryList = () => {
             setLoading(true);
             
             const { data, error } = await supabase
-                .from("medicine_categories")
+                .from("item_categories")
                 .select("*")
                 .order("name");
                 
@@ -43,7 +43,7 @@ const CategoryList = () => {
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Daftar Kategori Obat</h1>
+                <h1 className="text-2xl font-bold text-gray-800">Daftar Kategori Item</h1>
                 
                 <Link to="/master-data/categories/add">
                     <Button variant="primary" className="flex items-center">
@@ -104,10 +104,10 @@ const CategoryList = () => {
     );
     
     async function handleDelete(id: string) {
-        if (window.confirm("Apakah Anda yakin ingin menghapus kategori obat ini?")) {
+        if (window.confirm("Apakah Anda yakin ingin menghapus kategori item ini?")) {
             try {
                 const { error } = await supabase
-                    .from("medicine_categories")
+                    .from("item_categories")
                     .delete()
                     .eq("id", id);
                 
@@ -116,7 +116,7 @@ const CategoryList = () => {
                 fetchCategories(); // Refresh data after deletion
             } catch (error) {
                 console.error("Error deleting category:", error);
-                alert("Gagal menghapus kategori obat. Silakan coba lagi.");
+                alert("Gagal menghapus kategori item. Silakan coba lagi.");
             }
         }
     }

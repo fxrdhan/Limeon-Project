@@ -7,7 +7,7 @@ import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Loading } from "../../components/ui/Loading";
 
-interface Medicine {
+interface Item {
     id: string;
     name: string;
     category: { name: string };
@@ -18,8 +18,8 @@ interface Medicine {
     stock: number;
 }
 
-const MedicineList = () => {
-    const [medicines, setMedicines] = useState<Medicine[]>([]);
+const ItemList = () => {
+    const [items, setItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -39,16 +39,16 @@ const MedicineList = () => {
 
     // Efek untuk mengambil data saat parameter berubah
     useEffect(() => {
-        fetchMedicines(currentPage, debouncedSearch, itemsPerPage);
+        fetchItems(currentPage, debouncedSearch, itemsPerPage);
     }, [currentPage, debouncedSearch, itemsPerPage]);
 
-    const fetchMedicines = async (page = 1, searchTerm = '', limit = 10) => {
+    const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
         try {
             setLoading(true);
 
             // Buat query dasar
             let query = supabase
-                .from("medicines")
+                .from("items")
                 .select(`
                 id, 
                 name, 
@@ -68,7 +68,7 @@ const MedicineList = () => {
             // Ambil total jumlah item untuk pagination
             // Membuat query terpisah untuk menghitung total item
             let countQuery = supabase
-                .from("medicines")
+                .from("items")
                 .select('id', { count: 'exact' });
 
             // Tambahkan pencarian jika ada
@@ -88,14 +88,14 @@ const MedicineList = () => {
                 .range(from, to);
 
             if (error) {
-                console.error("Error fetching medicines:", error);
+                console.error("Error fetching items:", error);
                 throw error;
             }
 
             // Ambil data referensi
-            const { data: categories } = await supabase.from("medicine_categories").select("id, name");
-            const { data: types } = await supabase.from("medicine_types").select("id, name");
-            const { data: units } = await supabase.from("medicine_units").select("id, name");
+            const { data: categories } = await supabase.from("item_categories").select("id, name");
+            const { data: types } = await supabase.from("item_types").select("id, name");
+            const { data: units } = await supabase.from("item_units").select("id, name");
 
             // Gabungkan data
             const completedData = (data || []).map(item => ({
@@ -112,9 +112,9 @@ const MedicineList = () => {
             }));
 
             setTotalItems(count || 0);
-            setMedicines(completedData);
+            setItems(completedData);
         } catch (error) {
-            console.error("Error fetching medicines:", error);
+            console.error("Error fetching items:", error);
         } finally {
             setLoading(false);
         }
@@ -149,7 +149,7 @@ const MedicineList = () => {
         return (
             <div className="flex justify-between items-center mt-4">
                 <div className="text-sm text-gray-600">
-                    Menampilkan {medicines.length} dari {totalItems} obat
+                    Menampilkan {items.length} dari {totalItems} item
                 </div>
 
                 <div className="flex items-center">
@@ -216,14 +216,14 @@ const MedicineList = () => {
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Daftar Obat</h1>
+                <h1 className="text-2xl font-bold text-gray-800">Daftar Item</h1>
 
                 <Link
-                    to="/master-data/medicines/add"
+                    to="/master-data/items/add"
                 >
                     <Button variant="primary">
                         <FaPlus className="mr-2" />
-                        Tambah Obat Baru
+                        Tambah Item Baru
                     </Button>
                 </Link>
             </div>
@@ -231,7 +231,7 @@ const MedicineList = () => {
             <div className="mb-4 relative">
                 <input
                     type="text"
-                    placeholder="Cari obat..."
+                    placeholder="Cari item..."
                     className="w-full p-3 border rounded-md pl-10"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -246,7 +246,7 @@ const MedicineList = () => {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableHeader>Nama Obat</TableHeader>
+                                <TableHeader>Nama Item</TableHeader>
                                 <TableHeader>Kategori</TableHeader>
                                 <TableHeader>Jenis</TableHeader>
                                 <TableHeader>Satuan</TableHeader>
@@ -257,39 +257,39 @@ const MedicineList = () => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {medicines.length === 0 ? (
+                            {items.length === 0 ? (
                                 <TableRow>
                                     <TableCell
                                         colSpan={8}
                                         className="text-center text-gray-600"
                                     >
-                                        {debouncedSearch ? `Tidak ada obat dengan nama "${debouncedSearch}"` : "Tidak ada data obat yang ditemukan"}
+                                        {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                medicines.map((medicine) => (
-                                    <TableRow key={medicine.id}>
-                                        <TableCell>{medicine.name}</TableCell>
-                                        <TableCell>{medicine.category.name}</TableCell>
-                                        <TableCell>{medicine.type.name}</TableCell>
-                                        <TableCell>{medicine.unit.name}</TableCell>
+                                items.map((item) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell>{item.name}</TableCell>
+                                        <TableCell>{item.category.name}</TableCell>
+                                        <TableCell>{item.type.name}</TableCell>
+                                        <TableCell>{item.unit.name}</TableCell>
                                         <TableCell className="text-right">
-                                            {medicine.buy_price.toLocaleString("id-ID", {
+                                            {item.buy_price.toLocaleString("id-ID", {
                                                 style: "currency",
                                                 currency: "IDR",
                                             })}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            {medicine.sell_price.toLocaleString("id-ID", {
+                                            {item.sell_price.toLocaleString("id-ID", {
                                                 style: "currency",
                                                 currency: "IDR",
                                             })}
                                         </TableCell>
-                                        <TableCell className="text-right">{medicine.stock}</TableCell>
+                                        <TableCell className="text-right">{item.stock}</TableCell>
                                         <TableCell className="text-center">
                                             <div className="flex justify-center space-x-2">
                                                 <Link
-                                                    to={`/master-data/medicines/edit/${medicine.id}`}
+                                                    to={`/master-data/items/edit/${item.id}`}
                                                 >
                                                     <Button variant="secondary" size="sm">
                                                         <FaEdit />
@@ -298,7 +298,7 @@ const MedicineList = () => {
                                                 <Button
                                                     variant="danger"
                                                     size="sm"
-                                                    onClick={() => handleDelete(medicine.id)}
+                                                    onClick={() => handleDelete(item.id)}
                                                 >
                                                     <FaTrash />
                                                 </Button>
@@ -317,23 +317,23 @@ const MedicineList = () => {
     );
 
     async function handleDelete(id: string) {
-        if (window.confirm("Apakah Anda yakin ingin menghapus obat ini?")) {
+        if (window.confirm("Apakah Anda yakin ingin menghapus item ini?")) {
             try {
                 const { error } = await supabase
-                    .from("medicines")
+                    .from("items")
                     .delete()
                     .eq("id", id);
 
                 if (error) throw error;
 
                 // Refresh data
-                fetchMedicines(currentPage, debouncedSearch, itemsPerPage);
+                fetchItems(currentPage, debouncedSearch, itemsPerPage);
             } catch (error) {
-                console.error("Error deleting medicine:", error);
-                alert("Gagal menghapus obat. Silakan coba lagi.");
+                console.error("Error deleting item:", error);
+                alert("Gagal menghapus item. Silakan coba lagi.");
             }
         }
     }
 };
 
-export default MedicineList;
+export default ItemList;
