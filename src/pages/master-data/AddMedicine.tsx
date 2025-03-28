@@ -127,10 +127,10 @@ const AddMedicine = () => {
                 const generatedCode = `${codePrefix}${sequenceStr}`;
 
                 // Update form
-                setFormData({
-                    ...formData,
+                setFormData(prevFormData => ({
+                    ...prevFormData,
                     code: generatedCode,
-                });
+                }));
             } catch (error) {
                 console.error("Error generating item code:", error);
             }
