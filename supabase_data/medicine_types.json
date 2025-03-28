@@ -1,0 +1,37 @@
+[
+  {
+    "id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "name": "Tablet",
+    "description": "Obat dalam bentuk tablet",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "b355eadc-2a48-45bf-bbf2-1b0249de3060",
+    "name": "Kapsul",
+    "description": "Obat dalam bentuk kapsul",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "56db61b8-6fc0-47a4-82f3-960a6a33e84c",
+    "name": "Sirup",
+    "description": "Obat dalam bentuk cair/sirup",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "a237f060-7cce-4638-9d0b-510b55519a62",
+    "name": "Salep",
+    "description": "Obat dalam bentuk salep untuk penggunaan luar",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "d510c9c5-d8db-488c-a634-fee521d23d07",
+    "name": "Injeksi",
+    "description": "Obat dalam bentuk injeksi/suntik",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  }
+]

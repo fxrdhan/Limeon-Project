@@ -1,0 +1,38 @@
+#!/bin/bash
+# Konfigurasi Supabase
+SUPABASE_URL="https://psqmckbtwqphcteymjil.supabase.co"
+SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzcW1ja2J0d3FwaGN0ZXltamlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxOTQ2MjAsImV4cCI6MjA1Nzc3MDYyMH0.wvxpldpaoanDk9Wd7wDUeeCuMSVw9e0pxE7_BMt823s"
+# Buat direktori output jika belum ada
+OUTPUT_DIR="supabase_data"
+mkdir -p "$OUTPUT_DIR"
+# File output gabungan
+OUTPUT_FILE="database_export.txt"
+rm -f "$OUTPUT_FILE"
+# Daftar tabel yang diketahui
+TABLES=(
+  "medicine_units"
+  "medicine_categories" 
+  "medicine_types"
+  "medicines"
+  "patients"
+  "doctors"
+  "sales"
+  "sale_items"
+  "purchases"
+  "users"
+)
+# Loop melalui setiap tabel
+for TABLE in "${TABLES[@]}"; do
+  echo "Mengunduh data tabel: $TABLE"
+  
+  # Ambil data dari tabel dan simpan ke file JSON
+  RESPONSE=$(curl "$SUPABASE_URL/rest/v1/$TABLE?select=*" \
+    -H "apikey: $SUPABASE_KEY" \
+    -H "Authorization: Bearer $SUPABASE_KEY" \
+    -s)
+    
+  # Simpan ke file JSON
+  echo "$RESPONSE" | jq . > "$OUTPUT_DIR/$TABLE.json"
+  
+  echo "✓ Data $TABLE berhasil diproses"
+done
