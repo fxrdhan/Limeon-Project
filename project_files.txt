@@ -9,7 +9,6 @@
 ├── package-lock.json
 ├── project_files.txt
 ├── public
-│   └── vite.svg
 ├── README.md
 ├── src
 │   ├── App.css
@@ -28,7 +27,6 @@
 │   │       ├── Loading.tsx
 │   │       └── Table.tsx
 │   ├── index.css
-│   ├── input.css
 │   ├── lib
 │   │   ├── classNames.ts
 │   │   └── supabase.ts
@@ -67,7 +65,7 @@
 ├── tsconfig.node.json
 └── vite.config.ts
 
-15 directories, 53 files
+15 directories, 51 files
 
 
 ===============================================
@@ -263,12 +261,6 @@ module.exports = {
 }
 
 ===============================================
-= File: ./public/vite.svg 
-===============================================
-
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="31.88" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 257"><defs><linearGradient id="IconifyId1813088fe1fbc01fb466" x1="-.828%" x2="57.636%" y1="7.652%" y2="78.411%"><stop offset="0%" stop-color="#41D1FF"></stop><stop offset="100%" stop-color="#BD34FE"></stop></linearGradient><linearGradient id="IconifyId1813088fe1fbc01fb467" x1="43.376%" x2="50.316%" y1="2.242%" y2="89.03%"><stop offset="0%" stop-color="#FFEA83"></stop><stop offset="8.333%" stop-color="#FFDD35"></stop><stop offset="100%" stop-color="#FFA800"></stop></linearGradient></defs><path fill="url(#IconifyId1813088fe1fbc01fb466)" d="M255.153 37.938L134.897 252.976c-2.483 4.44-8.862 4.466-11.382.048L.875 37.958c-2.746-4.814 1.371-10.646 6.827-9.67l120.385 21.517a6.537 6.537 0 0 0 2.322-.004l117.867-21.483c5.438-.991 9.574 4.796 6.877 9.62Z"></path><path fill="url(#IconifyId1813088fe1fbc01fb467)" d="M185.432.063L96.44 17.501a3.268 3.268 0 0 0-2.634 3.014l-5.474 92.456a3.268 3.268 0 0 0 3.997 3.378l24.777-5.718c2.318-.535 4.413 1.507 3.936 3.838l-7.361 36.047c-.495 2.426 1.782 4.5 4.151 3.78l15.304-4.649c2.372-.72 4.652 1.36 4.15 3.788l-11.698 56.621c-.732 3.542 3.979 5.473 5.943 2.437l1.313-2.028l72.516-144.72c1.215-2.423-.88-5.186-3.54-4.672l-25.505 4.922c-2.396.462-4.435-1.77-3.759-4.114l16.646-57.705c.677-2.35-1.37-4.583-3.769-4.113Z"></path></svg>
-
-===============================================
 = File: ./src/main.tsx 
 ===============================================
 
@@ -330,12 +322,6 @@ createRoot(document.getElementById('root')!).render(
 .read-the-docs {
   color: #888;
 }
-
-
-===============================================
-= File: ./src/input.css 
-===============================================
-
 
 
 ===============================================
@@ -526,7 +512,7 @@ export const TableBody = ({ children, className }: TableProps) => {
 
 export const TableRow = ({ children, className }: TableProps) => {
     return (
-        <tr className={classNames('transition-colors duration-150 hover:bg-gray-50 even:bg-gray-50/30', className)}>
+        <tr className={classNames('transition-colors duration-150 hover:bg-gray-100 even:bg-gray-50/30', className)}>
             {children}
         </tr>
     );
@@ -542,7 +528,7 @@ export const TableCell = ({ children, className }: TableCellProps) => {
 
 export const TableHeader = ({ children, className }: TableProps) => {
     return (
-        <th className={classNames('py-3 px-4 text-left bg-gray-200 font-extrabold text-gray-700 uppercase tracking-wider text-sm', className)}>
+        <th className={classNames('py-3 px-4 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm', className)}>
             {children}
         </th>
     );
@@ -709,7 +695,7 @@ const Navbar = () => {
         <nav className="bg-white border-b px-6 py-3">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-xl font-semibold text-gray-800">Apotek & Klinik App</h1>
+                    <h1 className="text-xl font-semibold text-gray-800">PharmaSys</h1>
                 </div>
 
                 <div className="relative">
@@ -783,7 +769,7 @@ const Sidebar = () => {
     return (
         <aside className="w-64 bg-white shadow-md">
             <div className="p-4 bg-primary text-white">
-                <h2 className="text-xl font-bold">Apotek & Klinik</h2>
+                <h2 className="text-xl font-bold">Apotek App</h2>
             </div>
 
             <nav className="mt-6">
@@ -915,9 +901,11 @@ export default Sidebar;
 @tailwind utilities;
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: Poppins, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   line-height: 1.5;
-  font-weight: 400;
+  /* font-weight: 400; */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -925,7 +913,7 @@ export default Sidebar;
 }
 
 a {
-  font-weight: 500;
+  /* font-weight: 500; */
   color: #646cff;
   text-decoration: inherit;
 }
@@ -945,6 +933,8 @@ h1 {
   font-size: 3.2em;
   line-height: 1.1;
 }
+
+
 
 
 ===============================================
@@ -1281,6 +1271,9 @@ const AddMedicine = () => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [types, setTypes] = useState<MedicineType[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
+    // State untuk nilai yang ditampilkan dengan format mata uang
+    const [displayBuyPrice, setDisplayBuyPrice] = useState('');
+    const [displaySellPrice, setDisplaySellPrice] = useState('');
     // const [latestSequence, setLatestSequence] = useState<Record<string, number>>(
     //     {}
     // );
@@ -1300,6 +1293,33 @@ const AddMedicine = () => {
         is_active: true,
         has_expiry_date: false,
     });
+
+    // Fungsi untuk mengonversi angka ke format mata uang Rupiah
+    const formatRupiah = (angka: number): string => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(angka);
+    };
+
+    // Fungsi untuk mengonversi string format Rupiah ke angka
+    const parseRupiah = (rupiahString: string): number => {
+        // Menghapus semua karakter non-digit
+        const numericString = rupiahString.replace(/[^\d]/g, '');
+        return numericString ? parseInt(numericString) : 0;
+    };
+
+    // Mengubah nilai form data saat komponen dimount
+    useEffect(() => {
+        if (formData.buy_price) {
+            setDisplayBuyPrice(formatRupiah(formData.buy_price));
+        }
+        if (formData.sell_price) {
+            setDisplaySellPrice(formatRupiah(formData.sell_price));
+        }
+    }, []);
 
     useEffect(() => {
         fetchMasterData();
@@ -1394,7 +1414,25 @@ const AddMedicine = () => {
     ) => {
         const { name, value, type } = e.target as HTMLInputElement;
 
-        if (type === "checkbox") {
+        if (name === "buy_price" || name === "sell_price") {
+            // Untuk input harga
+            const numericValue = value.replace(/[^\d]/g, '');
+            const numericInt = numericValue ? parseInt(numericValue) : 0;
+            
+            // Update formData dengan nilai numerik
+            setFormData({
+                ...formData,
+                [name]: numericInt
+            });
+            
+            // Update display value dengan format Rupiah
+            const formattedValue = formatRupiah(numericInt);
+            if (name === "buy_price") {
+                setDisplayBuyPrice(formattedValue);
+            } else {
+                setDisplaySellPrice(formattedValue);
+            }
+        } else if (type === "checkbox") {
             const { checked } = e.target as HTMLInputElement;
             setFormData({
                 ...formData,
@@ -1640,9 +1678,10 @@ const AddMedicine = () => {
                                                 Harga Beli
                                             </label>
                                             <Input
-                                                type="number"
+                                                type="text"
                                                 name="buy_price"
-                                                value={formData.buy_price}
+                                                value={displayBuyPrice}
+                                                placeholder="Rp 0"
                                                 onChange={handleChange}
                                                 className="w-full"
                                                 required
@@ -1653,9 +1692,10 @@ const AddMedicine = () => {
                                                 Harga Jual
                                             </label>
                                             <Input
-                                                type="number"
+                                                type="text"
                                                 name="sell_price"
-                                                value={formData.sell_price}
+                                                value={displaySellPrice}
+                                                placeholder="Rp 0"
                                                 onChange={handleChange}
                                                 className="w-full"
                                                 required
@@ -1792,7 +1832,7 @@ interface Medicine {
 const MedicineList = () => {
     const [medicines, setMedicines] = useState<Medicine[]>([]);
     const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState(""); 
+    const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
@@ -1804,7 +1844,7 @@ const MedicineList = () => {
             setDebouncedSearch(search);
             setCurrentPage(1); // Reset ke halaman pertama saat pencarian berubah
         }, 500);
-        
+
         return () => clearTimeout(timer);
     }, [search]);
 
@@ -1841,19 +1881,19 @@ const MedicineList = () => {
             let countQuery = supabase
                 .from("medicines")
                 .select('id', { count: 'exact' });
-                
+
             // Tambahkan pencarian jika ada
             if (searchTerm) {
                 countQuery = countQuery.ilike('name', `%${searchTerm}%`);
             }
-                
+
             const { count, error: countError } = await countQuery;
             if (countError) throw countError;
 
             // Tambahkan pagination
             const from = (page - 1) * limit;
             const to = from + limit - 1;
-            
+
             const { data, error } = await query
                 .order('name')
                 .range(from, to);
@@ -1862,12 +1902,12 @@ const MedicineList = () => {
                 console.error("Error fetching medicines:", error);
                 throw error;
             }
-            
+
             // Ambil data referensi
             const { data: categories } = await supabase.from("medicine_categories").select("id, name");
             const { data: types } = await supabase.from("medicine_types").select("id, name");
             const { data: units } = await supabase.from("medicine_units").select("id, name");
-            
+
             // Gabungkan data
             const completedData = (data || []).map(item => ({
                 id: item.id,
@@ -1875,8 +1915,9 @@ const MedicineList = () => {
                 buy_price: item.buy_price,
                 sell_price: item.sell_price,
                 stock: item.stock,
-                category: { 
-                    name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
+                category: {
+                    name: categories?.find(cat => cat.id === item.category_id)?.name || ""
+                },
                 type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
                 unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
             }));
@@ -1904,28 +1945,28 @@ const MedicineList = () => {
     const Pagination = () => {
         const pageNumbers = [];
         const maxPageDisplay = 5;
-        
+
         let startPage = Math.max(1, currentPage - Math.floor(maxPageDisplay / 2));
         const endPage = Math.min(totalPages, startPage + maxPageDisplay - 1);
-        
+
         if (endPage - startPage + 1 < maxPageDisplay) {
             startPage = Math.max(1, endPage - maxPageDisplay + 1);
         }
-        
+
         for (let i = startPage; i <= endPage; i++) {
             pageNumbers.push(i);
         }
-        
+
         return (
             <div className="flex justify-between items-center mt-4">
                 <div className="text-sm text-gray-600">
                     Menampilkan {medicines.length} dari {totalItems} obat
                 </div>
-                
+
                 <div className="flex items-center">
                     <div className="mr-4">
-                        <select 
-                            value={itemsPerPage} 
+                        <select
+                            value={itemsPerPage}
                             onChange={handleItemsPerPageChange}
                             className="border rounded-md p-2"
                         >
@@ -1935,7 +1976,7 @@ const MedicineList = () => {
                             <option value={50}>50 per halaman</option>
                         </select>
                     </div>
-                    
+
                     <div className="flex">
                         <button
                             onClick={() => handlePageChange(1)}
@@ -1951,19 +1992,18 @@ const MedicineList = () => {
                         >
                             &lt;
                         </button>
-                        
+
                         {pageNumbers.map(number => (
                             <button
                                 key={number}
                                 onClick={() => handlePageChange(number)}
-                                className={`px-3 py-2 mx-1 rounded-md border ${
-                                    currentPage === number ? 'bg-primary text-emerald-500' : ''
-                                }`}
+                                className={`px-3 py-2 mx-1 rounded-md border ${currentPage === number ? 'bg-primary text-white' : ''
+                                    }`}
                             >
                                 {number}
                             </button>
                         ))}
-                        
+
                         <button
                             onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages || totalPages === 0}
@@ -2014,79 +2054,79 @@ const MedicineList = () => {
                 <Loading />
             ) : (
                 <>
-                  <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableHeader>Nama Obat</TableHeader>
-                            <TableHeader>Kategori</TableHeader>
-                            <TableHeader>Jenis</TableHeader>
-                            <TableHeader>Satuan</TableHeader>
-                            <TableHeader className="text-right">Harga Beli</TableHeader>
-                            <TableHeader className="text-right">Harga Jual</TableHeader>
-                            <TableHeader className="text-right">Stok</TableHeader>
-                            <TableHeader className="text-center">Aksi</TableHeader>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {medicines.length === 0 ? (
+                    <Table>
+                        <TableHead>
                             <TableRow>
-                                <TableCell
-                                    colSpan={8}
-                                    className="text-center text-gray-600"
-                                >
-                                    {debouncedSearch ? `Tidak ada obat dengan nama "${debouncedSearch}"` : "Tidak ada data obat yang ditemukan"}
-                                </TableCell>
+                                <TableHeader>Nama Obat</TableHeader>
+                                <TableHeader>Kategori</TableHeader>
+                                <TableHeader>Jenis</TableHeader>
+                                <TableHeader>Satuan</TableHeader>
+                                <TableHeader className="text-right">Harga Beli</TableHeader>
+                                <TableHeader className="text-right">Harga Jual</TableHeader>
+                                <TableHeader className="text-right">Stok</TableHeader>
+                                <TableHeader className="text-center">Aksi</TableHeader>
                             </TableRow>
-                        ) : (
-                            medicines.map((medicine) => (
-                                <TableRow key={medicine.id}>
-                                    <TableCell>{medicine.name}</TableCell>
-                                    <TableCell>{medicine.category.name}</TableCell>
-                                    <TableCell>{medicine.type.name}</TableCell>
-                                    <TableCell>{medicine.unit.name}</TableCell>
-                                    <TableCell className="text-right">
-                                        {medicine.buy_price.toLocaleString("id-ID", {
-                                            style: "currency",
-                                            currency: "IDR",
-                                        })}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {medicine.sell_price.toLocaleString("id-ID", {
-                                            style: "currency",
-                                            currency: "IDR",
-                                        })}
-                                    </TableCell>
-                                    <TableCell className="text-right">{medicine.stock}</TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="flex justify-center space-x-2">
-                                            <Link
-                                                to={`/master-data/medicines/edit/${medicine.id}`}
-                                            >
-                                                <Button variant="secondary" size="sm">
-                                                    <FaEdit />
-                                                </Button>
-                                            </Link>
-                                            <Button 
-                                                variant="danger" 
-                                                size="sm"
-                                                onClick={() => handleDelete(medicine.id)}
-                                            >
-                                                <FaTrash />
-                                            </Button>
-                                        </div>
+                        </TableHead>
+                        <TableBody>
+                            {medicines.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={8}
+                                        className="text-center text-gray-600"
+                                    >
+                                        {debouncedSearch ? `Tidak ada obat dengan nama "${debouncedSearch}"` : "Tidak ada data obat yang ditemukan"}
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-                
-                <Pagination />
+                            ) : (
+                                medicines.map((medicine) => (
+                                    <TableRow key={medicine.id}>
+                                        <TableCell>{medicine.name}</TableCell>
+                                        <TableCell>{medicine.category.name}</TableCell>
+                                        <TableCell>{medicine.type.name}</TableCell>
+                                        <TableCell>{medicine.unit.name}</TableCell>
+                                        <TableCell className="text-right">
+                                            {medicine.buy_price.toLocaleString("id-ID", {
+                                                style: "currency",
+                                                currency: "IDR",
+                                            })}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {medicine.sell_price.toLocaleString("id-ID", {
+                                                style: "currency",
+                                                currency: "IDR",
+                                            })}
+                                        </TableCell>
+                                        <TableCell className="text-right">{medicine.stock}</TableCell>
+                                        <TableCell className="text-center">
+                                            <div className="flex justify-center space-x-2">
+                                                <Link
+                                                    to={`/master-data/medicines/edit/${medicine.id}`}
+                                                >
+                                                    <Button variant="secondary" size="sm">
+                                                        <FaEdit />
+                                                    </Button>
+                                                </Link>
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(medicine.id)}
+                                                >
+                                                    <FaTrash />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+
+                    <Pagination />
                 </>
             )}
         </Card>
     );
-    
+
     async function handleDelete(id: string) {
         if (window.confirm("Apakah Anda yakin ingin menghapus obat ini?")) {
             try {
@@ -2094,9 +2134,9 @@ const MedicineList = () => {
                     .from("medicines")
                     .delete()
                     .eq("id", id);
-                
+
                 if (error) throw error;
-                
+
                 // Refresh data
                 fetchMedicines(currentPage, debouncedSearch, itemsPerPage);
             } catch (error) {
@@ -3692,8 +3732,8 @@ echo "$(tree -I "node_modules|.git" -a)" > project_files.txt && find . -type f -
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- <link href="../src/output.css" rel="stylesheet"> -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../src/output.css" rel="stylesheet">
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <title>Vite + React + TS</title>
   </head>
   <body>
