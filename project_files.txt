@@ -1,0 +1,4212 @@
+.
+├── .env
+├── eslint.config.js
+├── get-all
+├── get-database
+├── .gitignore
+├── index.html
+├── package.json
+├── package-lock.json
+├── project_files.txt
+├── public
+│   └── vite.svg
+├── README.md
+├── src
+│   ├── App.css
+│   ├── App.tsx
+│   ├── assets
+│   ├── components
+│   │   ├── layout
+│   │   │   ├── MainLayout.tsx
+│   │   │   ├── Navbar.tsx
+│   │   │   └── Sidebar.tsx
+│   │   └── ui
+│   │       ├── Badge.tsx
+│   │       ├── Button.tsx
+│   │       ├── Card.tsx
+│   │       ├── Input.tsx
+│   │       ├── Loading.tsx
+│   │       └── Table.tsx
+│   ├── index.css
+│   ├── input.css
+│   ├── lib
+│   │   ├── classNames.ts
+│   │   └── supabase.ts
+│   ├── main.tsx
+│   ├── output.css
+│   ├── pages
+│   │   ├── auth
+│   │   │   └── Login.tsx
+│   │   ├── dashboard
+│   │   │   └── Dashboard.tsx
+│   │   ├── master-data
+│   │   │   ├── AddMedicine.tsx
+│   │   │   ├── CategoryList.tsx
+│   │   │   ├── MedicineList.tsx
+│   │   │   ├── TypeList.tsx
+│   │   │   └── UnitList.tsx
+│   │   └── sales
+│   │       └── CreateSale.tsx
+│   ├── store
+│   │   └── authStore.ts
+│   └── vite-env.d.ts
+├── supabase_data
+│   ├── doctors.json
+│   ├── medicine_categories.json
+│   ├── medicines.json
+│   ├── medicine_types.json
+│   ├── medicine_units.json
+│   ├── patients.json
+│   ├── purchases.json
+│   ├── sale_items.json
+│   ├── sales.json
+│   └── users.json
+├── tailwind.config.js
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
+
+15 directories, 53 files
+
+
+===============================================
+= File: ./project_files.txt 
+===============================================
+
+
+
+===============================================
+= File: ./tsconfig.app.json 
+===============================================
+
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src"]
+}
+
+
+===============================================
+= File: ./tsconfig.json 
+===============================================
+
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+
+
+===============================================
+= File: ./README.md 
+===============================================
+
+# React + TypeScript + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default tseslint.config({
+  extends: [
+    // Remove ...tseslint.configs.recommended and replace with this
+    ...tseslint.configs.recommendedTypeChecked,
+    // Alternatively, use this for stricter rules
+    ...tseslint.configs.strictTypeChecked,
+    // Optionally, add this for stylistic rules
+    ...tseslint.configs.stylisticTypeChecked,
+  ],
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
+```
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default tseslint.config({
+  plugins: {
+    // Add the react-x and react-dom plugins
+    'react-x': reactX,
+    'react-dom': reactDom,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended typescript rules
+    ...reactX.configs['recommended-typescript'].rules,
+    ...reactDom.configs.recommended.rules,
+  },
+})
+```
+
+
+===============================================
+= File: ./package.json 
+===============================================
+
+{
+  "name": "apotek-klinik-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@headlessui/react": "^2.2.0",
+    "@supabase/supabase-js": "^2.49.3",
+    "@tanstack/react-table": "^8.21.2",
+    "autoprefixer": "^10.4.21",
+    "axios": "^1.8.4",
+    "chart.js": "^4.4.8",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
+    "postcss": "^8.5.3",
+    "react": "^19.0.0",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^6.30.0",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
+  }
+}
+
+
+===============================================
+= File: ./tailwind.config.js 
+===============================================
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: [
+          'system-ui',
+          'Avenir',
+          'Helvetica',
+          'Arial',
+          'sans-serif',
+        ],
+      },
+      colors: {
+        primary: "#1a73e8",
+        secondary: "#4285f4",
+        accent: "#ea4335",
+        neutral: "#fbbc05",
+      },
+    },
+  },
+  plugins: [],
+}
+
+===============================================
+= File: ./public/vite.svg 
+===============================================
+
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="31.88" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 257"><defs><linearGradient id="IconifyId1813088fe1fbc01fb466" x1="-.828%" x2="57.636%" y1="7.652%" y2="78.411%"><stop offset="0%" stop-color="#41D1FF"></stop><stop offset="100%" stop-color="#BD34FE"></stop></linearGradient><linearGradient id="IconifyId1813088fe1fbc01fb467" x1="43.376%" x2="50.316%" y1="2.242%" y2="89.03%"><stop offset="0%" stop-color="#FFEA83"></stop><stop offset="8.333%" stop-color="#FFDD35"></stop><stop offset="100%" stop-color="#FFA800"></stop></linearGradient></defs><path fill="url(#IconifyId1813088fe1fbc01fb466)" d="M255.153 37.938L134.897 252.976c-2.483 4.44-8.862 4.466-11.382.048L.875 37.958c-2.746-4.814 1.371-10.646 6.827-9.67l120.385 21.517a6.537 6.537 0 0 0 2.322-.004l117.867-21.483c5.438-.991 9.574 4.796 6.877 9.62Z"></path><path fill="url(#IconifyId1813088fe1fbc01fb467)" d="M185.432.063L96.44 17.501a3.268 3.268 0 0 0-2.634 3.014l-5.474 92.456a3.268 3.268 0 0 0 3.997 3.378l24.777-5.718c2.318-.535 4.413 1.507 3.936 3.838l-7.361 36.047c-.495 2.426 1.782 4.5 4.151 3.78l15.304-4.649c2.372-.72 4.652 1.36 4.15 3.788l-11.698 56.621c-.732 3.542 3.979 5.473 5.943 2.437l1.313-2.028l72.516-144.72c1.215-2.423-.88-5.186-3.54-4.672l-25.505 4.922c-2.396.462-4.435-1.77-3.759-4.114l16.646-57.705c.677-2.35-1.37-4.583-3.769-4.113Z"></path></svg>
+
+===============================================
+= File: ./src/main.tsx 
+===============================================
+
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+
+===============================================
+= File: ./src/App.css 
+===============================================
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+
+===============================================
+= File: ./src/input.css 
+===============================================
+
+
+
+===============================================
+= File: ./src/components/ui/Button.tsx 
+===============================================
+
+// src/components/ui/Button.tsx
+import { classNames } from "../../lib/classNames";
+
+export type ButtonVariant =
+    | "primary"
+    | "secondary"
+    | "accent"
+    | "outline"
+    | "danger";
+export type ButtonSize = "sm" | "md" | "lg";
+
+export interface ButtonProps
+    extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+    isLoading?: boolean;
+    fullWidth?: boolean;
+}
+
+export const Button = ({
+    children,
+    className,
+    variant = "primary",
+    size = "md",
+    isLoading = false,
+    fullWidth = false,
+    ...props
+}: ButtonProps) => {
+    const variants = {
+        primary: "rounded-md shadow-md bg-blue-500 flex items-center hover:bg-blue-600 text-white hover:text-white",
+        secondary: "rounded-md bg-blue-600 bg-secondary hover:bg-blue-700 text-white hover:text-white",
+        accent: "bg-accent hover:bg-red-600 text-white",
+        outline: "border border-primary text-primary hover:bg-blue-50",
+        danger: "bg-red-600 hover:bg-red-700 text-white",
+    };
+
+    const sizes = {
+        sm: "px-3 py-1.5 text-sm",
+        md: "px-4 py-2",
+        lg: "px-6 py-3 text-lg",
+    };
+
+    return (
+        <button
+            className={classNames(
+                "font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed",
+                variants[variant],
+                sizes[size],
+                fullWidth ? "w-full" : "",
+                className
+            )}
+            disabled={isLoading || props.disabled}
+            {...props}
+        >
+            {isLoading ? (
+                <span className="flex items-center justify-center">
+                    <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-current"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                        ></circle>
+                        <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                    </svg>
+                    Loading...
+                </span>
+            ) : (
+                children
+            )}
+        </button>
+    );
+};
+
+
+===============================================
+= File: ./src/components/ui/Card.tsx 
+===============================================
+
+// src/components/ui/Card.tsx
+import { classNames } from '../../lib/classNames';
+
+interface CardProps {
+    children: React.ReactNode;
+    className?: string;
+}
+
+export const Card = ({ children, className }: CardProps) => {
+    return (
+        <div className={classNames('bg-white p-6 rounded-lg shadow', className)}>
+            {children}
+        </div>
+    );
+};
+
+export const CardHeader = ({ children, className }: CardProps) => {
+    return (
+        <div className={classNames('mb-4', className)}>
+            {children}
+        </div>
+    );
+};
+
+export const CardTitle = ({ children, className }: CardProps) => {
+    return (
+        <h2 className={classNames('text-lg font-semibold text-gray-800', className)}>
+            {children}
+        </h2>
+    );
+};
+
+export const CardContent = ({ children, className }: CardProps) => {
+    return (
+        <div className={classNames('', className)}>
+            {children}
+        </div>
+    );
+};
+
+export const CardFooter = ({ children, className }: CardProps) => {
+    return (
+        <div className={classNames('mt-4 pt-4 border-t', className)}>
+            {children}
+        </div>
+    );
+};
+
+===============================================
+= File: ./src/components/ui/Table.tsx 
+===============================================
+
+// src/components/ui/Table.tsx
+import { classNames } from '../../lib/classNames';
+
+interface TableProps {
+    children: React.ReactNode;
+    className?: string;
+}
+
+interface TableCellProps extends TableProps {
+    colSpan?: number;
+    rowSpan?: number;
+    align?: 'left' | 'center' | 'right';
+}
+
+export const Table = ({ children, className }: TableProps) => {
+    return (
+        <div className={classNames('overflow-x-auto rounded-lg shadow', className)}>
+            <table className="min-w-full bg-white rounded-lg overflow-hidden">
+                {children}
+            </table>
+        </div>
+    );
+};
+
+export const TableHead = ({ children, className }: TableProps) => {
+    return (
+        <thead className={classNames('bg-gray-50 text-gray-700 border-b border-gray-200', className)}>
+            {children}
+        </thead>
+    );
+};
+
+export const TableBody = ({ children, className }: TableProps) => {
+    return (
+        <tbody className={classNames('divide-y divide-gray-100 bg-white', className)}>
+            {children}
+        </tbody>
+    );
+};
+
+export const TableRow = ({ children, className }: TableProps) => {
+    return (
+        <tr className={classNames('transition-colors duration-150 hover:bg-gray-50 even:bg-gray-50/30', className)}>
+            {children}
+        </tr>
+    );
+};
+
+export const TableCell = ({ children, className }: TableCellProps) => {
+    return (
+        <td className={classNames('py-3 px-4 text-gray-700 align-middle', className)}>
+            {children}
+        </td>
+    );
+};
+
+export const TableHeader = ({ children, className }: TableProps) => {
+    return (
+        <th className={classNames('py-3 px-4 text-left bg-gray-200 font-extrabold text-gray-700 uppercase tracking-wider text-sm', className)}>
+            {children}
+        </th>
+    );
+};
+
+===============================================
+= File: ./src/components/ui/Input.tsx 
+===============================================
+
+// src/components/ui/Input.tsx
+import { classNames } from '../../lib/classNames';
+
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    label?: string;
+    error?: string;
+    fullWidth?: boolean;
+}
+
+export const Input = ({
+    label,
+    error,
+    className,
+    fullWidth = true,
+    ...props
+}: InputProps) => {
+    return (
+        <div className={fullWidth ? 'w-full' : ''}>
+            {label && (
+                <label className="block text-gray-700 mb-2" htmlFor={props.id}>
+                    {label}
+                </label>
+            )}
+            <input
+                className={classNames(
+                    'p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
+                    error ? 'border-red-500' : 'border-gray-300',
+                    fullWidth ? 'w-full' : '',
+                    className
+                )}
+                {...props}
+            />
+            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+        </div>
+    );
+};
+
+===============================================
+= File: ./src/components/ui/Badge.tsx 
+===============================================
+
+// src/components/ui/Badge.tsx
+import { classNames } from "../../lib/classNames";
+
+export type BadgeVariant =
+    | "primary"
+    | "secondary"
+    | "accent"
+    | "success"
+    | "warning"
+    | "danger";
+
+interface BadgeProps {
+    children: React.ReactNode;
+    variant?: BadgeVariant;
+    className?: string;
+}
+
+export const Badge = ({
+    children,
+    variant = "primary",
+    className,
+}: BadgeProps) => {
+    const variants = {
+        primary: "bg-blue-100 text-blue-800",
+        secondary: "bg-gray-100 text-gray-800",
+        accent: "bg-red-100 text-red-800",
+        success: "bg-green-100 text-green-800",
+        warning: "bg-yellow-100 text-yellow-800",
+        danger: "bg-red-100 text-red-800",
+    };
+
+    return (
+        <span
+            className={classNames(
+                "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+                variants[variant],
+                className
+            )}
+        >
+            {children}
+        </span>
+    );
+};
+
+
+===============================================
+= File: ./src/components/ui/Loading.tsx 
+===============================================
+
+import { classNames } from "../../lib/classNames";
+
+interface LoadingProps {
+    className?: string;
+    message?: string;
+}
+
+export const Loading = ({ className, message = "Memuat data..." }: LoadingProps) => (
+    <div className={classNames("text-center py-10", className)}>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+        <p className="mt-2 text-gray-600">{message}</p>
+    </div>
+);
+
+
+===============================================
+= File: ./src/components/layout/MainLayout.tsx 
+===============================================
+
+import { Outlet } from "react-router-dom";
+import Navbar from "./Navbar";
+import Sidebar from "./Sidebar";
+
+const MainLayout = () => {
+    return (
+        <div className="flex h-screen bg-gray-100 text-gray-800">
+            <Sidebar />
+
+            <div className="flex flex-col flex-1 overflow-hidden">
+                <Navbar />
+
+                <main className="flex-1 overflow-y-auto p-4 text-gray-800">
+                    <Outlet />
+                </main>
+            </div>
+        </div>
+    );
+};
+
+export default MainLayout;
+
+
+===============================================
+= File: ./src/components/layout/Navbar.tsx 
+===============================================
+
+// src/components/layout/Navbar.tsx
+import { useState } from 'react';
+import { useAuthStore } from '../../store/authStore';
+import { Button } from '../ui/Button';
+
+const Navbar = () => {
+    const { user, logout } = useAuthStore();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+
+    const toggleDropdown = () => {
+        setDropdownOpen(!dropdownOpen);
+    };
+
+    const handleLogout = async () => {
+        await logout();
+    };
+
+    return (
+        <nav className="bg-white border-b px-6 py-3">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-xl font-semibold text-gray-800">Apotek & Klinik App</h1>
+                </div>
+
+                <div className="relative">
+                    <button
+                        className="flex items-center space-x-2"
+                        onClick={toggleDropdown}
+                    >
+                        <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
+                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                        <span className="font-medium">{user?.name || 'User'}</span>
+                    </button>
+
+                    {dropdownOpen && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                            <div className="py-1">
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start rounded-none"
+                                    onClick={handleLogout}
+                                >
+                                    Logout
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </nav>
+    );
+};
+
+export default Navbar;
+
+===============================================
+= File: ./src/components/layout/Sidebar.tsx 
+===============================================
+
+import { Link } from "react-router-dom";
+import { useState } from "react";
+import {
+    FaDatabase,
+    FaBoxes,
+    FaShoppingCart,
+    FaShoppingBag,
+    FaHospital,
+    FaChartBar,
+    FaCog,
+    FaAngleDown,
+} from "react-icons/fa";
+
+const Sidebar = () => {
+    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+        masterData: false,
+        inventory: false,
+        purchasing: false,
+        sales: false,
+        clinic: false,
+        accounting: false,
+        reports: false,
+        settings: false,
+    });
+
+    const toggleMenu = (menu: string) => {
+        setOpenMenus((prev) => ({
+            ...prev,
+            [menu]: !prev[menu],
+        }));
+    };
+
+    return (
+        <aside className="w-64 bg-white shadow-md">
+            <div className="p-4 bg-primary text-white">
+                <h2 className="text-xl font-bold">Apotek & Klinik</h2>
+            </div>
+
+            <nav className="mt-6">
+                <Link
+                    to="/"
+                    className="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100"
+                >
+                    <span className="mx-3">Dashboard</span>
+                </Link>
+
+                {/* Master Data */}
+                <div>
+                    <button
+                        onClick={() => toggleMenu("masterData")}
+                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
+                    >
+                        <div className="flex items-center">
+                            <FaDatabase className="text-gray-500" />
+                            <span className="mx-3">Master Data</span>
+                        </div>
+                        <FaAngleDown
+                            className={`transform ${openMenus.masterData ? "rotate-180" : ""
+                                }`}
+                        />
+                    </button>
+
+                    {openMenus.masterData && (
+                        <div className="pl-12 pr-6 py-2 bg-gray-50">
+                            <Link
+                                to="/master-data/medicines"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Obat/Resep
+                            </Link>
+                            <Link
+                                to="/master-data/categories"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Kategori Obat
+                            </Link>
+                            <Link
+                                to="/master-data/types"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Jenis Obat
+                            </Link>
+                            <Link
+                                to="/master-data/units"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Satuan
+                            </Link>
+                            <Link
+                                to="/master-data/suppliers"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Supplier
+                            </Link>
+                            <Link
+                                to="/master-data/patients"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Pasien
+                            </Link>
+                            <Link
+                                to="/master-data/doctors"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Dokter
+                            </Link>
+                        </div>
+                    )}
+                </div>
+
+                {/* Persediaan */}
+                <div>
+                    <button
+                        onClick={() => toggleMenu("inventory")}
+                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
+                    >
+                        <div className="flex items-center">
+                            <FaBoxes className="text-gray-500" />
+                            <span className="mx-3">Persediaan</span>
+                        </div>
+                        <FaAngleDown
+                            className={`transform ${openMenus.inventory ? "rotate-180" : ""}`}
+                        />
+                    </button>
+
+                    {openMenus.inventory && (
+                        <div className="pl-12 pr-6 py-2 bg-gray-50">
+                            <Link
+                                to="/inventory/stock"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Stok Obat
+                            </Link>
+                            <Link
+                                to="/inventory/stock-opname"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Stok Opname
+                            </Link>
+                            <Link
+                                to="/inventory/expired"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Obat Kadaluarsa
+                            </Link>
+                        </div>
+                    )}
+                </div>
+
+                {/* Tambahkan menu lain (Pembelian, Penjualan, Klinik, dll) dengan struktur yang sama */}
+            </nav>
+        </aside>
+    );
+};
+
+export default Sidebar;
+
+
+===============================================
+= File: ./src/index.css 
+===============================================
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #1a73e8;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: #213547;
+  background-color: #ffffff;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+
+===============================================
+= File: ./src/pages/master-data/UnitList.tsx 
+===============================================
+
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import { Loading } from "../../components/ui/Loading";
+
+interface Unit {
+    id: string;
+    name: string;
+    description: string;
+}
+
+const UnitList = () => {
+    const [units, setUnits] = useState<Unit[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchUnits();
+    }, []);
+
+    const fetchUnits = async () => {
+        try {
+            setLoading(true);
+            
+            const { data, error } = await supabase
+                .from("medicine_units")
+                .select("*")
+                .order("name");
+                
+            if (error) throw error;
+            
+            setUnits(data || []);
+        } catch (error) {
+            console.error("Error fetching units:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm("Apakah Anda yakin ingin menghapus satuan obat ini?")) {
+            try {
+                const { error } = await supabase
+                    .from("medicine_units")
+                    .delete()
+                    .eq("id", id);
+                
+                if (error) throw error;
+                
+                fetchUnits(); // Refresh data after deletion
+            } catch (error) {
+                console.error("Error deleting unit:", error);
+                alert("Gagal menghapus satuan obat. Silakan coba lagi.");
+            }
+        }
+    };
+
+    return (
+        <Card>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Daftar Satuan Obat</h1>
+                
+                <Link
+                    to="/master-data/units/add"
+                >
+                    <Button variant="primary">
+                        <FaPlus className="mr-2" />
+                        Tambah Satuan Baru
+                    </Button>
+                </Link>
+            </div>
+            
+            {loading ? (
+                <Loading />
+            ) : (
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableHeader>Nama Satuan</TableHeader>
+                            {/* <TableHeader>Deskripsi</TableHeader> */}
+                            <TableHeader className="text-center">Aksi</TableHeader>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                            {units.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center text-gray-500">
+                                        Tidak ada data satuan yang ditemukan
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                units.map((unit) => (
+                                    <TableRow key={unit.id}>
+                                        <TableCell>{unit.name}</TableCell>
+                                        {/* <TableCell>{unit.description}</TableCell> */}
+                                        <TableCell className="text-center">
+                                            <div className="flex justify-center space-x-2">
+                                                <Link
+                                                    to={`/master-data/units/edit/${unit.id}`}
+                                                >
+                                                    <Button variant="secondary" size="sm">
+                                                        <FaEdit />
+                                                    </Button>
+                                                </Link>
+                                                <Button 
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(unit.id)}
+                                                >
+                                                    <FaTrash />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                    </TableBody>
+                </Table>
+            )}
+        </Card>
+    );
+};
+
+export default UnitList;
+
+===============================================
+= File: ./src/pages/master-data/CategoryList.tsx 
+===============================================
+
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import { Loading } from "../../components/ui/Loading";
+
+interface Category {
+    id: string;
+    name: string;
+    description: string;
+}
+
+const CategoryList = () => {
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    const fetchCategories = async () => {
+        try {
+            setLoading(true);
+            
+            const { data, error } = await supabase
+                .from("medicine_categories")
+                .select("*")
+                .order("name");
+                
+            if (error) throw error;
+            
+            setCategories(data || []);
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Card>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Daftar Kategori Obat</h1>
+                
+                <Link to="/master-data/categories/add">
+                    <Button variant="primary" className="flex items-center">
+                        <FaPlus className="mr-2" />
+                        Tambah Kategori Baru
+                    </Button>
+                </Link>
+            </div>
+            
+            {loading ? (
+                <Loading />
+            ) : (
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableHeader>Nama Kategori</TableHeader>
+                            <TableHeader>Deskripsi</TableHeader>
+                            <TableHeader className="text-center">Aksi</TableHeader>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {categories.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center text-gray-500">
+                                    Tidak ada data kategori yang ditemukan
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            categories.map((category) => (
+                                <TableRow key={category.id}>
+                                    <TableCell>{category.name}</TableCell>
+                                    <TableCell>{category.description}</TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="flex justify-center space-x-2">
+                                            <Link
+                                                to={`/master-data/categories/edit/${category.id}`}
+                                            >
+                                                <Button variant="secondary" size="sm">
+                                                    <FaEdit />
+                                                </Button>
+                                            </Link>
+                                            <Button 
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => handleDelete(category.id)}
+                                            >
+                                                <FaTrash />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            )}
+        </Card>
+    );
+    
+    async function handleDelete(id: string) {
+        if (window.confirm("Apakah Anda yakin ingin menghapus kategori obat ini?")) {
+            try {
+                const { error } = await supabase
+                    .from("medicine_categories")
+                    .delete()
+                    .eq("id", id);
+                
+                if (error) throw error;
+                
+                fetchCategories(); // Refresh data after deletion
+            } catch (error) {
+                console.error("Error deleting category:", error);
+                alert("Gagal menghapus kategori obat. Silakan coba lagi.");
+            }
+        }
+    }
+};
+
+export default CategoryList;
+
+===============================================
+= File: ./src/pages/master-data/AddMedicine.tsx 
+===============================================
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Loading } from '../../components/ui/Loading';
+import { FaSave, FaTimes } from 'react-icons/fa';
+
+interface Category {
+    id: string;
+    name: string;
+}
+
+interface MedicineType {
+    id: string;
+    name: string;
+}
+
+interface Unit {
+    id: string;
+    name: string;
+}
+
+// Mapping untuk pembuatan kode
+const TYPE_CODE_MAP = {
+    'f295e143-883f-4222-b5ce-0428f858d7f4': 'T', // Tablet
+    'b355eadc-2a48-45bf-bbf2-1b0249de3060': 'K', // Kapsul
+    '56db61b8-6fc0-47a4-82f3-960a6a33e84c': 'S', // Sirup
+    'a237f060-7cce-4638-9d0b-510b55519a62': 'S', // Salep
+    'd510c9c5-d8db-488c-a634-fee521d23d07': 'I'  // Injeksi
+};
+
+const UNIT_CODE_MAP = {
+    'cc8e891c-34ac-4afb-944c-258ad244a96f': 'T', // Tablet
+    '05990da0-faa0-4f5e-92e9-bc1f2ef4defc': 'K', // Kapsul
+    '28dbe949-54a2-4198-baba-ed162a041cbe': 'B', // Botol
+    '6727b61b-8063-422d-a89a-16b378d5d76d': 'T', // Tube
+    '1713eeb1-8ca9-4302-be6a-1e9ccde39cf1': 'A', // Ampul
+    'd7ec80ef-00b0-4b57-8086-d6ad803a68cc': 'S'  // Strip
+};
+
+const CATEGORY_CODE_MAP = {
+    '0d1d6848-96b5-448e-a136-3aba8a9bbbca': 'AB', // Antibiotik
+    'a21f33c1-42aa-4171-a826-59a7e00c315d': 'AP', // Antipiretik
+    '502e0a0c-9a29-4003-b309-979b659b30db': 'AG', // Analgesik
+    '26e20a27-a34e-424e-9a85-babc2abdc955': 'AD', // Antidiabetes
+    'c0264ffd-cdd0-4c8f-b5c3-36d040005f5a': 'AH'  // Antihipertensi
+};
+
+const AddMedicine = () => {
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [types, setTypes] = useState<MedicineType[]>([]);
+    const [units, setUnits] = useState<Unit[]>([]);
+    const [latestSequence, setLatestSequence] = useState<Record<string, number>>({});
+
+    // Form state
+    const [formData, setFormData] = useState({
+        code: 'OTOMATIS', // Kode akan dibuat otomatis
+        name: '',
+        type_id: '',
+        category_id: '',
+        unit_id: '',
+        rack: '',
+        description: '',
+        buy_price: 0,
+        sell_price: 0,
+        min_stock: 10,
+        is_active: true,
+        has_expiry_date: false
+    });
+
+    useEffect(() => {
+        fetchMasterData();
+    }, []);
+
+    useEffect(() => {
+        if (formData.type_id && formData.category_id && formData.unit_id) {
+            generateItemCode();
+        }
+    }, [formData.type_id, formData.category_id, formData.unit_id]);
+
+    const generateItemCode = async () => {
+        // Jika tipe, kategori, atau satuan belum dipilih, keluar dari fungsi
+        if (!formData.type_id || !formData.category_id || !formData.unit_id) return;
+        
+        const typeCode = TYPE_CODE_MAP[formData.type_id] || 'X';
+        const unitCode = UNIT_CODE_MAP[formData.unit_id] || 'X';
+        const categoryCode = CATEGORY_CODE_MAP[formData.category_id] || 'XX';
+        
+        const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
+        
+        // Cek database untuk mendapatkan urutan terakhir
+        try {
+            const { data } = await supabase
+                .from('medicines')
+                .select('code')
+                .ilike('code', `${codePrefix}%`)
+                .order('code', { ascending: false });
+            
+            let sequence = 1; // Default mulai dari 1
+            
+            if (data && data.length > 0) {
+                // Ekstrak nomor urut dari kode yang sudah ada
+                const lastSequenceStr = data[0].code.substring(codePrefix.length);
+                const lastSequence = parseInt(lastSequenceStr);
+                
+                if (!isNaN(lastSequence)) {
+                    sequence = lastSequence + 1;
+                }
+            }
+            
+            // Format: membuat kode 2 digit (01, 02, ..., dst)
+            const sequenceStr = sequence.toString().padStart(2, '0');
+            const generatedCode = `${codePrefix}${sequenceStr}`;
+            
+            // Update form
+            setFormData({
+                ...formData,
+                code: generatedCode
+            });
+        } catch (error) {
+            console.error('Error generating item code:', error);
+        }
+    };
+
+    const fetchMasterData = async () => {
+        setLoading(true);
+        try {
+            // Fetch categories
+            const { data: categoriesData } = await supabase
+                .from('medicine_categories')
+                .select('id, name')
+                .order('name');
+
+            // Fetch types
+            const { data: typesData } = await supabase
+                .from('medicine_types')
+                .select('id, name')
+                .order('name');
+
+            // Fetch units
+            const { data: unitsData } = await supabase
+                .from('medicine_units')
+                .select('id, name')
+                .order('name');
+
+            if (categoriesData) setCategories(categoriesData);
+            if (typesData) setTypes(typesData);
+            if (unitsData) setUnits(unitsData);
+        } catch (error) {
+            console.error('Error fetching master data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target as HTMLInputElement;
+        
+        if (type === 'checkbox') {
+            const { checked } = e.target as HTMLInputElement;
+            setFormData({
+                ...formData,
+                [name]: checked
+            });
+        } else if (type === 'number') {
+            setFormData({
+                ...formData,
+                [name]: parseFloat(value) || 0
+            });
+        } else {
+            setFormData({
+                ...formData,
+                [name]: value
+            });
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+
+        try {
+            // Check jika nama obat sudah ada
+            const { data: existingMedicine } = await supabase
+                .from('medicines')
+                .select('name')
+                .eq('name', formData.name)
+                .maybeSingle();
+
+            if (existingMedicine) {
+                alert('Nama obat sudah terdaftar. Gunakan nama lain.');
+                setSaving(false);
+                return;
+            }
+
+            // Insert data obat baru
+            const { error } = await supabase
+                .from('medicines')
+                .insert({
+                    name: formData.name,
+                    category_id: formData.category_id,
+                    type_id: formData.type_id,
+                    unit_id: formData.unit_id,
+                    buy_price: formData.buy_price,
+                    sell_price: formData.sell_price,
+                    stock: 0, // Default stok awal 0
+                    min_stock: formData.min_stock,
+                    description: formData.description || null,
+                    is_active: formData.is_active,
+                    rack: formData.rack || null,
+                    code: formData.code,
+                    has_expiry_date: formData.has_expiry_date
+                });
+
+            if (error) throw error;
+
+            // Redirect ke halaman daftar obat
+            navigate('/master-data/medicines');
+        } catch (error) {
+            console.error('Error saving medicine:', error);
+            alert('Gagal menyimpan data obat. Silakan coba lagi.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Tambah Data Obat Baru</CardTitle>
+                </CardHeader>
+
+                {loading ? (
+                    <CardContent>
+                        <Loading />
+                    </CardContent>
+                ) : (
+                    <form onSubmit={handleSubmit}>
+                        <CardContent>
+                            <div className="border border-gray-200 rounded-lg mb-6">
+                                <h2 className="text-lg font-semibold bg-gray-100 p-3 border-b">Data Umum</h2>
+                                <div className="p-4 space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Kode Item</label>
+                                            <Input 
+                                                name="code"
+                                                value={formData.code}
+                                                disabled={true}
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nama Item</label>
+                                        <Input
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                            className="w-full"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Jenis</label>
+                                            <div className="flex">
+                                                <select
+                                                    name="type_id"
+                                                    value={formData.type_id}
+                                                    onChange={handleChange}
+                                                    className="bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    required
+                                                >
+                                                    <option value="">-- Pilih Jenis --</option>
+                                                    {types.map(type => (
+                                                        <option key={type.id} value={type.id}>{type.name}</option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    type="button"
+                                                    className="ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
+                                                    onClick={() => navigate('/master-data/types/add')}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                                            <div className="flex">
+                                                <select
+                                                    name="category_id"
+                                                    value={formData.category_id}
+                                                    onChange={handleChange}
+                                                    className="bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    required
+                                                >
+                                                    <option value="">-- Pilih Kategori --</option>
+                                                    {categories.map(category => (
+                                                        <option key={category.id} value={category.id}>{category.name}</option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    type="button"
+                                                    className="ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
+                                                    onClick={() => navigate('/master-data/categories/add')}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Satuan</label>
+                                            <div className="flex">
+                                                <select
+                                                    name="unit_id"
+                                                    value={formData.unit_id}
+                                                    onChange={handleChange}
+                                                    className="bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                    required
+                                                >
+                                                    <option value="">-- Pilih Satuan --</option>
+                                                    {units.map(unit => (
+                                                        <option key={unit.id} value={unit.id}>{unit.name}</option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    type="button"
+                                                    className="ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
+                                                    onClick={() => navigate('/master-data/units/add')}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Rak</label>
+                                            <Input
+                                                name="rack"
+                                                value={formData.rack}
+                                                onChange={handleChange}
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Keterangan</label>
+                                        <textarea
+                                            name="description"
+                                            value={formData.description}
+                                            onChange={handleChange}
+                                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                            rows={3}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="border border-gray-200 rounded-lg mb-6">
+                                <h2 className="text-lg font-semibold bg-gray-100 p-3 border-b">Harga Jual</h2>
+                                <div className="p-4 space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Harga Beli</label>
+                                            <Input
+                                                type="number"
+                                                name="buy_price"
+                                                value={formData.buy_price}
+                                                onChange={handleChange}
+                                                className="w-full"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Harga Jual</label>
+                                            <Input
+                                                type="number"
+                                                name="sell_price"
+                                                value={formData.sell_price}
+                                                onChange={handleChange}
+                                                className="w-full"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="border border-gray-200 rounded-lg mb-6">
+                                <h2 className="text-lg font-semibold bg-gray-100 p-3 border-b">Pengaturan Tambahan</h2>
+                                <div className="p-4 space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Status Jual</label>
+                                            <div className="space-x-6">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        name="is_active"
+                                                        checked={formData.is_active}
+                                                        onChange={() => setFormData({...formData, is_active: true})}
+                                                        className="form-radio h-5 w-5 text-primary"
+                                                    />
+                                                    <span className="ml-2">Masih dijual</span>
+                                                </label>
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        name="is_active"
+                                                        checked={!formData.is_active}
+                                                        onChange={() => setFormData({...formData, is_active: false})}
+                                                        className="form-radio h-5 w-5 text-primary"
+                                                    />
+                                                    <span className="ml-2">Tidak Dijual</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Stok Minimal</label>
+                                            <Input
+                                                type="number"
+                                                name="min_stock"
+                                                value={formData.min_stock}
+                                                onChange={handleChange}
+                                                className="w-full"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="has_expiry_date"
+                                                checked={formData.has_expiry_date}
+                                                onChange={handleChange}
+                                                className="form-checkbox h-5 w-5 text-primary"
+                                            />
+                                            <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
+                                        </label>
+                                        <div className="mt-1 text-sm text-gray-500">
+                                            Jika dicentang, obat ini akan menggunakan metode FEFO (First Expired First Out) untuk pengeluaran stok.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+
+                        <CardFooter className="flex justify-between">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => navigate('/master-data/medicines')}
+                            >
+                                <FaTimes className="mr-2" /> Batal
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={saving}
+                                isLoading={saving}
+                            >
+                                <FaSave className="mr-2" /> Simpan
+                            </Button>
+                        </CardFooter>
+                    </form>
+                )}
+            </Card>
+        </div>
+    );
+};
+
+export default AddMedicine;
+
+===============================================
+= File: ./src/pages/master-data/MedicineList.tsx 
+===============================================
+
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import { Loading } from "../../components/ui/Loading";
+
+interface Medicine {
+    id: string;
+    name: string;
+    category: { name: string };
+    type: { name: string };
+    unit: { name: string };
+    buy_price: number;
+    sell_price: number;
+    stock: number;
+}
+
+const MedicineList = () => {
+    const [medicines, setMedicines] = useState<Medicine[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState(""); 
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // Efek untuk debounce pencarian
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1); // Reset ke halaman pertama saat pencarian berubah
+        }, 500);
+        
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    // Efek untuk mengambil data saat parameter berubah
+    useEffect(() => {
+        fetchMedicines(currentPage, debouncedSearch, itemsPerPage);
+    }, [currentPage, debouncedSearch, itemsPerPage]);
+
+    const fetchMedicines = async (page = 1, searchTerm = '', limit = 10) => {
+        try {
+            setLoading(true);
+
+            // Buat query dasar
+            let query = supabase
+                .from("medicines")
+                .select(`
+                id, 
+                name, 
+                buy_price, 
+                sell_price, 
+                stock,
+                category_id,
+                type_id,
+                unit_id
+                `);
+
+            // Tambahkan pencarian jika ada
+            if (searchTerm) {
+                query = query.ilike('name', `%${searchTerm}%`);
+            }
+
+            // Ambil total jumlah item untuk pagination
+            // Membuat query terpisah untuk menghitung total item
+            let countQuery = supabase
+                .from("medicines")
+                .select('id', { count: 'exact' });
+                
+            // Tambahkan pencarian jika ada
+            if (searchTerm) {
+                countQuery = countQuery.ilike('name', `%${searchTerm}%`);
+            }
+                
+            const { count, error: countError } = await countQuery;
+            if (countError) throw countError;
+
+            // Tambahkan pagination
+            const from = (page - 1) * limit;
+            const to = from + limit - 1;
+            
+            const { data, error } = await query
+                .order('name')
+                .range(from, to);
+
+            if (error) {
+                console.error("Error fetching medicines:", error);
+                throw error;
+            }
+            
+            // Ambil data referensi
+            const { data: categories } = await supabase.from("medicine_categories").select("id, name");
+            const { data: types } = await supabase.from("medicine_types").select("id, name");
+            const { data: units } = await supabase.from("medicine_units").select("id, name");
+            
+            // Gabungkan data
+            const completedData = (data || []).map(item => ({
+                id: item.id,
+                name: item.name,
+                buy_price: item.buy_price,
+                sell_price: item.sell_price,
+                stock: item.stock,
+                category: { 
+                    name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
+                type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
+                unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
+            }));
+
+            setTotalItems(count || 0);
+            setMedicines(completedData);
+        } catch (error) {
+            console.error("Error fetching medicines:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
+
+    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1); // Reset ke halaman pertama
+    };
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    const Pagination = () => {
+        const pageNumbers = [];
+        const maxPageDisplay = 5;
+        
+        let startPage = Math.max(1, currentPage - Math.floor(maxPageDisplay / 2));
+        const endPage = Math.min(totalPages, startPage + maxPageDisplay - 1);
+        
+        if (endPage - startPage + 1 < maxPageDisplay) {
+            startPage = Math.max(1, endPage - maxPageDisplay + 1);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            pageNumbers.push(i);
+        }
+        
+        return (
+            <div className="flex justify-between items-center mt-4">
+                <div className="text-sm text-gray-600">
+                    Menampilkan {medicines.length} dari {totalItems} obat
+                </div>
+                
+                <div className="flex items-center">
+                    <div className="mr-4">
+                        <select 
+                            value={itemsPerPage} 
+                            onChange={handleItemsPerPageChange}
+                            className="border rounded-md p-2"
+                        >
+                            <option value={5}>5 per halaman</option>
+                            <option value={10}>10 per halaman</option>
+                            <option value={20}>20 per halaman</option>
+                            <option value={50}>50 per halaman</option>
+                        </select>
+                    </div>
+                    
+                    <div className="flex">
+                        <button
+                            onClick={() => handlePageChange(1)}
+                            disabled={currentPage === 1}
+                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
+                        >
+                            &laquo;
+                        </button>
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
+                        >
+                            &lt;
+                        </button>
+                        
+                        {pageNumbers.map(number => (
+                            <button
+                                key={number}
+                                onClick={() => handlePageChange(number)}
+                                className={`px-3 py-2 mx-1 rounded-md border ${
+                                    currentPage === number ? 'bg-primary text-emerald-500' : ''
+                                }`}
+                            >
+                                {number}
+                            </button>
+                        ))}
+                        
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages || totalPages === 0}
+                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
+                        >
+                            &gt;
+                        </button>
+                        <button
+                            onClick={() => handlePageChange(totalPages)}
+                            disabled={currentPage === totalPages || totalPages === 0}
+                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
+                        >
+                            &raquo;
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <Card>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Daftar Obat</h1>
+
+                <Link
+                    to="/master-data/medicines/add"
+                >
+                    <Button variant="primary">
+                        <FaPlus className="mr-2" />
+                        Tambah Obat Baru
+                    </Button>
+                </Link>
+            </div>
+
+            <div className="mb-4 relative">
+                <input
+                    type="text"
+                    placeholder="Cari obat..."
+                    className="w-full p-3 border rounded-md pl-10"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+            </div>
+
+            {loading ? (
+                <Loading />
+            ) : (
+                <>
+                  <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableHeader>Nama Obat</TableHeader>
+                            <TableHeader>Kategori</TableHeader>
+                            <TableHeader>Jenis</TableHeader>
+                            <TableHeader>Satuan</TableHeader>
+                            <TableHeader className="text-right">Harga Beli</TableHeader>
+                            <TableHeader className="text-right">Harga Jual</TableHeader>
+                            <TableHeader className="text-right">Stok</TableHeader>
+                            <TableHeader className="text-center">Aksi</TableHeader>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {medicines.length === 0 ? (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={8}
+                                    className="text-center text-gray-600"
+                                >
+                                    {debouncedSearch ? `Tidak ada obat dengan nama "${debouncedSearch}"` : "Tidak ada data obat yang ditemukan"}
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            medicines.map((medicine) => (
+                                <TableRow key={medicine.id}>
+                                    <TableCell>{medicine.name}</TableCell>
+                                    <TableCell>{medicine.category.name}</TableCell>
+                                    <TableCell>{medicine.type.name}</TableCell>
+                                    <TableCell>{medicine.unit.name}</TableCell>
+                                    <TableCell className="text-right">
+                                        {medicine.buy_price.toLocaleString("id-ID", {
+                                            style: "currency",
+                                            currency: "IDR",
+                                        })}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        {medicine.sell_price.toLocaleString("id-ID", {
+                                            style: "currency",
+                                            currency: "IDR",
+                                        })}
+                                    </TableCell>
+                                    <TableCell className="text-right">{medicine.stock}</TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="flex justify-center space-x-2">
+                                            <Link
+                                                to={`/master-data/medicines/edit/${medicine.id}`}
+                                            >
+                                                <Button variant="secondary" size="sm">
+                                                    <FaEdit />
+                                                </Button>
+                                            </Link>
+                                            <Button 
+                                                variant="danger" 
+                                                size="sm"
+                                                onClick={() => handleDelete(medicine.id)}
+                                            >
+                                                <FaTrash />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+                
+                <Pagination />
+                </>
+            )}
+        </Card>
+    );
+    
+    async function handleDelete(id: string) {
+        if (window.confirm("Apakah Anda yakin ingin menghapus obat ini?")) {
+            try {
+                const { error } = await supabase
+                    .from("medicines")
+                    .delete()
+                    .eq("id", id);
+                
+                if (error) throw error;
+                
+                // Refresh data
+                fetchMedicines(currentPage, debouncedSearch, itemsPerPage);
+            } catch (error) {
+                console.error("Error deleting medicine:", error);
+                alert("Gagal menghapus obat. Silakan coba lagi.");
+            }
+        }
+    }
+};
+
+export default MedicineList;
+
+===============================================
+= File: ./src/pages/master-data/TypeList.tsx 
+===============================================
+
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import { Loading } from "../../components/ui/Loading";
+
+interface MedicineType {
+    id: string;
+    name: string;
+    description: string;
+}
+
+const TypeList = () => {
+    const [types, setTypes] = useState<MedicineType[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchTypes();
+    }, []);
+
+    const fetchTypes = async () => {
+        try {
+            setLoading(true);
+            
+            const { data, error } = await supabase
+                .from("medicine_types")
+                .select("*")
+                .order("name");
+                
+            if (error) throw error;
+            
+            setTypes(data || []);
+        } catch (error) {
+            console.error("Error fetching medicine types:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Card>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Daftar Jenis Obat</h1>
+                
+                <Link
+                    to="/master-data/types/add"
+                >
+                    <Button variant="primary">
+                        <FaPlus className="mr-2" />
+                        Tambah Jenis Obat Baru
+                    </Button>
+                </Link>
+            </div>
+            
+            {loading ? (
+                <Loading />
+            ) : (
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableHeader>Nama Jenis</TableHeader>
+                            <TableHeader>Deskripsi</TableHeader>
+                            <TableHeader className="text-center">Aksi</TableHeader>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                            {types.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center text-gray-500">
+                                        Tidak ada data jenis obat yang ditemukan
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                types.map((type) => (
+                                    <TableRow key={type.id}>
+                                        <TableCell>{type.name}</TableCell>
+                                        <TableCell>{type.description}</TableCell>
+                                        <TableCell className="text-center">
+                                            <div className="flex justify-center space-x-2">
+                                                <Link
+                                                    to={`/master-data/types/edit/${type.id}`}
+                                                >
+                                                    <Button variant="secondary" size="sm">
+                                                        <FaEdit />
+                                                    </Button>
+                                                </Link>
+                                                <Button 
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(type.id)}
+                                                >
+                                                    <FaTrash />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                    </TableBody>
+                </Table>
+            )}
+        </Card>
+    );
+    
+    async function handleDelete(id: string) {
+        if (window.confirm("Apakah Anda yakin ingin menghapus jenis obat ini?")) {
+            try {
+                const { error } = await supabase
+                    .from("medicine_types")
+                    .delete()
+                    .eq("id", id);
+                
+                if (error) throw error;
+                
+                fetchTypes(); // Refresh data after deletion
+            } catch (error) {
+                console.error("Error deleting medicine type:", error);
+                alert("Gagal menghapus jenis obat. Silakan coba lagi.");
+            }
+        }
+    }
+};
+
+export default TypeList;
+
+
+===============================================
+= File: ./src/pages/dashboard/Dashboard.tsx 
+===============================================
+
+import { useEffect, useState, useCallback } from 'react';
+import { supabase } from '../../lib/supabase';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    ArcElement
+} from 'chart.js';
+import { Line, Pie, Bar, Doughnut } from 'react-chartjs-2';
+import { FaShoppingBag, FaShoppingCart, FaBoxes, FaExclamationTriangle } from 'react-icons/fa';
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    ArcElement
+);
+
+const Dashboard = () => {
+    const [demoMode, setDemoMode] = useState(false);
+    const [stats, setStats] = useState({
+        totalSales: 0,
+        totalPurchases: 0,
+        totalMedicines: 0,
+        lowStockCount: 0
+    });
+
+    const [salesData, setSalesData] = useState<{
+        labels: string[];
+        datasets: {
+            label: string;
+            data: number[];
+            borderColor: string;
+            backgroundColor: string;
+        }[];
+    }>({
+        labels: [],
+        datasets: []
+    });
+
+    const [topMedicines, setTopMedicines] = useState<{
+        labels: string[];
+        datasets: {
+            label: string;
+            data: number[];
+            backgroundColor: string[];
+            borderColor: string[];
+            borderWidth: number;
+        }[];
+    }>({
+        labels: [],
+        datasets: []
+    });
+
+    useEffect(() => {
+        if (!demoMode) {
+            fetchStats();
+            fetchSalesData();
+            fetchTopMedicines();
+        }
+    }, []);
+
+    const fetchStats = async () => {
+        // Get total sales
+        const { data: salesData } = await supabase
+            .from('sales')
+            .select('total');
+
+        const totalSales = salesData
+            ? salesData.reduce((sum, sale) => sum + sale.total, 0)
+            : 0;
+
+        // Get total purchases
+        const { data: purchasesData } = await supabase
+            .from('purchases')
+            .select('total');
+
+        const totalPurchases = purchasesData
+            ? purchasesData.reduce((sum, purchase) => sum + purchase.total, 0)
+            : 0;
+
+        // Get total medicines
+        const { count: totalMedicines } = await supabase
+            .from('medicines')
+            .select('*', { count: 'exact' });
+
+        // Get low stock count
+        const { count: lowStockCount } = await supabase
+            .from('medicines')
+            .select('*', { count: 'exact' })
+            .lt('stock', 10);
+
+        setStats({
+            totalSales,
+            totalPurchases,
+            totalMedicines: totalMedicines || 0,
+            lowStockCount: lowStockCount || 0
+        });
+    };
+
+    const fetchSalesData = async () => {
+        // Get sales data for the last 7 days
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.setDate(now.getDate() - 6));
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        const { data } = await supabase
+            .from('sales')
+            .select('date, total')
+            .gte('date', sevenDaysAgo.toISOString())
+            .order('date');
+
+        if (!data) return;
+
+        // Group by date
+        const salesByDate = data.reduce<Record<string, number>>((acc, sale) => {
+            const date = new Date(sale.date).toLocaleDateString();
+            if (!acc[date]) acc[date] = 0;
+            acc[date] += sale.total;
+            return acc;
+        }, {});
+
+        // Generate data for the last 7 days
+        const labels = [];
+        const values = [];
+
+        for (let i = 0; i < 7; i++) {
+            const date = new Date();
+            date.setDate(date.getDate() - (6 - i));
+            const dateStr = date.toLocaleDateString();
+            labels.push(dateStr);
+            values.push(salesByDate[dateStr] || 0);
+        }
+
+        setSalesData({
+            labels,
+            datasets: [
+                {
+                    label: 'Penjualan Harian',
+                    data: values,
+                    borderColor: 'rgb(53, 162, 235)',
+                    backgroundColor: 'rgba(53, 162, 235, 0.5)',
+                }
+            ]
+        });
+    };
+
+    const fetchTopMedicines = async () => {
+        // Get top 5 selling medicines
+        const { data } = await supabase
+            .rpc('get_top_selling_medicines', { limit_count: 5 });
+
+        if (!data) return;
+
+        interface TopSellingMedicine {
+            name: string;
+            total_quantity: number;
+        }
+
+        setTopMedicines({
+            labels: data.map((item: TopSellingMedicine) => item.name),
+            datasets: [
+                {
+                    label: 'Obat Terlaris',
+                    data: data.map((item: TopSellingMedicine) => item.total_quantity),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 1,
+                }
+            ]
+        });
+    };
+
+    const toggleDemoMode = () => {
+        setDemoMode(!demoMode);
+    };
+
+    return (
+        <div className="min-h-screen">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+                <button 
+                    onClick={toggleDemoMode}
+                    className={`px-4 py-2 rounded-md font-medium shadow-md border ${demoMode ? 'bg-red-500 text-white border-red-600' : 'bg-blue-500 text-white border-blue-600 hover:bg-blue-700'}`}
+                >
+                    {demoMode ? 'Disable Demo Mode' : 'Demo Mode'}
+                </button>
+            </div>
+
+            {demoMode ? (
+                <ModernDashboard />
+            ) : (
+                <RegularDashboard 
+                    stats={stats} 
+                    salesData={salesData} 
+                    topMedicines={topMedicines} 
+                />
+            )}
+        </div>
+    );
+};
+
+// Komponen untuk dashboard regular (asli)
+const RegularDashboard = ({ stats, salesData, topMedicines }) => {
+    return (
+        <div>
+            {/* <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1> */}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <div className="flex items-center">
+                        <div className="p-3 rounded-full bg-blue-100 mr-4">
+                            <FaShoppingBag className="text-blue-500 text-xl" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm text-gray-500">Total Penjualan</h2>
+                            <p className="text-xl font-semibold">
+                                {stats.totalSales.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <div className="flex items-center">
+                        <div className="p-3 rounded-full bg-green-100 mr-4">
+                            <FaShoppingCart className="text-green-500 text-xl" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm text-gray-500">Total Pembelian</h2>
+                            <p className="text-xl font-semibold">
+                                {stats.totalPurchases.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <div className="flex items-center">
+                        <div className="p-3 rounded-full bg-purple-100 mr-4">
+                            <FaBoxes className="text-purple-500 text-xl" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm text-gray-500">Total Obat</h2>
+                            <p className="text-xl font-semibold">{stats.totalMedicines}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <div className="flex items-center">
+                        <div className="p-3 rounded-full bg-red-100 mr-4">
+                            <FaExclamationTriangle className="text-red-500 text-xl" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm text-gray-500">Stok Menipis</h2>
+                            <p className="text-xl font-semibold">{stats.lowStockCount}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <h2 className="text-lg font-semibold mb-4">Penjualan 7 Hari Terakhir</h2>
+                    <div className="h-64">
+                        <Line
+                            data={salesData}
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }}
+                        />
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-lg shadow">
+                    <h2 className="text-lg font-semibold mb-4">Obat Terlaris</h2>
+                    <div className="h-64">
+                        <Pie
+                            data={topMedicines}
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Komponen untuk dashboard modern (mode demo)
+const ModernDashboard = () => {
+    // Data dummy untuk mode demo
+    const demoData = {
+        totalCustomer: 120,
+        totalSales: 234,
+        totalProfit: 456,
+        outOfStock: 56,
+        
+        expiringMedicines: [
+            { name: 'Doxycycline', expiryDate: '24 Dec 2021', quantity: 40 },
+            { name: 'Abetis', expiryDate: '24 Dec 2021', quantity: 40 },
+            { name: 'Disulfit 10ml', expiryDate: '24 Dec 2021', quantity: 40 },
+            { name: 'Cerox CV', expiryDate: '24 Dec 2021', quantity: 40 },
+            { name: 'Fluciox', expiryDate: '24 Dec 2021', quantity: 40 },
+        ],
+        
+        recentOrders: [
+            { medicine: 'Paricol 15mg', batchNo: '78367834', quantity: 40, status: 'Delivered', price: 23.00 },
+            { medicine: 'Abetis 20mg', batchNo: '88832433', quantity: 40, status: 'Pending', price: 23.00 },
+            { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
+            { medicine: 'Abetis 20mg', batchNo: '45578866', quantity: 40, status: 'Delivered', price: 23.00 },
+            { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
+        ],
+        
+        monthlyData: [
+            { month: 'Jan', value: 40 },
+            { month: 'Feb', value: 35 },
+            { month: 'Mar', value: 35 },
+            { month: 'Apr', value: 45 },
+            { month: 'May', value: 40 },
+            { month: 'Jun', value: 50 },
+            { month: 'Jul', value: 60 },
+            { month: 'Aug', value: 40 },
+            { month: 'Sep', value: 45 },
+            { month: 'Oct', value: 40 },
+            { month: 'Nov', value: 35 },
+            { month: 'Dec', value: 30 },
+        ],
+        
+        todayReport: {
+            totalEarning: 5098.00,
+            purchasePercentage: 65,
+            cashReceivedPercentage: 75,
+            bankReceivePercentage: 45,
+            servicePercentage: 85
+        }
+    };
+    
+    // Data untuk Monthly Progress chart
+    const monthlyProgressData = {
+        labels: demoData.monthlyData.map(item => item.month),
+        datasets: [
+            {
+                label: 'Penjualan Bulanan',
+                data: demoData.monthlyData.map(item => item.value),
+                backgroundColor: demoData.monthlyData.map(item => 
+                    item.month === 'Jul' ? '#1a73e8' : '#4ade80'
+                ),
+                borderRadius: 6,
+                borderSkipped: false,
+            }
+        ]
+    };
+    
+    // Data untuk Today's Report chart (doughnut chart)
+    const todayReportData = {
+        labels: ['Pembelian', 'Penerimaan Tunai', 'Penerimaan Bank', 'Layanan'],
+        datasets: [
+            {
+                data: [
+                    demoData.todayReport.purchasePercentage,
+                    demoData.todayReport.cashReceivedPercentage,
+                    demoData.todayReport.bankReceivePercentage,
+                    demoData.todayReport.servicePercentage
+                ],
+                backgroundColor: [
+                    '#3b82f6',
+                    '#f43f5e',
+                    '#f97316',
+                    '#4ade80'
+                ],
+                borderWidth: 0,
+                cutout: '55%'
+            }
+        ]
+    };
+
+    return (
+        <div className="bg-gray-50 p-6 rounded-xl">
+            {/* Cards Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                {/* Total Customer Card */}
+                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+                    <div>
+                        <p className="text-sm text-gray-500 mb-1">Total Customer</p>
+                        <p className="text-2xl font-bold">{demoData.totalCustomer}</p>
+                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+                    </div>
+                    <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <span className="text-indigo-500">👥</span>
+                    </div>
+                </div>
+                
+                {/* Total Sale Card */}
+                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+                    <div>
+                        <p className="text-sm text-gray-500 mb-1">Total Sale</p>
+                        <p className="text-2xl font-bold">{demoData.totalSales}</p>
+                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+                    </div>
+                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                        <span className="text-green-500">🛒</span>
+                    </div>
+                </div>
+                
+                {/* Total Profit Card */}
+                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+                    <div>
+                        <p className="text-sm text-gray-500 mb-1">Total Profit</p>
+                        <p className="text-2xl font-bold">${demoData.totalProfit}</p>
+                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+                    </div>
+                    <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                        <span className="text-yellow-500">💰</span>
+                    </div>
+                </div>
+                
+                {/* Out of Stock Card */}
+                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+                    <div>
+                        <p className="text-sm text-gray-500 mb-1">Out of Stock</p>
+                        <p className="text-2xl font-bold">{demoData.outOfStock}</p>
+                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+                    </div>
+                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                        <span className="text-red-500">⚠️</span>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Tables and Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Expiring List */}
+                <div className="bg-white p-4 rounded-xl shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-semibold">Expiring List</h2>
+                        <button className="text-xs text-primary">Lihat Semua</button>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="text-left text-xs text-gray-500">
+                                    <th className="pb-2">Medicine name</th>
+                                    <th className="pb-2">Expiry Date</th>
+                                    <th className="pb-2">Quantity</th>
+                                    <th className="pb-2">Chart</th>
+                                    <th className="pb-2">Return</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {demoData.expiringMedicines.map((medicine, index) => (
+                                    <tr key={index} className="text-sm">
+                                        <td className="py-3">{medicine.name}</td>
+                                        <td className="py-3">{medicine.expiryDate}</td>
+                                        <td className="py-3">{medicine.quantity}</td>
+                                        <td className="py-3">
+                                            <div className="h-6 w-10 text-green-500">📈</div>
+                                        </td>
+                                        <td className="py-3">
+                                            <button className="text-gray-400">↩️</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                {/* Recent Orders */}
+                <div className="bg-white p-4 rounded-xl shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-semibold">Recent Order's</h2>
+                        <button className="text-xs text-primary">Lihat Semua</button>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="text-left text-xs text-gray-500">
+                                    <th className="pb-2">Medicine name</th>
+                                    <th className="pb-2">Batch No.</th>
+                                    <th className="pb-2">Quantity</th>
+                                    <th className="pb-2">Status</th>
+                                    <th className="pb-2 text-right">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {demoData.recentOrders.map((order, index) => (
+                                    <tr key={index} className="text-sm">
+                                        <td className="py-3">{order.medicine}</td>
+                                        <td className="py-3">{order.batchNo}</td>
+                                        <td className="py-3">{order.quantity}</td>
+                                        <td className="py-3">
+                                            <span className={`px-2 py-1 rounded-full text-xs 
+                                                ${order.status === 'Delivered' ? 'bg-blue-100 text-blue-600' : 
+                                                  order.status === 'Pending' ? 'bg-yellow-100 text-yellow-600' : 
+                                                  'bg-red-100 text-red-600'}`}>
+                                                {order.status}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 text-right">${order.price.toFixed(2)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Monthly Progress */}
+                <div className="bg-white p-4 rounded-xl shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-semibold">Monthly Progress</h2>
+                        <select className="text-sm border rounded px-2 py-1">
+                            <option>Monthly</option>
+                            <option>Weekly</option>
+                            <option>Daily</option>
+                        </select>
+                    </div>
+                    
+                    <div className="h-64">
+                        <Bar 
+                            data={monthlyProgressData} 
+                            options={{
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            title: (context) => {
+                                                const label = context[0].label;
+                                                if (label === 'Sep') {
+                                                    return 'September';
+                                                }
+                                                return label;
+                                            },
+                                            label: (context) => {
+                                                return `Sales: ${context.parsed.y}`;
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        grid: {
+                                            display: false
+                                        }
+                                    },
+                                    x: {
+                                        grid: {
+                                            display: false
+                                        }
+                                    }
+                                }
+                            }}
+                        />
+                    </div>
+                </div>
+                
+                {/* Today's Report */}
+                <div className="bg-white p-4 rounded-xl shadow-sm">
+                    <h2 className="text-lg font-semibold mb-4">Today's Report</h2>
+                    
+                    <div className="flex items-center justify-center">
+                        <div className="h-64 w-64 relative flex items-center justify-center">
+                            <Doughnut 
+                                data={todayReportData}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        }
+                                    }
+                                }}
+                            />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <p className="text-sm text-gray-500">Total Earning</p>
+                                <p className="text-xl font-bold">${demoData.todayReport.totalEarning.toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <div className="ml-4">
+                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span> Total Purchase</div>
+                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-red-500 mr-2"></span> Cash Received</div>
+                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-orange-500 mr-2"></span> Bank Receive</div>
+                            <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span> Total Service</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Dashboard;
+
+
+===============================================
+= File: ./src/pages/auth/Login.tsx 
+===============================================
+
+// src/pages/auth/Login.tsx
+import { useState } from 'react';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { useAuthStore } from '../../store/authStore';
+
+const Login = () => {
+    const { login, error, loading } = useAuthStore();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await login(email, password);
+    };
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+            <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+                <h1 className="text-2xl font-bold text-center text-primary mb-6">Apotek & Klinik Login</h1>
+                
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
+                    </div>
+                )}
+                
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                        <Input 
+                            label="Email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+                
+                    <Input 
+                        label="Password"
+                        type="password"
+                        className="mb-6"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        fullWidth
+                        isLoading={loading}
+                    >
+                        Login
+                    </Button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default Login;
+
+===============================================
+= File: ./src/pages/sales/CreateSale.tsx 
+===============================================
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { FaPlus, FaTrash, FaSearch } from 'react-icons/fa';
+
+interface Medicine {
+    id: string;
+    name: string;
+    sell_price: number;
+    stock: number;
+}
+
+interface Patient {
+    id: string;
+    name: string;
+}
+
+interface Doctor {
+    id: string;
+    name: string;
+}
+
+interface SaleFormData {
+    patient_id: string;
+    doctor_id: string;
+    payment_method: string;
+    items: {
+        medicine_id: string;
+        quantity: number;
+        price: number;
+        subtotal: number;
+    }[];
+}
+
+const CreateSale = () => {
+    const navigate = useNavigate();
+    const [medicines, setMedicines] = useState<Medicine[]>([]);
+    const [patients, setPatients] = useState<Patient[]>([]);
+    const [doctors, setDoctors] = useState<Doctor[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [searchMedicine, setSearchMedicine] = useState('');
+    const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
+    const [showMedicineDropdown, setShowMedicineDropdown] = useState(false);
+
+    const { control, handleSubmit, setValue, watch, register, formState: { errors } } = useForm<SaleFormData>({
+        defaultValues: {
+            patient_id: '',
+            doctor_id: '',
+            payment_method: 'cash',
+            items: []
+        }
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "items"
+    });
+
+    const items = watch('items');
+    const total = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+
+    useEffect(() => {
+        fetchMedicines();
+        fetchPatients();
+        fetchDoctors();
+    }, []);
+
+    const fetchMedicines = async () => {
+        const { data } = await supabase
+            .from('medicines')
+            .select('id, name, sell_price, stock')
+            .gt('stock', 0)
+            .order('name');
+
+        if (data) setMedicines(data);
+    };
+
+    const fetchPatients = async () => {
+        const { data } = await supabase
+            .from('patients')
+            .select('id, name')
+            .order('name');
+
+        if (data) setPatients(data);
+    };
+
+    const fetchDoctors = async () => {
+        const { data } = await supabase
+            .from('doctors')
+            .select('id, name')
+            .order('name');
+
+        if (data) setDoctors(data);
+    };
+
+    const addItem = () => {
+        if (!selectedMedicine) return;
+
+        append({
+            medicine_id: selectedMedicine.id,
+            quantity: 1,
+            price: selectedMedicine.sell_price,
+            subtotal: selectedMedicine.sell_price
+        });
+
+        setSelectedMedicine(null);
+        setSearchMedicine('');
+    };
+
+    const updateSubtotal = (index: number, quantity: number, price: number) => {
+        setValue(`items.${index}.subtotal`, quantity * price);
+    };
+
+    const filteredMedicines = medicines.filter(medicine =>
+        medicine.name.toLowerCase().includes(searchMedicine.toLowerCase())
+    );
+
+    const onSubmit = async (data: SaleFormData) => {
+        try {
+            setLoading(true);
+
+            // Insert sale record
+            const { data: saleData, error: saleError } = await supabase
+                .from('sales')
+                .insert({
+                    patient_id: data.patient_id || null,
+                    doctor_id: data.doctor_id || null,
+                    date: new Date(),
+                    total: total,
+                    payment_method: data.payment_method
+                })
+                .select('id')
+                .single();
+
+            if (saleError) throw saleError;
+
+            // Insert sale items
+            const saleItems = data.items.map(item => ({
+                sale_id: saleData.id,
+                medicine_id: item.medicine_id,
+                quantity: item.quantity,
+                price: item.price,
+                subtotal: item.subtotal
+            }));
+
+            const { error: itemsError } = await supabase
+                .from('sale_items')
+                .insert(saleItems);
+
+            if (itemsError) throw itemsError;
+
+            // Update medicine stocks
+            for (const item of data.items) {
+                await supabase
+                    .from('medicines')
+                    .update({
+                        stock: supabase.rpc('decrement', { x: item.quantity })
+                    })
+                    .eq('id', item.medicine_id);
+            }
+
+            navigate('/sales');
+        } catch (error) {
+            console.error('Error creating sale:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="bg-white p-6 rounded-lg shadow">
+            <h1 className="text-2xl font-bold text-gray-800 mb-6">Buat Penjualan Baru</h1>
+
+            <form onSubmit={handleSubmit(onSubmit)}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label className="block mb-2 text-gray-700">Pasien (Opsional)</label>
+                        <select
+                            {...register('patient_id')}
+                            className="w-full p-3 border rounded-md"
+                        >
+                            <option value="">-- Pilih Pasien --</option>
+                            {patients.map(patient => (
+                                <option key={patient.id} value={patient.id}>{patient.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block mb-2 text-gray-700">Dokter (Opsional)</label>
+                        <select
+                            {...register('doctor_id')}
+                            className="w-full p-3 border rounded-md"
+                        >
+                            <option value="">-- Pilih Dokter --</option>
+                            {doctors.map(doctor => (
+                                <option key={doctor.id} value={doctor.id}>{doctor.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block mb-2 text-gray-700">Metode Pembayaran</label>
+                        <select
+                            {...register('payment_method')}
+                            className="w-full p-3 border rounded-md"
+                        >
+                            <option value="cash">Tunai</option>
+                            <option value="debit">Kartu Debit</option>
+                            <option value="credit">Kartu Kredit</option>
+                            <option value="insurance">Asuransi</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="mb-6">
+                    <h2 className="text-xl font-semibold mb-4">Daftar Obat</h2>
+
+                    <div className="mb-4">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Cari obat..."
+                                className="w-full p-3 border rounded-md"
+                                value={searchMedicine}
+                                onChange={(e) => {
+                                    setSearchMedicine(e.target.value);
+                                    setShowMedicineDropdown(true);
+                                }}
+                                onFocus={() => setShowMedicineDropdown(true)}
+                            />
+
+                            {showMedicineDropdown && searchMedicine && (
+                                <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                    {filteredMedicines.length === 0 ? (
+                                        <div className="p-3 text-gray-500">Tidak ada obat yang ditemukan</div>
+                                    ) : (
+                                        filteredMedicines.map(medicine => (
+                                            <div
+                                                key={medicine.id}
+                                                className="p-3 hover:bg-gray-100 cursor-pointer"
+                                                onClick={() => {
+                                                    setSelectedMedicine(medicine);
+                                                    setSearchMedicine(medicine.name);
+                                                    setShowMedicineDropdown(false);
+                                                }}
+                                            >
+                                                <div>{medicine.name}</div>
+                                                <div className="text-sm text-gray-500">
+                                                    Stok: {medicine.stock} | Harga: {medicine.sell_price.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-2 flex">
+                            <button
+                                type="button"
+                                className="px-4 py-2 bg-primary text-white rounded-md flex items-center disabled:opacity-50"
+                                onClick={addItem}
+                                disabled={!selectedMedicine}
+                            >
+                                <FaPlus className="mr-2" />
+                                Tambah Obat
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full bg-white border">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="py-3 px-4 text-left">Nama Obat</th>
+                                    <th className="py-3 px-4 text-right">Harga</th>
+                                    <th className="py-3 px-4 text-center">Kuantitas</th>
+                                    <th className="py-3 px-4 text-right">Subtotal</th>
+                                    <th className="py-3 px-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {fields.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-4 px-4 text-center text-gray-500">
+                                            Belum ada item
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    fields.map((field, index) => {
+                                        const medicine = medicines.find(m => m.id === items[index]?.medicine_id);
+
+                                        return (
+                                            <tr key={field.id}>
+                                                <td className="py-3 px-4">{medicine?.name}</td>
+                                                <td className="py-3 px-4 text-right">
+                                                    <Controller
+                                                        control={control}
+                                                        name={`items.${index}.price`}
+                                                        render={({ field }) => (
+                                                            <input
+                                                                type="number"
+                                                                className="w-32 p-2 border rounded-md text-right"
+                                                                {...field}
+                                                                onChange={(e) => {
+                                                                    const price = parseFloat(e.target.value);
+                                                                    field.onChange(price);
+                                                                    updateSubtotal(index, items[index]?.quantity || 0, price);
+                                                                }}
+                                                            />
+                                                        )}
+                                                    />
+                                                </td>
+                                                <td className="py-3 px-4 text-center">
+                                                    <Controller
+                                                        control={control}
+                                                        name={`items.${index}.quantity`}
+                                                        render={({ field }) => (
+                                                            <input
+                                                                type="number"
+                                                                className="w-20 p-2 border rounded-md text-center"
+                                                                min="1"
+                                                                max={medicine?.stock || 1}
+                                                                {...field}
+                                                                onChange={(e) => {
+                                                                    const quantity = parseInt(e.target.value);
+                                                                    field.onChange(quantity);
+                                                                    updateSubtotal(index, quantity, items[index]?.price || 0);
+                                                                }}
+                                                            />
+                                                        )}
+                                                    />
+                                                </td>
+                                                <td className="py-3 px-4 text-right">
+                                                    {items[index]?.subtotal?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                                </td>
+                                                <td className="py-3 px-4 text-center">
+                                                    <button
+                                                        type="button"
+                                                        className="p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600"
+                                                        onClick={() => remove(index)}
+                                                    >
+                                                        <FaTrash />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                            <tfoot className="bg-gray-50 font-semibold">
+                                <tr>
+                                    <td colSpan={3} className="py-3 px-4 text-right">Total:</td>
+                                    <td className="py-3 px-4 text-right">
+                                        {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div className="flex justify-end">
+                    <button
+                        type="button"
+                        className="px-4 py-2 border rounded-md mr-2"
+                        onClick={() => navigate('/sales')}
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        className="px-4 py-2 bg-primary text-white rounded-md"
+                        disabled={loading || fields.length === 0}
+                    >
+                        {loading ? 'Menyimpan...' : 'Simpan Penjualan'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+export default CreateSale;
+
+===============================================
+= File: ./src/App.tsx 
+===============================================
+
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Suspense, lazy, useEffect } from 'react';
+import MainLayout from './components/layout/MainLayout';
+import Login from './pages/auth/Login';
+import './index.css';
+import { useAuthStore } from './store/authStore';
+
+// Lazy load pages
+const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
+const MedicineList = lazy(() => import('./pages/master-data/MedicineList'));
+const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
+const UnitList = lazy(() => import('./pages/master-data/UnitList'));
+const TypeList = lazy(() => import('./pages/master-data/TypeList'));
+const AddMedicine = lazy(() => import('./pages/master-data/AddMedicine'));
+// Tambahkan halaman lain sesuai kebutuhan
+
+function App() {
+  const { session, initialize } = useAuthStore();
+  
+  // Inisialisasi auth state saat aplikasi dimuat
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+  
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
+        
+        <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
+          <Route 
+            index 
+            element={
+            <div className="text-gray-800">
+              <Suspense fallback={<div>Loading...</div>}>
+                <Dashboard />
+              </Suspense>
+            </div>
+          } />
+          
+          <Route path="master-data">
+            <Route path="medicines" element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <MedicineList />
+              </Suspense>
+            } />
+            <Route path="medicines/add" element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <AddMedicine />
+              </Suspense>
+            } />
+            <Route path="categories" element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <CategoryList />
+              </Suspense>
+            } />
+            <Route path="types" element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <TypeList />
+              </Suspense>
+            } />
+            <Route path="units" element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <UnitList />
+              </Suspense>
+            } />
+            {/* Tambahkan route lain sesuai kebutuhan */}
+          </Route>
+          
+          {/* Tambahkan route untuk modul lain */}
+        </Route>
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
+
+===============================================
+= File: ./src/vite-env.d.ts 
+===============================================
+
+/// <reference types="vite/client" />
+
+
+===============================================
+= File: ./src/lib/supabase.ts 
+===============================================
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+===============================================
+= File: ./src/lib/classNames.ts 
+===============================================
+
+// src/lib/classNames.ts
+export function classNames(...classes: (string | undefined | boolean | null | { [key: string]: boolean })[]): string {
+    return classes
+        .filter(Boolean)
+        .map((cls) => {
+            if (typeof cls === 'object' && cls !== null) {
+                return Object.entries(cls)
+                    .filter(([, value]) => value)
+                    .map(([key]) => key)
+                    .join(' ');
+            }
+            return cls;
+        })
+        .join(' ');
+}
+
+===============================================
+= File: ./src/store/authStore.ts 
+===============================================
+
+import { create } from 'zustand';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+
+interface AuthState {
+    session: Session | null;
+    user: any | null;
+    loading: boolean;
+    error: string | null;
+    login: (email: string, password: string) => Promise<void>;
+    logout: () => Promise<void>;
+    initialize: () => Promise<void>;
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+    session: null,
+    user: null,
+    loading: true,
+    error: null,
+
+    initialize: async () => {
+        try {
+            const { data } = await supabase.auth.getSession();
+
+            if (data.session) {
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', data.session.user.id)
+                    .single();
+
+                set({
+                    session: data.session,
+                    user: userData,
+                    loading: false
+                });
+            } else {
+                set({ loading: false });
+            }
+        } catch (error) {
+            console.error('Error initializing auth:', error);
+            set({ loading: false });
+        }
+    },
+
+    login: async (email, password) => {
+        try {
+            set({ loading: true, error: null });
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) throw error;
+
+            const { data: userData } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', data.user?.id)
+                .single();
+
+            set({
+                session: data.session,
+                user: userData,
+                loading: false
+            });
+        } catch (error: any) {
+            console.error('Login error:', error);
+            set({ error: error.message, loading: false });
+        }
+    },
+
+    logout: async () => {
+        try {
+            set({ loading: true });
+            await supabase.auth.signOut();
+            set({ session: null, user: null, loading: false });
+        } catch (error: any) {
+            console.error('Logout error:', error);
+            set({ error: error.message, loading: false });
+        }
+    }
+}));
+
+===============================================
+= File: ./.gitignore 
+===============================================
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+===============================================
+= File: ./get-database 
+===============================================
+
+#!/bin/bash
+# Konfigurasi Supabase
+SUPABASE_URL="https://psqmckbtwqphcteymjil.supabase.co"
+SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzcW1ja2J0d3FwaGN0ZXltamlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxOTQ2MjAsImV4cCI6MjA1Nzc3MDYyMH0.wvxpldpaoanDk9Wd7wDUeeCuMSVw9e0pxE7_BMt823s"
+# Buat direktori output jika belum ada
+OUTPUT_DIR="supabase_data"
+mkdir -p "$OUTPUT_DIR"
+# File output gabungan
+OUTPUT_FILE="database_export.txt"
+rm -f "$OUTPUT_FILE"
+# Daftar tabel yang diketahui
+TABLES=(
+  "medicine_units"
+  "medicine_categories" 
+  "medicine_types"
+  "medicines"
+  "patients"
+  "doctors"
+  "sales"
+  "sale_items"
+  "purchases"
+  "users"
+)
+# Loop melalui setiap tabel
+for TABLE in "${TABLES[@]}"; do
+  echo "Mengunduh data tabel: $TABLE"
+  
+  # Ambil data dari tabel dan simpan ke file JSON
+  RESPONSE=$(curl "$SUPABASE_URL/rest/v1/$TABLE?select=*" \
+    -H "apikey: $SUPABASE_KEY" \
+    -H "Authorization: Bearer $SUPABASE_KEY" \
+    -s)
+    
+  # Simpan ke file JSON
+  echo "$RESPONSE" | jq . > "$OUTPUT_DIR/$TABLE.json"
+  
+  echo "✓ Data $TABLE berhasil diproses"
+done
+
+
+===============================================
+= File: ./vite.config.ts 
+===============================================
+
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})
+
+
+===============================================
+= File: ./tsconfig.node.json 
+===============================================
+
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+
+===============================================
+= File: ./get-all 
+===============================================
+
+#!/bin/bash
+echo "$(tree -I "node_modules|.git" -a)" > project_files.txt && find . -type f -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./src/output.css" -not -path "./package-lock.json" -exec bash -c 'echo -e "
+
+===============================================
+= File: {} 
+===============================================
+" >> project_files.txt && cat {} >> project_files.txt' \;
+
+
+===============================================
+= File: ./index.html 
+===============================================
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- <link href="../src/output.css" rel="stylesheet"> -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+
+===============================================
+= File: ./eslint.config.js 
+===============================================
+
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+
+export default tseslint.config(
+  { ignores: ['dist'] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  },
+)
+
+
+===============================================
+= File: ./.env 
+===============================================
+
+VITE_SUPABASE_URL=https://psqmckbtwqphcteymjil.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzcW1ja2J0d3FwaGN0ZXltamlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxOTQ2MjAsImV4cCI6MjA1Nzc3MDYyMH0.wvxpldpaoanDk9Wd7wDUeeCuMSVw9e0pxE7_BMt823s
+
+===============================================
+= File: ./supabase_data/medicine_categories.json 
+===============================================
+
+[
+  {
+    "id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    "name": "Antibiotik",
+    "description": "Obat untuk membunuh atau menghambat pertumbuhan bakteri",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
+    "name": "Antipiretik",
+    "description": "Obat untuk menurunkan demam",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "name": "Analgesik",
+    "description": "Obat pereda nyeri",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "26e20a27-a34e-424e-9a85-babc2abdc955",
+    "name": "Antidiabetes",
+    "description": "Obat untuk mengontrol gula darah",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
+    "name": "Antihipertensi",
+    "description": "Obat untuk menurunkan tekanan darah",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  }
+]
+
+
+===============================================
+= File: ./supabase_data/patients.json 
+===============================================
+
+[]
+
+
+===============================================
+= File: ./supabase_data/users.json 
+===============================================
+
+[]
+
+
+===============================================
+= File: ./supabase_data/purchases.json 
+===============================================
+
+[]
+
+
+===============================================
+= File: ./supabase_data/medicine_units.json 
+===============================================
+
+[
+  {
+    "id": "cc8e891c-34ac-4afb-944c-258ad244a96f",
+    "name": "Tablet",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
+    "name": "Kapsul",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    "name": "Botol",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "6727b61b-8063-422d-a89a-16b378d5d76d",
+    "name": "Tube",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "name": "Ampul",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "name": "Strip",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  }
+]
+
+
+===============================================
+= File: ./supabase_data/medicines.json 
+===============================================
+
+[
+  {
+    "id": "e8bfc4d6-0a92-450c-b9ab-5f9e15af82da",
+    "name": "Amoxicillin 500mg",
+    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 5000,
+    "sell_price": 7500,
+    "stock": 100,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "7b4e99f7-d58a-4d97-88d9-cc9c2f23b5d3",
+    "name": "Cefixime 200mg",
+    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    "type_id": "b355eadc-2a48-45bf-bbf2-1b0249de3060",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 12000,
+    "sell_price": 15000,
+    "stock": 85,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "1b6e47b0-0aff-4385-8dac-b4f403f1c1b1",
+    "name": "Azithromycin 500mg",
+    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 15000,
+    "sell_price": 20000,
+    "stock": 70,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "1a3f0292-0e83-4eaa-993f-77e55eb8b0d9",
+    "name": "Ciprofloxacin 500mg",
+    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 8000,
+    "sell_price": 12000,
+    "stock": 90,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "d0c7b383-7e9c-490c-8a3d-7a3c5c09b7e6",
+    "name": "Cotrimoxazole 480mg",
+    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 4000,
+    "sell_price": 6000,
+    "stock": 120,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "e8b9e086-f92a-437c-9e0a-b40c15c8ea6c",
+    "name": "Paracetamol 500mg",
+    "category_id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 2000,
+    "sell_price": 3500,
+    "stock": 200,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "a2d9304c-ddb7-4b45-99db-51642c295de7",
+    "name": "Ibuprofen 400mg",
+    "category_id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 3000,
+    "sell_price": 5000,
+    "stock": 150,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "1a9f5f8c-c49f-4892-a15f-054b82ed1904",
+    "name": "Metamizole 500mg",
+    "category_id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 3500,
+    "sell_price": 5500,
+    "stock": 130,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "bbc8c792-7a8f-4ba2-9e49-0e8a2ee8f15e",
+    "name": "Parasetamol Sirup 120mg/5ml",
+    "category_id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
+    "type_id": "56db61b8-6fc0-47a4-82f3-960a6a33e84c",
+    "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    "buy_price": 10000,
+    "sell_price": 15000,
+    "stock": 80,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "8e1a39e9-d6a0-4df1-a0c3-77b6d812cfa3",
+    "name": "Aspirin 100mg",
+    "category_id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 2500,
+    "sell_price": 4000,
+    "stock": 180,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "b0b9cd56-9c15-4e83-9f15-3a134f8b1ee1",
+    "name": "Asam Mefenamat 500mg",
+    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 3000,
+    "sell_price": 5000,
+    "stock": 140,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "86ff21a7-17d7-45c9-a46b-3dca0650a346",
+    "name": "Natrium Diklofenak 50mg",
+    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 3500,
+    "sell_price": 6000,
+    "stock": 120,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "3a8c41f8-4834-4b16-9ba9-3a61c6585a3f",
+    "name": "Ketorolac 10mg",
+    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 7000,
+    "sell_price": 10000,
+    "stock": 90,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "d2a5f6a5-49f0-4dda-a4b6-6e8e7f56af1e",
+    "name": "Piroxicam 20mg",
+    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "type_id": "b355eadc-2a48-45bf-bbf2-1b0249de3060",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 5000,
+    "sell_price": 8000,
+    "stock": 110,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "fda5e259-960d-4c30-8c9b-b55f533fd2c0",
+    "name": "Tramadol 50mg",
+    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "type_id": "b355eadc-2a48-45bf-bbf2-1b0249de3060",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 9000,
+    "sell_price": 13000,
+    "stock": 75,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "d7a3c8c0-0e99-4a76-82b2-5c2f3e1fd372",
+    "name": "Metformin 500mg",
+    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 4500,
+    "sell_price": 7000,
+    "stock": 120,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "d0b5af66-e0a2-47c6-901b-e8d5927074ba",
+    "name": "Glimepiride 2mg",
+    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 6000,
+    "sell_price": 9000,
+    "stock": 100,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "a86e82e0-5b5f-4bdc-8a63-4b421fc17196",
+    "name": "Acarbose 50mg",
+    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 8000,
+    "sell_price": 12000,
+    "stock": 85,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "4c52b646-3ce4-445c-afd8-b5c68f7883db",
+    "name": "Glibenclamide 5mg",
+    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 3500,
+    "sell_price": 6000,
+    "stock": 110,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "adc1f9cc-d882-4cdf-bb01-f2f2e6a1cc6e",
+    "name": "Insulin Novorapid",
+    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
+    "type_id": "d510c9c5-d8db-488c-a634-fee521d23d07",
+    "unit_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "buy_price": 120000,
+    "sell_price": 150000,
+    "stock": 30,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "8d11a5e7-57a9-43be-881f-1ec1da9775a8",
+    "name": "Amlodipine 10mg",
+    "category_id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 5000,
+    "sell_price": 8000,
+    "stock": 130,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "6b94ffc5-40c6-4c7e-85a0-a0c1dc94d8bb",
+    "name": "Captopril 25mg",
+    "category_id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 4000,
+    "sell_price": 7000,
+    "stock": 140,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "c70f16e8-b98a-42bc-b66b-c7be6abfedc6",
+    "name": "Valsartan 80mg",
+    "category_id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 12000,
+    "sell_price": 17000,
+    "stock": 90,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "f97b4aca-a3cc-4c2f-bfd6-e241b11370c3",
+    "name": "Candesartan 8mg",
+    "category_id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 14000,
+    "sell_price": 20000,
+    "stock": 80,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  },
+  {
+    "id": "a1e80cfe-5499-4f95-9d90-5b1e50a8b913",
+    "name": "Bisoprolol 5mg",
+    "category_id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
+    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "buy_price": 7000,
+    "sell_price": 12000,
+    "stock": 95,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-27T06:13:52.704308+00:00",
+    "updated_at": "2025-03-27T06:13:52.704308+00:00"
+  }
+]
+
+
+===============================================
+= File: ./supabase_data/sales.json 
+===============================================
+
+[]
+
+
+===============================================
+= File: ./supabase_data/medicine_types.json 
+===============================================
+
+[
+  {
+    "id": "f295e143-883f-4222-b5ce-0428f858d7f4",
+    "name": "Tablet",
+    "description": "Obat dalam bentuk tablet",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "b355eadc-2a48-45bf-bbf2-1b0249de3060",
+    "name": "Kapsul",
+    "description": "Obat dalam bentuk kapsul",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "56db61b8-6fc0-47a4-82f3-960a6a33e84c",
+    "name": "Sirup",
+    "description": "Obat dalam bentuk cair/sirup",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "a237f060-7cce-4638-9d0b-510b55519a62",
+    "name": "Salep",
+    "description": "Obat dalam bentuk salep untuk penggunaan luar",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "d510c9c5-d8db-488c-a634-fee521d23d07",
+    "name": "Injeksi",
+    "description": "Obat dalam bentuk injeksi/suntik",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  }
+]
+
+
+===============================================
+= File: ./supabase_data/doctors.json 
+===============================================
+
+[]
+
+
+===============================================
+= File: ./supabase_data/sale_items.json 
+===============================================
+
+[]
