@@ -13,6 +13,44 @@ import { Input } from "../../components/ui/Input";
 import { Loading } from "../../components/ui/Loading";
 import { FaSave, FaTimes } from "react-icons/fa";
 
+// Add FormSection component
+interface FormSectionProps {
+    title: string;
+    children: React.ReactNode;
+    className?: string;
+}
+
+const FormSection: React.FC<FormSectionProps> = ({ title, children }) => {
+    return (
+        <div className="border border-gray-200 rounded-lg mb-6">
+            <h2 className="text-lg font-semibold bg-gray-100 p-3 border-b">
+                {title}
+            </h2>
+            <div className="p-4 space-y-4">
+                {children}
+            </div>
+        </div>
+    );
+};
+
+// Add FormField component
+interface FormFieldProps {
+    label: string;
+    children: React.ReactNode;
+    className?: string;
+}
+
+const FormField: React.FC<FormFieldProps> = ({ label, children, className }) => {
+    return (
+        <div className={className}>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+                {label}
+            </label>
+            {children}
+        </div>
+    );
+};
+
 // Menambahkan tipe untuk map objects
 type CodeMap = {
     [key: string]: string;
@@ -58,6 +96,13 @@ const CATEGORY_CODE_MAP: CodeMap = {
     "26e20a27-a34e-424e-9a85-babc2abdc955": "AD", // Antidiabetes
     "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a": "AH", // Antihipertensi
 };
+
+// Style constants
+const inputClassName = "w-full";
+const selectClassName = "bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
+const addButtonClassName = "ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600";
+const radioGroupClassName = "space-x-6";
+const textareaClassName = "w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
 
 const AddItem = () => {
     const navigate = useNavigate();
@@ -108,7 +153,7 @@ const AddItem = () => {
         if (formData.sell_price) {
             setDisplaySellPrice(formatRupiah(formData.sell_price));
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Hanya dijalankan sekali saat komponen mount
 
     useEffect(() => {
@@ -208,13 +253,13 @@ const AddItem = () => {
             // Untuk input harga
             const numericValue = value.replace(/[^\d]/g, '');
             const numericInt = numericValue ? parseInt(numericValue) : 0;
-            
+
             // Update formData dengan nilai numerik
             setFormData({
                 ...formData,
                 [name]: numericInt
             });
-            
+
             // Update display value dengan format Rupiah
             const formattedValue = formatRupiah(numericInt);
             if (name === "buy_price") {
@@ -293,7 +338,7 @@ const AddItem = () => {
         <div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Tambah Data Item Baru</CardTitle>
+                    <CardTitle className="text-2xl">Tambah Data Item Baru</CardTitle>
                 </CardHeader>
 
                 {loading ? (
@@ -302,300 +347,247 @@ const AddItem = () => {
                     </CardContent>
                 ) : (
                     <form onSubmit={handleSubmit}>
-                        <CardContent>
-                            <div className="border border-gray-200 rounded-lg mb-6">
-                                <h2 className="text-lg font-semibold bg-gray-100 p-3 border-b">
-                                    Data Umum
-                                </h2>
-                                <div className="p-4 space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Kode Item
-                                            </label>
-                                            <Input
-                                                name="code"
-                                                value={formData.code}
-                                                disabled={true}
-                                                className="w-full"
-                                                style={formData.code === "" ? {
-                                                    background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
-                                                } : {}}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Nama Item
-                                        </label>
+                        <CardContent className="space-y-6">
+                            <FormSection title="Data Umum">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField label="Kode Item">
                                         <Input
-                                            name="name"
-                                            value={formData.name}
-                                            onChange={handleChange}
-                                            className="w-full"
-                                            required
+                                            name="code"
+                                            value={formData.code}
+                                            disabled={true}
+                                            className={inputClassName}
+                                            style={formData.code === "" ? {
+                                                background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
+                                            } : {}}
                                         />
-                                    </div>
+                                    </FormField>
+                                </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Jenis
-                                            </label>
-                                            <div className="flex">
-                                                <select
-                                                    name="type_id"
-                                                    value={formData.type_id}
-                                                    onChange={handleChange}
-                                                    className="bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                                    required
-                                                >
-                                                    <option value="">-- Pilih Jenis --</option>
-                                                    {types.map((type) => (
-                                                        <option key={type.id} value={type.id}>
-                                                            {type.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    type="button"
-                                                    className="ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
-                                                    onClick={() => navigate("/master-data/types/add")}
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
-                                        </div>
+                                <FormField label="Nama Item">
+                                    <Input
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        className={inputClassName}
+                                        required
+                                    />
+                                </FormField>
 
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Kategori
-                                            </label>
-                                            <div className="flex">
-                                                <select
-                                                    name="category_id"
-                                                    value={formData.category_id}
-                                                    onChange={handleChange}
-                                                    className="bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                                    required
-                                                >
-                                                    <option value="">-- Pilih Kategori --</option>
-                                                    {categories.map((category) => (
-                                                        <option key={category.id} value={category.id}>
-                                                            {category.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    type="button"
-                                                    className="ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
-                                                    onClick={() =>
-                                                        navigate("/master-data/categories/add")
-                                                    }
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Satuan
-                                            </label>
-                                            <div className="flex">
-                                                <select
-                                                    name="unit_id"
-                                                    value={formData.unit_id}
-                                                    onChange={handleChange}
-                                                    className="bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                                    required
-                                                >
-                                                    <option value="">-- Pilih Satuan --</option>
-                                                    {units.map((unit) => (
-                                                        <option key={unit.id} value={unit.id}>
-                                                            {unit.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    type="button"
-                                                    className="ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
-                                                    onClick={() => navigate("/master-data/units/add")}
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Rak
-                                            </label>
-                                            <Input
-                                                name="rack"
-                                                value={formData.rack}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField label="Jenis">
+                                        <div className="flex">
+                                            <select
+                                                name="type_id"
+                                                value={formData.type_id}
                                                 onChange={handleChange}
-                                                className="w-full"
-                                            />
+                                                className={selectClassName}
+                                                required
+                                            >
+                                                <option value="">-- Pilih Jenis --</option>
+                                                {types.map((type) => (
+                                                    <option key={type.id} value={type.id}>
+                                                        {type.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                className={addButtonClassName}
+                                                onClick={() => navigate("/master-data/types/add")}
+                                            >
+                                                +
+                                            </button>
                                         </div>
-                                    </div>
+                                    </FormField>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Jenis Produk
-                                        </label>
-                                        <div className="space-x-6">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="radio"
-                                                    name="is_medicine"
-                                                    checked={formData.is_medicine}
-                                                    onChange={() => setFormData({ ...formData, is_medicine: true })}
-                                                    className="form-radio h-5 w-5 text-primary"
-                                                />
-                                                <span className="ml-2">Obat</span>
-                                            </label>
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="radio"
-                                                    name="is_medicine"
-                                                    checked={!formData.is_medicine}
-                                                    onChange={() => setFormData({ ...formData, is_medicine: false, has_expiry_date: false })}
-                                                    className="form-radio h-5 w-5 text-primary"
-                                                />
-                                                <span className="ml-2">Non-Obat</span>
-                                            </label>
+                                    <FormField label="Kategori">
+                                        <div className="flex">
+                                            <select
+                                                name="category_id"
+                                                value={formData.category_id}
+                                                onChange={handleChange}
+                                                className={selectClassName}
+                                                required
+                                            >
+                                                <option value="">-- Pilih Kategori --</option>
+                                                {categories.map((category) => (
+                                                    <option key={category.id} value={category.id}>
+                                                        {category.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                className={addButtonClassName}
+                                                onClick={() => navigate("/master-data/categories/add")}
+                                            >
+                                                +
+                                            </button>
                                         </div>
-                                    </div>
+                                    </FormField>
+                                </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Keterangan
-                                        </label>
-                                        <textarea
-                                            name="description"
-                                            value={formData.description}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField label="Satuan">
+                                        <div className="flex">
+                                            <select
+                                                name="unit_id"
+                                                value={formData.unit_id}
+                                                onChange={handleChange}
+                                                className={selectClassName}
+                                                required
+                                            >
+                                                <option value="">-- Pilih Satuan --</option>
+                                                {units.map((unit) => (
+                                                    <option key={unit.id} value={unit.id}>
+                                                        {unit.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                className={addButtonClassName}
+                                                onClick={() => navigate("/master-data/units/add")}
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                    </FormField>
+
+                                    <FormField label="Rak">
+                                        <Input
+                                            name="rack"
+                                            value={formData.rack}
                                             onChange={handleChange}
-                                            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                            rows={3}
+                                            className={inputClassName}
                                         />
-                                    </div>
+                                    </FormField>
                                 </div>
-                            </div>
 
-                            <div className="border border-gray-200 rounded-lg mb-6">
-                                <h2 className="text-lg font-semibold bg-gray-100 p-3 border-b">
-                                    Harga Jual
-                                </h2>
-                                <div className="p-4 space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Harga Beli
-                                            </label>
-                                            <Input
-                                                type="text"
-                                                name="buy_price"
-                                                value={displayBuyPrice}
-                                                placeholder="Rp 0"
-                                                onChange={handleChange}
-                                                className="w-full"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Harga Jual
-                                            </label>
-                                            <Input
-                                                type="text"
-                                                name="sell_price"
-                                                value={displaySellPrice}
-                                                placeholder="Rp 0"
-                                                onChange={handleChange}
-                                                className="w-full"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="border border-gray-200 rounded-lg mb-6">
-                                <h2 className="text-lg font-semibold bg-gray-100 p-3 border-b">
-                                    Pengaturan Tambahan
-                                </h2>
-                                <div className="p-4 space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Status Jual
-                                            </label>
-                                            <div className="space-x-6">
-                                                <label className="inline-flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        name="is_active"
-                                                        checked={formData.is_active}
-                                                        onChange={() =>
-                                                            setFormData({ ...formData, is_active: true })
-                                                        }
-                                                        className="form-radio h-5 w-5 text-primary"
-                                                    />
-                                                    <span className="ml-2">Masih dijual</span>
-                                                </label>
-                                                <label className="inline-flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        name="is_active"
-                                                        checked={!formData.is_active}
-                                                        onChange={() =>
-                                                            setFormData({ ...formData, is_active: false })
-                                                        }
-                                                        className="form-radio h-5 w-5 text-primary"
-                                                    />
-                                                    <span className="ml-2">Tidak Dijual</span>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Stok Minimal
-                                            </label>
-                                            <Input
-                                                type="number"
-                                                name="min_stock"
-                                                value={formData.min_stock}
-                                                onChange={handleChange}
-                                                className="w-full"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
+                                <FormField label="Jenis Produk">
+                                    <div className={radioGroupClassName}>
                                         <label className="inline-flex items-center">
                                             <input
-                                                type="checkbox"
-                                                name="has_expiry_date"
-                                                checked={formData.has_expiry_date}
-                                                disabled={!formData.is_medicine}
-                                                onChange={handleChange}
-                                                className="form-checkbox h-5 w-5 text-primary"
+                                                type="radio"
+                                                name="is_medicine"
+                                                checked={formData.is_medicine}
+                                                onChange={() => setFormData({ ...formData, is_medicine: true })}
+                                                className="form-radio h-5 w-5 text-primary"
                                             />
-                                            <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
+                                            <span className="ml-2">Obat</span>
                                         </label>
-                                        <div className="mt-1 text-sm text-gray-500">
-                                            Jika dicentang, obat ini akan menggunakan metode FEFO
-                                            (First Expired First Out)
+                                        <label className="inline-flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="is_medicine"
+                                                checked={!formData.is_medicine}
+                                                onChange={() => setFormData({ ...formData, is_medicine: false, has_expiry_date: false })}
+                                                className="form-radio h-5 w-5 text-primary"
+                                            />
+                                            <span className="ml-2">Non-Obat</span>
+                                        </label>
+                                    </div>
+                                </FormField>
+
+                                <FormField label="Keterangan">
+                                    <textarea
+                                        name="description"
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        className={textareaClassName}
+                                        rows={3}
+                                    />
+                                </FormField>
+                            </FormSection>
+
+                            <FormSection title="Harga Jual">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField label="Harga Beli">
+                                        <Input
+                                            type="text"
+                                            name="buy_price"
+                                            value={displayBuyPrice}
+                                            placeholder="Rp 0"
+                                            onChange={handleChange}
+                                            className={inputClassName}
+                                            required
+                                        />
+                                    </FormField>
+                                    <FormField label="Harga Jual">
+                                        <Input
+                                            type="text"
+                                            name="sell_price"
+                                            value={displaySellPrice}
+                                            placeholder="Rp 0"
+                                            onChange={handleChange}
+                                            className={inputClassName}
+                                            required
+                                        />
+                                    </FormField>
+                                </div>
+                            </FormSection>
+
+                            <FormSection title="Pengaturan Tambahan">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField label="Status Jual">
+                                        <div className={radioGroupClassName}>
+                                            <label className="inline-flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="is_active"
+                                                    checked={formData.is_active}
+                                                    onChange={() =>
+                                                        setFormData({ ...formData, is_active: true })
+                                                    }
+                                                    className="form-radio h-5 w-5 text-primary"
+                                                />
+                                                <span className="ml-2">Masih dijual</span>
+                                            </label>
+                                            <label className="inline-flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="is_active"
+                                                    checked={!formData.is_active}
+                                                    onChange={() =>
+                                                        setFormData({ ...formData, is_active: false })
+                                                    }
+                                                    className="form-radio h-5 w-5 text-primary"
+                                                />
+                                                <span className="ml-2">Tidak Dijual</span>
+                                            </label>
                                         </div>
+                                    </FormField>
+
+                                    <FormField label="Stok Minimal">
+                                        <Input
+                                            type="number"
+                                            name="min_stock"
+                                            value={formData.min_stock}
+                                            onChange={handleChange}
+                                            className={inputClassName}
+                                            required
+                                        />
+                                    </FormField>
+                                </div>
+
+                                <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
+                                    <label className="inline-flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            name="has_expiry_date"
+                                            checked={formData.has_expiry_date}
+                                            disabled={!formData.is_medicine}
+                                            onChange={handleChange}
+                                            className="form-checkbox h-5 w-5 text-primary"
+                                        />
+                                        <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
+                                    </label>
+                                    <div className="mt-1 text-sm text-gray-500">
+                                        Jika dicentang, obat ini akan menggunakan metode FEFO
+                                        (First Expired First Out)
                                     </div>
                                 </div>
-                            </div>
+                            </FormSection>
                         </CardContent>
 
                         <CardFooter className="flex justify-between">
@@ -608,9 +600,9 @@ const AddItem = () => {
                                     <FaTimes className="mr-2" /> <span>Batal</span>
                                 </div>
                             </Button>
-                            <Button type="submit" 
-                                    disabled={saving} 
-                                    isLoading={saving}
+                            <Button type="submit"
+                                disabled={saving}
+                                isLoading={saving}
                             >
                                 <FaSave className="mr-2" /> Simpan
                             </Button>
