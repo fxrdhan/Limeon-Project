@@ -1342,10 +1342,10 @@ const AddMedicine = () => {
                 const generatedCode = `${codePrefix}${sequenceStr}`;
 
                 // Update form
-                setFormData({
-                    ...formData,
+                setFormData(prevFormData => ({
+                    ...prevFormData,
                     code: generatedCode,
-                });
+                }));
             } catch (error) {
                 console.error("Error generating item code:", error);
             }
@@ -1743,7 +1743,10 @@ const AddMedicine = () => {
                             >
                                 <FaTimes className="mr-2" /> Batal
                             </Button>
-                            <Button type="submit" disabled={saving} isLoading={saving}>
+                            <Button type="submit" 
+                                    disabled={saving} 
+                                    isLoading={saving}
+                            >
                                 <FaSave className="mr-2" /> Simpan
                             </Button>
                         </CardFooter>
