@@ -66,6 +66,9 @@ const AddMedicine = () => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [types, setTypes] = useState<MedicineType[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
+    // State untuk nilai yang ditampilkan dengan format mata uang
+    const [displayBuyPrice, setDisplayBuyPrice] = useState('');
+    const [displaySellPrice, setDisplaySellPrice] = useState('');
     // const [latestSequence, setLatestSequence] = useState<Record<string, number>>(
     //     {}
     // );
@@ -85,6 +88,33 @@ const AddMedicine = () => {
         is_active: true,
         has_expiry_date: false,
     });
+
+    // Fungsi untuk mengonversi angka ke format mata uang Rupiah
+    const formatRupiah = (angka: number): string => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(angka);
+    };
+
+    // Fungsi untuk mengonversi string format Rupiah ke angka
+    const parseRupiah = (rupiahString: string): number => {
+        // Menghapus semua karakter non-digit
+        const numericString = rupiahString.replace(/[^\d]/g, '');
+        return numericString ? parseInt(numericString) : 0;
+    };
+
+    // Mengubah nilai form data saat komponen dimount
+    useEffect(() => {
+        if (formData.buy_price) {
+            setDisplayBuyPrice(formatRupiah(formData.buy_price));
+        }
+        if (formData.sell_price) {
+            setDisplaySellPrice(formatRupiah(formData.sell_price));
+        }
+    }, []);
 
     useEffect(() => {
         fetchMasterData();
@@ -179,7 +209,25 @@ const AddMedicine = () => {
     ) => {
         const { name, value, type } = e.target as HTMLInputElement;
 
-        if (type === "checkbox") {
+        if (name === "buy_price" || name === "sell_price") {
+            // Untuk input harga
+            const numericValue = value.replace(/[^\d]/g, '');
+            const numericInt = numericValue ? parseInt(numericValue) : 0;
+            
+            // Update formData dengan nilai numerik
+            setFormData({
+                ...formData,
+                [name]: numericInt
+            });
+            
+            // Update display value dengan format Rupiah
+            const formattedValue = formatRupiah(numericInt);
+            if (name === "buy_price") {
+                setDisplayBuyPrice(formattedValue);
+            } else {
+                setDisplaySellPrice(formattedValue);
+            }
+        } else if (type === "checkbox") {
             const { checked } = e.target as HTMLInputElement;
             setFormData({
                 ...formData,
@@ -425,9 +473,10 @@ const AddMedicine = () => {
                                                 Harga Beli
                                             </label>
                                             <Input
-                                                type="number"
+                                                type="text"
                                                 name="buy_price"
-                                                value={formData.buy_price}
+                                                value={displayBuyPrice}
+                                                placeholder="Rp 0"
                                                 onChange={handleChange}
                                                 className="w-full"
                                                 required
@@ -438,9 +487,10 @@ const AddMedicine = () => {
                                                 Harga Jual
                                             </label>
                                             <Input
-                                                type="number"
+                                                type="text"
                                                 name="sell_price"
-                                                value={formData.sell_price}
+                                                value={displaySellPrice}
+                                                placeholder="Rp 0"
                                                 onChange={handleChange}
                                                 className="w-full"
                                                 required
