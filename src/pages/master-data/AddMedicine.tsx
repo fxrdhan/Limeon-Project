@@ -72,7 +72,7 @@ const AddMedicine = () => {
 
     // Form state
     const [formData, setFormData] = useState({
-        code: "OTOMATIS", // Kode akan dibuat otomatis
+        code: "", // Kode akan dibuat otomatis
         name: "",
         type_id: "",
         category_id: "",
@@ -274,6 +274,9 @@ const AddMedicine = () => {
                                                 value={formData.code}
                                                 disabled={true}
                                                 className="w-full"
+                                                style={formData.code === "" ? {
+                                                    background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
+                                                } : {}}
                                             />
                                         </div>
                                     </div>
@@ -526,9 +529,14 @@ const AddMedicine = () => {
                                 variant="outline"
                                 onClick={() => navigate("/master-data/medicines")}
                             >
-                                <FaTimes className="mr-2" /> Batal
+                                <div className="flex items-center">
+                                    <FaTimes className="mr-2" /> <span>Batal</span>
+                                </div>
                             </Button>
-                            <Button type="submit" disabled={saving} isLoading={saving}>
+                            <Button type="submit" 
+                                    disabled={saving} 
+                                    isLoading={saving}
+                            >
                                 <FaSave className="mr-2" /> Simpan
                             </Button>
                         </CardFooter>
