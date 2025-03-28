@@ -7,14 +7,14 @@ import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Loading } from "../../components/ui/Loading";
 
-interface MedicineType {
+interface ItemType {
     id: string;
     name: string;
     description: string;
 }
 
 const TypeList = () => {
-    const [types, setTypes] = useState<MedicineType[]>([]);
+    const [types, setTypes] = useState<ItemType[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -26,7 +26,7 @@ const TypeList = () => {
             setLoading(true);
             
             const { data, error } = await supabase
-                .from("medicine_types")
+                .from("item_types")
                 .select("*")
                 .order("name");
                 
@@ -34,7 +34,7 @@ const TypeList = () => {
             
             setTypes(data || []);
         } catch (error) {
-            console.error("Error fetching medicine types:", error);
+            console.error("Error fetching item types:", error);
         } finally {
             setLoading(false);
         }
@@ -43,14 +43,14 @@ const TypeList = () => {
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Daftar Jenis Obat</h1>
+                <h1 className="text-2xl font-bold text-gray-800">Daftar Jenis Item</h1>
                 
                 <Link
                     to="/master-data/types/add"
                 >
                     <Button variant="primary">
                         <FaPlus className="mr-2" />
-                        Tambah Jenis Obat Baru
+                        Tambah Jenis Item Baru
                     </Button>
                 </Link>
             </div>
@@ -70,7 +70,7 @@ const TypeList = () => {
                             {types.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={3} className="text-center text-gray-500">
-                                        Tidak ada data jenis obat yang ditemukan
+                                        Tidak ada data jenis item yang ditemukan
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -106,10 +106,10 @@ const TypeList = () => {
     );
     
     async function handleDelete(id: string) {
-        if (window.confirm("Apakah Anda yakin ingin menghapus jenis obat ini?")) {
+        if (window.confirm("Apakah Anda yakin ingin menghapus jenis item ini?")) {
             try {
                 const { error } = await supabase
-                    .from("medicine_types")
+                    .from("item_types")
                     .delete()
                     .eq("id", id);
                 
@@ -117,8 +117,8 @@ const TypeList = () => {
                 
                 fetchTypes(); // Refresh data after deletion
             } catch (error) {
-                console.error("Error deleting medicine type:", error);
-                alert("Gagal menghapus jenis obat. Silakan coba lagi.");
+                console.error("Error deleting item type:", error);
+                alert("Gagal menghapus jenis item. Silakan coba lagi.");
             }
         }
     }

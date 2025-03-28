@@ -26,7 +26,7 @@ const UnitList = () => {
             setLoading(true);
             
             const { data, error } = await supabase
-                .from("medicine_units")
+                .from("item_units")
                 .select("*")
                 .order("name");
                 
@@ -41,10 +41,10 @@ const UnitList = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm("Apakah Anda yakin ingin menghapus satuan obat ini?")) {
+        if (window.confirm("Apakah Anda yakin ingin menghapus satuan item ini?")) {
             try {
                 const { error } = await supabase
-                    .from("medicine_units")
+                    .from("item_units")
                     .delete()
                     .eq("id", id);
                 
@@ -53,7 +53,7 @@ const UnitList = () => {
                 fetchUnits(); // Refresh data after deletion
             } catch (error) {
                 console.error("Error deleting unit:", error);
-                alert("Gagal menghapus satuan obat. Silakan coba lagi.");
+                alert("Gagal menghapus satuan item. Silakan coba lagi.");
             }
         }
     };
@@ -61,7 +61,7 @@ const UnitList = () => {
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Daftar Satuan Obat</h1>
+                <h1 className="text-2xl font-bold text-gray-800">Daftar Satuan Item</h1>
                 
                 <Link
                     to="/master-data/units/add"

@@ -1304,13 +1304,6 @@ const AddMedicine = () => {
         }).format(angka);
     };
 
-    // Fungsi untuk mengonversi string format Rupiah ke angka
-    const parseRupiah = (rupiahString: string): number => {
-        // Menghapus semua karakter non-digit
-        const numericString = rupiahString.replace(/[^\d]/g, '');
-        return numericString ? parseInt(numericString) : 0;
-    };
-
     // Mengubah nilai form data saat komponen dimount
     useEffect(() => {
         if (formData.buy_price) {
@@ -1319,7 +1312,8 @@ const AddMedicine = () => {
         if (formData.sell_price) {
             setDisplaySellPrice(formatRupiah(formData.sell_price));
         }
-    }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Hanya dijalankan sekali saat komponen mount
 
     useEffect(() => {
         fetchMasterData();

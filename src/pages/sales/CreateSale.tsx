@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { FaPlus, FaTrash, FaSearch } from 'react-icons/fa';
 
-interface Medicine {
+interface Item {
     id: string;
     name: string;
     sell_price: number;
@@ -26,7 +26,7 @@ interface SaleFormData {
     doctor_id: string;
     payment_method: string;
     items: {
-        medicine_id: string;
+        item_id: string;
         quantity: number;
         price: number;
         subtotal: number;
@@ -35,13 +35,13 @@ interface SaleFormData {
 
 const CreateSale = () => {
     const navigate = useNavigate();
-    const [medicines, setMedicines] = useState<Medicine[]>([]);
+    const [items, setItems] = useState<Item[]>([]);
     const [patients, setPatients] = useState<Patient[]>([]);
     const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [loading, setLoading] = useState(false);
-    const [searchMedicine, setSearchMedicine] = useState('');
-    const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
-    const [showMedicineDropdown, setShowMedicineDropdown] = useState(false);
+    const [searchItem, setSearchItem] = useState('');
+    const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+    const [showItemDropdown, setShowItemDropdown] = useState(false);
 
     const { control, handleSubmit, setValue, watch, register, formState: { errors } } = useForm<SaleFormData>({
         defaultValues: {
@@ -61,19 +61,19 @@ const CreateSale = () => {
     const total = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
 
     useEffect(() => {
-        fetchMedicines();
+        fetchItems();
         fetchPatients();
         fetchDoctors();
     }, []);
 
-    const fetchMedicines = async () => {
+    const fetchItems = async () => {
         const { data } = await supabase
-            .from('medicines')
+            .from('items')
             .select('id, name, sell_price, stock')
             .gt('stock', 0)
             .order('name');
 
-        if (data) setMedicines(data);
+        if (data) setItems(data);
     };
 
     const fetchPatients = async () => {
@@ -95,25 +95,25 @@ const CreateSale = () => {
     };
 
     const addItem = () => {
-        if (!selectedMedicine) return;
+        if (!selectedItem) return;
 
         append({
-            medicine_id: selectedMedicine.id,
+            item_id: selectedItem.id,
             quantity: 1,
-            price: selectedMedicine.sell_price,
-            subtotal: selectedMedicine.sell_price
+            price: selectedItem.sell_price,
+            subtotal: selectedItem.sell_price
         });
 
-        setSelectedMedicine(null);
-        setSearchMedicine('');
+        setSelectedItem(null);
+        setSearchItem('');
     };
 
     const updateSubtotal = (index: number, quantity: number, price: number) => {
         setValue(`items.${index}.subtotal`, quantity * price);
     };
 
-    const filteredMedicines = medicines.filter(medicine =>
-        medicine.name.toLowerCase().includes(searchMedicine.toLowerCase())
+    const filteredItems = items.filter(item =>
+        item.name.toLowerCase().includes(searchItem.toLowerCase())
     );
 
     const onSubmit = async (data: SaleFormData) => {
@@ -138,7 +138,7 @@ const CreateSale = () => {
             // Insert sale items
             const saleItems = data.items.map(item => ({
                 sale_id: saleData.id,
-                medicine_id: item.medicine_id,
+                item_id: item.item_id,
                 quantity: item.quantity,
                 price: item.price,
                 subtotal: item.subtotal
@@ -153,11 +153,11 @@ const CreateSale = () => {
             // Update medicine stocks
             for (const item of data.items) {
                 await supabase
-                    .from('medicines')
+                    .from('items')
                     .update({
                         stock: supabase.rpc('decrement', { x: item.quantity })
                     })
-                    .eq('id', item.medicine_id);
+                    .eq('id', item.item_id);
             }
 
             navigate('/sales');
@@ -215,40 +215,40 @@ const CreateSale = () => {
                 </div>
 
                 <div className="mb-6">
-                    <h2 className="text-xl font-semibold mb-4">Daftar Obat</h2>
+                    <h2 className="text-xl font-semibold mb-4">Daftar Item</h2>
 
                     <div className="mb-4">
                         <div className="relative">
                             <input
                                 type="text"
-                                placeholder="Cari obat..."
+                                placeholder="Cari item..."
                                 className="w-full p-3 border rounded-md"
-                                value={searchMedicine}
+                                value={searchItem}
                                 onChange={(e) => {
-                                    setSearchMedicine(e.target.value);
-                                    setShowMedicineDropdown(true);
+                                    setSearchItem(e.target.value);
+                                    setShowItemDropdown(true);
                                 }}
-                                onFocus={() => setShowMedicineDropdown(true)}
+                                onFocus={() => setShowItemDropdown(true)}
                             />
 
-                            {showMedicineDropdown && searchMedicine && (
+                            {showItemDropdown && searchItem && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                                    {filteredMedicines.length === 0 ? (
-                                        <div className="p-3 text-gray-500">Tidak ada obat yang ditemukan</div>
+                                    {filteredItems.length === 0 ? (
+                                        <div className="p-3 text-gray-500">Tidak ada item yang ditemukan</div>
                                     ) : (
-                                        filteredMedicines.map(medicine => (
+                                        filteredItems.map(item => (
                                             <div
-                                                key={medicine.id}
+                                                key={item.id}
                                                 className="p-3 hover:bg-gray-100 cursor-pointer"
                                                 onClick={() => {
-                                                    setSelectedMedicine(medicine);
-                                                    setSearchMedicine(medicine.name);
-                                                    setShowMedicineDropdown(false);
+                                                    setSelectedItem(item);
+                                                    setSearchItem(item.name);
+                                                    setShowItemDropdown(false);
                                                 }}
                                             >
-                                                <div>{medicine.name}</div>
+                                                <div>{item.name}</div>
                                                 <div className="text-sm text-gray-500">
-                                                    Stok: {medicine.stock} | Harga: {medicine.sell_price.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                                    Stok: {item.stock} | Harga: {item.sell_price.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                                                 </div>
                                             </div>
                                         ))
@@ -262,10 +262,10 @@ const CreateSale = () => {
                                 type="button"
                                 className="px-4 py-2 bg-primary text-white rounded-md flex items-center disabled:opacity-50"
                                 onClick={addItem}
-                                disabled={!selectedMedicine}
+                                disabled={!selectedItem}
                             >
                                 <FaPlus className="mr-2" />
-                                Tambah Obat
+                                Tambah Item
                             </button>
                         </div>
                     </div>
@@ -274,7 +274,7 @@ const CreateSale = () => {
                         <table className="min-w-full bg-white border">
                             <thead className="bg-gray-100">
                                 <tr>
-                                    <th className="py-3 px-4 text-left">Nama Obat</th>
+                                    <th className="py-3 px-4 text-left">Nama Item</th>
                                     <th className="py-3 px-4 text-right">Harga</th>
                                     <th className="py-3 px-4 text-center">Kuantitas</th>
                                     <th className="py-3 px-4 text-right">Subtotal</th>
@@ -290,11 +290,11 @@ const CreateSale = () => {
                                     </tr>
                                 ) : (
                                     fields.map((field, index) => {
-                                        const medicine = medicines.find(m => m.id === items[index]?.medicine_id);
+                                        const item = items.find(m => m.id === items[index]?.item_id);
 
                                         return (
                                             <tr key={field.id}>
-                                                <td className="py-3 px-4">{medicine?.name}</td>
+                                                <td className="py-3 px-4">{item?.name}</td>
                                                 <td className="py-3 px-4 text-right">
                                                     <Controller
                                                         control={control}
@@ -322,7 +322,7 @@ const CreateSale = () => {
                                                                 type="number"
                                                                 className="w-20 p-2 border rounded-md text-center"
                                                                 min="1"
-                                                                max={medicine?.stock || 1}
+                                                                max={item?.stock || 1}
                                                                 {...field}
                                                                 onChange={(e) => {
                                                                     const quantity = parseInt(e.target.value);

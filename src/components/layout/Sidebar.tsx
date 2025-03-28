@@ -63,22 +63,22 @@ const Sidebar = () => {
                     {openMenus.masterData && (
                         <div className="pl-12 pr-6 py-2 bg-gray-50">
                             <Link
-                                to="/master-data/medicines"
+                                to="/master-data/items"
                                 className="block py-2 text-sm text-gray-600 hover:text-primary"
                             >
-                                Obat/Resep
+                                Daftar Item
                             </Link>
                             <Link
                                 to="/master-data/categories"
                                 className="block py-2 text-sm text-gray-600 hover:text-primary"
                             >
-                                Kategori Obat
+                                Kategori Item
                             </Link>
                             <Link
                                 to="/master-data/types"
                                 className="block py-2 text-sm text-gray-600 hover:text-primary"
                             >
-                                Jenis Obat
+                                Jenis Item
                             </Link>
                             <Link
                                 to="/master-data/units"
