@@ -40,7 +40,7 @@ export const TableBody = ({ children, className }: TableProps) => {
 
 export const TableRow = ({ children, className }: TableProps) => {
     return (
-        <tr className={classNames('transition-colors duration-150 hover:bg-gray-50 even:bg-gray-50/30', className)}>
+        <tr className={classNames('transition-colors duration-150 hover:bg-gray-100 even:bg-gray-50/30', className)}>
             {children}
         </tr>
     );
@@ -56,7 +56,7 @@ export const TableCell = ({ children, className }: TableCellProps) => {
 
 export const TableHeader = ({ children, className }: TableProps) => {
     return (
-        <th className={classNames('py-3 px-4 text-left bg-gray-200 font-extrabold text-gray-700 uppercase tracking-wider text-sm', className)}>
+        <th className={classNames('py-3 px-4 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm', className)}>
             {children}
         </th>
     );

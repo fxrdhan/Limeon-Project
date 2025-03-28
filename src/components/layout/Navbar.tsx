@@ -19,7 +19,7 @@ const Navbar = () => {
         <nav className="bg-white border-b px-6 py-3">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-xl font-semibold text-gray-800">Apotek & Klinik App</h1>
+                    <h1 className="text-xl font-semibold text-gray-800">PharmaSys</h1>
                 </div>
 
                 <div className="relative">
