@@ -26,6 +26,7 @@
 │   │       ├── FormComponents.tsx
 │   │       ├── Input.tsx
 │   │       ├── Loading.tsx
+│   │       ├── Pagination.tsx
 │   │       └── Table.tsx
 │   ├── hooks
 │   │   └── useAddItemForm.ts
@@ -68,7 +69,7 @@
 ├── tsconfig.node.json
 └── vite.config.ts
 
-16 directories, 53 files
+16 directories, 54 files
 
 
 ===============================================
@@ -326,6 +327,125 @@ createRoot(document.getElementById('root')!).render(
   color: #888;
 }
 
+
+===============================================
+= File: ./src/components/ui/Pagination.tsx 
+===============================================
+
+// src/components/ui/Pagination.tsx
+import { classNames } from "../../lib/classNames";
+import { Button } from "./Button";
+
+export interface PaginationProps {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    itemsCount: number;
+    onPageChange: (page: number) => void;
+    onItemsPerPageChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+    className?: string;
+}
+
+export const Pagination = ({
+    currentPage,
+    totalPages,
+    totalItems,
+    itemsPerPage,
+    itemsCount,
+    onPageChange,
+    onItemsPerPageChange,
+    className,
+}: PaginationProps) => {
+    const pageNumbers = [];
+    const maxPageDisplay = 5;
+
+    let startPage = Math.max(1, currentPage - Math.floor(maxPageDisplay / 2));
+    const endPage = Math.min(totalPages, startPage + maxPageDisplay - 1);
+
+    if (endPage - startPage + 1 < maxPageDisplay) {
+        startPage = Math.max(1, endPage - maxPageDisplay + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+    }
+
+    return (
+        <div className={classNames("flex justify-between items-center mt-4", className)}>
+            <div className="text-sm text-gray-600">
+                Menampilkan {itemsCount} dari {totalItems} item
+            </div>
+
+            <div className="flex items-center">
+                <div className="mr-4">
+                    <select
+                        value={itemsPerPage}
+                        onChange={onItemsPerPageChange}
+                        className="border rounded-md p-2"
+                    >
+                        <option value={5}>5 per halaman</option>
+                        <option value={10}>10 per halaman</option>
+                        <option value={20}>20 per halaman</option>
+                        <option value={50}>50 per halaman</option>
+                    </select>
+                </div>
+
+                <div className="flex">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPageChange(1)}
+                        disabled={currentPage === 1}
+                        className="mx-1"
+                    >
+                        &laquo;
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="mx-1"
+                    >
+                        &lt;
+                    </Button>
+
+                    {pageNumbers.map(number => (
+                        <Button
+                            key={number}
+                            variant={currentPage === number ? "primary" : "outline"}
+                            size="sm"
+                            onClick={() => onPageChange(number)}
+                            className="mx-1"
+                        >
+                            {number}
+                        </Button>
+                    ))}
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages || totalPages === 0}
+                        className="mx-1"
+                    >
+                        &gt;
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPageChange(totalPages)}
+                        disabled={currentPage === totalPages || totalPages === 0}
+                        className="mx-1"
+                    >
+                        &raquo;
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 ===============================================
 = File: ./src/components/ui/Button.tsx 
@@ -1328,6 +1448,7 @@ import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import { Pagination } from "../../components/ui/Pagination";
 import { Loading } from "../../components/ui/Loading";
 
 interface Item {
@@ -1454,88 +1575,6 @@ const ItemList = () => {
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-    const Pagination = () => {
-        const pageNumbers = [];
-        const maxPageDisplay = 5;
-
-        let startPage = Math.max(1, currentPage - Math.floor(maxPageDisplay / 2));
-        const endPage = Math.min(totalPages, startPage + maxPageDisplay - 1);
-
-        if (endPage - startPage + 1 < maxPageDisplay) {
-            startPage = Math.max(1, endPage - maxPageDisplay + 1);
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-            pageNumbers.push(i);
-        }
-
-        return (
-            <div className="flex justify-between items-center mt-4">
-                <div className="text-sm text-gray-600">
-                    Menampilkan {items.length} dari {totalItems} item
-                </div>
-
-                <div className="flex items-center">
-                    <div className="mr-4">
-                        <select
-                            value={itemsPerPage}
-                            onChange={handleItemsPerPageChange}
-                            className="border rounded-md p-2"
-                        >
-                            <option value={5}>5 per halaman</option>
-                            <option value={10}>10 per halaman</option>
-                            <option value={20}>20 per halaman</option>
-                            <option value={50}>50 per halaman</option>
-                        </select>
-                    </div>
-
-                    <div className="flex">
-                        <button
-                            onClick={() => handlePageChange(1)}
-                            disabled={currentPage === 1}
-                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
-                        >
-                            &laquo;
-                        </button>
-                        <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
-                        >
-                            &lt;
-                        </button>
-
-                        {pageNumbers.map(number => (
-                            <button
-                                key={number}
-                                onClick={() => handlePageChange(number)}
-                                className={`px-3 py-2 mx-1 rounded-md border ${currentPage === number ? 'bg-primary text-white' : ''
-                                    }`}
-                            >
-                                {number}
-                            </button>
-                        ))}
-
-                        <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
-                        >
-                            &gt;
-                        </button>
-                        <button
-                            onClick={() => handlePageChange(totalPages)}
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
-                        >
-                            &raquo;
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
@@ -1633,7 +1672,15 @@ const ItemList = () => {
                         </TableBody>
                     </Table>
 
-                    <Pagination />
+                    <Pagination 
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        itemsPerPage={itemsPerPage}
+                        itemsCount={items.length}
+                        onPageChange={handlePageChange}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                    />
                 </>
             )}
         </Card>
@@ -1669,7 +1716,6 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { Loading } from "../../components/ui/Loading";
 import { FaSave, FaTimes } from "react-icons/fa";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
@@ -1686,7 +1732,7 @@ const AddItem = () => {
 
     const {
         formData, displayBuyPrice, displaySellPrice, categories, types, units,
-        loading, saving, handleChange, handleSelectChange, handleSubmit, updateFormData
+        saving, handleChange, handleSelectChange, handleSubmit, updateFormData
     } = useAddItemForm();
 
     return (
@@ -1696,270 +1742,267 @@ const AddItem = () => {
                     <CardTitle>Tambah Data Item Baru</CardTitle>
                 </CardHeader>
 
-                {loading ? (
-                    <CardContent>
-                        <Loading />
-                    </CardContent>
-                ) : (
-                    <form onSubmit={handleSubmit}>
-                        <CardContent className="space-y-6">
-                            <FormSection title="Data Umum">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField label="Kode Item">
-                                        <Input
-                                            name="code"
-                                            value={formData.code}
-                                            disabled={true}
-                                            className={inputClassName}
-                                            style={formData.code === "" ? {
-                                                background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
-                                            } : {}}
-                                        />
-                                    </FormField>
-                                </div>
-
-                                <FormField label="Nama Item">
+                <form onSubmit={handleSubmit}>
+                    <CardContent className="space-y-6">
+                        <FormSection title="Data Umum">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField label="Kode Item">
                                     <Input
-                                        name="name"
-                                        value={formData.name}
+                                        name="code"
+                                        value={formData.code}
+                                        disabled={true}
+                                        className={inputClassName}
+                                        style={formData.code === "" ? {
+                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
+                                        } : {}}
+                                    />
+                                </FormField>
+                            </div>
+
+                            <FormField label="Nama Item">
+                                <Input
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    className={inputClassName}
+                                    required
+                                />
+                            </FormField>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField label="Jenis">
+                                    <div className="flex">
+                                        {categories.length === 0 && (
+                                            <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
+                                        )}
+                                        <select
+                                            name="type_id" 
+                                            value={formData.type_id}
+                                            onChange={handleSelectChange}
+                                            className={selectClassName}
+                                            required
+                                        >
+                                            <option value="">-- Pilih Jenis --</option>
+                                            {types.map((type) => (
+                                                <option key={type.id} value={type.id}>
+                                                    {type.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            className={addButtonClassName}
+                                            onClick={() => navigate("/master-data/types/add")}
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </FormField>
+
+                                <FormField label="Kategori">
+                                    <div className="flex">
+                                        <select
+                                            name="category_id"
+                                            value={formData.category_id}
+                                            onChange={handleSelectChange}
+                                            className={selectClassName}
+                                            required
+                                        >
+                                            <option value="">-- Pilih Kategori --</option>
+                                            {categories.map((category) => (
+                                                <option key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            className={addButtonClassName}
+                                            onClick={() => navigate("/master-data/categories/add")}
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </FormField>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField label="Satuan">
+                                    <div className="flex">
+                                        <select
+                                            name="unit_id"
+                                            value={formData.unit_id}
+                                            onChange={handleSelectChange}
+                                            className={selectClassName}
+                                            required
+                                        >
+                                            <option value="">-- Pilih Satuan --</option>
+                                            {units.map((unit) => (
+                                                <option key={unit.id} value={unit.id}>
+                                                    {unit.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            className={addButtonClassName}
+                                            onClick={() => navigate("/master-data/units/add")}
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                </FormField>
+
+                                <FormField label="Rak">
+                                    <Input
+                                        name="rack"
+                                        value={formData.rack}
+                                        onChange={handleChange}
+                                        className={inputClassName}
+                                    />
+                                </FormField>
+                            </div>
+
+                            <FormField label="Jenis Produk">
+                                <div className={radioGroupClassName}>
+                                    <label className="inline-flex items-center">
+                                        <input
+                                            type="radio"
+                                            name="is_medicine"
+                                            checked={formData.is_medicine}
+                                            onChange={() => updateFormData({ is_medicine: true })}
+                                            className="form-radio h-5 w-5 text-primary"
+                                        />
+                                        <span className="ml-2">Obat</span>
+                                    </label>
+                                    <label className="inline-flex items-center">
+                                        <input
+                                            type="radio"
+                                            name="is_medicine"
+                                            checked={!formData.is_medicine}
+                                            onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
+                                            className="form-radio h-5 w-5 text-primary"
+                                        />
+                                        <span className="ml-2">Non-Obat</span>
+                                    </label>
+                                </div>
+                            </FormField>
+
+                            <FormField label="Keterangan">
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    className={textareaClassName}
+                                    rows={3}
+                                />
+                            </FormField>
+                        </FormSection>
+
+                        <FormSection title="Harga Jual">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField label="Harga Beli">
+                                    <Input
+                                        type="text"
+                                        name="buy_price"
+                                        value={displayBuyPrice}
+                                        placeholder="Rp 0"
                                         onChange={handleChange}
                                         className={inputClassName}
                                         required
                                     />
                                 </FormField>
+                                <FormField label="Harga Jual">
+                                    <Input
+                                        type="text"
+                                        name="sell_price"
+                                        value={displaySellPrice}
+                                        placeholder="Rp 0"
+                                        onChange={handleChange}
+                                        className={inputClassName}
+                                        required
+                                    />
+                                </FormField>
+                            </div>
+                        </FormSection>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField label="Jenis">
-                                        <div className="flex">
-                                            <select
-                                                name="type_id"
-                                                value={formData.type_id}
-                                                onChange={handleSelectChange}
-                                                className={selectClassName}
-                                                required
-                                            >
-                                                <option value="">-- Pilih Jenis --</option>
-                                                {types.map((type) => (
-                                                    <option key={type.id} value={type.id}>
-                                                        {type.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <button
-                                                type="button"
-                                                className={addButtonClassName}
-                                                onClick={() => navigate("/master-data/types/add")}
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                    </FormField>
-
-                                    <FormField label="Kategori">
-                                        <div className="flex">
-                                            <select
-                                                name="category_id"
-                                                value={formData.category_id}
-                                                onChange={handleSelectChange}
-                                                className={selectClassName}
-                                                required
-                                            >
-                                                <option value="">-- Pilih Kategori --</option>
-                                                {categories.map((category) => (
-                                                    <option key={category.id} value={category.id}>
-                                                        {category.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <button
-                                                type="button"
-                                                className={addButtonClassName}
-                                                onClick={() => navigate("/master-data/categories/add")}
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                    </FormField>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField label="Satuan">
-                                        <div className="flex">
-                                            <select
-                                                name="unit_id"
-                                                value={formData.unit_id}
-                                                onChange={handleSelectChange}
-                                                className={selectClassName}
-                                                required
-                                            >
-                                                <option value="">-- Pilih Satuan --</option>
-                                                {units.map((unit) => (
-                                                    <option key={unit.id} value={unit.id}>
-                                                        {unit.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <button
-                                                type="button"
-                                                className={addButtonClassName}
-                                                onClick={() => navigate("/master-data/units/add")}
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                    </FormField>
-
-                                    <FormField label="Rak">
-                                        <Input
-                                            name="rack"
-                                            value={formData.rack}
-                                            onChange={handleChange}
-                                            className={inputClassName}
-                                        />
-                                    </FormField>
-                                </div>
-
-                                <FormField label="Jenis Produk">
+                        <FormSection title="Pengaturan Tambahan">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField label="Status Jual">
                                     <div className={radioGroupClassName}>
                                         <label className="inline-flex items-center">
                                             <input
                                                 type="radio"
-                                                name="is_medicine"
-                                                checked={formData.is_medicine}
-                                                onChange={() => updateFormData({ is_medicine: true })}
+                                                name="is_active"
+                                                checked={formData.is_active}
+                                                onChange={() => updateFormData({ is_active: true })}
                                                 className="form-radio h-5 w-5 text-primary"
                                             />
-                                            <span className="ml-2">Obat</span>
+                                            <span className="ml-2">Masih dijual</span>
                                         </label>
                                         <label className="inline-flex items-center">
                                             <input
                                                 type="radio"
-                                                name="is_medicine"
-                                                checked={!formData.is_medicine}
-                                                onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
+                                                name="is_active"
+                                                checked={!formData.is_active}
+                                                onChange={() => updateFormData({ is_active: false })}
                                                 className="form-radio h-5 w-5 text-primary"
                                             />
-                                            <span className="ml-2">Non-Obat</span>
+                                            <span className="ml-2">Tidak Dijual</span>
                                         </label>
                                     </div>
                                 </FormField>
 
-                                <FormField label="Keterangan">
-                                    <textarea
-                                        name="description"
-                                        value={formData.description}
+                                <FormField label="Stok Minimal">
+                                    <Input
+                                        type="number"
+                                        name="min_stock"
+                                        value={formData.min_stock}
                                         onChange={handleChange}
-                                        className={textareaClassName}
-                                        rows={3}
+                                        className={inputClassName}
+                                        required
                                     />
                                 </FormField>
-                            </FormSection>
+                            </div>
 
-                            <FormSection title="Harga Jual">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField label="Harga Beli">
-                                        <Input
-                                            type="text"
-                                            name="buy_price"
-                                            value={displayBuyPrice}
-                                            placeholder="Rp 0"
-                                            onChange={handleChange}
-                                            className={inputClassName}
-                                            required
-                                        />
-                                    </FormField>
-                                    <FormField label="Harga Jual">
-                                        <Input
-                                            type="text"
-                                            name="sell_price"
-                                            value={displaySellPrice}
-                                            placeholder="Rp 0"
-                                            onChange={handleChange}
-                                            className={inputClassName}
-                                            required
-                                        />
-                                    </FormField>
+                            <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
+                                <label className="inline-flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        name="has_expiry_date"
+                                        checked={formData.has_expiry_date}
+                                        disabled={!formData.is_medicine}
+                                        onChange={handleChange}
+                                        className="form-checkbox h-5 w-5 text-primary"
+                                    />
+                                    <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
+                                </label>
+                                <div className="mt-1 text-sm text-gray-500">
+                                    Jika dicentang, obat ini akan menggunakan metode FEFO
+                                    (First Expired First Out)
                                 </div>
-                            </FormSection>
+                            </div>
+                        </FormSection>
+                    </CardContent>
 
-                            <FormSection title="Pengaturan Tambahan">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField label="Status Jual">
-                                        <div className={radioGroupClassName}>
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="radio"
-                                                    name="is_active"
-                                                    checked={formData.is_active}
-                                                    onChange={() => updateFormData({ is_active: true })}
-                                                    className="form-radio h-5 w-5 text-primary"
-                                                />
-                                                <span className="ml-2">Masih dijual</span>
-                                            </label>
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="radio"
-                                                    name="is_active"
-                                                    checked={!formData.is_active}
-                                                    onChange={() => updateFormData({ is_active: false })}
-                                                    className="form-radio h-5 w-5 text-primary"
-                                                />
-                                                <span className="ml-2">Tidak Dijual</span>
-                                            </label>
-                                        </div>
-                                    </FormField>
-
-                                    <FormField label="Stok Minimal">
-                                        <Input
-                                            type="number"
-                                            name="min_stock"
-                                            value={formData.min_stock}
-                                            onChange={handleChange}
-                                            className={inputClassName}
-                                            required
-                                        />
-                                    </FormField>
-                                </div>
-
-                                <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
-                                    <label className="inline-flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="has_expiry_date"
-                                            checked={formData.has_expiry_date}
-                                            disabled={!formData.is_medicine}
-                                            onChange={handleChange}
-                                            className="form-checkbox h-5 w-5 text-primary"
-                                        />
-                                        <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
-                                    </label>
-                                    <div className="mt-1 text-sm text-gray-500">
-                                        Jika dicentang, obat ini akan menggunakan metode FEFO
-                                        (First Expired First Out)
-                                    </div>
-                                </div>
-                            </FormSection>
-                        </CardContent>
-
-                        <CardFooter className="flex justify-between">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => navigate("/master-data/items")}
-                            >
-                                <div className="flex items-center">
-                                    <FaTimes className="mr-2" /> <span>Batal</span>
-                                </div>
-                            </Button>
-                            <Button type="submit"
-                                disabled={saving}
-                                isLoading={saving}
-                            >
-                                <FaSave className="mr-2" /> Simpan
-                            </Button>
-                        </CardFooter>
-                    </form>
-                )}
+                    <CardFooter className="flex justify-between">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => navigate("/master-data/items")}
+                        >
+                            <div className="flex items-center">
+                                <FaTimes className="mr-2" /> <span>Batal</span>
+                            </div>
+                        </Button>
+                        <Button type="submit"
+                            disabled={saving}
+                            isLoading={saving}
+                        >
+                            <FaSave className="mr-2" /> Simpan
+                        </Button>
+                    </CardFooter>
+                </form>
             </Card>
         </div>
     );
