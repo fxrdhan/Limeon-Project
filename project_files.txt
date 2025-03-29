@@ -1338,11 +1338,6 @@ const FormField: React.FC<FormFieldProps> = ({ label, children, className }) => 
     );
 };
 
-// Menambahkan tipe untuk map objects
-type CodeMap = {
-    [key: string]: string;
-};
-
 interface Category {
     id: string;
     name: string;
@@ -1357,32 +1352,6 @@ interface Unit {
     id: string;
     name: string;
 }
-
-// Mapping untuk pembuatan kode
-const TYPE_CODE_MAP: CodeMap = {
-    "f295e143-883f-4222-b5ce-0428f858d7f4": "T", // Tablet
-    "b355eadc-2a48-45bf-bbf2-1b0249de3060": "K", // Kapsul
-    "56db61b8-6fc0-47a4-82f3-960a6a33e84c": "S", // Sirup
-    "a237f060-7cce-4638-9d0b-510b55519a62": "S", // Salep
-    "d510c9c5-d8db-488c-a634-fee521d23d07": "I", // Injeksi
-};
-
-const UNIT_CODE_MAP: CodeMap = {
-    "cc8e891c-34ac-4afb-944c-258ad244a96f": "T", // Tablet
-    "05990da0-faa0-4f5e-92e9-bc1f2ef4defc": "K", // Kapsul
-    "28dbe949-54a2-4198-baba-ed162a041cbe": "B", // Botol
-    "6727b61b-8063-422d-a89a-16b378d5d76d": "T", // Tube
-    "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1": "A", // Ampul
-    "d7ec80ef-00b0-4b57-8086-d6ad803a68cc": "S", // Strip
-};
-
-const CATEGORY_CODE_MAP: CodeMap = {
-    "0d1d6848-96b5-448e-a136-3aba8a9bbbca": "AB", // Antibiotik
-    "a21f33c1-42aa-4171-a826-59a7e00c315d": "AP", // Antipiretik
-    "502e0a0c-9a29-4003-b309-979b659b30db": "AG", // Analgesik
-    "26e20a27-a34e-424e-9a85-babc2abdc955": "AD", // Antidiabetes
-    "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a": "AH", // Antihipertensi
-};
 
 // Style constants
 const inputClassName = "w-full";
@@ -1422,6 +1391,50 @@ const AddItem = () => {
         has_expiry_date: false,
     });
 
+    // Fungsi helper untuk menghasilkan kode dinamis
+    const generateTypeCode = (typeId: string): string => {
+        const selectedType = types.find(type => type.id === typeId);
+        if (!selectedType) return "X";
+
+        // Ambil huruf pertama dari nama tipe
+        return selectedType.name.charAt(0).toUpperCase();
+    };
+
+    const generateUnitCode = (unitId: string): string => {
+        const selectedUnit = units.find(unit => unit.id === unitId);
+        if (!selectedUnit) return "X";
+
+        // Ambil huruf pertama dari nama unit
+        return selectedUnit.name.charAt(0).toUpperCase();
+    };
+
+    const generateCategoryCode = (categoryId: string): string => {
+        const selectedCategory = categories.find(category => category.id === categoryId);
+        if (!selectedCategory) return "XX";
+
+        const name = selectedCategory.name;
+
+        // Cek apakah kategori dimulai dengan "Anti"
+        if (name.toLowerCase().startsWith("anti")) {
+            // Untuk kategori yang dimulai dengan "Anti"
+            // Ambil "A" dari "Anti" dan huruf pertama dari kata selanjutnya
+            const baseName = name.slice(4); // Hilangkan "Anti" dari awal
+            if (baseName.length > 0) {
+                return "A" + baseName.charAt(0).toUpperCase();
+            }
+            return "A";
+        } else {
+            // Untuk kategori lainnya, ambil 2 huruf pertama
+            if (name.length >= 2) {
+                return name.substring(0, 2).toUpperCase();
+            } else if (name.length === 1) {
+                return name.toUpperCase() + "X";
+            } else {
+                return "XX";
+            }
+        }
+    };
+
     // Fungsi untuk mengonversi angka ke format mata uang Rupiah
     const formatRupiah = (angka: number): string => {
         return new Intl.NumberFormat('id-ID', {
@@ -1442,9 +1455,9 @@ const AddItem = () => {
             if (!formData.type_id || !formData.category_id || !formData.unit_id)
                 return;
 
-            const typeCode = TYPE_CODE_MAP[formData.type_id] || "X";
-            const unitCode = UNIT_CODE_MAP[formData.unit_id] || "X";
-            const categoryCode = CATEGORY_CODE_MAP[formData.category_id] || "XX";
+            const typeCode = generateTypeCode(formData.type_id);
+            const unitCode = generateUnitCode(formData.unit_id);
+            const categoryCode = generateCategoryCode(formData.category_id);
 
             const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
 
@@ -1482,10 +1495,13 @@ const AddItem = () => {
             }
         };
 
-        if (formData.type_id && formData.category_id && formData.unit_id) {
+        // Hanya generate code jika data master sudah dimuat dan semua pilihan sudah dipilih
+        if (formData.type_id && formData.category_id && formData.unit_id &&
+            categories.length > 0 && types.length > 0 && units.length > 0) {
             generateItemCode();
         }
-    }, [formData.type_id, formData.category_id, formData.unit_id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.type_id, formData.category_id, formData.unit_id, categories, types, units]);
 
     const fetchMasterData = async () => {
         setLoading(true);
@@ -1560,6 +1576,15 @@ const AddItem = () => {
                 [name]: value,
             });
         }
+    };
+
+    // Modifikasi handleChange untuk menjamin pemicu generate kode
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prevFormData => ({
+            ...prevFormData,
+            [name]: value,
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -1655,7 +1680,7 @@ const AddItem = () => {
                                             <select
                                                 name="type_id"
                                                 value={formData.type_id}
-                                                onChange={handleChange}
+                                                onChange={handleSelectChange}
                                                 className={selectClassName}
                                                 required
                                             >
@@ -1681,7 +1706,7 @@ const AddItem = () => {
                                             <select
                                                 name="category_id"
                                                 value={formData.category_id}
-                                                onChange={handleChange}
+                                                onChange={handleSelectChange}
                                                 className={selectClassName}
                                                 required
                                             >
@@ -1709,7 +1734,7 @@ const AddItem = () => {
                                             <select
                                                 name="unit_id"
                                                 value={formData.unit_id}
-                                                onChange={handleChange}
+                                                onChange={handleSelectChange}
                                                 className={selectClassName}
                                                 required
                                             >
