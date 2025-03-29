@@ -26,7 +26,7 @@ const AddItem = () => {
         <div>
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-2xl">Tambah Data Item Baru</CardTitle>
+                    <CardTitle>Tambah Data Item Baru</CardTitle>
                 </CardHeader>
 
                 {loading ? (
