@@ -28,6 +28,7 @@
 │   │       └── Table.tsx
 │   ├── index.css
 │   ├── lib
+│   │   ├── classNames.ts
 │   │   └── supabase.ts
 │   ├── main.tsx
 │   ├── output.css
@@ -64,7 +65,7 @@
 ├── tsconfig.node.json
 └── vite.config.ts
 
-15 directories, 50 files
+15 directories, 51 files
 
 
 ===============================================
@@ -1430,17 +1431,6 @@ const AddItem = () => {
             maximumFractionDigits: 0
         }).format(angka);
     };
-
-    // Mengubah nilai form data saat komponen dimount
-    useEffect(() => {
-        if (formData.buy_price) {
-            setDisplayBuyPrice(formatRupiah(formData.buy_price));
-        }
-        if (formData.sell_price) {
-            setDisplaySellPrice(formatRupiah(formData.sell_price));
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Hanya dijalankan sekali saat komponen mount
 
     useEffect(() => {
         fetchMasterData();
@@ -3498,6 +3488,14 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+===============================================
+= File: ./src/lib/classNames.ts 
+===============================================
+
+export function classNames(...classes: (string | boolean | undefined | null)[]): string {
+    return classes.filter(Boolean).join(' ');
+}
 
 ===============================================
 = File: ./src/store/authStore.ts 
