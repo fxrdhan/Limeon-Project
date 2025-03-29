@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { Loading } from "../../components/ui/Loading";
 import { FaSave, FaTimes } from "react-icons/fa";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
@@ -19,7 +18,7 @@ const AddItem = () => {
 
     const {
         formData, displayBuyPrice, displaySellPrice, categories, types, units,
-        loading, saving, handleChange, handleSelectChange, handleSubmit, updateFormData
+        saving, handleChange, handleSelectChange, handleSubmit, updateFormData
     } = useAddItemForm();
 
     return (
