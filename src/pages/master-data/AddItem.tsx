@@ -145,17 +145,6 @@ const AddItem = () => {
         }).format(angka);
     };
 
-    // Mengubah nilai form data saat komponen dimount
-    useEffect(() => {
-        if (formData.buy_price) {
-            setDisplayBuyPrice(formatRupiah(formData.buy_price));
-        }
-        if (formData.sell_price) {
-            setDisplaySellPrice(formatRupiah(formData.sell_price));
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Hanya dijalankan sekali saat komponen mount
-
     useEffect(() => {
         fetchMasterData();
     }, []);
