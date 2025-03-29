@@ -6,6 +6,7 @@ export type ButtonVariant =
     | "secondary"
     | "accent"
     | "outline"
+    | "text"
     | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
@@ -31,6 +32,7 @@ export const Button = ({
         secondary: "rounded-md bg-blue-600 bg-secondary hover:bg-blue-700 text-white hover:text-white",
         accent: "bg-accent hover:bg-red-600 text-white",
         outline: "border border-primary text-primary hover:bg-blue-50",
+        text: "bg-transparent hover:bg-opacity-10 focus:outline-none focus:ring-0 focus:shadow-none",
         danger: "bg-red-600 hover:bg-red-700 text-white",
     };
 
@@ -40,10 +42,13 @@ export const Button = ({
         lg: "px-6 py-3 text-lg",
     };
 
+    const baseClasses = "font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+    const focusClasses = variant === 'text' ? "" : "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary";
+    
     return (
         <button
             className={classNames(
-                "font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed",
+                baseClasses, focusClasses,
                 variants[variant],
                 sizes[size],
                 fullWidth ? "w-full" : "",
