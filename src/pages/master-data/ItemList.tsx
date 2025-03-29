@@ -5,6 +5,7 @@ import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import { Pagination } from "../../components/ui/Pagination";
 import { Loading } from "../../components/ui/Loading";
 
 interface Item {
@@ -131,88 +132,6 @@ const ItemList = () => {
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-    const Pagination = () => {
-        const pageNumbers = [];
-        const maxPageDisplay = 5;
-
-        let startPage = Math.max(1, currentPage - Math.floor(maxPageDisplay / 2));
-        const endPage = Math.min(totalPages, startPage + maxPageDisplay - 1);
-
-        if (endPage - startPage + 1 < maxPageDisplay) {
-            startPage = Math.max(1, endPage - maxPageDisplay + 1);
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-            pageNumbers.push(i);
-        }
-
-        return (
-            <div className="flex justify-between items-center mt-4">
-                <div className="text-sm text-gray-600">
-                    Menampilkan {items.length} dari {totalItems} item
-                </div>
-
-                <div className="flex items-center">
-                    <div className="mr-4">
-                        <select
-                            value={itemsPerPage}
-                            onChange={handleItemsPerPageChange}
-                            className="border rounded-md p-2"
-                        >
-                            <option value={5}>5 per halaman</option>
-                            <option value={10}>10 per halaman</option>
-                            <option value={20}>20 per halaman</option>
-                            <option value={50}>50 per halaman</option>
-                        </select>
-                    </div>
-
-                    <div className="flex">
-                        <button
-                            onClick={() => handlePageChange(1)}
-                            disabled={currentPage === 1}
-                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
-                        >
-                            &laquo;
-                        </button>
-                        <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
-                        >
-                            &lt;
-                        </button>
-
-                        {pageNumbers.map(number => (
-                            <button
-                                key={number}
-                                onClick={() => handlePageChange(number)}
-                                className={`px-3 py-2 mx-1 rounded-md border ${currentPage === number ? 'bg-primary text-white' : ''
-                                    }`}
-                            >
-                                {number}
-                            </button>
-                        ))}
-
-                        <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
-                        >
-                            &gt;
-                        </button>
-                        <button
-                            onClick={() => handlePageChange(totalPages)}
-                            disabled={currentPage === totalPages || totalPages === 0}
-                            className="px-3 py-2 mx-1 rounded-md border disabled:opacity-50"
-                        >
-                            &raquo;
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
@@ -310,7 +229,15 @@ const ItemList = () => {
                         </TableBody>
                     </Table>
 
-                    <Pagination />
+                    <Pagination 
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        itemsPerPage={itemsPerPage}
+                        itemsCount={items.length}
+                        onPageChange={handlePageChange}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                    />
                 </>
             )}
         </Card>
