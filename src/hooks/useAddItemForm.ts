@@ -34,6 +34,14 @@ interface FormData {
     has_expiry_date: boolean;
 }
 
+interface UnitConversion {
+    unit: {
+        id: string;
+    };
+    conversion: number;
+    basePrice: number;
+}
+
 export const useAddItemForm = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -78,10 +86,19 @@ export const useAddItemForm = () => {
         const selectedType = types.find(type => type.id === typeId);
         if (!selectedType) return "X";
 
-        // Ambil huruf pertama dari nama tipe
+        // Gunakan kode khusus untuk setiap jenis obat
+        const typeName = selectedType.name.toLowerCase();
+        if (typeName.includes("bebas") && !typeName.includes("terbatas")) return "B";
+        if (typeName.includes("bebas terbatas")) return "T";
+        if (typeName.includes("keras")) return "K";
+        if (typeName.includes("narkotika")) return "N";
+        if (typeName.includes("fitofarmaka")) return "F";
+        if (typeName.includes("herbal")) return "H";
+        
+        // Fallback ke huruf pertama jika tidak ada yang cocok
         return selectedType.name.charAt(0).toUpperCase();
     };
-
+    
     const generateUnitCode = (unitId: string): string => {
         const selectedUnit = units.find(unit => unit.id === unitId);
         if (!selectedUnit) return "X";
@@ -274,23 +291,18 @@ export const useAddItemForm = () => {
             // Check jika nama obat sudah ada
             const { data: existingMedicine } = await supabase
                 .from("items")
-                .select("name")
-                .eq("name", formData.name)
-                .maybeSingle();
+                .select("id")
+                .eq("name", formData.name);
 
-            if (existingMedicine) {
-                alert("Nama item sudah terdaftar. Gunakan nama lain.");
+            if (existingMedicine && existingMedicine.length > 0) {
+                alert("Nama obat sudah ada. Silakan gunakan nama lain.");
                 setSaving(false);
                 return;
             }
 
-            // Urutkan konversi satuan dari terbesar ke terkecil
-            const sortedConversions = [...unitConversionHook.unitConversions]
-                .sort((a, b) => b.conversion - a.conversion);
-            
-            // Siapkan data konversi satuan untuk disimpan sebagai JSON
-            const unitConversionsData = sortedConversions.map(uc => ({
-                unit: uc.unit,
+            // Konversi satuan
+            const unitConversionsData = unitConversionHook.conversions.map((uc: UnitConversion) => ({
+                unit_id: uc.unit.id,
                 conversion: uc.conversion,
                 basePrice: uc.basePrice
             }));

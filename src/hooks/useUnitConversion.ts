@@ -9,6 +9,7 @@ export interface UnitConversion {
 }
 
 export interface UseUnitConversionReturn {
+    conversions: any;
     baseUnit: string;
     setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
     basePrice: number;
