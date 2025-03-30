@@ -18,7 +18,7 @@ const AddItem = () => {
     const navigate = useNavigate();
 
     const {
-        formData, displayBuyPrice, categories, types, units,
+        formData, displayBasePrice, categories, types, units,
         saving, handleChange, handleSelectChange, handleSubmit, updateFormData,
         unitConversionHook
     } = useAddItemForm();
@@ -211,20 +211,12 @@ const AddItem = () => {
                                         name="basePrice"
                                         value={unitConversionHook.basePrice}
                                         onChange={(e) => unitConversionHook.setBasePrice(parseFloat(e.target.value) || 0)}
-                                        type="number"
-                                        min="0"
-                                        placeholder="0,00"
-                                        className={inputClassName}
-                                    />
-                                </FormField>
-                                
-                                <FormField label="Harga Beli">
-                                    <Input
                                         type="text"
-                                        name="buy_price"
-                                        value={displayBuyPrice}
+                                        name="base_price"
+                                        value={displayBasePrice}
                                         placeholder="Rp 0"
                                         onChange={handleChange}
+                                        min="0"
                                         className={inputClassName}
                                         required
                                     />
