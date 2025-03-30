@@ -1,38 +1,6 @@
-[
-  {
-    "id": "cc8e891c-34ac-4afb-944c-258ad244a96f",
-    "name": "Tablet",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
-    "name": "Kapsul",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "28dbe949-54a2-4198-baba-ed162a041cbe",
-    "name": "Botol",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "6727b61b-8063-422d-a89a-16b378d5d76d",
-    "name": "Tube",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
-    "name": "Ampul",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "name": "Strip",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  }
-]
+{
+  "code": "42P01",
+  "details": null,
+  "hint": null,
+  "message": "relation \"public.medicine_units\" does not exist"
+}

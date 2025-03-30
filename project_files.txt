@@ -19,6 +19,8 @@
 │   │   │   ├── MainLayout.tsx
 │   │   │   ├── Navbar.tsx
 │   │   │   └── Sidebar.tsx
+│   │   ├── master-data
+│   │   │   └── UnitConversionManager.tsx
 │   │   └── ui
 │   │       ├── Badge.tsx
 │   │       ├── Button.tsx
@@ -29,7 +31,8 @@
 │   │       ├── Pagination.tsx
 │   │       └── Table.tsx
 │   ├── hooks
-│   │   └── useAddItemForm.ts
+│   │   ├── useAddItemForm.ts
+│   │   └── useUnitConversion.ts
 │   ├── index.css
 │   ├── lib
 │   │   ├── classNames.ts
@@ -69,7 +72,7 @@
 ├── tsconfig.node.json
 └── vite.config.ts
 
-16 directories, 54 files
+17 directories, 56 files
 
 
 ===============================================
@@ -199,6 +202,7 @@ export default tseslint.config({
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^0.7.0",
     "@headlessui/react": "^2.2.0",
     "@supabase/supabase-js": "^2.49.3",
     "@tanstack/react-table": "^8.21.2",
@@ -329,6 +333,210 @@ createRoot(document.getElementById('root')!).render(
 
 
 ===============================================
+= File: ./src/components/master-data/UnitConversionManager.tsx 
+===============================================
+
+import { Input } from "../../components/ui/Input";
+import { Button } from "../../components/ui/Button";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import { FormSection, FormField } from "../../components/ui/FormComponents";
+import { UseUnitConversionReturn } from "../../hooks/useUnitConversion";
+import { FaTrash } from "react-icons/fa";
+
+interface UnitConversionManagerProps {
+    unitConversionHook: UseUnitConversionReturn;
+}
+
+const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
+    unitConversionHook
+}) => {
+    const {
+        baseUnit,
+        setBaseUnit,
+        basePrice,
+        setBasePrice,
+        unitConversions,
+        addUnitConversion,
+        removeUnitConversion,
+        unitConversionFormData,
+        setUnitConversionFormData,
+    } = unitConversionHook;
+
+    // Handler untuk satuan dasar
+    const handleBaseUnitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        if (name === "baseUnit") {
+            setBaseUnit(value);
+        } else if (name === "basePrice") {
+            setBasePrice(parseFloat(value) || 0);
+        }
+    };
+
+    // Handler untuk form konversi satuan
+    const handleConversionFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setUnitConversionFormData({
+            ...unitConversionFormData,
+            [name]: name === "conversion" ? parseFloat(value) || 0 : value,
+        });
+    };
+
+    // Tambahkan konversi baru
+    const handleAddConversion = () => {
+        if (!unitConversionFormData.unit || unitConversionFormData.conversion <= 0) {
+            alert("Satuan dan konversi harus diisi dengan benar!");
+            return;
+        }
+
+        // Cek apakah satuan sudah ada
+        const existingUnit = unitConversions.find(uc => uc.unit === unitConversionFormData.unit);
+        if (existingUnit) {
+            alert("Satuan tersebut sudah ada dalam daftar!");
+            return;
+        }
+
+        addUnitConversion({
+            unit: unitConversionFormData.unit,
+            conversion: unitConversionFormData.conversion,
+            basePrice: 0,
+        });
+
+        // Reset form
+        setUnitConversionFormData({
+            unit: "",
+            conversion: 0,
+        });
+    };
+
+    return (
+        <FormSection title="Satuan dan Konversi">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField label="Satuan Dasar">
+                    <Input
+                        name="baseUnit"
+                        value={baseUnit}
+                        onChange={handleBaseUnitChange}
+                        placeholder="Contoh: PCS"
+                        className="w-full"
+                    />
+                </FormField>
+
+                <FormField label="Harga Pokok">
+                    <Input
+                        name="basePrice"
+                        value={basePrice}
+                        onChange={handleBaseUnitChange}
+                        type="number"
+                        min="0"
+                        placeholder="0,00"
+                        className="w-full"
+                    />
+                </FormField>
+            </div>
+
+            <div className="mt-4 border-t pt-4">
+                <h3 className="text-lg font-medium mb-3">Daftar Konversi</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <FormField label="Satuan">
+                        <Input
+                            name="unit"
+                            value={unitConversionFormData.unit}
+                            onChange={handleConversionFormChange}
+                            placeholder="Contoh: DUS, PAK"
+                            className="w-full"
+                        />
+                    </FormField>
+
+                    <FormField label="Konversi">
+                        <Input
+                            name="conversion"
+                            value={unitConversionFormData.conversion || ""}
+                            onChange={handleConversionFormChange}
+                            type="number"
+                            min="1"
+                            placeholder="Jumlah satuan dasar"
+                            className="w-full"
+                        />
+                    </FormField>
+
+                    <div className="flex items-end">
+                        <Button
+                            type="button"
+                            onClick={handleAddConversion}
+                            className="mb-1"
+                        >
+                            Tambah Satuan
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableHeader>Satuan</TableHeader>
+                                <TableHeader>Konversi</TableHeader>
+                                <TableHeader>Harga Pokok</TableHeader>
+                                <TableHeader className="text-center">Aksi</TableHeader>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {unitConversions.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center text-gray-500">
+                                        Belum ada data konversi
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                unitConversions.map((uc) => (
+                                    <TableRow key={uc.id}>
+                                        <TableCell>{uc.unit}</TableCell>
+                                        <TableCell>
+                                            1 {uc.unit} = {uc.conversion} {baseUnit}
+                                        </TableCell>
+                                        <TableCell>
+                                            {(uc.basePrice || 0).toLocaleString("id-ID", {
+                                                style: "currency",
+                                                currency: "IDR",
+                                            })}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => removeUnitConversion(uc.id)}
+                                            >
+                                                <FaTrash />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+
+                <div className="mt-4">
+                    <Button
+                        type="button"
+                        variant="outline"
+                    >
+                        Hitung Harga Pokok Dasar
+                    </Button>
+                </div>
+
+                <div className="mt-4 text-sm text-red-500">
+                    <p>PENTING: Disarankan untuk tidak mengubah satuan jika sudah terdapat transaksi yang berhubungan dengan item ini.</p>
+                </div>
+            </div>
+        </FormSection>
+    );
+};
+
+export default UnitConversionManager;
+
+===============================================
 = File: ./src/components/ui/Pagination.tsx 
 ===============================================
 
@@ -350,98 +558,82 @@ export interface PaginationProps {
 export const Pagination = ({
     currentPage,
     totalPages,
-    totalItems,
+    // totalItems,
     itemsPerPage,
-    itemsCount,
+    // itemsCount,
     onPageChange,
     onItemsPerPageChange,
     className,
 }: PaginationProps) => {
-    const pageNumbers = [];
-    const maxPageDisplay = 5;
+    // const pageNumbers = [];
+    // Sudah tidak memerlukan pageNumbers untuk tampilan semua halaman
 
-    let startPage = Math.max(1, currentPage - Math.floor(maxPageDisplay / 2));
-    const endPage = Math.min(totalPages, startPage + maxPageDisplay - 1);
-
-    if (endPage - startPage + 1 < maxPageDisplay) {
-        startPage = Math.max(1, endPage - maxPageDisplay + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-        pageNumbers.push(i);
-    }
+    // Fungsi untuk menangani perubahan jumlah item per halaman
+    const handleItemsPerPageClick = (value: number) => {
+        const event = {
+            target: { value: value.toString() }
+        } as React.ChangeEvent<HTMLSelectElement>;
+        onItemsPerPageChange(event);
+    };
 
     return (
-        <div className={classNames("flex justify-between items-center mt-4", className)}>
-            <div className="text-sm text-gray-600">
-                Menampilkan {itemsCount} dari {totalItems} item
+        <div className={classNames("flex justify-between items-center mt-4 gap-4", className)}>
+            {/* Items per page selection - left side */}
+            <div className="flex items-center rounded-full bg-primary shadow-md text-white overflow-hidden">
+                <button 
+                    className={classNames(
+                        "px-3 py-1.5 focus:outline-none transition-colors", 
+                        itemsPerPage === 10 ? "bg-blue-600" : "hover:bg-blue-600"
+                    )}
+                    onClick={() => handleItemsPerPageClick(10)}
+                >
+                    10 Items
+                </button>
+                <button 
+                    className={classNames(
+                        "px-3 py-1.5 focus:outline-none transition-colors", 
+                        itemsPerPage === 20 ? "bg-blue-600" : "hover:bg-blue-600"
+                    )}
+                    onClick={() => handleItemsPerPageClick(20)}
+                >
+                    20
+                </button>
+                <button 
+                    className={classNames(
+                        "px-3 py-1.5 focus:outline-none transition-colors", 
+                        itemsPerPage === 40 ? "bg-blue-600" : "hover:bg-blue-600"
+                    )}
+                    onClick={() => handleItemsPerPageClick(40)}
+                >
+                    40
+                </button>
             </div>
 
-            <div className="flex items-center">
-                <div className="mr-4">
-                    <select
-                        value={itemsPerPage}
-                        onChange={onItemsPerPageChange}
-                        className="border rounded-md p-2"
-                    >
-                        <option value={5}>5 per halaman</option>
-                        <option value={10}>10 per halaman</option>
-                        <option value={20}>20 per halaman</option>
-                        <option value={50}>50 per halaman</option>
-                    </select>
+            {/* Page navigation - right side */}
+            <div className="flex items-center rounded-full bg-primary shadow-md text-white overflow-hidden">
+                <Button
+                    variant="text"
+                    size="sm"
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 text-white hover:bg-blue-600 focus:ring-0 focus:outline-none"
+                >
+                    &lt;
+                </Button>
+
+                <div className="px-3 py-1.5">
+                    {currentPage} of {totalPages}
                 </div>
 
-                <div className="flex">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPageChange(1)}
-                        disabled={currentPage === 1}
-                        className="mx-1"
-                    >
-                        &laquo;
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="mx-1"
-                    >
-                        &lt;
-                    </Button>
-
-                    {pageNumbers.map(number => (
-                        <Button
-                            key={number}
-                            variant={currentPage === number ? "primary" : "outline"}
-                            size="sm"
-                            onClick={() => onPageChange(number)}
-                            className="mx-1"
-                        >
-                            {number}
-                        </Button>
-                    ))}
-
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages || totalPages === 0}
-                        className="mx-1"
-                    >
-                        &gt;
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPageChange(totalPages)}
-                        disabled={currentPage === totalPages || totalPages === 0}
-                        className="mx-1"
-                    >
-                        &raquo;
-                    </Button>
-                </div>
+                <Button
+                    variant="text"
+                    size="sm"
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className="px-3 py-1.5 text-white hover:bg-blue-600 focus:ring-0 focus:outline-none"
+                >
+                    &gt;
+                </Button>
             </div>
         </div>
     );
@@ -459,6 +651,7 @@ export type ButtonVariant =
     | "secondary"
     | "accent"
     | "outline"
+    | "text"
     | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
@@ -484,6 +677,7 @@ export const Button = ({
         secondary: "rounded-md bg-blue-600 bg-secondary hover:bg-blue-700 text-white hover:text-white",
         accent: "bg-accent hover:bg-red-600 text-white",
         outline: "border border-primary text-primary hover:bg-blue-50",
+        text: "bg-transparent hover:bg-opacity-10 focus:outline-none focus:ring-0 focus:shadow-none",
         danger: "bg-red-600 hover:bg-red-700 text-white",
     };
 
@@ -493,10 +687,13 @@ export const Button = ({
         lg: "px-6 py-3 text-lg",
     };
 
+    const baseClasses = "font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+    const focusClasses = variant === 'text' ? "" : "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary";
+    
     return (
         <button
             className={classNames(
-                "font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed",
+                baseClasses, focusClasses,
                 variants[variant],
                 sizes[size],
                 fullWidth ? "w-full" : "",
@@ -1067,6 +1264,7 @@ export default Sidebar;
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useUnitConversion } from "./useUnitConversion";
 
 interface Category {
     id: string;
@@ -1109,6 +1307,9 @@ export const useAddItemForm = () => {
     // State untuk nilai yang ditampilkan dengan format mata uang
     const [displayBuyPrice, setDisplayBuyPrice] = useState('');
     const [displaySellPrice, setDisplaySellPrice] = useState('');
+
+    // Hook untuk konversi satuan
+    const unitConversionHook = useUnitConversion();
 
     // Form state
     const [formData, setFormData] = useState<FormData>({
@@ -1361,6 +1562,7 @@ export const useAddItemForm = () => {
                 rack: formData.rack || null,
                 code: formData.code,
                 is_medicine: formData.is_medicine,
+                base_unit: unitConversionHook.baseUnit,
                 has_expiry_date: formData.has_expiry_date,
             });
 
@@ -1388,7 +1590,76 @@ export const useAddItemForm = () => {
         handleChange,
         handleSelectChange,
         handleSubmit,
+        unitConversionHook,
         updateFormData
+    };
+};
+
+===============================================
+= File: ./src/hooks/useUnitConversion.ts 
+===============================================
+
+import { useState } from "react";
+
+export interface UnitConversion {
+    id: string;
+    unit: string;
+    conversion: number;
+    basePrice?: number;
+}
+
+export interface UseUnitConversionReturn {
+    baseUnit: string;
+    setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
+    basePrice: number;
+    setBasePrice: React.Dispatch<React.SetStateAction<number>>;
+    unitConversions: UnitConversion[];
+    addUnitConversion: (unitConversion: Omit<UnitConversion, "id">) => void;
+    removeUnitConversion: (id: string) => void;
+    unitConversionFormData: {
+        unit: string;
+        conversion: number;
+    };
+    setUnitConversionFormData: React.Dispatch<React.SetStateAction<{
+        unit: string;
+        conversion: number;
+    }>>;
+}
+
+export const useUnitConversion = (): UseUnitConversionReturn => {
+    const [baseUnit, setBaseUnit] = useState<string>("");
+    const [basePrice, setBasePrice] = useState<number>(0);
+    const [unitConversions, setUnitConversions] = useState<UnitConversion[]>([]);
+
+    const [unitConversionFormData, setUnitConversionFormData] = useState({
+        unit: "",
+        conversion: 0,
+    });
+
+    // Fungsi untuk menambah konversi satuan
+    const addUnitConversion = (unitConversion: Omit<UnitConversion, "id">) => {
+        const newUnitConversion: UnitConversion = {
+            ...unitConversion,
+            id: Date.now().toString(),
+        };
+        setUnitConversions([...unitConversions, newUnitConversion]);
+    };
+
+    // Fungsi untuk menghapus konversi satuan
+    const removeUnitConversion = (id: string) => {
+        setUnitConversions(unitConversions.filter((uc) => uc.id !== id));
+    };
+
+    return {
+        baseUnit,
+        setBaseUnit,
+        basePrice,
+        setBasePrice,
+        unitConversions,
+        addUnitConversion,
+        removeUnitConversion,
+        unitConversionFormData,
+        setUnitConversionFormData,
     };
 };
 
@@ -1719,6 +1990,7 @@ import { Input } from "../../components/ui/Input";
 import { FaSave, FaTimes } from "react-icons/fa";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
+import UnitConversionManager from "../../components/master-data/UnitConversionManager";
 
 // Style constants
 const inputClassName = "w-full";
@@ -1731,8 +2003,9 @@ const AddItem = () => {
     const navigate = useNavigate();
 
     const {
-        formData, displayBuyPrice, displaySellPrice, categories, types, units,
-        saving, handleChange, handleSelectChange, handleSubmit, updateFormData
+        formData, displayBuyPrice, categories, types, units,
+        saving, handleChange, handleSelectChange, handleSubmit, updateFormData,
+        unitConversionHook
     } = useAddItemForm();
 
     return (
@@ -1899,7 +2172,7 @@ const AddItem = () => {
                             </FormField>
                         </FormSection>
 
-                        <FormSection title="Harga Jual">
+                        <FormSection title="Harga Pokok">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField label="Harga Beli">
                                     <Input
@@ -1912,6 +2185,8 @@ const AddItem = () => {
                                         required
                                     />
                                 </FormField>
+                                {/* Menghilangkan input harga jual */}
+                                {/*
                                 <FormField label="Harga Jual">
                                     <Input
                                         type="text"
@@ -1923,8 +2198,11 @@ const AddItem = () => {
                                         required
                                     />
                                 </FormField>
+                                */}
                             </div>
                         </FormSection>
+
+                        <UnitConversionManager unitConversionHook={unitConversionHook} />
 
                         <FormSection title="Pengaturan Tambahan">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

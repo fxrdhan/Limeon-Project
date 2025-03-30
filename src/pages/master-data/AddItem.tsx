@@ -5,6 +5,7 @@ import { Input } from "../../components/ui/Input";
 import { FaSave, FaTimes } from "react-icons/fa";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
+import UnitConversionManager from "../../components/master-data/UnitConversionManager";
 
 // Style constants
 const inputClassName = "w-full";
@@ -17,8 +18,9 @@ const AddItem = () => {
     const navigate = useNavigate();
 
     const {
-        formData, displayBuyPrice, displaySellPrice, categories, types, units,
-        saving, handleChange, handleSelectChange, handleSubmit, updateFormData
+        formData, displayBuyPrice, categories, types, units,
+        saving, handleChange, handleSelectChange, handleSubmit, updateFormData,
+        unitConversionHook
     } = useAddItemForm();
 
     return (
@@ -185,7 +187,7 @@ const AddItem = () => {
                             </FormField>
                         </FormSection>
 
-                        <FormSection title="Harga Jual">
+                        <FormSection title="Harga Pokok">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField label="Harga Beli">
                                     <Input
@@ -198,6 +200,8 @@ const AddItem = () => {
                                         required
                                     />
                                 </FormField>
+                                {/* Menghilangkan input harga jual */}
+                                {/*
                                 <FormField label="Harga Jual">
                                     <Input
                                         type="text"
@@ -209,8 +213,11 @@ const AddItem = () => {
                                         required
                                     />
                                 </FormField>
+                                */}
                             </div>
                         </FormSection>
+
+                        <UnitConversionManager unitConversionHook={unitConversionHook} />
 
                         <FormSection title="Pengaturan Tambahan">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
