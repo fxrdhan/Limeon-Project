@@ -14,7 +14,7 @@ interface Item {
     category: { name: string };
     type: { name: string };
     unit: { name: string };
-    buy_price: number;
+    base_price: number;
     sell_price: number;
     stock: number;
 }
@@ -53,7 +53,7 @@ const ItemList = () => {
                 .select(`
                 id, 
                 name, 
-                buy_price, 
+                base_price, 
                 sell_price, 
                 stock,
                 category_id,
@@ -102,7 +102,7 @@ const ItemList = () => {
             const completedData = (data || []).map(item => ({
                 id: item.id,
                 name: item.name,
-                buy_price: item.buy_price,
+                base_price: item.base_price,
                 sell_price: item.sell_price,
                 stock: item.stock,
                 category: {
@@ -169,7 +169,7 @@ const ItemList = () => {
                                 <TableHeader>Kategori</TableHeader>
                                 <TableHeader>Jenis</TableHeader>
                                 <TableHeader>Satuan</TableHeader>
-                                <TableHeader className="text-right">Harga Beli</TableHeader>
+                                <TableHeader className="text-right">Harga Pokok</TableHeader>
                                 <TableHeader className="text-right">Harga Jual</TableHeader>
                                 <TableHeader className="text-right">Stok</TableHeader>
                                 <TableHeader className="text-center">Aksi</TableHeader>
@@ -193,7 +193,7 @@ const ItemList = () => {
                                         <TableCell>{item.type.name}</TableCell>
                                         <TableCell>{item.unit.name}</TableCell>
                                         <TableCell className="text-right">
-                                            {item.buy_price.toLocaleString("id-ID", {
+                                            {item.base_price.toLocaleString("id-ID", {
                                                 style: "currency",
                                                 currency: "IDR",
                                             })}

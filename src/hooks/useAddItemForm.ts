@@ -26,7 +26,7 @@ interface FormData {
     unit_id: string;
     rack: string;
     description: string;
-    buy_price: number;
+    base_price: number;
     sell_price: number;
     min_stock: number;
     is_active: boolean;
@@ -50,7 +50,7 @@ export const useAddItemForm = () => {
     const [types, setTypes] = useState<MedicineType[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
     // State untuk nilai yang ditampilkan dengan format mata uang
-    const [displayBuyPrice, setDisplayBuyPrice] = useState('');
+    const [displayBasePrice, setDisplayBasePrice] = useState('');
     const [displaySellPrice, setDisplaySellPrice] = useState('');
 
     // Hook untuk konversi satuan
@@ -65,7 +65,7 @@ export const useAddItemForm = () => {
         unit_id: "",
         rack: "",
         description: "",
-        buy_price: 0,
+        base_price: 0,
         sell_price: 0,
         min_stock: 10,
         is_active: true,
@@ -237,7 +237,7 @@ export const useAddItemForm = () => {
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target as HTMLInputElement;
 
-        if (name === "buy_price" || name === "sell_price") {
+        if (name === "base_price" || name === "sell_price") {
             // Untuk input harga
             const numericValue = value.replace(/[^\d]/g, '');
             const numericInt = numericValue ? parseInt(numericValue) : 0;
@@ -250,8 +250,8 @@ export const useAddItemForm = () => {
 
             // Update display value dengan format Rupiah
             const formattedValue = formatRupiah(numericInt);
-            if (name === "buy_price") {
-                setDisplayBuyPrice(formattedValue);
+            if (name === "base_price") {
+                setDisplayBasePrice(formattedValue);
             } else {
                 setDisplaySellPrice(formattedValue);
             }
@@ -313,7 +313,7 @@ export const useAddItemForm = () => {
                 category_id: formData.category_id,
                 type_id: formData.type_id,
                 unit_id: formData.unit_id,
-                buy_price: formData.buy_price,
+                base_price: formData.base_price,
                 sell_price: formData.sell_price,
                 stock: 0, // Default stok awal 0
                 min_stock: formData.min_stock,
@@ -341,7 +341,7 @@ export const useAddItemForm = () => {
 
     return {
         formData,
-        displayBuyPrice,
+        displayBasePrice,
         displaySellPrice,
         categories,
         types,

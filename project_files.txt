@@ -1371,7 +1371,7 @@ interface FormData {
     unit_id: string;
     rack: string;
     description: string;
-    buy_price: number;
+    base_price: number;
     sell_price: number;
     min_stock: number;
     is_active: boolean;
@@ -1395,7 +1395,7 @@ export const useAddItemForm = () => {
     const [types, setTypes] = useState<MedicineType[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
     // State untuk nilai yang ditampilkan dengan format mata uang
-    const [displayBuyPrice, setDisplayBuyPrice] = useState('');
+    const [displayBasePrice, setDisplayBasePrice] = useState('');
     const [displaySellPrice, setDisplaySellPrice] = useState('');
 
     // Hook untuk konversi satuan
@@ -1410,7 +1410,7 @@ export const useAddItemForm = () => {
         unit_id: "",
         rack: "",
         description: "",
-        buy_price: 0,
+        base_price: 0,
         sell_price: 0,
         min_stock: 10,
         is_active: true,
@@ -1582,7 +1582,7 @@ export const useAddItemForm = () => {
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target as HTMLInputElement;
 
-        if (name === "buy_price" || name === "sell_price") {
+        if (name === "base_price" || name === "sell_price") {
             // Untuk input harga
             const numericValue = value.replace(/[^\d]/g, '');
             const numericInt = numericValue ? parseInt(numericValue) : 0;
@@ -1595,8 +1595,8 @@ export const useAddItemForm = () => {
 
             // Update display value dengan format Rupiah
             const formattedValue = formatRupiah(numericInt);
-            if (name === "buy_price") {
-                setDisplayBuyPrice(formattedValue);
+            if (name === "base_price") {
+                setDisplayBasePrice(formattedValue);
             } else {
                 setDisplaySellPrice(formattedValue);
             }
@@ -1658,7 +1658,7 @@ export const useAddItemForm = () => {
                 category_id: formData.category_id,
                 type_id: formData.type_id,
                 unit_id: formData.unit_id,
-                buy_price: formData.buy_price,
+                base_price: formData.base_price,
                 sell_price: formData.sell_price,
                 stock: 0, // Default stok awal 0
                 min_stock: formData.min_stock,
@@ -1686,7 +1686,7 @@ export const useAddItemForm = () => {
 
     return {
         formData,
-        displayBuyPrice,
+        displayBasePrice,
         displaySellPrice,
         categories,
         types,
@@ -1888,7 +1888,7 @@ interface Item {
     category: { name: string };
     type: { name: string };
     unit: { name: string };
-    buy_price: number;
+    base_price: number;
     sell_price: number;
     stock: number;
 }
@@ -1927,7 +1927,7 @@ const ItemList = () => {
                 .select(`
                 id, 
                 name, 
-                buy_price, 
+                base_price, 
                 sell_price, 
                 stock,
                 category_id,
@@ -1976,7 +1976,7 @@ const ItemList = () => {
             const completedData = (data || []).map(item => ({
                 id: item.id,
                 name: item.name,
-                buy_price: item.buy_price,
+                base_price: item.base_price,
                 sell_price: item.sell_price,
                 stock: item.stock,
                 category: {
@@ -2043,7 +2043,7 @@ const ItemList = () => {
                                 <TableHeader>Kategori</TableHeader>
                                 <TableHeader>Jenis</TableHeader>
                                 <TableHeader>Satuan</TableHeader>
-                                <TableHeader className="text-right">Harga Beli</TableHeader>
+                                <TableHeader className="text-right">Harga Pokok</TableHeader>
                                 <TableHeader className="text-right">Harga Jual</TableHeader>
                                 <TableHeader className="text-right">Stok</TableHeader>
                                 <TableHeader className="text-center">Aksi</TableHeader>
@@ -2067,7 +2067,7 @@ const ItemList = () => {
                                         <TableCell>{item.type.name}</TableCell>
                                         <TableCell>{item.unit.name}</TableCell>
                                         <TableCell className="text-right">
-                                            {item.buy_price.toLocaleString("id-ID", {
+                                            {item.base_price.toLocaleString("id-ID", {
                                                 style: "currency",
                                                 currency: "IDR",
                                             })}
@@ -2163,7 +2163,7 @@ const AddItem = () => {
     const navigate = useNavigate();
 
     const {
-        formData, displayBuyPrice, categories, types, units,
+        formData, displayBasePrice, categories, types, units,
         saving, handleChange, handleSelectChange, handleSubmit, updateFormData,
         unitConversionHook
     } = useAddItemForm();
@@ -2356,20 +2356,12 @@ const AddItem = () => {
                                         name="basePrice"
                                         value={unitConversionHook.basePrice}
                                         onChange={(e) => unitConversionHook.setBasePrice(parseFloat(e.target.value) || 0)}
-                                        type="number"
-                                        min="0"
-                                        placeholder="0,00"
-                                        className={inputClassName}
-                                    />
-                                </FormField>
-                                
-                                <FormField label="Harga Beli">
-                                    <Input
                                         type="text"
-                                        name="buy_price"
-                                        value={displayBuyPrice}
+                                        name="base_price"
+                                        value={displayBasePrice}
                                         placeholder="Rp 0"
                                         onChange={handleChange}
+                                        min="0"
                                         className={inputClassName}
                                         required
                                     />
