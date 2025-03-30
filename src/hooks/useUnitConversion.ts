@@ -9,6 +9,7 @@ export interface UnitConversion {
 }
 
 export interface UseUnitConversionReturn {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     conversions: any;
     baseUnit: string;
     setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
@@ -96,6 +97,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         setBaseUnit,
         basePrice,
         setBasePrice,
+        conversions: unitConversions,
         unitConversions,
         addUnitConversion,
         removeUnitConversion,

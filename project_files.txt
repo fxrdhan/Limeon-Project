@@ -434,16 +434,6 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         });
     };
 
-    // Menghitung harga pokok dasar
-    // const handleCalculateBasePrice = () => {
-    //     if (unitConversions.length === 0) {
-    //         alert("Tambahkan satuan konversi terlebih dahulu!");
-    //         return;
-    //     }
-        
-    //     recalculateBasePrices();
-    // };
-
     return (
         <FormSection title="Satuan dan Konversi">
             <div>
@@ -512,7 +502,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                unitConversions.map((uc, index) => (
+                                unitConversions.map((uc) => (
                                     <TableRow key={uc.id}>
                                         <TableCell>{uc.unit}</TableCell>
                                         <TableCell>
@@ -1651,6 +1641,7 @@ export interface UnitConversion {
 }
 
 export interface UseUnitConversionReturn {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     conversions: any;
     baseUnit: string;
     setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
@@ -1727,7 +1718,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
     const recalculateBasePrices = () => {
         const updatedConversions = unitConversions.map(uc => ({
             ...uc,
-            basePrice: basePrice / uc.conversion
+            basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0
         }));
         
         setUnitConversions(updatedConversions);
@@ -2069,6 +2060,7 @@ export default ItemList;
 ===============================================
 
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -2106,6 +2098,15 @@ const AddItem = () => {
             }
         }
     };
+
+    // Efek untuk memperbarui basePrice pada unitConversionHook saat harga pokok berubah
+    useEffect(() => {
+        // Perbarui nilai basePrice di unitConversionHook ketika formData.base_price berubah
+        if (formData.base_price > 0) {
+            unitConversionHook.setBasePrice(formData.base_price);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.base_price]);
 
     return (
         <div>
