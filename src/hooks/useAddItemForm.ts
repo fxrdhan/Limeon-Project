@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useUnitConversion } from "./useUnitConversion";
 
 interface Category {
     id: string;
@@ -43,6 +44,9 @@ export const useAddItemForm = () => {
     // State untuk nilai yang ditampilkan dengan format mata uang
     const [displayBuyPrice, setDisplayBuyPrice] = useState('');
     const [displaySellPrice, setDisplaySellPrice] = useState('');
+
+    // Hook untuk konversi satuan
+    const unitConversionHook = useUnitConversion();
 
     // Form state
     const [formData, setFormData] = useState<FormData>({
@@ -280,6 +284,17 @@ export const useAddItemForm = () => {
                 return;
             }
 
+            // Urutkan konversi satuan dari terbesar ke terkecil
+            const sortedConversions = [...unitConversionHook.unitConversions]
+                .sort((a, b) => b.conversion - a.conversion);
+            
+            // Siapkan data konversi satuan untuk disimpan sebagai JSON
+            const unitConversionsData = sortedConversions.map(uc => ({
+                unit: uc.unit,
+                conversion: uc.conversion,
+                basePrice: uc.basePrice
+            }));
+
             // Insert data obat baru
             const { error } = await supabase.from("items").insert({
                 name: formData.name,
@@ -295,6 +310,8 @@ export const useAddItemForm = () => {
                 rack: formData.rack || null,
                 code: formData.code,
                 is_medicine: formData.is_medicine,
+                unit_conversions: unitConversionsData, // Simpan data konversi satuan sebagai JSON
+                base_unit: unitConversionHook.baseUnit,
                 has_expiry_date: formData.has_expiry_date,
             });
 
@@ -322,6 +339,7 @@ export const useAddItemForm = () => {
         handleChange,
         handleSelectChange,
         handleSubmit,
+        unitConversionHook,
         updateFormData
     };
 };

@@ -1,37 +1,6 @@
-[
-  {
-    "id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
-    "name": "Antibiotik",
-    "description": "Obat untuk membunuh atau menghambat pertumbuhan bakteri",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
-    "name": "Antipiretik",
-    "description": "Obat untuk menurunkan demam",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "502e0a0c-9a29-4003-b309-979b659b30db",
-    "name": "Analgesik",
-    "description": "Obat pereda nyeri",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "26e20a27-a34e-424e-9a85-babc2abdc955",
-    "name": "Antidiabetes",
-    "description": "Obat untuk mengontrol gula darah",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
-    "name": "Antihipertensi",
-    "description": "Obat untuk menurunkan tekanan darah",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  }
-]
+{
+  "code": "42P01",
+  "details": null,
+  "hint": null,
+  "message": "relation \"public.medicine_categories\" does not exist"
+}

@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^0.7.0",
     "@headlessui/react": "^2.2.0",
     "@supabase/supabase-js": "^2.49.3",
     "@tanstack/react-table": "^8.21.2",
