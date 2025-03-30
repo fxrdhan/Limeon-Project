@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -36,6 +37,14 @@ const AddItem = () => {
             }
         }
     };
+
+    // Efek untuk memperbarui basePrice pada unitConversionHook saat harga pokok berubah
+    useEffect(() => {
+        // Perbarui nilai basePrice di unitConversionHook ketika formData.base_price berubah
+        if (formData.base_price > 0) {
+            unitConversionHook.setBasePrice(formData.base_price);
+        }
+    }, [formData.base_price]);
 
     return (
         <div>

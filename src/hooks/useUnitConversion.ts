@@ -85,7 +85,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
     const recalculateBasePrices = () => {
         const updatedConversions = unitConversions.map(uc => ({
             ...uc,
-            basePrice: basePrice / uc.conversion
+            basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0
         }));
         
         setUnitConversions(updatedConversions);
