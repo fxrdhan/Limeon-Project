@@ -19,9 +19,23 @@ const AddItem = () => {
 
     const {
         formData, displayBasePrice, categories, types, units,
-        saving, handleChange, handleSelectChange, handleSubmit, updateFormData,
+        saving, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
         unitConversionHook
     } = useAddItemForm();
+
+    // Modified handleSelectChange to update baseUnit automatically
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        originalHandleSelectChange(e);
+        
+        // Set baseUnit automatically when unit_id changes
+        if (name === 'unit_id' && value) {
+            const selectedUnit = units.find(unit => unit.id === value);
+            if (selectedUnit) {
+                unitConversionHook.setBaseUnit(selectedUnit.name);
+            }
+        }
+    };
 
     return (
         <div>
@@ -190,27 +204,16 @@ const AddItem = () => {
                         <FormSection title="Harga Pokok">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <FormField label="Satuan Dasar">
-                                    <select
-                                        name="baseUnit"
+                                    <Input
+                                        type="text"
                                         value={unitConversionHook.baseUnit}
-                                        onChange={(e) => unitConversionHook.setBaseUnit(e.target.value)}
-                                        className={selectClassName}
-                                        required
-                                    >
-                                        <option value="">-- Pilih Satuan Dasar --</option>
-                                        {unitConversionHook.availableUnits.map(unit => (
-                                            <option key={unit.id} value={unit.name}>
-                                                {unit.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        readOnly
+                                        className={inputClassName}
+                                    />
                                 </FormField>
                                 
                                 <FormField label="Harga Pokok">
                                     <Input
-                                        name="basePrice"
-                                        value={unitConversionHook.basePrice}
-                                        onChange={(e) => unitConversionHook.setBasePrice(parseFloat(e.target.value) || 0)}
                                         type="text"
                                         name="base_price"
                                         value={displayBasePrice}
