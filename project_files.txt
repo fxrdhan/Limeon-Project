@@ -355,10 +355,10 @@ createRoot(document.getElementById('root')!).render(
 ===============================================
 
 import { useEffect } from "react";
-import { Input } from "../../components/ui/Input";
-import { Button } from "../../components/ui/Button";
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
-import { FormSection, FormField } from "../../components/ui/FormComponents";
+import { Input } from "../ui/Input";
+import { Button } from "../ui/Button";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../ui/Table";
+import { FormSection, FormField } from "../ui/FormComponents";
 import { UseUnitConversionReturn } from "../../hooks/useUnitConversion";
 import { FaTrash } from "react-icons/fa";
 
@@ -371,9 +371,9 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
 }) => {
     const {
         baseUnit,
-        setBaseUnit,
+        // setBaseUnit,
         basePrice,
-        setBasePrice,
+        // setBasePrice,
         unitConversions,
         addUnitConversion,
         removeUnitConversion,
@@ -389,8 +389,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         if (basePrice > 0 && unitConversions.length > 0) {
             recalculateBasePrices();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [basePrice]);
+    }, [basePrice, unitConversions.length, recalculateBasePrices]);
 
     // Sort conversions when they change
     useEffect(() => {
@@ -399,15 +398,14 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         }
     }, [unitConversions.length, sortConversions]);
 
-    // Handler untuk satuan dasar
-    const handleBaseUnitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        if (name === "baseUnit") {
-            setBaseUnit(value);
-        } else if (name === "basePrice") {
-            setBasePrice(parseFloat(value) || 0);
-        }
-    };
+    // const handleBaseUnitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    //     const { name, value } = e.target;
+    //     if (name === "baseUnit") {
+    //         setBaseUnit(value);
+    //     } else if (name === "basePrice") {
+    //         setBasePrice(parseFloat(value) || 0);
+    //     }
+    // };
 
     // Handler untuk form konversi satuan
     const handleConversionFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -445,48 +443,18 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
     };
 
     // Menghitung harga pokok dasar
-    const handleCalculateBasePrice = () => {
-        if (unitConversions.length === 0) {
-            alert("Tambahkan satuan konversi terlebih dahulu!");
-            return;
-        }
+    // const handleCalculateBasePrice = () => {
+    //     if (unitConversions.length === 0) {
+    //         alert("Tambahkan satuan konversi terlebih dahulu!");
+    //         return;
+    //     }
         
-        recalculateBasePrices();
-    };
+    //     recalculateBasePrices();
+    // };
 
     return (
         <FormSection title="Satuan dan Konversi">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField label="Satuan Dasar">
-                    <select
-                        name="baseUnit"
-                        value={baseUnit}
-                        onChange={handleBaseUnitChange}
-                        className="w-full p-3 border rounded-md"
-                    >
-                        <option value="">-- Pilih Satuan Dasar --</option>
-                        {availableUnits.map(unit => (
-                            <option key={unit.id} value={unit.name}>
-                                {unit.name}
-                            </option>
-                        ))}
-                    </select>
-                </FormField>
-
-                <FormField label="Harga Pokok">
-                    <Input
-                        name="basePrice"
-                        value={basePrice}
-                        onChange={handleBaseUnitChange}
-                        type="number"
-                        min="0"
-                        placeholder="0,00"
-                        className="w-full"
-                    />
-                </FormField>
-            </div>
-
-            <div className="mt-4 border-t pt-4">
+            <div>
                 <h3 className="text-lg font-medium mb-3">Daftar Konversi</h3>
                 <p className="text-sm text-gray-600 mb-3">
                     Konversi akan diurutkan dari satuan terbesar ke terkecil. Satuan dengan konversi terbesar dianggap sebagai satuan terbesar.
@@ -592,16 +560,6 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             )}
                         </TableBody>
                     </Table>
-                </div>
-
-                <div className="mt-4">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCalculateBasePrice}
-                    >
-                        Hitung Harga Pokok
-                    </Button>
                 </div>
 
                 <div className="mt-4 text-sm text-gray-600">
@@ -1771,7 +1729,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
 
     // Fungsi untuk menambah konversi satuan
     const addUnitConversion = (unitConversion: Omit<UnitConversion, "id" | "basePrice">) => {
-        const calculatedBasePrice = basePrice / unitConversion.conversion;
+        const calculatedBasePrice = basePrice * unitConversion.conversion;
         
         const newUnitConversion: UnitConversion = {
             ...unitConversion,
@@ -1795,7 +1753,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
     const recalculateBasePrices = () => {
         const updatedConversions = unitConversions.map(uc => ({
             ...uc,
-            basePrice: basePrice / uc.conversion
+            basePrice: basePrice * uc.conversion
         }));
         
         setUnitConversions(updatedConversions);
@@ -2164,9 +2122,23 @@ const AddItem = () => {
 
     const {
         formData, displayBasePrice, categories, types, units,
-        saving, handleChange, handleSelectChange, handleSubmit, updateFormData,
+        saving, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
         unitConversionHook
     } = useAddItemForm();
+
+    // Modified handleSelectChange to update baseUnit automatically
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        originalHandleSelectChange(e);
+        
+        // Set baseUnit automatically when unit_id changes
+        if (name === 'unit_id' && value) {
+            const selectedUnit = units.find(unit => unit.id === value);
+            if (selectedUnit) {
+                unitConversionHook.setBaseUnit(selectedUnit.name);
+            }
+        }
+    };
 
     return (
         <div>
@@ -2335,27 +2307,16 @@ const AddItem = () => {
                         <FormSection title="Harga Pokok">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <FormField label="Satuan Dasar">
-                                    <select
-                                        name="baseUnit"
+                                    <Input
+                                        type="text"
                                         value={unitConversionHook.baseUnit}
-                                        onChange={(e) => unitConversionHook.setBaseUnit(e.target.value)}
-                                        className={selectClassName}
-                                        required
-                                    >
-                                        <option value="">-- Pilih Satuan Dasar --</option>
-                                        {unitConversionHook.availableUnits.map(unit => (
-                                            <option key={unit.id} value={unit.name}>
-                                                {unit.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        readOnly
+                                        className={inputClassName}
+                                    />
                                 </FormField>
                                 
                                 <FormField label="Harga Pokok">
                                     <Input
-                                        name="basePrice"
-                                        value={unitConversionHook.basePrice}
-                                        onChange={(e) => unitConversionHook.setBasePrice(parseFloat(e.target.value) || 0)}
                                         type="text"
                                         name="base_price"
                                         value={displayBasePrice}

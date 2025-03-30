@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { Input } from "../../components/ui/Input";
-import { Button } from "../../components/ui/Button";
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
-import { FormSection, FormField } from "../../components/ui/FormComponents";
+import { Input } from "../ui/Input";
+import { Button } from "../ui/Button";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../ui/Table";
+import { FormSection, FormField } from "../ui/FormComponents";
 import { UseUnitConversionReturn } from "../../hooks/useUnitConversion";
 import { FaTrash } from "react-icons/fa";
 
@@ -15,16 +15,15 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
 }) => {
     const {
         baseUnit,
-        setBaseUnit,
+        // setBaseUnit,
         basePrice,
-        setBasePrice,
+        // setBasePrice,
         unitConversions,
         addUnitConversion,
         removeUnitConversion,
         unitConversionFormData,
         setUnitConversionFormData,
         recalculateBasePrices,
-        sortConversions,
         availableUnits
     } = unitConversionHook;
 
@@ -33,25 +32,16 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         if (basePrice > 0 && unitConversions.length > 0) {
             recalculateBasePrices();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [basePrice]);
+    }, [basePrice, unitConversions.length, recalculateBasePrices]);
 
-    // Sort conversions when they change
-    useEffect(() => {
-        if (unitConversions.length > 1) {
-            sortConversions();
-        }
-    }, [unitConversions.length, sortConversions]);
-
-    // Handler untuk satuan dasar
-    const handleBaseUnitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        if (name === "baseUnit") {
-            setBaseUnit(value);
-        } else if (name === "basePrice") {
-            setBasePrice(parseFloat(value) || 0);
-        }
-    };
+    // const handleBaseUnitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    //     const { name, value } = e.target;
+    //     if (name === "baseUnit") {
+    //         setBaseUnit(value);
+    //     } else if (name === "basePrice") {
+    //         setBasePrice(parseFloat(value) || 0);
+    //     }
+    // };
 
     // Handler untuk form konversi satuan
     const handleConversionFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -89,21 +79,21 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
     };
 
     // Menghitung harga pokok dasar
-    const handleCalculateBasePrice = () => {
-        if (unitConversions.length === 0) {
-            alert("Tambahkan satuan konversi terlebih dahulu!");
-            return;
-        }
+    // const handleCalculateBasePrice = () => {
+    //     if (unitConversions.length === 0) {
+    //         alert("Tambahkan satuan konversi terlebih dahulu!");
+    //         return;
+    //     }
         
-        recalculateBasePrices();
-    };
+    //     recalculateBasePrices();
+    // };
 
     return (
         <FormSection title="Satuan dan Konversi">
             <div>
-                <h3 className="text-lg font-medium mb-3">Daftar Konversi</h3>
+                <h3 className="text-lg font-medium mb-3">Konversi Satuan</h3>
                 <p className="text-sm text-gray-600 mb-3">
-                    Konversi akan diurutkan dari satuan terbesar ke terkecil. Satuan dengan konversi terbesar dianggap sebagai satuan terbesar.
+                    Tentukan berapa banyak satuan turunan dalam satu satuan dasar.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -126,7 +116,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                         </select>
                     </FormField>
 
-                    <FormField label={`1 ${unitConversionFormData.unit || 'satuan'} = ? ${baseUnit || 'satuan dasar'}`}>
+                    <FormField label={`1 ${baseUnit || 'satuan dasar'} = ? ${unitConversionFormData.unit || 'satuan'}`}>
                         <div className="flex space-x-2">
                             <Input
                                 name="conversion"
@@ -152,8 +142,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableHeader>Urutan</TableHeader>
-                                <TableHeader>Satuan</TableHeader>
+                                <TableHeader>Satuan Turunan</TableHeader>
                                 <TableHeader>Konversi</TableHeader>
                                 <TableHeader>Harga Pokok</TableHeader>
                                 <TableHeader className="text-center">Aksi</TableHeader>
@@ -169,22 +158,9 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             ) : (
                                 unitConversions.map((uc, index) => (
                                     <TableRow key={uc.id}>
-                                        <TableCell>
-                                            {index === 0 ? (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    Terbesar
-                                                </span>
-                                            ) : index === unitConversions.length - 1 ? (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    Terkecil
-                                                </span>
-                                            ) : (
-                                                `#${index + 1}`
-                                            )}
-                                        </TableCell>
                                         <TableCell>{uc.unit}</TableCell>
                                         <TableCell>
-                                            1 {uc.unit} = {uc.conversion} {baseUnit}
+                                            1 {baseUnit} = {uc.conversion} {uc.unit}
                                         </TableCell>
                                         <TableCell>
                                             {(uc.basePrice || 0).toLocaleString("id-ID", {
@@ -208,20 +184,9 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                     </Table>
                 </div>
 
-                <div className="mt-4">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCalculateBasePrice}
-                    >
-                        Hitung Harga Pokok
-                    </Button>
-                </div>
-
                 <div className="mt-4 text-sm text-gray-600">
                     <ul className="list-disc pl-5 space-y-1">
-                        <li>Satuan terbesar adalah yang memiliki nilai konversi paling besar ke satuan dasar.</li>
-                        <li>Harga pokok otomatis dihitung berdasarkan konversi dari harga pokok satuan dasar.</li>
+                        <li>Harga pokok satuan turunan dihitung dengan: Harga pokok satuan dasar ÷ jumlah satuan turunan.</li>
                         <li className="text-red-500 font-semibold">PENTING: Disarankan untuk tidak mengubah satuan jika sudah terdapat transaksi yang berhubungan dengan item ini.</li>
                     </ul>
                 </div>

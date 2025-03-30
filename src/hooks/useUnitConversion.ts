@@ -26,7 +26,6 @@ export interface UseUnitConversionReturn {
         conversion: number;
     }>>;
     recalculateBasePrices: () => void;
-    sortConversions: () => void;
     availableUnits: UnitData[];
 }
 
@@ -64,6 +63,9 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
 
     // Fungsi untuk menambah konversi satuan
     const addUnitConversion = (unitConversion: Omit<UnitConversion, "id" | "basePrice">) => {
+        // Hitung harga per unit kecil (misal: per tablet)
+        // Jika 1 strip = 10 tablet dan harga strip 50.000,
+        // maka harga per tablet = 50.000 / 10 = 5.000
         const calculatedBasePrice = basePrice / unitConversion.conversion;
         
         const newUnitConversion: UnitConversion = {
@@ -71,12 +73,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
             id: Date.now().toString(),
             basePrice: calculatedBasePrice,
         };
-        
-        const updatedConversions = [...unitConversions, newUnitConversion];
-        // Sort automatically after adding
-        const sortedConversions = updatedConversions.sort((a, b) => b.conversion - a.conversion);
-        
-        setUnitConversions(sortedConversions);
+        setUnitConversions([...unitConversions, newUnitConversion]);
     };
 
     // Fungsi untuk menghapus konversi satuan
@@ -94,12 +91,6 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         setUnitConversions(updatedConversions);
     };
 
-    // Mengurutkan konversi dari satuan terbesar ke terkecil (konversi terbesar ke terkecil)
-    const sortConversions = () => {
-        const sortedConversions = [...unitConversions].sort((a, b) => b.conversion - a.conversion);
-        setUnitConversions(sortedConversions);
-    };
-
     return {
         baseUnit,
         setBaseUnit,
@@ -111,7 +102,6 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         unitConversionFormData,
         setUnitConversionFormData,
         recalculateBasePrices,
-        sortConversions,
         availableUnits
     };
 };
