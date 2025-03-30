@@ -78,16 +78,6 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         });
     };
 
-    // Menghitung harga pokok dasar
-    // const handleCalculateBasePrice = () => {
-    //     if (unitConversions.length === 0) {
-    //         alert("Tambahkan satuan konversi terlebih dahulu!");
-    //         return;
-    //     }
-        
-    //     recalculateBasePrices();
-    // };
-
     return (
         <FormSection title="Satuan dan Konversi">
             <div>
@@ -156,7 +146,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                unitConversions.map((uc, index) => (
+                                unitConversions.map((uc) => (
                                     <TableRow key={uc.id}>
                                         <TableCell>{uc.unit}</TableCell>
                                         <TableCell>

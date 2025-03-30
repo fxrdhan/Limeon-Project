@@ -44,6 +44,7 @@ const AddItem = () => {
         if (formData.base_price > 0) {
             unitConversionHook.setBasePrice(formData.base_price);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.base_price]);
 
     return (
