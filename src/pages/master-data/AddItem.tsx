@@ -188,7 +188,36 @@ const AddItem = () => {
                         </FormSection>
 
                         <FormSection title="Harga Pokok">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <FormField label="Satuan Dasar">
+                                    <select
+                                        name="baseUnit"
+                                        value={unitConversionHook.baseUnit}
+                                        onChange={(e) => unitConversionHook.setBaseUnit(e.target.value)}
+                                        className={selectClassName}
+                                        required
+                                    >
+                                        <option value="">-- Pilih Satuan Dasar --</option>
+                                        {unitConversionHook.availableUnits.map(unit => (
+                                            <option key={unit.id} value={unit.name}>
+                                                {unit.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </FormField>
+                                
+                                <FormField label="Harga Pokok">
+                                    <Input
+                                        name="basePrice"
+                                        value={unitConversionHook.basePrice}
+                                        onChange={(e) => unitConversionHook.setBasePrice(parseFloat(e.target.value) || 0)}
+                                        type="number"
+                                        min="0"
+                                        placeholder="0,00"
+                                        className={inputClassName}
+                                    />
+                                </FormField>
+                                
                                 <FormField label="Harga Beli">
                                     <Input
                                         type="text"
@@ -200,20 +229,6 @@ const AddItem = () => {
                                         required
                                     />
                                 </FormField>
-                                {/* Menghilangkan input harga jual */}
-                                {/*
-                                <FormField label="Harga Jual">
-                                    <Input
-                                        type="text"
-                                        name="sell_price"
-                                        value={displaySellPrice}
-                                        placeholder="Rp 0"
-                                        onChange={handleChange}
-                                        className={inputClassName}
-                                        required
-                                    />
-                                </FormField>
-                                */}
                             </div>
                         </FormSection>
 
