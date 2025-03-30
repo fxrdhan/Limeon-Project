@@ -100,37 +100,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
 
     return (
         <FormSection title="Satuan dan Konversi">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField label="Satuan Dasar">
-                    <select
-                        name="baseUnit"
-                        value={baseUnit}
-                        onChange={handleBaseUnitChange}
-                        className="w-full p-3 border rounded-md"
-                    >
-                        <option value="">-- Pilih Satuan Dasar --</option>
-                        {availableUnits.map(unit => (
-                            <option key={unit.id} value={unit.name}>
-                                {unit.name}
-                            </option>
-                        ))}
-                    </select>
-                </FormField>
-
-                <FormField label="Harga Pokok">
-                    <Input
-                        name="basePrice"
-                        value={basePrice}
-                        onChange={handleBaseUnitChange}
-                        type="number"
-                        min="0"
-                        placeholder="0,00"
-                        className="w-full"
-                    />
-                </FormField>
-            </div>
-
-            <div className="mt-4 border-t pt-4">
+            <div>
                 <h3 className="text-lg font-medium mb-3">Daftar Konversi</h3>
                 <p className="text-sm text-gray-600 mb-3">
                     Konversi akan diurutkan dari satuan terbesar ke terkecil. Satuan dengan konversi terbesar dianggap sebagai satuan terbesar.
