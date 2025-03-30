@@ -336,12 +336,13 @@ createRoot(document.getElementById('root')!).render(
 = File: ./src/components/master-data/UnitConversionManager.tsx 
 ===============================================
 
+import { useEffect } from "react";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { UseUnitConversionReturn } from "../../hooks/useUnitConversion";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaCalculator } from "react-icons/fa";
 
 interface UnitConversionManagerProps {
     unitConversionHook: UseUnitConversionReturn;
@@ -360,7 +361,25 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         removeUnitConversion,
         unitConversionFormData,
         setUnitConversionFormData,
+        recalculateBasePrices,
+        sortConversions,
+        availableUnits
     } = unitConversionHook;
+
+    // Recalculate base prices when base price changes
+    useEffect(() => {
+        if (basePrice > 0 && unitConversions.length > 0) {
+            recalculateBasePrices();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [basePrice]);
+
+    // Sort conversions when they change
+    useEffect(() => {
+        if (unitConversions.length > 1) {
+            sortConversions();
+        }
+    }, [unitConversions.length, sortConversions]);
 
     // Handler untuk satuan dasar
     const handleBaseUnitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -398,7 +417,6 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         addUnitConversion({
             unit: unitConversionFormData.unit,
             conversion: unitConversionFormData.conversion,
-            basePrice: 0,
         });
 
         // Reset form
@@ -408,17 +426,33 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         });
     };
 
+    // Menghitung harga pokok dasar
+    const handleCalculateBasePrice = () => {
+        if (unitConversions.length === 0) {
+            alert("Tambahkan satuan konversi terlebih dahulu!");
+            return;
+        }
+        
+        recalculateBasePrices();
+    };
+
     return (
         <FormSection title="Satuan dan Konversi">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField label="Satuan Dasar">
-                    <Input
+                    <select
                         name="baseUnit"
                         value={baseUnit}
                         onChange={handleBaseUnitChange}
-                        placeholder="Contoh: PCS"
-                        className="w-full"
-                    />
+                        className="w-full p-3 border rounded-md"
+                    >
+                        <option value="">-- Pilih Satuan Dasar --</option>
+                        {availableUnits.map(unit => (
+                            <option key={unit.id} value={unit.name}>
+                                {unit.name}
+                            </option>
+                        ))}
+                    </select>
                 </FormField>
 
                 <FormField label="Harga Pokok">
@@ -436,16 +470,28 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
 
             <div className="mt-4 border-t pt-4">
                 <h3 className="text-lg font-medium mb-3">Daftar Konversi</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                    Konversi akan diurutkan dari satuan terbesar ke terkecil. Satuan dengan konversi terbesar dianggap sebagai satuan terbesar.
+                </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <FormField label="Satuan">
-                        <Input
+                        <select
                             name="unit"
                             value={unitConversionFormData.unit}
                             onChange={handleConversionFormChange}
-                            placeholder="Contoh: DUS, PAK"
-                            className="w-full"
-                        />
+                            className="w-full p-3 border rounded-md"
+                        >
+                            <option value="">-- Pilih Satuan --</option>
+                            {availableUnits
+                                .filter(unit => unit.name !== baseUnit)
+                                .filter(unit => !unitConversions.some(uc => uc.unit === unit.name))
+                                .map(unit => (
+                                <option key={unit.id} value={unit.name}>
+                                    {unit.name}
+                                </option>
+                            ))}
+                        </select>
                     </FormField>
 
                     <FormField label="Konversi">
@@ -475,6 +521,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                     <Table>
                         <TableHead>
                             <TableRow>
+                                <TableHeader>Urutan</TableHeader>
                                 <TableHeader>Satuan</TableHeader>
                                 <TableHeader>Konversi</TableHeader>
                                 <TableHeader>Harga Pokok</TableHeader>
@@ -489,8 +536,21 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                unitConversions.map((uc) => (
+                                unitConversions.map((uc, index) => (
                                     <TableRow key={uc.id}>
+                                        <TableCell>
+                                            {index === 0 ? (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    Terbesar
+                                                </span>
+                                            ) : index === unitConversions.length - 1 ? (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    Terkecil
+                                                </span>
+                                            ) : (
+                                                `#${index + 1}`
+                                            )}
+                                        </TableCell>
                                         <TableCell>{uc.unit}</TableCell>
                                         <TableCell>
                                             1 {uc.unit} = {uc.conversion} {baseUnit}
@@ -521,13 +581,18 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                     <Button
                         type="button"
                         variant="outline"
+                        onClick={handleCalculateBasePrice}
                     >
-                        Hitung Harga Pokok Dasar
+                        <FaCalculator className="mr-2" /> Hitung Harga Pokok
                     </Button>
                 </div>
 
-                <div className="mt-4 text-sm text-red-500">
-                    <p>PENTING: Disarankan untuk tidak mengubah satuan jika sudah terdapat transaksi yang berhubungan dengan item ini.</p>
+                <div className="mt-4 text-sm text-gray-600">
+                    <ul className="list-disc pl-5 space-y-1">
+                        <li>Satuan terbesar adalah yang memiliki nilai konversi paling besar ke satuan dasar.</li>
+                        <li>Harga pokok otomatis dihitung berdasarkan konversi dari harga pokok satuan dasar.</li>
+                        <li className="text-red-500 font-semibold">PENTING: Disarankan untuk tidak mengubah satuan jika sudah terdapat transaksi yang berhubungan dengan item ini.</li>
+                    </ul>
                 </div>
             </div>
         </FormSection>
@@ -1547,6 +1612,17 @@ export const useAddItemForm = () => {
                 return;
             }
 
+            // Urutkan konversi satuan dari terbesar ke terkecil
+            const sortedConversions = [...unitConversionHook.unitConversions]
+                .sort((a, b) => b.conversion - a.conversion);
+            
+            // Siapkan data konversi satuan untuk disimpan sebagai JSON
+            const unitConversionsData = sortedConversions.map(uc => ({
+                unit: uc.unit,
+                conversion: uc.conversion,
+                basePrice: uc.basePrice
+            }));
+
             // Insert data obat baru
             const { error } = await supabase.from("items").insert({
                 name: formData.name,
@@ -1562,6 +1638,7 @@ export const useAddItemForm = () => {
                 rack: formData.rack || null,
                 code: formData.code,
                 is_medicine: formData.is_medicine,
+                unit_conversions: unitConversionsData, // Simpan data konversi satuan sebagai JSON
                 base_unit: unitConversionHook.baseUnit,
                 has_expiry_date: formData.has_expiry_date,
             });
@@ -1599,13 +1676,14 @@ export const useAddItemForm = () => {
 = File: ./src/hooks/useUnitConversion.ts 
 ===============================================
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 
 export interface UnitConversion {
     id: string;
     unit: string;
     conversion: number;
-    basePrice?: number;
+    basePrice: number;
 }
 
 export interface UseUnitConversionReturn {
@@ -1614,7 +1692,7 @@ export interface UseUnitConversionReturn {
     basePrice: number;
     setBasePrice: React.Dispatch<React.SetStateAction<number>>;
     unitConversions: UnitConversion[];
-    addUnitConversion: (unitConversion: Omit<UnitConversion, "id">) => void;
+    addUnitConversion: (unitConversion: Omit<UnitConversion, "id" | "basePrice">) => void;
     removeUnitConversion: (id: string) => void;
     unitConversionFormData: {
         unit: string;
@@ -1624,30 +1702,79 @@ export interface UseUnitConversionReturn {
         unit: string;
         conversion: number;
     }>>;
+    recalculateBasePrices: () => void;
+    sortConversions: () => void;
+    availableUnits: UnitData[];
+}
+
+export interface UnitData {
+    id: string;
+    name: string;
 }
 
 export const useUnitConversion = (): UseUnitConversionReturn => {
     const [baseUnit, setBaseUnit] = useState<string>("");
     const [basePrice, setBasePrice] = useState<number>(0);
     const [unitConversions, setUnitConversions] = useState<UnitConversion[]>([]);
+    const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
 
     const [unitConversionFormData, setUnitConversionFormData] = useState({
         unit: "",
         conversion: 0,
     });
 
+    // Fetch available units from database
+    useEffect(() => {
+        const fetchUnits = async () => {
+            const { data } = await supabase
+                .from("item_units")
+                .select("id, name")
+                .order("name");
+            
+            if (data) {
+                setAvailableUnits(data);
+            }
+        };
+
+        fetchUnits();
+    }, []);
+
     // Fungsi untuk menambah konversi satuan
-    const addUnitConversion = (unitConversion: Omit<UnitConversion, "id">) => {
+    const addUnitConversion = (unitConversion: Omit<UnitConversion, "id" | "basePrice">) => {
+        const calculatedBasePrice = basePrice / unitConversion.conversion;
+        
         const newUnitConversion: UnitConversion = {
             ...unitConversion,
             id: Date.now().toString(),
+            basePrice: calculatedBasePrice,
         };
-        setUnitConversions([...unitConversions, newUnitConversion]);
+        
+        const updatedConversions = [...unitConversions, newUnitConversion];
+        // Sort automatically after adding
+        const sortedConversions = updatedConversions.sort((a, b) => b.conversion - a.conversion);
+        
+        setUnitConversions(sortedConversions);
     };
 
     // Fungsi untuk menghapus konversi satuan
     const removeUnitConversion = (id: string) => {
         setUnitConversions(unitConversions.filter((uc) => uc.id !== id));
+    };
+
+    // Menghitung ulang harga pokok untuk semua konversi berdasarkan harga pokok dasar
+    const recalculateBasePrices = () => {
+        const updatedConversions = unitConversions.map(uc => ({
+            ...uc,
+            basePrice: basePrice / uc.conversion
+        }));
+        
+        setUnitConversions(updatedConversions);
+    };
+
+    // Mengurutkan konversi dari satuan terbesar ke terkecil (konversi terbesar ke terkecil)
+    const sortConversions = () => {
+        const sortedConversions = [...unitConversions].sort((a, b) => b.conversion - a.conversion);
+        setUnitConversions(sortedConversions);
     };
 
     return {
@@ -1660,6 +1787,9 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         removeUnitConversion,
         unitConversionFormData,
         setUnitConversionFormData,
+        recalculateBasePrices,
+        sortConversions,
+        availableUnits
     };
 };
 
@@ -4178,43 +4308,12 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 = File: ./supabase_data/medicine_categories.json 
 ===============================================
 
-[
-  {
-    "id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
-    "name": "Antibiotik",
-    "description": "Obat untuk membunuh atau menghambat pertumbuhan bakteri",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
-    "name": "Antipiretik",
-    "description": "Obat untuk menurunkan demam",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "502e0a0c-9a29-4003-b309-979b659b30db",
-    "name": "Analgesik",
-    "description": "Obat pereda nyeri",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "26e20a27-a34e-424e-9a85-babc2abdc955",
-    "name": "Antidiabetes",
-    "description": "Obat untuk mengontrol gula darah",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
-    "name": "Antihipertensi",
-    "description": "Obat untuk menurunkan tekanan darah",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  }
-]
+{
+  "code": "42P01",
+  "details": null,
+  "hint": null,
+  "message": "relation \"public.medicine_categories\" does not exist"
+}
 
 
 ===============================================
@@ -4242,402 +4341,24 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 = File: ./supabase_data/medicine_units.json 
 ===============================================
 
-[
-  {
-    "id": "cc8e891c-34ac-4afb-944c-258ad244a96f",
-    "name": "Tablet",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
-    "name": "Kapsul",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "28dbe949-54a2-4198-baba-ed162a041cbe",
-    "name": "Botol",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "6727b61b-8063-422d-a89a-16b378d5d76d",
-    "name": "Tube",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
-    "name": "Ampul",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "name": "Strip",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  }
-]
+{
+  "code": "42P01",
+  "details": null,
+  "hint": null,
+  "message": "relation \"public.medicine_units\" does not exist"
+}
 
 
 ===============================================
 = File: ./supabase_data/medicines.json 
 ===============================================
 
-[
-  {
-    "id": "e8bfc4d6-0a92-450c-b9ab-5f9e15af82da",
-    "name": "Amoxicillin 500mg",
-    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 5000,
-    "sell_price": 7500,
-    "stock": 100,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "7b4e99f7-d58a-4d97-88d9-cc9c2f23b5d3",
-    "name": "Cefixime 200mg",
-    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
-    "type_id": "b355eadc-2a48-45bf-bbf2-1b0249de3060",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 12000,
-    "sell_price": 15000,
-    "stock": 85,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "1b6e47b0-0aff-4385-8dac-b4f403f1c1b1",
-    "name": "Azithromycin 500mg",
-    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 15000,
-    "sell_price": 20000,
-    "stock": 70,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "1a3f0292-0e83-4eaa-993f-77e55eb8b0d9",
-    "name": "Ciprofloxacin 500mg",
-    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 8000,
-    "sell_price": 12000,
-    "stock": 90,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "d0c7b383-7e9c-490c-8a3d-7a3c5c09b7e6",
-    "name": "Cotrimoxazole 480mg",
-    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 4000,
-    "sell_price": 6000,
-    "stock": 120,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "e8b9e086-f92a-437c-9e0a-b40c15c8ea6c",
-    "name": "Paracetamol 500mg",
-    "category_id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 2000,
-    "sell_price": 3500,
-    "stock": 200,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "a2d9304c-ddb7-4b45-99db-51642c295de7",
-    "name": "Ibuprofen 400mg",
-    "category_id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 3000,
-    "sell_price": 5000,
-    "stock": 150,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "1a9f5f8c-c49f-4892-a15f-054b82ed1904",
-    "name": "Metamizole 500mg",
-    "category_id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 3500,
-    "sell_price": 5500,
-    "stock": 130,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "bbc8c792-7a8f-4ba2-9e49-0e8a2ee8f15e",
-    "name": "Parasetamol Sirup 120mg/5ml",
-    "category_id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
-    "type_id": "56db61b8-6fc0-47a4-82f3-960a6a33e84c",
-    "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
-    "buy_price": 10000,
-    "sell_price": 15000,
-    "stock": 80,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "8e1a39e9-d6a0-4df1-a0c3-77b6d812cfa3",
-    "name": "Aspirin 100mg",
-    "category_id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 2500,
-    "sell_price": 4000,
-    "stock": 180,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "b0b9cd56-9c15-4e83-9f15-3a134f8b1ee1",
-    "name": "Asam Mefenamat 500mg",
-    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 3000,
-    "sell_price": 5000,
-    "stock": 140,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "86ff21a7-17d7-45c9-a46b-3dca0650a346",
-    "name": "Natrium Diklofenak 50mg",
-    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 3500,
-    "sell_price": 6000,
-    "stock": 120,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "3a8c41f8-4834-4b16-9ba9-3a61c6585a3f",
-    "name": "Ketorolac 10mg",
-    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 7000,
-    "sell_price": 10000,
-    "stock": 90,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "d2a5f6a5-49f0-4dda-a4b6-6e8e7f56af1e",
-    "name": "Piroxicam 20mg",
-    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
-    "type_id": "b355eadc-2a48-45bf-bbf2-1b0249de3060",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 5000,
-    "sell_price": 8000,
-    "stock": 110,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "fda5e259-960d-4c30-8c9b-b55f533fd2c0",
-    "name": "Tramadol 50mg",
-    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
-    "type_id": "b355eadc-2a48-45bf-bbf2-1b0249de3060",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 9000,
-    "sell_price": 13000,
-    "stock": 75,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "d7a3c8c0-0e99-4a76-82b2-5c2f3e1fd372",
-    "name": "Metformin 500mg",
-    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 4500,
-    "sell_price": 7000,
-    "stock": 120,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "d0b5af66-e0a2-47c6-901b-e8d5927074ba",
-    "name": "Glimepiride 2mg",
-    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 6000,
-    "sell_price": 9000,
-    "stock": 100,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "a86e82e0-5b5f-4bdc-8a63-4b421fc17196",
-    "name": "Acarbose 50mg",
-    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 8000,
-    "sell_price": 12000,
-    "stock": 85,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "4c52b646-3ce4-445c-afd8-b5c68f7883db",
-    "name": "Glibenclamide 5mg",
-    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 3500,
-    "sell_price": 6000,
-    "stock": 110,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "adc1f9cc-d882-4cdf-bb01-f2f2e6a1cc6e",
-    "name": "Insulin Novorapid",
-    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
-    "type_id": "d510c9c5-d8db-488c-a634-fee521d23d07",
-    "unit_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
-    "buy_price": 120000,
-    "sell_price": 150000,
-    "stock": 30,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "8d11a5e7-57a9-43be-881f-1ec1da9775a8",
-    "name": "Amlodipine 10mg",
-    "category_id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 5000,
-    "sell_price": 8000,
-    "stock": 130,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "6b94ffc5-40c6-4c7e-85a0-a0c1dc94d8bb",
-    "name": "Captopril 25mg",
-    "category_id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 4000,
-    "sell_price": 7000,
-    "stock": 140,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "c70f16e8-b98a-42bc-b66b-c7be6abfedc6",
-    "name": "Valsartan 80mg",
-    "category_id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 12000,
-    "sell_price": 17000,
-    "stock": 90,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "f97b4aca-a3cc-4c2f-bfd6-e241b11370c3",
-    "name": "Candesartan 8mg",
-    "category_id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 14000,
-    "sell_price": 20000,
-    "stock": 80,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  },
-  {
-    "id": "a1e80cfe-5499-4f95-9d90-5b1e50a8b913",
-    "name": "Bisoprolol 5mg",
-    "category_id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
-    "type_id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "buy_price": 7000,
-    "sell_price": 12000,
-    "stock": 95,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-27T06:13:52.704308+00:00",
-    "updated_at": "2025-03-27T06:13:52.704308+00:00"
-  }
-]
+{
+  "code": "42P01",
+  "details": null,
+  "hint": null,
+  "message": "relation \"public.medicines\" does not exist"
+}
 
 
 ===============================================
@@ -4651,43 +4372,12 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 = File: ./supabase_data/medicine_types.json 
 ===============================================
 
-[
-  {
-    "id": "f295e143-883f-4222-b5ce-0428f858d7f4",
-    "name": "Tablet",
-    "description": "Obat dalam bentuk tablet",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "b355eadc-2a48-45bf-bbf2-1b0249de3060",
-    "name": "Kapsul",
-    "description": "Obat dalam bentuk kapsul",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "56db61b8-6fc0-47a4-82f3-960a6a33e84c",
-    "name": "Sirup",
-    "description": "Obat dalam bentuk cair/sirup",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "a237f060-7cce-4638-9d0b-510b55519a62",
-    "name": "Salep",
-    "description": "Obat dalam bentuk salep untuk penggunaan luar",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  },
-  {
-    "id": "d510c9c5-d8db-488c-a634-fee521d23d07",
-    "name": "Injeksi",
-    "description": "Obat dalam bentuk injeksi/suntik",
-    "created_at": "2025-03-26T14:57:20.368076+00:00",
-    "updated_at": "2025-03-26T14:57:20.368076+00:00"
-  }
-]
+{
+  "code": "42P01",
+  "details": null,
+  "hint": null,
+  "message": "relation \"public.medicine_types\" does not exist"
+}
 
 
 ===============================================
