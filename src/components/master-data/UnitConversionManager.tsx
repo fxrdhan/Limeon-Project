@@ -4,7 +4,7 @@ import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { UseUnitConversionReturn } from "../../hooks/useUnitConversion";
-import { FaTrash, FaCalculator } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa";
 
 interface UnitConversionManagerProps {
     unitConversionHook: UseUnitConversionReturn;
@@ -136,8 +136,8 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                     Konversi akan diurutkan dari satuan terbesar ke terkecil. Satuan dengan konversi terbesar dianggap sebagai satuan terbesar.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <FormField label="Satuan">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <FormField label="Satuan Konversi">
                         <select
                             name="unit"
                             value={unitConversionFormData.unit}
@@ -156,27 +156,26 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                         </select>
                     </FormField>
 
-                    <FormField label="Konversi">
-                        <Input
-                            name="conversion"
-                            value={unitConversionFormData.conversion || ""}
-                            onChange={handleConversionFormChange}
-                            type="number"
-                            min="1"
-                            placeholder="Jumlah satuan dasar"
-                            className="w-full"
-                        />
+                    <FormField label={`1 ${unitConversionFormData.unit || 'satuan'} = ? ${baseUnit || 'satuan dasar'}`}>
+                        <div className="flex space-x-2">
+                            <Input
+                                name="conversion"
+                                value={unitConversionFormData.conversion || ""}
+                                onChange={handleConversionFormChange}
+                                type="number"
+                                min="1"
+                                placeholder="Jumlah satuan dasar"
+                                className="w-full"
+                            />
+                            <Button
+                                type="button"
+                                onClick={handleAddConversion}
+                                className="whitespace-nowrap"
+                            >
+                                Tambah Satuan
+                            </Button>
+                        </div>
                     </FormField>
-
-                    <div className="flex items-end">
-                        <Button
-                            type="button"
-                            onClick={handleAddConversion}
-                            className="mb-1"
-                        >
-                            Tambah Satuan
-                        </Button>
-                    </div>
                 </div>
 
                 <div className="border rounded-lg overflow-hidden">
@@ -245,7 +244,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                         variant="outline"
                         onClick={handleCalculateBasePrice}
                     >
-                        <FaCalculator className="mr-2" /> Hitung Harga Pokok
+                        Hitung Harga Pokok
                     </Button>
                 </div>
 
