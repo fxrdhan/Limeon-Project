@@ -6,7 +6,7 @@ import { Input } from "../../components/ui/Input";
 import { FaSave, FaTimes } from "react-icons/fa";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
-import UnitConversionManager from "../../components/master-data/UnitConversionManager";
+import UnitConversionManager from "../../components/tools/UnitConversionManager";
 
 // Style constants
 const inputClassName = "w-full";
