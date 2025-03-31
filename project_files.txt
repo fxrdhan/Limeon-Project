@@ -1593,13 +1593,12 @@ export const useAddItemForm = () => {
             // 2. Insert unit conversions ke tabel terpisah
             if (unitConversionHook.conversions.length > 0 && newItem) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; }; conversion: any; basePrice: any; }) => ({
+                const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
                     item_id: newItem.id,
-                    unit_id: uc.unit.id,
+                    unit_name: uc.unit.name,
                     conversion_rate: uc.conversion,
                     base_price: uc.basePrice,
-                    created_at: new Date(),
-                    updated_at: new Date()
+                    created_at: new Date()
                 }));
 
                 // Insert ke tabel unit_conversions
