@@ -114,7 +114,7 @@ const UnitList = () => {
                                                 </Button>
                                             </div>
                                         </TableCell>
-                                    </Row>
+                                    </TableRow>
                                 ))
                             )}
                     </TableBody>
