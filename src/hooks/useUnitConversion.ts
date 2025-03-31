@@ -3,7 +3,10 @@ import { supabase } from "../lib/supabase";
 
 export interface UnitConversion {
     id: string;
-    unit: string;
+    unit: {
+        id: string;
+        name: string;
+    };
     conversion: number;
     basePrice: number;
 }
