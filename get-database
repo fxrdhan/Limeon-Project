@@ -2,25 +2,32 @@
 # Konfigurasi Supabase
 SUPABASE_URL="https://psqmckbtwqphcteymjil.supabase.co"
 SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzcW1ja2J0d3FwaGN0ZXltamlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxOTQ2MjAsImV4cCI6MjA1Nzc3MDYyMH0.wvxpldpaoanDk9Wd7wDUeeCuMSVw9e0pxE7_BMt823s"
+
 # Buat direktori output jika belum ada
 OUTPUT_DIR="supabase_data"
 mkdir -p "$OUTPUT_DIR"
+
 # File output gabungan
-OUTPUT_FILE="database_export.txt"
-rm -f "$OUTPUT_FILE"
-# Daftar tabel yang diketahui
+OUTPUT_FILE="$OUTPUT_DIR/database_export.txt"
+> "$OUTPUT_FILE"
+
+# Daftar tabel yang diketahui (diperbarui sesuai gambar)
 TABLES=(
-  "medicine_units"
-  "medicine_categories" 
-  "medicine_types"
-  "medicines"
-  "patients"
   "doctors"
-  "sales"
-  "sale_items"
+  "item_categories"
+  "item_types"
+  "item_units"
+  "items"
+  "patients"
+  "purchase_items"
   "purchases"
+  "sale_items"
+  "sales"
+  "suppliers"
+  "unit_conversions"
   "users"
 )
+
 # Loop melalui setiap tabel
 for TABLE in "${TABLES[@]}"; do
   echo "Mengunduh data tabel: $TABLE"
@@ -31,8 +38,16 @@ for TABLE in "${TABLES[@]}"; do
     -H "Authorization: Bearer $SUPABASE_KEY" \
     -s)
     
-  # Simpan ke file JSON
+  # Simpan ke file JSON individual
   echo "$RESPONSE" | jq . > "$OUTPUT_DIR/$TABLE.json"
+  
+  # Tambahkan ke file gabungan
+  echo "=== DATA TABEL: $TABLE ===" >> "$OUTPUT_FILE"
+  echo "$RESPONSE" | jq . >> "$OUTPUT_FILE"
+  echo -e "\n\n" >> "$OUTPUT_FILE"
   
   echo "✓ Data $TABLE berhasil diproses"
 done
+
+echo "Semua data telah diunduh ke direktori $OUTPUT_DIR"
+echo "Ekspor gabungan disimpan di $OUTPUT_FILE"

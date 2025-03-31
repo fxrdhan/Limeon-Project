@@ -34,13 +34,13 @@ interface FormData {
     has_expiry_date: boolean;
 }
 
-interface UnitConversion {
-    unit: {
-        id: string;
-    };
-    conversion: number;
-    basePrice: number;
-}
+// interface UnitConversion {
+//     unit: {
+//         id: string;
+//     };
+//     conversion: number;
+//     basePrice: number;
+// }
 
 export const useAddItemForm = () => {
     const navigate = useNavigate();
@@ -300,15 +300,8 @@ export const useAddItemForm = () => {
                 return;
             }
 
-            // Konversi satuan
-            const unitConversionsData = unitConversionHook.conversions.map((uc: UnitConversion) => ({
-                unit_id: uc.unit.id,
-                conversion: uc.conversion,
-                basePrice: uc.basePrice
-            }));
-
-            // Insert data obat baru
-            const { error } = await supabase.from("items").insert({
+            // 1. Insert item utama (dengan satuan dasar)
+            const mainItemData = {
                 name: formData.name,
                 category_id: formData.category_id,
                 type_id: formData.type_id,
@@ -322,12 +315,40 @@ export const useAddItemForm = () => {
                 rack: formData.rack || null,
                 code: formData.code,
                 is_medicine: formData.is_medicine,
-                unit_conversions: unitConversionsData, // Simpan data konversi satuan sebagai JSON
                 base_unit: unitConversionHook.baseUnit,
                 has_expiry_date: formData.has_expiry_date,
-            });
+            };
 
-            if (error) throw error;
+            const { data: newItem, error: mainError } = await supabase
+                .from("items")
+                .insert(mainItemData)
+                .select("id")
+                .single();
+
+            if (mainError) throw mainError;
+
+            // 2. Insert unit conversions ke tabel terpisah
+            if (unitConversionHook.conversions.length > 0 && newItem) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; }; conversion: any; basePrice: any; }) => ({
+                    item_id: newItem.id,
+                    unit_id: uc.unit.id,
+                    conversion_rate: uc.conversion,
+                    base_price: uc.basePrice,
+                    created_at: new Date(),
+                    updated_at: new Date()
+                }));
+
+                // Insert ke tabel unit_conversions
+                const { error: conversionError } = await supabase
+                    .from("unit_conversions")
+                    .insert(conversionRecords);
+
+                if (conversionError) {
+                    console.error("Error saving unit conversions:", conversionError);
+                    // Lanjutkan meskipun ada error pada konversi unit
+                }
+            }
 
             // Redirect ke halaman daftar obat
             navigate("/master-data/items");

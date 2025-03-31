@@ -56,32 +56,19 @@
 │   │   └── authStore.ts
 │   └── vite-env.d.ts
 ├── supabase_data
-│   ├── basePath.json
-│   ├── consumes.json
-│   ├── definitions.json
+│   ├── database_export.txt
+│   ├── definitions.txt
 │   ├── doctors.json
-│   ├── externalDocs.json
-│   ├── host.json
-│   ├── info.json
 │   ├── item_categories.json
 │   ├── items.json
 │   ├── item_types.json
 │   ├── item_units.json
-│   ├── medicine_categories.json
-│   ├── medicines.json
-│   ├── medicine_types.json
-│   ├── medicine_units.json
-│   ├── parameters.json
-│   ├── paths.json
 │   ├── patients.json
-│   ├── produces.json
 │   ├── purchase_items.json
 │   ├── purchases.json
 │   ├── sale_items.json
 │   ├── sales.json
-│   ├── schemes.json
 │   ├── suppliers.json
-│   ├── swagger.json
 │   ├── unit_conversions.json
 │   └── users.json
 ├── tailwind.config.js
@@ -90,7 +77,7 @@
 ├── tsconfig.node.json
 └── vite.config.ts
 
-17 directories, 74 files
+17 directories, 61 files
 
 
 ===============================================
@@ -416,14 +403,20 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         }
 
         // Cek apakah satuan sudah ada
-        const existingUnit = unitConversions.find(uc => uc.unit === unitConversionFormData.unit);
+        const existingUnit = unitConversions.find(uc => uc.unit.name === unitConversionFormData.unit);
         if (existingUnit) {
             alert("Satuan tersebut sudah ada dalam daftar!");
             return;
         }
+        
+        const selectedUnit = availableUnits.find(u => u.name === unitConversionFormData.unit);
+            if (!selectedUnit) {
+                alert("Satuan tidak valid!");
+            return;
+        }
 
         addUnitConversion({
-            unit: unitConversionFormData.unit,
+            unit: selectedUnit,
             conversion: unitConversionFormData.conversion,
         });
 
@@ -453,7 +446,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             <option value="">-- Pilih Satuan --</option>
                             {availableUnits
                                 .filter(unit => unit.name !== baseUnit)
-                                .filter(unit => !unitConversions.some(uc => uc.unit === unit.name))
+                                .filter(unit => !unitConversions.some(uc => uc.unit.name === unit.name))
                                 .map(unit => (
                                 <option key={unit.id} value={unit.name}>
                                     {unit.name}
@@ -504,9 +497,9 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             ) : (
                                 unitConversions.map((uc) => (
                                     <TableRow key={uc.id}>
-                                        <TableCell>{uc.unit}</TableCell>
+                                        <TableCell>{uc.unit.name}</TableCell>
                                         <TableCell>
-                                            1 {baseUnit} = {uc.conversion} {uc.unit}
+                                            1 {baseUnit} = {uc.conversion} {uc.unit.name}
                                         </TableCell>
                                         <TableCell>
                                             {(uc.basePrice || 0).toLocaleString("id-ID", {
@@ -1304,13 +1297,13 @@ interface FormData {
     has_expiry_date: boolean;
 }
 
-interface UnitConversion {
-    unit: {
-        id: string;
-    };
-    conversion: number;
-    basePrice: number;
-}
+// interface UnitConversion {
+//     unit: {
+//         id: string;
+//     };
+//     conversion: number;
+//     basePrice: number;
+// }
 
 export const useAddItemForm = () => {
     const navigate = useNavigate();
@@ -1570,15 +1563,8 @@ export const useAddItemForm = () => {
                 return;
             }
 
-            // Konversi satuan
-            const unitConversionsData = unitConversionHook.conversions.map((uc: UnitConversion) => ({
-                unit_id: uc.unit.id,
-                conversion: uc.conversion,
-                basePrice: uc.basePrice
-            }));
-
-            // Insert data obat baru
-            const { error } = await supabase.from("items").insert({
+            // 1. Insert item utama (dengan satuan dasar)
+            const mainItemData = {
                 name: formData.name,
                 category_id: formData.category_id,
                 type_id: formData.type_id,
@@ -1592,12 +1578,40 @@ export const useAddItemForm = () => {
                 rack: formData.rack || null,
                 code: formData.code,
                 is_medicine: formData.is_medicine,
-                unit_conversions: unitConversionsData, // Simpan data konversi satuan sebagai JSON
                 base_unit: unitConversionHook.baseUnit,
                 has_expiry_date: formData.has_expiry_date,
-            });
+            };
 
-            if (error) throw error;
+            const { data: newItem, error: mainError } = await supabase
+                .from("items")
+                .insert(mainItemData)
+                .select("id")
+                .single();
+
+            if (mainError) throw mainError;
+
+            // 2. Insert unit conversions ke tabel terpisah
+            if (unitConversionHook.conversions.length > 0 && newItem) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; }; conversion: any; basePrice: any; }) => ({
+                    item_id: newItem.id,
+                    unit_id: uc.unit.id,
+                    conversion_rate: uc.conversion,
+                    base_price: uc.basePrice,
+                    created_at: new Date(),
+                    updated_at: new Date()
+                }));
+
+                // Insert ke tabel unit_conversions
+                const { error: conversionError } = await supabase
+                    .from("unit_conversions")
+                    .insert(conversionRecords);
+
+                if (conversionError) {
+                    console.error("Error saving unit conversions:", conversionError);
+                    // Lanjutkan meskipun ada error pada konversi unit
+                }
+            }
 
             // Redirect ke halaman daftar obat
             navigate("/master-data/items");
@@ -1635,7 +1649,10 @@ import { supabase } from "../lib/supabase";
 
 export interface UnitConversion {
     id: string;
-    unit: string;
+    unit: {
+        id: string;
+        name: string;
+    };
     conversion: number;
     basePrice: number;
 }
@@ -1729,6 +1746,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         setBaseUnit,
         basePrice,
         setBasePrice,
+        conversions: unitConversions,
         unitConversions,
         addUnitConversion,
         removeUnitConversion,
@@ -3993,6 +4011,7 @@ export function classNames(...classes: (string | boolean | undefined | null)[]):
 = File: ./src/store/authStore.ts 
 ===============================================
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -4116,25 +4135,32 @@ dist-ssr
 # Konfigurasi Supabase
 SUPABASE_URL="https://psqmckbtwqphcteymjil.supabase.co"
 SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzcW1ja2J0d3FwaGN0ZXltamlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxOTQ2MjAsImV4cCI6MjA1Nzc3MDYyMH0.wvxpldpaoanDk9Wd7wDUeeCuMSVw9e0pxE7_BMt823s"
+
 # Buat direktori output jika belum ada
 OUTPUT_DIR="supabase_data"
 mkdir -p "$OUTPUT_DIR"
+
 # File output gabungan
-OUTPUT_FILE="database_export.txt"
-rm -f "$OUTPUT_FILE"
-# Daftar tabel yang diketahui
+OUTPUT_FILE="$OUTPUT_DIR/database_export.txt"
+> "$OUTPUT_FILE"
+
+# Daftar tabel yang diketahui (diperbarui sesuai gambar)
 TABLES=(
-  "medicine_units"
-  "medicine_categories" 
-  "medicine_types"
-  "medicines"
-  "patients"
   "doctors"
-  "sales"
-  "sale_items"
+  "item_categories"
+  "item_types"
+  "item_units"
+  "items"
+  "patients"
+  "purchase_items"
   "purchases"
+  "sale_items"
+  "sales"
+  "suppliers"
+  "unit_conversions"
   "users"
 )
+
 # Loop melalui setiap tabel
 for TABLE in "${TABLES[@]}"; do
   echo "Mengunduh data tabel: $TABLE"
@@ -4145,12 +4171,19 @@ for TABLE in "${TABLES[@]}"; do
     -H "Authorization: Bearer $SUPABASE_KEY" \
     -s)
     
-  # Simpan ke file JSON
+  # Simpan ke file JSON individual
   echo "$RESPONSE" | jq . > "$OUTPUT_DIR/$TABLE.json"
+  
+  # Tambahkan ke file gabungan
+  echo "=== DATA TABEL: $TABLE ===" >> "$OUTPUT_FILE"
+  echo "$RESPONSE" | jq . >> "$OUTPUT_FILE"
+  echo -e "\n\n" >> "$OUTPUT_FILE"
   
   echo "✓ Data $TABLE berhasil diproses"
 done
 
+echo "Semua data telah diunduh ke direktori $OUTPUT_DIR"
+echo "Ekspor gabungan disimpan di $OUTPUT_FILE"
 
 ===============================================
 = File: ./vite.config.ts 
@@ -4219,8 +4252,7 @@ echo "$(tree -I "node_modules|.git" -a)" > project_files.txt && find . -type f -
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="../src/output.css" rel="stylesheet">
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-    <title>Vite + React + TS</title>
+    <!-- <title>Vite + React + TS</title> -->
   </head>
   <body>
     <div id="root"></div>
@@ -4271,16 +4303,271 @@ VITE_SUPABASE_URL=https://psqmckbtwqphcteymjil.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzcW1ja2J0d3FwaGN0ZXltamlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxOTQ2MjAsImV4cCI6MjA1Nzc3MDYyMH0.wvxpldpaoanDk9Wd7wDUeeCuMSVw9e0pxE7_BMt823s
 
 ===============================================
-= File: ./supabase_data/medicine_categories.json 
+= File: ./supabase_data/definitions.txt 
 ===============================================
 
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.medicine_categories\" does not exist"
-}
+SQL Definition of doctors
 
+create table public.doctors (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  name character varying(100) not null,
+  specialization character varying(100) null,
+  license_number character varying(50) null,
+  phone character varying(20) null,
+  email character varying(100) null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint doctors_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on doctors for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of item_categories
+
+create table public.item_categories (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  name character varying(100) not null,
+  description text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint medicine_categories_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on item_categories for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of item_types
+
+create table public.item_types (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  name character varying(100) not null,
+  description text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint medicine_types_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on item_types for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of item_units
+
+create table public.item_units (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  name character varying(50) not null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  description text null,
+  constraint medicine_units_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on item_units for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of items
+
+create table public.items (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  name character varying(100) not null,
+  sell_price numeric(15, 2) not null default 0,
+  stock integer not null default 0,
+  min_stock integer null default 10,
+  description text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  is_active boolean null default true,
+  code character varying null,
+  rack character varying null,
+  has_expiry_date boolean null default false,
+  is_medicine boolean null default true,
+  category_id uuid null,
+  type_id uuid null,
+  unit_id uuid null,
+  base_unit text null,
+  base_price numeric(15, 2) null default 0,
+  unit_conversions jsonb null default '[]'::jsonb,
+  constraint medicines_pkey primary key (id),
+  constraint medicines_category_id_fkey foreign KEY (category_id) references item_categories (id),
+  constraint medicines_type_id_fkey foreign KEY (type_id) references item_types (id),
+  constraint medicines_unit_id_fkey foreign KEY (unit_id) references item_units (id),
+  constraint check_base_price_not_negative check ((base_price >= (0)::numeric))
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on items for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of patients
+
+create table public.patients (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  name character varying(100) not null,
+  gender character varying(10) null,
+  birth_date date null,
+  address text null,
+  phone character varying(20) null,
+  email character varying(100) null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint patients_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on patients for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of purchase_items
+
+create table public.purchase_items (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  purchase_id uuid null,
+  medicine_id uuid null,
+  quantity integer not null,
+  price numeric(15, 2) not null,
+  subtotal numeric(15, 2) not null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint purchase_items_pkey primary key (id),
+  constraint purchase_items_medicine_id_fkey foreign KEY (medicine_id) references items (id),
+  constraint purchase_items_purchase_id_fkey foreign KEY (purchase_id) references purchases (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on purchase_items for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of purchases
+
+create table public.purchases (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  supplier_id uuid null,
+  invoice_number character varying(50) null,
+  date date not null,
+  total numeric(15, 2) not null default 0,
+  payment_status character varying(20) null default 'unpaid'::character varying,
+  payment_method character varying(20) null,
+  notes text null,
+  created_by uuid null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint purchases_pkey primary key (id),
+  constraint purchases_created_by_fkey foreign KEY (created_by) references users (id),
+  constraint purchases_supplier_id_fkey foreign KEY (supplier_id) references suppliers (id)
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on purchases for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of sale_items
+
+create table public.sale_items (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  sale_id uuid null,
+  item_id uuid null,
+  quantity integer not null,
+  price numeric(15, 2) not null,
+  subtotal numeric(15, 2) not null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint sale_items_pkey primary key (id),
+  constraint sale_items_medicine_id_fkey foreign KEY (item_id) references items (id),
+  constraint sale_items_sale_id_fkey foreign KEY (sale_id) references sales (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on sale_items for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of sales
+
+create table public.sales (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  patient_id uuid null,
+  doctor_id uuid null,
+  invoice_number character varying(50) null,
+  date date not null,
+  total numeric(15, 2) not null default 0,
+  payment_method character varying(20) null default 'cash'::character varying,
+  created_by uuid null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint sales_pkey primary key (id),
+  constraint sales_created_by_fkey foreign KEY (created_by) references users (id),
+  constraint sales_doctor_id_fkey foreign KEY (doctor_id) references doctors (id),
+  constraint sales_patient_id_fkey foreign KEY (patient_id) references patients (id)
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on sales for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of suppliers
+
+create table public.suppliers (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  name character varying(100) not null,
+  address text null,
+  phone character varying(20) null,
+  email character varying(100) null,
+  contact_person character varying(100) null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint suppliers_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on suppliers for EACH row
+execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of unit_conversions
+
+create table public.unit_conversions (
+  id uuid not null default gen_random_uuid (),
+  item_id uuid null,
+  unit_name text not null,
+  conversion_rate numeric not null,
+  base_price numeric null default 0,
+  created_at timestamp with time zone null default now(),
+  constraint unit_conversions_pkey primary key (id),
+  constraint unit_conversions_item_id_unit_name_key unique (item_id, unit_name),
+  constraint unit_conversions_item_id_fkey foreign KEY (item_id) references items (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+==============================================================
+SQL Definition of users
+
+create table public.users (
+  id uuid not null,
+  name character varying(100) not null,
+  email character varying(100) not null,
+  role character varying(20) not null default 'staff'::character varying,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint users_pkey primary key (id),
+  constraint users_email_key unique (email),
+  constraint users_id_fkey foreign KEY (id) references auth.users (id)
+) TABLESPACE pg_default;
+
+create trigger set_updated_at BEFORE
+update on users for EACH row
+execute FUNCTION update_updated_at_column ();
 
 ===============================================
 = File: ./supabase_data/item_types.json 
@@ -4344,18 +4631,6 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 ===============================================
 
 []
-
-
-===============================================
-= File: ./supabase_data/produces.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.produces\" does not exist"
-}
 
 
 ===============================================
@@ -4500,54 +4775,6 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 
 ===============================================
-= File: ./supabase_data/schemes.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.schemes\" does not exist"
-}
-
-
-===============================================
-= File: ./supabase_data/consumes.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.consumes\" does not exist"
-}
-
-
-===============================================
-= File: ./supabase_data/externalDocs.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.externalDocs\" does not exist"
-}
-
-
-===============================================
-= File: ./supabase_data/host.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.host\" does not exist"
-}
-
-
-===============================================
 = File: ./supabase_data/purchases.json 
 ===============================================
 
@@ -4555,58 +4782,31 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 
 ===============================================
-= File: ./supabase_data/basePath.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.basePath\" does not exist"
-}
-
-
-===============================================
-= File: ./supabase_data/info.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.info\" does not exist"
-}
-
-
-===============================================
-= File: ./supabase_data/medicine_units.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.medicine_units\" does not exist"
-}
-
-
-===============================================
 = File: ./supabase_data/items.json 
 ===============================================
 
-[]
-
-
-===============================================
-= File: ./supabase_data/medicines.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.medicines\" does not exist"
-}
+[
+  {
+    "id": "a0b29cc8-c271-4d63-ad91-cd7d515d09d9",
+    "name": "Test Item",
+    "sell_price": 10,
+    "stock": 100,
+    "min_stock": 10,
+    "description": "This is a test item.",
+    "created_at": "2025-03-31T11:55:27.697158+00:00",
+    "updated_at": "2025-03-31T11:55:27.697158+00:00",
+    "is_active": true,
+    "code": null,
+    "rack": null,
+    "has_expiry_date": false,
+    "is_medicine": true,
+    "category_id": null,
+    "type_id": null,
+    "unit_id": null,
+    "base_unit": null,
+    "base_price": 0
+  }
+]
 
 
 ===============================================
@@ -4624,18 +4824,6 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 
 ===============================================
-= File: ./supabase_data/parameters.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.parameters\" does not exist"
-}
-
-
-===============================================
 = File: ./supabase_data/suppliers.json 
 ===============================================
 
@@ -4643,15 +4831,308 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 
 ===============================================
-= File: ./supabase_data/medicine_types.json 
+= File: ./supabase_data/database_export.txt 
 ===============================================
 
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.medicine_types\" does not exist"
-}
+=== DATA TABEL: doctors ===
+[]
+
+
+
+=== DATA TABEL: item_categories ===
+[
+  {
+    "id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    "name": "Antibiotik",
+    "description": "Obat untuk membunuh atau menghambat pertumbuhan bakteri",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "a21f33c1-42aa-4171-a826-59a7e00c315d",
+    "name": "Antipiretik",
+    "description": "Obat untuk menurunkan demam",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "name": "Analgesik",
+    "description": "Obat pereda nyeri",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "26e20a27-a34e-424e-9a85-babc2abdc955",
+    "name": "Antidiabetes",
+    "description": "Obat untuk mengontrol gula darah",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  },
+  {
+    "id": "c0264ffd-cdd0-4c8f-b5c3-36d040005f5a",
+    "name": "Antihipertensi",
+    "description": "Obat untuk menurunkan tekanan darah",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00"
+  }
+]
+
+
+
+=== DATA TABEL: item_types ===
+[
+  {
+    "id": "ccc6e9a8-9f61-43bc-b1a8-a64ad1c8aebd",
+    "name": "Obat Bebas",
+    "description": "Obat yang dapat dibeli tanpa resep dokter, ditandai dengan lingkaran hijau dengan garis tepi hitam",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:29:38.937463+00:00"
+  },
+  {
+    "id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+    "name": "Obat Bebas Terbatas",
+    "description": "Obat yang dapat dibeli tanpa resep dokter, namun memiliki peringatan khusus",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:29:38.937463+00:00"
+  },
+  {
+    "id": "6ecd610a-4a35-448c-8eda-662f1c10fa51",
+    "name": "Obat Keras",
+    "description": "Obat yang hanya dapat dibeli dengan resep dokter, ditandai dengan lingkaran merah dengan garis tepi hitam dan huruf K di tengah",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:29:38.937463+00:00"
+  },
+  {
+    "id": "1c2068a7-a66c-4a91-820e-354588330ada",
+    "name": "Obat Golongan Narkotika",
+    "description": "Obat yang termasuk dalam golongan narkotika dan diatur ketat",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:29:38.937463+00:00"
+  },
+  {
+    "id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+    "name": "Obat Fitofarmaka",
+    "description": "Obat yang berasal dari bahan alam yang telah dibuktikan keamanan dan khasiatnya melalui uji klinis",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:29:38.937463+00:00"
+  },
+  {
+    "id": "e09561d2-cc62-4a94-a132-4e17d6a02fa2",
+    "name": "Obat Herbal Terstandar",
+    "description": "Obat tradisional yang telah dibuktikan keamanan dan khasiatnya melalui uji pra-klinis",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:29:38.937463+00:00"
+  }
+]
+
+
+
+=== DATA TABEL: item_units ===
+[
+  {
+    "id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    "name": "Botol",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00",
+    "description": null
+  },
+  {
+    "id": "6727b61b-8063-422d-a89a-16b378d5d76d",
+    "name": "Tube",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00",
+    "description": null
+  },
+  {
+    "id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "name": "Strip",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-26T14:57:20.368076+00:00",
+    "description": null
+  },
+  {
+    "id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
+    "name": "Kapsul",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan padat dengan cangkang keras atau lunak"
+  },
+  {
+    "id": "b822686b-f7ec-46d1-8b40-fb69d8bea2f7",
+    "name": "Sirup",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan cair dengan kandungan gula atau pemanis"
+  },
+  {
+    "id": "f19ecad4-fec8-4ba9-b987-8f7bfe7f13b8",
+    "name": "Suspensi",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan cair dengan partikel padat yang tersuspensi"
+  },
+  {
+    "id": "aebc351d-0608-4643-ac0a-517bfd73aa7a",
+    "name": "Emulsi",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan cair yang terdiri dari dua cairan yang tidak saling bercampur"
+  },
+  {
+    "id": "9d764020-ae97-43c4-ae7e-ae66cb91ff17",
+    "name": "Serbuk",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan kering dalam bentuk bubuk"
+  },
+  {
+    "id": "23fd2eb0-16bb-47bb-832e-e201f4c77a57",
+    "name": "Salep",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan semi-padat untuk penggunaan luar"
+  },
+  {
+    "id": "bf752bfc-7a5f-4c0f-8f59-65b8c74e7f92",
+    "name": "Krim",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan semi-padat untuk penggunaan luar"
+  },
+  {
+    "id": "827d5b4f-a057-443f-bf40-8f50bc336857",
+    "name": "Gel",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan semi-padat transparan atau translusen"
+  },
+  {
+    "id": "abc71b3d-55c9-49e8-8730-bb5071d5c835",
+    "name": "Suppositoria",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan padat untuk penggunaan rektal"
+  },
+  {
+    "id": "c10825a4-90db-48d5-92f7-e8252e5a28b0",
+    "name": "Tetes",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan cair dosis kecil"
+  },
+  {
+    "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "name": "Ampul",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan steril dalam wadah kaca tertutup"
+  },
+  {
+    "id": "762913e6-f1e0-4765-a685-122015dc8eaa",
+    "name": "Vial",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Wadah kaca dengan tutup karet untuk sediaan injeksi"
+  },
+  {
+    "id": "7a50f346-7587-4ad7-9494-3b871e8be246",
+    "name": "Inhaler",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Alat untuk menghirup obat dalam bentuk aerosol"
+  },
+  {
+    "id": "71a78582-1700-4fd8-bc21-6045ca671c56",
+    "name": "Patch",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:31:02.468123+00:00",
+    "description": "Sediaan yang ditempelkan ke kulit"
+  },
+  {
+    "id": "cc8e891c-34ac-4afb-944c-258ad244a96f",
+    "name": "Tablet",
+    "created_at": "2025-03-26T14:57:20.368076+00:00",
+    "updated_at": "2025-03-30T08:33:30.804321+00:00",
+    "description": "Sediaan padat berbentuk bulat, oval, atau persegi"
+  },
+  {
+    "id": "243e80e0-917b-4549-b78c-3c1d27e4ccc4",
+    "name": "Kaplet",
+    "created_at": "2025-03-30T08:29:38.937463+00:00",
+    "updated_at": "2025-03-30T08:34:44.259782+00:00",
+    "description": "Tablet yang dibungkus dengan lapisan gula dan berwarna yang berguna dalam menjaga kelembapan serta kontaminasi ketika di lambung."
+  }
+]
+
+
+
+=== DATA TABEL: items ===
+[
+  {
+    "id": "a0b29cc8-c271-4d63-ad91-cd7d515d09d9",
+    "name": "Test Item",
+    "sell_price": 10,
+    "stock": 100,
+    "min_stock": 10,
+    "description": "This is a test item.",
+    "created_at": "2025-03-31T11:55:27.697158+00:00",
+    "updated_at": "2025-03-31T11:55:27.697158+00:00",
+    "is_active": true,
+    "code": null,
+    "rack": null,
+    "has_expiry_date": false,
+    "is_medicine": true,
+    "category_id": null,
+    "type_id": null,
+    "unit_id": null,
+    "base_unit": null,
+    "base_price": 0
+  }
+]
+
+
+
+=== DATA TABEL: patients ===
+[]
+
+
+
+=== DATA TABEL: purchase_items ===
+[]
+
+
+
+=== DATA TABEL: purchases ===
+[]
+
+
+
+=== DATA TABEL: sale_items ===
+[]
+
+
+
+=== DATA TABEL: sales ===
+[]
+
+
+
+=== DATA TABEL: suppliers ===
+[]
+
+
+
+=== DATA TABEL: unit_conversions ===
+[]
+
+
+
+=== DATA TABEL: users ===
+[]
+
+
+
 
 
 ===============================================
@@ -4662,34 +5143,10 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 
 ===============================================
-= File: ./supabase_data/paths.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.paths\" does not exist"
-}
-
-
-===============================================
 = File: ./supabase_data/sale_items.json 
 ===============================================
 
 []
-
-
-===============================================
-= File: ./supabase_data/definitions.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.definitions\" does not exist"
-}
 
 
 ===============================================
@@ -4740,15 +5197,3 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
     "updated_at": "2025-03-26T14:57:20.368076+00:00"
   }
 ]
-
-
-===============================================
-= File: ./supabase_data/swagger.json 
-===============================================
-
-{
-  "code": "42P01",
-  "details": null,
-  "hint": null,
-  "message": "relation \"public.swagger\" does not exist"
-}

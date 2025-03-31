@@ -60,14 +60,20 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         }
 
         // Cek apakah satuan sudah ada
-        const existingUnit = unitConversions.find(uc => uc.unit === unitConversionFormData.unit);
+        const existingUnit = unitConversions.find(uc => uc.unit.name === unitConversionFormData.unit);
         if (existingUnit) {
             alert("Satuan tersebut sudah ada dalam daftar!");
             return;
         }
+        
+        const selectedUnit = availableUnits.find(u => u.name === unitConversionFormData.unit);
+            if (!selectedUnit) {
+                alert("Satuan tidak valid!");
+            return;
+        }
 
         addUnitConversion({
-            unit: unitConversionFormData.unit,
+            unit: selectedUnit,
             conversion: unitConversionFormData.conversion,
         });
 
@@ -97,7 +103,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             <option value="">-- Pilih Satuan --</option>
                             {availableUnits
                                 .filter(unit => unit.name !== baseUnit)
-                                .filter(unit => !unitConversions.some(uc => uc.unit === unit.name))
+                                .filter(unit => !unitConversions.some(uc => uc.unit.name === unit.name))
                                 .map(unit => (
                                 <option key={unit.id} value={unit.name}>
                                     {unit.name}
@@ -148,9 +154,9 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             ) : (
                                 unitConversions.map((uc) => (
                                     <TableRow key={uc.id}>
-                                        <TableCell>{uc.unit}</TableCell>
+                                        <TableCell>{uc.unit.name}</TableCell>
                                         <TableCell>
-                                            1 {baseUnit} = {uc.conversion} {uc.unit}
+                                            1 {baseUnit} = {uc.conversion} {uc.unit.name}
                                         </TableCell>
                                         <TableCell>
                                             {(uc.basePrice || 0).toLocaleString("id-ID", {
