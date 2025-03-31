@@ -12,6 +12,8 @@ const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
 const UnitList = lazy(() => import('./pages/master-data/UnitList'));
 const TypeList = lazy(() => import('./pages/master-data/TypeList'));
 const AddItem = lazy(() => import('./pages/master-data/AddItem'));
+const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
+const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
 // Tambahkan halaman lain sesuai kebutuhan
 
 function App() {
@@ -66,6 +68,27 @@ function App() {
               </Suspense>
             } />
             {/* Tambahkan route lain sesuai kebutuhan */}
+          </Route>
+          
+          <Route path="purchases">
+            <Route 
+              index 
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <PurchaseList />
+                </Suspense>
+              } 
+            />
+            <Route 
+              path="create" 
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <CreatePurchase />
+                </Suspense>
+              } 
+            />
+            <Route path="orders" element={<div>Daftar Pesanan Beli (Coming Soon)</div>} />
+            <Route path="price-history" element={<div>Riwayat Harga Beli (Coming Soon)</div>} />
           </Route>
           
           {/* Tambahkan route untuk modul lain */}

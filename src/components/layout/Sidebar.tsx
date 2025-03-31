@@ -4,10 +4,10 @@ import {
     FaDatabase,
     FaBoxes,
     FaShoppingCart,
-    FaShoppingBag,
-    FaHospital,
-    FaChartBar,
-    FaCog,
+    // FaShoppingBag,
+    // FaHospital,
+    // FaChartBar,
+    // FaCog,
     FaAngleDown,
 } from "react-icons/fa";
 
@@ -142,6 +142,45 @@ const Sidebar = () => {
                                 className="block py-2 text-sm text-gray-600 hover:text-primary"
                             >
                                 Obat Kadaluarsa
+                            </Link>
+                        </div>
+                    )}
+                </div>
+
+                {/* Pembelian */}
+                <div>
+                    <button
+                        onClick={() => toggleMenu("purchasing")}
+                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
+                    >
+                        <div className="flex items-center">
+                            <FaShoppingCart className="text-gray-500" />
+                            <span className="mx-3">Pembelian</span>
+                        </div>
+                        <FaAngleDown
+                            className={`transform ${openMenus.purchasing ? "rotate-180" : ""}`}
+                        />
+                    </button>
+
+                    {openMenus.purchasing && (
+                        <div className="pl-12 pr-6 py-2 bg-gray-50">
+                            <Link
+                                to="/purchases/orders"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Daftar Pesanan Beli
+                            </Link>
+                            <Link
+                                to="/purchases"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Daftar Pembelian
+                            </Link>
+                            <Link
+                                to="/purchases/price-history"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Riwayat Harga Beli
                             </Link>
                         </div>
                     )}
