@@ -32,7 +32,8 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         if (basePrice > 0 && unitConversions.length > 0) {
             recalculateBasePrices();
         }
-    }, [basePrice, unitConversions.length, recalculateBasePrices]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [basePrice, recalculateBasePrices]);
 
     // const handleBaseUnitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     //     const { name, value } = e.target;

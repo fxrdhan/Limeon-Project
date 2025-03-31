@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
 export interface UnitConversion {
@@ -66,7 +66,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
     }, []);
 
     // Fungsi untuk menambah konversi satuan
-    const addUnitConversion = (unitConversion: Omit<UnitConversion, "id" | "basePrice">) => {
+    const addUnitConversion = useCallback((unitConversion: Omit<UnitConversion, "id" | "basePrice">) => {
         // Hitung harga per unit kecil (misal: per tablet)
         // Jika 1 strip = 10 tablet dan harga strip 50.000,
         // maka harga per tablet = 50.000 / 10 = 5.000
@@ -77,23 +77,26 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
             id: Date.now().toString(),
             basePrice: calculatedBasePrice,
         };
-        setUnitConversions([...unitConversions, newUnitConversion]);
-    };
+        setUnitConversions(prevConversions => [...prevConversions, newUnitConversion]);
+    }, [basePrice]);
 
     // Fungsi untuk menghapus konversi satuan
-    const removeUnitConversion = (id: string) => {
-        setUnitConversions(unitConversions.filter((uc) => uc.id !== id));
-    };
+    const removeUnitConversion = useCallback((id: string) => {
+        setUnitConversions(prevConversions => prevConversions.filter(uc => uc.id !== id));
+    }, []);
 
     // Menghitung ulang harga pokok untuk semua konversi berdasarkan harga pokok dasar
-    const recalculateBasePrices = () => {
-        const updatedConversions = unitConversions.map(uc => ({
-            ...uc,
-            basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0
-        }));
+    const recalculateBasePrices = useCallback(() => {
+        if (basePrice <= 0 || unitConversions.length === 0) return;
         
-        setUnitConversions(updatedConversions);
-    };
+        setUnitConversions(prevConversions => 
+            prevConversions.map(uc => ({
+                ...uc,
+                basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0
+            }))
+        );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [basePrice]);
 
     return {
         baseUnit,
