@@ -80,7 +80,7 @@ const UnitList = () => {
                     <TableHead>
                         <TableRow>
                             <TableHeader>Nama Satuan</TableHeader>
-                            {/* <TableHeader>Deskripsi</TableHeader> */}
+                            <TableHeader>Deskripsi</TableHeader>
                             <TableHeader className="text-center">Aksi</TableHeader>
                         </TableRow>
                     </TableHead>
@@ -95,7 +95,7 @@ const UnitList = () => {
                                 units.map((unit) => (
                                     <TableRow key={unit.id}>
                                         <TableCell>{unit.name}</TableCell>
-                                        {/* <TableCell>{unit.description}</TableCell> */}
+                                        <TableCell>{unit.description}</TableCell>
                                         <TableCell className="text-center">
                                             <div className="flex justify-center space-x-2">
                                                 <Link
@@ -114,7 +114,7 @@ const UnitList = () => {
                                                 </Button>
                                             </div>
                                         </TableCell>
-                                    </TableRow>
+                                    </Row>
                                 ))
                             )}
                     </TableBody>
