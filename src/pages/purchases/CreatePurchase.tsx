@@ -19,6 +19,10 @@ interface Item {
     name: string;
     base_price: number;
     stock: number;
+    unit_id: string;
+    base_unit: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    unit_conversions: any[];
 }
 
 interface PurchaseItem {
@@ -28,6 +32,8 @@ interface PurchaseItem {
     quantity: number;
     price: number;
     subtotal: number;
+    unit: string;
+    unit_conversion_rate: number;
 }
 
 const CreatePurchase = () => {
@@ -76,7 +82,7 @@ const CreatePurchase = () => {
         try {
             const { data, error } = await supabase
                 .from('items')
-                .select('id, name, base_price, stock')
+                .select('id, name, base_price, stock, unit_id, base_unit, unit_conversions')
                 .order('name');
                 
             if (error) throw error;
@@ -84,6 +90,10 @@ const CreatePurchase = () => {
         } catch (error) {
             console.error('Error fetching items:', error);
         }
+    };
+    
+    const getItemByID = (itemId: string): Item | undefined => {
+        return items.find(item => item.id === itemId);
     };
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -103,7 +113,9 @@ const CreatePurchase = () => {
             item_name: selectedItem.name,
             quantity: 1,
             price: selectedItem.base_price,
-            subtotal: selectedItem.base_price
+            subtotal: selectedItem.base_price,
+            unit: selectedItem.base_unit || 'Unit',
+            unit_conversion_rate: 1
         };
         
         setPurchaseItems([...purchaseItems, newItem]);
@@ -120,6 +132,38 @@ const CreatePurchase = () => {
                     ...item,
                     [field]: value,
                     subtotal: quantity * price
+                };
+            }
+            return item;
+        });
+        
+        setPurchaseItems(updatedItems);
+    };
+    
+    const handleUnitChange = (id: string, unitName: string) => {
+        const updatedItems = purchaseItems.map(item => {
+            if (item.id === id) {
+                const itemData = getItemByID(item.item_id);
+                if (!itemData) return item;
+                
+                let price = itemData.base_price;
+                let conversionRate = 1;
+                
+                // Jika bukan satuan dasar, cari harga berdasarkan konversi
+                if (unitName !== itemData.base_unit) {
+                    const unitConversion = itemData.unit_conversions?.find(uc => uc.unit_name === unitName);
+                    if (unitConversion) {
+                        price = unitConversion.base_price || itemData.base_price / unitConversion.conversion_rate;
+                        conversionRate = unitConversion.conversion_rate;
+                    }
+                }
+                
+                return {
+                    ...item,
+                    unit: unitName,
+                    price: price,
+                    subtotal: price * item.quantity,
+                    unit_conversion_rate: conversionRate
                 };
             }
             return item;
@@ -163,10 +207,11 @@ const CreatePurchase = () => {
             // Insert purchase items
             const purchaseItemsData = purchaseItems.map(item => ({
                 purchase_id: purchaseData.id,
-                medicine_id: item.item_id,
+                item_id: item.item_id,
                 quantity: item.quantity,
                 price: item.price,
-                subtotal: item.subtotal
+                subtotal: item.subtotal,
+                unit: item.unit
             }));
             
             const { error: itemsError } = await supabase
@@ -343,6 +388,7 @@ const CreatePurchase = () => {
                                     <TableHeader>Nama Item</TableHeader>
                                     <TableHeader className="text-right">Harga</TableHeader>
                                     <TableHeader className="text-center">Jumlah</TableHeader>
+                                    <TableHeader className="text-center">Satuan</TableHeader>
                                     <TableHeader className="text-right">Subtotal</TableHeader>
                                     <TableHeader className="text-center">Aksi</TableHeader>
                                 </TableRow>
@@ -350,7 +396,7 @@ const CreatePurchase = () => {
                             <TableBody>
                                 {purchaseItems.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center text-gray-500">
+                                        <TableCell colSpan={6} className="text-center text-gray-500">
                                             Belum ada item ditambahkan
                                         </TableCell>
                                     </TableRow>
@@ -376,6 +422,20 @@ const CreatePurchase = () => {
                                                     className="w-20 text-center"
                                                 />
                                             </TableCell>
+                                            <TableCell className="text-center">
+                                                <select
+                                                    value={item.unit}
+                                                    onChange={(e) => handleUnitChange(item.id, e.target.value)}
+                                                    className="p-2 border rounded-md"
+                                                >
+                                                    <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
+                                                        {getItemByID(item.item_id)?.base_unit || 'Unit'}
+                                                    </option>
+                                                    {getItemByID(item.item_id)?.unit_conversions?.map(uc => (
+                                                        <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
+                                                    ))}
+                                                </select>
+                                            </TableCell>
                                             <TableCell className="text-right">
                                                 {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                                             </TableCell>
@@ -393,11 +453,11 @@ const CreatePurchase = () => {
                                     ))
                                 )}
                                 <TableRow className="font-semibold bg-gray-50">
-                                    <TableCell colSpan={3} className="text-right">Total:</TableCell>
+                                    <TableCell colSpan={4} className="text-right">Total:</TableCell>
                                     <TableCell className="text-right">
                                         {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                                     </TableCell>
-                                    {/* <TableCell></TableCell> */}
+                                    <TableCell children={undefined}></TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
