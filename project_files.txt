@@ -50,6 +50,9 @@
 │   │   │   ├── ItemList.tsx
 │   │   │   ├── TypeList.tsx
 │   │   │   └── UnitList.tsx
+│   │   ├── purchases
+│   │   │   ├── CreatePurchase.tsx
+│   │   │   └── PurchaseList.tsx
 │   │   └── sales
 │   │       └── CreateSale.tsx
 │   ├── store
@@ -77,7 +80,7 @@
 ├── tsconfig.node.json
 └── vite.config.ts
 
-17 directories, 61 files
+18 directories, 63 files
 
 
 ===============================================
@@ -1106,10 +1109,10 @@ import {
     FaDatabase,
     FaBoxes,
     FaShoppingCart,
-    FaShoppingBag,
-    FaHospital,
-    FaChartBar,
-    FaCog,
+    // FaShoppingBag,
+    // FaHospital,
+    // FaChartBar,
+    // FaCog,
     FaAngleDown,
 } from "react-icons/fa";
 
@@ -1244,6 +1247,45 @@ const Sidebar = () => {
                                 className="block py-2 text-sm text-gray-600 hover:text-primary"
                             >
                                 Obat Kadaluarsa
+                            </Link>
+                        </div>
+                    )}
+                </div>
+
+                {/* Pembelian */}
+                <div>
+                    <button
+                        onClick={() => toggleMenu("purchasing")}
+                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
+                    >
+                        <div className="flex items-center">
+                            <FaShoppingCart className="text-gray-500" />
+                            <span className="mx-3">Pembelian</span>
+                        </div>
+                        <FaAngleDown
+                            className={`transform ${openMenus.purchasing ? "rotate-180" : ""}`}
+                        />
+                    </button>
+
+                    {openMenus.purchasing && (
+                        <div className="pl-12 pr-6 py-2 bg-gray-50">
+                            <Link
+                                to="/purchases/orders"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Daftar Pesanan Beli
+                            </Link>
+                            <Link
+                                to="/purchases"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Daftar Pembelian
+                            </Link>
+                            <Link
+                                to="/purchases/price-history"
+                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+                            >
+                                Riwayat Harga Beli
                             </Link>
                         </div>
                     )}
@@ -3443,6 +3485,737 @@ export default Dashboard;
 
 
 ===============================================
+= File: ./src/pages/purchases/PurchaseList.tsx 
+===============================================
+
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaEye } from "react-icons/fa";
+import { Card } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import { Pagination } from "../../components/ui/Pagination";
+import { Loading } from "../../components/ui/Loading";
+import { Badge } from "../../components/ui/Badge";
+
+interface Purchase {
+    id: string;
+    invoice_number: string;
+    date: string;
+    total: number;
+    payment_status: string;
+    payment_method: string;
+    supplier: {
+        name: string;
+    };
+}
+
+const PurchaseList = () => {
+    const [purchases, setPurchases] = useState<Purchase[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // Effect for debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1); // Reset to first page when search changes
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    // Effect to fetch data when parameters change
+    useEffect(() => {
+        fetchPurchases(currentPage, debouncedSearch, itemsPerPage);
+    }, [currentPage, debouncedSearch, itemsPerPage]);
+
+    const fetchPurchases = async (page = 1, searchTerm = '', limit = 10) => {
+        try {
+            setLoading(true);
+
+            // Base query
+            let query = supabase
+                .from("purchases")
+                .select(`
+                    id,
+                    invoice_number,
+                    date,
+                    total,
+                    payment_status,
+                    payment_method,
+                    supplier_id,
+                    supplier:suppliers(name)
+                `);
+
+            // Add search if present
+            if (searchTerm) {
+                query = query.or(`invoice_number.ilike.%${searchTerm}%,suppliers.name.ilike.%${searchTerm}%`);
+            }
+
+            // Get total count for pagination
+            let countQuery = supabase
+                .from("purchases")
+                .select('id', { count: 'exact' });
+
+            // Add search to count query if present
+            if (searchTerm) {
+                countQuery = countQuery.or(`invoice_number.ilike.%${searchTerm}%,suppliers.name.ilike.%${searchTerm}%`);
+            }
+
+            const { count, error: countError } = await countQuery;
+            if (countError) throw countError;
+
+            // Add pagination
+            const from = (page - 1) * limit;
+            const to = from + limit - 1;
+
+            const { data, error } = await query
+                .order('date', { ascending: false })
+                .range(from, to);
+
+            if (error) {
+                console.error("Error fetching purchases:", error);
+                throw error;
+            }
+
+            setTotalItems(count || 0);
+            setPurchases(data || []);
+        } catch (error) {
+            console.error("Error fetching purchases:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
+
+    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1); // Reset to first page
+    };
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm("Apakah Anda yakin ingin menghapus pembelian ini?")) {
+            try {
+                const { error } = await supabase
+                    .from("purchases")
+                    .delete()
+                    .eq("id", id);
+
+                if (error) throw error;
+
+                // Refresh data
+                fetchPurchases(currentPage, debouncedSearch, itemsPerPage);
+            } catch (error) {
+                console.error("Error deleting purchase:", error);
+                alert("Gagal menghapus pembelian. Silakan coba lagi.");
+            }
+        }
+    };
+
+    const getStatusBadgeVariant = (status: string) => {
+        switch (status) {
+            case 'paid':
+                return 'success';
+            case 'partial':
+                return 'warning';
+            case 'unpaid':
+                return 'danger';
+            default:
+                return 'secondary';
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'paid':
+                return 'Lunas';
+            case 'partial':
+                return 'Sebagian';
+            case 'unpaid':
+                return 'Belum Bayar';
+            default:
+                return status;
+        }
+    };
+
+    const getPaymentMethodLabel = (method: string) => {
+        switch (method) {
+            case 'cash':
+                return 'Tunai';
+            case 'transfer':
+                return 'Transfer';
+            case 'credit':
+                return 'Kredit';
+            default:
+                return method;
+        }
+    };
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    return (
+        <Card>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Daftar Pembelian</h1>
+
+                <Link to="/purchases/create">
+                    <Button variant="primary">
+                        <FaPlus className="mr-2" />
+                        Tambah Pembelian Baru
+                    </Button>
+                </Link>
+            </div>
+
+            <div className="mb-4 relative">
+                <input
+                    type="text"
+                    placeholder="Cari nomor faktur atau supplier..."
+                    className="w-full p-3 border rounded-md pl-10"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+            </div>
+
+            {loading ? (
+                <Loading />
+            ) : (
+                <>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableHeader>No. Faktur</TableHeader>
+                                <TableHeader>Tanggal</TableHeader>
+                                <TableHeader>Supplier</TableHeader>
+                                <TableHeader className="text-right">Total</TableHeader>
+                                <TableHeader className="text-center">Status Pembayaran</TableHeader>
+                                <TableHeader className="text-center">Metode Pembayaran</TableHeader>
+                                <TableHeader className="text-center">Aksi</TableHeader>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {purchases.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={7}
+                                        className="text-center text-gray-600"
+                                    >
+                                        {debouncedSearch ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"` : "Tidak ada data pembelian yang ditemukan"}
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                purchases.map((purchase) => (
+                                    <TableRow key={purchase.id}>
+                                        <TableCell>{purchase.invoice_number}</TableCell>
+                                        <TableCell>
+                                            {new Date(purchase.date).toLocaleDateString('id-ID', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric'
+                                            })}
+                                        </TableCell>
+                                        <TableCell>{purchase.supplier?.name || 'Tidak ada supplier'}</TableCell>
+                                        <TableCell className="text-right">
+                                            {purchase.total.toLocaleString('id-ID', {
+                                                style: 'currency',
+                                                currency: 'IDR'
+                                            })}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge variant={getStatusBadgeVariant(purchase.payment_status)}>
+                                                {getStatusLabel(purchase.payment_status)}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            {getPaymentMethodLabel(purchase.payment_method)}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <div className="flex justify-center space-x-2">
+                                                <Link to={`/purchases/view/${purchase.id}`}>
+                                                    <Button variant="primary" size="sm">
+                                                        <FaEye />
+                                                    </Button>
+                                                </Link>
+                                                <Link to={`/purchases/edit/${purchase.id}`}>
+                                                    <Button variant="secondary" size="sm">
+                                                        <FaEdit />
+                                                    </Button>
+                                                </Link>
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(purchase.id)}
+                                                >
+                                                    <FaTrash />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        itemsPerPage={itemsPerPage}
+                        itemsCount={purchases.length}
+                        onPageChange={handlePageChange}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                    />
+                </>
+            )}
+        </Card>
+    );
+};
+
+export default PurchaseList;
+
+===============================================
+= File: ./src/pages/purchases/CreatePurchase.tsx 
+===============================================
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { FaPlus, FaTrash, FaTimes, FaSave } from 'react-icons/fa';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { FormSection, FormField } from '../../components/ui/FormComponents';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
+
+interface Supplier {
+    id: string;
+    name: string;
+}
+
+interface Item {
+    id: string;
+    name: string;
+    base_price: number;
+    stock: number;
+}
+
+interface PurchaseItem {
+    id: string;
+    item_id: string;
+    item_name: string;
+    quantity: number;
+    price: number;
+    subtotal: number;
+}
+
+const CreatePurchase = () => {
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    const [items, setItems] = useState<Item[]>([]);
+    const [searchItem, setSearchItem] = useState('');
+    const [showItemDropdown, setShowItemDropdown] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+    const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
+    
+    // Form data
+    const [formData, setFormData] = useState({
+        supplier_id: '',
+        invoice_number: '',
+        date: new Date().toISOString().slice(0, 10),
+        payment_status: 'unpaid',
+        payment_method: 'cash',
+        notes: ''
+    });
+    
+    // Calculate total
+    const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
+    
+    useEffect(() => {
+        fetchSuppliers();
+        fetchItems();
+    }, []);
+    
+    const fetchSuppliers = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('suppliers')
+                .select('id, name')
+                .order('name');
+                
+            if (error) throw error;
+            setSuppliers(data || []);
+        } catch (error) {
+            console.error('Error fetching suppliers:', error);
+        }
+    };
+    
+    const fetchItems = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('items')
+                .select('id, name, base_price, stock')
+                .order('name');
+                
+            if (error) throw error;
+            setItems(data || []);
+        } catch (error) {
+            console.error('Error fetching items:', error);
+        }
+    };
+    
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData({
+            ...formData,
+            [name]: value
+        });
+    };
+    
+    const addItem = () => {
+        if (!selectedItem) return;
+        
+        const newItem: PurchaseItem = {
+            id: Date.now().toString(),
+            item_id: selectedItem.id,
+            item_name: selectedItem.name,
+            quantity: 1,
+            price: selectedItem.base_price,
+            subtotal: selectedItem.base_price
+        };
+        
+        setPurchaseItems([...purchaseItems, newItem]);
+        setSelectedItem(null);
+        setSearchItem('');
+    };
+    
+    const updateItem = (id: string, field: 'quantity' | 'price', value: number) => {
+        const updatedItems = purchaseItems.map(item => {
+            if (item.id === id) {
+                const quantity = field === 'quantity' ? value : item.quantity;
+                const price = field === 'price' ? value : item.price;
+                return {
+                    ...item,
+                    [field]: value,
+                    subtotal: quantity * price
+                };
+            }
+            return item;
+        });
+        
+        setPurchaseItems(updatedItems);
+    };
+    
+    const removeItem = (id: string) => {
+        setPurchaseItems(purchaseItems.filter(item => item.id !== id));
+    };
+    
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (purchaseItems.length === 0) {
+            alert('Silakan tambahkan minimal satu item');
+            return;
+        }
+        
+        try {
+            setLoading(true);
+            
+            // Insert purchase record
+            const { data: purchaseData, error: purchaseError } = await supabase
+                .from('purchases')
+                .insert({
+                    supplier_id: formData.supplier_id || null,
+                    invoice_number: formData.invoice_number,
+                    date: formData.date,
+                    total: total,
+                    payment_status: formData.payment_status,
+                    payment_method: formData.payment_method,
+                    notes: formData.notes || null
+                })
+                .select('id')
+                .single();
+                
+            if (purchaseError) throw purchaseError;
+            
+            // Insert purchase items
+            const purchaseItemsData = purchaseItems.map(item => ({
+                purchase_id: purchaseData.id,
+                medicine_id: item.item_id,
+                quantity: item.quantity,
+                price: item.price,
+                subtotal: item.subtotal
+            }));
+            
+            const { error: itemsError } = await supabase
+                .from('purchase_items')
+                .insert(purchaseItemsData);
+                
+            if (itemsError) throw itemsError;
+            
+            // Update item stocks
+            for (const item of purchaseItems) {
+                await supabase
+                    .from('items')
+                    .update({
+                        stock: supabase.rpc('increment', { x: item.quantity })
+                    })
+                    .eq('id', item.item_id);
+            }
+            
+            navigate('/purchases');
+        } catch (error) {
+            console.error('Error creating purchase:', error);
+            alert('Gagal menyimpan pembelian. Silakan coba lagi.');
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    // Filter items based on search input
+    const filteredItems = items.filter(item =>
+        item.name.toLowerCase().includes(searchItem.toLowerCase())
+    );
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Tambah Pembelian Baru</CardTitle>
+            </CardHeader>
+            
+            <form onSubmit={handleSubmit}>
+                <CardContent className="space-y-6">
+                    <FormSection title="Informasi Pembelian">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormField label="Supplier">
+                                <select
+                                    name="supplier_id"
+                                    value={formData.supplier_id}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border rounded-md"
+                                >
+                                    <option value="">-- Pilih Supplier --</option>
+                                    {suppliers.map(supplier => (
+                                        <option key={supplier.id} value={supplier.id}>
+                                            {supplier.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </FormField>
+                            
+                            <FormField label="Nomor Faktur">
+                                <Input
+                                    name="invoice_number"
+                                    value={formData.invoice_number}
+                                    onChange={handleChange}
+                                    placeholder="Masukkan nomor faktur"
+                                />
+                            </FormField>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <FormField label="Tanggal Pembelian">
+                                <Input
+                                    type="date"
+                                    name="date"
+                                    value={formData.date}
+                                    onChange={handleChange}
+                                />
+                            </FormField>
+                            
+                            <FormField label="Status Pembayaran">
+                                <select
+                                    name="payment_status"
+                                    value={formData.payment_status}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border rounded-md"
+                                >
+                                    <option value="unpaid">Belum Dibayar</option>
+                                    <option value="partial">Sebagian</option>
+                                    <option value="paid">Lunas</option>
+                                </select>
+                            </FormField>
+                            
+                            <FormField label="Metode Pembayaran">
+                                <select
+                                    name="payment_method"
+                                    value={formData.payment_method}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border rounded-md"
+                                >
+                                    <option value="cash">Tunai</option>
+                                    <option value="transfer">Transfer</option>
+                                    <option value="credit">Kredit</option>
+                                </select>
+                            </FormField>
+                        </div>
+                        
+                        <FormField label="Catatan">
+                            <textarea
+                                name="notes"
+                                value={formData.notes}
+                                onChange={handleChange}
+                                className="w-full p-3 border rounded-md"
+                                rows={3}
+                            />
+                        </FormField>
+                    </FormSection>
+                    
+                    <FormSection title="Daftar Item">
+                        <div className="mb-4">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Cari item..."
+                                    className="w-full p-3 border rounded-md"
+                                    value={searchItem}
+                                    onChange={(e) => {
+                                        setSearchItem(e.target.value);
+                                        setShowItemDropdown(true);
+                                    }}
+                                    onFocus={() => setShowItemDropdown(true)}
+                                />
+                                
+                                {showItemDropdown && searchItem && (
+                                    <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                        {filteredItems.length === 0 ? (
+                                            <div className="p-3 text-gray-500">Tidak ada item yang ditemukan</div>
+                                        ) : (
+                                            filteredItems.map(item => (
+                                                <div
+                                                    key={item.id}
+                                                    className="p-3 hover:bg-gray-100 cursor-pointer"
+                                                    onClick={() => {
+                                                        setSelectedItem(item);
+                                                        setSearchItem(item.name);
+                                                        setShowItemDropdown(false);
+                                                    }}
+                                                >
+                                                    <div>{item.name}</div>
+                                                    <div className="text-sm text-gray-500">
+                                                        Harga Dasar: {item.base_price.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="mt-2 flex">
+                                <Button
+                                    type="button"
+                                    onClick={addItem}
+                                    disabled={!selectedItem}
+                                    className="flex items-center"
+                                >
+                                    <FaPlus className="mr-2" />
+                                    Tambah Item
+                                </Button>
+                            </div>
+                        </div>
+                        
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableHeader>Nama Item</TableHeader>
+                                    <TableHeader className="text-right">Harga</TableHeader>
+                                    <TableHeader className="text-center">Jumlah</TableHeader>
+                                    <TableHeader className="text-right">Subtotal</TableHeader>
+                                    <TableHeader className="text-center">Aksi</TableHeader>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {purchaseItems.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center text-gray-500">
+                                            Belum ada item ditambahkan
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    purchaseItems.map(item => (
+                                        <TableRow key={item.id}>
+                                            <TableCell>{item.item_name}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    value={item.price}
+                                                    onChange={(e) => updateItem(item.id, 'price', Number(e.target.value))}
+                                                    className="w-32 text-right"
+                                                />
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Input
+                                                    type="number"
+                                                    min="1"
+                                                    value={item.quantity}
+                                                    onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
+                                                    className="w-20 text-center"
+                                                />
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Button
+                                                    type="button"
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => removeItem(item.id)}
+                                                >
+                                                    <FaTrash />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                                <TableRow className="font-semibold bg-gray-50">
+                                    <TableCell colSpan={3} className="text-right">Total:</TableCell>
+                                    <TableCell className="text-right">
+                                        {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                    </TableCell>
+                                    {/* <TableCell></TableCell> */}
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </FormSection>
+                </CardContent>
+                
+                <CardFooter className="flex justify-between">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => navigate('/purchases')}
+                    >
+                        <FaTimes className="mr-2" /> Batal
+                    </Button>
+                    
+                    <Button
+                        type="submit"
+                        disabled={loading || purchaseItems.length === 0}
+                        isLoading={loading}
+                    >
+                        <FaSave className="mr-2" /> Simpan
+                    </Button>
+                </CardFooter>
+            </form>
+        </Card>
+    );
+};
+
+export default CreatePurchase;
+
+===============================================
 = File: ./src/pages/auth/Login.tsx 
 ===============================================
 
@@ -3919,6 +4692,8 @@ const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
 const UnitList = lazy(() => import('./pages/master-data/UnitList'));
 const TypeList = lazy(() => import('./pages/master-data/TypeList'));
 const AddItem = lazy(() => import('./pages/master-data/AddItem'));
+const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
+const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
 // Tambahkan halaman lain sesuai kebutuhan
 
 function App() {
@@ -3973,6 +4748,27 @@ function App() {
               </Suspense>
             } />
             {/* Tambahkan route lain sesuai kebutuhan */}
+          </Route>
+          
+          <Route path="purchases">
+            <Route 
+              index 
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <PurchaseList />
+                </Suspense>
+              } 
+            />
+            <Route 
+              path="create" 
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <CreatePurchase />
+                </Suspense>
+              } 
+            />
+            <Route path="orders" element={<div>Daftar Pesanan Beli (Coming Soon)</div>} />
+            <Route path="price-history" element={<div>Riwayat Harga Beli (Coming Soon)</div>} />
           </Route>
           
           {/* Tambahkan route untuk modul lain */}
@@ -4435,16 +5231,23 @@ SQL Definition of purchase_items
 create table public.purchase_items (
   id uuid not null default extensions.uuid_generate_v4 (),
   purchase_id uuid null,
-  medicine_id uuid null,
+  item_id uuid null,
   quantity integer not null,
   price numeric(15, 2) not null,
   subtotal numeric(15, 2) not null,
   created_at timestamp with time zone null default now(),
   updated_at timestamp with time zone null default now(),
+  batch_no character varying(50) null,
+  expiry_date date null,
+  unit character varying(50) null,
   constraint purchase_items_pkey primary key (id),
-  constraint purchase_items_medicine_id_fkey foreign KEY (medicine_id) references items (id),
+  constraint purchase_items_item_id_fkey foreign KEY (item_id) references items (id),
   constraint purchase_items_purchase_id_fkey foreign KEY (purchase_id) references purchases (id) on delete CASCADE
 ) TABLESPACE pg_default;
+
+create index IF not exists idx_purchase_items_batch_no on public.purchase_items using btree (batch_no) TABLESPACE pg_default;
+
+create index IF not exists idx_purchase_items_expiry_date on public.purchase_items using btree (expiry_date) TABLESPACE pg_default;
 
 create trigger set_updated_at BEFORE
 update on purchase_items for EACH row
@@ -4465,6 +5268,11 @@ create table public.purchases (
   created_by uuid null,
   created_at timestamp with time zone null default now(),
   updated_at timestamp with time zone null default now(),
+  so_number character varying(50) null,
+  due_date date null,
+  vat_amount numeric(15, 2) null default 0,
+  vat_percentage numeric(5, 2) null default 11.0,
+  is_vat_included boolean null default true,
   constraint purchases_pkey primary key (id),
   constraint purchases_created_by_fkey foreign KEY (created_by) references users (id),
   constraint purchases_supplier_id_fkey foreign KEY (supplier_id) references suppliers (id)
@@ -4790,24 +5598,46 @@ execute FUNCTION update_updated_at_column ();
 
 [
   {
-    "id": "a0b29cc8-c271-4d63-ad91-cd7d515d09d9",
-    "name": "Test Item",
-    "sell_price": 10,
-    "stock": 100,
+    "id": "69701999-977d-4505-87ca-555387c9fc1b",
+    "name": "test",
+    "sell_price": 0,
+    "stock": 0,
     "min_stock": 10,
-    "description": "This is a test item.",
-    "created_at": "2025-03-31T11:55:27.697158+00:00",
-    "updated_at": "2025-03-31T11:55:27.697158+00:00",
+    "description": null,
+    "created_at": "2025-03-31T12:59:49.016794+00:00",
+    "updated_at": "2025-03-31T12:59:49.016794+00:00",
     "is_active": true,
-    "code": null,
+    "code": "TSAD01",
     "rack": null,
     "has_expiry_date": false,
     "is_medicine": true,
-    "category_id": null,
-    "type_id": null,
-    "unit_id": null,
-    "base_unit": null,
-    "base_price": 0
+    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
+    "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "base_unit": "Strip",
+    "base_price": 50000,
+    "unit_conversions": []
+  },
+  {
+    "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
+    "name": "ioiiooioi",
+    "sell_price": 0,
+    "stock": 0,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-31T12:28:37.963061+00:00",
+    "updated_at": "2025-03-31T12:28:37.963061+00:00",
+    "is_active": true,
+    "code": "TSAB01",
+    "rack": null,
+    "has_expiry_date": true,
+    "is_medicine": true,
+    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "base_unit": "Strip",
+    "base_price": 50000,
+    "unit_conversions": []
   }
 ]
 
@@ -4816,7 +5646,24 @@ execute FUNCTION update_updated_at_column ();
 = File: ./supabase_data/unit_conversions.json 
 ===============================================
 
-[]
+[
+  {
+    "id": "6b514e67-ddfc-4b20-9a0b-00eefa1ac081",
+    "item_id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
+    "unit_name": "Tablet",
+    "conversion_rate": 10,
+    "base_price": 5000,
+    "created_at": "2025-03-31T12:28:38.07+00:00"
+  },
+  {
+    "id": "caf6a321-5ceb-4956-b77e-39b7b83449f6",
+    "item_id": "69701999-977d-4505-87ca-555387c9fc1b",
+    "unit_name": "Tablet",
+    "conversion_rate": 10,
+    "base_price": 5000,
+    "created_at": "2025-03-31T12:59:49.152+00:00"
+  }
+]
 
 
 ===============================================
@@ -4830,7 +5677,18 @@ execute FUNCTION update_updated_at_column ();
 = File: ./supabase_data/suppliers.json 
 ===============================================
 
-[]
+[
+  {
+    "id": "e822fee9-035b-4d93-8bf0-d4fb51c18002",
+    "name": "PT. Teknologi Medika Pratama",
+    "address": "Komplek Pergudangan Kubik Logistics, Gudang E1 E2 E7, JI. Tugu Raya, RT.10/RW.10, Kel Tugu, Kec. Cimanggis, Kota Depok, Jawa Barat Indonesia",
+    "phone": null,
+    "email": null,
+    "contact_person": "apt. Nur Ramadhani, S. Farm.",
+    "created_at": "2025-03-31T15:29:52.123716+00:00",
+    "updated_at": "2025-03-31T15:29:52.123716+00:00"
+  }
+]
 
 
 ===============================================
@@ -5073,24 +5931,46 @@ execute FUNCTION update_updated_at_column ();
 === DATA TABEL: items ===
 [
   {
-    "id": "a0b29cc8-c271-4d63-ad91-cd7d515d09d9",
-    "name": "Test Item",
-    "sell_price": 10,
-    "stock": 100,
+    "id": "69701999-977d-4505-87ca-555387c9fc1b",
+    "name": "test",
+    "sell_price": 0,
+    "stock": 0,
     "min_stock": 10,
-    "description": "This is a test item.",
-    "created_at": "2025-03-31T11:55:27.697158+00:00",
-    "updated_at": "2025-03-31T11:55:27.697158+00:00",
+    "description": null,
+    "created_at": "2025-03-31T12:59:49.016794+00:00",
+    "updated_at": "2025-03-31T12:59:49.016794+00:00",
     "is_active": true,
-    "code": null,
+    "code": "TSAD01",
     "rack": null,
     "has_expiry_date": false,
     "is_medicine": true,
-    "category_id": null,
-    "type_id": null,
-    "unit_id": null,
-    "base_unit": null,
-    "base_price": 0
+    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
+    "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "base_unit": "Strip",
+    "base_price": 50000,
+    "unit_conversions": []
+  },
+  {
+    "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
+    "name": "ioiiooioi",
+    "sell_price": 0,
+    "stock": 0,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-03-31T12:28:37.963061+00:00",
+    "updated_at": "2025-03-31T12:28:37.963061+00:00",
+    "is_active": true,
+    "code": "TSAB01",
+    "rack": null,
+    "has_expiry_date": true,
+    "is_medicine": true,
+    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "base_unit": "Strip",
+    "base_price": 50000,
+    "unit_conversions": []
   }
 ]
 
@@ -5122,12 +6002,40 @@ execute FUNCTION update_updated_at_column ();
 
 
 === DATA TABEL: suppliers ===
-[]
+[
+  {
+    "id": "e822fee9-035b-4d93-8bf0-d4fb51c18002",
+    "name": "PT. Teknologi Medika Pratama",
+    "address": "Komplek Pergudangan Kubik Logistics, Gudang E1 E2 E7, JI. Tugu Raya, RT.10/RW.10, Kel Tugu, Kec. Cimanggis, Kota Depok, Jawa Barat Indonesia",
+    "phone": null,
+    "email": null,
+    "contact_person": "apt. Nur Ramadhani, S. Farm.",
+    "created_at": "2025-03-31T15:29:52.123716+00:00",
+    "updated_at": "2025-03-31T15:29:52.123716+00:00"
+  }
+]
 
 
 
 === DATA TABEL: unit_conversions ===
-[]
+[
+  {
+    "id": "6b514e67-ddfc-4b20-9a0b-00eefa1ac081",
+    "item_id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
+    "unit_name": "Tablet",
+    "conversion_rate": 10,
+    "base_price": 5000,
+    "created_at": "2025-03-31T12:28:38.07+00:00"
+  },
+  {
+    "id": "caf6a321-5ceb-4956-b77e-39b7b83449f6",
+    "item_id": "69701999-977d-4505-87ca-555387c9fc1b",
+    "unit_name": "Tablet",
+    "conversion_rate": 10,
+    "base_price": 5000,
+    "created_at": "2025-03-31T12:59:49.152+00:00"
+  }
+]
 
 
 

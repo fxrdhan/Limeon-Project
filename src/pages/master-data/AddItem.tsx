@@ -1,9 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
+import { FormActions } from "../../components/ui/FormActions";
 import { Input } from "../../components/ui/Input";
-import { FaSave, FaTimes } from "react-icons/fa";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
@@ -299,21 +298,11 @@ const AddItem = () => {
                     </CardContent>
 
                     <CardFooter className="flex justify-between">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => navigate("/master-data/items")}
-                        >
-                            <div className="flex items-center">
-                                <FaTimes className="mr-2" /> <span>Batal</span>
-                            </div>
-                        </Button>
-                        <Button type="submit"
-                            disabled={saving}
-                            isLoading={saving}
-                        >
-                            <FaSave className="mr-2" /> Simpan
-                        </Button>
+                        <FormActions
+                            onCancel={() => navigate("/master-data/items")}
+                            isDisabled={false}
+                            isSaving={saving}
+                        />
                     </CardFooter>
                 </form>
             </Card>

@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "id": "6b514e67-ddfc-4b20-9a0b-00eefa1ac081",
+    "item_id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
+    "unit_name": "Tablet",
+    "conversion_rate": 10,
+    "base_price": 5000,
+    "created_at": "2025-03-31T12:28:38.07+00:00"
+  },
+  {
+    "id": "caf6a321-5ceb-4956-b77e-39b7b83449f6",
+    "item_id": "69701999-977d-4505-87ca-555387c9fc1b",
+    "unit_name": "Tablet",
+    "conversion_rate": 10,
+    "base_price": 5000,
+    "created_at": "2025-03-31T12:59:49.152+00:00"
+  }
+]
