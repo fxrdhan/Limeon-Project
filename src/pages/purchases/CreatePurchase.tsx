@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { FaPlus, FaTrash, FaTimes, FaSave } from 'react-icons/fa';
+import { FaPlus, FaTrash } from 'react-icons/fa';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { FormActions } from '../../components/ui/FormActions';
 import { Input } from '../../components/ui/Input';
 import { FormSection, FormField } from '../../components/ui/FormComponents';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
@@ -404,21 +405,11 @@ const CreatePurchase = () => {
                 </CardContent>
                 
                 <CardFooter className="flex justify-between">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => navigate('/purchases')}
-                    >
-                        <FaTimes className="mr-2" /> Batal
-                    </Button>
-                    
-                    <Button
-                        type="submit"
-                        disabled={loading || purchaseItems.length === 0}
-                        isLoading={loading}
-                    >
-                        <FaSave className="mr-2" /> Simpan
-                    </Button>
+                    <FormActions
+                        onCancel={() => navigate('/purchases')}
+                        isSaving={loading}
+                        isDisabled={purchaseItems.length === 0}
+                    />
                 </CardFooter>
             </form>
         </Card>

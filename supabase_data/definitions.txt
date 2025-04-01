@@ -124,16 +124,23 @@ SQL Definition of purchase_items
 create table public.purchase_items (
   id uuid not null default extensions.uuid_generate_v4 (),
   purchase_id uuid null,
-  medicine_id uuid null,
+  item_id uuid null,
   quantity integer not null,
   price numeric(15, 2) not null,
   subtotal numeric(15, 2) not null,
   created_at timestamp with time zone null default now(),
   updated_at timestamp with time zone null default now(),
+  batch_no character varying(50) null,
+  expiry_date date null,
+  unit character varying(50) null,
   constraint purchase_items_pkey primary key (id),
-  constraint purchase_items_medicine_id_fkey foreign KEY (medicine_id) references items (id),
+  constraint purchase_items_item_id_fkey foreign KEY (item_id) references items (id),
   constraint purchase_items_purchase_id_fkey foreign KEY (purchase_id) references purchases (id) on delete CASCADE
 ) TABLESPACE pg_default;
+
+create index IF not exists idx_purchase_items_batch_no on public.purchase_items using btree (batch_no) TABLESPACE pg_default;
+
+create index IF not exists idx_purchase_items_expiry_date on public.purchase_items using btree (expiry_date) TABLESPACE pg_default;
 
 create trigger set_updated_at BEFORE
 update on purchase_items for EACH row
@@ -154,6 +161,11 @@ create table public.purchases (
   created_by uuid null,
   created_at timestamp with time zone null default now(),
   updated_at timestamp with time zone null default now(),
+  so_number character varying(50) null,
+  due_date date null,
+  vat_amount numeric(15, 2) null default 0,
+  vat_percentage numeric(5, 2) null default 11.0,
+  is_vat_included boolean null default true,
   constraint purchases_pkey primary key (id),
   constraint purchases_created_by_fkey foreign KEY (created_by) references users (id),
   constraint purchases_supplier_id_fkey foreign KEY (supplier_id) references suppliers (id)
