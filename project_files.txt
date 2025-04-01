@@ -4045,12 +4045,33 @@ const CreatePurchase = () => {
             
             // Update item stocks
             for (const item of purchaseItems) {
-                await supabase
+                // Ambil data item untuk mendapatkan satuan dasar, stok saat ini, dan konversi
+                const { data: itemData } = await supabase
                     .from('items')
-                    .update({
-                        stock: supabase.rpc('increment', { x: item.quantity })
-                    })
-                    .eq('id', item.item_id);
+                    .select('stock, base_unit, unit_conversions')
+                    .eq('id', item.item_id)
+                    .single();
+                
+                if (itemData) {
+                    let quantityInBaseUnit = item.quantity;
+                    
+                    // Jika satuan pembelian berbeda dengan satuan dasar, konversikan
+                    if (item.unit !== itemData.base_unit) {
+                        const unitConversion = itemData.unit_conversions.find(
+                            (uc: { unit_name: string; }) => uc.unit_name === item.unit
+                        );
+                        
+                        if (unitConversion) {
+                            // Konversikan ke satuan dasar
+                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
+                        }
+                    }
+                    
+                    // Hitung stok baru dan update
+                    const newStock = (itemData.stock || 0) + quantityInBaseUnit;
+                    await supabase
+                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
+                }
             }
             
             navigate('/purchases');
@@ -5690,17 +5711,17 @@ execute FUNCTION update_updated_at_column ();
 
 [
   {
-    "id": "4d0ba747-05a8-4a99-b8f5-f42260ce4476",
-    "supplier_id": "e822fee9-035b-4d93-8bf0-d4fb51c18002",
-    "invoice_number": "awesgrdgcn",
+    "id": "74eaf678-1307-45a5-a186-6c2e759c2ac8",
+    "supplier_id": null,
+    "invoice_number": "",
     "date": "2025-04-01",
-    "total": 250000,
+    "total": 500000,
     "payment_status": "unpaid",
     "payment_method": "cash",
     "notes": null,
     "created_by": null,
-    "created_at": "2025-04-01T16:41:27.15369+00:00",
-    "updated_at": "2025-04-01T16:41:27.15369+00:00",
+    "created_at": "2025-04-01T16:53:25.280642+00:00",
+    "updated_at": "2025-04-01T16:53:25.280642+00:00",
     "so_number": null,
     "due_date": null,
     "vat_amount": 0,
@@ -5719,11 +5740,11 @@ execute FUNCTION update_updated_at_column ();
     "id": "69701999-977d-4505-87ca-555387c9fc1b",
     "name": "test",
     "sell_price": 0,
-    "stock": 0,
+    "stock": 300,
     "min_stock": 10,
     "description": null,
     "created_at": "2025-03-31T12:59:49.016794+00:00",
-    "updated_at": "2025-04-01T16:07:21.067043+00:00",
+    "updated_at": "2025-04-01T16:52:05.047961+00:00",
     "is_active": true,
     "code": "TSAD01",
     "rack": null,
@@ -5748,11 +5769,11 @@ execute FUNCTION update_updated_at_column ();
     "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
     "name": "ioiiooioi",
     "sell_price": 0,
-    "stock": 0,
+    "stock": 10,
     "min_stock": 10,
     "description": null,
     "created_at": "2025-03-31T12:28:37.963061+00:00",
-    "updated_at": "2025-04-01T16:07:21.067043+00:00",
+    "updated_at": "2025-04-01T16:53:25.745242+00:00",
     "is_active": true,
     "code": "TSAB01",
     "rack": null,
@@ -6068,11 +6089,11 @@ execute FUNCTION update_updated_at_column ();
     "id": "69701999-977d-4505-87ca-555387c9fc1b",
     "name": "test",
     "sell_price": 0,
-    "stock": 0,
+    "stock": 300,
     "min_stock": 10,
     "description": null,
     "created_at": "2025-03-31T12:59:49.016794+00:00",
-    "updated_at": "2025-04-01T16:07:21.067043+00:00",
+    "updated_at": "2025-04-01T16:52:05.047961+00:00",
     "is_active": true,
     "code": "TSAD01",
     "rack": null,
@@ -6097,11 +6118,11 @@ execute FUNCTION update_updated_at_column ();
     "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
     "name": "ioiiooioi",
     "sell_price": 0,
-    "stock": 0,
+    "stock": 10,
     "min_stock": 10,
     "description": null,
     "created_at": "2025-03-31T12:28:37.963061+00:00",
-    "updated_at": "2025-04-01T16:07:21.067043+00:00",
+    "updated_at": "2025-04-01T16:53:25.745242+00:00",
     "is_active": true,
     "code": "TSAB01",
     "rack": null,
@@ -6134,14 +6155,14 @@ execute FUNCTION update_updated_at_column ();
 === DATA TABEL: purchase_items ===
 [
   {
-    "id": "ba1bc381-61a1-4eb4-9cfd-ad4a32602048",
-    "purchase_id": "4d0ba747-05a8-4a99-b8f5-f42260ce4476",
-    "item_id": "69701999-977d-4505-87ca-555387c9fc1b",
-    "quantity": 50,
+    "id": "7c2b3c1a-f732-403c-b1a7-569f80ee5625",
+    "purchase_id": "74eaf678-1307-45a5-a186-6c2e759c2ac8",
+    "item_id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
+    "quantity": 100,
     "price": 5000,
-    "subtotal": 250000,
-    "created_at": "2025-04-01T16:41:27.255819+00:00",
-    "updated_at": "2025-04-01T16:41:27.255819+00:00",
+    "subtotal": 500000,
+    "created_at": "2025-04-01T16:53:25.393542+00:00",
+    "updated_at": "2025-04-01T16:53:25.393542+00:00",
     "batch_no": null,
     "expiry_date": null,
     "unit": "Tablet"
@@ -6153,17 +6174,17 @@ execute FUNCTION update_updated_at_column ();
 === DATA TABEL: purchases ===
 [
   {
-    "id": "4d0ba747-05a8-4a99-b8f5-f42260ce4476",
-    "supplier_id": "e822fee9-035b-4d93-8bf0-d4fb51c18002",
-    "invoice_number": "awesgrdgcn",
+    "id": "74eaf678-1307-45a5-a186-6c2e759c2ac8",
+    "supplier_id": null,
+    "invoice_number": "",
     "date": "2025-04-01",
-    "total": 250000,
+    "total": 500000,
     "payment_status": "unpaid",
     "payment_method": "cash",
     "notes": null,
     "created_by": null,
-    "created_at": "2025-04-01T16:41:27.15369+00:00",
-    "updated_at": "2025-04-01T16:41:27.15369+00:00",
+    "created_at": "2025-04-01T16:53:25.280642+00:00",
+    "updated_at": "2025-04-01T16:53:25.280642+00:00",
     "so_number": null,
     "due_date": null,
     "vat_amount": 0,
@@ -6249,14 +6270,14 @@ execute FUNCTION update_updated_at_column ();
 
 [
   {
-    "id": "ba1bc381-61a1-4eb4-9cfd-ad4a32602048",
-    "purchase_id": "4d0ba747-05a8-4a99-b8f5-f42260ce4476",
-    "item_id": "69701999-977d-4505-87ca-555387c9fc1b",
-    "quantity": 50,
+    "id": "7c2b3c1a-f732-403c-b1a7-569f80ee5625",
+    "purchase_id": "74eaf678-1307-45a5-a186-6c2e759c2ac8",
+    "item_id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
+    "quantity": 100,
     "price": 5000,
-    "subtotal": 250000,
-    "created_at": "2025-04-01T16:41:27.255819+00:00",
-    "updated_at": "2025-04-01T16:41:27.255819+00:00",
+    "subtotal": 500000,
+    "created_at": "2025-04-01T16:53:25.393542+00:00",
+    "updated_at": "2025-04-01T16:53:25.393542+00:00",
     "batch_no": null,
     "expiry_date": null,
     "unit": "Tablet"
