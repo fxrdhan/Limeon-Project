@@ -95,7 +95,12 @@ const PurchaseList = () => {
             }
 
             setTotalItems(count || 0);
-            setPurchases(data || []);
+            // Transform data to match the Purchase interface
+            const transformedData = data?.map(item => ({
+                ...item,
+                supplier: Array.isArray(item.supplier) ? item.supplier[0] : item.supplier
+            })) || [];
+            setPurchases(transformedData);
         } catch (error) {
             console.error("Error fetching purchases:", error);
         } finally {
@@ -115,14 +120,53 @@ const PurchaseList = () => {
     const handleDelete = async (id: string) => {
         if (window.confirm("Apakah Anda yakin ingin menghapus pembelian ini?")) {
             try {
+                // Ambil item-item yang terkait dengan pembelian ini
+                const { data: purchaseItems, error: itemsError } = await supabase
+                    .from("purchase_items")
+                    .select("item_id, quantity, unit")
+                    .eq("purchase_id", id);
+                    
+                if (itemsError) throw itemsError;
+                
+                // Update stok untuk setiap item
+                for (const item of purchaseItems || []) {
+                    // Ambil data item untuk mendapatkan satuan dasar, stok saat ini, dan konversi
+                    const { data: itemData } = await supabase
+                        .from('items')
+                        .select('stock, base_unit, unit_conversions')
+                        .eq('id', item.item_id)
+                        .single();
+                    
+                    if (itemData) {
+                        let quantityInBaseUnit = item.quantity;
+                        
+                        // Jika satuan pembelian berbeda dengan satuan dasar, konversikan
+                        if (item.unit !== itemData.base_unit) {
+                            const unitConversion = itemData.unit_conversions.find(
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                (uc: { unit_name: any; }) => uc.unit_name === item.unit
+                            );
+                            
+                            if (unitConversion) {
+                                // Konversikan ke satuan dasar
+                                quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
+                            }
+                        }
+                        
+                        // Hitung stok baru (kurangi dari stok yang ada) dan update
+                        const newStock = Math.max(0, (itemData.stock || 0) - quantityInBaseUnit);
+                        await supabase
+                            .from('items').update({ stock: newStock }).eq('id', item.item_id);
+                    }
+                }
+
+                // Setelah memperbarui stok, baru hapus purchase
                 const { error } = await supabase
                     .from("purchases")
                     .delete()
                     .eq("id", id);
 
                 if (error) throw error;
-
-                // Refresh data
                 fetchPurchases(currentPage, debouncedSearch, itemsPerPage);
             } catch (error) {
                 console.error("Error deleting purchase:", error);
