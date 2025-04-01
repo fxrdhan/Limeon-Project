@@ -7,7 +7,7 @@
     "min_stock": 10,
     "description": null,
     "created_at": "2025-03-31T12:59:49.016794+00:00",
-    "updated_at": "2025-03-31T12:59:49.016794+00:00",
+    "updated_at": "2025-04-01T16:07:21.067043+00:00",
     "is_active": true,
     "code": "TSAD01",
     "rack": null,
@@ -18,7 +18,15 @@
     "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
     "base_unit": "Strip",
     "base_price": 50000,
-    "unit_conversions": []
+    "unit_conversions": [
+      {
+        "id": "caf6a321-5ceb-4956-b77e-39b7b83449f6",
+        "unit_name": "Tablet",
+        "base_price": 5000,
+        "created_at": "2025-03-31T12:59:49.152+00:00",
+        "conversion_rate": 10
+      }
+    ]
   },
   {
     "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
@@ -28,7 +36,7 @@
     "min_stock": 10,
     "description": null,
     "created_at": "2025-03-31T12:28:37.963061+00:00",
-    "updated_at": "2025-03-31T12:28:37.963061+00:00",
+    "updated_at": "2025-04-01T16:07:21.067043+00:00",
     "is_active": true,
     "code": "TSAB01",
     "rack": null,
@@ -39,6 +47,14 @@
     "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
     "base_unit": "Strip",
     "base_price": 50000,
-    "unit_conversions": []
+    "unit_conversions": [
+      {
+        "id": "6b514e67-ddfc-4b20-9a0b-00eefa1ac081",
+        "unit_name": "Tablet",
+        "base_price": 5000,
+        "created_at": "2025-03-31T12:28:38.07+00:00",
+        "conversion_rate": 10
+      }
+    ]
   }
 ]
