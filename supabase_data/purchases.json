@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "4d0ba747-05a8-4a99-b8f5-f42260ce4476",
+    "supplier_id": "e822fee9-035b-4d93-8bf0-d4fb51c18002",
+    "invoice_number": "awesgrdgcn",
+    "date": "2025-04-01",
+    "total": 250000,
+    "payment_status": "unpaid",
+    "payment_method": "cash",
+    "notes": null,
+    "created_by": null,
+    "created_at": "2025-04-01T16:41:27.15369+00:00",
+    "updated_at": "2025-04-01T16:41:27.15369+00:00",
+    "so_number": null,
+    "due_date": null,
+    "vat_amount": 0,
+    "vat_percentage": 11,
+    "is_vat_included": true
+  }
+]

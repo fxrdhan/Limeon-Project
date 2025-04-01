@@ -301,12 +301,45 @@
 
 
 === DATA TABEL: purchase_items ===
-[]
+[
+  {
+    "id": "ba1bc381-61a1-4eb4-9cfd-ad4a32602048",
+    "purchase_id": "4d0ba747-05a8-4a99-b8f5-f42260ce4476",
+    "item_id": "69701999-977d-4505-87ca-555387c9fc1b",
+    "quantity": 50,
+    "price": 5000,
+    "subtotal": 250000,
+    "created_at": "2025-04-01T16:41:27.255819+00:00",
+    "updated_at": "2025-04-01T16:41:27.255819+00:00",
+    "batch_no": null,
+    "expiry_date": null,
+    "unit": "Tablet"
+  }
+]
 
 
 
 === DATA TABEL: purchases ===
-[]
+[
+  {
+    "id": "4d0ba747-05a8-4a99-b8f5-f42260ce4476",
+    "supplier_id": "e822fee9-035b-4d93-8bf0-d4fb51c18002",
+    "invoice_number": "awesgrdgcn",
+    "date": "2025-04-01",
+    "total": 250000,
+    "payment_status": "unpaid",
+    "payment_method": "cash",
+    "notes": null,
+    "created_by": null,
+    "created_at": "2025-04-01T16:41:27.15369+00:00",
+    "updated_at": "2025-04-01T16:41:27.15369+00:00",
+    "so_number": null,
+    "due_date": null,
+    "vat_amount": 0,
+    "vat_percentage": 11,
+    "is_vat_included": true
+  }
+]
 
 
 

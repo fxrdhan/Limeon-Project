@@ -222,12 +222,33 @@ const CreatePurchase = () => {
             
             // Update item stocks
             for (const item of purchaseItems) {
-                await supabase
+                // Ambil data item untuk mendapatkan satuan dasar, stok saat ini, dan konversi
+                const { data: itemData } = await supabase
                     .from('items')
-                    .update({
-                        stock: supabase.rpc('increment', { x: item.quantity })
-                    })
-                    .eq('id', item.item_id);
+                    .select('stock, base_unit, unit_conversions')
+                    .eq('id', item.item_id)
+                    .single();
+                
+                if (itemData) {
+                    let quantityInBaseUnit = item.quantity;
+                    
+                    // Jika satuan pembelian berbeda dengan satuan dasar, konversikan
+                    if (item.unit !== itemData.base_unit) {
+                        const unitConversion = itemData.unit_conversions.find(
+                            (uc: { unit_name: string; }) => uc.unit_name === item.unit
+                        );
+                        
+                        if (unitConversion) {
+                            // Konversikan ke satuan dasar
+                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
+                        }
+                    }
+                    
+                    // Hitung stok baru dan update
+                    const newStock = (itemData.stock || 0) + quantityInBaseUnit;
+                    await supabase
+                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
+                }
             }
             
             navigate('/purchases');
