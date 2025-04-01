@@ -254,6 +254,19 @@ create table public.unit_conversions (
   constraint unit_conversions_item_id_fkey foreign KEY (item_id) references items (id) on delete CASCADE
 ) TABLESPACE pg_default;
 
+create trigger after_unit_conversion_delete
+after DELETE on unit_conversions for EACH row
+execute FUNCTION sync_unit_conversions_to_items ();
+
+create trigger after_unit_conversion_insert
+after INSERT on unit_conversions for EACH row
+execute FUNCTION sync_unit_conversions_to_items ();
+
+create trigger after_unit_conversion_update
+after
+update on unit_conversions for EACH row
+execute FUNCTION sync_unit_conversions_to_items ();
+
 ==============================================================
 SQL Definition of users
 
