@@ -64,7 +64,7 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
                         type="checkbox"
                         name="is_vat_included"
                         checked={formData.is_vat_included}
-                        onChange={(e) => handleChange({ ...e, target: { ...e.target, value: e.target.checked.toString() } })}
+                        onChange={handleChange}
                         className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                     />
                 </FormField>
