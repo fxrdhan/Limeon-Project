@@ -191,27 +191,24 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
         >
             <div className="flex flex-col h-full">
                 {/* Logo Area */}
-                <div className={`p-4 border-b border-blue-500/30 flex items-center justify-between`}>
-                    {!collapsed && (
+                <div className={`p-4 border-b border-blue-500/30 flex items-center justify-between group`}>
+                    {!collapsed ? (
+                        <>
                         <div className="flex items-center">
                             <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center">
                                 <span className="text-blue-600 text-xl font-bold">P</span>
                             </div>
                             <h2 className="ml-2 text-lg font-bold transition-opacity duration-200">PharmaSys</h2>
                         </div>
-                    )}
-                    {collapsed && (
-                        <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center mx-auto">
+                        <button onClick={toggleSidebar} className="p-1.5 rounded-full bg-blue-500/20 hover:bg-blue-500/40 transition-all duration-300">
+                            <FaArrowLeft size={14} />
+                        </button>
+                        </>
+                    ) : (
+                        <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center mx-auto cursor-pointer" onClick={toggleSidebar}>
                             <span className="text-blue-600 text-xl font-bold">P</span>
                         </div>
                     )}
-                    <button
-                        onClick={toggleSidebar}
-                        className={`p-1.5 rounded-full bg-blue-500/20 hover:bg-blue-500/40 
-                                  transition-all duration-300 ${collapsed ? 'ml-auto mr-auto' : ''}`}
-                    >
-                        {collapsed ? <FaArrowRight size={14} /> : <FaArrowLeft size={14} />}
-                    </button>
                 </div>
 
                 {/* Menu Items */}
