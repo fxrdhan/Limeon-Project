@@ -1596,27 +1596,34 @@
 = File: ./src/components/layout/MainLayout.tsx 
 ===============================================
 
-     1	import { Outlet } from "react-router-dom";
-     2	import Navbar from "./Navbar";
-     3	import Sidebar from "./Sidebar";
-     4	
-     5	const MainLayout = () => {
-     6	    return (
-     7	        <div className="flex h-screen bg-gray-100 text-gray-800">
-     8	            <Sidebar />
-     9	
-    10	            <div className="flex flex-col flex-1 overflow-hidden">
-    11	                <Navbar />
+     1	import { useState } from "react";
+     2	import { Outlet } from "react-router-dom";
+     3	import Navbar from "./Navbar";
+     4	import Sidebar from "./Sidebar";
+     5	
+     6	const MainLayout = () => {
+     7	    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+     8	
+     9	    const toggleSidebar = () => {
+    10	        setSidebarCollapsed(!sidebarCollapsed);
+    11	    };
     12	
-    13	                <main className="flex-1 overflow-y-auto p-4 text-gray-800">
-    14	                    <Outlet />
-    15	                </main>
-    16	            </div>
-    17	        </div>
-    18	    );
-    19	};
-    20	
-    21	export default MainLayout;
+    13	    return (
+    14	        <div className="flex h-screen bg-gray-100 text-gray-800">
+    15	            <Sidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+    16	
+    17	            <div className="flex flex-col flex-1 overflow-hidden">
+    18	                <Navbar />
+    19	
+    20	                <main className="flex-1 overflow-y-auto p-4 text-gray-800">
+    21	                    <Outlet />
+    22	                </main>
+    23	            </div>
+    24	        </div>
+    25	    );
+    26	};
+    27	
+    28	export default MainLayout;
 
 
 ===============================================
@@ -1685,7 +1692,7 @@
 ===============================================
 
      1	import { Link } from "react-router-dom";
-     2	import { useState } from "react";
+     2	import { useState, useEffect } from "react";
      3	import {
      4	    FaDatabase,
      5	    FaBoxes,
@@ -1695,190 +1702,231 @@
      9	    // FaChartBar,
     10	    // FaCog,
     11	    FaAngleDown,
-    12	} from "react-icons/fa";
-    13	
-    14	const Sidebar = () => {
-    15	    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-    16	        masterData: false,
-    17	        inventory: false,
-    18	        purchasing: false,
-    19	        sales: false,
-    20	        clinic: false,
-    21	        accounting: false,
-    22	        reports: false,
-    23	        settings: false,
-    24	    });
-    25	
-    26	    const toggleMenu = (menu: string) => {
-    27	        setOpenMenus((prev) => ({
-    28	            ...prev,
-    29	            [menu]: !prev[menu],
-    30	        }));
-    31	    };
+    12	    FaBars,
+    13	    FaChevronRight
+    14	} from "react-icons/fa";
+    15	
+    16	interface SidebarProps {
+    17	    collapsed: boolean;
+    18	    toggleSidebar: () => void;
+    19	}
+    20	
+    21	const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
+    22	    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    23	        masterData: false,
+    24	        inventory: false,
+    25	        purchasing: false,
+    26	        sales: false,
+    27	        clinic: false,
+    28	        accounting: false,
+    29	        reports: false,
+    30	        settings: false,
+    31	    });
     32	
-    33	    return (
-    34	        <aside className="w-64 bg-white shadow-md">
-    35	            <div className="p-4 bg-primary text-white">
-    36	                <h2 className="text-xl font-bold">Apotek App</h2>
-    37	            </div>
-    38	
-    39	            <nav className="mt-6">
-    40	                <Link
-    41	                    to="/"
-    42	                    className="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100"
-    43	                >
-    44	                    <span className="mx-3">Dashboard</span>
-    45	                </Link>
-    46	
-    47	                {/* Master Data */}
-    48	                <div>
-    49	                    <button
-    50	                        onClick={() => toggleMenu("masterData")}
-    51	                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
-    52	                    >
-    53	                        <div className="flex items-center">
-    54	                            <FaDatabase className="text-gray-500" />
-    55	                            <span className="mx-3">Master Data</span>
-    56	                        </div>
-    57	                        <FaAngleDown
-    58	                            className={`transform ${openMenus.masterData ? "rotate-180" : ""
-    59	                                }`}
-    60	                        />
-    61	                    </button>
-    62	
-    63	                    {openMenus.masterData && (
-    64	                        <div className="pl-12 pr-6 py-2 bg-gray-50">
-    65	                            <Link
-    66	                                to="/master-data/items"
-    67	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-    68	                            >
-    69	                                Daftar Item
-    70	                            </Link>
-    71	                            <Link
-    72	                                to="/master-data/categories"
-    73	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-    74	                            >
-    75	                                Kategori Item
-    76	                            </Link>
-    77	                            <Link
-    78	                                to="/master-data/types"
-    79	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-    80	                            >
-    81	                                Jenis Item
-    82	                            </Link>
-    83	                            <Link
-    84	                                to="/master-data/units"
-    85	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-    86	                            >
-    87	                                Satuan
-    88	                            </Link>
-    89	                            <Link
-    90	                                to="/master-data/suppliers"
-    91	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-    92	                            >
-    93	                                Supplier
-    94	                            </Link>
-    95	                            <Link
-    96	                                to="/master-data/patients"
-    97	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-    98	                            >
-    99	                                Pasien
-   100	                            </Link>
-   101	                            <Link
-   102	                                to="/master-data/doctors"
-   103	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   104	                            >
-   105	                                Dokter
-   106	                            </Link>
-   107	                        </div>
-   108	                    )}
-   109	                </div>
-   110	
-   111	                {/* Persediaan */}
-   112	                <div>
-   113	                    <button
-   114	                        onClick={() => toggleMenu("inventory")}
-   115	                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
-   116	                    >
-   117	                        <div className="flex items-center">
-   118	                            <FaBoxes className="text-gray-500" />
-   119	                            <span className="mx-3">Persediaan</span>
-   120	                        </div>
-   121	                        <FaAngleDown
-   122	                            className={`transform ${openMenus.inventory ? "rotate-180" : ""}`}
-   123	                        />
-   124	                    </button>
-   125	
-   126	                    {openMenus.inventory && (
-   127	                        <div className="pl-12 pr-6 py-2 bg-gray-50">
-   128	                            <Link
-   129	                                to="/inventory/stock"
-   130	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   131	                            >
-   132	                                Stok Obat
-   133	                            </Link>
-   134	                            <Link
-   135	                                to="/inventory/stock-opname"
-   136	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   137	                            >
-   138	                                Stok Opname
-   139	                            </Link>
-   140	                            <Link
-   141	                                to="/inventory/expired"
-   142	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   143	                            >
-   144	                                Obat Kadaluarsa
-   145	                            </Link>
-   146	                        </div>
-   147	                    )}
-   148	                </div>
-   149	
-   150	                {/* Pembelian */}
-   151	                <div>
-   152	                    <button
-   153	                        onClick={() => toggleMenu("purchasing")}
-   154	                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
-   155	                    >
-   156	                        <div className="flex items-center">
-   157	                            <FaShoppingCart className="text-gray-500" />
-   158	                            <span className="mx-3">Pembelian</span>
-   159	                        </div>
-   160	                        <FaAngleDown
-   161	                            className={`transform ${openMenus.purchasing ? "rotate-180" : ""}`}
-   162	                        />
-   163	                    </button>
-   164	
-   165	                    {openMenus.purchasing && (
-   166	                        <div className="pl-12 pr-6 py-2 bg-gray-50">
-   167	                            <Link
-   168	                                to="/purchases/orders"
-   169	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   170	                            >
-   171	                                Daftar Pesanan Beli
-   172	                            </Link>
-   173	                            <Link
-   174	                                to="/purchases"
-   175	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   176	                            >
-   177	                                Daftar Pembelian
-   178	                            </Link>
-   179	                            <Link
-   180	                                to="/purchases/price-history"
-   181	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   182	                            >
-   183	                                Riwayat Harga Beli
-   184	                            </Link>
-   185	                        </div>
-   186	                    )}
-   187	                </div>
-   188	
-   189	                {/* Tambahkan menu lain (Pembelian, Penjualan, Klinik, dll) dengan struktur yang sama */}
-   190	            </nav>
-   191	        </aside>
-   192	    );
-   193	};
-   194	
-   195	export default Sidebar;
+    33	    // Menyimpan state menu yang dibuka sebelum collapse
+    34	    const [savedOpenMenus, setSavedOpenMenus] = useState<Record<string, boolean>>({});
+    35	
+    36	    // Effect untuk menyimpan/mengembalikan state menu
+    37	    useEffect(() => {
+    38	        if (collapsed) {
+    39	            // Simpan state menu saat ini sebelum collapse
+    40	            setSavedOpenMenus({...openMenus});
+    41	            // Tutup semua menu saat collapsed
+    42	            setOpenMenus({
+    43	                masterData: false,
+    44	                inventory: false,
+    45	                purchasing: false,
+    46	                sales: false,
+    47	                clinic: false,
+    48	                accounting: false,
+    49	                reports: false,
+    50	                settings: false,
+    51	            });
+    52	        } else {
+    53	            // Kembalikan state menu sebelumnya saat expand
+    54	            setOpenMenus(savedOpenMenus);
+    55	        }
+    56	    // eslint-disable-next-line react-hooks/exhaustive-deps
+    57	    }, [collapsed]);
+    58	
+    59	    const toggleMenu = (menu: string) => {
+    60	        if (!collapsed) {
+    61	            setOpenMenus((prev) => ({
+    62	                ...prev,
+    63	                [menu]: !prev[menu],
+    64	            }));
+    65	        }
+    66	    };
+    67	
+    68	    return (
+    69	        <aside className={`bg-white shadow-md transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'} relative`}>
+    70	            <div className={`p-4 bg-primary text-white ${collapsed ? 'justify-center' : 'flex justify-between items-center'}`}>
+    71	                {!collapsed && <h2 className="text-xl font-bold">Apotek App</h2>}
+    72	                <button 
+    73	                    onClick={toggleSidebar} 
+    74	                    className="p-1 rounded-full hover:bg-blue-600 focus:outline-none"
+    75	                >
+    76	                    {collapsed ? <FaChevronRight /> : <FaBars />}
+    77	                </button>
+    78	            </div>
+    79	
+    80	            <nav className="mt-6">
+    81	                <Link
+    82	                    to="/"
+    83	                    className={`flex items-center ${collapsed ? 'justify-center' : ''} px-6 py-3 text-gray-700 hover:bg-gray-100`}
+    84	                >
+    85	                    {collapsed ? <i className="fas fa-home"></i> : <span className="mx-3">Dashboard</span>}
+    86	                </Link>
+    87	
+    88	                {/* Master Data */}
+    89	                <div>
+    90	                    <button
+    91	                        onClick={() => toggleMenu("masterData")}
+    92	                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
+    93	                    >
+    94	                        <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
+    95	                            <FaDatabase className="text-gray-500" />
+    96	                            {!collapsed && <span className="mx-3">Master Data</span>}
+    97	                        </div>
+    98	                        {!collapsed && <FaAngleDown
+    99	                            className={`transform ${openMenus.masterData ? "rotate-180" : ""
+   100	                                }`}
+   101	                        />}
+   102	                    </button>
+   103	
+   104	                    {openMenus.masterData && !collapsed && (
+   105	                        <div className="pl-12 pr-6 py-2 bg-gray-50">
+   106	                            <Link
+   107	                                to="/master-data/items"
+   108	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   109	                            >
+   110	                                Daftar Item
+   111	                            </Link>
+   112	                            <Link
+   113	                                to="/master-data/categories"
+   114	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   115	                            >
+   116	                                Kategori Item
+   117	                            </Link>
+   118	                            <Link
+   119	                                to="/master-data/types"
+   120	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   121	                            >
+   122	                                Jenis Item
+   123	                            </Link>
+   124	                            <Link
+   125	                                to="/master-data/units"
+   126	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   127	                            >
+   128	                                Satuan
+   129	                            </Link>
+   130	                            <Link
+   131	                                to="/master-data/suppliers"
+   132	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   133	                            >
+   134	                                Supplier
+   135	                            </Link>
+   136	                            <Link
+   137	                                to="/master-data/patients"
+   138	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   139	                            >
+   140	                                Pasien
+   141	                            </Link>
+   142	                            <Link
+   143	                                to="/master-data/doctors"
+   144	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   145	                            >
+   146	                                Dokter
+   147	                            </Link>
+   148	                        </div>
+   149	                    )}
+   150	                </div>
+   151	
+   152	                {/* Persediaan */}
+   153	                <div>
+   154	                    <button
+   155	                        onClick={() => toggleMenu("inventory")}
+   156	                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
+   157	                    >
+   158	                        <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
+   159	                            <FaBoxes className="text-gray-500" />
+   160	                            {!collapsed && <span className="mx-3">Persediaan</span>}
+   161	                        </div>
+   162	                        {!collapsed && <FaAngleDown
+   163	                            className={`transform ${openMenus.inventory ? "rotate-180" : ""}`}
+   164	                        />}
+   165	                    </button>
+   166	
+   167	                    {openMenus.inventory && !collapsed && (
+   168	                        <div className="pl-12 pr-6 py-2 bg-gray-50">
+   169	                            <Link
+   170	                                to="/inventory/stock"
+   171	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   172	                            >
+   173	                                Stok Obat
+   174	                            </Link>
+   175	                            <Link
+   176	                                to="/inventory/stock-opname"
+   177	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   178	                            >
+   179	                                Stok Opname
+   180	                            </Link>
+   181	                            <Link
+   182	                                to="/inventory/expired"
+   183	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   184	                            >
+   185	                                Obat Kadaluarsa
+   186	                            </Link>
+   187	                        </div>
+   188	                    )}
+   189	                </div>
+   190	
+   191	                {/* Pembelian */}
+   192	                <div>
+   193	                    <button
+   194	                        onClick={() => toggleMenu("purchasing")}
+   195	                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
+   196	                    >
+   197	                        <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
+   198	                            <FaShoppingCart className="text-gray-500" />
+   199	                            {!collapsed && <span className="mx-3">Pembelian</span>}
+   200	                        </div>
+   201	                        {!collapsed && <FaAngleDown
+   202	                            className={`transform ${openMenus.purchasing ? "rotate-180" : ""}`}
+   203	                        />}
+   204	                    </button>
+   205	
+   206	                    {openMenus.purchasing && !collapsed && (
+   207	                        <div className="pl-12 pr-6 py-2 bg-gray-50">
+   208	                            <Link
+   209	                                to="/purchases/orders"
+   210	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   211	                            >
+   212	                                Daftar Pesanan Beli
+   213	                            </Link>
+   214	                            <Link
+   215	                                to="/purchases"
+   216	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   217	                            >
+   218	                                Daftar Pembelian
+   219	                            </Link>
+   220	                            <Link
+   221	                                to="/purchases/price-history"
+   222	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
+   223	                            >
+   224	                                Riwayat Harga Beli
+   225	                            </Link>
+   226	                        </div>
+   227	                    )}
+   228	                </div>
+   229	
+   230	                {/* Tambahkan menu lain (Pembelian, Penjualan, Klinik, dll) dengan struktur yang sama */}
+   231	            </nav>
+   232	        </aside>
+   233	    );
+   234	};
+   235	
+   236	export default Sidebar;
 
 
 ===============================================
