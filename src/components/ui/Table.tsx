@@ -48,7 +48,7 @@ export const TableRow = ({ children, className }: TableProps) => {
 
 export const TableCell = ({ children, className }: TableCellProps) => {
     return (
-        <td className={classNames('py-3 px-4 text-gray-700 align-middle', className)}>
+        <td className={classNames('py-3 px-2 text-gray-700 align-middle', className)}>
             {children}
         </td>
     );
@@ -56,7 +56,7 @@ export const TableCell = ({ children, className }: TableCellProps) => {
 
 export const TableHeader = ({ children, className }: TableProps) => {
     return (
-        <th className={classNames('py-3 px-4 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm', className)}>
+        <th className={classNames('py-3 px-2 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm', className)}>
             {children}
         </th>
     );
