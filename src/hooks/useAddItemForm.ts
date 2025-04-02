@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useUnitConversion } from "./useUnitConversion";
+import { formatRupiah, extractNumericValue } from "../lib/formatters";
 
 interface Category {
     id: string;
@@ -134,16 +135,6 @@ export const useAddItemForm = () => {
         }
     };
 
-    // Fungsi untuk mengonversi angka ke format mata uang Rupiah
-    const formatRupiah = (angka: number): string => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(angka);
-    };
-
     useEffect(() => {
         fetchMasterData();
     }, []);
@@ -239,8 +230,7 @@ export const useAddItemForm = () => {
 
         if (name === "base_price" || name === "sell_price") {
             // Untuk input harga
-            const numericValue = value.replace(/[^\d]/g, '');
-            const numericInt = numericValue ? parseInt(numericValue) : 0;
+            const numericInt = extractNumericValue(value);
 
             // Update formData dengan nilai numerik
             setFormData({

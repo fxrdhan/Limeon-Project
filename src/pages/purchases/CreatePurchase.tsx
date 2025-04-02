@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { FormActions } from '../../components/ui/FormActions';
 import { Input } from '../../components/ui/Input';
 import { FormSection, FormField } from '../../components/ui/FormComponents';
+import { formatRupiah, extractNumericValue } from '../../lib/formatters';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
 
 interface Supplier {
@@ -459,21 +460,26 @@ const CreatePurchase = () => {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Input
-                                                    type="number"
-                                                    min="0"
-                                                    value={item.price}
-                                                    onChange={(e) => updateItem(item.id, 'price', Number(e.target.value))}
+                                                    type="text"
+                                                    value={item.price === 0 ? '' : formatRupiah(item.price)}
+                                                    onChange={(e) => {
+                                                        const numericValue = extractNumericValue(e.target.value);
+                                                        updateItem(item.id, 'price', numericValue);
+                                                    }}
                                                     className="w-32 text-right"
+                                                    placeholder="Rp 0"
                                                 />
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    value={item.discount}
-                                                    onChange={(e) => updateItem(item.id, 'discount', Number(e.target.value))}
+                                                    type="text"
+                                                    value={item.discount === 0 ? '' : `${item.discount}%`}
+                                                    onChange={(e) => {
+                                                        const numericValue = extractNumericValue(e.target.value);
+                                                        updateItem(item.id, 'discount', Math.min(numericValue, 100));
+                                                    }}
                                                     className="w-20 text-right"
+                                                    placeholder="0%"
                                                 />
                                             </TableCell>
                                             <TableCell className="text-right">
