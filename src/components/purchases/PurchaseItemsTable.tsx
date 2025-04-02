@@ -87,7 +87,18 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                         type="number"
                                         min="1"
                                         value={item.quantity}
-                                        onChange={(e) => onUpdateItem(item.id, 'quantity', Number(e.target.value))}
+                                        onChange={(e) => {
+                                            // Tangani kasus string kosong atau nilai tidak valid
+                                            const inputValue = e.target.value;
+                                            if (inputValue === '' || inputValue === '0') {
+                                                onUpdateItem(item.id, 'quantity', 1); // Default ke 1 jika kosong atau 0
+                                            } else {
+                                                // Konversi ke integer dan pastikan nilai minimal 1
+                                                const newValue = parseInt(inputValue, 10);
+                                                const validValue = isNaN(newValue) ? 1 : Math.max(1, newValue);
+                                                onUpdateItem(item.id, 'quantity', validValue);
+                                            }
+                                        }}
                                         className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
                                     />
                                 </TableCell>
