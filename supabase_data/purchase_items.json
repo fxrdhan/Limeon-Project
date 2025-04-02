@@ -1,15 +1,1 @@
-[
-  {
-    "id": "7c2b3c1a-f732-403c-b1a7-569f80ee5625",
-    "purchase_id": "74eaf678-1307-45a5-a186-6c2e759c2ac8",
-    "item_id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
-    "quantity": 100,
-    "price": 5000,
-    "subtotal": 500000,
-    "created_at": "2025-04-01T16:53:25.393542+00:00",
-    "updated_at": "2025-04-01T16:53:25.393542+00:00",
-    "batch_no": null,
-    "expiry_date": null,
-    "unit": "Tablet"
-  }
-]
+[]

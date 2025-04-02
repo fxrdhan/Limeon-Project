@@ -37,33 +37,33 @@ export const Pagination = ({
     return (
         <div className={classNames("flex justify-between items-center mt-4 gap-4", className)}>
             {/* Items per page selection - left side */}
-            <div className="flex items-center rounded-full bg-primary shadow-md text-white overflow-hidden">
+            <div className="flex items-center rounded-full bg-zinc-400 shadow-md text-white overflow-hidden">
                 <button 
                     className={classNames(
                         "px-3 py-1.5 focus:outline-none transition-colors", 
-                        itemsPerPage === 10 ? "bg-blue-600" : "hover:bg-blue-600"
+                        itemsPerPage === 10 ? "bg-blue-500" : "hover:bg-blue-500"
                     )}
                     onClick={() => handleItemsPerPageClick(10)}
                 >
-                    10 Items
+                    {itemsPerPage === 10 ? "10 items" : "10"}
                 </button>
                 <button 
                     className={classNames(
                         "px-3 py-1.5 focus:outline-none transition-colors", 
-                        itemsPerPage === 20 ? "bg-blue-600" : "hover:bg-blue-600"
+                        itemsPerPage === 20 ? "bg-blue-500" : "hover:bg-blue-500"
                     )}
                     onClick={() => handleItemsPerPageClick(20)}
                 >
-                    20
+                    {itemsPerPage === 20 ? "20 items" : "20"}
                 </button>
                 <button 
                     className={classNames(
                         "px-3 py-1.5 focus:outline-none transition-colors", 
-                        itemsPerPage === 40 ? "bg-blue-600" : "hover:bg-blue-600"
+                        itemsPerPage === 40 ? "bg-blue-500" : "hover:bg-blue-500"
                     )}
                     onClick={() => handleItemsPerPageClick(40)}
                 >
-                    40
+                    {itemsPerPage === 40 ? "40 items" : "40"}
                 </button>
             </div>
 
