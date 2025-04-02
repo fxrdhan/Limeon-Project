@@ -11,6 +11,9 @@ interface PurchaseItemsTableProps {
     total: number;
     onUpdateItem: (id: string, field: 'quantity' | 'price' | 'discount', value: number) => void;
     onRemoveItem: (id: string) => void;
+    onUpdateItemVat: (id: string, vatPercentage: number) => void;
+    onUpdateItemExpiry: (id: string, expiryDate: string) => void;
+    onUpdateItemBatchNo: (id: string, batchNo: string) => void;
     onUnitChange: (id: string, unitName: string) => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getItemByID: (itemId: string) => any;
@@ -22,6 +25,9 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
     onUpdateItem,
     onRemoveItem,
     onUnitChange,
+    onUpdateItemVat,
+    onUpdateItemExpiry,
+    onUpdateItemBatchNo,
     getItemByID
 }) => {
     return (
@@ -31,10 +37,13 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                     <TableHeader className="w-16 text-center">No</TableHeader>
                     <TableHeader>Kode Item</TableHeader>
                     <TableHeader>Nama Item</TableHeader>
+                    <TableHeader>Batch No.</TableHeader>
+                    <TableHeader>Kadaluarsa</TableHeader>
                     <TableHeader className="text-center">Jumlah</TableHeader>
                     <TableHeader className="text-center">Satuan</TableHeader>
                     <TableHeader className="text-right">Harga</TableHeader>
                     <TableHeader className="text-right">Diskon (%)</TableHeader>
+                    <TableHeader className="text-right">VAT (%)</TableHeader>
                     <TableHeader className="text-right">Subtotal</TableHeader>
                     <TableHeader className="text-center">Aksi</TableHeader>
                 </TableRow>
@@ -42,7 +51,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
             <TableBody>
                 {purchaseItems.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={9} className="text-center text-gray-500">
+                        <TableCell colSpan={12} className="text-center text-gray-500">
                             Belum ada item ditambahkan
                         </TableCell>
                     </TableRow>
@@ -52,6 +61,26 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                             <TableCell className="text-center">{index + 1}</TableCell>
                             <TableCell>{getItemByID(item.item_id)?.code || '-'}</TableCell>
                             <TableCell>{item.item_name}</TableCell>
+                            <TableCell>
+                                <Input
+                                    type="text"
+                                    value={item.batch_no || ''}
+                                    onChange={(e) => onUpdateItemBatchNo(item.id, e.target.value)}
+                                    className="w-24 text-center"
+                                    placeholder="No Batch"
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    type="date"
+                                    value={item.expiry_date || ''}
+                                    onChange={(e) => onUpdateItemExpiry(item.id, e.target.value)}
+                                    className="w-36 text-center"
+                                    min={new Date().toISOString().split('T')[0]}
+                                    title="Tanggal Kadaluarsa"
+                                    placeholder="Tgl. Kadaluarsa"
+                                />
+                            </TableCell>
                             <TableCell className="text-center">
                                 <Input
                                     type="number"
@@ -100,6 +129,18 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                 />
                             </TableCell>
                             <TableCell className="text-right">
+                                <Input
+                                    type="text"
+                                    value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
+                                    onChange={(e) => {
+                                        const numericValue = extractNumericValue(e.target.value);
+                                        onUpdateItemVat(item.id, Math.min(numericValue, 100));
+                                    }}
+                                    className="w-20 text-right"
+                                    placeholder="0%"
+                                />
+                            </TableCell>
+                            <TableCell className="text-right">
                                 {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                             </TableCell>
                             <TableCell className="text-center">
@@ -116,7 +157,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                     ))
                 )}
                 <TableRow className="font-semibold bg-gray-50">
-                    <TableCell colSpan={7} className="text-right">Total:</TableCell>
+                    <TableCell colSpan={10} className="text-right">Total:</TableCell>
                     <TableCell className="text-right">
                         {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                     </TableCell>

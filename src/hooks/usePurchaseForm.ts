@@ -14,6 +14,8 @@ export interface PurchaseFormData {
     payment_status: string;
     payment_method: string;
     notes: string;
+    vat_percentage: number;
+    is_vat_included: boolean;
 }
 
 export interface PurchaseItem {
@@ -25,6 +27,9 @@ export interface PurchaseItem {
     discount: number;
     subtotal: number;
     unit: string;
+    vat_percentage: number;
+    batch_no: string | null;
+    expiry_date: string | null;
     unit_conversion_rate: number;
 }
 
@@ -41,6 +46,8 @@ export const usePurchaseForm = () => {
         date: new Date().toISOString().slice(0, 10),
         payment_status: 'unpaid',
         payment_method: 'cash',
+        vat_percentage: 11.0,
+        is_vat_included: true,
         notes: ''
     });
     
@@ -74,7 +81,16 @@ export const usePurchaseForm = () => {
     };
 
     const addItem = (newItem: PurchaseItem) => {
-        setPurchaseItems([...purchaseItems, newItem]);
+        const newItems = [...purchaseItems, {
+            ...newItem,
+            vat_percentage: 0,
+            batch_no: null,
+            expiry_date: null,
+            unit: newItem.unit || 'Unit',
+            unit_conversion_rate: 1
+        }];
+        recalculateSubtotal(newItems);
+        setPurchaseItems(newItems);
     };
     
     const updateItem = (id: string, field: 'quantity' | 'price' | 'discount', value: number) => {
@@ -83,18 +99,93 @@ export const usePurchaseForm = () => {
                 const quantity = field === 'quantity' ? value : item.quantity;
                 const price = field === 'price' ? value : item.price;
                 const discount = field === 'discount' ? value : item.discount;
-                // Hitung subtotal dengan memperhitungkan diskon dalam persentase
-                const discountAmount = price * quantity * (discount / 100);
+                
+                // Hitung subtotal dengan diskon
+                let subtotal = quantity * price;
+                if (discount > 0) {
+                    const discountAmount = subtotal * (discount / 100);
+                    subtotal -= discountAmount;
+                }
+                
+                // Tambahkan VAT jika tidak termasuk
+                if (item.vat_percentage > 0 && !formData.is_vat_included) {
+                    const vatAmount = subtotal * (item.vat_percentage / 100);
+                    subtotal += vatAmount;
+                }
                 return {
                     ...item,
                     [field]: value,
-                    subtotal: quantity * price - discountAmount
+                    subtotal: subtotal
                 };
             }
             return item;
         });
         
         setPurchaseItems(updatedItems);
+    };
+    
+    // Fungsi untuk memperbarui VAT per item
+    const updateItemVat = (id: string, vatPercentage: number) => {
+        const updatedItems = purchaseItems.map(item => {
+            if (item.id === id) {
+                // Hitung subtotal dengan diskon dan VAT baru
+                let subtotal = item.quantity * item.price;
+                if (item.discount > 0) {
+                    const discountAmount = subtotal * (item.discount / 100);
+                    subtotal -= discountAmount;
+                }
+                
+                // Tambahkan VAT jika tidak termasuk
+                if (vatPercentage > 0 && !formData.is_vat_included) {
+                    const vatAmount = subtotal * (vatPercentage / 100);
+                    subtotal += vatAmount;
+                }
+                
+                return {
+                    ...item,
+                    vat_percentage: vatPercentage,
+                    subtotal: subtotal
+                };
+            }
+            return item;
+        });
+        
+        setPurchaseItems(updatedItems);
+    };
+
+    // Fungsi untuk memperbarui tanggal kadaluarsa
+    const updateItemExpiry = (id: string, expiryDate: string) => {
+        setPurchaseItems(purchaseItems.map(item => 
+            item.id === id ? {...item, expiry_date: expiryDate} : item
+        ));
+    };
+
+    // Fungsi untuk memperbarui nomor batch
+    const updateItemBatchNo = (id: string, batchNo: string) => {
+        setPurchaseItems(purchaseItems.map(item => 
+            item.id === id ? {...item, batch_no: batchNo} : item
+        ));
+    };
+
+    // Fungsi untuk menghitung ulang semua subtotal
+    const recalculateSubtotal = (items = purchaseItems) => {
+        return items.map(item => {
+            let subtotal = item.quantity * item.price;
+            if (item.discount > 0) {
+                const discountAmount = subtotal * (item.discount / 100);
+                subtotal -= discountAmount;
+            }
+            
+            if (item.vat_percentage > 0 && !formData.is_vat_included) {
+                const vatAmount = subtotal * (item.vat_percentage / 100);
+                subtotal += vatAmount;
+            }
+            
+            return {
+                ...item,
+                subtotal: subtotal
+            };
+        });
     };
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -136,6 +227,18 @@ export const usePurchaseForm = () => {
         setPurchaseItems(purchaseItems.filter(item => item.id !== id));
     };
     
+    // Calculate total VAT amount
+    const calculateTotalVat = () => {
+        return purchaseItems.reduce((total, item) => {
+            if (item.vat_percentage > 0) {
+                const subtotalBeforeVat = item.subtotal / (1 + item.vat_percentage / 100);
+                const vatAmount = item.subtotal - subtotalBeforeVat;
+                return total + vatAmount;
+            }
+            return total;
+        }, 0);
+    };
+    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -156,13 +259,16 @@ export const usePurchaseForm = () => {
                     date: formData.date,
                     total: total,
                     payment_status: formData.payment_status,
-                    payment_method: formData.payment_method,
+                    payment_method: formData.payment_method, 
+                    vat_percentage: formData.vat_percentage,
+                    is_vat_included: formData.is_vat_included,
+                    vat_amount: calculateTotalVat(),
                     notes: formData.notes || null
                 })
                 .select('id')
                 .single();
                 
-            if (purchaseError) throw purchaseError;
+            if (purchaseError) throw purchaseError; 
             
             // Insert purchase items
             const purchaseItemsData = purchaseItems.map(item => ({
@@ -172,7 +278,10 @@ export const usePurchaseForm = () => {
                 discount: item.discount,
                 price: item.price,
                 subtotal: item.subtotal,
-                unit: item.unit
+                unit: item.unit,
+                vat_percentage: item.vat_percentage,
+                batch_no: item.batch_no,
+                expiry_date: item.expiry_date
             }));
             
             const { error: itemsError } = await supabase
@@ -230,6 +339,9 @@ export const usePurchaseForm = () => {
         handleChange,
         addItem,
         updateItem,
+        updateItemVat,
+        updateItemExpiry,
+        updateItemBatchNo,
         handleUnitChange,
         removeItem,
         handleSubmit
