@@ -7,7 +7,6 @@ import {
     FaShoppingCart,
     FaHome,
     FaArrowLeft,
-    FaArrowRight,
     FaAngleDown,
     FaChartBar,
     FaHospital,
@@ -218,14 +217,14 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                             {/* Menu Item Button */}
                             <button
                                 onClick={() => item.children ? toggleMenu(item.name.toLowerCase().replace(' ', '')) : null}
-                                className={`w-full text-left flex items-center justify-between px-4 py-2.5
+                                className={`w-full text-left flex items-center justify-between px-2 py-3
                                           ${isActive(item.path) || hasActiveChild(item.children)
                                         ? 'bg-white/20 font-medium border-l-4 border-white'
                                         : collapsed ? '' : 'border-l-4 border-transparent'} 
                                             : 'hover:bg-white/5'} 
                                           transition-all duration-150 group relative`}
                             >
-                                <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
+                                <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
                                     <div className={`${isActive(item.path) || hasActiveChild(item.children)
                                         ? 'text-white'
                                         : 'text-blue-100'} 
