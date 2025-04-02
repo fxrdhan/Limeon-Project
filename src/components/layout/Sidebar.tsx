@@ -269,7 +269,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                             <Link
                                                 key={child.path}
                                                 to={child.path}
-                                                className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 
+                                                className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
                                                           ${isActive(child.path)
                                                         ? 'bg-white/20 text-white font-medium'
                                                         : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
@@ -291,7 +291,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                         <Link
                                             key={child.path}
                                             to={child.path}
-                                            className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 
+                                            className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
                                                       ${isActive(child.path)
                                                     ? 'bg-white/10 text-white'
                                                     : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}

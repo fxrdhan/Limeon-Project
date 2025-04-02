@@ -1759,6 +1759,10 @@ h1 {
   background-color: rgb(249 250 251 / 0.3);
 }
 
+.visited\:text-blue-100:visited {
+  color: rgb(219 234 254 );
+}
+
 .hover\:bg-blue-50:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(239 246 255 / var(--tw-bg-opacity, 1));

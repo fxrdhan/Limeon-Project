@@ -1692,241 +1692,322 @@
 ===============================================
 
      1	import { Link } from "react-router-dom";
-     2	import { useState, useEffect } from "react";
-     3	import {
-     4	    FaDatabase,
-     5	    FaBoxes,
-     6	    FaShoppingCart,
-     7	    // FaShoppingBag,
-     8	    // FaHospital,
-     9	    // FaChartBar,
-    10	    // FaCog,
+     2	import { useState, useEffect, useCallback } from "react";
+     3	import { useLocation } from "react-router-dom";
+     4	import {
+     5	    FaDatabase,
+     6	    FaBoxes,
+     7	    FaShoppingCart,
+     8	    FaHome,
+     9	    FaArrowLeft,
+    10	    FaArrowRight,
     11	    FaAngleDown,
-    12	    FaBars,
-    13	    FaChevronRight
-    14	} from "react-icons/fa";
-    15	
-    16	interface SidebarProps {
-    17	    collapsed: boolean;
-    18	    toggleSidebar: () => void;
-    19	}
-    20	
-    21	const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
-    22	    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-    23	        masterData: false,
-    24	        inventory: false,
-    25	        purchasing: false,
-    26	        sales: false,
-    27	        clinic: false,
-    28	        accounting: false,
-    29	        reports: false,
-    30	        settings: false,
-    31	    });
-    32	
-    33	    // Menyimpan state menu yang dibuka sebelum collapse
-    34	    const [savedOpenMenus, setSavedOpenMenus] = useState<Record<string, boolean>>({});
-    35	
-    36	    // Effect untuk menyimpan/mengembalikan state menu
-    37	    useEffect(() => {
-    38	        if (collapsed) {
-    39	            // Simpan state menu saat ini sebelum collapse
-    40	            setSavedOpenMenus({...openMenus});
-    41	            // Tutup semua menu saat collapsed
-    42	            setOpenMenus({
-    43	                masterData: false,
-    44	                inventory: false,
-    45	                purchasing: false,
-    46	                sales: false,
-    47	                clinic: false,
-    48	                accounting: false,
-    49	                reports: false,
-    50	                settings: false,
-    51	            });
-    52	        } else {
-    53	            // Kembalikan state menu sebelumnya saat expand
-    54	            setOpenMenus(savedOpenMenus);
-    55	        }
-    56	    // eslint-disable-next-line react-hooks/exhaustive-deps
-    57	    }, [collapsed]);
-    58	
-    59	    const toggleMenu = (menu: string) => {
-    60	        if (!collapsed) {
-    61	            setOpenMenus((prev) => ({
-    62	                ...prev,
-    63	                [menu]: !prev[menu],
-    64	            }));
-    65	        }
-    66	    };
-    67	
-    68	    return (
-    69	        <aside className={`bg-white shadow-md transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'} relative`}>
-    70	            <div className={`p-4 bg-primary text-white ${collapsed ? 'justify-center' : 'flex justify-between items-center'}`}>
-    71	                {!collapsed && <h2 className="text-xl font-bold">Apotek App</h2>}
-    72	                <button 
-    73	                    onClick={toggleSidebar} 
-    74	                    className="p-1 rounded-full hover:bg-blue-600 focus:outline-none"
-    75	                >
-    76	                    {collapsed ? <FaChevronRight /> : <FaBars />}
-    77	                </button>
-    78	            </div>
-    79	
-    80	            <nav className="mt-6">
-    81	                <Link
-    82	                    to="/"
-    83	                    className={`flex items-center ${collapsed ? 'justify-center' : ''} px-6 py-3 text-gray-700 hover:bg-gray-100`}
-    84	                >
-    85	                    {collapsed ? <i className="fas fa-home"></i> : <span className="mx-3">Dashboard</span>}
-    86	                </Link>
-    87	
-    88	                {/* Master Data */}
-    89	                <div>
-    90	                    <button
-    91	                        onClick={() => toggleMenu("masterData")}
-    92	                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
-    93	                    >
-    94	                        <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
-    95	                            <FaDatabase className="text-gray-500" />
-    96	                            {!collapsed && <span className="mx-3">Master Data</span>}
-    97	                        </div>
-    98	                        {!collapsed && <FaAngleDown
-    99	                            className={`transform ${openMenus.masterData ? "rotate-180" : ""
-   100	                                }`}
-   101	                        />}
-   102	                    </button>
-   103	
-   104	                    {openMenus.masterData && !collapsed && (
-   105	                        <div className="pl-12 pr-6 py-2 bg-gray-50">
-   106	                            <Link
-   107	                                to="/master-data/items"
-   108	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   109	                            >
-   110	                                Daftar Item
-   111	                            </Link>
-   112	                            <Link
-   113	                                to="/master-data/categories"
-   114	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   115	                            >
-   116	                                Kategori Item
-   117	                            </Link>
-   118	                            <Link
-   119	                                to="/master-data/types"
-   120	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   121	                            >
-   122	                                Jenis Item
-   123	                            </Link>
-   124	                            <Link
-   125	                                to="/master-data/units"
-   126	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   127	                            >
-   128	                                Satuan
-   129	                            </Link>
-   130	                            <Link
-   131	                                to="/master-data/suppliers"
-   132	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   133	                            >
-   134	                                Supplier
-   135	                            </Link>
-   136	                            <Link
-   137	                                to="/master-data/patients"
-   138	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   139	                            >
-   140	                                Pasien
-   141	                            </Link>
-   142	                            <Link
-   143	                                to="/master-data/doctors"
-   144	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   145	                            >
-   146	                                Dokter
-   147	                            </Link>
-   148	                        </div>
-   149	                    )}
-   150	                </div>
-   151	
-   152	                {/* Persediaan */}
-   153	                <div>
-   154	                    <button
-   155	                        onClick={() => toggleMenu("inventory")}
-   156	                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
-   157	                    >
-   158	                        <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
-   159	                            <FaBoxes className="text-gray-500" />
-   160	                            {!collapsed && <span className="mx-3">Persediaan</span>}
-   161	                        </div>
-   162	                        {!collapsed && <FaAngleDown
-   163	                            className={`transform ${openMenus.inventory ? "rotate-180" : ""}`}
-   164	                        />}
-   165	                    </button>
-   166	
-   167	                    {openMenus.inventory && !collapsed && (
-   168	                        <div className="pl-12 pr-6 py-2 bg-gray-50">
-   169	                            <Link
-   170	                                to="/inventory/stock"
-   171	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   172	                            >
-   173	                                Stok Obat
-   174	                            </Link>
-   175	                            <Link
-   176	                                to="/inventory/stock-opname"
-   177	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   178	                            >
-   179	                                Stok Opname
-   180	                            </Link>
-   181	                            <Link
-   182	                                to="/inventory/expired"
-   183	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   184	                            >
-   185	                                Obat Kadaluarsa
-   186	                            </Link>
-   187	                        </div>
-   188	                    )}
-   189	                </div>
-   190	
-   191	                {/* Pembelian */}
-   192	                <div>
-   193	                    <button
-   194	                        onClick={() => toggleMenu("purchasing")}
-   195	                        className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
-   196	                    >
-   197	                        <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
-   198	                            <FaShoppingCart className="text-gray-500" />
-   199	                            {!collapsed && <span className="mx-3">Pembelian</span>}
-   200	                        </div>
-   201	                        {!collapsed && <FaAngleDown
-   202	                            className={`transform ${openMenus.purchasing ? "rotate-180" : ""}`}
-   203	                        />}
-   204	                    </button>
-   205	
-   206	                    {openMenus.purchasing && !collapsed && (
-   207	                        <div className="pl-12 pr-6 py-2 bg-gray-50">
-   208	                            <Link
-   209	                                to="/purchases/orders"
-   210	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   211	                            >
-   212	                                Daftar Pesanan Beli
-   213	                            </Link>
-   214	                            <Link
-   215	                                to="/purchases"
-   216	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   217	                            >
-   218	                                Daftar Pembelian
-   219	                            </Link>
-   220	                            <Link
-   221	                                to="/purchases/price-history"
-   222	                                className="block py-2 text-sm text-gray-600 hover:text-primary"
-   223	                            >
-   224	                                Riwayat Harga Beli
-   225	                            </Link>
-   226	                        </div>
-   227	                    )}
-   228	                </div>
-   229	
-   230	                {/* Tambahkan menu lain (Pembelian, Penjualan, Klinik, dll) dengan struktur yang sama */}
-   231	            </nav>
-   232	        </aside>
-   233	    );
-   234	};
-   235	
-   236	export default Sidebar;
+    12	    FaChartBar,
+    13	    FaHospital,
+    14	    FaShoppingBag,
+    15	    FaCog
+    16	} from "react-icons/fa";
+    17	import { JSX } from "react/jsx-runtime";
+    18	
+    19	interface SidebarProps {
+    20	    collapsed: boolean;
+    21	    toggleSidebar: () => void;
+    22	}
+    23	
+    24	interface MenuItem {
+    25	    name: string;
+    26	    path: string;
+    27	    icon: JSX.Element;
+    28	    children?: {
+    29	        name: string;
+    30	        path: string;
+    31	    }[];
+    32	}
+    33	
+    34	const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
+    35	    const location = useLocation();
+    36	    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    37	        masterData: false,
+    38	        inventory: false,
+    39	        purchasing: false,
+    40	        sales: false,
+    41	        clinic: false,
+    42	        finance: false,
+    43	        reports: false,
+    44	        settings: false,
+    45	    });
+    46	
+    47	    const [savedOpenMenus, setSavedOpenMenus] = useState<Record<string, boolean>>({});
+    48	    const [hoverMenu, setHoverMenu] = useState<string | null>(null);
+    49	
+    50	    // Define menu structure
+    51	    const menuItems: MenuItem[] = [
+    52	        {
+    53	            name: "Dashboard",
+    54	            path: "/",
+    55	            icon: <FaHome className="text-lg" />,
+    56	        },
+    57	        {
+    58	            name: "Master Data",
+    59	            path: "/master-data",
+    60	            icon: <FaDatabase className="text-lg" />,
+    61	            children: [
+    62	                { name: "Daftar Item", path: "/master-data/items" },
+    63	                { name: "Kategori Item", path: "/master-data/categories" },
+    64	                { name: "Jenis Item", path: "/master-data/types" },
+    65	                { name: "Satuan", path: "/master-data/units" },
+    66	                { name: "Supplier", path: "/master-data/suppliers" },
+    67	                { name: "Pasien", path: "/master-data/patients" },
+    68	                { name: "Dokter", path: "/master-data/doctors" },
+    69	            ],
+    70	        },
+    71	        {
+    72	            name: "Persediaan",
+    73	            path: "/inventory",
+    74	            icon: <FaBoxes className="text-lg" />,
+    75	            children: [
+    76	                { name: "Stok Obat", path: "/inventory/stock" },
+    77	                { name: "Stok Opname", path: "/inventory/stock-opname" },
+    78	                { name: "Obat Kadaluarsa", path: "/inventory/expired" },
+    79	            ],
+    80	        },
+    81	        {
+    82	            name: "Pembelian",
+    83	            path: "/purchases",
+    84	            icon: <FaShoppingCart className="text-lg" />,
+    85	            children: [
+    86	                { name: "Daftar Pesanan Beli", path: "/purchases/orders" },
+    87	                { name: "Daftar Pembelian", path: "/purchases" },
+    88	                { name: "Riwayat Harga Beli", path: "/purchases/price-history" },
+    89	            ],
+    90	        },
+    91	        {
+    92	            name: "Penjualan",
+    93	            path: "/sales",
+    94	            icon: <FaShoppingBag className="text-lg" />,
+    95	            children: [
+    96	                { name: "Daftar Penjualan", path: "/sales" },
+    97	                { name: "Tambah Penjualan", path: "/sales/create" },
+    98	            ],
+    99	        },
+   100	        {
+   101	            name: "Klinik",
+   102	            path: "/clinic",
+   103	            icon: <FaHospital className="text-lg" />,
+   104	            children: [
+   105	                { name: "Daftar Pasien", path: "/clinic/patients" },
+   106	                { name: "Antrian", path: "/clinic/queue" },
+   107	                { name: "Rekam Medis", path: "/clinic/medical-records" },
+   108	            ],
+   109	        },
+   110	        {
+   111	            name: "Laporan",
+   112	            path: "/reports",
+   113	            icon: <FaChartBar className="text-lg" />,
+   114	            children: [
+   115	                { name: "Penjualan", path: "/reports/sales" },
+   116	                { name: "Pembelian", path: "/reports/purchases" },
+   117	                { name: "Stok", path: "/reports/stock" },
+   118	            ],
+   119	        },
+   120	        {
+   121	            name: "Pengaturan",
+   122	            path: "/settings",
+   123	            icon: <FaCog className="text-lg" />,
+   124	            children: [
+   125	                { name: "Profil", path: "/settings/profile" },
+   126	                { name: "Pengguna", path: "/settings/users" },
+   127	                { name: "Aplikasi", path: "/settings/app" },
+   128	            ],
+   129	        },
+   130	    ];
+   131	
+   132	    useEffect(() => {
+   133	        if (collapsed) {
+   134	            setSavedOpenMenus({ ...openMenus });
+   135	            setOpenMenus({
+   136	                masterData: false,
+   137	                inventory: false,
+   138	                purchasing: false,
+   139	                sales: false,
+   140	                clinic: false,
+   141	                finance: false,
+   142	                reports: false,
+   143	                settings: false,
+   144	            });
+   145	        } else {
+   146	            setOpenMenus(savedOpenMenus);
+   147	        }
+   148	        // eslint-disable-next-line react-hooks/exhaustive-deps
+   149	    }, [collapsed]);
+   150	
+   151	    // Check if path is active
+   152	    const isActive = useCallback((path: string) => {
+   153	        if (path === '/') {
+   154	            return location.pathname === '/';
+   155	        }
+   156	        return location.pathname.startsWith(path);
+   157	    }, [location]);
+   158	
+   159	    // Check if submenu is active
+   160	    const hasActiveChild = useCallback((children?: { path: string }[]) => {
+   161	        if (!children) return false;
+   162	        return children.some(child => isActive(child.path));
+   163	    }, [isActive]);
+   164	
+   165	    // Toggle menu open/closed
+   166	    const toggleMenu = useCallback((menu: string) => {
+   167	        if (!collapsed) {
+   168	            setOpenMenus((prev) => ({
+   169	                ...prev,
+   170	                [menu]: !prev[menu],
+   171	            }));
+   172	        }
+   173	    }, [collapsed]);
+   174	
+   175	    // Handle hover for collapsed sidebar
+   176	    const handleMouseEnter = useCallback((menu: string) => {
+   177	        if (collapsed) {
+   178	            setHoverMenu(menu);
+   179	        }
+   180	    }, [collapsed]);
+   181	
+   182	    const handleMouseLeave = useCallback(() => {
+   183	        setHoverMenu(null);
+   184	    }, []);
+   185	
+   186	    return (
+   187	        <aside
+   188	            className={`bg-gradient-to-b from-blue-600 to-blue-800 text-white 
+   189	                        transition-all duration-500 ease-in-out h-screen 
+   190	                        ${collapsed ? 'w-16' : 'w-64'} relative group z-10`}
+   191	        >
+   192	            <div className="flex flex-col h-full">
+   193	                {/* Logo Area */}
+   194	                <div className={`p-4 border-b border-blue-500/30 flex items-center justify-between`}>
+   195	                    {!collapsed && (
+   196	                        <div className="flex items-center">
+   197	                            <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center">
+   198	                                <span className="text-blue-600 text-xl font-bold">P</span>
+   199	                            </div>
+   200	                            <h2 className="ml-2 text-lg font-bold transition-opacity duration-200">PharmaSys</h2>
+   201	                        </div>
+   202	                    )}
+   203	                    {collapsed && (
+   204	                        <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center mx-auto">
+   205	                            <span className="text-blue-600 text-xl font-bold">P</span>
+   206	                        </div>
+   207	                    )}
+   208	                    <button
+   209	                        onClick={toggleSidebar}
+   210	                        className={`p-1.5 rounded-full bg-blue-500/20 hover:bg-blue-500/40 
+   211	                                  transition-all duration-300 ${collapsed ? 'ml-auto mr-auto' : ''}`}
+   212	                    >
+   213	                        {collapsed ? <FaArrowRight size={14} /> : <FaArrowLeft size={14} />}
+   214	                    </button>
+   215	                </div>
+   216	
+   217	                {/* Menu Items */}
+   218	                <nav className="flex-grow overflow-y-auto py-2 scrollbar-thin">
+   219	                    {menuItems.map((item) => (
+   220	                        <div key={item.name} className="mb-1" onMouseEnter={() => handleMouseEnter(item.name)} onMouseLeave={handleMouseLeave}>
+   221	                            {/* Menu Item Button */}
+   222	                            <button
+   223	                                onClick={() => item.children ? toggleMenu(item.name.toLowerCase().replace(' ', '')) : null}
+   224	                                className={`w-full text-left flex items-center justify-between px-4 py-2.5
+   225	                                          ${isActive(item.path) || hasActiveChild(item.children)
+   226	                                        ? 'bg-white/20 font-medium border-l-4 border-white'
+   227	                                        : collapsed ? '' : 'border-l-4 border-transparent'} 
+   228	                                            : 'hover:bg-white/5'} 
+   229	                                          transition-all duration-150 group relative`}
+   230	                            >
+   231	                                <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
+   232	                                    <div className={`${isActive(item.path) || hasActiveChild(item.children)
+   233	                                        ? 'text-white'
+   234	                                        : 'text-blue-100'} 
+   235	                                                  transition-colors duration-200`}>
+   236	                                        {item.icon}
+   237	                                    </div>
+   238	
+   239	                                    {!collapsed && (
+   240	                                        <span className="ml-3 truncate">{item.name}</span>
+   241	                                    )}
+   242	                                </div>
+   243	
+   244	                                {!collapsed && item.children && (
+   245	                                    <FaAngleDown
+   246	                                        className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""
+   247	                                            }`}
+   248	                                    />
+   249	                                )}
+   250	
+   251	                                {/* Hover tooltip for collapsed state */}
+   252	                                {collapsed && (
+   253	                                    <div className={`
+   254	                                        absolute left-full ml-2 bg-blue-800 text-white rounded-md py-1 px-3 
+   255	                                        text-sm whitespace-nowrap shadow-lg opacity-0 pointer-events-none
+   256	                                        transition-opacity duration-150 z-20
+   257	                                        ${hoverMenu === item.name ? 'opacity-100' : 'opacity-0'}
+   258	                                    `}>
+   259	                                        {item.name}
+   260	                                    </div>
+   261	                                )}
+   262	                            </button>
+   263	
+   264	                            {/* Submenu Items */}
+   265	                            {item.children && openMenus[item.name.toLowerCase().replace(' ', '')] && !collapsed && (
+   266	                                <div className="overflow-hidden transition-all duration-300 ease-in-out max-h-96 bg-blue-700/20">
+   267	                                    <div className="pl-12 pr-4 py-1 space-y-1">
+   268	                                        {item.children.map((child) => (
+   269	                                            <Link
+   270	                                                key={child.path}
+   271	                                                to={child.path}
+   272	                                                className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 
+   273	                                                          ${isActive(child.path)
+   274	                                                        ? 'bg-white/20 text-white font-medium'
+   275	                                                        : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
+   276	                                            >
+   277	                                                {child.name}
+   278	                                            </Link>
+   279	                                        ))}
+   280	                                    </div>
+   281	                                </div>
+   282	                            )}
+   283	
+   284	                            {/* Submenu dropdown for collapsed sidebar on hover */}
+   285	                            {collapsed && item.children && hoverMenu === item.name && (
+   286	                                <div
+   287	                                    className="absolute left-full ml-2 top-0 bg-blue-800 rounded-md py-2 px-3 
+   288	                                            min-w-40 z-20 shadow-xl"
+   289	                                >
+   290	                                    {item.children.map((child) => (
+   291	                                        <Link
+   292	                                            key={child.path}
+   293	                                            to={child.path}
+   294	                                            className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 
+   295	                                                      ${isActive(child.path)
+   296	                                                    ? 'bg-white/10 text-white'
+   297	                                                    : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
+   298	                                        >
+   299	                                            {child.name}
+   300	                                        </Link>
+   301	                                    ))}
+   302	                                </div>
+   303	                            )}
+   304	                        </div>
+   305	                    ))}
+   306	                </nav>
+   307	
+   308	                {/* Bottom version info */}
+   309	                <div className={`p-4 text-xs text-blue-200/70 border-t border-blue-500/30 ${collapsed ? 'text-center' : ''}`}>
+   310	                    {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
+   311	                </div>
+   312	            </div>
+   313	        </aside>
+   314	    );
+   315	};
+   316	
+   317	export default Sidebar;
 
 
 ===============================================
