@@ -263,17 +263,23 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                             )}
 
                             {/* Submenu Items */}
-                            {item.children && openMenus[item.name.toLowerCase().replace(' ', '')] && !collapsed && (
-                                <div className="overflow-hidden transition-all duration-300 ease-in-out max-h-96 bg-blue-700/20">
-                                    <div className="pl-12 pr-4 py-1 space-y-1">
+                            {item.children && !collapsed && (
+                                <div 
+                                    className={`overflow-hidden transition-all duration-300 ease-in-out transform ${
+                                        openMenus[item.name.toLowerCase().replace(' ', '')] 
+                                            ? 'max-h-96 opacity-100 scale-y-100 origin-top' 
+                                            : 'max-h-0 opacity-0 scale-y-95 origin-top'
+                                    }`}
+                                >
+                                    <div className="pl-12 pr-4 py-1 space-y-1 bg-blue-700/20">
                                         {item.children.map((child) => (
                                             <Link
                                                 key={child.path}
                                                 to={child.path}
                                                 className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
-                                                          ${isActive(child.path)
-                                                        ? 'bg-white/20 text-white font-medium'
-                                                        : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
+                                                           ${isActive(child.path)
+                                                    ? 'bg-white/20 text-white font-medium'
+                                                    : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
                                             >
                                                 {child.name}
                                             </Link>
