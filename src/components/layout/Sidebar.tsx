@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     FaDatabase,
     FaBoxes,
@@ -9,9 +9,16 @@ import {
     // FaChartBar,
     // FaCog,
     FaAngleDown,
+    FaBars,
+    FaChevronRight
 } from "react-icons/fa";
 
-const Sidebar = () => {
+interface SidebarProps {
+    collapsed: boolean;
+    toggleSidebar: () => void;
+}
+
+const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
         masterData: false,
         inventory: false,
@@ -23,25 +30,59 @@ const Sidebar = () => {
         settings: false,
     });
 
+    // Menyimpan state menu yang dibuka sebelum collapse
+    const [savedOpenMenus, setSavedOpenMenus] = useState<Record<string, boolean>>({});
+
+    // Effect untuk menyimpan/mengembalikan state menu
+    useEffect(() => {
+        if (collapsed) {
+            // Simpan state menu saat ini sebelum collapse
+            setSavedOpenMenus({...openMenus});
+            // Tutup semua menu saat collapsed
+            setOpenMenus({
+                masterData: false,
+                inventory: false,
+                purchasing: false,
+                sales: false,
+                clinic: false,
+                accounting: false,
+                reports: false,
+                settings: false,
+            });
+        } else {
+            // Kembalikan state menu sebelumnya saat expand
+            setOpenMenus(savedOpenMenus);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [collapsed]);
+
     const toggleMenu = (menu: string) => {
-        setOpenMenus((prev) => ({
-            ...prev,
-            [menu]: !prev[menu],
-        }));
+        if (!collapsed) {
+            setOpenMenus((prev) => ({
+                ...prev,
+                [menu]: !prev[menu],
+            }));
+        }
     };
 
     return (
-        <aside className="w-64 bg-white shadow-md">
-            <div className="p-4 bg-primary text-white">
-                <h2 className="text-xl font-bold">Apotek App</h2>
+        <aside className={`bg-white shadow-md transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'} relative`}>
+            <div className={`p-4 bg-primary text-white ${collapsed ? 'justify-center' : 'flex justify-between items-center'}`}>
+                {!collapsed && <h2 className="text-xl font-bold">Apotek App</h2>}
+                <button 
+                    onClick={toggleSidebar} 
+                    className="p-1 rounded-full hover:bg-blue-600 focus:outline-none"
+                >
+                    {collapsed ? <FaChevronRight /> : <FaBars />}
+                </button>
             </div>
 
             <nav className="mt-6">
                 <Link
                     to="/"
-                    className="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100"
+                    className={`flex items-center ${collapsed ? 'justify-center' : ''} px-6 py-3 text-gray-700 hover:bg-gray-100`}
                 >
-                    <span className="mx-3">Dashboard</span>
+                    {collapsed ? <i className="fas fa-home"></i> : <span className="mx-3">Dashboard</span>}
                 </Link>
 
                 {/* Master Data */}
@@ -50,17 +91,17 @@ const Sidebar = () => {
                         onClick={() => toggleMenu("masterData")}
                         className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
                     >
-                        <div className="flex items-center">
+                        <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
                             <FaDatabase className="text-gray-500" />
-                            <span className="mx-3">Master Data</span>
+                            {!collapsed && <span className="mx-3">Master Data</span>}
                         </div>
-                        <FaAngleDown
+                        {!collapsed && <FaAngleDown
                             className={`transform ${openMenus.masterData ? "rotate-180" : ""
                                 }`}
-                        />
+                        />}
                     </button>
 
-                    {openMenus.masterData && (
+                    {openMenus.masterData && !collapsed && (
                         <div className="pl-12 pr-6 py-2 bg-gray-50">
                             <Link
                                 to="/master-data/items"
@@ -114,16 +155,16 @@ const Sidebar = () => {
                         onClick={() => toggleMenu("inventory")}
                         className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
                     >
-                        <div className="flex items-center">
+                        <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
                             <FaBoxes className="text-gray-500" />
-                            <span className="mx-3">Persediaan</span>
+                            {!collapsed && <span className="mx-3">Persediaan</span>}
                         </div>
-                        <FaAngleDown
+                        {!collapsed && <FaAngleDown
                             className={`transform ${openMenus.inventory ? "rotate-180" : ""}`}
-                        />
+                        />}
                     </button>
 
-                    {openMenus.inventory && (
+                    {openMenus.inventory && !collapsed && (
                         <div className="pl-12 pr-6 py-2 bg-gray-50">
                             <Link
                                 to="/inventory/stock"
@@ -153,16 +194,16 @@ const Sidebar = () => {
                         onClick={() => toggleMenu("purchasing")}
                         className="flex items-center justify-between w-full px-6 py-3 text-gray-700 hover:bg-gray-100"
                     >
-                        <div className="flex items-center">
+                        <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
                             <FaShoppingCart className="text-gray-500" />
-                            <span className="mx-3">Pembelian</span>
+                            {!collapsed && <span className="mx-3">Pembelian</span>}
                         </div>
-                        <FaAngleDown
+                        {!collapsed && <FaAngleDown
                             className={`transform ${openMenus.purchasing ? "rotate-180" : ""}`}
-                        />
+                        />}
                     </button>
 
-                    {openMenus.purchasing && (
+                    {openMenus.purchasing && !collapsed && (
                         <div className="pl-12 pr-6 py-2 bg-gray-50">
                             <Link
                                 to="/purchases/orders"
