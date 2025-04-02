@@ -1,7 +1,2 @@
 #!/bin/bash
-echo "$(tree -I "node_modules|.git" -a)" > project_files.txt && find . -type f -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./src/output.css" -not -path "./package-lock.json" -exec bash -c 'echo -e "
-
-===============================================
-= File: {} 
-===============================================
-" >> project_files.txt && cat {} >> project_files.txt' \;
+echo "$(tree -I "node_modules|.git" -a)" > project_files.txt && find . -type f -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./src/output.css" -not -path "./package-lock.json" -exec bash -c 'echo -e "\n\n===============================================\n= File: {} \n===============================================\n" >> project_files.txt && nl -ba {} >> project_files.txt' \;

@@ -1,11 +1,18 @@
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 
 const MainLayout = () => {
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    const toggleSidebar = () => {
+        setSidebarCollapsed(!sidebarCollapsed);
+    };
+
     return (
         <div className="flex h-screen bg-gray-100 text-gray-800">
-            <Sidebar />
+            <Sidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
 
             <div className="flex flex-col flex-1 overflow-hidden">
                 <Navbar />
