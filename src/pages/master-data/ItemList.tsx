@@ -11,6 +11,7 @@ import { Loading } from "../../components/ui/Loading";
 interface Item {
     id: string;
     name: string;
+    code: string;
     category: { name: string };
     type: { name: string };
     unit: { name: string };
@@ -56,6 +57,7 @@ const ItemList = () => {
                 .select(`
                 id, 
                 name, 
+                code,
                 base_price, 
                 sell_price, 
                 stock,
@@ -105,6 +107,7 @@ const ItemList = () => {
             const completedData = (data || []).map(item => ({
                 id: item.id,
                 name: item.name,
+                code: item.code,
                 base_price: item.base_price,
                 sell_price: item.sell_price,
                 stock: item.stock,
@@ -178,6 +181,7 @@ const ItemList = () => {
                             <TableHead>
                                 <TableRow>
                                     <TableHeader>Nama Item</TableHeader>
+                                    <TableHeader>Kode</TableHeader>
                                     <TableHeader>Kategori</TableHeader>
                                     <TableHeader>Jenis</TableHeader>
                                     <TableHeader>Satuan</TableHeader>
@@ -191,7 +195,7 @@ const ItemList = () => {
                                 {items.length === 0 ? (
                                     <TableRow>
                                         <TableCell
-                                            colSpan={8}
+                                            colSpan={9}
                                             className="text-center text-gray-600"
                                         >
                                             {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
@@ -201,6 +205,7 @@ const ItemList = () => {
                                     items.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>{item.name}</TableCell>
+                                            <TableCell>{item.code}</TableCell>
                                             <TableCell>{item.category.name}</TableCell>
                                             <TableCell>{item.type.name}</TableCell>
                                             <TableCell>{item.unit.name}</TableCell>
