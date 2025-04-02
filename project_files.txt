@@ -3905,6 +3905,7 @@ interface Supplier {
 interface Item {
     id: string;
     name: string;
+    code?: string;
     base_price: number;
     stock: number;
     unit_id: string;
@@ -3971,7 +3972,7 @@ const CreatePurchase = () => {
         try {
             const { data, error } = await supabase
                 .from('items')
-                .select('id, name, base_price, stock, unit_id, base_unit, unit_conversions')
+                .select('id, name, code, base_price, stock, unit_id, base_unit, unit_conversions')
                 .order('name');
                 
             if (error) throw error;
@@ -4158,7 +4159,8 @@ const CreatePurchase = () => {
     
     // Filter items based on search input
     const filteredItems = items.filter(item =>
-        item.name.toLowerCase().includes(searchItem.toLowerCase())
+        item.name.toLowerCase().includes(searchItem.toLowerCase()) || 
+        (item.code && item.code.toLowerCase().includes(searchItem.toLowerCase()))
     );
     
     return (
@@ -4247,51 +4249,50 @@ const CreatePurchase = () => {
                     
                     <FormSection title="Daftar Item">
                         <div className="mb-4">
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="Cari item..."
-                                    className="w-full p-3 border rounded-md"
-                                    value={searchItem}
-                                    onChange={(e) => {
-                                        setSearchItem(e.target.value);
-                                        setShowItemDropdown(true);
-                                    }}
-                                    onFocus={() => setShowItemDropdown(true)}
-                                />
-                                
-                                {showItemDropdown && searchItem && (
-                                    <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                                        {filteredItems.length === 0 ? (
-                                            <div className="p-3 text-gray-500">Tidak ada item yang ditemukan</div>
-                                        ) : (
-                                            filteredItems.map(item => (
-                                                <div
-                                                    key={item.id}
-                                                    className="p-3 hover:bg-gray-100 cursor-pointer"
-                                                    onClick={() => {
-                                                        setSelectedItem(item);
-                                                        setSearchItem(item.name);
-                                                        setShowItemDropdown(false);
-                                                    }}
-                                                >
-                                                    <div>{item.name}</div>
-                                                    <div className="text-sm text-gray-500">
-                                                        Harga Dasar: {item.base_price.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                            <div className="flex space-x-2">
+                                <div className="relative flex-1">
+                                    <input
+                                        type="text"
+                                        placeholder="Cari nama atau kode item..."
+                                        className="w-full p-3 border rounded-md"
+                                        value={searchItem}
+                                        onChange={(e) => {
+                                            setSearchItem(e.target.value);
+                                            setShowItemDropdown(true);
+                                        }}
+                                        onFocus={() => setShowItemDropdown(true)}
+                                    />
+                                    
+                                    {showItemDropdown && searchItem && (
+                                        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                            {filteredItems.length === 0 ? (
+                                                <div className="p-3 text-gray-500">Tidak ada item yang ditemukan</div>
+                                            ) : (
+                                                filteredItems.map(item => (
+                                                    <div
+                                                        key={item.id}
+                                                        className="p-3 hover:bg-gray-100 cursor-pointer"
+                                                        onClick={() => {
+                                                            setSelectedItem(item);
+                                                            setSearchItem(item.name);
+                                                            setShowItemDropdown(false);
+                                                        }}
+                                                    >
+                                                        <div><span className="font-semibold">{item.code}</span> - {item.name}</div>
+                                                        <div className="text-sm text-gray-500">
+                                                            Harga Dasar: {item.base_price.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                            
-                            <div className="mt-2 flex">
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                                 <Button
                                     type="button"
                                     onClick={addItem}
                                     disabled={!selectedItem}
-                                    className="flex items-center"
+                                    className="flex items-center whitespace-nowrap"
                                 >
                                     <FaPlus className="mr-2" />
                                     Tambah Item
@@ -4302,6 +4303,8 @@ const CreatePurchase = () => {
                         <Table>
                             <TableHead>
                                 <TableRow>
+                                    <TableHeader className="w-16 text-center">No</TableHeader>
+                                    <TableHeader>Kode Item</TableHeader>
                                     <TableHeader>Nama Item</TableHeader>
                                     <TableHeader className="text-center">Jumlah</TableHeader>
                                     <TableHeader className="text-center">Satuan</TableHeader>
@@ -4314,13 +4317,15 @@ const CreatePurchase = () => {
                             <TableBody>
                                 {purchaseItems.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="text-center text-gray-500">
+                                        <TableCell colSpan={9} className="text-center text-gray-500">
                                             Belum ada item ditambahkan
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    purchaseItems.map(item => (
+                                    purchaseItems.map((item, index) => (
                                         <TableRow key={item.id}>
+                                            <TableCell className="text-center">{index + 1}</TableCell>
+                                            <TableCell>{getItemByID(item.item_id)?.code || '-'}</TableCell>
                                             <TableCell>{item.item_name}</TableCell>
                                             <TableCell className="text-center">
                                                 <Input
@@ -4386,7 +4391,7 @@ const CreatePurchase = () => {
                                     ))
                                 )}
                                 <TableRow className="font-semibold bg-gray-50">
-                                    <TableCell colSpan={4} className="text-right">Total:</TableCell>
+                                    <TableCell colSpan={6} className="text-right">Total:</TableCell>
                                     <TableCell className="text-right">
                                         {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                                     </TableCell>

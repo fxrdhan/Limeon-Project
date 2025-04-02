@@ -1,0 +1,96 @@
+import React from 'react';
+import { FormSection, FormField } from '../ui/FormComponents';
+import { Input } from '../ui/Input';
+import { PurchaseFormData } from '../../hooks/usePurchaseForm';
+
+interface PurchaseInformationFormProps {
+    formData: PurchaseFormData;
+    suppliers: Array<{ id: string; name: string }>;
+    handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+}
+
+const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
+    formData,
+    suppliers,
+    handleChange
+}) => {
+    return (
+        <FormSection title="Informasi Pembelian">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField label="Supplier">
+                    <select
+                        name="supplier_id"
+                        value={formData.supplier_id}
+                        onChange={handleChange}
+                        className="w-full p-3 border rounded-md"
+                    >
+                        <option value="">-- Pilih Supplier --</option>
+                        {suppliers.map(supplier => (
+                            <option key={supplier.id} value={supplier.id}>
+                                {supplier.name}
+                            </option>
+                        ))}
+                    </select>
+                </FormField>
+                
+                <FormField label="Nomor Faktur">
+                    <Input
+                        name="invoice_number"
+                        value={formData.invoice_number}
+                        onChange={handleChange}
+                        placeholder="Masukkan nomor faktur"
+                    />
+                </FormField>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FormField label="Tanggal Pembelian">
+                    <Input
+                        type="date"
+                        name="date"
+                        value={formData.date}
+                        onChange={handleChange}
+                    />
+                </FormField>
+                
+                <FormField label="Status Pembayaran">
+                    <select
+                        name="payment_status"
+                        value={formData.payment_status}
+                        onChange={handleChange}
+                        className="w-full p-3 border rounded-md"
+                    >
+                        <option value="unpaid">Belum Dibayar</option>
+                        <option value="partial">Sebagian</option>
+                        <option value="paid">Lunas</option>
+                    </select>
+                </FormField>
+                
+                <FormField label="Metode Pembayaran">
+                    <select
+                        name="payment_method"
+                        value={formData.payment_method}
+                        onChange={handleChange}
+                        className="w-full p-3 border rounded-md"
+                    >
+                        <option value="cash">Tunai</option>
+                        <option value="transfer">Transfer</option>
+                        <option value="credit">Kredit</option>
+                    </select>
+                </FormField>
+            </div>
+            
+            <FormField label="Catatan">
+                <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    className="w-full p-3 border rounded-md"
+                    rows={3}
+                />
+            </FormField>
+        </FormSection>
+    );
+};
+
+export default PurchaseInformationForm;
