@@ -37,7 +37,7 @@ const CreatePurchase: React.FC = () => {
     } = useItemSelection();
 
     const onHandleSubmit = (e: React.FormEvent) => {
-        handleSubmit(e, getItemByID);
+        handleSubmit(e);
     };
 
     const onHandleUnitChange = (id: string, unitName: string) => {

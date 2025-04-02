@@ -70,7 +70,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                     <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
                                         {getItemByID(item.item_id)?.base_unit || 'Unit'}
                                     </option>
-                                    {getItemByID(item.item_id)?.unit_conversions?.map(uc => (
+                                    {getItemByID(item.item_id)?.unit_conversions?.map((uc: { id: string; unit_name: string }) => (
                                         <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
                                     ))}
                                 </select>
