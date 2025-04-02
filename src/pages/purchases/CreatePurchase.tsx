@@ -21,6 +21,9 @@ const CreatePurchase: React.FC = () => {
         addItem,
         updateItem,
         handleUnitChange,
+        updateItemVat,
+        updateItemExpiry,
+        updateItemBatchNo,
         removeItem,
         handleSubmit
     } = usePurchaseForm();
@@ -75,6 +78,9 @@ const CreatePurchase: React.FC = () => {
                             total={total}
                             onUpdateItem={updateItem}
                             onRemoveItem={removeItem}
+                            onUpdateItemVat={updateItemVat}
+                            onUpdateItemExpiry={updateItemExpiry}
+                            onUpdateItemBatchNo={updateItemBatchNo}
                             onUnitChange={onHandleUnitChange}
                             getItemByID={getItemByID}
                         />

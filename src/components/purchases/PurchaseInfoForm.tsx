@@ -43,6 +43,33 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
                 </FormField>
             </div>
             
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField label="Persentase PPN">
+                    <div className="flex items-center">
+                        <Input
+                            type="number"
+                            name="vat_percentage"
+                            value={formData.vat_percentage}
+                            onChange={handleChange}
+                            min="0"
+                            max="100"
+                            className="w-24"
+                        />
+                        <span className="ml-2">%</span>
+                    </div>
+                </FormField>
+                
+                <FormField label="PPN Termasuk Harga">
+                    <input
+                        type="checkbox"
+                        name="is_vat_included"
+                        checked={formData.is_vat_included}
+                        onChange={(e) => handleChange({ ...e, target: { ...e.target, value: e.target.checked } })}
+                        className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                </FormField>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField label="Tanggal Pembelian">
                     <Input
