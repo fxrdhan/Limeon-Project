@@ -31,6 +31,7 @@ interface PurchaseItem {
     item_name: string;
     quantity: number;
     price: number;
+    discount: number;
     subtotal: number;
     unit: string;
     unit_conversion_rate: number;
@@ -113,6 +114,7 @@ const CreatePurchase = () => {
             item_name: selectedItem.name,
             quantity: 1,
             price: selectedItem.base_price,
+            discount: 0,
             subtotal: selectedItem.base_price,
             unit: selectedItem.base_unit || 'Unit',
             unit_conversion_rate: 1
@@ -123,15 +125,18 @@ const CreatePurchase = () => {
         setSearchItem('');
     };
     
-    const updateItem = (id: string, field: 'quantity' | 'price', value: number) => {
+    const updateItem = (id: string, field: 'quantity' | 'price' | 'discount', value: number) => {
         const updatedItems = purchaseItems.map(item => {
             if (item.id === id) {
                 const quantity = field === 'quantity' ? value : item.quantity;
                 const price = field === 'price' ? value : item.price;
+                const discount = field === 'discount' ? value : item.discount;
+                // Hitung subtotal dengan memperhitungkan diskon dalam persentase
+                const discountAmount = price * quantity * (discount / 100);
                 return {
                     ...item,
                     [field]: value,
-                    subtotal: quantity * price
+                    subtotal: quantity * price - discountAmount
                 };
             }
             return item;
@@ -157,12 +162,14 @@ const CreatePurchase = () => {
                         conversionRate = unitConversion.conversion_rate;
                     }
                 }
+
+                const discountAmount = price * item.quantity * (item.discount / 100);
                 
                 return {
                     ...item,
                     unit: unitName,
                     price: price,
-                    subtotal: price * item.quantity,
+                    subtotal: price * item.quantity - discountAmount,
                     unit_conversion_rate: conversionRate
                 };
             }
@@ -209,6 +216,7 @@ const CreatePurchase = () => {
                 purchase_id: purchaseData.id,
                 item_id: item.item_id,
                 quantity: item.quantity,
+                discount: item.discount,
                 price: item.price,
                 subtotal: item.subtotal,
                 unit: item.unit
@@ -407,9 +415,10 @@ const CreatePurchase = () => {
                             <TableHead>
                                 <TableRow>
                                     <TableHeader>Nama Item</TableHeader>
-                                    <TableHeader className="text-right">Harga</TableHeader>
                                     <TableHeader className="text-center">Jumlah</TableHeader>
                                     <TableHeader className="text-center">Satuan</TableHeader>
+                                    <TableHeader className="text-right">Harga</TableHeader>
+                                    <TableHeader className="text-right">Diskon (%)</TableHeader>
                                     <TableHeader className="text-right">Subtotal</TableHeader>
                                     <TableHeader className="text-center">Aksi</TableHeader>
                                 </TableRow>
@@ -417,7 +426,7 @@ const CreatePurchase = () => {
                             <TableBody>
                                 {purchaseItems.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center text-gray-500">
+                                        <TableCell colSpan={7} className="text-center text-gray-500">
                                             Belum ada item ditambahkan
                                         </TableCell>
                                     </TableRow>
@@ -425,15 +434,6 @@ const CreatePurchase = () => {
                                     purchaseItems.map(item => (
                                         <TableRow key={item.id}>
                                             <TableCell>{item.item_name}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    value={item.price}
-                                                    onChange={(e) => updateItem(item.id, 'price', Number(e.target.value))}
-                                                    className="w-32 text-right"
-                                                />
-                                            </TableCell>
                                             <TableCell className="text-center">
                                                 <Input
                                                     type="number"
@@ -456,6 +456,25 @@ const CreatePurchase = () => {
                                                         <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
                                                     ))}
                                                 </select>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    value={item.price}
+                                                    onChange={(e) => updateItem(item.id, 'price', Number(e.target.value))}
+                                                    className="w-32 text-right"
+                                                />
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    value={item.discount}
+                                                    onChange={(e) => updateItem(item.id, 'discount', Number(e.target.value))}
+                                                    className="w-20 text-right"
+                                                />
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
