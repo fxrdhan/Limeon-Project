@@ -908,7 +908,10 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
             discount: 0,
             subtotal: selectedItem.base_price,
             unit: selectedItem.base_unit || 'Unit',
-            unit_conversion_rate: 1
+            unit_conversion_rate: 1,
+            vat_percentage: 0,
+            batch_no: null,
+            expiry_date: null
         };
         
         onAddItem(newItem);
@@ -1043,7 +1046,7 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
                         type="checkbox"
                         name="is_vat_included"
                         checked={formData.is_vat_included}
-                        onChange={(e) => handleChange({ ...e, target: { ...e.target, value: e.target.checked } })}
+                        onChange={(e) => handleChange({ ...e, target: { ...e.target, value: e.target.checked.toString() } })}
                         className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                     />
                 </FormField>

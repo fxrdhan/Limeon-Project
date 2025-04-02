@@ -9,6 +9,7 @@ import { PurchaseItem } from '../../hooks/usePurchaseForm';
 interface PurchaseItemsTableProps {
     purchaseItems: PurchaseItem[];
     total: number;
+    isVatIncluded: boolean;
     onUpdateItem: (id: string, field: 'quantity' | 'price' | 'discount', value: number) => void;
     onRemoveItem: (id: string) => void;
     onUpdateItemVat: (id: string, vatPercentage: number) => void;
@@ -22,6 +23,7 @@ interface PurchaseItemsTableProps {
 const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
     purchaseItems,
     total,
+    isVatIncluded,
     onUpdateItem,
     onRemoveItem,
     onUnitChange,
@@ -43,7 +45,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                     <TableHeader className="text-center">Satuan</TableHeader>
                     <TableHeader className="text-right">Harga</TableHeader>
                     <TableHeader className="text-right">Diskon (%)</TableHeader>
-                    <TableHeader className="text-right">VAT (%)</TableHeader>
+                    {!isVatIncluded && <TableHeader className="text-right">VAT (%)</TableHeader>}
                     <TableHeader className="text-right">Subtotal</TableHeader>
                     <TableHeader className="text-center">Aksi</TableHeader>
                 </TableRow>
@@ -128,18 +130,20 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                     placeholder="0%"
                                 />
                             </TableCell>
-                            <TableCell className="text-right">
-                                <Input
-                                    type="text"
-                                    value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
-                                    onChange={(e) => {
-                                        const numericValue = extractNumericValue(e.target.value);
-                                        onUpdateItemVat(item.id, Math.min(numericValue, 100));
-                                    }}
-                                    className="w-20 text-right"
-                                    placeholder="0%"
-                                />
-                            </TableCell>
+                            {!isVatIncluded && (
+                                <TableCell className="text-right">
+                                    <Input
+                                        type="text"
+                                        value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
+                                        onChange={(e) => {
+                                            const numericValue = extractNumericValue(e.target.value);
+                                            onUpdateItemVat(item.id, Math.min(numericValue, 100));
+                                        }}
+                                        className="w-20 text-right"
+                                        placeholder="0%"
+                                    />
+                                </TableCell>
+                            )}
                             <TableCell className="text-right">
                                 {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                             </TableCell>
@@ -157,7 +161,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                     ))
                 )}
                 <TableRow className="font-semibold bg-gray-50">
-                    <TableCell colSpan={10} className="text-right">Total:</TableCell>
+                    <TableCell colSpan={isVatIncluded ? 9 : 10} className="text-right">Total:</TableCell>
                     <TableCell className="text-right">
                         {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                     </TableCell>
