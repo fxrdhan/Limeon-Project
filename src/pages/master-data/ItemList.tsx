@@ -22,6 +22,7 @@ interface Item {
 const ItemList = () => {
     const [items, setItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(true);
+    const [tableLoading, setTableLoading] = useState(false);
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -41,11 +42,13 @@ const ItemList = () => {
     // Efek untuk mengambil data saat parameter berubah
     useEffect(() => {
         fetchItems(currentPage, debouncedSearch, itemsPerPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPage, debouncedSearch, itemsPerPage]);
 
     const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
         try {
-            setLoading(true);
+            // Hanya set loading untuk tabel, bukan seluruh komponen
+            setTableLoading(true);
 
             // Buat query dasar
             let query = supabase
@@ -117,7 +120,11 @@ const ItemList = () => {
         } catch (error) {
             console.error("Error fetching items:", error);
         } finally {
-            setLoading(false);
+            setTableLoading(false);
+            // Setelah loading pertama, set loading utama menjadi false
+            if (loading) {
+                setLoading(false);
+            }
         }
     };
 
@@ -162,73 +169,78 @@ const ItemList = () => {
                 <Loading />
             ) : (
                 <>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeader>Nama Item</TableHeader>
-                                <TableHeader>Kategori</TableHeader>
-                                <TableHeader>Jenis</TableHeader>
-                                <TableHeader>Satuan</TableHeader>
-                                <TableHeader className="text-right">Harga Pokok</TableHeader>
-                                <TableHeader className="text-right">Harga Jual</TableHeader>
-                                <TableHeader className="text-right">Stok</TableHeader>
-                                <TableHeader className="text-center">Aksi</TableHeader>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {items.length === 0 ? (
+                    {tableLoading ? (
+                        <div className="py-10">
+                            <Loading message="Memuat data..." />
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHead>
                                 <TableRow>
-                                    <TableCell
-                                        colSpan={8}
-                                        className="text-center text-gray-600"
-                                    >
-                                        {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
-                                    </TableCell>
+                                    <TableHeader>Nama Item</TableHeader>
+                                    <TableHeader>Kategori</TableHeader>
+                                    <TableHeader>Jenis</TableHeader>
+                                    <TableHeader>Satuan</TableHeader>
+                                    <TableHeader className="text-right">Harga Pokok</TableHeader>
+                                    <TableHeader className="text-right">Harga Jual</TableHeader>
+                                    <TableHeader className="text-right">Stok</TableHeader>
+                                    <TableHeader className="text-center">Aksi</TableHeader>
                                 </TableRow>
-                            ) : (
-                                items.map((item) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell>{item.name}</TableCell>
-                                        <TableCell>{item.category.name}</TableCell>
-                                        <TableCell>{item.type.name}</TableCell>
-                                        <TableCell>{item.unit.name}</TableCell>
-                                        <TableCell className="text-right">
-                                            {item.base_price.toLocaleString("id-ID", {
-                                                style: "currency",
-                                                currency: "IDR",
-                                            })}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            {item.sell_price.toLocaleString("id-ID", {
-                                                style: "currency",
-                                                currency: "IDR",
-                                            })}
-                                        </TableCell>
-                                        <TableCell className="text-right">{item.stock}</TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex justify-center space-x-2">
-                                                <Link
-                                                    to={`/master-data/items/edit/${item.id}`}
-                                                >
-                                                    <Button variant="secondary" size="sm">
-                                                        <FaEdit />
-                                                    </Button>
-                                                </Link>
-                                                <Button
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(item.id)}
-                                                >
-                                                    <FaTrash />
-                                                </Button>
-                                            </div>
+                            </TableHead>
+                            <TableBody>
+                                {items.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={8}
+                                            className="text-center text-gray-600"
+                                        >
+                                            {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-
+                                ) : (
+                                    items.map((item) => (
+                                        <TableRow key={item.id}>
+                                            <TableCell>{item.name}</TableCell>
+                                            <TableCell>{item.category.name}</TableCell>
+                                            <TableCell>{item.type.name}</TableCell>
+                                            <TableCell>{item.unit.name}</TableCell>
+                                            <TableCell className="text-right">
+                                                {item.base_price.toLocaleString("id-ID", {
+                                                    style: "currency",
+                                                    currency: "IDR",
+                                                })}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {item.sell_price.toLocaleString("id-ID", {
+                                                    style: "currency",
+                                                    currency: "IDR",
+                                                })}
+                                            </TableCell>
+                                            <TableCell className="text-right">{item.stock}</TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="flex justify-center space-x-2">
+                                                    <Link
+                                                        to={`/master-data/items/edit/${item.id}`}
+                                                    >
+                                                        <Button variant="secondary" size="sm">
+                                                            <FaEdit />
+                                                        </Button>
+                                                    </Link>
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
+                                                        onClick={() => handleDelete(item.id)}
+                                                    >
+                                                        <FaTrash />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    )}
                     <Pagination 
                         currentPage={currentPage}
                         totalPages={totalPages}

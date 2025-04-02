@@ -37,11 +37,11 @@ export const Pagination = ({
     return (
         <div className={classNames("flex justify-between items-center mt-4 gap-4", className)}>
             {/* Items per page selection - left side */}
-            <div className="flex items-center rounded-full bg-zinc-400 shadow-md text-white overflow-hidden">
+            <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden">
                 <button 
                     className={classNames(
-                        "px-3 py-1.5 focus:outline-none transition-colors", 
-                        itemsPerPage === 10 ? "bg-blue-500" : "hover:bg-blue-500"
+                        "px-3 py-1.5 rounded-full focus:outline-none transition-all duration-300 ease-in-out", 
+                        itemsPerPage === 10 ? "bg-blue-500 text-white font-medium shadow-sm transform scale-105" : "hover:bg-blue-100 hover:text-blue-600"
                     )}
                     onClick={() => handleItemsPerPageClick(10)}
                 >
@@ -49,8 +49,8 @@ export const Pagination = ({
                 </button>
                 <button 
                     className={classNames(
-                        "px-3 py-1.5 focus:outline-none transition-colors", 
-                        itemsPerPage === 20 ? "bg-blue-500" : "hover:bg-blue-500"
+                        "px-3 py-1.5 rounded-full focus:outline-none transition-all duration-300 ease-in-out", 
+                        itemsPerPage === 20 ? "bg-blue-500 text-white font-medium shadow-sm transform scale-105" : "hover:bg-blue-100 hover:text-blue-600"
                     )}
                     onClick={() => handleItemsPerPageClick(20)}
                 >
@@ -58,8 +58,8 @@ export const Pagination = ({
                 </button>
                 <button 
                     className={classNames(
-                        "px-3 py-1.5 focus:outline-none transition-colors", 
-                        itemsPerPage === 40 ? "bg-blue-500" : "hover:bg-blue-500"
+                        "px-3 py-1.5 rounded-full focus:outline-none transition-all duration-300 ease-in-out", 
+                        itemsPerPage === 40 ? "bg-blue-500 text-white font-medium shadow-sm transform scale-105" : "hover:bg-blue-100 hover:text-blue-600"
                     )}
                     onClick={() => handleItemsPerPageClick(40)}
                 >
@@ -68,18 +68,18 @@ export const Pagination = ({
             </div>
 
             {/* Page navigation - right side */}
-            <div className="flex items-center rounded-full bg-primary shadow-md text-white overflow-hidden">
+            <div className="flex items-center rounded-full bg-primary p-1 shadow-md text-white overflow-hidden">
                 <Button
                     variant="text"
                     size="sm"
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-3 py-1.5 text-white hover:bg-blue-600 focus:ring-0 focus:outline-none"
+                    className={classNames("px-3 py-1.5 rounded-full text-white focus:ring-0 focus:outline-none transition-all duration-300", currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600")}
                 >
                     &lt;
                 </Button>
 
-                <div className="px-3 py-1.5">
+                <div className="px-3 py-1.5 font-medium">
                     {currentPage} of {totalPages}
                 </div>
 
@@ -88,7 +88,7 @@ export const Pagination = ({
                     size="sm"
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages || totalPages === 0}
-                    className="px-3 py-1.5 text-white hover:bg-blue-600 focus:ring-0 focus:outline-none"
+                    className={classNames("px-3 py-1.5 rounded-full text-white focus:ring-0 focus:outline-none transition-all duration-300", (currentPage === totalPages || totalPages === 0) ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600")}
                 >
                     &gt;
                 </Button>
