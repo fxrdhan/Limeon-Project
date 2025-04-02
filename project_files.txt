@@ -38,7 +38,6 @@
 │   ├── lib
 │   │   ├── classNames.ts
 │   │   ├── formatters.ts
-│   │   ├── formatters.tsx
 │   │   └── supabase.ts
 │   ├── main.tsx
 │   ├── output.css
@@ -83,7 +82,7 @@
 ├── tsconfig.node.json
 └── vite.config.ts
 
-18 directories, 66 files
+18 directories, 65 files
 
 
 ===============================================
@@ -4988,46 +4987,6 @@ export default App;
 = File: ./src/lib/formatters.ts 
 ===============================================
 
-/**
- * Format a number as Indonesian Rupiah
- * @param value - The number to format
- * @returns Formatted currency string
- */
-export const formatRupiah = (value: number): string => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(value);
-};
-
-/**
- * Extract numeric value from a string (e.g., from formatted currency)
- * @param value - The string to extract from
- * @returns The extracted number
- */
-export const extractNumericValue = (value: string): number => {
-  const numericValue = value.replace(/[^\d]/g, '');
-  return numericValue ? parseInt(numericValue) : 0;
-};
-
-
-===============================================
-= File: ./src/lib/supabase.ts 
-===============================================
-
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-===============================================
-= File: ./src/lib/formatters.tsx 
-===============================================
-
 // src/lib/formatters.ts
 export function formatRupiah(angka: number): string {
     return new Intl.NumberFormat('id-ID', {
@@ -5046,6 +5005,17 @@ export function extractNumericValue(value: string): number {
     const numericValue = value.replace(/[^\d]/g, '');
     return numericValue ? parseInt(numericValue) : 0;
 }
+
+===============================================
+= File: ./src/lib/supabase.ts 
+===============================================
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 ===============================================
 = File: ./src/lib/classNames.ts 
