@@ -76,6 +76,7 @@ const CreatePurchase: React.FC = () => {
                         <PurchaseItemsTable 
                             purchaseItems={purchaseItems}
                             total={total}
+                            isVatIncluded={formData.is_vat_included}
                             onUpdateItem={updateItem}
                             onRemoveItem={removeItem}
                             onUpdateItemVat={updateItemVat}
