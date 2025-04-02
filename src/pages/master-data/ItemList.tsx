@@ -170,8 +170,8 @@ const ItemList = () => {
             ) : (
                 <>
                     {tableLoading ? (
-                        <div className="py-10">
-                            <Loading message="Memuat data..." />
+                        <div>
+                            <Loading/>
                         </div>
                     ) : (
                         <Table>
