@@ -1962,7 +1962,7 @@
    269	                                            <Link
    270	                                                key={child.path}
    271	                                                to={child.path}
-   272	                                                className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 
+   272	                                                className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
    273	                                                          ${isActive(child.path)
    274	                                                        ? 'bg-white/20 text-white font-medium'
    275	                                                        : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
@@ -1984,7 +1984,7 @@
    291	                                        <Link
    292	                                            key={child.path}
    293	                                            to={child.path}
-   294	                                            className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 
+   294	                                            className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
    295	                                                      ${isActive(child.path)
    296	                                                    ? 'bg-white/10 text-white'
    297	                                                    : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
