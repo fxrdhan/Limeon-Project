@@ -2557,27 +2557,41 @@
     38	    };
     39	    
     40	    const getItemByID = (itemId: string): Item | undefined => {
-    41	        return items.find(item => item.id === itemId);
-    42	    };
-    43	
-    44	    // Filter items based on search input
-    45	    const filteredItems = items.filter(item =>
-    46	        item.name.toLowerCase().includes(searchItem.toLowerCase()) || 
-    47	        (item.code && item.code.toLowerCase().includes(searchItem.toLowerCase()))
-    48	    );
-    49	
-    50	    return {
-    51	        items,
-    52	        searchItem,
-    53	        setSearchItem,
-    54	        showItemDropdown,
-    55	        setShowItemDropdown,
-    56	        selectedItem,
-    57	        setSelectedItem,
-    58	        filteredItems,
-    59	        getItemByID
-    60	    };
-    61	};
+    41	        const item = items.find(item => item.id === itemId);
+    42	        if (item) {
+    43	            // Parse unit_conversions if it's a string
+    44	            if (typeof item.unit_conversions === 'string') {
+    45	                try {
+    46	                    item.unit_conversions = JSON.parse(item.unit_conversions || '[]');
+    47	                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    48	                } catch (e) {
+    49	                    item.unit_conversions = [];
+    50	                }
+    51	            }
+    52	            // Ensure unit_conversions is always an array
+    53	            item.unit_conversions = item.unit_conversions || [];
+    54	        }
+    55	        return item;
+    56	    };
+    57	
+    58	    // Filter items based on search input
+    59	    const filteredItems = items.filter(item =>
+    60	        item.name.toLowerCase().includes(searchItem.toLowerCase()) || 
+    61	        (item.code && item.code.toLowerCase().includes(searchItem.toLowerCase()))
+    62	    );
+    63	
+    64	    return {
+    65	        items,
+    66	        searchItem,
+    67	        setSearchItem,
+    68	        showItemDropdown,
+    69	        setShowItemDropdown,
+    70	        selectedItem,
+    71	        setSelectedItem,
+    72	        filteredItems,
+    73	        getItemByID
+    74	    };
+    75	};
 
 
 ===============================================

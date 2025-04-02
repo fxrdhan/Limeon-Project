@@ -36,18 +36,18 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableHeader className="w-16 text-center">No</TableHeader>
-                        <TableHeader>Kode</TableHeader>
-                        <TableHeader>Nama</TableHeader>
-                        <TableHeader>Batch No.</TableHeader>
-                        <TableHeader>Kadaluarsa</TableHeader>
-                        <TableHeader className="text-center">Jumlah</TableHeader>
-                        <TableHeader className="text-center">Satuan</TableHeader>
-                        <TableHeader className="text-right">Harga</TableHeader>
-                        <TableHeader className="text-right">Disc</TableHeader>
-                        {!isVatIncluded && <TableHeader className="text-right">VAT</TableHeader>}
-                        <TableHeader className="text-right">Subtotal</TableHeader>
-                        <TableHeader className="text-center">Aksi</TableHeader>
+                        <TableHeader className="w-12 text-center">No</TableHeader>
+                        <TableHeader className="w-24">Kode</TableHeader>
+                        <TableHeader className="w-full">Nama</TableHeader>
+                        <TableHeader className="w-28">Batch No.</TableHeader>
+                        <TableHeader className="w-32">Kadaluarsa</TableHeader>
+                        <TableHeader className="w-20 text-center">Jumlah</TableHeader>
+                        <TableHeader className="w-24 text-center">Satuan</TableHeader>
+                        <TableHeader className="w-28 text-right">Harga</TableHeader>
+                        <TableHeader className="w-16 text-right">Disc</TableHeader>
+                        {!isVatIncluded && <TableHeader className="w-16 text-right">VAT</TableHeader>}
+                        <TableHeader className="w-28 text-right">Subtotal</TableHeader>
+                        <TableHeader className="w-16 text-center">Aksi</TableHeader>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -68,7 +68,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                         type="text"
                                         value={item.batch_no || ''}
                                         onChange={(e) => onUpdateItemBatchNo(item.id, e.target.value)}
-                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
                                         placeholder="No Batch"
                                     />
                                 </TableCell>
@@ -77,7 +77,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                         type="date"
                                         value={item.expiry_date || ''}
                                         onChange={(e) => onUpdateItemExpiry(item.id, e.target.value)}
-                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+                                        className="w-32 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
                                         min={new Date().toISOString().split('T')[0]}
                                         title="Tanggal Kadaluarsa"
                                     />
@@ -113,7 +113,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                             const numericValue = extractNumericValue(e.target.value);
                                             onUpdateItem(item.id, 'price', numericValue);
                                         }}
-                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
                                         placeholder="Rp 0"
                                     />
                                 </TableCell>
@@ -125,7 +125,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                             const numericValue = extractNumericValue(e.target.value);
                                             onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
                                         }}
-                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
                                         placeholder="0%"
                                     />
                                 </TableCell>
@@ -138,7 +138,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                                 const numericValue = extractNumericValue(e.target.value);
                                                 onUpdateItemVat(item.id, Math.min(numericValue, 100));
                                             }}
-                                            className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
                                             placeholder="0%"
                                         />
                                     </TableCell>
