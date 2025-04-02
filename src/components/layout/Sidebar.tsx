@@ -215,47 +215,52 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                     {menuItems.map((item) => (
                         <div key={item.name} className="mb-1" onMouseEnter={() => handleMouseEnter(item.name)} onMouseLeave={handleMouseLeave}>
                             {/* Menu Item Button */}
-                            <button
-                                onClick={() => item.children ? toggleMenu(item.name.toLowerCase().replace(' ', '')) : null}
+                            {item.children ? (
+                                <button
+                                    onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
+                                    className={`w-full text-left flex items-center justify-between px-2 py-3
+                                              ${isActive(item.path) || hasActiveChild(item.children)
+                                            ? 'bg-white/20 font-medium border-l-4 border-white'
+                                            : collapsed ? '' : 'border-l-4 border-transparent'} 
+                                                : 'hover:bg-white/5'} 
+                                              transition-all duration-150 group relative`}
+                                >
+                                    <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
+                                        <div className={`${isActive(item.path) || hasActiveChild(item.children)
+                                            ? 'text-white'
+                                            : 'text-blue-100'} 
+                                                      transition-colors duration-200`}>
+                                            {item.icon}
+                                        </div>
+                                        {!collapsed && <span className="ml-3 truncate text-white">{item.name}</span>}
+                                    </div>
+                                    {!collapsed && <FaAngleDown
+                                        className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""
+                                            }`}
+                                    />}
+                                </button>
+                            ) : (
+                                <Link to={item.path}
                                 className={`w-full text-left flex items-center justify-between px-2 py-3
                                           ${isActive(item.path) || hasActiveChild(item.children)
                                         ? 'bg-white/20 font-medium border-l-4 border-white'
                                         : collapsed ? '' : 'border-l-4 border-transparent'} 
                                             : 'hover:bg-white/5'} 
                                           transition-all duration-150 group relative`}
-                            >
-                                <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
-                                    <div className={`${isActive(item.path) || hasActiveChild(item.children)
+                                >
+                                    <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
+                                        <div className={`${isActive(item.path) || hasActiveChild(item.children)
                                         ? 'text-white'
                                         : 'text-blue-100'} 
                                                   transition-colors duration-200`}>
-                                        {item.icon}
-                                    </div>
-
+                                            {item.icon}
+                                        </div>
                                     {!collapsed && (
-                                        <span className="ml-3 truncate">{item.name}</span>
+                                        <span className="ml-3 truncate text-white">{item.name}</span>
                                     )}
                                 </div>
-
-                                {!collapsed && item.children && (
-                                    <FaAngleDown
-                                        className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""
-                                            }`}
-                                    />
-                                )}
-
-                                {/* Hover tooltip for collapsed state */}
-                                {collapsed && (
-                                    <div className={`
-                                        absolute left-full ml-2 bg-blue-800 text-white rounded-md py-1 px-3 
-                                        text-sm whitespace-nowrap shadow-lg opacity-0 pointer-events-none
-                                        transition-opacity duration-150 z-20
-                                        ${hoverMenu === item.name ? 'opacity-100' : 'opacity-0'}
-                                    `}>
-                                        {item.name}
-                                    </div>
-                                )}
-                            </button>
+                            </Link>
+                            )}
 
                             {/* Submenu Items */}
                             {item.children && openMenus[item.name.toLowerCase().replace(' ', '')] && !collapsed && (
