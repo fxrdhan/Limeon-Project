@@ -752,7 +752,7 @@
     48	
     49	export const TableCell = ({ children, className }: TableCellProps) => {
     50	    return (
-    51	        <td className={classNames('py-3 px-2 text-gray-700 align-middle', className)}>
+    51	        <td className={classNames('py-3 px-3 text-gray-700 align-middle', className)}>
     52	            {children}
     53	        </td>
     54	    );
@@ -760,7 +760,7 @@
     56	
     57	export const TableHeader = ({ children, className }: TableProps) => {
     58	    return (
-    59	        <th className={classNames('py-3 px-2 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm', className)}>
+    59	        <th className={classNames('py-3 px-3 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm', className)}>
     60	            {children}
     61	        </th>
     62	    );
@@ -1252,18 +1252,18 @@
     36	            <Table>
     37	                <TableHead>
     38	                    <TableRow>
-    39	                        <TableHeader className="w-16 text-center">No</TableHeader>
-    40	                        <TableHeader>Kode</TableHeader>
-    41	                        <TableHeader>Nama</TableHeader>
-    42	                        <TableHeader>Batch No.</TableHeader>
-    43	                        <TableHeader>Kadaluarsa</TableHeader>
-    44	                        <TableHeader className="text-center">Jumlah</TableHeader>
-    45	                        <TableHeader className="text-center">Satuan</TableHeader>
-    46	                        <TableHeader className="text-right">Harga</TableHeader>
-    47	                        <TableHeader className="text-right">Disc</TableHeader>
-    48	                        {!isVatIncluded && <TableHeader className="text-right">VAT</TableHeader>}
-    49	                        <TableHeader className="text-right">Subtotal</TableHeader>
-    50	                        <TableHeader className="text-center">Aksi</TableHeader>
+    39	                        <TableHeader className="w-12 text-center">No</TableHeader>
+    40	                        <TableHeader className="w-24">Kode</TableHeader>
+    41	                        <TableHeader className="w-full">Nama</TableHeader>
+    42	                        <TableHeader className="w-28">Batch No.</TableHeader>
+    43	                        <TableHeader className="w-32">Kadaluarsa</TableHeader>
+    44	                        <TableHeader className="w-20 text-center">Jumlah</TableHeader>
+    45	                        <TableHeader className="w-24 text-center">Satuan</TableHeader>
+    46	                        <TableHeader className="w-28 text-right">Harga</TableHeader>
+    47	                        <TableHeader className="w-16 text-right">Disc</TableHeader>
+    48	                        {!isVatIncluded && <TableHeader className="w-16 text-right">VAT</TableHeader>}
+    49	                        <TableHeader className="w-28 text-right">Subtotal</TableHeader>
+    50	                        <TableHeader className="w-16 text-center">Aksi</TableHeader>
     51	                    </TableRow>
     52	                </TableHead>
     53	                <TableBody>
@@ -1284,7 +1284,7 @@
     68	                                        type="text"
     69	                                        value={item.batch_no || ''}
     70	                                        onChange={(e) => onUpdateItemBatchNo(item.id, e.target.value)}
-    71	                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+    71	                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
     72	                                        placeholder="No Batch"
     73	                                    />
     74	                                </TableCell>
@@ -1293,7 +1293,7 @@
     77	                                        type="date"
     78	                                        value={item.expiry_date || ''}
     79	                                        onChange={(e) => onUpdateItemExpiry(item.id, e.target.value)}
-    80	                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+    80	                                        className="w-32 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
     81	                                        min={new Date().toISOString().split('T')[0]}
     82	                                        title="Tanggal Kadaluarsa"
     83	                                    />
@@ -1329,7 +1329,7 @@
    113	                                            const numericValue = extractNumericValue(e.target.value);
    114	                                            onUpdateItem(item.id, 'price', numericValue);
    115	                                        }}
-   116	                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   116	                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
    117	                                        placeholder="Rp 0"
    118	                                    />
    119	                                </TableCell>
@@ -1341,7 +1341,7 @@
    125	                                            const numericValue = extractNumericValue(e.target.value);
    126	                                            onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
    127	                                        }}
-   128	                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   128	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
    129	                                        placeholder="0%"
    130	                                    />
    131	                                </TableCell>
@@ -1354,7 +1354,7 @@
    138	                                                const numericValue = extractNumericValue(e.target.value);
    139	                                                onUpdateItemVat(item.id, Math.min(numericValue, 100));
    140	                                            }}
-   141	                                            className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   141	                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
    142	                                            placeholder="0%"
    143	                                        />
    144	                                    </TableCell>

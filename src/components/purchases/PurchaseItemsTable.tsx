@@ -39,13 +39,13 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                         <TableHeader className="w-12 text-center">No</TableHeader>
                         <TableHeader className="w-24">Kode</TableHeader>
                         <TableHeader className="w-full">Nama</TableHeader>
-                        <TableHeader className="w-28">Batch No.</TableHeader>
-                        <TableHeader className="w-32">Kadaluarsa</TableHeader>
+                        <TableHeader className="w-28 text-center">Batch No.</TableHeader>
+                        <TableHeader className="w-32 text-center">Kadaluarsa</TableHeader>
                         <TableHeader className="w-20 text-center">Jumlah</TableHeader>
                         <TableHeader className="w-24 text-center">Satuan</TableHeader>
                         <TableHeader className="w-28 text-right">Harga</TableHeader>
-                        <TableHeader className="w-16 text-right">Disc</TableHeader>
-                        {!isVatIncluded && <TableHeader className="w-16 text-right">VAT</TableHeader>}
+                        <TableHeader className="w-10 text-right">Disc</TableHeader>
+                        {!isVatIncluded && <TableHeader className="w-10 text-right">VAT</TableHeader>}
                         <TableHeader className="w-28 text-right">Subtotal</TableHeader>
                         <TableHeader className="w-16 text-center">Aksi</TableHeader>
                     </TableRow>
@@ -122,11 +122,29 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                         type="text"
                                         value={item.discount === 0 ? '' : `${item.discount}%`}
                                         onChange={(e) => {
-                                            const numericValue = extractNumericValue(e.target.value);
+                                            // Hapus tanda % jika ada
+                                            let inputValue = e.target.value;
+                                            if (inputValue.endsWith('%')) {
+                                                inputValue = inputValue.slice(0, -1);
+                                            }
+                                            
+                                            // Ambil nilai numerik saja tanpa %
+                                            const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
                                             onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
                                         }}
                                         className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
                                         placeholder="0%"
+                                        onKeyDown={(e) => {
+                                            // Tangani backspace saat kursor berada di akhir input
+                                            if (e.key === 'Backspace' && 
+                                                item.discount > 0 && 
+                                                e.currentTarget.selectionStart === e.currentTarget.value.length) {
+                                                // Cegah perilaku default dan update nilai secara manual
+                                                e.preventDefault();
+                                                const newValue = Math.floor(item.discount / 10);
+                                                onUpdateItem(item.id, 'discount', newValue);
+                                            }
+                                        }}
                                     />
                                 </TableCell>
                                 {!isVatIncluded && (
@@ -135,11 +153,29 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                             type="text"
                                             value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
                                             onChange={(e) => {
-                                                const numericValue = extractNumericValue(e.target.value);
+                                                // Hapus tanda % jika ada
+                                                let inputValue = e.target.value;
+                                                if (inputValue.endsWith('%')) {
+                                                    inputValue = inputValue.slice(0, -1);
+                                                }
+                                                
+                                                // Ambil nilai numerik saja tanpa %
+                                                const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
                                                 onUpdateItemVat(item.id, Math.min(numericValue, 100));
                                             }}
                                             className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
                                             placeholder="0%"
+                                            onKeyDown={(e) => {
+                                                // Tangani backspace saat kursor berada di akhir input
+                                                if (e.key === 'Backspace' && 
+                                                    item.vat_percentage > 0 && 
+                                                    e.currentTarget.selectionStart === e.currentTarget.value.length) {
+                                                    // Cegah perilaku default dan update nilai secara manual
+                                                    e.preventDefault();
+                                                    const newValue = Math.floor(item.vat_percentage / 10);
+                                                    onUpdateItemVat(item.id, newValue);
+                                                }
+                                            }}
                                         />
                                     </TableCell>
                                 )}
