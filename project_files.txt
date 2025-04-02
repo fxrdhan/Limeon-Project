@@ -1910,14 +1910,14 @@
    217	                            {/* Menu Item Button */}
    218	                            <button
    219	                                onClick={() => item.children ? toggleMenu(item.name.toLowerCase().replace(' ', '')) : null}
-   220	                                className={`w-full text-left flex items-center justify-between px-4 py-2.5
+   220	                                className={`w-full text-left flex items-center justify-between px-2 py-3
    221	                                          ${isActive(item.path) || hasActiveChild(item.children)
    222	                                        ? 'bg-white/20 font-medium border-l-4 border-white'
    223	                                        : collapsed ? '' : 'border-l-4 border-transparent'} 
    224	                                            : 'hover:bg-white/5'} 
    225	                                          transition-all duration-150 group relative`}
    226	                            >
-   227	                                <div className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
+   227	                                <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
    228	                                    <div className={`${isActive(item.path) || hasActiveChild(item.children)
    229	                                        ? 'text-white'
    230	                                        : 'text-blue-100'} 
