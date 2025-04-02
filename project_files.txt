@@ -1022,6 +1022,33 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
                 </FormField>
             </div>
             
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField label="Persentase PPN">
+                    <div className="flex items-center">
+                        <Input
+                            type="number"
+                            name="vat_percentage"
+                            value={formData.vat_percentage}
+                            onChange={handleChange}
+                            min="0"
+                            max="100"
+                            className="w-24"
+                        />
+                        <span className="ml-2">%</span>
+                    </div>
+                </FormField>
+                
+                <FormField label="PPN Termasuk Harga">
+                    <input
+                        type="checkbox"
+                        name="is_vat_included"
+                        checked={formData.is_vat_included}
+                        onChange={(e) => handleChange({ ...e, target: { ...e.target, value: e.target.checked } })}
+                        className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                </FormField>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField label="Tanggal Pembelian">
                     <Input
@@ -1091,6 +1118,9 @@ interface PurchaseItemsTableProps {
     total: number;
     onUpdateItem: (id: string, field: 'quantity' | 'price' | 'discount', value: number) => void;
     onRemoveItem: (id: string) => void;
+    onUpdateItemVat: (id: string, vatPercentage: number) => void;
+    onUpdateItemExpiry: (id: string, expiryDate: string) => void;
+    onUpdateItemBatchNo: (id: string, batchNo: string) => void;
     onUnitChange: (id: string, unitName: string) => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getItemByID: (itemId: string) => any;
@@ -1102,6 +1132,9 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
     onUpdateItem,
     onRemoveItem,
     onUnitChange,
+    onUpdateItemVat,
+    onUpdateItemExpiry,
+    onUpdateItemBatchNo,
     getItemByID
 }) => {
     return (
@@ -1111,10 +1144,13 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                     <TableHeader className="w-16 text-center">No</TableHeader>
                     <TableHeader>Kode Item</TableHeader>
                     <TableHeader>Nama Item</TableHeader>
+                    <TableHeader>Batch No.</TableHeader>
+                    <TableHeader>Kadaluarsa</TableHeader>
                     <TableHeader className="text-center">Jumlah</TableHeader>
                     <TableHeader className="text-center">Satuan</TableHeader>
                     <TableHeader className="text-right">Harga</TableHeader>
                     <TableHeader className="text-right">Diskon (%)</TableHeader>
+                    <TableHeader className="text-right">VAT (%)</TableHeader>
                     <TableHeader className="text-right">Subtotal</TableHeader>
                     <TableHeader className="text-center">Aksi</TableHeader>
                 </TableRow>
@@ -1122,7 +1158,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
             <TableBody>
                 {purchaseItems.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={9} className="text-center text-gray-500">
+                        <TableCell colSpan={12} className="text-center text-gray-500">
                             Belum ada item ditambahkan
                         </TableCell>
                     </TableRow>
@@ -1132,6 +1168,26 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                             <TableCell className="text-center">{index + 1}</TableCell>
                             <TableCell>{getItemByID(item.item_id)?.code || '-'}</TableCell>
                             <TableCell>{item.item_name}</TableCell>
+                            <TableCell>
+                                <Input
+                                    type="text"
+                                    value={item.batch_no || ''}
+                                    onChange={(e) => onUpdateItemBatchNo(item.id, e.target.value)}
+                                    className="w-24 text-center"
+                                    placeholder="No Batch"
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    type="date"
+                                    value={item.expiry_date || ''}
+                                    onChange={(e) => onUpdateItemExpiry(item.id, e.target.value)}
+                                    className="w-36 text-center"
+                                    min={new Date().toISOString().split('T')[0]}
+                                    title="Tanggal Kadaluarsa"
+                                    placeholder="Tgl. Kadaluarsa"
+                                />
+                            </TableCell>
                             <TableCell className="text-center">
                                 <Input
                                     type="number"
@@ -1180,6 +1236,18 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                 />
                             </TableCell>
                             <TableCell className="text-right">
+                                <Input
+                                    type="text"
+                                    value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
+                                    onChange={(e) => {
+                                        const numericValue = extractNumericValue(e.target.value);
+                                        onUpdateItemVat(item.id, Math.min(numericValue, 100));
+                                    }}
+                                    className="w-20 text-right"
+                                    placeholder="0%"
+                                />
+                            </TableCell>
+                            <TableCell className="text-right">
                                 {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                             </TableCell>
                             <TableCell className="text-center">
@@ -1196,7 +1264,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                     ))
                 )}
                 <TableRow className="font-semibold bg-gray-50">
-                    <TableCell colSpan={7} className="text-right">Total:</TableCell>
+                    <TableCell colSpan={10} className="text-right">Total:</TableCell>
                     <TableCell className="text-right">
                         {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                     </TableCell>
@@ -2275,6 +2343,8 @@ export interface PurchaseFormData {
     payment_status: string;
     payment_method: string;
     notes: string;
+    vat_percentage: number;
+    is_vat_included: boolean;
 }
 
 export interface PurchaseItem {
@@ -2286,6 +2356,9 @@ export interface PurchaseItem {
     discount: number;
     subtotal: number;
     unit: string;
+    vat_percentage: number;
+    batch_no: string | null;
+    expiry_date: string | null;
     unit_conversion_rate: number;
 }
 
@@ -2302,6 +2375,8 @@ export const usePurchaseForm = () => {
         date: new Date().toISOString().slice(0, 10),
         payment_status: 'unpaid',
         payment_method: 'cash',
+        vat_percentage: 11.0,
+        is_vat_included: true,
         notes: ''
     });
     
@@ -2335,7 +2410,16 @@ export const usePurchaseForm = () => {
     };
 
     const addItem = (newItem: PurchaseItem) => {
-        setPurchaseItems([...purchaseItems, newItem]);
+        const newItems = [...purchaseItems, {
+            ...newItem,
+            vat_percentage: 0,
+            batch_no: null,
+            expiry_date: null,
+            unit: newItem.unit || 'Unit',
+            unit_conversion_rate: 1
+        }];
+        recalculateSubtotal(newItems);
+        setPurchaseItems(newItems);
     };
     
     const updateItem = (id: string, field: 'quantity' | 'price' | 'discount', value: number) => {
@@ -2344,18 +2428,93 @@ export const usePurchaseForm = () => {
                 const quantity = field === 'quantity' ? value : item.quantity;
                 const price = field === 'price' ? value : item.price;
                 const discount = field === 'discount' ? value : item.discount;
-                // Hitung subtotal dengan memperhitungkan diskon dalam persentase
-                const discountAmount = price * quantity * (discount / 100);
+                
+                // Hitung subtotal dengan diskon
+                let subtotal = quantity * price;
+                if (discount > 0) {
+                    const discountAmount = subtotal * (discount / 100);
+                    subtotal -= discountAmount;
+                }
+                
+                // Tambahkan VAT jika tidak termasuk
+                if (item.vat_percentage > 0 && !formData.is_vat_included) {
+                    const vatAmount = subtotal * (item.vat_percentage / 100);
+                    subtotal += vatAmount;
+                }
                 return {
                     ...item,
                     [field]: value,
-                    subtotal: quantity * price - discountAmount
+                    subtotal: subtotal
                 };
             }
             return item;
         });
         
         setPurchaseItems(updatedItems);
+    };
+    
+    // Fungsi untuk memperbarui VAT per item
+    const updateItemVat = (id: string, vatPercentage: number) => {
+        const updatedItems = purchaseItems.map(item => {
+            if (item.id === id) {
+                // Hitung subtotal dengan diskon dan VAT baru
+                let subtotal = item.quantity * item.price;
+                if (item.discount > 0) {
+                    const discountAmount = subtotal * (item.discount / 100);
+                    subtotal -= discountAmount;
+                }
+                
+                // Tambahkan VAT jika tidak termasuk
+                if (vatPercentage > 0 && !formData.is_vat_included) {
+                    const vatAmount = subtotal * (vatPercentage / 100);
+                    subtotal += vatAmount;
+                }
+                
+                return {
+                    ...item,
+                    vat_percentage: vatPercentage,
+                    subtotal: subtotal
+                };
+            }
+            return item;
+        });
+        
+        setPurchaseItems(updatedItems);
+    };
+
+    // Fungsi untuk memperbarui tanggal kadaluarsa
+    const updateItemExpiry = (id: string, expiryDate: string) => {
+        setPurchaseItems(purchaseItems.map(item => 
+            item.id === id ? {...item, expiry_date: expiryDate} : item
+        ));
+    };
+
+    // Fungsi untuk memperbarui nomor batch
+    const updateItemBatchNo = (id: string, batchNo: string) => {
+        setPurchaseItems(purchaseItems.map(item => 
+            item.id === id ? {...item, batch_no: batchNo} : item
+        ));
+    };
+
+    // Fungsi untuk menghitung ulang semua subtotal
+    const recalculateSubtotal = (items = purchaseItems) => {
+        return items.map(item => {
+            let subtotal = item.quantity * item.price;
+            if (item.discount > 0) {
+                const discountAmount = subtotal * (item.discount / 100);
+                subtotal -= discountAmount;
+            }
+            
+            if (item.vat_percentage > 0 && !formData.is_vat_included) {
+                const vatAmount = subtotal * (item.vat_percentage / 100);
+                subtotal += vatAmount;
+            }
+            
+            return {
+                ...item,
+                subtotal: subtotal
+            };
+        });
     };
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2397,6 +2556,18 @@ export const usePurchaseForm = () => {
         setPurchaseItems(purchaseItems.filter(item => item.id !== id));
     };
     
+    // Calculate total VAT amount
+    const calculateTotalVat = () => {
+        return purchaseItems.reduce((total, item) => {
+            if (item.vat_percentage > 0) {
+                const subtotalBeforeVat = item.subtotal / (1 + item.vat_percentage / 100);
+                const vatAmount = item.subtotal - subtotalBeforeVat;
+                return total + vatAmount;
+            }
+            return total;
+        }, 0);
+    };
+    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -2417,13 +2588,16 @@ export const usePurchaseForm = () => {
                     date: formData.date,
                     total: total,
                     payment_status: formData.payment_status,
-                    payment_method: formData.payment_method,
+                    payment_method: formData.payment_method, 
+                    vat_percentage: formData.vat_percentage,
+                    is_vat_included: formData.is_vat_included,
+                    vat_amount: calculateTotalVat(),
                     notes: formData.notes || null
                 })
                 .select('id')
                 .single();
                 
-            if (purchaseError) throw purchaseError;
+            if (purchaseError) throw purchaseError; 
             
             // Insert purchase items
             const purchaseItemsData = purchaseItems.map(item => ({
@@ -2433,7 +2607,10 @@ export const usePurchaseForm = () => {
                 discount: item.discount,
                 price: item.price,
                 subtotal: item.subtotal,
-                unit: item.unit
+                unit: item.unit,
+                vat_percentage: item.vat_percentage,
+                batch_no: item.batch_no,
+                expiry_date: item.expiry_date
             }));
             
             const { error: itemsError } = await supabase
@@ -2491,6 +2668,9 @@ export const usePurchaseForm = () => {
         handleChange,
         addItem,
         updateItem,
+        updateItemVat,
+        updateItemExpiry,
+        updateItemBatchNo,
         handleUnitChange,
         removeItem,
         handleSubmit
@@ -4566,6 +4746,9 @@ const CreatePurchase: React.FC = () => {
         addItem,
         updateItem,
         handleUnitChange,
+        updateItemVat,
+        updateItemExpiry,
+        updateItemBatchNo,
         removeItem,
         handleSubmit
     } = usePurchaseForm();
@@ -4620,6 +4803,9 @@ const CreatePurchase: React.FC = () => {
                             total={total}
                             onUpdateItem={updateItem}
                             onRemoveItem={removeItem}
+                            onUpdateItemVat={updateItemVat}
+                            onUpdateItemExpiry={updateItemExpiry}
+                            onUpdateItemBatchNo={updateItemBatchNo}
                             onUnitChange={onHandleUnitChange}
                             getItemByID={getItemByID}
                         />

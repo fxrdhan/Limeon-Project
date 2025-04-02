@@ -37,7 +37,10 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
             discount: 0,
             subtotal: selectedItem.base_price,
             unit: selectedItem.base_unit || 'Unit',
-            unit_conversion_rate: 1
+            unit_conversion_rate: 1,
+            vat_percentage: 0,
+            batch_no: null,
+            expiry_date: null
         };
         
         onAddItem(newItem);
