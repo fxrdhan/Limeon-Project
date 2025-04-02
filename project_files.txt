@@ -1255,13 +1255,13 @@
     39	                        <TableHeader className="w-12 text-center">No</TableHeader>
     40	                        <TableHeader className="w-24">Kode</TableHeader>
     41	                        <TableHeader className="w-full">Nama</TableHeader>
-    42	                        <TableHeader className="w-28">Batch No.</TableHeader>
-    43	                        <TableHeader className="w-32">Kadaluarsa</TableHeader>
+    42	                        <TableHeader className="w-28 text-center">Batch No.</TableHeader>
+    43	                        <TableHeader className="w-32 text-center">Kadaluarsa</TableHeader>
     44	                        <TableHeader className="w-20 text-center">Jumlah</TableHeader>
     45	                        <TableHeader className="w-24 text-center">Satuan</TableHeader>
     46	                        <TableHeader className="w-28 text-right">Harga</TableHeader>
-    47	                        <TableHeader className="w-16 text-right">Disc</TableHeader>
-    48	                        {!isVatIncluded && <TableHeader className="w-16 text-right">VAT</TableHeader>}
+    47	                        <TableHeader className="w-10 text-right">Disc</TableHeader>
+    48	                        {!isVatIncluded && <TableHeader className="w-10 text-right">VAT</TableHeader>}
     49	                        <TableHeader className="w-28 text-right">Subtotal</TableHeader>
     50	                        <TableHeader className="w-16 text-center">Aksi</TableHeader>
     51	                    </TableRow>
@@ -1338,58 +1338,94 @@
    122	                                        type="text"
    123	                                        value={item.discount === 0 ? '' : `${item.discount}%`}
    124	                                        onChange={(e) => {
-   125	                                            const numericValue = extractNumericValue(e.target.value);
-   126	                                            onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
-   127	                                        }}
-   128	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   129	                                        placeholder="0%"
-   130	                                    />
-   131	                                </TableCell>
-   132	                                {!isVatIncluded && (
-   133	                                    <TableCell className="text-right">
-   134	                                        <input
-   135	                                            type="text"
-   136	                                            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
-   137	                                            onChange={(e) => {
-   138	                                                const numericValue = extractNumericValue(e.target.value);
-   139	                                                onUpdateItemVat(item.id, Math.min(numericValue, 100));
-   140	                                            }}
-   141	                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   142	                                            placeholder="0%"
-   143	                                        />
-   144	                                    </TableCell>
-   145	                                )}
-   146	                                <TableCell className="text-right">
-   147	                                    {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   148	                                </TableCell>
-   149	                                <TableCell className="text-center">
-   150	                                    <Button
-   151	                                        type="button"
-   152	                                        variant="danger"
-   153	                                        size="sm"
-   154	                                        onClick={() => onRemoveItem(item.id)}
-   155	                                    >
-   156	                                        <FaTrash />
-   157	                                    </Button>
-   158	                                </TableCell>
-   159	                            </TableRow>
-   160	                        ))
-   161	                    )}
-   162	                </TableBody>
-   163	            </Table>
-   164	            
-   165	            {/* Total display outside the table */}
-   166	            <div className="flex justify-end items-center mt-4 font-semibold text-lg">
-   167	                <div className="mr-4">Total:</div>
-   168	                <div className="w-40 text-right">
-   169	                    {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   170	                </div>
-   171	            </div>
-   172	        </>
-   173	    );
-   174	};
-   175	
-   176	export default PurchaseItemsTable;
+   125	                                            // Hapus tanda % jika ada
+   126	                                            let inputValue = e.target.value;
+   127	                                            if (inputValue.endsWith('%')) {
+   128	                                                inputValue = inputValue.slice(0, -1);
+   129	                                            }
+   130	                                            
+   131	                                            // Ambil nilai numerik saja tanpa %
+   132	                                            const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
+   133	                                            onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
+   134	                                        }}
+   135	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   136	                                        placeholder="0%"
+   137	                                        onKeyDown={(e) => {
+   138	                                            // Tangani backspace saat kursor berada di akhir input
+   139	                                            if (e.key === 'Backspace' && 
+   140	                                                item.discount > 0 && 
+   141	                                                e.currentTarget.selectionStart === e.currentTarget.value.length) {
+   142	                                                // Cegah perilaku default dan update nilai secara manual
+   143	                                                e.preventDefault();
+   144	                                                const newValue = Math.floor(item.discount / 10);
+   145	                                                onUpdateItem(item.id, 'discount', newValue);
+   146	                                            }
+   147	                                        }}
+   148	                                    />
+   149	                                </TableCell>
+   150	                                {!isVatIncluded && (
+   151	                                    <TableCell className="text-right">
+   152	                                        <input
+   153	                                            type="text"
+   154	                                            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
+   155	                                            onChange={(e) => {
+   156	                                                // Hapus tanda % jika ada
+   157	                                                let inputValue = e.target.value;
+   158	                                                if (inputValue.endsWith('%')) {
+   159	                                                    inputValue = inputValue.slice(0, -1);
+   160	                                                }
+   161	                                                
+   162	                                                // Ambil nilai numerik saja tanpa %
+   163	                                                const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
+   164	                                                onUpdateItemVat(item.id, Math.min(numericValue, 100));
+   165	                                            }}
+   166	                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   167	                                            placeholder="0%"
+   168	                                            onKeyDown={(e) => {
+   169	                                                // Tangani backspace saat kursor berada di akhir input
+   170	                                                if (e.key === 'Backspace' && 
+   171	                                                    item.vat_percentage > 0 && 
+   172	                                                    e.currentTarget.selectionStart === e.currentTarget.value.length) {
+   173	                                                    // Cegah perilaku default dan update nilai secara manual
+   174	                                                    e.preventDefault();
+   175	                                                    const newValue = Math.floor(item.vat_percentage / 10);
+   176	                                                    onUpdateItemVat(item.id, newValue);
+   177	                                                }
+   178	                                            }}
+   179	                                        />
+   180	                                    </TableCell>
+   181	                                )}
+   182	                                <TableCell className="text-right">
+   183	                                    {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   184	                                </TableCell>
+   185	                                <TableCell className="text-center">
+   186	                                    <Button
+   187	                                        type="button"
+   188	                                        variant="danger"
+   189	                                        size="sm"
+   190	                                        onClick={() => onRemoveItem(item.id)}
+   191	                                    >
+   192	                                        <FaTrash />
+   193	                                    </Button>
+   194	                                </TableCell>
+   195	                            </TableRow>
+   196	                        ))
+   197	                    )}
+   198	                </TableBody>
+   199	            </Table>
+   200	            
+   201	            {/* Total display outside the table */}
+   202	            <div className="flex justify-end items-center mt-4 font-semibold text-lg">
+   203	                <div className="mr-4">Total:</div>
+   204	                <div className="w-40 text-right">
+   205	                    {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   206	                </div>
+   207	            </div>
+   208	        </>
+   209	    );
+   210	};
+   211	
+   212	export default PurchaseItemsTable;
 
 
 ===============================================
