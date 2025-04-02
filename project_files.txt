@@ -2329,66 +2329,67 @@
    305	                rack: formData.rack || null,
    306	                code: formData.code,
    307	                is_medicine: formData.is_medicine,
-   308	                unit_conversions: JSON.stringify(unitConversionHook.conversions),
-   309	                has_expiry_date: formData.has_expiry_date,
-   310	            };
-   311	
-   312	            const { data: newItem, error: mainError } = await supabase
-   313	                .from("items")
-   314	                .insert(mainItemData)
-   315	                .select("id")
-   316	                .single();
-   317	
-   318	            if (mainError) throw mainError;
-   319	
-   320	            // 2. Insert unit conversions ke tabel terpisah
-   321	            if (unitConversionHook.conversions.length > 0 && newItem) {
-   322	                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   323	                const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
-   324	                    item_id: newItem.id,
-   325	                    unit_name: uc.unit.name,
-   326	                    conversion_rate: uc.conversion,
-   327	                    base_price: uc.basePrice,
-   328	                    created_at: new Date()
-   329	                }));
-   330	
-   331	                // Insert ke tabel unit_conversions
-   332	                const { error: conversionError } = await supabase
-   333	                    .from("unit_conversions")
-   334	                    .insert(conversionRecords);
-   335	
-   336	                if (conversionError) {
-   337	                    console.error("Error saving unit conversions:", conversionError);
-   338	                    // Lanjutkan meskipun ada error pada konversi unit
-   339	                }
-   340	            }
-   341	
-   342	            // Redirect ke halaman daftar obat
-   343	            navigate("/master-data/items");
-   344	        } catch (error) {
-   345	            console.error("Error saving item:", error);
-   346	            alert("Gagal menyimpan data item. Silakan coba lagi.");
-   347	        } finally {
-   348	            setSaving(false);
-   349	        }
-   350	    };
-   351	
-   352	    return {
-   353	        formData,
-   354	        displayBasePrice,
-   355	        displaySellPrice,
-   356	        categories,
-   357	        types,
-   358	        units,
-   359	        loading,
-   360	        saving,
-   361	        handleChange,
-   362	        handleSelectChange,
-   363	        handleSubmit,
-   364	        unitConversionHook,
-   365	        updateFormData
-   366	    };
-   367	};
+   308	                base_unit: unitConversionHook.baseUnit,
+   309	                unit_conversions: JSON.stringify(unitConversionHook.conversions),
+   310	                has_expiry_date: formData.has_expiry_date,
+   311	            };
+   312	
+   313	            const { data: newItem, error: mainError } = await supabase
+   314	                .from("items")
+   315	                .insert(mainItemData)
+   316	                .select("id")
+   317	                .single();
+   318	
+   319	            if (mainError) throw mainError;
+   320	
+   321	            // 2. Insert unit conversions ke tabel terpisah
+   322	            if (unitConversionHook.conversions.length > 0 && newItem) {
+   323	                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   324	                const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
+   325	                    item_id: newItem.id,
+   326	                    unit_name: uc.unit.name,
+   327	                    conversion_rate: uc.conversion,
+   328	                    base_price: uc.basePrice,
+   329	                    created_at: new Date()
+   330	                }));
+   331	
+   332	                // Insert ke tabel unit_conversions
+   333	                const { error: conversionError } = await supabase
+   334	                    .from("unit_conversions")
+   335	                    .insert(conversionRecords);
+   336	
+   337	                if (conversionError) {
+   338	                    console.error("Error saving unit conversions:", conversionError);
+   339	                    // Lanjutkan meskipun ada error pada konversi unit
+   340	                }
+   341	            }
+   342	
+   343	            // Redirect ke halaman daftar obat
+   344	            navigate("/master-data/items");
+   345	        } catch (error) {
+   346	            console.error("Error saving item:", error);
+   347	            alert("Gagal menyimpan data item. Silakan coba lagi.");
+   348	        } finally {
+   349	            setSaving(false);
+   350	        }
+   351	    };
+   352	
+   353	    return {
+   354	        formData,
+   355	        displayBasePrice,
+   356	        displaySellPrice,
+   357	        categories,
+   358	        types,
+   359	        units,
+   360	        loading,
+   361	        saving,
+   362	        handleChange,
+   363	        handleSelectChange,
+   364	        handleSubmit,
+   365	        unitConversionHook,
+   366	        updateFormData
+   367	    };
+   368	};
 
 
 ===============================================
@@ -6511,54 +6512,54 @@
 
      1	[
      2	  {
-     3	    "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
-     4	    "name": "ioiiooioi",
+     3	    "id": "52bb1af5-bac4-4dd3-9034-a992f8cee758",
+     4	    "name": "ACTIFED PLUS COUGH SUPRESSANT GSK SIRUP 60 ML",
      5	    "sell_price": 0,
      6	    "stock": 0,
      7	    "min_stock": 10,
      8	    "description": null,
-     9	    "created_at": "2025-03-31T12:28:37.963061+00:00",
-    10	    "updated_at": "2025-04-02T07:51:41.43854+00:00",
+     9	    "created_at": "2025-04-02T15:56:51.722547+00:00",
+    10	    "updated_at": "2025-04-02T15:56:51.722547+00:00",
     11	    "is_active": true,
-    12	    "code": "TSAB01",
+    12	    "code": "BBAN01",
     13	    "rack": null,
     14	    "has_expiry_date": true,
     15	    "is_medicine": true,
-    16	    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
-    17	    "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
-    18	    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    19	    "base_unit": "Strip",
-    20	    "base_price": 50000,
-    21	    "unit_conversions": [
-    22	      {
-    23	        "id": "6b514e67-ddfc-4b20-9a0b-00eefa1ac081",
-    24	        "unit_name": "Tablet",
-    25	        "base_price": 5000,
-    26	        "created_at": "2025-03-31T12:28:38.07+00:00",
-    27	        "conversion_rate": 10
-    28	      }
-    29	    ]
-    30	  },
-    31	  {
-    32	    "id": "cb16978b-8352-4bf1-aea1-ebb0eb9b2ac7",
-    33	    "name": "ACTIFED PLUS COUGH SUPRESSANT GSK SIRUP 60 ML",
-    34	    "sell_price": 0,
-    35	    "stock": 0,
-    36	    "min_stock": 10,
-    37	    "description": null,
-    38	    "created_at": "2025-04-02T15:45:27.086774+00:00",
-    39	    "updated_at": "2025-04-02T15:45:27.086774+00:00",
-    40	    "is_active": true,
-    41	    "code": "BBAN01",
-    42	    "rack": null,
-    43	    "has_expiry_date": true,
-    44	    "is_medicine": true,
-    45	    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
-    46	    "type_id": "ccc6e9a8-9f61-43bc-b1a8-a64ad1c8aebd",
-    47	    "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
-    48	    "base_unit": null,
-    49	    "base_price": 30000,
-    50	    "unit_conversions": "[]"
+    16	    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    17	    "type_id": "ccc6e9a8-9f61-43bc-b1a8-a64ad1c8aebd",
+    18	    "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    19	    "base_unit": "Botol",
+    20	    "base_price": 35000,
+    21	    "unit_conversions": "[]"
+    22	  },
+    23	  {
+    24	    "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
+    25	    "name": "ioiiooioi",
+    26	    "sell_price": 0,
+    27	    "stock": 0,
+    28	    "min_stock": 10,
+    29	    "description": null,
+    30	    "created_at": "2025-03-31T12:28:37.963061+00:00",
+    31	    "updated_at": "2025-04-02T07:51:41.43854+00:00",
+    32	    "is_active": true,
+    33	    "code": "TSAB01",
+    34	    "rack": null,
+    35	    "has_expiry_date": true,
+    36	    "is_medicine": true,
+    37	    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    38	    "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+    39	    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    40	    "base_unit": "Strip",
+    41	    "base_price": 50000,
+    42	    "unit_conversions": [
+    43	      {
+    44	        "id": "6b514e67-ddfc-4b20-9a0b-00eefa1ac081",
+    45	        "unit_name": "Tablet",
+    46	        "base_price": 5000,
+    47	        "created_at": "2025-03-31T12:28:38.07+00:00",
+    48	        "conversion_rate": 10
+    49	      }
+    50	    ]
     51	  }
     52	]
 
@@ -6844,54 +6845,54 @@
    234	=== DATA TABEL: items ===
    235	[
    236	  {
-   237	    "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
-   238	    "name": "ioiiooioi",
+   237	    "id": "52bb1af5-bac4-4dd3-9034-a992f8cee758",
+   238	    "name": "ACTIFED PLUS COUGH SUPRESSANT GSK SIRUP 60 ML",
    239	    "sell_price": 0,
    240	    "stock": 0,
    241	    "min_stock": 10,
    242	    "description": null,
-   243	    "created_at": "2025-03-31T12:28:37.963061+00:00",
-   244	    "updated_at": "2025-04-02T07:51:41.43854+00:00",
+   243	    "created_at": "2025-04-02T15:56:51.722547+00:00",
+   244	    "updated_at": "2025-04-02T15:56:51.722547+00:00",
    245	    "is_active": true,
-   246	    "code": "TSAB01",
+   246	    "code": "BBAN01",
    247	    "rack": null,
    248	    "has_expiry_date": true,
    249	    "is_medicine": true,
-   250	    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
-   251	    "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
-   252	    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-   253	    "base_unit": "Strip",
-   254	    "base_price": 50000,
-   255	    "unit_conversions": [
-   256	      {
-   257	        "id": "6b514e67-ddfc-4b20-9a0b-00eefa1ac081",
-   258	        "unit_name": "Tablet",
-   259	        "base_price": 5000,
-   260	        "created_at": "2025-03-31T12:28:38.07+00:00",
-   261	        "conversion_rate": 10
-   262	      }
-   263	    ]
-   264	  },
-   265	  {
-   266	    "id": "cb16978b-8352-4bf1-aea1-ebb0eb9b2ac7",
-   267	    "name": "ACTIFED PLUS COUGH SUPRESSANT GSK SIRUP 60 ML",
-   268	    "sell_price": 0,
-   269	    "stock": 0,
-   270	    "min_stock": 10,
-   271	    "description": null,
-   272	    "created_at": "2025-04-02T15:45:27.086774+00:00",
-   273	    "updated_at": "2025-04-02T15:45:27.086774+00:00",
-   274	    "is_active": true,
-   275	    "code": "BBAN01",
-   276	    "rack": null,
-   277	    "has_expiry_date": true,
-   278	    "is_medicine": true,
-   279	    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
-   280	    "type_id": "ccc6e9a8-9f61-43bc-b1a8-a64ad1c8aebd",
-   281	    "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
-   282	    "base_unit": null,
-   283	    "base_price": 30000,
-   284	    "unit_conversions": "[]"
+   250	    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+   251	    "type_id": "ccc6e9a8-9f61-43bc-b1a8-a64ad1c8aebd",
+   252	    "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+   253	    "base_unit": "Botol",
+   254	    "base_price": 35000,
+   255	    "unit_conversions": "[]"
+   256	  },
+   257	  {
+   258	    "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
+   259	    "name": "ioiiooioi",
+   260	    "sell_price": 0,
+   261	    "stock": 0,
+   262	    "min_stock": 10,
+   263	    "description": null,
+   264	    "created_at": "2025-03-31T12:28:37.963061+00:00",
+   265	    "updated_at": "2025-04-02T07:51:41.43854+00:00",
+   266	    "is_active": true,
+   267	    "code": "TSAB01",
+   268	    "rack": null,
+   269	    "has_expiry_date": true,
+   270	    "is_medicine": true,
+   271	    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+   272	    "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+   273	    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+   274	    "base_unit": "Strip",
+   275	    "base_price": 50000,
+   276	    "unit_conversions": [
+   277	      {
+   278	        "id": "6b514e67-ddfc-4b20-9a0b-00eefa1ac081",
+   279	        "unit_name": "Tablet",
+   280	        "base_price": 5000,
+   281	        "created_at": "2025-03-31T12:28:38.07+00:00",
+   282	        "conversion_rate": 10
+   283	      }
+   284	    ]
    285	  }
    286	]
    287	

@@ -1,5 +1,26 @@
 [
   {
+    "id": "52bb1af5-bac4-4dd3-9034-a992f8cee758",
+    "name": "ACTIFED PLUS COUGH SUPRESSANT GSK SIRUP 60 ML",
+    "sell_price": 0,
+    "stock": 0,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-04-02T15:56:51.722547+00:00",
+    "updated_at": "2025-04-02T15:56:51.722547+00:00",
+    "is_active": true,
+    "code": "BBAN01",
+    "rack": null,
+    "has_expiry_date": true,
+    "is_medicine": true,
+    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "type_id": "ccc6e9a8-9f61-43bc-b1a8-a64ad1c8aebd",
+    "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    "base_unit": "Botol",
+    "base_price": 35000,
+    "unit_conversions": "[]"
+  },
+  {
     "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
     "name": "ioiiooioi",
     "sell_price": 0,
@@ -27,26 +48,5 @@
         "conversion_rate": 10
       }
     ]
-  },
-  {
-    "id": "cb16978b-8352-4bf1-aea1-ebb0eb9b2ac7",
-    "name": "ACTIFED PLUS COUGH SUPRESSANT GSK SIRUP 60 ML",
-    "sell_price": 0,
-    "stock": 0,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-04-02T15:45:27.086774+00:00",
-    "updated_at": "2025-04-02T15:45:27.086774+00:00",
-    "is_active": true,
-    "code": "BBAN01",
-    "rack": null,
-    "has_expiry_date": true,
-    "is_medicine": true,
-    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
-    "type_id": "ccc6e9a8-9f61-43bc-b1a8-a64ad1c8aebd",
-    "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
-    "base_unit": null,
-    "base_price": 30000,
-    "unit_conversions": "[]"
   }
 ]

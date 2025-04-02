@@ -38,7 +38,21 @@ export const useItemSelection = () => {
     };
     
     const getItemByID = (itemId: string): Item | undefined => {
-        return items.find(item => item.id === itemId);
+        const item = items.find(item => item.id === itemId);
+        if (item) {
+            // Parse unit_conversions if it's a string
+            if (typeof item.unit_conversions === 'string') {
+                try {
+                    item.unit_conversions = JSON.parse(item.unit_conversions || '[]');
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                } catch (e) {
+                    item.unit_conversions = [];
+                }
+            }
+            // Ensure unit_conversions is always an array
+            item.unit_conversions = item.unit_conversions || [];
+        }
+        return item;
     };
 
     // Filter items based on search input
