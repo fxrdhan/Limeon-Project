@@ -305,6 +305,7 @@ export const useAddItemForm = () => {
                 rack: formData.rack || null,
                 code: formData.code,
                 is_medicine: formData.is_medicine,
+                base_unit: unitConversionHook.baseUnit,
                 unit_conversions: JSON.stringify(unitConversionHook.conversions),
                 has_expiry_date: formData.has_expiry_date,
             };
