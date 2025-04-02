@@ -752,7 +752,7 @@
     48	
     49	export const TableCell = ({ children, className }: TableCellProps) => {
     50	    return (
-    51	        <td className={classNames('py-3 px-4 text-gray-700 align-middle', className)}>
+    51	        <td className={classNames('py-3 px-2 text-gray-700 align-middle', className)}>
     52	            {children}
     53	        </td>
     54	    );
@@ -760,7 +760,7 @@
     56	
     57	export const TableHeader = ({ children, className }: TableProps) => {
     58	    return (
-    59	        <th className={classNames('py-3 px-4 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm', className)}>
+    59	        <th className={classNames('py-3 px-2 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm', className)}>
     60	            {children}
     61	        </th>
     62	    );
@@ -1218,177 +1218,178 @@
      2	import { FaTrash } from 'react-icons/fa';
      3	import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../ui/Table';
      4	import { Button } from '../ui/Button';
-     5	import { Input } from '../ui/Input';
-     6	import { formatRupiah, extractNumericValue } from '../../lib/formatters';
-     7	import { PurchaseItem } from '../../hooks/usePurchaseForm';
-     8	
-     9	interface PurchaseItemsTableProps {
-    10	    purchaseItems: PurchaseItem[];
-    11	    total: number;
-    12	    isVatIncluded: boolean;
-    13	    onUpdateItem: (id: string, field: 'quantity' | 'price' | 'discount', value: number) => void;
-    14	    onRemoveItem: (id: string) => void;
-    15	    onUpdateItemVat: (id: string, vatPercentage: number) => void;
-    16	    onUpdateItemExpiry: (id: string, expiryDate: string) => void;
-    17	    onUpdateItemBatchNo: (id: string, batchNo: string) => void;
-    18	    onUnitChange: (id: string, unitName: string) => void;
-    19	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    20	    getItemByID: (itemId: string) => any;
-    21	}
-    22	
-    23	const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
-    24	    purchaseItems,
-    25	    total,
-    26	    isVatIncluded,
-    27	    onUpdateItem,
-    28	    onRemoveItem,
-    29	    onUnitChange,
-    30	    onUpdateItemVat,
-    31	    onUpdateItemExpiry,
-    32	    onUpdateItemBatchNo,
-    33	    getItemByID
-    34	}) => {
-    35	    return (
-    36	        <Table>
-    37	            <TableHead>
-    38	                <TableRow>
-    39	                    <TableHeader className="w-16 text-center">No</TableHeader>
-    40	                    <TableHeader>Kode Item</TableHeader>
-    41	                    <TableHeader>Nama Item</TableHeader>
-    42	                    <TableHeader>Batch No.</TableHeader>
-    43	                    <TableHeader>Kadaluarsa</TableHeader>
-    44	                    <TableHeader className="text-center">Jumlah</TableHeader>
-    45	                    <TableHeader className="text-center">Satuan</TableHeader>
-    46	                    <TableHeader className="text-right">Harga</TableHeader>
-    47	                    <TableHeader className="text-right">Diskon (%)</TableHeader>
-    48	                    {!isVatIncluded && <TableHeader className="text-right">VAT (%)</TableHeader>}
-    49	                    <TableHeader className="text-right">Subtotal</TableHeader>
-    50	                    <TableHeader className="text-center">Aksi</TableHeader>
-    51	                </TableRow>
-    52	            </TableHead>
-    53	            <TableBody>
-    54	                {purchaseItems.length === 0 ? (
-    55	                    <TableRow>
-    56	                        <TableCell colSpan={12} className="text-center text-gray-500">
-    57	                            Belum ada item ditambahkan
-    58	                        </TableCell>
-    59	                    </TableRow>
-    60	                ) : (
-    61	                    purchaseItems.map((item, index) => (
-    62	                        <TableRow key={item.id}>
-    63	                            <TableCell className="text-center">{index + 1}</TableCell>
-    64	                            <TableCell>{getItemByID(item.item_id)?.code || '-'}</TableCell>
-    65	                            <TableCell>{item.item_name}</TableCell>
-    66	                            <TableCell>
-    67	                                <Input
-    68	                                    type="text"
-    69	                                    value={item.batch_no || ''}
-    70	                                    onChange={(e) => onUpdateItemBatchNo(item.id, e.target.value)}
-    71	                                    className="w-24 text-center"
-    72	                                    placeholder="No Batch"
-    73	                                />
-    74	                            </TableCell>
-    75	                            <TableCell>
-    76	                                <Input
-    77	                                    type="date"
-    78	                                    value={item.expiry_date || ''}
-    79	                                    onChange={(e) => onUpdateItemExpiry(item.id, e.target.value)}
-    80	                                    className="w-36 text-center"
-    81	                                    min={new Date().toISOString().split('T')[0]}
-    82	                                    title="Tanggal Kadaluarsa"
-    83	                                    placeholder="Tgl. Kadaluarsa"
-    84	                                />
-    85	                            </TableCell>
-    86	                            <TableCell className="text-center">
-    87	                                <Input
-    88	                                    type="number"
-    89	                                    min="1"
-    90	                                    value={item.quantity}
-    91	                                    onChange={(e) => onUpdateItem(item.id, 'quantity', Number(e.target.value))}
-    92	                                    className="w-20 text-center"
-    93	                                />
-    94	                            </TableCell>
-    95	                            <TableCell className="text-center">
-    96	                                <select
-    97	                                    value={item.unit}
-    98	                                    onChange={(e) => onUnitChange(item.id, e.target.value)}
-    99	                                    className="p-2 border rounded-md"
-   100	                                >
-   101	                                    <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
-   102	                                        {getItemByID(item.item_id)?.base_unit || 'Unit'}
-   103	                                    </option>
-   104	                                    {getItemByID(item.item_id)?.unit_conversions?.map((uc: { id: string; unit_name: string }) => (
-   105	                                        <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
-   106	                                    ))}
-   107	                                </select>
-   108	                            </TableCell>
-   109	                            <TableCell className="text-right">
-   110	                                <Input
-   111	                                    type="text"
-   112	                                    value={item.price === 0 ? '' : formatRupiah(item.price)}
-   113	                                    onChange={(e) => {
-   114	                                        const numericValue = extractNumericValue(e.target.value);
-   115	                                        onUpdateItem(item.id, 'price', numericValue);
-   116	                                    }}
-   117	                                    className="w-32 text-right"
-   118	                                    placeholder="Rp 0"
-   119	                                />
-   120	                            </TableCell>
-   121	                            <TableCell className="text-right">
-   122	                                <Input
-   123	                                    type="text"
-   124	                                    value={item.discount === 0 ? '' : `${item.discount}%`}
-   125	                                    onChange={(e) => {
-   126	                                        const numericValue = extractNumericValue(e.target.value);
-   127	                                        onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
-   128	                                    }}
-   129	                                    className="w-20 text-right"
-   130	                                    placeholder="0%"
-   131	                                />
-   132	                            </TableCell>
-   133	                            {!isVatIncluded && (
-   134	                                <TableCell className="text-right">
-   135	                                    <Input
-   136	                                        type="text"
-   137	                                        value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
-   138	                                        onChange={(e) => {
-   139	                                            const numericValue = extractNumericValue(e.target.value);
-   140	                                            onUpdateItemVat(item.id, Math.min(numericValue, 100));
-   141	                                        }}
-   142	                                        className="w-20 text-right"
-   143	                                        placeholder="0%"
-   144	                                    />
-   145	                                </TableCell>
-   146	                            )}
-   147	                            <TableCell className="text-right">
-   148	                                {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   149	                            </TableCell>
-   150	                            <TableCell className="text-center">
-   151	                                <Button
-   152	                                    type="button"
-   153	                                    variant="danger"
-   154	                                    size="sm"
-   155	                                    onClick={() => onRemoveItem(item.id)}
-   156	                                >
-   157	                                    <FaTrash />
-   158	                                </Button>
-   159	                            </TableCell>
-   160	                        </TableRow>
-   161	                    ))
-   162	                )}
-   163	                <TableRow className="font-semibold bg-gray-50">
-   164	                    <TableCell colSpan={isVatIncluded ? 9 : 10} className="text-right">Total:</TableCell>
-   165	                    <TableCell className="text-right">
-   166	                        {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   167	                    </TableCell>
-   168	                    <TableCell children={undefined}></TableCell>
-   169	                </TableRow>
-   170	            </TableBody>
-   171	        </Table>
-   172	    );
-   173	};
-   174	
-   175	export default PurchaseItemsTable;
+     5	import { formatRupiah, extractNumericValue } from '../../lib/formatters';
+     6	import { PurchaseItem } from '../../hooks/usePurchaseForm';
+     7	
+     8	interface PurchaseItemsTableProps {
+     9	    purchaseItems: PurchaseItem[];
+    10	    total: number;
+    11	    isVatIncluded: boolean;
+    12	    onUpdateItem: (id: string, field: 'quantity' | 'price' | 'discount', value: number) => void;
+    13	    onRemoveItem: (id: string) => void;
+    14	    onUpdateItemVat: (id: string, vatPercentage: number) => void;
+    15	    onUpdateItemExpiry: (id: string, expiryDate: string) => void;
+    16	    onUpdateItemBatchNo: (id: string, batchNo: string) => void;
+    17	    onUnitChange: (id: string, unitName: string) => void;
+    18	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    19	    getItemByID: (itemId: string) => any;
+    20	}
+    21	
+    22	const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
+    23	    purchaseItems,
+    24	    total,
+    25	    isVatIncluded,
+    26	    onUpdateItem,
+    27	    onRemoveItem,
+    28	    onUnitChange,
+    29	    onUpdateItemVat,
+    30	    onUpdateItemExpiry,
+    31	    onUpdateItemBatchNo,
+    32	    getItemByID
+    33	}) => {
+    34	    return (
+    35	        <>
+    36	            <Table>
+    37	                <TableHead>
+    38	                    <TableRow>
+    39	                        <TableHeader className="w-16 text-center">No</TableHeader>
+    40	                        <TableHeader>Kode</TableHeader>
+    41	                        <TableHeader>Nama</TableHeader>
+    42	                        <TableHeader>Batch No.</TableHeader>
+    43	                        <TableHeader>Kadaluarsa</TableHeader>
+    44	                        <TableHeader className="text-center">Jumlah</TableHeader>
+    45	                        <TableHeader className="text-center">Satuan</TableHeader>
+    46	                        <TableHeader className="text-right">Harga</TableHeader>
+    47	                        <TableHeader className="text-right">Disc</TableHeader>
+    48	                        {!isVatIncluded && <TableHeader className="text-right">VAT</TableHeader>}
+    49	                        <TableHeader className="text-right">Subtotal</TableHeader>
+    50	                        <TableHeader className="text-center">Aksi</TableHeader>
+    51	                    </TableRow>
+    52	                </TableHead>
+    53	                <TableBody>
+    54	                    {purchaseItems.length === 0 ? (
+    55	                        <TableRow>
+    56	                            <TableCell colSpan={12} className="text-center text-gray-500">
+    57	                                Belum ada item ditambahkan
+    58	                            </TableCell>
+    59	                        </TableRow>
+    60	                    ) : (
+    61	                        purchaseItems.map((item, index) => (
+    62	                            <TableRow key={item.id}>
+    63	                                <TableCell className="text-center">{index + 1}</TableCell>
+    64	                                <TableCell>{getItemByID(item.item_id)?.code || '-'}</TableCell>
+    65	                                <TableCell>{item.item_name}</TableCell>
+    66	                                <TableCell>
+    67	                                    <input
+    68	                                        type="text"
+    69	                                        value={item.batch_no || ''}
+    70	                                        onChange={(e) => onUpdateItemBatchNo(item.id, e.target.value)}
+    71	                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+    72	                                        placeholder="No Batch"
+    73	                                    />
+    74	                                </TableCell>
+    75	                                <TableCell>
+    76	                                    <input
+    77	                                        type="date"
+    78	                                        value={item.expiry_date || ''}
+    79	                                        onChange={(e) => onUpdateItemExpiry(item.id, e.target.value)}
+    80	                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+    81	                                        min={new Date().toISOString().split('T')[0]}
+    82	                                        title="Tanggal Kadaluarsa"
+    83	                                    />
+    84	                                </TableCell>
+    85	                                <TableCell className="text-center">
+    86	                                    <input
+    87	                                        type="number"
+    88	                                        min="1"
+    89	                                        value={item.quantity}
+    90	                                        onChange={(e) => onUpdateItem(item.id, 'quantity', Number(e.target.value))}
+    91	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+    92	                                    />
+    93	                                </TableCell>
+    94	                                <TableCell className="text-center">
+    95	                                    <select
+    96	                                        value={item.unit}
+    97	                                        onChange={(e) => onUnitChange(item.id, e.target.value)}
+    98	                                        className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center appearance-none cursor-pointer"
+    99	                                    >
+   100	                                        <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
+   101	                                            {getItemByID(item.item_id)?.base_unit || 'Unit'}
+   102	                                        </option>
+   103	                                        {getItemByID(item.item_id)?.unit_conversions?.map((uc: { id: string; unit_name: string }) => (
+   104	                                            <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
+   105	                                        ))}
+   106	                                    </select>
+   107	                                </TableCell>
+   108	                                <TableCell className="text-right">
+   109	                                    <input
+   110	                                        type="text"
+   111	                                        value={item.price === 0 ? '' : formatRupiah(item.price)}
+   112	                                        onChange={(e) => {
+   113	                                            const numericValue = extractNumericValue(e.target.value);
+   114	                                            onUpdateItem(item.id, 'price', numericValue);
+   115	                                        }}
+   116	                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   117	                                        placeholder="Rp 0"
+   118	                                    />
+   119	                                </TableCell>
+   120	                                <TableCell className="text-right">
+   121	                                    <input
+   122	                                        type="text"
+   123	                                        value={item.discount === 0 ? '' : `${item.discount}%`}
+   124	                                        onChange={(e) => {
+   125	                                            const numericValue = extractNumericValue(e.target.value);
+   126	                                            onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
+   127	                                        }}
+   128	                                        className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   129	                                        placeholder="0%"
+   130	                                    />
+   131	                                </TableCell>
+   132	                                {!isVatIncluded && (
+   133	                                    <TableCell className="text-right">
+   134	                                        <input
+   135	                                            type="text"
+   136	                                            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
+   137	                                            onChange={(e) => {
+   138	                                                const numericValue = extractNumericValue(e.target.value);
+   139	                                                onUpdateItemVat(item.id, Math.min(numericValue, 100));
+   140	                                            }}
+   141	                                            className="w-full bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   142	                                            placeholder="0%"
+   143	                                        />
+   144	                                    </TableCell>
+   145	                                )}
+   146	                                <TableCell className="text-right">
+   147	                                    {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   148	                                </TableCell>
+   149	                                <TableCell className="text-center">
+   150	                                    <Button
+   151	                                        type="button"
+   152	                                        variant="danger"
+   153	                                        size="sm"
+   154	                                        onClick={() => onRemoveItem(item.id)}
+   155	                                    >
+   156	                                        <FaTrash />
+   157	                                    </Button>
+   158	                                </TableCell>
+   159	                            </TableRow>
+   160	                        ))
+   161	                    )}
+   162	                </TableBody>
+   163	            </Table>
+   164	            
+   165	            {/* Total display outside the table */}
+   166	            <div className="flex justify-end items-center mt-4 font-semibold text-lg">
+   167	                <div className="mr-4">Total:</div>
+   168	                <div className="w-40 text-right">
+   169	                    {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   170	                </div>
+   171	            </div>
+   172	        </>
+   173	    );
+   174	};
+   175	
+   176	export default PurchaseItemsTable;
 
 
 ===============================================
@@ -1908,102 +1909,113 @@
    215	                    {menuItems.map((item) => (
    216	                        <div key={item.name} className="mb-1" onMouseEnter={() => handleMouseEnter(item.name)} onMouseLeave={handleMouseLeave}>
    217	                            {/* Menu Item Button */}
-   218	                            <button
-   219	                                onClick={() => item.children ? toggleMenu(item.name.toLowerCase().replace(' ', '')) : null}
-   220	                                className={`w-full text-left flex items-center justify-between px-2 py-3
-   221	                                          ${isActive(item.path) || hasActiveChild(item.children)
-   222	                                        ? 'bg-white/20 font-medium border-l-4 border-white'
-   223	                                        : collapsed ? '' : 'border-l-4 border-transparent'} 
-   224	                                            : 'hover:bg-white/5'} 
-   225	                                          transition-all duration-150 group relative`}
-   226	                            >
-   227	                                <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
-   228	                                    <div className={`${isActive(item.path) || hasActiveChild(item.children)
-   229	                                        ? 'text-white'
-   230	                                        : 'text-blue-100'} 
-   231	                                                  transition-colors duration-200`}>
-   232	                                        {item.icon}
-   233	                                    </div>
-   234	
-   235	                                    {!collapsed && (
-   236	                                        <span className="ml-3 truncate">{item.name}</span>
-   237	                                    )}
-   238	                                </div>
-   239	
-   240	                                {!collapsed && item.children && (
-   241	                                    <FaAngleDown
-   242	                                        className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""
-   243	                                            }`}
-   244	                                    />
-   245	                                )}
-   246	
-   247	                                {/* Hover tooltip for collapsed state */}
-   248	                                {collapsed && (
-   249	                                    <div className={`
-   250	                                        absolute left-full ml-2 bg-blue-800 text-white rounded-md py-1 px-3 
-   251	                                        text-sm whitespace-nowrap shadow-lg opacity-0 pointer-events-none
-   252	                                        transition-opacity duration-150 z-20
-   253	                                        ${hoverMenu === item.name ? 'opacity-100' : 'opacity-0'}
-   254	                                    `}>
-   255	                                        {item.name}
-   256	                                    </div>
-   257	                                )}
-   258	                            </button>
-   259	
-   260	                            {/* Submenu Items */}
-   261	                            {item.children && openMenus[item.name.toLowerCase().replace(' ', '')] && !collapsed && (
-   262	                                <div className="overflow-hidden transition-all duration-300 ease-in-out max-h-96 bg-blue-700/20">
-   263	                                    <div className="pl-12 pr-4 py-1 space-y-1">
-   264	                                        {item.children.map((child) => (
-   265	                                            <Link
-   266	                                                key={child.path}
-   267	                                                to={child.path}
-   268	                                                className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
-   269	                                                          ${isActive(child.path)
-   270	                                                        ? 'bg-white/20 text-white font-medium'
-   271	                                                        : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
-   272	                                            >
-   273	                                                {child.name}
-   274	                                            </Link>
-   275	                                        ))}
-   276	                                    </div>
-   277	                                </div>
-   278	                            )}
-   279	
-   280	                            {/* Submenu dropdown for collapsed sidebar on hover */}
-   281	                            {collapsed && item.children && hoverMenu === item.name && (
-   282	                                <div
-   283	                                    className="absolute left-full ml-2 top-0 bg-blue-800 rounded-md py-2 px-3 
-   284	                                            min-w-40 z-20 shadow-xl"
-   285	                                >
-   286	                                    {item.children.map((child) => (
-   287	                                        <Link
-   288	                                            key={child.path}
-   289	                                            to={child.path}
-   290	                                            className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
-   291	                                                      ${isActive(child.path)
-   292	                                                    ? 'bg-white/10 text-white'
-   293	                                                    : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
-   294	                                        >
-   295	                                            {child.name}
-   296	                                        </Link>
-   297	                                    ))}
-   298	                                </div>
-   299	                            )}
-   300	                        </div>
-   301	                    ))}
-   302	                </nav>
-   303	
-   304	                {/* Bottom version info */}
-   305	                <div className={`p-4 text-xs text-blue-200/70 border-t border-blue-500/30 ${collapsed ? 'text-center' : ''}`}>
-   306	                    {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
-   307	                </div>
-   308	            </div>
-   309	        </aside>
-   310	    );
-   311	};
-   312	
-   313	export default Sidebar;
+   218	                            {item.children ? (
+   219	                                <button
+   220	                                    onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
+   221	                                    className={`w-full text-left flex items-center justify-between px-2 py-3
+   222	                                              ${isActive(item.path) || hasActiveChild(item.children)
+   223	                                            ? 'bg-white/20 font-medium border-l-4 border-white'
+   224	                                            : collapsed ? '' : 'border-l-4 border-transparent'} 
+   225	                                                : 'hover:bg-white/5'} 
+   226	                                              transition-all duration-150 group relative`}
+   227	                                >
+   228	                                    <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
+   229	                                        <div className={`${isActive(item.path) || hasActiveChild(item.children)
+   230	                                            ? 'text-white'
+   231	                                            : 'text-blue-100'} 
+   232	                                                      transition-colors duration-200`}>
+   233	                                            {item.icon}
+   234	                                        </div>
+   235	                                        {!collapsed && <span className="ml-3 truncate text-white">{item.name}</span>}
+   236	                                    </div>
+   237	                                    {!collapsed && <FaAngleDown
+   238	                                        className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""
+   239	                                            }`}
+   240	                                    />}
+   241	                                </button>
+   242	                            ) : (
+   243	                                <Link to={item.path}
+   244	                                className={`w-full text-left flex items-center justify-between px-2 py-3
+   245	                                          ${isActive(item.path) || hasActiveChild(item.children)
+   246	                                        ? 'bg-white/20 font-medium border-l-4 border-white'
+   247	                                        : collapsed ? '' : 'border-l-4 border-transparent'} 
+   248	                                            : 'hover:bg-white/5'} 
+   249	                                          transition-all duration-150 group relative`}
+   250	                                >
+   251	                                    <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
+   252	                                        <div className={`${isActive(item.path) || hasActiveChild(item.children)
+   253	                                        ? 'text-white'
+   254	                                        : 'text-blue-100'} 
+   255	                                                  transition-colors duration-200`}>
+   256	                                            {item.icon}
+   257	                                        </div>
+   258	                                    {!collapsed && (
+   259	                                        <span className="ml-3 truncate text-white">{item.name}</span>
+   260	                                    )}
+   261	                                </div>
+   262	                            </Link>
+   263	                            )}
+   264	
+   265	                            {/* Submenu Items */}
+   266	                            {item.children && !collapsed && (
+   267	                                <div 
+   268	                                    className={`overflow-hidden transition-all duration-300 ease-in-out transform ${
+   269	                                        openMenus[item.name.toLowerCase().replace(' ', '')] 
+   270	                                            ? 'max-h-96 opacity-100 scale-y-100 origin-top' 
+   271	                                            : 'max-h-0 opacity-0 scale-y-95 origin-top'
+   272	                                    }`}
+   273	                                >
+   274	                                    <div className="pl-12 pr-4 py-1 space-y-1 bg-blue-700/20">
+   275	                                        {item.children.map((child) => (
+   276	                                            <Link
+   277	                                                key={child.path}
+   278	                                                to={child.path}
+   279	                                                className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
+   280	                                                           ${isActive(child.path)
+   281	                                                    ? 'bg-white/20 text-white font-medium'
+   282	                                                    : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
+   283	                                            >
+   284	                                                {child.name}
+   285	                                            </Link>
+   286	                                        ))}
+   287	                                    </div>
+   288	                                </div>
+   289	                            )}
+   290	
+   291	                            {/* Submenu dropdown for collapsed sidebar on hover */}
+   292	                            {collapsed && item.children && hoverMenu === item.name && (
+   293	                                <div
+   294	                                    className="absolute left-full ml-2 top-0 bg-blue-800 rounded-md py-2 px-3 
+   295	                                            min-w-40 z-20 shadow-xl"
+   296	                                >
+   297	                                    {item.children.map((child) => (
+   298	                                        <Link
+   299	                                            key={child.path}
+   300	                                            to={child.path}
+   301	                                            className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
+   302	                                                      ${isActive(child.path)
+   303	                                                    ? 'bg-white/10 text-white'
+   304	                                                    : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
+   305	                                        >
+   306	                                            {child.name}
+   307	                                        </Link>
+   308	                                    ))}
+   309	                                </div>
+   310	                            )}
+   311	                        </div>
+   312	                    ))}
+   313	                </nav>
+   314	
+   315	                {/* Bottom version info */}
+   316	                <div className={`p-4 text-xs text-blue-200/70 border-t border-blue-500/30 ${collapsed ? 'text-center' : ''}`}>
+   317	                    {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
+   318	                </div>
+   319	            </div>
+   320	        </aside>
+   321	    );
+   322	};
+   323	
+   324	export default Sidebar;
 
 
 ===============================================
@@ -2931,40 +2943,38 @@
      3	@tailwind utilities;
      4	
      5	:root {
-     6	  font-family: Poppins, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-     7	    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
-     8	    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-     9	  line-height: 1.5;
-    10	  /* font-weight: 400; */
-    11	  font-synthesis: none;
-    12	  text-rendering: optimizeLegibility;
-    13	  -webkit-font-smoothing: antialiased;
-    14	  -moz-osx-font-smoothing: grayscale;
-    15	}
-    16	
-    17	a {
-    18	  /* font-weight: 500; */
-    19	  color: #646cff;
-    20	  text-decoration: inherit;
-    21	}
-    22	a:hover {
-    23	  color: #1a73e8;
-    24	}
-    25	
-    26	body {
-    27	  margin: 0;
-    28	  min-width: 320px;
-    29	  min-height: 100vh;
-    30	  color: #213547;
-    31	  background-color: #ffffff;
-    32	}
-    33	
-    34	h1 {
-    35	  font-size: 3.2em;
-    36	  line-height: 1.1;
-    37	}
-    38	
-    39	
+     6	  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+     7	  line-height: 1.5;
+     8	  /* font-weight: 400; */
+     9	  font-synthesis: none;
+    10	  text-rendering: optimizeLegibility;
+    11	  -webkit-font-smoothing: antialiased;
+    12	  -moz-osx-font-smoothing: grayscale;
+    13	}
+    14	
+    15	a {
+    16	  /* font-weight: 500; */
+    17	  color: #646cff;
+    18	  text-decoration: inherit;
+    19	}
+    20	a:hover {
+    21	  color: #1a73e8;
+    22	}
+    23	
+    24	body {
+    25	  margin: 0;
+    26	  min-width: 320px;
+    27	  min-height: 100vh;
+    28	  color: #213547;
+    29	  background-color: #ffffff;
+    30	}
+    31	
+    32	h1 {
+    33	  font-size: 3.2em;
+    34	  line-height: 1.1;
+    35	}
+    36	
+    37	
 
 
 ===============================================
@@ -6508,7 +6518,7 @@
      7	    "min_stock": 10,
      8	    "description": null,
      9	    "created_at": "2025-03-31T12:28:37.963061+00:00",
-    10	    "updated_at": "2025-04-02T01:17:37.362594+00:00",
+    10	    "updated_at": "2025-04-02T07:51:41.43854+00:00",
     11	    "is_active": true,
     12	    "code": "TSAB01",
     13	    "rack": null,
@@ -6528,8 +6538,29 @@
     27	        "conversion_rate": 10
     28	      }
     29	    ]
-    30	  }
-    31	]
+    30	  },
+    31	  {
+    32	    "id": "cb16978b-8352-4bf1-aea1-ebb0eb9b2ac7",
+    33	    "name": "ACTIFED PLUS COUGH SUPRESSANT GSK SIRUP 60 ML",
+    34	    "sell_price": 0,
+    35	    "stock": 0,
+    36	    "min_stock": 10,
+    37	    "description": null,
+    38	    "created_at": "2025-04-02T15:45:27.086774+00:00",
+    39	    "updated_at": "2025-04-02T15:45:27.086774+00:00",
+    40	    "is_active": true,
+    41	    "code": "BBAN01",
+    42	    "rack": null,
+    43	    "has_expiry_date": true,
+    44	    "is_medicine": true,
+    45	    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    46	    "type_id": "ccc6e9a8-9f61-43bc-b1a8-a64ad1c8aebd",
+    47	    "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    48	    "base_unit": null,
+    49	    "base_price": 30000,
+    50	    "unit_conversions": "[]"
+    51	  }
+    52	]
 
 
 ===============================================
@@ -6820,7 +6851,7 @@
    241	    "min_stock": 10,
    242	    "description": null,
    243	    "created_at": "2025-03-31T12:28:37.963061+00:00",
-   244	    "updated_at": "2025-04-02T01:17:37.362594+00:00",
+   244	    "updated_at": "2025-04-02T07:51:41.43854+00:00",
    245	    "is_active": true,
    246	    "code": "TSAB01",
    247	    "rack": null,
@@ -6840,71 +6871,92 @@
    261	        "conversion_rate": 10
    262	      }
    263	    ]
-   264	  }
-   265	]
-   266	
-   267	
-   268	
-   269	=== DATA TABEL: patients ===
-   270	[]
-   271	
-   272	
-   273	
-   274	=== DATA TABEL: purchase_items ===
-   275	[]
-   276	
-   277	
-   278	
-   279	=== DATA TABEL: purchases ===
-   280	[]
-   281	
-   282	
-   283	
-   284	=== DATA TABEL: sale_items ===
-   285	[]
-   286	
+   264	  },
+   265	  {
+   266	    "id": "cb16978b-8352-4bf1-aea1-ebb0eb9b2ac7",
+   267	    "name": "ACTIFED PLUS COUGH SUPRESSANT GSK SIRUP 60 ML",
+   268	    "sell_price": 0,
+   269	    "stock": 0,
+   270	    "min_stock": 10,
+   271	    "description": null,
+   272	    "created_at": "2025-04-02T15:45:27.086774+00:00",
+   273	    "updated_at": "2025-04-02T15:45:27.086774+00:00",
+   274	    "is_active": true,
+   275	    "code": "BBAN01",
+   276	    "rack": null,
+   277	    "has_expiry_date": true,
+   278	    "is_medicine": true,
+   279	    "category_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+   280	    "type_id": "ccc6e9a8-9f61-43bc-b1a8-a64ad1c8aebd",
+   281	    "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+   282	    "base_unit": null,
+   283	    "base_price": 30000,
+   284	    "unit_conversions": "[]"
+   285	  }
+   286	]
    287	
    288	
-   289	=== DATA TABEL: sales ===
-   290	[]
-   291	
+   289	
+   290	=== DATA TABEL: patients ===
+   291	[]
    292	
    293	
-   294	=== DATA TABEL: suppliers ===
-   295	[
-   296	  {
-   297	    "id": "e822fee9-035b-4d93-8bf0-d4fb51c18002",
-   298	    "name": "PT. Teknologi Medika Pratama",
-   299	    "address": "Komplek Pergudangan Kubik Logistics, Gudang E1 E2 E7, JI. Tugu Raya, RT.10/RW.10, Kel Tugu, Kec. Cimanggis, Kota Depok, Jawa Barat Indonesia",
-   300	    "phone": null,
-   301	    "email": null,
-   302	    "contact_person": "apt. Nur Ramadhani, S. Farm.",
-   303	    "created_at": "2025-03-31T15:29:52.123716+00:00",
-   304	    "updated_at": "2025-03-31T15:29:52.123716+00:00"
-   305	  }
-   306	]
+   294	
+   295	=== DATA TABEL: purchase_items ===
+   296	[]
+   297	
+   298	
+   299	
+   300	=== DATA TABEL: purchases ===
+   301	[]
+   302	
+   303	
+   304	
+   305	=== DATA TABEL: sale_items ===
+   306	[]
    307	
    308	
    309	
-   310	=== DATA TABEL: unit_conversions ===
-   311	[
-   312	  {
-   313	    "id": "6b514e67-ddfc-4b20-9a0b-00eefa1ac081",
-   314	    "item_id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
-   315	    "unit_name": "Tablet",
-   316	    "conversion_rate": 10,
-   317	    "base_price": 5000,
-   318	    "created_at": "2025-03-31T12:28:38.07+00:00"
-   319	  }
-   320	]
-   321	
-   322	
-   323	
-   324	=== DATA TABEL: users ===
-   325	[]
-   326	
-   327	
+   310	=== DATA TABEL: sales ===
+   311	[]
+   312	
+   313	
+   314	
+   315	=== DATA TABEL: suppliers ===
+   316	[
+   317	  {
+   318	    "id": "e822fee9-035b-4d93-8bf0-d4fb51c18002",
+   319	    "name": "PT. Teknologi Medika Pratama",
+   320	    "address": "Komplek Pergudangan Kubik Logistics, Gudang E1 E2 E7, JI. Tugu Raya, RT.10/RW.10, Kel Tugu, Kec. Cimanggis, Kota Depok, Jawa Barat Indonesia",
+   321	    "phone": null,
+   322	    "email": null,
+   323	    "contact_person": "apt. Nur Ramadhani, S. Farm.",
+   324	    "created_at": "2025-03-31T15:29:52.123716+00:00",
+   325	    "updated_at": "2025-03-31T15:29:52.123716+00:00"
+   326	  }
+   327	]
    328	
+   329	
+   330	
+   331	=== DATA TABEL: unit_conversions ===
+   332	[
+   333	  {
+   334	    "id": "6b514e67-ddfc-4b20-9a0b-00eefa1ac081",
+   335	    "item_id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
+   336	    "unit_name": "Tablet",
+   337	    "conversion_rate": 10,
+   338	    "base_price": 5000,
+   339	    "created_at": "2025-03-31T12:28:38.07+00:00"
+   340	  }
+   341	]
+   342	
+   343	
+   344	
+   345	=== DATA TABEL: users ===
+   346	[]
+   347	
+   348	
+   349	
 
 
 ===============================================
