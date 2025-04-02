@@ -234,43 +234,14 @@
 === DATA TABEL: items ===
 [
   {
-    "id": "69701999-977d-4505-87ca-555387c9fc1b",
-    "name": "test",
-    "sell_price": 0,
-    "stock": 300,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-03-31T12:59:49.016794+00:00",
-    "updated_at": "2025-04-01T16:52:05.047961+00:00",
-    "is_active": true,
-    "code": "TSAD01",
-    "rack": null,
-    "has_expiry_date": false,
-    "is_medicine": true,
-    "category_id": "26e20a27-a34e-424e-9a85-babc2abdc955",
-    "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
-    "unit_id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
-    "base_unit": "Strip",
-    "base_price": 50000,
-    "unit_conversions": [
-      {
-        "id": "caf6a321-5ceb-4956-b77e-39b7b83449f6",
-        "unit_name": "Tablet",
-        "base_price": 5000,
-        "created_at": "2025-03-31T12:59:49.152+00:00",
-        "conversion_rate": 10
-      }
-    ]
-  },
-  {
     "id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
     "name": "ioiiooioi",
     "sell_price": 0,
-    "stock": 10,
+    "stock": 0,
     "min_stock": 10,
     "description": null,
     "created_at": "2025-03-31T12:28:37.963061+00:00",
-    "updated_at": "2025-04-01T16:53:25.745242+00:00",
+    "updated_at": "2025-04-01T17:54:39.533653+00:00",
     "is_active": true,
     "code": "TSAB01",
     "rack": null,
@@ -301,45 +272,12 @@
 
 
 === DATA TABEL: purchase_items ===
-[
-  {
-    "id": "7c2b3c1a-f732-403c-b1a7-569f80ee5625",
-    "purchase_id": "74eaf678-1307-45a5-a186-6c2e759c2ac8",
-    "item_id": "68ed5202-4ef0-4a3b-ae2f-e3f17dd76671",
-    "quantity": 100,
-    "price": 5000,
-    "subtotal": 500000,
-    "created_at": "2025-04-01T16:53:25.393542+00:00",
-    "updated_at": "2025-04-01T16:53:25.393542+00:00",
-    "batch_no": null,
-    "expiry_date": null,
-    "unit": "Tablet"
-  }
-]
+[]
 
 
 
 === DATA TABEL: purchases ===
-[
-  {
-    "id": "74eaf678-1307-45a5-a186-6c2e759c2ac8",
-    "supplier_id": null,
-    "invoice_number": "",
-    "date": "2025-04-01",
-    "total": 500000,
-    "payment_status": "unpaid",
-    "payment_method": "cash",
-    "notes": null,
-    "created_by": null,
-    "created_at": "2025-04-01T16:53:25.280642+00:00",
-    "updated_at": "2025-04-01T16:53:25.280642+00:00",
-    "so_number": null,
-    "due_date": null,
-    "vat_amount": 0,
-    "vat_percentage": 11,
-    "is_vat_included": true
-  }
-]
+[]
 
 
 
@@ -378,14 +316,6 @@
     "conversion_rate": 10,
     "base_price": 5000,
     "created_at": "2025-03-31T12:28:38.07+00:00"
-  },
-  {
-    "id": "caf6a321-5ceb-4956-b77e-39b7b83449f6",
-    "item_id": "69701999-977d-4505-87ca-555387c9fc1b",
-    "unit_name": "Tablet",
-    "conversion_rate": 10,
-    "base_price": 5000,
-    "created_at": "2025-03-31T12:59:49.152+00:00"
   }
 ]
 
