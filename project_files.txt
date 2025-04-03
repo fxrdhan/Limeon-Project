@@ -1139,75 +1139,85 @@
     52	                </FormField>
     53	            </div>
     54	            
-    55	            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-    56	                <FormField label="PPN Termasuk Harga">
-    57	                    <div className="flex items-center h-full pt-2">
-    58	                        <input
-    59	                            type="checkbox"
-    60	                            name="is_vat_included"
-    61	                            checked={formData.is_vat_included}
-    62	                            onChange={handleChange}
-    63	                            className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-    64	                        />
-    65	                    </div>
-    66	                </FormField>
-    67	                
-    68	                <FormField label="Persentase PPN">
-    69	                    <div className="flex items-center">
-    70	                        <Input
-    71	                            type="number"
-    72	                            name="vat_percentage"
-    73	                            value={formData.vat_percentage}
-    74	                            onChange={handleChange}
-    75	                            min="0"
-    76	                            max="100"
-    77	                            className="w-16"
-    78	                        />
-    79	                        <span className="ml-1">%</span>
-    80	                    </div>
-    81	                </FormField>
-    82	                
-    83	                <FormField label="Status Pembayaran">
-    84	                    <select
-    85	                        name="payment_status"
-    86	                        value={formData.payment_status}
-    87	                        onChange={handleChange}
-    88	                        className="w-full p-3 border rounded-md"
-    89	                    >
-    90	                        <option value="unpaid">Belum Dibayar</option>
-    91	                        <option value="partial">Sebagian</option>
-    92	                        <option value="paid">Lunas</option>
-    93	                    </select>
-    94	                </FormField>
-    95	                
-    96	                <FormField label="Metode Pembayaran">
-    97	                    <select
-    98	                        name="payment_method"
-    99	                        value={formData.payment_method}
-   100	                        onChange={handleChange}
-   101	                        className="w-full p-3 border rounded-md"
-   102	                    >
-   103	                        <option value="cash">Tunai</option>
-   104	                        <option value="transfer">Transfer</option>
-   105	                        <option value="credit">Kredit</option>
-   106	                    </select>
-   107	                </FormField>
-   108	            </div>
-   109	            
-   110	            <FormField label="Catatan">
-   111	                <textarea
-   112	                    name="notes"
-   113	                    value={formData.notes}
-   114	                    onChange={handleChange}
-   115	                    className="w-full p-3 border rounded-md"
-   116	                    rows={3}
-   117	                />
-   118	            </FormField>
-   119	        </FormSection>
-   120	    );
-   121	};
-   122	
-   123	export default PurchaseInformationForm;
+    55	            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+    56	                <FormField label="Tanggal Jatuh Tempo">
+    57	                    <Input
+    58	                        type="date"
+    59	                        name="due_date"
+    60	                        value={formData.due_date}
+    61	                        onChange={handleChange}
+    62	                        min={formData.date}
+    63	                    />
+    64	                </FormField>
+    65	
+    66	                <FormField label="PPN Termasuk Harga">
+    67	                    <div className="flex items-center h-full pt-2">
+    68	                        <input
+    69	                            type="checkbox"
+    70	                            name="is_vat_included"
+    71	                            checked={formData.is_vat_included}
+    72	                            onChange={handleChange}
+    73	                            className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+    74	                        />
+    75	                    </div>
+    76	                </FormField>
+    77	                
+    78	                <FormField label="Persentase PPN">
+    79	                    <div className="flex items-center">
+    80	                        <Input
+    81	                            type="number"
+    82	                            name="vat_percentage"
+    83	                            value={formData.vat_percentage}
+    84	                            onChange={handleChange}
+    85	                            min="0"
+    86	                            max="100"
+    87	                            className="w-16"
+    88	                        />
+    89	                        <span className="ml-1">%</span>
+    90	                    </div>
+    91	                </FormField>
+    92	                
+    93	                <FormField label="Status Pembayaran">
+    94	                    <select
+    95	                        name="payment_status"
+    96	                        value={formData.payment_status}
+    97	                        onChange={handleChange}
+    98	                        className="w-full p-3 border rounded-md"
+    99	                    >
+   100	                        <option value="unpaid">Belum Dibayar</option>
+   101	                        <option value="partial">Sebagian</option>
+   102	                        <option value="paid">Lunas</option>
+   103	                    </select>
+   104	                </FormField>
+   105	                
+   106	                <FormField label="Metode Pembayaran">
+   107	                    <select
+   108	                        name="payment_method"
+   109	                        value={formData.payment_method}
+   110	                        onChange={handleChange}
+   111	                        className="w-full p-3 border rounded-md"
+   112	                    >
+   113	                        <option value="cash">Tunai</option>
+   114	                        <option value="transfer">Transfer</option>
+   115	                        <option value="credit">Kredit</option>
+   116	                    </select>
+   117	                </FormField>
+   118	            </div>
+   119	            
+   120	            <FormField label="Catatan">
+   121	                <textarea
+   122	                    name="notes"
+   123	                    value={formData.notes}
+   124	                    onChange={handleChange}
+   125	                    className="w-full p-3 border rounded-md"
+   126	                    rows={3}
+   127	                />
+   128	            </FormField>
+   129	        </FormSection>
+   130	    );
+   131	};
+   132	
+   133	export default PurchaseInformationForm;
 
 
 ===============================================
@@ -1301,142 +1311,151 @@
     85	                                <TableCell className="text-center">
     86	                                    <input
     87	                                        type="number"
-    88	                                        min="1"
-    89	                                        value={item.quantity}
-    90	                                        onChange={(e) => {
-    91	                                            // Tangani kasus string kosong atau nilai tidak valid
+    88	                                        onFocus={(e) => e.target.select()}
+    89	                                        onClick={(e) => (e.target as HTMLInputElement).select()}
+    90	                                        value={item.quantity}
+    91	                                        onChange={(e) => {
     92	                                            const inputValue = e.target.value;
-    93	                                            if (inputValue === '' || inputValue === '0') {
-    94	                                                onUpdateItem(item.id, 'quantity', 1); // Default ke 1 jika kosong atau 0
-    95	                                            } else {
-    96	                                                // Konversi ke integer dan pastikan nilai minimal 1
-    97	                                                const newValue = parseInt(inputValue, 10);
-    98	                                                const validValue = isNaN(newValue) ? 1 : Math.max(1, newValue);
-    99	                                                onUpdateItem(item.id, 'quantity', validValue);
-   100	                                            }
-   101	                                        }}
-   102	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
-   103	                                    />
-   104	                                </TableCell>
-   105	                                <TableCell className="text-center">
-   106	                                    <select
-   107	                                        value={item.unit}
-   108	                                        onChange={(e) => onUnitChange(item.id, e.target.value)}
-   109	                                        className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center appearance-none cursor-pointer"
-   110	                                    >
-   111	                                        <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
-   112	                                            {getItemByID(item.item_id)?.base_unit || 'Unit'}
-   113	                                        </option>
-   114	                                        {getItemByID(item.item_id)?.unit_conversions?.map((uc: { id: string; unit_name: string }) => (
-   115	                                            <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
-   116	                                        ))}
-   117	                                    </select>
-   118	                                </TableCell>
-   119	                                <TableCell className="text-right">
-   120	                                    <input
-   121	                                        type="text"
-   122	                                        value={item.price === 0 ? '' : formatRupiah(item.price)}
-   123	                                        onChange={(e) => {
-   124	                                            const numericValue = extractNumericValue(e.target.value);
-   125	                                            onUpdateItem(item.id, 'price', numericValue);
-   126	                                        }}
-   127	                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   128	                                        placeholder="Rp 0"
-   129	                                    />
-   130	                                </TableCell>
-   131	                                <TableCell className="text-right">
-   132	                                    <input
-   133	                                        type="text"
-   134	                                        value={item.discount === 0 ? '' : `${item.discount}%`}
-   135	                                        onChange={(e) => {
-   136	                                            // Hapus tanda % jika ada
-   137	                                            let inputValue = e.target.value;
-   138	                                            if (inputValue.endsWith('%')) {
-   139	                                                inputValue = inputValue.slice(0, -1);
-   140	                                            }
-   141	                                            
-   142	                                            // Ambil nilai numerik saja tanpa %
-   143	                                            const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
-   144	                                            onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
-   145	                                        }}
-   146	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   147	                                        placeholder="0%"
-   148	                                        onKeyDown={(e) => {
-   149	                                            // Tangani backspace saat kursor berada di akhir input
-   150	                                            if (e.key === 'Backspace' && 
-   151	                                                item.discount > 0 && 
-   152	                                                e.currentTarget.selectionStart === e.currentTarget.value.length) {
-   153	                                                // Cegah perilaku default dan update nilai secara manual
-   154	                                                e.preventDefault();
-   155	                                                const newValue = Math.floor(item.discount / 10);
-   156	                                                onUpdateItem(item.id, 'discount', newValue);
-   157	                                            }
-   158	                                        }}
-   159	                                    />
-   160	                                </TableCell>
-   161	                                {!isVatIncluded && (
-   162	                                    <TableCell className="text-right">
-   163	                                        <input
-   164	                                            type="text"
-   165	                                            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
-   166	                                            onChange={(e) => {
-   167	                                                // Hapus tanda % jika ada
-   168	                                                let inputValue = e.target.value;
-   169	                                                if (inputValue.endsWith('%')) {
-   170	                                                    inputValue = inputValue.slice(0, -1);
-   171	                                                }
-   172	                                                
-   173	                                                // Ambil nilai numerik saja tanpa %
-   174	                                                const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
-   175	                                                onUpdateItemVat(item.id, Math.min(numericValue, 100));
-   176	                                            }}
-   177	                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   178	                                            placeholder="0%"
-   179	                                            onKeyDown={(e) => {
-   180	                                                // Tangani backspace saat kursor berada di akhir input
-   181	                                                if (e.key === 'Backspace' && 
-   182	                                                    item.vat_percentage > 0 && 
-   183	                                                    e.currentTarget.selectionStart === e.currentTarget.value.length) {
-   184	                                                    // Cegah perilaku default dan update nilai secara manual
-   185	                                                    e.preventDefault();
-   186	                                                    const newValue = Math.floor(item.vat_percentage / 10);
-   187	                                                    onUpdateItemVat(item.id, newValue);
-   188	                                                }
-   189	                                            }}
-   190	                                        />
-   191	                                    </TableCell>
-   192	                                )}
-   193	                                <TableCell className="text-right">
-   194	                                    {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   195	                                </TableCell>
-   196	                                <TableCell className="text-center">
-   197	                                    <Button
-   198	                                        type="button"
-   199	                                        variant="danger"
-   200	                                        size="sm"
-   201	                                        onClick={() => onRemoveItem(item.id)}
-   202	                                    >
-   203	                                        <FaTrash />
-   204	                                    </Button>
-   205	                                </TableCell>
-   206	                            </TableRow>
-   207	                        ))
-   208	                    )}
-   209	                </TableBody>
-   210	            </Table>
-   211	            
-   212	            {/* Total display outside the table */}
-   213	            <div className="flex justify-end items-center mt-4 font-semibold text-lg">
-   214	                <div className="mr-4">Total:</div>
-   215	                <div className="w-40 text-right">
-   216	                    {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   217	                </div>
-   218	            </div>
-   219	        </>
-   220	    );
-   221	};
-   222	
-   223	export default PurchaseItemsTable;
+    93	                                            
+    94	                                            // Izinkan input kosong untuk sementara agar user bisa mengetik ulang
+    95	                                            if (inputValue === '') {
+    96	                                                onUpdateItem(item.id, 'quantity', 0); // Gunakan 0 sementara
+    97	                                                return;
+    98	                                            }
+    99	                                            
+   100	                                            // Untuk input tidak kosong, parse dan update
+   101	                                            const newValue = parseInt(inputValue, 10);
+   102	                                            if (!isNaN(newValue) && newValue >= 0) {
+   103	                                                onUpdateItem(item.id, 'quantity', newValue);
+   104	                                            }
+   105	                                        }}
+   106	                                        onBlur={() => {
+   107	                                            // Pastikan nilai minimum 1 ketika input kehilangan fokus
+   108	                                            const numericValue = parseInt(item.quantity.toString(), 10);
+   109	                                            onUpdateItem(item.id, 'quantity', numericValue < 1 ? 1 : numericValue);
+   110	                                        }}
+   111	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+   112	                                    />
+   113	                                </TableCell>
+   114	                                <TableCell className="text-center">
+   115	                                    <select
+   116	                                        value={item.unit}
+   117	                                        onChange={(e) => onUnitChange(item.id, e.target.value)}
+   118	                                        className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center appearance-none cursor-pointer"
+   119	                                    >
+   120	                                        <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
+   121	                                            {getItemByID(item.item_id)?.base_unit || 'Unit'}
+   122	                                        </option>
+   123	                                        {getItemByID(item.item_id)?.unit_conversions?.map((uc: { id: string; unit_name: string }) => (
+   124	                                            <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
+   125	                                        ))}
+   126	                                    </select>
+   127	                                </TableCell>
+   128	                                <TableCell className="text-right">
+   129	                                    <input
+   130	                                        type="text"
+   131	                                        value={item.price === 0 ? '' : formatRupiah(item.price)}
+   132	                                        onChange={(e) => {
+   133	                                            const numericValue = extractNumericValue(e.target.value);
+   134	                                            onUpdateItem(item.id, 'price', numericValue);
+   135	                                        }}
+   136	                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   137	                                        placeholder="Rp 0"
+   138	                                    />
+   139	                                </TableCell>
+   140	                                <TableCell className="text-right">
+   141	                                    <input
+   142	                                        type="text"
+   143	                                        value={item.discount === 0 ? '' : `${item.discount}%`}
+   144	                                        onChange={(e) => {
+   145	                                            // Hapus tanda % jika ada
+   146	                                            let inputValue = e.target.value;
+   147	                                            if (inputValue.endsWith('%')) {
+   148	                                                inputValue = inputValue.slice(0, -1);
+   149	                                            }
+   150	                                            
+   151	                                            // Ambil nilai numerik saja tanpa %
+   152	                                            const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
+   153	                                            onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
+   154	                                        }}
+   155	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   156	                                        placeholder="0%"
+   157	                                        onKeyDown={(e) => {
+   158	                                            // Tangani backspace saat kursor berada di akhir input
+   159	                                            if (e.key === 'Backspace' && 
+   160	                                                item.discount > 0 && 
+   161	                                                e.currentTarget.selectionStart === e.currentTarget.value.length) {
+   162	                                                // Cegah perilaku default dan update nilai secara manual
+   163	                                                e.preventDefault();
+   164	                                                const newValue = Math.floor(item.discount / 10);
+   165	                                                onUpdateItem(item.id, 'discount', newValue);
+   166	                                            }
+   167	                                        }}
+   168	                                    />
+   169	                                </TableCell>
+   170	                                {!isVatIncluded && (
+   171	                                    <TableCell className="text-right">
+   172	                                        <input
+   173	                                            type="text"
+   174	                                            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
+   175	                                            onChange={(e) => {
+   176	                                                // Hapus tanda % jika ada
+   177	                                                let inputValue = e.target.value;
+   178	                                                if (inputValue.endsWith('%')) {
+   179	                                                    inputValue = inputValue.slice(0, -1);
+   180	                                                }
+   181	                                                
+   182	                                                // Ambil nilai numerik saja tanpa %
+   183	                                                const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
+   184	                                                onUpdateItemVat(item.id, Math.min(numericValue, 100));
+   185	                                            }}
+   186	                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   187	                                            placeholder="0%"
+   188	                                            onKeyDown={(e) => {
+   189	                                                // Tangani backspace saat kursor berada di akhir input
+   190	                                                if (e.key === 'Backspace' && 
+   191	                                                    item.vat_percentage > 0 && 
+   192	                                                    e.currentTarget.selectionStart === e.currentTarget.value.length) {
+   193	                                                    // Cegah perilaku default dan update nilai secara manual
+   194	                                                    e.preventDefault();
+   195	                                                    const newValue = Math.floor(item.vat_percentage / 10);
+   196	                                                    onUpdateItemVat(item.id, newValue);
+   197	                                                }
+   198	                                            }}
+   199	                                        />
+   200	                                    </TableCell>
+   201	                                )}
+   202	                                <TableCell className="text-right">
+   203	                                    {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   204	                                </TableCell>
+   205	                                <TableCell className="text-center">
+   206	                                    <Button
+   207	                                        type="button"
+   208	                                        variant="danger"
+   209	                                        size="sm"
+   210	                                        onClick={() => onRemoveItem(item.id)}
+   211	                                    >
+   212	                                        <FaTrash />
+   213	                                    </Button>
+   214	                                </TableCell>
+   215	                            </TableRow>
+   216	                        ))
+   217	                    )}
+   218	                </TableBody>
+   219	            </Table>
+   220	            
+   221	            {/* Total display outside the table */}
+   222	            <div className="flex justify-end items-center mt-4 font-semibold text-lg">
+   223	                <div className="mr-4">Total:</div>
+   224	                <div className="w-40 text-right">
+   225	                    {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   226	                </div>
+   227	            </div>
+   228	        </>
+   229	    );
+   230	};
+   231	
+   232	export default PurchaseItemsTable;
 
 
 ===============================================
@@ -2658,342 +2677,345 @@
     11	    supplier_id: string;
     12	    invoice_number: string;
     13	    date: string;
-    14	    payment_status: string;
-    15	    payment_method: string;
-    16	    notes: string;
-    17	    vat_percentage: number;
-    18	    is_vat_included: boolean;
-    19	}
-    20	
-    21	export interface PurchaseItem {
-    22	    id: string;
-    23	    item_id: string;
-    24	    item_name: string;
-    25	    quantity: number;
-    26	    price: number;
-    27	    discount: number;
-    28	    subtotal: number;
-    29	    unit: string;
-    30	    vat_percentage: number;
-    31	    batch_no: string | null;
-    32	    expiry_date: string | null;
-    33	    unit_conversion_rate: number;
-    34	}
-    35	
-    36	export const usePurchaseForm = () => {
-    37	    const navigate = useNavigate();
-    38	    const [loading, setLoading] = useState(false);
-    39	    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    40	    const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
-    41	    
-    42	    // Form data
-    43	    const [formData, setFormData] = useState<PurchaseFormData>({
-    44	        supplier_id: '',
-    45	        invoice_number: '',
-    46	        date: new Date().toISOString().slice(0, 10),
-    47	        payment_status: 'unpaid',
-    48	        payment_method: 'cash',
-    49	        vat_percentage: 11.0,
-    50	        is_vat_included: true,
-    51	        notes: ''
-    52	    });
-    53	    
-    54	    // Calculate total
-    55	    const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
-    56	    
-    57	    useEffect(() => {
-    58	        fetchSuppliers();
-    59	    }, []);
-    60	    
-    61	    const fetchSuppliers = async () => {
-    62	        try {
-    63	            const { data, error } = await supabase
-    64	                .from('suppliers')
-    65	                .select('id, name')
-    66	                .order('name');
-    67	                
-    68	            if (error) throw error;
-    69	            setSuppliers(data || []);
-    70	        } catch (error) {
-    71	            console.error('Error fetching suppliers:', error);
-    72	        }
-    73	    };
-    74	    
-    75	    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    76	        const { name, value, type, checked } = e.target as HTMLInputElement;
-    77	        setFormData({
-    78	            ...formData,
-    79	            [name]: type === 'checkbox' ? checked : value
-    80	        });
-    81	    };
-    82	
-    83	    const addItem = (newItem: PurchaseItem) => {
-    84	        const newItems = [...purchaseItems, {
-    85	            ...newItem,
-    86	            vat_percentage: 0,
-    87	            batch_no: null,
-    88	            expiry_date: null,
-    89	            unit: newItem.unit || 'Unit',
-    90	            unit_conversion_rate: 1
-    91	        }];
-    92	        recalculateSubtotal(newItems);
-    93	        setPurchaseItems(newItems);
-    94	    };
-    95	    
-    96	    const updateItem = (id: string, field: 'quantity' | 'price' | 'discount', value: number) => {
-    97	        const updatedItems = purchaseItems.map(item => {
-    98	            if (item.id === id) {
-    99	                const quantity = field === 'quantity' ? value : item.quantity;
-   100	                const price = field === 'price' ? value : item.price;
-   101	                const discount = field === 'discount' ? value : item.discount;
-   102	                
-   103	                // Hitung subtotal dengan diskon
-   104	                let subtotal = quantity * price;
-   105	                if (discount > 0) {
-   106	                    const discountAmount = subtotal * (discount / 100);
-   107	                    subtotal -= discountAmount;
-   108	                }
-   109	                
-   110	                // Tambahkan VAT jika tidak termasuk
-   111	                if (item.vat_percentage > 0 && !formData.is_vat_included) {
-   112	                    const vatAmount = subtotal * (item.vat_percentage / 100);
-   113	                    subtotal += vatAmount;
-   114	                }
-   115	                return {
-   116	                    ...item,
-   117	                    [field]: value,
-   118	                    subtotal: subtotal
-   119	                };
-   120	            }
-   121	            return item;
-   122	        });
-   123	        
-   124	        setPurchaseItems(updatedItems);
-   125	    };
-   126	    
-   127	    // Fungsi untuk memperbarui VAT per item
-   128	    const updateItemVat = (id: string, vatPercentage: number) => {
-   129	        const updatedItems = purchaseItems.map(item => {
-   130	            if (item.id === id) {
-   131	                // Hitung subtotal dengan diskon dan VAT baru
-   132	                let subtotal = item.quantity * item.price;
-   133	                if (item.discount > 0) {
-   134	                    const discountAmount = subtotal * (item.discount / 100);
-   135	                    subtotal -= discountAmount;
-   136	                }
-   137	                
-   138	                // Tambahkan VAT jika tidak termasuk
-   139	                if (vatPercentage > 0 && !formData.is_vat_included) {
-   140	                    const vatAmount = subtotal * (vatPercentage / 100);
-   141	                    subtotal += vatAmount;
-   142	                }
-   143	                
-   144	                return {
-   145	                    ...item,
-   146	                    vat_percentage: vatPercentage,
-   147	                    subtotal: subtotal
-   148	                };
-   149	            }
-   150	            return item;
-   151	        });
-   152	        
-   153	        setPurchaseItems(updatedItems);
-   154	    };
-   155	
-   156	    // Fungsi untuk memperbarui tanggal kadaluarsa
-   157	    const updateItemExpiry = (id: string, expiryDate: string) => {
-   158	        setPurchaseItems(purchaseItems.map(item => 
-   159	            item.id === id ? {...item, expiry_date: expiryDate} : item
-   160	        ));
-   161	    };
-   162	
-   163	    // Fungsi untuk memperbarui nomor batch
-   164	    const updateItemBatchNo = (id: string, batchNo: string) => {
-   165	        setPurchaseItems(purchaseItems.map(item => 
-   166	            item.id === id ? {...item, batch_no: batchNo} : item
-   167	        ));
-   168	    };
-   169	
-   170	    // Fungsi untuk menghitung ulang semua subtotal
-   171	    const recalculateSubtotal = (items = purchaseItems) => {
-   172	        return items.map(item => {
-   173	            let subtotal = item.quantity * item.price;
-   174	            if (item.discount > 0) {
-   175	                const discountAmount = subtotal * (item.discount / 100);
-   176	                subtotal -= discountAmount;
-   177	            }
-   178	            
-   179	            if (item.vat_percentage > 0 && !formData.is_vat_included) {
-   180	                const vatAmount = subtotal * (item.vat_percentage / 100);
-   181	                subtotal += vatAmount;
-   182	            }
-   183	            
-   184	            return {
-   185	                ...item,
-   186	                subtotal: subtotal
-   187	            };
-   188	        });
-   189	    };
-   190	    
-   191	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   192	    const handleUnitChange = (id: string, unitName: string, getItemByID: (id: string) => any) => {
-   193	        const updatedItems = purchaseItems.map(item => {
-   194	            if (item.id === id) {
-   195	                const itemData = getItemByID(item.item_id);
-   196	                if (!itemData) return item;
-   197	                
-   198	                let price = itemData.base_price;
-   199	                let conversionRate = 1;
-   200	                
-   201	                // Jika bukan satuan dasar, cari harga berdasarkan konversi
-   202	                if (unitName !== itemData.base_unit) {
-   203	                    const unitConversion = itemData.unit_conversions?.find((uc: { unit_name: string; }) => uc.unit_name === unitName);
-   204	                    if (unitConversion) {
-   205	                        price = unitConversion.base_price || itemData.base_price / unitConversion.conversion_rate;
-   206	                        conversionRate = unitConversion.conversion_rate;
-   207	                    }
-   208	                }
-   209	
-   210	                const discountAmount = price * item.quantity * (item.discount / 100);
-   211	                
-   212	                return {
-   213	                    ...item,
-   214	                    unit: unitName,
-   215	                    price: price,
-   216	                    subtotal: price * item.quantity - discountAmount,
-   217	                    unit_conversion_rate: conversionRate
-   218	                };
-   219	            }
-   220	            return item;
-   221	        });
-   222	        
-   223	        setPurchaseItems(updatedItems);
-   224	    };
-   225	    
-   226	    const removeItem = (id: string) => {
-   227	        setPurchaseItems(purchaseItems.filter(item => item.id !== id));
-   228	    };
-   229	    
-   230	    // Calculate total VAT amount
-   231	    const calculateTotalVat = () => {
-   232	        return purchaseItems.reduce((total, item) => {
-   233	            if (item.vat_percentage > 0) {
-   234	                const subtotalBeforeVat = item.subtotal / (1 + item.vat_percentage / 100);
-   235	                const vatAmount = item.subtotal - subtotalBeforeVat;
-   236	                return total + vatAmount;
-   237	            }
-   238	            return total;
-   239	        }, 0);
-   240	    };
-   241	    
-   242	    const handleSubmit = async (e: React.FormEvent) => {
-   243	        e.preventDefault();
-   244	        
-   245	        if (purchaseItems.length === 0) {
-   246	            alert('Silakan tambahkan minimal satu item');
-   247	            return;
-   248	        }
-   249	        
-   250	        try {
-   251	            setLoading(true);
-   252	            
-   253	            // Insert purchase record
-   254	            const { data: purchaseData, error: purchaseError } = await supabase
-   255	                .from('purchases')
-   256	                .insert({
-   257	                    supplier_id: formData.supplier_id || null,
-   258	                    invoice_number: formData.invoice_number,
-   259	                    date: formData.date,
-   260	                    total: total,
-   261	                    payment_status: formData.payment_status,
-   262	                    payment_method: formData.payment_method, 
-   263	                    vat_percentage: formData.vat_percentage,
-   264	                    is_vat_included: formData.is_vat_included,
-   265	                    vat_amount: calculateTotalVat(),
-   266	                    notes: formData.notes || null
-   267	                })
-   268	                .select('id')
-   269	                .single();
-   270	                
-   271	            if (purchaseError) throw purchaseError; 
-   272	            
-   273	            // Insert purchase items
-   274	            const purchaseItemsData = purchaseItems.map(item => ({
-   275	                purchase_id: purchaseData.id,
-   276	                item_id: item.item_id,
-   277	                quantity: item.quantity,
-   278	                discount: item.discount,
-   279	                price: item.price,
-   280	                subtotal: item.subtotal,
-   281	                unit: item.unit,
-   282	                vat_percentage: item.vat_percentage,
-   283	                batch_no: item.batch_no,
-   284	                expiry_date: item.expiry_date
-   285	            }));
-   286	            
-   287	            const { error: itemsError } = await supabase
-   288	                .from('purchase_items')
-   289	                .insert(purchaseItemsData);
-   290	                
-   291	            if (itemsError) throw itemsError;
-   292	            
-   293	            // Update item stocks
-   294	            for (const item of purchaseItems) {
-   295	                // Ambil data item untuk mendapatkan satuan dasar, stok saat ini, dan konversi
-   296	                const { data: itemData } = await supabase
-   297	                    .from('items')
-   298	                    .select('stock, base_unit, unit_conversions')
-   299	                    .eq('id', item.item_id)
-   300	                    .single();
-   301	                
-   302	                if (itemData) {
-   303	                    let quantityInBaseUnit = item.quantity;
-   304	                    
-   305	                    // Jika satuan pembelian berbeda dengan satuan dasar, konversikan
-   306	                    if (item.unit !== itemData.base_unit) {
-   307	                        const unitConversion = itemData.unit_conversions.find(
-   308	                            (uc: { unit_name: string; }) => uc.unit_name === item.unit
-   309	                        );
-   310	                        
-   311	                        if (unitConversion) {
-   312	                            // Konversikan ke satuan dasar
-   313	                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
-   314	                        }
-   315	                    }
-   316	                    
-   317	                    // Hitung stok baru dan update
-   318	                    const newStock = (itemData.stock || 0) + quantityInBaseUnit;
-   319	                    await supabase
-   320	                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
-   321	                }
-   322	            }
-   323	            
-   324	            navigate('/purchases');
-   325	        } catch (error) {
-   326	            console.error('Error creating purchase:', error);
-   327	            alert('Gagal menyimpan pembelian. Silakan coba lagi.');
-   328	        } finally {
-   329	            setLoading(false);
-   330	        }
-   331	    };
-   332	
-   333	    return {
-   334	        formData,
-   335	        suppliers,
-   336	        purchaseItems,
-   337	        total,
-   338	        loading,
-   339	        handleChange,
-   340	        addItem,
-   341	        updateItem,
-   342	        updateItemVat,
-   343	        updateItemExpiry,
-   344	        updateItemBatchNo,
-   345	        handleUnitChange,
-   346	        removeItem,
-   347	        handleSubmit
-   348	    };
-   349	};
+    14	    due_date: string;
+    15	    payment_status: string;
+    16	    payment_method: string;
+    17	    notes: string;
+    18	    vat_percentage: number;
+    19	    is_vat_included: boolean;
+    20	}
+    21	
+    22	export interface PurchaseItem {
+    23	    id: string;
+    24	    item_id: string;
+    25	    item_name: string;
+    26	    quantity: number;
+    27	    price: number;
+    28	    discount: number;
+    29	    subtotal: number;
+    30	    unit: string;
+    31	    vat_percentage: number;
+    32	    batch_no: string | null;
+    33	    expiry_date: string | null;
+    34	    unit_conversion_rate: number;
+    35	}
+    36	
+    37	export const usePurchaseForm = () => {
+    38	    const navigate = useNavigate();
+    39	    const [loading, setLoading] = useState(false);
+    40	    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    41	    const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
+    42	    
+    43	    // Form data
+    44	    const [formData, setFormData] = useState<PurchaseFormData>({
+    45	        supplier_id: '',
+    46	        invoice_number: '',
+    47	        date: new Date().toISOString().slice(0, 10),
+    48	        due_date: '',
+    49	        payment_status: 'unpaid',
+    50	        payment_method: 'cash',
+    51	        vat_percentage: 11.0,
+    52	        is_vat_included: true,
+    53	        notes: ''
+    54	    });
+    55	    
+    56	    // Calculate total
+    57	    const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
+    58	    
+    59	    useEffect(() => {
+    60	        fetchSuppliers();
+    61	    }, []);
+    62	    
+    63	    const fetchSuppliers = async () => {
+    64	        try {
+    65	            const { data, error } = await supabase
+    66	                .from('suppliers')
+    67	                .select('id, name')
+    68	                .order('name');
+    69	                
+    70	            if (error) throw error;
+    71	            setSuppliers(data || []);
+    72	        } catch (error) {
+    73	            console.error('Error fetching suppliers:', error);
+    74	        }
+    75	    };
+    76	    
+    77	    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    78	        const { name, value, type, checked } = e.target as HTMLInputElement;
+    79	        setFormData({
+    80	            ...formData,
+    81	            [name]: type === 'checkbox' ? checked : value
+    82	        });
+    83	    };
+    84	
+    85	    const addItem = (newItem: PurchaseItem) => {
+    86	        const newItems = [...purchaseItems, {
+    87	            ...newItem,
+    88	            vat_percentage: 0,
+    89	            batch_no: null,
+    90	            expiry_date: null,
+    91	            unit: newItem.unit || 'Unit',
+    92	            unit_conversion_rate: 1
+    93	        }];
+    94	        recalculateSubtotal(newItems);
+    95	        setPurchaseItems(newItems);
+    96	    };
+    97	    
+    98	    const updateItem = (id: string, field: 'quantity' | 'price' | 'discount', value: number) => {
+    99	        const updatedItems = purchaseItems.map(item => {
+   100	            if (item.id === id) {
+   101	                const quantity = field === 'quantity' ? value : item.quantity;
+   102	                const price = field === 'price' ? value : item.price;
+   103	                const discount = field === 'discount' ? value : item.discount;
+   104	                
+   105	                // Hitung subtotal dengan diskon
+   106	                let subtotal = quantity * price;
+   107	                if (discount > 0) {
+   108	                    const discountAmount = subtotal * (discount / 100);
+   109	                    subtotal -= discountAmount;
+   110	                }
+   111	                
+   112	                // Tambahkan VAT jika tidak termasuk
+   113	                if (item.vat_percentage > 0 && !formData.is_vat_included) {
+   114	                    const vatAmount = subtotal * (item.vat_percentage / 100);
+   115	                    subtotal += vatAmount;
+   116	                }
+   117	                return {
+   118	                    ...item,
+   119	                    [field]: value,
+   120	                    subtotal: subtotal
+   121	                };
+   122	            }
+   123	            return item;
+   124	        });
+   125	        
+   126	        setPurchaseItems(updatedItems);
+   127	    };
+   128	    
+   129	    // Fungsi untuk memperbarui VAT per item
+   130	    const updateItemVat = (id: string, vatPercentage: number) => {
+   131	        const updatedItems = purchaseItems.map(item => {
+   132	            if (item.id === id) {
+   133	                // Hitung subtotal dengan diskon dan VAT baru
+   134	                let subtotal = item.quantity * item.price;
+   135	                if (item.discount > 0) {
+   136	                    const discountAmount = subtotal * (item.discount / 100);
+   137	                    subtotal -= discountAmount;
+   138	                }
+   139	                
+   140	                // Tambahkan VAT jika tidak termasuk
+   141	                if (vatPercentage > 0 && !formData.is_vat_included) {
+   142	                    const vatAmount = subtotal * (vatPercentage / 100);
+   143	                    subtotal += vatAmount;
+   144	                }
+   145	                
+   146	                return {
+   147	                    ...item,
+   148	                    vat_percentage: vatPercentage,
+   149	                    subtotal: subtotal
+   150	                };
+   151	            }
+   152	            return item;
+   153	        });
+   154	        
+   155	        setPurchaseItems(updatedItems);
+   156	    };
+   157	
+   158	    // Fungsi untuk memperbarui tanggal kadaluarsa
+   159	    const updateItemExpiry = (id: string, expiryDate: string) => {
+   160	        setPurchaseItems(purchaseItems.map(item => 
+   161	            item.id === id ? {...item, expiry_date: expiryDate} : item
+   162	        ));
+   163	    };
+   164	
+   165	    // Fungsi untuk memperbarui nomor batch
+   166	    const updateItemBatchNo = (id: string, batchNo: string) => {
+   167	        setPurchaseItems(purchaseItems.map(item => 
+   168	            item.id === id ? {...item, batch_no: batchNo} : item
+   169	        ));
+   170	    };
+   171	
+   172	    // Fungsi untuk menghitung ulang semua subtotal
+   173	    const recalculateSubtotal = (items = purchaseItems) => {
+   174	        return items.map(item => {
+   175	            let subtotal = item.quantity * item.price;
+   176	            if (item.discount > 0) {
+   177	                const discountAmount = subtotal * (item.discount / 100);
+   178	                subtotal -= discountAmount;
+   179	            }
+   180	            
+   181	            if (item.vat_percentage > 0 && !formData.is_vat_included) {
+   182	                const vatAmount = subtotal * (item.vat_percentage / 100);
+   183	                subtotal += vatAmount;
+   184	            }
+   185	            
+   186	            return {
+   187	                ...item,
+   188	                subtotal: subtotal
+   189	            };
+   190	        });
+   191	    };
+   192	    
+   193	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   194	    const handleUnitChange = (id: string, unitName: string, getItemByID: (id: string) => any) => {
+   195	        const updatedItems = purchaseItems.map(item => {
+   196	            if (item.id === id) {
+   197	                const itemData = getItemByID(item.item_id);
+   198	                if (!itemData) return item;
+   199	                
+   200	                let price = itemData.base_price;
+   201	                let conversionRate = 1;
+   202	                
+   203	                // Jika bukan satuan dasar, cari harga berdasarkan konversi
+   204	                if (unitName !== itemData.base_unit) {
+   205	                    const unitConversion = itemData.unit_conversions?.find((uc: { unit_name: string; }) => uc.unit_name === unitName);
+   206	                    if (unitConversion) {
+   207	                        price = unitConversion.base_price || itemData.base_price / unitConversion.conversion_rate;
+   208	                        conversionRate = unitConversion.conversion_rate;
+   209	                    }
+   210	                }
+   211	
+   212	                const discountAmount = price * item.quantity * (item.discount / 100);
+   213	                
+   214	                return {
+   215	                    ...item,
+   216	                    unit: unitName,
+   217	                    price: price,
+   218	                    subtotal: price * item.quantity - discountAmount,
+   219	                    unit_conversion_rate: conversionRate
+   220	                };
+   221	            }
+   222	            return item;
+   223	        });
+   224	        
+   225	        setPurchaseItems(updatedItems);
+   226	    };
+   227	    
+   228	    const removeItem = (id: string) => {
+   229	        setPurchaseItems(purchaseItems.filter(item => item.id !== id));
+   230	    };
+   231	    
+   232	    // Calculate total VAT amount
+   233	    const calculateTotalVat = () => {
+   234	        return purchaseItems.reduce((total, item) => {
+   235	            if (item.vat_percentage > 0) {
+   236	                const subtotalBeforeVat = item.subtotal / (1 + item.vat_percentage / 100);
+   237	                const vatAmount = item.subtotal - subtotalBeforeVat;
+   238	                return total + vatAmount;
+   239	            }
+   240	            return total;
+   241	        }, 0);
+   242	    };
+   243	    
+   244	    const handleSubmit = async (e: React.FormEvent) => {
+   245	        e.preventDefault();
+   246	        
+   247	        if (purchaseItems.length === 0) {
+   248	            alert('Silakan tambahkan minimal satu item');
+   249	            return;
+   250	        }
+   251	        
+   252	        try {
+   253	            setLoading(true);
+   254	            
+   255	            // Insert purchase record
+   256	            const { data: purchaseData, error: purchaseError } = await supabase
+   257	                .from('purchases')
+   258	                .insert({
+   259	                    supplier_id: formData.supplier_id || null,
+   260	                    invoice_number: formData.invoice_number,
+   261	                    date: formData.date,
+   262	                    due_date: formData.due_date || null,
+   263	                    total: total,
+   264	                    payment_status: formData.payment_status,
+   265	                    payment_method: formData.payment_method, 
+   266	                    vat_percentage: formData.vat_percentage,
+   267	                    is_vat_included: formData.is_vat_included,
+   268	                    vat_amount: calculateTotalVat(),
+   269	                    notes: formData.notes || null
+   270	                })
+   271	                .select('id')
+   272	                .single();
+   273	                
+   274	            if (purchaseError) throw purchaseError; 
+   275	            
+   276	            // Insert purchase items
+   277	            const purchaseItemsData = purchaseItems.map(item => ({
+   278	                purchase_id: purchaseData.id,
+   279	                item_id: item.item_id,
+   280	                quantity: item.quantity,
+   281	                discount: item.discount,
+   282	                price: item.price,
+   283	                subtotal: item.subtotal,
+   284	                unit: item.unit,
+   285	                vat_percentage: item.vat_percentage,
+   286	                batch_no: item.batch_no,
+   287	                expiry_date: item.expiry_date
+   288	            }));
+   289	            
+   290	            const { error: itemsError } = await supabase
+   291	                .from('purchase_items')
+   292	                .insert(purchaseItemsData);
+   293	                
+   294	            if (itemsError) throw itemsError;
+   295	            
+   296	            // Update item stocks
+   297	            for (const item of purchaseItems) {
+   298	                // Ambil data item untuk mendapatkan satuan dasar, stok saat ini, dan konversi
+   299	                const { data: itemData } = await supabase
+   300	                    .from('items')
+   301	                    .select('stock, base_unit, unit_conversions')
+   302	                    .eq('id', item.item_id)
+   303	                    .single();
+   304	                
+   305	                if (itemData) {
+   306	                    let quantityInBaseUnit = item.quantity;
+   307	                    
+   308	                    // Jika satuan pembelian berbeda dengan satuan dasar, konversikan
+   309	                    if (item.unit !== itemData.base_unit) {
+   310	                        const unitConversion = itemData.unit_conversions.find(
+   311	                            (uc: { unit_name: string; }) => uc.unit_name === item.unit
+   312	                        );
+   313	                        
+   314	                        if (unitConversion) {
+   315	                            // Konversikan ke satuan dasar
+   316	                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
+   317	                        }
+   318	                    }
+   319	                    
+   320	                    // Hitung stok baru dan update
+   321	                    const newStock = (itemData.stock || 0) + quantityInBaseUnit;
+   322	                    await supabase
+   323	                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
+   324	                }
+   325	            }
+   326	            
+   327	            navigate('/purchases');
+   328	        } catch (error) {
+   329	            console.error('Error creating purchase:', error);
+   330	            alert('Gagal menyimpan pembelian. Silakan coba lagi.');
+   331	        } finally {
+   332	            setLoading(false);
+   333	        }
+   334	    };
+   335	
+   336	    return {
+   337	        formData,
+   338	        suppliers,
+   339	        purchaseItems,
+   340	        total,
+   341	        loading,
+   342	        handleChange,
+   343	        addItem,
+   344	        updateItem,
+   345	        updateItemVat,
+   346	        updateItemExpiry,
+   347	        updateItemBatchNo,
+   348	        handleUnitChange,
+   349	        removeItem,
+   350	        handleSubmit
+   351	    };
+   352	};
 
 
 ===============================================

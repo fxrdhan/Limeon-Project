@@ -85,19 +85,28 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                 <TableCell className="text-center">
                                     <input
                                         type="number"
-                                        min="1"
+                                        onFocus={(e) => e.target.select()}
+                                        onClick={(e) => (e.target as HTMLInputElement).select()}
                                         value={item.quantity}
                                         onChange={(e) => {
-                                            // Tangani kasus string kosong atau nilai tidak valid
                                             const inputValue = e.target.value;
-                                            if (inputValue === '' || inputValue === '0') {
-                                                onUpdateItem(item.id, 'quantity', 1); // Default ke 1 jika kosong atau 0
-                                            } else {
-                                                // Konversi ke integer dan pastikan nilai minimal 1
-                                                const newValue = parseInt(inputValue, 10);
-                                                const validValue = isNaN(newValue) ? 1 : Math.max(1, newValue);
-                                                onUpdateItem(item.id, 'quantity', validValue);
+                                            
+                                            // Izinkan input kosong untuk sementara agar user bisa mengetik ulang
+                                            if (inputValue === '') {
+                                                onUpdateItem(item.id, 'quantity', 0); // Gunakan 0 sementara
+                                                return;
                                             }
+                                            
+                                            // Untuk input tidak kosong, parse dan update
+                                            const newValue = parseInt(inputValue, 10);
+                                            if (!isNaN(newValue) && newValue >= 0) {
+                                                onUpdateItem(item.id, 'quantity', newValue);
+                                            }
+                                        }}
+                                        onBlur={() => {
+                                            // Pastikan nilai minimum 1 ketika input kehilangan fokus
+                                            const numericValue = parseInt(item.quantity.toString(), 10);
+                                            onUpdateItem(item.id, 'quantity', numericValue < 1 ? 1 : numericValue);
                                         }}
                                         className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
                                     />
