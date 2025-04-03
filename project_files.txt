@@ -1103,7 +1103,7 @@
     16	}) => {
     17	    return (
     18	        <FormSection title="Informasi Pembelian">
-    19	            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    19	            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
     20	                <FormField label="Supplier">
     21	                    <select
     22	                        name="supplier_id"
@@ -1128,43 +1128,43 @@
     41	                        placeholder="Masukkan nomor faktur"
     42	                    />
     43	                </FormField>
-    44	            </div>
-    45	            
-    46	            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    47	                <FormField label="Persentase PPN">
-    48	                    <div className="flex items-center">
-    49	                        <Input
-    50	                            type="number"
-    51	                            name="vat_percentage"
-    52	                            value={formData.vat_percentage}
-    53	                            onChange={handleChange}
-    54	                            min="0"
-    55	                            max="100"
-    56	                            className="w-24"
-    57	                        />
-    58	                        <span className="ml-2">%</span>
-    59	                    </div>
-    60	                </FormField>
-    61	                
-    62	                <FormField label="PPN Termasuk Harga">
-    63	                    <input
-    64	                        type="checkbox"
-    65	                        name="is_vat_included"
-    66	                        checked={formData.is_vat_included}
-    67	                        onChange={handleChange}
-    68	                        className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-    69	                    />
-    70	                </FormField>
-    71	            </div>
-    72	            
-    73	            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-    74	                <FormField label="Tanggal Pembelian">
-    75	                    <Input
-    76	                        type="date"
-    77	                        name="date"
-    78	                        value={formData.date}
-    79	                        onChange={handleChange}
-    80	                    />
+    44	                
+    45	                <FormField label="Tanggal Pembelian">
+    46	                    <Input
+    47	                        type="date"
+    48	                        name="date"
+    49	                        value={formData.date}
+    50	                        onChange={handleChange}
+    51	                    />
+    52	                </FormField>
+    53	            </div>
+    54	            
+    55	            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    56	                <FormField label="PPN Termasuk Harga">
+    57	                    <div className="flex items-center h-full pt-2">
+    58	                        <input
+    59	                            type="checkbox"
+    60	                            name="is_vat_included"
+    61	                            checked={formData.is_vat_included}
+    62	                            onChange={handleChange}
+    63	                            className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+    64	                        />
+    65	                    </div>
+    66	                </FormField>
+    67	                
+    68	                <FormField label="Persentase PPN">
+    69	                    <div className="flex items-center">
+    70	                        <Input
+    71	                            type="number"
+    72	                            name="vat_percentage"
+    73	                            value={formData.vat_percentage}
+    74	                            onChange={handleChange}
+    75	                            min="0"
+    76	                            max="100"
+    77	                            className="w-16"
+    78	                        />
+    79	                        <span className="ml-1">%</span>
+    80	                    </div>
     81	                </FormField>
     82	                
     83	                <FormField label="Status Pembayaran">

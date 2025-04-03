@@ -11,6 +11,7 @@ export interface PurchaseFormData {
     supplier_id: string;
     invoice_number: string;
     date: string;
+    due_date: string;
     payment_status: string;
     payment_method: string;
     notes: string;
@@ -44,6 +45,7 @@ export const usePurchaseForm = () => {
         supplier_id: '',
         invoice_number: '',
         date: new Date().toISOString().slice(0, 10),
+        due_date: '',
         payment_status: 'unpaid',
         payment_method: 'cash',
         vat_percentage: 11.0,
@@ -257,6 +259,7 @@ export const usePurchaseForm = () => {
                     supplier_id: formData.supplier_id || null,
                     invoice_number: formData.invoice_number,
                     date: formData.date,
+                    due_date: formData.due_date || null,
                     total: total,
                     payment_status: formData.payment_status,
                     payment_method: formData.payment_method, 
