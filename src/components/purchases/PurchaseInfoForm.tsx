@@ -52,7 +52,17 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
                 </FormField>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <FormField label="Tanggal Jatuh Tempo">
+                    <Input
+                        type="date"
+                        name="due_date"
+                        value={formData.due_date}
+                        onChange={handleChange}
+                        min={formData.date}
+                    />
+                </FormField>
+
                 <FormField label="PPN Termasuk Harga">
                     <div className="flex items-center h-full pt-2">
                         <input
