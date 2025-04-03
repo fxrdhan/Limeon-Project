@@ -16,7 +16,7 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
 }) => {
     return (
         <FormSection title="Informasi Pembelian">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField label="Supplier">
                     <select
                         name="supplier_id"
@@ -41,9 +41,30 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
                         placeholder="Masukkan nomor faktur"
                     />
                 </FormField>
+                
+                <FormField label="Tanggal Pembelian">
+                    <Input
+                        type="date"
+                        name="date"
+                        value={formData.date}
+                        onChange={handleChange}
+                    />
+                </FormField>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <FormField label="PPN Termasuk Harga">
+                    <div className="flex items-center h-full pt-2">
+                        <input
+                            type="checkbox"
+                            name="is_vat_included"
+                            checked={formData.is_vat_included}
+                            onChange={handleChange}
+                            className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                        />
+                    </div>
+                </FormField>
+                
                 <FormField label="Persentase PPN">
                     <div className="flex items-center">
                         <Input
@@ -53,31 +74,10 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
                             onChange={handleChange}
                             min="0"
                             max="100"
-                            className="w-24"
+                            className="w-16"
                         />
-                        <span className="ml-2">%</span>
+                        <span className="ml-1">%</span>
                     </div>
-                </FormField>
-                
-                <FormField label="PPN Termasuk Harga">
-                    <input
-                        type="checkbox"
-                        name="is_vat_included"
-                        checked={formData.is_vat_included}
-                        onChange={handleChange}
-                        className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                    />
-                </FormField>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <FormField label="Tanggal Pembelian">
-                    <Input
-                        type="date"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleChange}
-                    />
                 </FormField>
                 
                 <FormField label="Status Pembayaran">

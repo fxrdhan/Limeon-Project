@@ -6,7 +6,6 @@
 ├── .gitignore
 ├── index.html
 ├── package.json
-├── package-lock.json
 ├── project_files.txt
 ├── public
 ├── README.md
@@ -86,7 +85,8 @@
 ├── tsconfig.app.json
 ├── tsconfig.json
 ├── tsconfig.node.json
-└── vite.config.ts
+├── vite.config.ts
+└── yarn.lock
 
 19 directories, 70 files
 
@@ -103,87 +103,87 @@
      6	├── .gitignore
      7	├── index.html
      8	├── package.json
-     9	├── package-lock.json
-    10	├── project_files.txt
-    11	├── public
-    12	├── README.md
-    13	├── src
-    14	│   ├── App.css
-    15	│   ├── App.tsx
-    16	│   ├── assets
-    17	│   ├── components
-    18	│   │   ├── layout
-    19	│   │   │   ├── MainLayout.tsx
-    20	│   │   │   ├── Navbar.tsx
-    21	│   │   │   └── Sidebar.tsx
-    22	│   │   ├── purchases
-    23	│   │   │   ├── ItemSearchBar.tsx
-    24	│   │   │   ├── PurchaseInfoForm.tsx
-    25	│   │   │   └── PurchaseItemsTable.tsx
-    26	│   │   ├── tools
-    27	│   │   │   └── UnitConversionManager.tsx
-    28	│   │   └── ui
-    29	│   │       ├── Badge.tsx
-    30	│   │       ├── Button.tsx
-    31	│   │       ├── Card.tsx
-    32	│   │       ├── FormActions.tsx
-    33	│   │       ├── FormComponents.tsx
-    34	│   │       ├── Input.tsx
-    35	│   │       ├── Loading.tsx
-    36	│   │       ├── Pagination.tsx
-    37	│   │       └── Table.tsx
-    38	│   ├── hooks
-    39	│   │   ├── useAddItemForm.ts
-    40	│   │   ├── useItemSelection.ts
-    41	│   │   ├── usePurchaseForm.ts
-    42	│   │   └── useUnitConversion.ts
-    43	│   ├── index.css
-    44	│   ├── lib
-    45	│   │   ├── classNames.ts
-    46	│   │   ├── formatters.ts
-    47	│   │   └── supabase.ts
-    48	│   ├── main.tsx
-    49	│   ├── output.css
-    50	│   ├── pages
-    51	│   │   ├── auth
-    52	│   │   │   └── Login.tsx
-    53	│   │   ├── dashboard
-    54	│   │   │   └── Dashboard.tsx
-    55	│   │   ├── master-data
-    56	│   │   │   ├── AddItem.tsx
-    57	│   │   │   ├── CategoryList.tsx
-    58	│   │   │   ├── ItemList.tsx
-    59	│   │   │   ├── TypeList.tsx
-    60	│   │   │   └── UnitList.tsx
-    61	│   │   ├── purchases
-    62	│   │   │   ├── CreatePurchase.tsx
-    63	│   │   │   └── PurchaseList.tsx
-    64	│   │   └── sales
-    65	│   │       └── CreateSale.tsx
-    66	│   ├── store
-    67	│   │   └── authStore.ts
-    68	│   └── vite-env.d.ts
-    69	├── supabase_data
-    70	│   ├── database_export.txt
-    71	│   ├── definitions.txt
-    72	│   ├── doctors.json
-    73	│   ├── item_categories.json
-    74	│   ├── items.json
-    75	│   ├── item_types.json
-    76	│   ├── item_units.json
-    77	│   ├── patients.json
-    78	│   ├── purchase_items.json
-    79	│   ├── purchases.json
-    80	│   ├── sale_items.json
-    81	│   ├── sales.json
-    82	│   ├── suppliers.json
-    83	│   ├── unit_conversions.json
-    84	│   └── users.json
-    85	├── tailwind.config.js
-    86	├── tsconfig.app.json
-    87	├── tsconfig.json
-    88	├── tsconfig.node.json
-    89	└── vite.config.ts
+     9	├── project_files.txt
+    10	├── public
+    11	├── README.md
+    12	├── src
+    13	│   ├── App.css
+    14	│   ├── App.tsx
+    15	│   ├── assets
+    16	│   ├── components
+    17	│   │   ├── layout
+    18	│   │   │   ├── MainLayout.tsx
+    19	│   │   │   ├── Navbar.tsx
+    20	│   │   │   └── Sidebar.tsx
+    21	│   │   ├── purchases
+    22	│   │   │   ├── ItemSearchBar.tsx
+    23	│   │   │   ├── PurchaseInfoForm.tsx
+    24	│   │   │   └── PurchaseItemsTable.tsx
+    25	│   │   ├── tools
+    26	│   │   │   └── UnitConversionManager.tsx
+    27	│   │   └── ui
+    28	│   │       ├── Badge.tsx
+    29	│   │       ├── Button.tsx
+    30	│   │       ├── Card.tsx
+    31	│   │       ├── FormActions.tsx
+    32	│   │       ├── FormComponents.tsx
+    33	│   │       ├── Input.tsx
+    34	│   │       ├── Loading.tsx
+    35	│   │       ├── Pagination.tsx
+    36	│   │       └── Table.tsx
+    37	│   ├── hooks
+    38	│   │   ├── useAddItemForm.ts
+    39	│   │   ├── useItemSelection.ts
+    40	│   │   ├── usePurchaseForm.ts
+    41	│   │   └── useUnitConversion.ts
+    42	│   ├── index.css
+    43	│   ├── lib
+    44	│   │   ├── classNames.ts
+    45	│   │   ├── formatters.ts
+    46	│   │   └── supabase.ts
+    47	│   ├── main.tsx
+    48	│   ├── output.css
+    49	│   ├── pages
+    50	│   │   ├── auth
+    51	│   │   │   └── Login.tsx
+    52	│   │   ├── dashboard
+    53	│   │   │   └── Dashboard.tsx
+    54	│   │   ├── master-data
+    55	│   │   │   ├── AddItem.tsx
+    56	│   │   │   ├── CategoryList.tsx
+    57	│   │   │   ├── ItemList.tsx
+    58	│   │   │   ├── TypeList.tsx
+    59	│   │   │   └── UnitList.tsx
+    60	│   │   ├── purchases
+    61	│   │   │   ├── CreatePurchase.tsx
+    62	│   │   │   └── PurchaseList.tsx
+    63	│   │   └── sales
+    64	│   │       └── CreateSale.tsx
+    65	│   ├── store
+    66	│   │   └── authStore.ts
+    67	│   └── vite-env.d.ts
+    68	├── supabase_data
+    69	│   ├── database_export.txt
+    70	│   ├── definitions.txt
+    71	│   ├── doctors.json
+    72	│   ├── item_categories.json
+    73	│   ├── items.json
+    74	│   ├── item_types.json
+    75	│   ├── item_units.json
+    76	│   ├── patients.json
+    77	│   ├── purchase_items.json
+    78	│   ├── purchases.json
+    79	│   ├── sale_items.json
+    80	│   ├── sales.json
+    81	│   ├── suppliers.json
+    82	│   ├── unit_conversions.json
+    83	│   └── users.json
+    84	├── tailwind.config.js
+    85	├── tsconfig.app.json
+    86	├── tsconfig.json
+    87	├── tsconfig.node.json
+    88	├── vite.config.ts
+    89	└── yarn.lock
     90	
     91	19 directories, 70 files
     92	
@@ -1303,129 +1303,140 @@
     87	                                        type="number"
     88	                                        min="1"
     89	                                        value={item.quantity}
-    90	                                        onChange={(e) => onUpdateItem(item.id, 'quantity', Number(e.target.value))}
-    91	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
-    92	                                    />
-    93	                                </TableCell>
-    94	                                <TableCell className="text-center">
-    95	                                    <select
-    96	                                        value={item.unit}
-    97	                                        onChange={(e) => onUnitChange(item.id, e.target.value)}
-    98	                                        className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center appearance-none cursor-pointer"
-    99	                                    >
-   100	                                        <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
-   101	                                            {getItemByID(item.item_id)?.base_unit || 'Unit'}
-   102	                                        </option>
-   103	                                        {getItemByID(item.item_id)?.unit_conversions?.map((uc: { id: string; unit_name: string }) => (
-   104	                                            <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
-   105	                                        ))}
-   106	                                    </select>
-   107	                                </TableCell>
-   108	                                <TableCell className="text-right">
-   109	                                    <input
-   110	                                        type="text"
-   111	                                        value={item.price === 0 ? '' : formatRupiah(item.price)}
-   112	                                        onChange={(e) => {
-   113	                                            const numericValue = extractNumericValue(e.target.value);
-   114	                                            onUpdateItem(item.id, 'price', numericValue);
-   115	                                        }}
-   116	                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   117	                                        placeholder="Rp 0"
-   118	                                    />
-   119	                                </TableCell>
-   120	                                <TableCell className="text-right">
-   121	                                    <input
-   122	                                        type="text"
-   123	                                        value={item.discount === 0 ? '' : `${item.discount}%`}
-   124	                                        onChange={(e) => {
-   125	                                            // Hapus tanda % jika ada
-   126	                                            let inputValue = e.target.value;
-   127	                                            if (inputValue.endsWith('%')) {
-   128	                                                inputValue = inputValue.slice(0, -1);
-   129	                                            }
-   130	                                            
-   131	                                            // Ambil nilai numerik saja tanpa %
-   132	                                            const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
-   133	                                            onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
-   134	                                        }}
-   135	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   136	                                        placeholder="0%"
-   137	                                        onKeyDown={(e) => {
-   138	                                            // Tangani backspace saat kursor berada di akhir input
-   139	                                            if (e.key === 'Backspace' && 
-   140	                                                item.discount > 0 && 
-   141	                                                e.currentTarget.selectionStart === e.currentTarget.value.length) {
-   142	                                                // Cegah perilaku default dan update nilai secara manual
-   143	                                                e.preventDefault();
-   144	                                                const newValue = Math.floor(item.discount / 10);
-   145	                                                onUpdateItem(item.id, 'discount', newValue);
-   146	                                            }
-   147	                                        }}
-   148	                                    />
-   149	                                </TableCell>
-   150	                                {!isVatIncluded && (
-   151	                                    <TableCell className="text-right">
-   152	                                        <input
-   153	                                            type="text"
-   154	                                            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
-   155	                                            onChange={(e) => {
-   156	                                                // Hapus tanda % jika ada
-   157	                                                let inputValue = e.target.value;
-   158	                                                if (inputValue.endsWith('%')) {
-   159	                                                    inputValue = inputValue.slice(0, -1);
-   160	                                                }
-   161	                                                
-   162	                                                // Ambil nilai numerik saja tanpa %
-   163	                                                const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
-   164	                                                onUpdateItemVat(item.id, Math.min(numericValue, 100));
-   165	                                            }}
-   166	                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   167	                                            placeholder="0%"
-   168	                                            onKeyDown={(e) => {
-   169	                                                // Tangani backspace saat kursor berada di akhir input
-   170	                                                if (e.key === 'Backspace' && 
-   171	                                                    item.vat_percentage > 0 && 
-   172	                                                    e.currentTarget.selectionStart === e.currentTarget.value.length) {
-   173	                                                    // Cegah perilaku default dan update nilai secara manual
-   174	                                                    e.preventDefault();
-   175	                                                    const newValue = Math.floor(item.vat_percentage / 10);
-   176	                                                    onUpdateItemVat(item.id, newValue);
-   177	                                                }
-   178	                                            }}
-   179	                                        />
-   180	                                    </TableCell>
-   181	                                )}
-   182	                                <TableCell className="text-right">
-   183	                                    {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   184	                                </TableCell>
-   185	                                <TableCell className="text-center">
-   186	                                    <Button
-   187	                                        type="button"
-   188	                                        variant="danger"
-   189	                                        size="sm"
-   190	                                        onClick={() => onRemoveItem(item.id)}
-   191	                                    >
-   192	                                        <FaTrash />
-   193	                                    </Button>
-   194	                                </TableCell>
-   195	                            </TableRow>
-   196	                        ))
-   197	                    )}
-   198	                </TableBody>
-   199	            </Table>
-   200	            
-   201	            {/* Total display outside the table */}
-   202	            <div className="flex justify-end items-center mt-4 font-semibold text-lg">
-   203	                <div className="mr-4">Total:</div>
-   204	                <div className="w-40 text-right">
-   205	                    {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   206	                </div>
-   207	            </div>
-   208	        </>
-   209	    );
-   210	};
-   211	
-   212	export default PurchaseItemsTable;
+    90	                                        onChange={(e) => {
+    91	                                            // Tangani kasus string kosong atau nilai tidak valid
+    92	                                            const inputValue = e.target.value;
+    93	                                            if (inputValue === '' || inputValue === '0') {
+    94	                                                onUpdateItem(item.id, 'quantity', 1); // Default ke 1 jika kosong atau 0
+    95	                                            } else {
+    96	                                                // Konversi ke integer dan pastikan nilai minimal 1
+    97	                                                const newValue = parseInt(inputValue, 10);
+    98	                                                const validValue = isNaN(newValue) ? 1 : Math.max(1, newValue);
+    99	                                                onUpdateItem(item.id, 'quantity', validValue);
+   100	                                            }
+   101	                                        }}
+   102	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+   103	                                    />
+   104	                                </TableCell>
+   105	                                <TableCell className="text-center">
+   106	                                    <select
+   107	                                        value={item.unit}
+   108	                                        onChange={(e) => onUnitChange(item.id, e.target.value)}
+   109	                                        className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center appearance-none cursor-pointer"
+   110	                                    >
+   111	                                        <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
+   112	                                            {getItemByID(item.item_id)?.base_unit || 'Unit'}
+   113	                                        </option>
+   114	                                        {getItemByID(item.item_id)?.unit_conversions?.map((uc: { id: string; unit_name: string }) => (
+   115	                                            <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
+   116	                                        ))}
+   117	                                    </select>
+   118	                                </TableCell>
+   119	                                <TableCell className="text-right">
+   120	                                    <input
+   121	                                        type="text"
+   122	                                        value={item.price === 0 ? '' : formatRupiah(item.price)}
+   123	                                        onChange={(e) => {
+   124	                                            const numericValue = extractNumericValue(e.target.value);
+   125	                                            onUpdateItem(item.id, 'price', numericValue);
+   126	                                        }}
+   127	                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   128	                                        placeholder="Rp 0"
+   129	                                    />
+   130	                                </TableCell>
+   131	                                <TableCell className="text-right">
+   132	                                    <input
+   133	                                        type="text"
+   134	                                        value={item.discount === 0 ? '' : `${item.discount}%`}
+   135	                                        onChange={(e) => {
+   136	                                            // Hapus tanda % jika ada
+   137	                                            let inputValue = e.target.value;
+   138	                                            if (inputValue.endsWith('%')) {
+   139	                                                inputValue = inputValue.slice(0, -1);
+   140	                                            }
+   141	                                            
+   142	                                            // Ambil nilai numerik saja tanpa %
+   143	                                            const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
+   144	                                            onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
+   145	                                        }}
+   146	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   147	                                        placeholder="0%"
+   148	                                        onKeyDown={(e) => {
+   149	                                            // Tangani backspace saat kursor berada di akhir input
+   150	                                            if (e.key === 'Backspace' && 
+   151	                                                item.discount > 0 && 
+   152	                                                e.currentTarget.selectionStart === e.currentTarget.value.length) {
+   153	                                                // Cegah perilaku default dan update nilai secara manual
+   154	                                                e.preventDefault();
+   155	                                                const newValue = Math.floor(item.discount / 10);
+   156	                                                onUpdateItem(item.id, 'discount', newValue);
+   157	                                            }
+   158	                                        }}
+   159	                                    />
+   160	                                </TableCell>
+   161	                                {!isVatIncluded && (
+   162	                                    <TableCell className="text-right">
+   163	                                        <input
+   164	                                            type="text"
+   165	                                            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
+   166	                                            onChange={(e) => {
+   167	                                                // Hapus tanda % jika ada
+   168	                                                let inputValue = e.target.value;
+   169	                                                if (inputValue.endsWith('%')) {
+   170	                                                    inputValue = inputValue.slice(0, -1);
+   171	                                                }
+   172	                                                
+   173	                                                // Ambil nilai numerik saja tanpa %
+   174	                                                const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
+   175	                                                onUpdateItemVat(item.id, Math.min(numericValue, 100));
+   176	                                            }}
+   177	                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   178	                                            placeholder="0%"
+   179	                                            onKeyDown={(e) => {
+   180	                                                // Tangani backspace saat kursor berada di akhir input
+   181	                                                if (e.key === 'Backspace' && 
+   182	                                                    item.vat_percentage > 0 && 
+   183	                                                    e.currentTarget.selectionStart === e.currentTarget.value.length) {
+   184	                                                    // Cegah perilaku default dan update nilai secara manual
+   185	                                                    e.preventDefault();
+   186	                                                    const newValue = Math.floor(item.vat_percentage / 10);
+   187	                                                    onUpdateItemVat(item.id, newValue);
+   188	                                                }
+   189	                                            }}
+   190	                                        />
+   191	                                    </TableCell>
+   192	                                )}
+   193	                                <TableCell className="text-right">
+   194	                                    {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   195	                                </TableCell>
+   196	                                <TableCell className="text-center">
+   197	                                    <Button
+   198	                                        type="button"
+   199	                                        variant="danger"
+   200	                                        size="sm"
+   201	                                        onClick={() => onRemoveItem(item.id)}
+   202	                                    >
+   203	                                        <FaTrash />
+   204	                                    </Button>
+   205	                                </TableCell>
+   206	                            </TableRow>
+   207	                        ))
+   208	                    )}
+   209	                </TableBody>
+   210	            </Table>
+   211	            
+   212	            {/* Total display outside the table */}
+   213	            <div className="flex justify-end items-center mt-4 font-semibold text-lg">
+   214	                <div className="mr-4">Total:</div>
+   215	                <div className="w-40 text-right">
+   216	                    {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   217	                </div>
+   218	            </div>
+   219	        </>
+   220	    );
+   221	};
+   222	
+   223	export default PurchaseItemsTable;
 
 
 ===============================================
@@ -5986,7 +5997,7 @@
 ===============================================
 
      1	#!/bin/bash
-     2	echo "$(tree -I "node_modules|.git" -a)" > project_files.txt && find . -type f -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./src/output.css" -not -path "./package-lock.json" -exec bash -c 'echo -e "\n\n===============================================\n= File: {} \n===============================================\n" >> project_files.txt && nl -ba {} >> project_files.txt' \;
+     2	echo "$(tree -I "node_modules|.git" -a)" > project_files.txt && find . -type f -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./src/output.css" -not -path "./yarn.lock" -exec bash -c 'echo -e "\n\n===============================================\n= File: {} \n===============================================\n" >> project_files.txt && nl -ba {} >> project_files.txt' \;
 
 
 ===============================================
