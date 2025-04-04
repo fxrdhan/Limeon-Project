@@ -251,21 +251,25 @@ const ViewPurchase = () => {
                         <div className="w-1/2">
                             {/* Faktur Info */}
                             <div className="bg-gray-50 p-3 rounded text-sm">
-                                <div className="grid grid-cols-2 gap-2 mb-1">
-                                    <span className="text-right pr-2 font-bold">No. Faktur :</span>
+                                <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                                    <span className="text-left font-bold">No. Faktur</span>
+                                    <span className="px-2">:</span>
                                     <span>{purchase.invoice_number}</span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 mb-1">
-                                    <span className="text-right pr-2">Tanggal :</span>
+                                <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                                    <span className="text-left">Tanggal</span>
+                                    <span className="px-2">:</span>
                                     <span>{new Date(purchase.date).toLocaleDateString('id-ID')}</span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 mb-1">
-                                    <span className="text-right pr-2">Jatuh Tempo :</span>
+                                <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                                    <span className="text-left">Jatuh Tempo</span>
+                                    <span className="px-2">:</span>
                                     <span>{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</span>
                                 </div>
                                 {purchase.so_number && (
-                                    <div className="grid grid-cols-2 gap-2 mb-1">
-                                        <span className="text-right pr-2">No. SO :</span>
+                                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                                        <span className="text-left">No. SO</span>
+                                        <span className="px-2">:</span>
                                         <span>{purchase.so_number}</span>
                                     </div>
                                 )}
@@ -327,13 +331,15 @@ const ViewPurchase = () => {
 
                 <div className="flex justify-between mt-8">
                     <div className="max-w-md">
-                        <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
-                            <span className="text-right pr-2">Diperiksa oleh :</span>
+                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+                            <span className="text-left">Diperiksa oleh</span>
+                            <span className="px-2">:</span>
                             <span>{purchase.supplier?.contact_person || purchase.checked_by || '-'}</span>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
-                            <span className="text-right pr-2">Status Pembayaran :</span>
+                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+                            <span className="text-left">Status Pembayaran</span>
+                            <span className="px-2">:</span>
                             <span className={`${purchase.payment_status === 'paid' ? 'text-green-600' :
                                 purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
                             }`}>
@@ -342,48 +348,56 @@ const ViewPurchase = () => {
                             </span>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
-                            <span className="text-right pr-2">Metode Pembayaran :</span>
+                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+                            <span className="text-left">Metode Pembayaran</span>
+                            <span className="px-2">:</span>
                             <span>{purchase.payment_method === 'cash' ? 'Tunai' : purchase.payment_method === 'transfer' ? 'Transfer' : purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method}</span>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
-                            <span className="text-right pr-2">Catatan :</span>
+                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+                            <span className="text-left">Catatan</span>
+                            <span className="px-2">:</span>
                             <span>{purchase.notes || '-'}</span>
                         </div>
                         {purchase.is_vat_included && (
-                            <div className="grid grid-cols-2 gap-2 mt-2">
-                                <span className="text-right pr-2"></span>
+                            <div className="grid grid-cols-[1fr,auto,1fr] mt-2">
+                                <span className="text-left"></span>
+                                <span className="px-2"></span>
                                 <span className="text-sm">* PPN sudah termasuk dalam harga</span>
                             </div>
                         )}
                     </div>
                     
                     <div className="border p-4 min-w-[250px] text-sm">
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                            <span className="text-right pr-2">Subtotal :</span>
+                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                            <span className="text-left">Subtotal</span>
+                            <span className="px-2">:</span>
                             <span>{baseTotal.toLocaleString('id-ID')}</span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                            <span className="text-right pr-2">Diskon :</span>
+                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                            <span className="text-left">Diskon</span>
+                            <span className="px-2">:</span>
                             <span>-{discountTotal.toLocaleString('id-ID')}</span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                            <span className="text-right pr-2">Setelah Diskon :</span>
+                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                            <span className="text-left">Setelah Diskon</span>
+                            <span className="px-2">:</span>
                             <span>{afterDiscountTotal.toLocaleString('id-ID')}</span>
                         </div>
 
                         {!purchase.is_vat_included && (
-                            <div className="grid grid-cols-2 gap-2 mb-2">
-                                <span className="text-right pr-2">PPN :</span>
+                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                                <span className="text-left">PPN</span>
+                                <span className="px-2">:</span>
                                 <span>+{vatTotal.toLocaleString('id-ID')}</span>
                             </div>
                         )}
 
-                        <div className="border-t pt-2 grid grid-cols-2 gap-2 font-bold">
-                            <span className="text-right pr-2">TOTAL :</span>
+                        <div className="border-t pt-2 grid grid-cols-[1fr,auto,1fr] font-bold">
+                            <span className="text-left">TOTAL</span>
+                            <span className="px-2">:</span>
                             <span>{grandTotal.toLocaleString('id-ID')}</span>
                         </div>
                     </div>

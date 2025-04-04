@@ -904,6 +904,10 @@ video {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.grid-cols-\[1fr\2c auto\2c 1fr\] {
+  grid-template-columns: 1fr auto 1fr;
+}
+
 .flex-col {
   flex-direction: column;
 }
