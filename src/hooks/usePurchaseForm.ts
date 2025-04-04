@@ -38,6 +38,8 @@ export const usePurchaseForm = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [companyProfile, setCompanyProfile] = useState<any>(null);
     const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
     
     // Form data
@@ -58,8 +60,29 @@ export const usePurchaseForm = () => {
     
     useEffect(() => {
         fetchSuppliers();
+        fetchCompanyProfile();
     }, []);
     
+    const fetchCompanyProfile = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('company_profiles')
+                .select('*')
+                .single();
+                
+            if (error) {
+                console.error('Error fetching company profile:', error);
+                return;
+            }
+            
+            if (data) {
+                setCompanyProfile(data);
+            }
+        } catch (error) {
+            console.error('Error fetching company profile:', error);
+        }
+    };
+
     const fetchSuppliers = async () => {
         try {
             const { data, error } = await supabase
@@ -257,6 +280,8 @@ export const usePurchaseForm = () => {
                 .from('purchases')
                 .insert({
                     supplier_id: formData.supplier_id || null,
+                    customer_name: companyProfile?.name || null,
+                    customer_address: companyProfile?.address || null,
                     invoice_number: formData.invoice_number,
                     date: formData.date,
                     due_date: formData.due_date || null,

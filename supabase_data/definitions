@@ -352,3 +352,39 @@ create index IF not exists idx_e_invoice_items_item_id on public.e_invoice_items
 create trigger set_updated_at_e_invoice_items BEFORE
 update on e_invoice_items for EACH row
 execute FUNCTION update_updated_at_column ();
+
+==============================================================
+SQL Definition of company_profiles
+
+create table public.e_invoice_items (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  invoice_id uuid null,
+  sku character varying(50) null,
+  product_name character varying(200) not null,
+  quantity integer not null,
+  unit character varying(20) null,
+  batch_number character varying(50) null,
+  expiry_date character varying(10) null,
+  unit_price numeric(15, 2) not null,
+  discount numeric(15, 2) null default 0,
+  total_price numeric(15, 2) not null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  unit_id uuid null,
+  item_id uuid null,
+  constraint e_invoice_items_pkey primary key (id),
+  constraint e_invoice_items_invoice_id_fkey foreign KEY (invoice_id) references e_invoices (id) on delete CASCADE,
+  constraint e_invoice_items_item_id_fkey foreign KEY (item_id) references items (id) on delete set null,
+  constraint e_invoice_items_unit_id_fkey foreign KEY (unit_id) references item_units (id) on delete set null
+) TABLESPACE pg_default;
+
+create index IF not exists idx_e_invoice_items_unit_id on public.e_invoice_items using btree (unit_id) TABLESPACE pg_default;
+
+create index IF not exists idx_e_invoice_items_item_id on public.e_invoice_items using btree (item_id) TABLESPACE pg_default;
+
+create trigger before_e_invoice_item_insert BEFORE INSERT on e_invoice_items for EACH row
+execute FUNCTION process_e_invoice_item ();
+
+create trigger set_updated_at_e_invoice_items BEFORE
+update on e_invoice_items for EACH row
+execute FUNCTION update_updated_at_column ();

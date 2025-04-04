@@ -134,5 +134,21 @@
     "events": "BEFORE UPDATE",
     "orientation": "ROW",
     "enabled": true
+  },
+  {
+    "name": "before_e_invoice_item_insert",
+    "table": "e_invoice_items",
+    "function": "process_e_invoice_item",
+    "events": "BEFORE INSERT",
+    "orientation": "ROW",
+    "enabled": true
+  },
+  {
+    "name": "set_updated_at_e_invoice_items",
+    "table": "e_invoice_items",
+    "function": "update_updated_at_column",
+    "events": "BEFORE UPDATE",
+    "orientation": "ROW",
+    "enabled": true
   }
 ]
