@@ -1,0 +1,250 @@
+Name: convert_expiry_date
+Arg: month_year text
+Return: date
+Language: plpgsql
+
+DECLARE
+  month_num int;
+  year_num int;
+  last_day date;
+BEGIN
+  -- Parse bulan dan tahun dari string format "MM-YYYY"
+  month_num := split_part(month_year, '-', 1)::int;
+  year_num := split_part(month_year, '-', 2)::int;
+  
+  -- Dapatkan tanggal hari terakhir dari bulan tersebut
+  -- Caranya: ambil tanggal 1 bulan berikutnya, lalu kurangi 1 hari
+  IF month_num = 12 THEN
+    last_day := make_date(year_num + 1, 1, 1) - interval '1 day';
+  ELSE
+    last_day := make_date(year_num, month_num + 1, 1) - interval '1 day';
+  END IF;
+  
+  RETURN last_day;
+END;
+
+==============================================================
+Name: decrement
+Arg: x int
+Return: int
+Language: plpgsql
+
+BEGIN
+    RETURN - x;
+END;
+
+==============================================================
+Name: get_top_selling_medicines
+Arg: limit_count int
+Return: TABLE(name character varying, total_quantity bigint)
+Language: plpgsql
+
+BEGIN
+    RETURN QUERY
+    SELECT m.name, SUM(si.quantity) as total_quantity
+    FROM medicines m
+    JOIN sale_items si ON m.id = si.medicine_id
+    GROUP BY m.name
+    ORDER BY total_quantity DESC
+    LIMIT limit_count;
+END;
+
+==============================================================
+Name: process_e_invoice_item
+Arg: -
+Return: trigger
+Language: plpgsql
+
+BEGIN
+  -- Jika expiry_date dalam format MM-YYYY, konversi ke tanggal hari terakhir bulan
+  IF NEW.expiry_date ~ '^\d{2}-\d{4}$' THEN
+    -- Langsung ubah kolom expiry_date ke format tanggal PostgreSQL
+    NEW.expiry_date := convert_expiry_date(NEW.expiry_date);
+  END IF;
+  
+  RETURN NEW;
+END;
+
+==============================================================
+Name: process_e_invoice_to_purchase
+Arg: e_invoice_id uuid
+Return: uuid
+Language: plpgsql
+
+DECLARE
+  new_purchase_id uuid;
+  invoice_record record;
+BEGIN
+  -- Ambil data invoice
+  SELECT * INTO invoice_record FROM e_invoices WHERE id = e_invoice_id;
+  
+  -- Buat purchase record baru
+  INSERT INTO purchases (
+    supplier_id,
+    invoice_number,
+    date,
+    due_date,
+    total,
+    payment_status,
+    vat_percentage,
+    vat_amount,
+    notes
+  ) VALUES (
+    (SELECT id FROM suppliers WHERE name = invoice_record.supplier_name LIMIT 1),
+    invoice_record.invoice_number,
+    invoice_record.invoice_date,
+    invoice_record.due_date,
+    invoice_record.total_price,
+    'unpaid',
+    CASE WHEN invoice_record.total_price > 0 
+         THEN (invoice_record.ppn / invoice_record.total_price) * 100 
+         ELSE 11.0 END,
+    invoice_record.ppn,
+    'Diimpor dari faktur elektronik. Diperiksa oleh: ' || invoice_record.checked_by
+  ) RETURNING id INTO new_purchase_id;
+  
+  -- Salin item-item faktur ke purchase_items dengan konversi tanggal
+  INSERT INTO purchase_items (
+    purchase_id,
+    item_id,
+    quantity,
+    price,
+    subtotal,
+    batch_no,
+    expiry_date,
+    unit
+  )
+  SELECT 
+    new_purchase_id,
+    item_id,
+    quantity,
+    unit_price,
+    total_price,
+    batch_number,
+    -- Konversi format tanggal kedaluwarsa
+    CASE WHEN expiry_date ~ '^\d{2}-\d{4}$' 
+         THEN convert_expiry_date(expiry_date)
+         ELSE NULL END,
+    unit
+  FROM e_invoice_items
+  WHERE invoice_id = e_invoice_id;
+  
+  -- Update status e_invoice menjadi processed
+  UPDATE e_invoices 
+  SET is_processed = true, 
+      related_purchase_id = new_purchase_id,
+      updated_at = NOW()
+  WHERE id = e_invoice_id;
+  
+  RETURN new_purchase_id;
+END;
+
+==============================================================
+Name: process_purchase
+Args: p_supplier_id, uuid
+p_invoice_number, character
+p_date, date
+p_total, numeric
+p_payment_status, character
+p_payment_method, character
+p_notes, text
+p_so_number, character
+p_due_date, date
+p_vat_amount, numeric
+p_is_vat_included, boolean
+p_items, jsonb
+Return: uuid
+Language: plpgsql
+
+
+DECLARE
+  purchase_id UUID;
+BEGIN
+  -- Insert purchase record
+  INSERT INTO purchases (
+    supplier_id, invoice_number, date, total, payment_status, payment_method, 
+    notes, so_number, due_date, vat_amount, is_vat_included, created_at
+  ) VALUES (
+    p_supplier_id, p_invoice_number, p_date, p_total, p_payment_status, p_payment_method, 
+    p_notes, p_so_number, p_due_date, p_vat_amount, p_is_vat_included, NOW()
+  ) RETURNING id INTO purchase_id;
+  
+  -- Process items with batch info
+  FOR i IN 0..jsonb_array_length(p_items) - 1 LOOP
+    INSERT INTO purchase_items (
+      purchase_id, medicine_id, quantity, price, subtotal, 
+      batch_no, expiry_date, unit, created_at
+    ) VALUES (
+      purchase_id,
+      (p_items->i->>'item_id')::UUID,
+      (p_items->i->>'quantity')::INTEGER,
+      (p_items->i->>'price')::NUMERIC,
+      (p_items->i->>'subtotal')::NUMERIC,
+      p_items->i->>'batch_no',
+      (p_items->i->>'expiry_date')::DATE,
+      p_items->i->>'unit',
+      NOW()
+    );
+  END LOOP;
+  
+  RETURN purchase_id;
+END;
+
+==============================================================
+Name: sync_unit_conversions_to_items
+Arg: -
+Return: trigger
+Language: plpgsql
+
+DECLARE
+  conversions JSONB;
+BEGIN
+  -- Kumpulkan semua konversi untuk item yang terkait dengan operasi trigger saat ini
+  SELECT json_agg(
+    json_build_object(
+      'id', uc.id,
+      'unit_name', uc.unit_name,
+      'conversion_rate', uc.conversion_rate,
+      'base_price', uc.base_price,
+      'created_at', uc.created_at
+    )
+  )::jsonb INTO conversions
+  FROM unit_conversions uc
+  WHERE uc.item_id = 
+    CASE
+      WHEN TG_OP = 'DELETE' THEN OLD.item_id
+      ELSE NEW.item_id
+    END;
+
+  -- Gunakan array kosong jika tidak ada konversi
+  IF conversions IS NULL THEN
+    conversions := '[]'::jsonb;
+  END IF;
+
+  -- Perbarui kolom JSONB di tabel items
+  UPDATE items
+  SET unit_conversions = conversions
+  WHERE id = 
+    CASE
+      WHEN TG_OP = 'DELETE' THEN OLD.item_id
+      ELSE NEW.item_id
+    END;
+
+  -- Kembalikan nilai sesuai jenis operasi trigger
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  ELSE
+    RETURN NEW;
+  END IF;
+END;
+
+==============================================================
+Name: update_updated_at_column
+Arg: -
+Return: trigger
+Language: plpgsql
+
+BEGIN
+   NEW.updated_at = now();
+   RETURN NEW;
+END;

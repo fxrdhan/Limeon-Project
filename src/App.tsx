@@ -14,6 +14,7 @@ const TypeList = lazy(() => import('./pages/master-data/TypeList'));
 const AddItem = lazy(() => import('./pages/master-data/AddItem'));
 const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
 const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
+const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
 // Tambahkan halaman lain sesuai kebutuhan
 
 function App() {
@@ -84,6 +85,14 @@ function App() {
               element={
                 <Suspense fallback={<div>Loading...</div>}>
                   <CreatePurchase />
+                </Suspense>
+              } 
+            />
+            <Route 
+              path="view/:id" 
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ViewPurchase />
                 </Suspense>
               } 
             />
