@@ -14,6 +14,7 @@ const TypeList = lazy(() => import('./pages/master-data/TypeList'));
 const AddItem = lazy(() => import('./pages/master-data/AddItem'));
 const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
 const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
+const Profile = lazy(() => import('./pages/settings/Profile'));
 const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
 // Tambahkan halaman lain sesuai kebutuhan
 
@@ -100,6 +101,15 @@ function App() {
             <Route path="price-history" element={<div>Riwayat Harga Beli (Coming Soon)</div>} />
           </Route>
           
+          <Route path="settings">
+            <Route path="profile" element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <Profile />
+              </Suspense>
+            } />
+            <Route path="users" element={<div>Pengguna (Coming Soon)</div>} />
+            <Route path="app" element={<div>Pengaturan Aplikasi (Coming Soon)</div>} />
+          </Route>
           {/* Tambahkan route untuk modul lain */}
         </Route>
       </Routes>

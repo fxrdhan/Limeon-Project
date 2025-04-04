@@ -211,7 +211,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                 </div>
 
                 {/* Menu Items */}
-                <nav className="flex-grow overflow-y-auto py-2 scrollbar-thin">
+                <nav className="flex-grow overflow-y-auto py-2 scrollbar-hidden">
                     {menuItems.map((item) => (
                         <div key={item.name} className="mb-1" onMouseEnter={() => handleMouseEnter(item.name)} onMouseLeave={handleMouseLeave}>
                             {/* Menu Item Button */}
