@@ -28,6 +28,9 @@ interface PurchaseData {
         address: string | null;
         contact_person: string | null;
     };
+    customer_name?: string;
+    customer_address?: string;
+    checked_by?: string;
 }
 
 interface PurchaseItem {
@@ -226,38 +229,53 @@ const ViewPurchase = () => {
                     <h1 className="text-2xl font-bold text-center mb-2">FAKTUR PEMBELIAN</h1>
                     <div className="border-b-2 border-gray-400 mb-4"></div>
 
-                    <div className="flex flex-col gap-4">
-                        <div className="text-left">
-                            <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Tidak ada supplier'}</h2>
-                            <div className="text-sm text-gray-600">
-                            <p>{purchase.supplier?.name || 'Tidak ada supplier'}</p>
-                            <p className="text-sm">{purchase.supplier?.address || ''}</p>
-                            <p className="text-sm">Kontak: {purchase.supplier?.contact_person || '-'}</p>
+                    <div className="flex justify-between gap-4">
+                        <div className="w-1/2">
+                            {/* Supplier Info */}
+                            <div className="text-left mb-4">
+                                <h2 className="font-bold text-lg text-gray-800">Supplier:</h2>
+                                <div className="text-sm text-gray-600">
+                                    <p className="font-semibold">{purchase.supplier?.name || 'Tidak ada supplier'}</p>
+                                    <p>{purchase.supplier?.address || ''}</p>
+                                    <p>Kontak: {purchase.supplier?.contact_person || '-'}</p>
+                                </div>
+                            </div>
+                            
+                            {/* Customer Info */}
+                            <div className="text-left">
+                                <h2 className="font-bold text-lg text-gray-800">Customer:</h2>
+                                <div className="text-sm text-gray-600">
+                                    <p className="font-semibold">{purchase.customer_name || 'Apotek & Klinik'}</p>
+                                    <p>{purchase.customer_address || 'Alamat belum tersedia'}</p>
+                                </div>
                             </div>
                         </div>
-
-                        <table className="w-full border-collapse border mb-2">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    <th className="border p-2 text-sm">No. Faktur</th>
-                                    <th className="border p-2 text-sm">Tanggal</th>
-                                    <th className="border p-2 text-sm">Jatuh Tempo</th>
-                                    {purchase.so_number && (
-                                        <th className="border p-2 text-sm">No. SO</th>
-                                    )}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td className="border p-2 text-center text-sm">{purchase.invoice_number}</td>
-                                    <td className="border p-2 text-center text-sm">{new Date(purchase.date).toLocaleDateString('id-ID')}</td>
-                                    <td className="border p-2 text-center text-sm">{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</td>
-                                    {purchase.so_number && (
-                                        <td className="border p-2 text-center text-sm">{purchase.so_number}</td>
-                                    )}
-                                </tr>
-                            </tbody>
-                        </table>
+                        
+                        <div className="w-1/2">
+                            {/* Faktur Info */}
+                            <table className="w-full border-collapse border">
+                                <thead className="bg-gray-100">
+                                    <tr>
+                                        <th className="border p-2 text-sm">No. Faktur</th>
+                                        <th className="border p-2 text-sm">Tanggal</th>
+                                        <th className="border p-2 text-sm">Jatuh Tempo</th>
+                                        {purchase.so_number && (
+                                            <th className="border p-2 text-sm">No. SO</th>
+                                        )}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td className="border p-2 text-center text-sm">{purchase.invoice_number}</td>
+                                        <td className="border p-2 text-center text-sm">{new Date(purchase.date).toLocaleDateString('id-ID')}</td>
+                                        <td className="border p-2 text-center text-sm">{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</td>
+                                        {purchase.so_number && (
+                                            <td className="border p-2 text-center text-sm">{purchase.so_number}</td>
+                                        )}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -316,6 +334,11 @@ const ViewPurchase = () => {
                     <div className="max-w-md">
                         <h3 className="font-bold mb-2">Catatan:</h3>
                         <p className="text-sm">{purchase.notes || '-'}</p>
+
+                        <div className="mt-4">
+                            <p className="font-bold mb-1">Diperiksa oleh:</p>
+                            <p className="text-sm">{purchase.checked_by || '-'}</p>
+                        </div>
 
                         <div className="mt-4">
                             <p className="font-bold">Status Pembayaran:
