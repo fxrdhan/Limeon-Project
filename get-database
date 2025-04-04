@@ -24,6 +24,7 @@ TABLES=(
   "users"
   "e_invoices"
   "e_invoice_items"
+  "company_profiles"
 )
 
 # Buat objek JSON utama

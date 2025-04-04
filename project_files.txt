@@ -62,12 +62,15 @@
 │   │   │   ├── CreatePurchase.tsx
 │   │   │   ├── PurchaseList.tsx
 │   │   │   └── ViewPurchase.tsx
-│   │   └── sales
-│   │       └── CreateSale.tsx
+│   │   ├── sales
+│   │   │   └── CreateSale.tsx
+│   │   └── settings
+│   │       └── Profile.tsx
 │   ├── store
 │   │   └── authStore.ts
 │   └── vite-env.d.ts
 ├── supabase_data
+│   ├── company_profiles.json
 │   ├── database_export
 │   ├── database_export.json
 │   ├── database_funcions
@@ -96,7 +99,7 @@
 ├── vite.config.ts
 └── yarn.lock
 
-19 directories, 78 files
+20 directories, 80 files
 
 
 ===============================================
@@ -230,50 +233,51 @@
     24	  "users"
     25	  "e_invoices"
     26	  "e_invoice_items"
-    27	)
-    28	
-    29	# Buat objek JSON utama
-    30	echo "{" > "$OUTPUT_DIR/database_export.json"
-    31	echo "  \"export_date\": \"$(date -u '+%Y-%m-%dT%H:%M:%SZ')\"," >> "$OUTPUT_DIR/database_export.json"
-    32	echo "  \"tables\": {" >> "$OUTPUT_DIR/database_export.json"
-    33	
-    34	# Loop melalui setiap tabel
-    35	TABLE_COUNT=${#TABLES[@]}
-    36	CURRENT_TABLE=0
-    37	
-    38	for TABLE in "${TABLES[@]}"; do
-    39	  CURRENT_TABLE=$((CURRENT_TABLE + 1))
-    40	  echo "Mengunduh data tabel: $TABLE"
-    41	  
-    42	  # Ambil data dari tabel
-    43	  RESPONSE=$(curl "$SUPABASE_URL/rest/v1/$TABLE?select=*" \
-    44	    -H "apikey: $SUPABASE_KEY" \
-    45	    -H "Authorization: Bearer $SUPABASE_KEY" \
-    46	    -s)
-    47	    
-    48	  # Simpan ke file JSON individual
-    49	  echo "$RESPONSE" | jq . > "$OUTPUT_DIR/$TABLE.json"
-    50	  
-    51	  # Tambahkan ke file JSON gabungan
-    52	  echo "    \"$TABLE\": $(echo "$RESPONSE" | jq .)" >> "$OUTPUT_DIR/database_export.json"
-    53	  
-    54	  # Tambahkan koma jika bukan tabel terakhir
-    55	  if [ $CURRENT_TABLE -lt $TABLE_COUNT ]; then
-    56	    echo "," >> "$OUTPUT_DIR/database_export.json"
-    57	  fi
-    58	  
-    59	  echo "✓ Data $TABLE berhasil diproses"
-    60	done
-    61	
-    62	# Tutup objek JSON
-    63	echo "  }" >> "$OUTPUT_DIR/database_export.json"
-    64	echo "}" >> "$OUTPUT_DIR/database_export.json"
-    65	
-    66	# Format JSON akhir agar lebih rapi
-    67	jq . "$OUTPUT_DIR/database_export.json" > "$OUTPUT_DIR/temp.json" && mv "$OUTPUT_DIR/temp.json" "$OUTPUT_DIR/database_export.json"
-    68	
-    69	echo "Semua data telah diunduh ke direktori $OUTPUT_DIR"
-    70	echo "Ekspor gabungan disimpan di $OUTPUT_DIR/database_export.json"
+    27	  "company_profiles"
+    28	)
+    29	
+    30	# Buat objek JSON utama
+    31	echo "{" > "$OUTPUT_DIR/database_export.json"
+    32	echo "  \"export_date\": \"$(date -u '+%Y-%m-%dT%H:%M:%SZ')\"," >> "$OUTPUT_DIR/database_export.json"
+    33	echo "  \"tables\": {" >> "$OUTPUT_DIR/database_export.json"
+    34	
+    35	# Loop melalui setiap tabel
+    36	TABLE_COUNT=${#TABLES[@]}
+    37	CURRENT_TABLE=0
+    38	
+    39	for TABLE in "${TABLES[@]}"; do
+    40	  CURRENT_TABLE=$((CURRENT_TABLE + 1))
+    41	  echo "Mengunduh data tabel: $TABLE"
+    42	  
+    43	  # Ambil data dari tabel
+    44	  RESPONSE=$(curl "$SUPABASE_URL/rest/v1/$TABLE?select=*" \
+    45	    -H "apikey: $SUPABASE_KEY" \
+    46	    -H "Authorization: Bearer $SUPABASE_KEY" \
+    47	    -s)
+    48	    
+    49	  # Simpan ke file JSON individual
+    50	  echo "$RESPONSE" | jq . > "$OUTPUT_DIR/$TABLE.json"
+    51	  
+    52	  # Tambahkan ke file JSON gabungan
+    53	  echo "    \"$TABLE\": $(echo "$RESPONSE" | jq .)" >> "$OUTPUT_DIR/database_export.json"
+    54	  
+    55	  # Tambahkan koma jika bukan tabel terakhir
+    56	  if [ $CURRENT_TABLE -lt $TABLE_COUNT ]; then
+    57	    echo "," >> "$OUTPUT_DIR/database_export.json"
+    58	  fi
+    59	  
+    60	  echo "✓ Data $TABLE berhasil diproses"
+    61	done
+    62	
+    63	# Tutup objek JSON
+    64	echo "  }" >> "$OUTPUT_DIR/database_export.json"
+    65	echo "}" >> "$OUTPUT_DIR/database_export.json"
+    66	
+    67	# Format JSON akhir agar lebih rapi
+    68	jq . "$OUTPUT_DIR/database_export.json" > "$OUTPUT_DIR/temp.json" && mv "$OUTPUT_DIR/temp.json" "$OUTPUT_DIR/database_export.json"
+    69	
+    70	echo "Semua data telah diunduh ke direktori $OUTPUT_DIR"
+    71	echo "Ekspor gabungan disimpan di $OUTPUT_DIR/database_export.json"
 
 
 ===============================================
@@ -505,100 +509,110 @@
     14	const AddItem = lazy(() => import('./pages/master-data/AddItem'));
     15	const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
     16	const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
-    17	const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
-    18	// Tambahkan halaman lain sesuai kebutuhan
-    19	
-    20	function App() {
-    21	  const { session, initialize } = useAuthStore();
-    22	  
-    23	  // Inisialisasi auth state saat aplikasi dimuat
-    24	  useEffect(() => {
-    25	    initialize();
-    26	  }, [initialize]);
-    27	  
-    28	
-    29	  return (
-    30	    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-    31	      <Routes>
-    32	        <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
-    33	        
-    34	        <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
-    35	          <Route 
-    36	            index 
-    37	            element={
-    38	            <div className="text-gray-800">
-    39	              <Suspense fallback={<div>Loading...</div>}>
-    40	                <Dashboard />
-    41	              </Suspense>
-    42	            </div>
-    43	          } />
-    44	          
-    45	          <Route path="master-data">
-    46	            <Route path="items" element={
-    47	              <Suspense fallback={<div>Loading...</div>}>
-    48	                <ItemList />
-    49	              </Suspense>
-    50	            } />
-    51	            <Route path="items/add" element={
-    52	              <Suspense fallback={<div>Loading...</div>}>
-    53	                <AddItem />
-    54	              </Suspense>
-    55	            } />
-    56	            <Route path="categories" element={
-    57	              <Suspense fallback={<div>Loading...</div>}>
-    58	                <CategoryList />
-    59	              </Suspense>
-    60	            } />
-    61	            <Route path="types" element={
-    62	              <Suspense fallback={<div>Loading...</div>}>
-    63	                <TypeList />
-    64	              </Suspense>
-    65	            } />
-    66	            <Route path="units" element={
-    67	              <Suspense fallback={<div>Loading...</div>}>
-    68	                <UnitList />
-    69	              </Suspense>
-    70	            } />
-    71	            {/* Tambahkan route lain sesuai kebutuhan */}
-    72	          </Route>
-    73	          
-    74	          <Route path="purchases">
-    75	            <Route 
-    76	              index 
-    77	              element={
-    78	                <Suspense fallback={<div>Loading...</div>}>
-    79	                  <PurchaseList />
-    80	                </Suspense>
-    81	              } 
-    82	            />
-    83	            <Route 
-    84	              path="create" 
-    85	              element={
-    86	                <Suspense fallback={<div>Loading...</div>}>
-    87	                  <CreatePurchase />
-    88	                </Suspense>
-    89	              } 
-    90	            />
-    91	            <Route 
-    92	              path="view/:id" 
-    93	              element={
-    94	                <Suspense fallback={<div>Loading...</div>}>
-    95	                  <ViewPurchase />
-    96	                </Suspense>
-    97	              } 
-    98	            />
-    99	            <Route path="orders" element={<div>Daftar Pesanan Beli (Coming Soon)</div>} />
-   100	            <Route path="price-history" element={<div>Riwayat Harga Beli (Coming Soon)</div>} />
-   101	          </Route>
-   102	          
-   103	          {/* Tambahkan route untuk modul lain */}
-   104	        </Route>
-   105	      </Routes>
-   106	    </Router>
-   107	  );
-   108	}
-   109	
-   110	export default App;
+    17	const Profile = lazy(() => import('./pages/settings/Profile'));
+    18	const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
+    19	// Tambahkan halaman lain sesuai kebutuhan
+    20	
+    21	function App() {
+    22	  const { session, initialize } = useAuthStore();
+    23	  
+    24	  // Inisialisasi auth state saat aplikasi dimuat
+    25	  useEffect(() => {
+    26	    initialize();
+    27	  }, [initialize]);
+    28	  
+    29	
+    30	  return (
+    31	    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    32	      <Routes>
+    33	        <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
+    34	        
+    35	        <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
+    36	          <Route 
+    37	            index 
+    38	            element={
+    39	            <div className="text-gray-800">
+    40	              <Suspense fallback={<div>Loading...</div>}>
+    41	                <Dashboard />
+    42	              </Suspense>
+    43	            </div>
+    44	          } />
+    45	          
+    46	          <Route path="master-data">
+    47	            <Route path="items" element={
+    48	              <Suspense fallback={<div>Loading...</div>}>
+    49	                <ItemList />
+    50	              </Suspense>
+    51	            } />
+    52	            <Route path="items/add" element={
+    53	              <Suspense fallback={<div>Loading...</div>}>
+    54	                <AddItem />
+    55	              </Suspense>
+    56	            } />
+    57	            <Route path="categories" element={
+    58	              <Suspense fallback={<div>Loading...</div>}>
+    59	                <CategoryList />
+    60	              </Suspense>
+    61	            } />
+    62	            <Route path="types" element={
+    63	              <Suspense fallback={<div>Loading...</div>}>
+    64	                <TypeList />
+    65	              </Suspense>
+    66	            } />
+    67	            <Route path="units" element={
+    68	              <Suspense fallback={<div>Loading...</div>}>
+    69	                <UnitList />
+    70	              </Suspense>
+    71	            } />
+    72	            {/* Tambahkan route lain sesuai kebutuhan */}
+    73	          </Route>
+    74	          
+    75	          <Route path="purchases">
+    76	            <Route 
+    77	              index 
+    78	              element={
+    79	                <Suspense fallback={<div>Loading...</div>}>
+    80	                  <PurchaseList />
+    81	                </Suspense>
+    82	              } 
+    83	            />
+    84	            <Route 
+    85	              path="create" 
+    86	              element={
+    87	                <Suspense fallback={<div>Loading...</div>}>
+    88	                  <CreatePurchase />
+    89	                </Suspense>
+    90	              } 
+    91	            />
+    92	            <Route 
+    93	              path="view/:id" 
+    94	              element={
+    95	                <Suspense fallback={<div>Loading...</div>}>
+    96	                  <ViewPurchase />
+    97	                </Suspense>
+    98	              } 
+    99	            />
+   100	            <Route path="orders" element={<div>Daftar Pesanan Beli (Coming Soon)</div>} />
+   101	            <Route path="price-history" element={<div>Riwayat Harga Beli (Coming Soon)</div>} />
+   102	          </Route>
+   103	          
+   104	          <Route path="settings">
+   105	            <Route path="profile" element={
+   106	              <Suspense fallback={<div>Loading...</div>}>
+   107	                <Profile />
+   108	              </Suspense>
+   109	            } />
+   110	            <Route path="users" element={<div>Pengguna (Coming Soon)</div>} />
+   111	            <Route path="app" element={<div>Pengaturan Aplikasi (Coming Soon)</div>} />
+   112	          </Route>
+   113	          {/* Tambahkan route untuk modul lain */}
+   114	        </Route>
+   115	      </Routes>
+   116	    </Router>
+   117	  );
+   118	}
+   119	
+   120	export default App;
 
 
 ===============================================
@@ -913,7 +927,7 @@
    211	                </div>
    212	
    213	                {/* Menu Items */}
-   214	                <nav className="flex-grow overflow-y-auto py-2 scrollbar-thin">
+   214	                <nav className="flex-grow overflow-y-auto py-2 scrollbar-hidden">
    215	                    {menuItems.map((item) => (
    216	                        <div key={item.name} className="mb-1" onMouseEnter={() => handleMouseEnter(item.name)} onMouseLeave={handleMouseLeave}>
    217	                            {/* Menu Item Button */}
@@ -6287,6 +6301,228 @@
 
 
 ===============================================
+= File: ./src/pages/settings/Profile.tsx 
+===============================================
+
+     1	import { useEffect, useState } from 'react';
+     2	import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+     3	import { supabase } from '../../lib/supabase';
+     4	import { FaEdit, FaCheck } from 'react-icons/fa';
+     5	import { Button } from '../../components/ui/Button';
+     6	
+     7	interface CompanyProfile {
+     8	    id: string;
+     9	    name: string;
+    10	    address: string;
+    11	    phone: string | null;
+    12	    email: string | null;
+    13	    website: string | null;
+    14	    tax_id: string | null;
+    15	    pharmacist_name: string | null;
+    16	    pharmacist_license: string | null;
+    17	}
+    18	
+    19	const Profile = () => {
+    20	    const [profile, setProfile] = useState<CompanyProfile | null>(null);
+    21	    const [loading, setLoading] = useState(true);
+    22	    const [editMode, setEditMode] = useState<Record<string, boolean>>({});
+    23	    const [editValues, setEditValues] = useState<Record<string, string>>({});
+    24	
+    25	    useEffect(() => {
+    26	        fetchProfile();
+    27	    }, []);
+    28	
+    29	    const fetchProfile = async () => {
+    30	        try {
+    31	            setLoading(true);
+    32	            const { data, error } = await supabase
+    33	                .from('company_profiles')
+    34	                .select('*')
+    35	                .single();
+    36	
+    37	            if (error) {
+    38	                console.error('Error fetching profile:', error);
+    39	                if (error.code === 'PGRST116') {
+    40	                    // No data found, we'll handle this case in the UI
+    41	                } else {
+    42	                    throw error;
+    43	                }
+    44	            }
+    45	
+    46	            if (data) {
+    47	                setProfile(data);
+    48	                // Initialize edit values
+    49	                const initialValues: Record<string, string> = {};
+    50	                Object.entries(data).forEach(([key, value]) => {
+    51	                    if (typeof value === 'string') {
+    52	                        initialValues[key] = value;
+    53	                    } else if (value === null) {
+    54	                        initialValues[key] = '';
+    55	                    }
+    56	                });
+    57	                setEditValues(initialValues);
+    58	            }
+    59	        } catch (error) {
+    60	            console.error('Error:', error);
+    61	        } finally {
+    62	            setLoading(false);
+    63	        }
+    64	    };
+    65	
+    66	    const toggleEdit = (field: string) => {
+    67	        if (editMode[field]) {
+    68	            // Save changes
+    69	            saveField(field, editValues[field] || '');
+    70	        }
+    71	        setEditMode((prev) => ({
+    72	            ...prev,
+    73	            [field]: !prev[field],
+    74	        }));
+    75	    };
+    76	
+    77	    const handleChange = (field: string, value: string) => {
+    78	        setEditValues((prev) => ({
+    79	            ...prev,
+    80	            [field]: value,
+    81	        }));
+    82	    };
+    83	
+    84	    const saveField = async (field: string, value: string) => {
+    85	        if (!profile) return;
+    86	
+    87	        try {
+    88	            const { error } = await supabase
+    89	                .from('company_profiles')
+    90	                .update({ [field]: value })
+    91	                .eq('id', profile.id);
+    92	
+    93	            if (error) {
+    94	                console.error('Error updating profile:', error);
+    95	                return;
+    96	            }
+    97	
+    98	            // Update local state
+    99	            setProfile((prev) => prev ? {
+   100	                ...prev,
+   101	                [field]: value,
+   102	            } : null);
+   103	        } catch (error) {
+   104	            console.error('Error saving field:', error);
+   105	        }
+   106	    };
+   107	
+   108	    const ProfileField = ({
+   109	        label,
+   110	        field,
+   111	        value
+   112	    }: {
+   113	        label: string;
+   114	        field: string;
+   115	        value: string | null;
+   116	    }) => {
+   117	        return (
+   118	            <div className="mb-4">
+   119	                <div className="flex justify-between items-center mb-1">
+   120	                    <label className="text-sm font-medium text-gray-600">{label}</label>
+   121	                    <Button
+   122	                        variant="text"
+   123	                        size="sm"
+   124	                        onClick={() => toggleEdit(field)}
+   125	                        className="p-1 text-gray-500 hover:text-gray-700"
+   126	                    >
+   127	                        {editMode[field] ? <FaCheck className="text-green-500" /> : <FaEdit />}
+   128	                    </Button>
+   129	                </div>
+   130	                {editMode[field] ? (
+   131	                    <input
+   132	                        type="text"
+   133	                        value={editValues[field] || ''}
+   134	                        onChange={(e) => handleChange(field, e.target.value)}
+   135	                        className="w-full p-2 border rounded-md"
+   136	                    />
+   137	                ) : (
+   138	                    <div className="p-2 bg-gray-50 rounded-md">
+   139	                        {value || <span className="text-gray-400 italic">Tidak ada data</span>}
+   140	                    </div>
+   141	                )}
+   142	            </div>
+   143	        );
+   144	    };
+   145	
+   146	    if (loading) {
+   147	        return <div className="text-center p-6">Memuat data...</div>;
+   148	    }
+   149	
+   150	    return (
+   151	        <Card>
+   152	            <CardHeader>
+   153	                <CardTitle>Profil Perusahaan</CardTitle>
+   154	            </CardHeader>
+   155	            <CardContent>
+   156	                {!profile ? (
+   157	                    <div className="text-center">
+   158	                        <p className="mb-4">Belum ada data profil. Tambahkan profil perusahaan Anda.</p>
+   159	                        <Button onClick={createProfile}>Tambah Profil</Button>
+   160	                    </div>
+   161	                ) : (
+   162	                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   163	                        <div>
+   164	                            <ProfileField label="Nama Perusahaan" field="name" value={profile.name} />
+   165	                            <ProfileField label="Alamat" field="address" value={profile.address} />
+   166	                            <ProfileField label="Nomor Telepon" field="phone" value={profile.phone} />
+   167	                            <ProfileField label="Email" field="email" value={profile.email} />
+   168	                        </div>
+   169	                        <div>
+   170	                            <ProfileField label="Website" field="website" value={profile.website} />
+   171	                            <ProfileField label="NPWP" field="tax_id" value={profile.tax_id} />
+   172	                            <ProfileField label="Nama Apoteker" field="pharmacist_name" value={profile.pharmacist_name} />
+   173	                            <ProfileField label="No. STRA/SIPA" field="pharmacist_license" value={profile.pharmacist_license} />
+   174	                        </div>
+   175	                    </div>
+   176	                )}
+   177	            </CardContent>
+   178	        </Card>
+   179	    );
+   180	
+   181	    async function createProfile() {
+   182	        try {
+   183	            const { data, error } = await supabase
+   184	                .from('company_profiles')
+   185	                .insert({
+   186	                    name: 'Apotek Mekar Sehat Sukaraya Karangbahagia',
+   187	                    address: 'PURI NIRWANA RESIDENCE BLOK EJ-01, Desa/Kel. Sukaraya, Kec. Karangbahagia, Kab. Bekasi, 17530 Indonesia',
+   188	                })
+   189	                .select()
+   190	                .single();
+   191	
+   192	            if (error) {
+   193	                console.error('Error creating profile:', error);
+   194	                return;
+   195	            }
+   196	
+   197	            if (data) {
+   198	                setProfile(data);
+   199	                // Inisialisasi nilai edit dengan data yang ada
+   200	                const initialValues: Record<string, string> = {};
+   201	                Object.entries(data).forEach(([key, value]) => {
+   202	                    if (typeof value === 'string') {
+   203	                        initialValues[key] = value;
+   204	                    } else if (value === null) {
+   205	                        initialValues[key] = '';
+   206	                    }
+   207	                });
+   208	                setEditValues(initialValues);
+   209	            }
+   210	        } catch (error) {
+   211	            console.error('Error:', error);
+   212	        }
+   213	    }
+   214	};
+   215	
+   216	export default Profile;
+
+
+===============================================
 = File: ./src/store/authStore.ts 
 ===============================================
 
@@ -7172,8 +7408,24 @@
    134	    "events": "BEFORE UPDATE",
    135	    "orientation": "ROW",
    136	    "enabled": true
-   137	  }
-   138	]
+   137	  },
+   138	  {
+   139	    "name": "before_e_invoice_item_insert",
+   140	    "table": "e_invoice_items",
+   141	    "function": "process_e_invoice_item",
+   142	    "events": "BEFORE INSERT",
+   143	    "orientation": "ROW",
+   144	    "enabled": true
+   145	  },
+   146	  {
+   147	    "name": "set_updated_at_e_invoice_items",
+   148	    "table": "e_invoice_items",
+   149	    "function": "update_updated_at_column",
+   150	    "events": "BEFORE UPDATE",
+   151	    "orientation": "ROW",
+   152	    "enabled": true
+   153	  }
+   154	]
 
 
 ===============================================
@@ -7534,6 +7786,42 @@
    352	create trigger set_updated_at_e_invoice_items BEFORE
    353	update on e_invoice_items for EACH row
    354	execute FUNCTION update_updated_at_column ();
+   355	
+   356	==============================================================
+   357	SQL Definition of company_profiles
+   358	
+   359	create table public.e_invoice_items (
+   360	  id uuid not null default extensions.uuid_generate_v4 (),
+   361	  invoice_id uuid null,
+   362	  sku character varying(50) null,
+   363	  product_name character varying(200) not null,
+   364	  quantity integer not null,
+   365	  unit character varying(20) null,
+   366	  batch_number character varying(50) null,
+   367	  expiry_date character varying(10) null,
+   368	  unit_price numeric(15, 2) not null,
+   369	  discount numeric(15, 2) null default 0,
+   370	  total_price numeric(15, 2) not null,
+   371	  created_at timestamp with time zone null default now(),
+   372	  updated_at timestamp with time zone null default now(),
+   373	  unit_id uuid null,
+   374	  item_id uuid null,
+   375	  constraint e_invoice_items_pkey primary key (id),
+   376	  constraint e_invoice_items_invoice_id_fkey foreign KEY (invoice_id) references e_invoices (id) on delete CASCADE,
+   377	  constraint e_invoice_items_item_id_fkey foreign KEY (item_id) references items (id) on delete set null,
+   378	  constraint e_invoice_items_unit_id_fkey foreign KEY (unit_id) references item_units (id) on delete set null
+   379	) TABLESPACE pg_default;
+   380	
+   381	create index IF not exists idx_e_invoice_items_unit_id on public.e_invoice_items using btree (unit_id) TABLESPACE pg_default;
+   382	
+   383	create index IF not exists idx_e_invoice_items_item_id on public.e_invoice_items using btree (item_id) TABLESPACE pg_default;
+   384	
+   385	create trigger before_e_invoice_item_insert BEFORE INSERT on e_invoice_items for EACH row
+   386	execute FUNCTION process_e_invoice_item ();
+   387	
+   388	create trigger set_updated_at_e_invoice_items BEFORE
+   389	update on e_invoice_items for EACH row
+   390	execute FUNCTION update_updated_at_column ();
 
 
 ===============================================

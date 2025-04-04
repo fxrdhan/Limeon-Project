@@ -238,7 +238,7 @@ const ViewPurchase = () => {
                             <div className="text-left">
                                 <h2 className="font-bold text-lg text-gray-800">Customer:</h2>
                                 <div className="text-sm text-gray-600">
-                                    <p>{purchase.customer_name || 'Apotek & Klinik'}</p>
+                                    <p>{purchase.customer_name || 'Data belum tersedia'}</p>
                                     <p>{purchase.customer_address || 'Alamat belum tersedia'}</p>
                                 </div>
                             </div>
