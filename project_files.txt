@@ -5492,374 +5492,373 @@
      5	import { Card } from "../../components/ui/Card";
      6	import { Button } from "../../components/ui/Button";
      7	import { Loading } from "../../components/ui/Loading";
-     8	import { formatRupiah } from "../../lib/formatters";
-     9	import { FaArrowLeft, FaPrint, FaFilePdf } from "react-icons/fa";
-    10	import html2canvas from "html2canvas";
-    11	import jsPDF from "jspdf";
-    12	
-    13	interface PurchaseData {
-    14	    id: string;
-    15	    invoice_number: string;
-    16	    date: string;
-    17	    due_date: string | null;
-    18	    so_number: string | null;
-    19	    total: number;
-    20	    payment_status: string;
-    21	    payment_method: string;
-    22	    vat_percentage: number;
-    23	    is_vat_included: boolean;
-    24	    vat_amount: number;
-    25	    notes: string | null;
-    26	    supplier: {
-    27	        name: string;
-    28	        address: string | null;
-    29	        contact_person: string | null;
-    30	    };
-    31	    customer_name?: string;
-    32	    customer_address?: string;
-    33	    checked_by?: string;
-    34	}
-    35	
-    36	interface PurchaseItem {
-    37	    id: string;
-    38	    item_id: string;
-    39	    item: {
-    40	        name: string;
-    41	        code: string;
-    42	    };
-    43	    quantity: number;
-    44	    price: number;
-    45	    discount: number;
-    46	    subtotal: number;
-    47	    vat_percentage: number;
-    48	    unit: string;
-    49	    batch_no: string | null;
-    50	    expiry_date: string | null;
-    51	}
-    52	
-    53	const ViewPurchase = () => {
-    54	    const { id } = useParams<{ id: string }>();
-    55	    const navigate = useNavigate();
-    56	    const printRef = useRef<HTMLDivElement>(null);
-    57	
-    58	    const [purchase, setPurchase] = useState<PurchaseData | null>(null);
-    59	    const [items, setItems] = useState<PurchaseItem[]>([]);
-    60	    const [loading, setLoading] = useState(true);
-    61	
-    62	    useEffect(() => {
-    63	        if (id) {
-    64	            fetchPurchaseData(id);
-    65	        }
-    66	    }, [id]);
-    67	
-    68	    const fetchPurchaseData = async (purchaseId: string) => {
-    69	        try {
-    70	            setLoading(true);
-    71	
-    72	            // Fetch purchase data with supplier information
-    73	            const { data: purchaseData, error: purchaseError } = await supabase
-    74	                .from("purchases")
-    75	                .select(`
-    76	          *,
-    77	          supplier:suppliers(
-    78	            name,
-    79	            address,
-    80	            contact_person
-    81	          )
-    82	        `)
-    83	                .eq("id", purchaseId)
-    84	                .single();
-    85	
-    86	            if (purchaseError) throw purchaseError;
-    87	
-    88	            // Fetch purchase items with item information
-    89	            const { data: itemsData, error: itemsError } = await supabase
-    90	                .from("purchase_items")
-    91	                .select(`
-    92	          *,
-    93	          item:items(
-    94	            name,
-    95	            code
-    96	          )
-    97	        `)
-    98	                .eq("purchase_id", purchaseId)
-    99	                .order("id");
-   100	
-   101	            if (itemsError) throw itemsError;
-   102	
-   103	            setPurchase(purchaseData);
-   104	            setItems(itemsData || []);
-   105	        } catch (error) {
-   106	            console.error("Error fetching purchase data:", error);
-   107	        } finally {
-   108	            setLoading(false);
-   109	        }
-   110	    };
-   111	
-   112	    // Calculate subtotals
-   113	    const calculateSubtotals = () => {
-   114	        // Base prices total (before discounts and VAT)
-   115	        const baseTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-   116	
-   117	        // Total discounts
-   118	        const discountTotal = items.reduce((sum, item) => {
-   119	            const itemTotal = item.price * item.quantity;
-   120	            const discountAmount = (itemTotal * item.discount) / 100;
-   121	            return sum + discountAmount;
-   122	        }, 0);
-   123	
-   124	        // Total after discounts
-   125	        const afterDiscountTotal = baseTotal - discountTotal;
-   126	
-   127	        // Total VAT
-   128	        const vatTotal = purchase?.is_vat_included
-   129	            ? 0 // If VAT included, it's already in the item prices
-   130	            : items.reduce((sum, item) => {
-   131	                const itemTotal = item.price * item.quantity;
-   132	                const afterDiscount = itemTotal - (itemTotal * item.discount / 100);
-   133	                const vatAmount = afterDiscount * (item.vat_percentage / 100);
-   134	                return sum + vatAmount;
-   135	            }, 0);
-   136	
-   137	        // Grand total
-   138	        const grandTotal = purchase?.is_vat_included
-   139	            ? afterDiscountTotal // If VAT included, no need to add VAT
-   140	            : afterDiscountTotal + vatTotal;
-   141	
-   142	        return {
-   143	            baseTotal,
-   144	            discountTotal,
-   145	            afterDiscountTotal,
-   146	            vatTotal,
-   147	            grandTotal
-   148	        };
-   149	    };
-   150	
-   151	    const handlePrint = () => {
-   152	        if (printRef.current) {
-   153	            window.print();
-   154	        }
-   155	    };
-   156	
-   157	    const handleGeneratePDF = async () => {
-   158	        if (!printRef.current) return;
-   159	
-   160	        const element = printRef.current;
-   161	        const canvas = await html2canvas(element, {
-   162	            scale: 2,
-   163	            useCORS: true,
-   164	            logging: false
-   165	        });
-   166	
-   167	        const imgData = canvas.toDataURL('image/png');
-   168	
-   169	        // F4 dimensions: 215 x 330 mm
-   170	        const pdf = new jsPDF({
-   171	            orientation: 'portrait',
-   172	            unit: 'mm',
-   173	            format: [215, 330]
-   174	        });
-   175	
-   176	        const imgWidth = 215;
-   177	        const imgHeight = canvas.height * imgWidth / canvas.width;
-   178	
-   179	        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-   180	        pdf.save(`purchase-${purchase?.invoice_number}.pdf`);
-   181	    };
-   182	
-   183	    if (loading) {
-   184	        return <Loading message="Memuat data pembelian..." />;
-   185	    }
-   186	
-   187	    if (!purchase) {
-   188	        return (
-   189	            <div className="text-center p-6">
-   190	                <p className="text-red-500 mb-4">Data pembelian tidak ditemukan</p>
-   191	                <Button onClick={() => navigate("/purchases")}>
-   192	                    <FaArrowLeft className="mr-2" /> Kembali ke Daftar Pembelian
-   193	                </Button>
-   194	            </div>
-   195	        );
-   196	    }
-   197	
-   198	    const {
-   199	        baseTotal,
-   200	        discountTotal,
-   201	        afterDiscountTotal,
-   202	        vatTotal,
-   203	        grandTotal
-   204	    } = calculateSubtotals();
-   205	
-   206	    return (
-   207	        <Card>
-   208	            <div className="flex justify-between items-center mb-4 print:hidden">
-   209	                <Button onClick={() => navigate("/purchases")} variant="outline">
-   210	                    <FaArrowLeft className="mr-2" /> Kembali
-   211	                </Button>
-   212	
-   213	                <div className="flex space-x-3">
-   214	                    <Button onClick={handlePrint} variant="secondary">
-   215	                        <FaPrint className="mr-2" /> Cetak
-   216	                    </Button>
-   217	                    <Button onClick={handleGeneratePDF}>
-   218	                        <FaFilePdf className="mr-2" /> Download PDF
-   219	                    </Button>
-   220	                </div>
-   221	            </div>
-   222	
-   223	            <div
-   224	                ref={printRef}
-   225	                className="bg-white p-6 shadow print:shadow-none"
-   226	                style={{ width: "215mm", minHeight: "330mm", margin: "0 auto" }}
-   227	            >
-   228	                <div className="mb-8">
-   229	                    <h1 className="text-2xl font-bold text-center mb-2">FAKTUR PEMBELIAN</h1>
-   230	                    <div className="border-b-2 border-gray-400 mb-4"></div>
-   231	
-   232	                    <div className="flex justify-between gap-4">
-   233	                        <div className="w-1/2">
-   234	                            {/* Supplier Info */}
-   235	                            <div className="text-left mb-4">
-   236	                                <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Supplier'}</h2>
-   237	                                <div className="text-sm text-gray-600">
-   238	                                    <p>{purchase.supplier?.address || ''}</p>
-   239	                                </div>
-   240	                            </div>
-   241	                            
-   242	                            {/* Customer Info */}
-   243	                            <div className="text-left">
-   244	                                <h2 className="font-bold text-lg text-gray-800">Customer:</h2>
-   245	                                <div className="text-sm text-gray-600">
-   246	                                    <p>{purchase.customer_name || 'Apotek & Klinik'}</p>
-   247	                                    <p>{purchase.customer_address || 'Alamat belum tersedia'}</p>
-   248	                                </div>
-   249	                            </div>
-   250	                        </div>
-   251	                        
-   252	                        <div className="w-1/2">
-   253	                            {/* Faktur Info */}
-   254	                            <div className="bg-gray-50 p-3 rounded">
-   255	                                <p className="text-sm mb-1"><strong>No. Faktur:</strong> {purchase.invoice_number}</p>
-   256	                                <p className="text-sm mb-1"><strong>Tanggal:</strong> {new Date(purchase.date).toLocaleDateString('id-ID')}</p>
-   257	                                <p className="text-sm mb-1"><strong>Jatuh Tempo:</strong> {purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</p>
-   258	                                {purchase.so_number && (
-   259	                                    <p className="text-sm mb-1"><strong>No. SO:</strong> {purchase.so_number}</p>
-   260	                                )}
-   261	                            </div>
-   262	                        </div>
-   263	                    </div>
-   264	                </div>
-   265	
-   266	                <div className="mb-8">
-   267	                    <table className="w-full border-collapse">
-   268	                        <thead>
-   269	                            <tr className="bg-gray-100 text-xs">
-   270	                                <th className="border p-1 text-left">No.</th>
-   271	                                <th className="border p-1 text-left">Kode</th>
-   272	                                <th className="border p-1 text-left">Nama Item</th>
-   273	                                <th className="border p-1 text-center">Batch</th>
-   274	                                <th className="border p-1 text-center">Exp</th>
-   275	                                <th className="border p-1 text-center">Qty</th>
-   276	                                <th className="border p-1 text-center">Satuan</th>
-   277	                                <th className="border p-1 text-right">Harga</th>
-   278	                                <th className="border p-1 text-right">Disc %</th>
-   279	                                {!purchase.is_vat_included && (
-   280	                                    <th className="border p-1 text-right">PPN %</th>
-   281	                                )}
-   282	                                <th className="border p-1 text-right">Subtotal</th>
-   283	                            </tr>
-   284	                        </thead>
-   285	                        <tbody>
-   286	                            {items.length === 0 ? (
-   287	                                <tr>
-   288	                                    <td colSpan={purchase.is_vat_included ? 10 : 11} className="border p-2 text-center text-gray-500 text-xs">
-   289	                                        Tidak ada item
-   290	                                    </td>
-   291	                                </tr>
-   292	                            ) : (
-   293	                                items.map((item, index) => (
-   294	                                    <tr key={item.id} className="hover:bg-gray-50 text-xs">
-   295	                                        <td className="border p-1 text-center">{index + 1}</td>
-   296	                                        <td className="border p-1">{item.item?.code || '-'}</td>
-   297	                                        <td className="border p-1">{item.item?.name || 'Item tidak ditemukan'}</td>
-   298	                                        <td className="border p-1 text-center">{item.batch_no || '-'}</td>
-   299	                                        <td className="border p-1 text-center">
-   300	                                            {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit' }) : '-'}
-   301	                                        </td>
-   302	                                        <td className="border p-1 text-center">{item.quantity}</td>
-   303	                                        <td className="border p-1 text-center">{item.unit}</td>
-   304	                                        <td className="border p-1 text-right">{formatRupiah(item.price)}</td>
-   305	                                        <td className="border p-1 text-right">{item.discount > 0 ? `${item.discount}%` : '-'}</td>
-   306	                                        {!purchase.is_vat_included && (
-   307	                                            <td className="border p-1 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}%` : '-'}</td>
-   308	                                        )}
-   309	                                        <td className="border p-1 text-right">{formatRupiah(item.subtotal)}</td>
-   310	                                    </tr>
-   311	                                ))
-   312	                            )}
-   313	                        </tbody>
-   314	                    </table>
-   315	                </div>
-   316	
-   317	                <div className="flex justify-between">
-   318	                    <div className="max-w-md">
-   319	                        <p className="text-sm mb-2"><strong>Diperiksa oleh:</strong> {purchase.supplier?.contact_person || purchase.checked_by || '-'}</p>
-   320	                        
-   321	                        <p className="text-sm mb-2"><strong>Status Pembayaran: </strong>
-   322	                            <span className={`${purchase.payment_status === 'paid' ? 'text-green-600' :
-   323	                                    purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
-   324	                                }`}>
-   325	                                {purchase.payment_status === 'paid' ? 'Lunas' :
-   326	                                    purchase.payment_status === 'partial' ? 'Sebagian' : 'Belum Dibayar'}
-   327	                            </span>
-   328	                        </p>
-   329	                        <p className="text-sm mb-2"><strong>Metode Pembayaran:</strong> {
-   330	                            purchase.payment_method === 'cash' ? 'Tunai' :
-   331	                                purchase.payment_method === 'transfer' ? 'Transfer' :
-   332	                                    purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method
-   333	                        }</p>
-   334	                        
-   335	                        <p className="text-sm mb-2"><strong>Catatan:</strong> {purchase.notes || '-'}</p>
-   336	                        {purchase.is_vat_included && (
-   337	                            <p className="text-sm mt-2">* PPN sudah termasuk dalam harga</p>
-   338	                        )}
-   339	                    </div>
-   340	
-   341	                    <div className="border p-4 min-w-[250px]">
-   342	                        <div className="flex justify-between mb-2">
-   343	                            <span>Subtotal:</span>
-   344	                            <span>{formatRupiah(baseTotal)}</span>
-   345	                        </div>
-   346	
-   347	                        <div className="flex justify-between mb-2">
-   348	                            <span>Diskon:</span>
-   349	                            <span>({formatRupiah(discountTotal)})</span>
-   350	                        </div>
-   351	
-   352	                        <div className="flex justify-between mb-2">
-   353	                            <span>Setelah Diskon:</span>
-   354	                            <span>{formatRupiah(afterDiscountTotal)}</span>
-   355	                        </div>
-   356	
-   357	                        {!purchase.is_vat_included && (
-   358	                            <div className="flex justify-between mb-2">
-   359	                                <span>PPN ({purchase.vat_percentage}%):</span>
-   360	                                <span>{formatRupiah(vatTotal)}</span>
-   361	                            </div>
-   362	                        )}
-   363	
-   364	                        <div className="border-t pt-2 flex justify-between font-bold">
-   365	                            <span>TOTAL:</span>
-   366	                            <span>{formatRupiah(grandTotal)}</span>
-   367	                        </div>
-   368	                    </div>
-   369	                </div>
-   370	            </div>
-   371	        </Card>
-   372	    );
-   373	};
-   374	
-   375	export default ViewPurchase;
+     8	import { FaArrowLeft, FaPrint, FaFilePdf } from "react-icons/fa";
+     9	import html2canvas from "html2canvas";
+    10	import jsPDF from "jspdf";
+    11	
+    12	interface PurchaseData {
+    13	    id: string;
+    14	    invoice_number: string;
+    15	    date: string;
+    16	    due_date: string | null;
+    17	    so_number: string | null;
+    18	    total: number;
+    19	    payment_status: string;
+    20	    payment_method: string;
+    21	    vat_percentage: number;
+    22	    is_vat_included: boolean;
+    23	    vat_amount: number;
+    24	    notes: string | null;
+    25	    supplier: {
+    26	        name: string;
+    27	        address: string | null;
+    28	        contact_person: string | null;
+    29	    };
+    30	    customer_name?: string;
+    31	    customer_address?: string;
+    32	    checked_by?: string;
+    33	}
+    34	
+    35	interface PurchaseItem {
+    36	    id: string;
+    37	    item_id: string;
+    38	    item: {
+    39	        name: string;
+    40	        code: string;
+    41	    };
+    42	    quantity: number;
+    43	    price: number;
+    44	    discount: number;
+    45	    subtotal: number;
+    46	    vat_percentage: number;
+    47	    unit: string;
+    48	    batch_no: string | null;
+    49	    expiry_date: string | null;
+    50	}
+    51	
+    52	const ViewPurchase = () => {
+    53	    const { id } = useParams<{ id: string }>();
+    54	    const navigate = useNavigate();
+    55	    const printRef = useRef<HTMLDivElement>(null);
+    56	
+    57	    const [purchase, setPurchase] = useState<PurchaseData | null>(null);
+    58	    const [items, setItems] = useState<PurchaseItem[]>([]);
+    59	    const [loading, setLoading] = useState(true);
+    60	
+    61	    useEffect(() => {
+    62	        if (id) {
+    63	            fetchPurchaseData(id);
+    64	        }
+    65	    }, [id]);
+    66	
+    67	    const fetchPurchaseData = async (purchaseId: string) => {
+    68	        try {
+    69	            setLoading(true);
+    70	
+    71	            // Fetch purchase data with supplier information
+    72	            const { data: purchaseData, error: purchaseError } = await supabase
+    73	                .from("purchases")
+    74	                .select(`
+    75	          *,
+    76	          supplier:suppliers(
+    77	            name,
+    78	            address,
+    79	            contact_person
+    80	          )
+    81	        `)
+    82	                .eq("id", purchaseId)
+    83	                .single();
+    84	
+    85	            if (purchaseError) throw purchaseError;
+    86	
+    87	            // Fetch purchase items with item information
+    88	            const { data: itemsData, error: itemsError } = await supabase
+    89	                .from("purchase_items")
+    90	                .select(`
+    91	          *,
+    92	          item:items(
+    93	            name,
+    94	            code
+    95	          )
+    96	        `)
+    97	                .eq("purchase_id", purchaseId)
+    98	                .order("id");
+    99	
+   100	            if (itemsError) throw itemsError;
+   101	
+   102	            setPurchase(purchaseData);
+   103	            setItems(itemsData || []);
+   104	        } catch (error) {
+   105	            console.error("Error fetching purchase data:", error);
+   106	        } finally {
+   107	            setLoading(false);
+   108	        }
+   109	    };
+   110	
+   111	    // Calculate subtotals
+   112	    const calculateSubtotals = () => {
+   113	        // Base prices total (before discounts and VAT)
+   114	        const baseTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+   115	
+   116	        // Total discounts
+   117	        const discountTotal = items.reduce((sum, item) => {
+   118	            const itemTotal = item.price * item.quantity;
+   119	            const discountAmount = (itemTotal * item.discount) / 100;
+   120	            return sum + discountAmount;
+   121	        }, 0);
+   122	
+   123	        // Total after discounts
+   124	        const afterDiscountTotal = baseTotal - discountTotal;
+   125	
+   126	        // Total VAT
+   127	        const vatTotal = purchase?.is_vat_included
+   128	            ? 0 // If VAT included, it's already in the item prices
+   129	            : items.reduce((sum, item) => {
+   130	                const itemTotal = item.price * item.quantity;
+   131	                const afterDiscount = itemTotal - (itemTotal * item.discount / 100);
+   132	                const vatAmount = afterDiscount * (item.vat_percentage / 100);
+   133	                return sum + vatAmount;
+   134	            }, 0);
+   135	
+   136	        // Grand total
+   137	        const grandTotal = purchase?.is_vat_included
+   138	            ? afterDiscountTotal // If VAT included, no need to add VAT
+   139	            : afterDiscountTotal + vatTotal;
+   140	
+   141	        return {
+   142	            baseTotal,
+   143	            discountTotal,
+   144	            afterDiscountTotal,
+   145	            vatTotal,
+   146	            grandTotal
+   147	        };
+   148	    };
+   149	
+   150	    const handlePrint = () => {
+   151	        if (printRef.current) {
+   152	            window.print();
+   153	        }
+   154	    };
+   155	
+   156	    const handleGeneratePDF = async () => {
+   157	        if (!printRef.current) return;
+   158	
+   159	        const element = printRef.current;
+   160	        const canvas = await html2canvas(element, {
+   161	            scale: 2,
+   162	            useCORS: true,
+   163	            logging: false
+   164	        });
+   165	
+   166	        const imgData = canvas.toDataURL('image/png');
+   167	
+   168	        // F4 dimensions: 215 x 330 mm
+   169	        const pdf = new jsPDF({
+   170	            orientation: 'portrait',
+   171	            unit: 'mm',
+   172	            format: [215, 330]
+   173	        });
+   174	
+   175	        const imgWidth = 215;
+   176	        const imgHeight = canvas.height * imgWidth / canvas.width;
+   177	
+   178	        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+   179	        pdf.save(`purchase-${purchase?.invoice_number}.pdf`);
+   180	    };
+   181	
+   182	    if (loading) {
+   183	        return <Loading message="Memuat data pembelian..." />;
+   184	    }
+   185	
+   186	    if (!purchase) {
+   187	        return (
+   188	            <div className="text-center p-6">
+   189	                <p className="text-red-500 mb-4">Data pembelian tidak ditemukan</p>
+   190	                <Button onClick={() => navigate("/purchases")}>
+   191	                    <FaArrowLeft className="mr-2" /> Kembali ke Daftar Pembelian
+   192	                </Button>
+   193	            </div>
+   194	        );
+   195	    }
+   196	
+   197	    const {
+   198	        baseTotal,
+   199	        discountTotal,
+   200	        afterDiscountTotal,
+   201	        vatTotal,
+   202	        grandTotal
+   203	    } = calculateSubtotals();
+   204	
+   205	    return (
+   206	        <Card>
+   207	            <div className="flex justify-between items-center mb-4 print:hidden">
+   208	                <Button onClick={() => navigate("/purchases")} variant="outline">
+   209	                    <FaArrowLeft className="mr-2" /> Kembali
+   210	                </Button>
+   211	
+   212	                <div className="flex space-x-3">
+   213	                    <Button onClick={handlePrint} variant="secondary">
+   214	                        <FaPrint className="mr-2" /> Cetak
+   215	                    </Button>
+   216	                    <Button onClick={handleGeneratePDF}>
+   217	                        <FaFilePdf className="mr-2" /> Download PDF
+   218	                    </Button>
+   219	                </div>
+   220	            </div>
+   221	
+   222	            <div
+   223	                ref={printRef}
+   224	                className="bg-white p-6 shadow print:shadow-none"
+   225	                style={{ width: "215mm", minHeight: "330mm", margin: "0 auto" }}
+   226	            >
+   227	                <div className="mb-8">
+   228	                    <h1 className="text-2xl font-bold text-center mb-2">FAKTUR PEMBELIAN</h1>
+   229	                    <div className="border-b-2 border-gray-400 mb-4"></div>
+   230	
+   231	                    <div className="flex justify-between gap-4">
+   232	                        <div className="w-1/2">
+   233	                            {/* Supplier Info */}
+   234	                            <div className="text-left mb-4">
+   235	                                <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Supplier'}</h2>
+   236	                                <div className="text-sm text-gray-600">
+   237	                                    <p>{purchase.supplier?.address || ''}</p>
+   238	                                </div>
+   239	                            </div>
+   240	                            
+   241	                            {/* Customer Info */}
+   242	                            <div className="text-left">
+   243	                                <h2 className="font-bold text-lg text-gray-800">Customer:</h2>
+   244	                                <div className="text-sm text-gray-600">
+   245	                                    <p>{purchase.customer_name || 'Apotek & Klinik'}</p>
+   246	                                    <p>{purchase.customer_address || 'Alamat belum tersedia'}</p>
+   247	                                </div>
+   248	                            </div>
+   249	                        </div>
+   250	                        
+   251	                        <div className="w-1/2">
+   252	                            {/* Faktur Info */}
+   253	                            <div className="bg-gray-50 p-3 rounded">
+   254	                                <p className="text-sm mb-1"><strong>No. Faktur:</strong> {purchase.invoice_number}</p>
+   255	                                <p className="text-sm mb-1"><strong>Tanggal:</strong> {new Date(purchase.date).toLocaleDateString('id-ID')}</p>
+   256	                                <p className="text-sm mb-1"><strong>Jatuh Tempo:</strong> {purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</p>
+   257	                                {purchase.so_number && (
+   258	                                    <p className="text-sm mb-1"><strong>No. SO:</strong> {purchase.so_number}</p>
+   259	                                )}
+   260	                            </div>
+   261	                        </div>
+   262	                    </div>
+   263	                </div>
+   264	
+   265	                <div className="mb-8">
+   266	                    <table className="w-full border-collapse">
+   267	                        <thead>
+   268	                            <tr className="bg-gray-100 text-xs">
+   269	                                <th className="border p-1 text-left">No.</th>
+   270	                                <th className="border p-1 text-left">Kode</th>
+   271	                                <th className="border p-1 text-left">Nama Item</th>
+   272	                                <th className="border p-1 text-center">Batch</th>
+   273	                                <th className="border p-1 text-center">Exp</th>
+   274	                                <th className="border p-1 text-center">Qty</th>
+   275	                                <th className="border p-1 text-center">Satuan</th>
+   276	                                <th className="border p-1 text-right">Harga</th>
+   277	                                <th className="border p-1 text-right">Disc</th>
+   278	                                {!purchase.is_vat_included && (
+   279	                                    <th className="border p-1 text-right">PPN</th>
+   280	                                )}
+   281	                                <th className="border p-1 text-right">Subtotal</th>
+   282	                            </tr>
+   283	                        </thead>
+   284	                        <tbody>
+   285	                            {items.length === 0 ? (
+   286	                                <tr>
+   287	                                    <td colSpan={purchase.is_vat_included ? 10 : 11} className="border p-2 text-center text-gray-500 text-xs">
+   288	                                        Tidak ada item
+   289	                                    </td>
+   290	                                </tr>
+   291	                            ) : (
+   292	                                items.map((item, index) => (
+   293	                                    <tr key={item.id} className="hover:bg-gray-50 text-xs">
+   294	                                        <td className="border p-1 text-center">{index + 1}</td>
+   295	                                        <td className="border p-1">{item.item?.code || '-'}</td>
+   296	                                        <td className="border p-1">{item.item?.name || 'Item tidak ditemukan'}</td>
+   297	                                        <td className="border p-1 text-center">{item.batch_no || '-'}</td>
+   298	                                        <td className="border p-1 text-center">
+   299	                                            {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}
+   300	                                        </td>
+   301	                                        <td className="border p-1 text-center">{item.quantity}</td>
+   302	                                        <td className="border p-1 text-center">{item.unit}</td>
+   303	                                        <td className="border p-1 text-right">{item.price.toLocaleString('id-ID')}</td>
+   304	                                        <td className="border p-1 text-right">{item.discount > 0 ? `${item.discount}` : '-'}</td>
+   305	                                        {!purchase.is_vat_included && (
+   306	                                            <td className="border p-1 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}` : '-'}</td>
+   307	                                        )}
+   308	                                        <td className="border p-1 text-right">{item.subtotal.toLocaleString('id-ID')}</td>
+   309	                                    </tr>
+   310	                                ))
+   311	                            )}
+   312	                        </tbody>
+   313	                    </table>
+   314	                </div>
+   315	
+   316	                <div className="flex justify-between mt-8">
+   317	                    <div className="max-w-md">
+   318	                        <p className="text-sm mb-2"><strong>Diperiksa oleh:</strong> {purchase.supplier?.contact_person || purchase.checked_by || '-'}</p>
+   319	                        
+   320	                        <p className="text-sm mb-2"><strong>Status Pembayaran: </strong>
+   321	                            <span className={`${purchase.payment_status === 'paid' ? 'text-green-600' :
+   322	                                    purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
+   323	                                }`}>
+   324	                                {purchase.payment_status === 'paid' ? 'Lunas' :
+   325	                                    purchase.payment_status === 'partial' ? 'Sebagian' : 'Belum Dibayar'}
+   326	                            </span>
+   327	                        </p>
+   328	                        <p className="text-sm mb-2"><strong>Metode Pembayaran:</strong> {
+   329	                            purchase.payment_method === 'cash' ? 'Tunai' :
+   330	                                purchase.payment_method === 'transfer' ? 'Transfer' :
+   331	                                    purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method
+   332	                        }</p>
+   333	                        
+   334	                        <p className="text-sm mb-2"><strong>Catatan:</strong> {purchase.notes || '-'}</p>
+   335	                        {purchase.is_vat_included && (
+   336	                            <p className="text-sm mt-2">* PPN sudah termasuk dalam harga</p>
+   337	                        )}
+   338	                    </div>
+   339	
+   340	                    <div className="border p-4 min-w-[250px] text-sm">
+   341	                        <div className="grid grid-cols-2 gap-2 mb-2">
+   342	                            <span className="text-right pr-2">Subtotal :</span>
+   343	                            <span>{baseTotal.toLocaleString('id-ID')}</span>
+   344	                        </div>
+   345	
+   346	                        <div className="grid grid-cols-2 gap-2 mb-2">
+   347	                            <span className="text-right pr-2">Diskon :</span>
+   348	                            <span>-{discountTotal.toLocaleString('id-ID')}</span>
+   349	                        </div>
+   350	
+   351	                        <div className="grid grid-cols-2 gap-2 mb-2">
+   352	                            <span className="text-right pr-2">Setelah Diskon :</span>
+   353	                            <span>{afterDiscountTotal.toLocaleString('id-ID')}</span>
+   354	                        </div>
+   355	
+   356	                        {!purchase.is_vat_included && (
+   357	                            <div className="grid grid-cols-2 gap-2 mb-2">
+   358	                                <span className="text-right pr-2">PPN :</span>
+   359	                                <span>+{vatTotal.toLocaleString('id-ID')}</span>
+   360	                            </div>
+   361	                        )}
+   362	
+   363	                        <div className="border-t pt-2 grid grid-cols-2 gap-2 font-bold">
+   364	                            <span className="text-right pr-2">TOTAL :</span>
+   365	                            <span>{grandTotal.toLocaleString('id-ID')}</span>
+   366	                        </div>
+   367	                    </div>
+   368	                </div>
+   369	            </div>
+   370	        </Card>
+   371	    );
+   372	};
+   373	
+   374	export default ViewPurchase;
 
 
 ===============================================
