@@ -5,7 +5,6 @@ import { supabase } from "../../lib/supabase";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Loading } from "../../components/ui/Loading";
-import { formatRupiah } from "../../lib/formatters";
 import { FaArrowLeft, FaPrint, FaFilePdf } from "react-icons/fa";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -275,9 +274,9 @@ const ViewPurchase = () => {
                                 <th className="border p-1 text-center">Qty</th>
                                 <th className="border p-1 text-center">Satuan</th>
                                 <th className="border p-1 text-right">Harga</th>
-                                <th className="border p-1 text-right">Disc %</th>
+                                <th className="border p-1 text-right">Disc</th>
                                 {!purchase.is_vat_included && (
-                                    <th className="border p-1 text-right">PPN %</th>
+                                    <th className="border p-1 text-right">PPN</th>
                                 )}
                                 <th className="border p-1 text-right">Subtotal</th>
                             </tr>
@@ -297,16 +296,16 @@ const ViewPurchase = () => {
                                         <td className="border p-1">{item.item?.name || 'Item tidak ditemukan'}</td>
                                         <td className="border p-1 text-center">{item.batch_no || '-'}</td>
                                         <td className="border p-1 text-center">
-                                            {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit' }) : '-'}
+                                            {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}
                                         </td>
                                         <td className="border p-1 text-center">{item.quantity}</td>
                                         <td className="border p-1 text-center">{item.unit}</td>
-                                        <td className="border p-1 text-right">{formatRupiah(item.price)}</td>
-                                        <td className="border p-1 text-right">{item.discount > 0 ? `${item.discount}%` : '-'}</td>
+                                        <td className="border p-1 text-right">{item.price.toLocaleString('id-ID')}</td>
+                                        <td className="border p-1 text-right">{item.discount > 0 ? `${item.discount}` : '-'}</td>
                                         {!purchase.is_vat_included && (
-                                            <td className="border p-1 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}%` : '-'}</td>
+                                            <td className="border p-1 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}` : '-'}</td>
                                         )}
-                                        <td className="border p-1 text-right">{formatRupiah(item.subtotal)}</td>
+                                        <td className="border p-1 text-right">{item.subtotal.toLocaleString('id-ID')}</td>
                                     </tr>
                                 ))
                             )}
@@ -314,7 +313,7 @@ const ViewPurchase = () => {
                     </table>
                 </div>
 
-                <div className="flex justify-between">
+                <div className="flex justify-between mt-8">
                     <div className="max-w-md">
                         <p className="text-sm mb-2"><strong>Diperiksa oleh:</strong> {purchase.supplier?.contact_person || purchase.checked_by || '-'}</p>
                         
@@ -338,32 +337,32 @@ const ViewPurchase = () => {
                         )}
                     </div>
 
-                    <div className="border p-4 min-w-[250px]">
-                        <div className="flex justify-between mb-2">
-                            <span>Subtotal:</span>
-                            <span>{formatRupiah(baseTotal)}</span>
+                    <div className="border p-4 min-w-[250px] text-sm">
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                            <span className="text-right pr-2">Subtotal :</span>
+                            <span>{baseTotal.toLocaleString('id-ID')}</span>
                         </div>
 
-                        <div className="flex justify-between mb-2">
-                            <span>Diskon:</span>
-                            <span>({formatRupiah(discountTotal)})</span>
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                            <span className="text-right pr-2">Diskon :</span>
+                            <span>-{discountTotal.toLocaleString('id-ID')}</span>
                         </div>
 
-                        <div className="flex justify-between mb-2">
-                            <span>Setelah Diskon:</span>
-                            <span>{formatRupiah(afterDiscountTotal)}</span>
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                            <span className="text-right pr-2">Setelah Diskon :</span>
+                            <span>{afterDiscountTotal.toLocaleString('id-ID')}</span>
                         </div>
 
                         {!purchase.is_vat_included && (
-                            <div className="flex justify-between mb-2">
-                                <span>PPN ({purchase.vat_percentage}%):</span>
-                                <span>{formatRupiah(vatTotal)}</span>
+                            <div className="grid grid-cols-2 gap-2 mb-2">
+                                <span className="text-right pr-2">PPN :</span>
+                                <span>+{vatTotal.toLocaleString('id-ID')}</span>
                             </div>
                         )}
 
-                        <div className="border-t pt-2 flex justify-between font-bold">
-                            <span>TOTAL:</span>
-                            <span>{formatRupiah(grandTotal)}</span>
+                        <div className="border-t pt-2 grid grid-cols-2 gap-2 font-bold">
+                            <span className="text-right pr-2">TOTAL :</span>
+                            <span>{grandTotal.toLocaleString('id-ID')}</span>
                         </div>
                     </div>
                 </div>
