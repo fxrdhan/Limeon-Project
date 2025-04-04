@@ -1,2 +1,53 @@
 #!/bin/bash
-echo "$(tree -I "node_modules|.git" -a)" > project_files.txt && find . -type f -not -path "./node_modules/*" -not -path "./.git/*" -not -path "./src/output.css" -not -path "./yarn.lock" -exec bash -c 'echo -e "\n\n===============================================\n= File: {} \n===============================================\n" >> project_files.txt && nl -ba {} >> project_files.txt' \;
+
+# Fungsi untuk menampilkan pesan verbose
+verbose() {
+    echo "[INFO] $1"
+}
+
+# Nama file output dan pengaturan
+OUTPUT_FILE="project_files.txt"
+EXCLUDE_DIRS="node_modules|.git"
+EXCLUDE_FILES=("./src/output.css" "./yarn.lock" "./image.png")
+verbose "Output ke: $OUTPUT_FILE"
+verbose "Mengecualikan direktori: $EXCLUDE_DIRS"
+verbose "Mengecualikan file: ${EXCLUDE_FILES[*]}"
+verbose "Mengecualikan file JSON dari folder ./supabase_data"
+
+# Hapus file output jika sudah ada
+[ -f "$OUTPUT_FILE" ] && rm "$OUTPUT_FILE" && verbose "Menghapus file output lama"
+
+# Buat struktur direktori
+verbose "Membuat struktur direktori..."
+tree -I "$EXCLUDE_DIRS" -a > "$OUTPUT_FILE" && verbose "Struktur direktori telah disimpan"
+
+# Buat find command
+FIND_CMD="find . -type f -not -path \"./node_modules/*\" -not -path \"./.git/*\" -not -path \"./project_files.txt\""
+for EXCL in "${EXCLUDE_FILES[@]}"; do
+    FIND_CMD+=" -not -path \"$EXCL\""
+done
+
+# Tambahkan pengecualian untuk file JSON di folder supabase_data
+FIND_CMD+=" -not -path \"./supabase_data/*.json\""
+
+# Temukan dan hitung file
+verbose "Menghitung file..."
+TOTAL_FILES=$(eval "$FIND_CMD" | wc -l)
+verbose "Total file yang akan diproses: $TOTAL_FILES"
+
+# Inisialisasi counter
+COUNT=0
+
+# Proses semua file
+verbose "Mulai memproses file..."
+eval "$FIND_CMD" | sort | while IFS= read -r FILE; do
+    ((COUNT++))
+    verbose "[$COUNT/$TOTAL_FILES] Memproses: $FILE"
+    
+    echo -e "\n\n===============================================" >> "$OUTPUT_FILE"
+    echo -e "= File: $FILE " >> "$OUTPUT_FILE"
+    echo -e "===============================================\n" >> "$OUTPUT_FILE"
+    nl -ba "$FILE" >> "$OUTPUT_FILE"
+done
+
+verbose "Proses selesai. Hasil tersimpan di $OUTPUT_FILE"

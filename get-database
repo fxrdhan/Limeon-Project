@@ -7,11 +7,7 @@ SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 OUTPUT_DIR="supabase_data"
 mkdir -p "$OUTPUT_DIR"
 
-# File output gabungan
-OUTPUT_FILE="$OUTPUT_DIR/database_export.txt"
-> "$OUTPUT_FILE"
-
-# Daftar tabel yang diketahui (diperbarui sesuai gambar)
+# Daftar tabel yang diketahui
 TABLES=(
   "doctors"
   "item_categories"
@@ -26,13 +22,24 @@ TABLES=(
   "suppliers"
   "unit_conversions"
   "users"
+  "e_invoices"
+  "e_invoice_items"
 )
 
+# Buat objek JSON utama
+echo "{" > "$OUTPUT_DIR/database_export.json"
+echo "  \"export_date\": \"$(date -u '+%Y-%m-%dT%H:%M:%SZ')\"," >> "$OUTPUT_DIR/database_export.json"
+echo "  \"tables\": {" >> "$OUTPUT_DIR/database_export.json"
+
 # Loop melalui setiap tabel
+TABLE_COUNT=${#TABLES[@]}
+CURRENT_TABLE=0
+
 for TABLE in "${TABLES[@]}"; do
+  CURRENT_TABLE=$((CURRENT_TABLE + 1))
   echo "Mengunduh data tabel: $TABLE"
   
-  # Ambil data dari tabel dan simpan ke file JSON
+  # Ambil data dari tabel
   RESPONSE=$(curl "$SUPABASE_URL/rest/v1/$TABLE?select=*" \
     -H "apikey: $SUPABASE_KEY" \
     -H "Authorization: Bearer $SUPABASE_KEY" \
@@ -41,13 +48,23 @@ for TABLE in "${TABLES[@]}"; do
   # Simpan ke file JSON individual
   echo "$RESPONSE" | jq . > "$OUTPUT_DIR/$TABLE.json"
   
-  # Tambahkan ke file gabungan
-  echo "=== DATA TABEL: $TABLE ===" >> "$OUTPUT_FILE"
-  echo "$RESPONSE" | jq . >> "$OUTPUT_FILE"
-  echo -e "\n\n" >> "$OUTPUT_FILE"
+  # Tambahkan ke file JSON gabungan
+  echo "    \"$TABLE\": $(echo "$RESPONSE" | jq .)" >> "$OUTPUT_DIR/database_export.json"
+  
+  # Tambahkan koma jika bukan tabel terakhir
+  if [ $CURRENT_TABLE -lt $TABLE_COUNT ]; then
+    echo "," >> "$OUTPUT_DIR/database_export.json"
+  fi
   
   echo "✓ Data $TABLE berhasil diproses"
 done
 
+# Tutup objek JSON
+echo "  }" >> "$OUTPUT_DIR/database_export.json"
+echo "}" >> "$OUTPUT_DIR/database_export.json"
+
+# Format JSON akhir agar lebih rapi
+jq . "$OUTPUT_DIR/database_export.json" > "$OUTPUT_DIR/temp.json" && mv "$OUTPUT_DIR/temp.json" "$OUTPUT_DIR/database_export.json"
+
 echo "Semua data telah diunduh ke direktori $OUTPUT_DIR"
-echo "Ekspor gabungan disimpan di $OUTPUT_FILE"
+echo "Ekspor gabungan disimpan di $OUTPUT_DIR/database_export.json"
