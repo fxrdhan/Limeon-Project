@@ -5,7 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Loading } from "../../components/ui/Loading";
-import { FaArrowLeft, FaFilePdf, FaSearchPlus, FaSearchMinus } from "react-icons/fa";
+import { FaArrowLeft, FaFilePdf, FaSearchPlus, FaSearchMinus, FaPrint } from "react-icons/fa";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -174,6 +174,20 @@ const ViewPurchase = () => {
         pdf.save(`purchase-${purchase?.invoice_number}.pdf`);
     };
 
+    const openPrintableVersion = () => {
+        // Simpan data faktur di sessionStorage untuk digunakan oleh halaman cetak
+        sessionStorage.setItem('purchaseData', JSON.stringify({
+            purchase: purchase,
+            items: items,
+            subtotals: calculateSubtotals()
+        }));
+        
+        // Buka tab baru dengan halaman cetak
+        const printWindow = window.open('/purchases/print-view', '_blank');
+        if (printWindow)
+            printWindow.focus();
+    };
+
     const increaseScale = () => {
         setScale(prev => Math.min(prev + 0.1, 1.5));
     };
@@ -225,8 +239,11 @@ const ViewPurchase = () => {
                     <Button type="button" variant="outline" onClick={increaseScale} title="Perbesar">
                         <FaSearchPlus />
                     </Button>
-                    <Button onClick={handleGeneratePDF}>
+                    <Button onClick={handleGeneratePDF} className="mr-2">
                         <FaFilePdf className="mr-2" /> Download PDF
+                    </Button>
+                    <Button onClick={openPrintableVersion} variant="primary">
+                        <FaPrint className="mr-2" /> Print View
                     </Button>
                 </div>
             </div>
