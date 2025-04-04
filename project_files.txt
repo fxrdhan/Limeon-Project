@@ -2752,318 +2752,343 @@
     38	    const navigate = useNavigate();
     39	    const [loading, setLoading] = useState(false);
     40	    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    41	    const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
-    42	    
-    43	    // Form data
-    44	    const [formData, setFormData] = useState<PurchaseFormData>({
-    45	        supplier_id: '',
-    46	        invoice_number: '',
-    47	        date: new Date().toISOString().slice(0, 10),
-    48	        due_date: '',
-    49	        payment_status: 'unpaid',
-    50	        payment_method: 'cash',
-    51	        vat_percentage: 11.0,
-    52	        is_vat_included: true,
-    53	        notes: ''
-    54	    });
-    55	    
-    56	    // Calculate total
-    57	    const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
-    58	    
-    59	    useEffect(() => {
-    60	        fetchSuppliers();
-    61	    }, []);
-    62	    
-    63	    const fetchSuppliers = async () => {
-    64	        try {
-    65	            const { data, error } = await supabase
-    66	                .from('suppliers')
-    67	                .select('id, name')
-    68	                .order('name');
-    69	                
-    70	            if (error) throw error;
-    71	            setSuppliers(data || []);
-    72	        } catch (error) {
-    73	            console.error('Error fetching suppliers:', error);
-    74	        }
-    75	    };
-    76	    
-    77	    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    78	        const { name, value, type, checked } = e.target as HTMLInputElement;
-    79	        setFormData({
-    80	            ...formData,
-    81	            [name]: type === 'checkbox' ? checked : value
-    82	        });
-    83	    };
-    84	
-    85	    const addItem = (newItem: PurchaseItem) => {
-    86	        const newItems = [...purchaseItems, {
-    87	            ...newItem,
-    88	            vat_percentage: 0,
-    89	            batch_no: null,
-    90	            expiry_date: null,
-    91	            unit: newItem.unit || 'Unit',
-    92	            unit_conversion_rate: 1
-    93	        }];
-    94	        recalculateSubtotal(newItems);
-    95	        setPurchaseItems(newItems);
-    96	    };
-    97	    
-    98	    const updateItem = (id: string, field: 'quantity' | 'price' | 'discount', value: number) => {
-    99	        const updatedItems = purchaseItems.map(item => {
-   100	            if (item.id === id) {
-   101	                const quantity = field === 'quantity' ? value : item.quantity;
-   102	                const price = field === 'price' ? value : item.price;
-   103	                const discount = field === 'discount' ? value : item.discount;
-   104	                
-   105	                // Hitung subtotal dengan diskon
-   106	                let subtotal = quantity * price;
-   107	                if (discount > 0) {
-   108	                    const discountAmount = subtotal * (discount / 100);
-   109	                    subtotal -= discountAmount;
-   110	                }
-   111	                
-   112	                // Tambahkan VAT jika tidak termasuk
-   113	                if (item.vat_percentage > 0 && !formData.is_vat_included) {
-   114	                    const vatAmount = subtotal * (item.vat_percentage / 100);
-   115	                    subtotal += vatAmount;
-   116	                }
-   117	                return {
-   118	                    ...item,
-   119	                    [field]: value,
-   120	                    subtotal: subtotal
-   121	                };
-   122	            }
-   123	            return item;
-   124	        });
-   125	        
-   126	        setPurchaseItems(updatedItems);
-   127	    };
-   128	    
-   129	    // Fungsi untuk memperbarui VAT per item
-   130	    const updateItemVat = (id: string, vatPercentage: number) => {
-   131	        const updatedItems = purchaseItems.map(item => {
-   132	            if (item.id === id) {
-   133	                // Hitung subtotal dengan diskon dan VAT baru
-   134	                let subtotal = item.quantity * item.price;
-   135	                if (item.discount > 0) {
-   136	                    const discountAmount = subtotal * (item.discount / 100);
-   137	                    subtotal -= discountAmount;
-   138	                }
-   139	                
-   140	                // Tambahkan VAT jika tidak termasuk
-   141	                if (vatPercentage > 0 && !formData.is_vat_included) {
-   142	                    const vatAmount = subtotal * (vatPercentage / 100);
-   143	                    subtotal += vatAmount;
-   144	                }
-   145	                
-   146	                return {
-   147	                    ...item,
-   148	                    vat_percentage: vatPercentage,
-   149	                    subtotal: subtotal
-   150	                };
-   151	            }
-   152	            return item;
-   153	        });
-   154	        
-   155	        setPurchaseItems(updatedItems);
-   156	    };
-   157	
-   158	    // Fungsi untuk memperbarui tanggal kadaluarsa
-   159	    const updateItemExpiry = (id: string, expiryDate: string) => {
-   160	        setPurchaseItems(purchaseItems.map(item => 
-   161	            item.id === id ? {...item, expiry_date: expiryDate} : item
-   162	        ));
-   163	    };
-   164	
-   165	    // Fungsi untuk memperbarui nomor batch
-   166	    const updateItemBatchNo = (id: string, batchNo: string) => {
-   167	        setPurchaseItems(purchaseItems.map(item => 
-   168	            item.id === id ? {...item, batch_no: batchNo} : item
-   169	        ));
-   170	    };
-   171	
-   172	    // Fungsi untuk menghitung ulang semua subtotal
-   173	    const recalculateSubtotal = (items = purchaseItems) => {
-   174	        return items.map(item => {
-   175	            let subtotal = item.quantity * item.price;
-   176	            if (item.discount > 0) {
-   177	                const discountAmount = subtotal * (item.discount / 100);
-   178	                subtotal -= discountAmount;
-   179	            }
-   180	            
-   181	            if (item.vat_percentage > 0 && !formData.is_vat_included) {
-   182	                const vatAmount = subtotal * (item.vat_percentage / 100);
-   183	                subtotal += vatAmount;
-   184	            }
-   185	            
-   186	            return {
-   187	                ...item,
-   188	                subtotal: subtotal
-   189	            };
-   190	        });
-   191	    };
-   192	    
-   193	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   194	    const handleUnitChange = (id: string, unitName: string, getItemByID: (id: string) => any) => {
-   195	        const updatedItems = purchaseItems.map(item => {
-   196	            if (item.id === id) {
-   197	                const itemData = getItemByID(item.item_id);
-   198	                if (!itemData) return item;
-   199	                
-   200	                let price = itemData.base_price;
-   201	                let conversionRate = 1;
-   202	                
-   203	                // Jika bukan satuan dasar, cari harga berdasarkan konversi
-   204	                if (unitName !== itemData.base_unit) {
-   205	                    const unitConversion = itemData.unit_conversions?.find((uc: { unit_name: string; }) => uc.unit_name === unitName);
-   206	                    if (unitConversion) {
-   207	                        price = unitConversion.base_price || itemData.base_price / unitConversion.conversion_rate;
-   208	                        conversionRate = unitConversion.conversion_rate;
-   209	                    }
-   210	                }
-   211	
-   212	                const discountAmount = price * item.quantity * (item.discount / 100);
-   213	                
-   214	                return {
-   215	                    ...item,
-   216	                    unit: unitName,
-   217	                    price: price,
-   218	                    subtotal: price * item.quantity - discountAmount,
-   219	                    unit_conversion_rate: conversionRate
-   220	                };
-   221	            }
-   222	            return item;
-   223	        });
-   224	        
-   225	        setPurchaseItems(updatedItems);
-   226	    };
-   227	    
-   228	    const removeItem = (id: string) => {
-   229	        setPurchaseItems(purchaseItems.filter(item => item.id !== id));
-   230	    };
-   231	    
-   232	    // Calculate total VAT amount
-   233	    const calculateTotalVat = () => {
-   234	        return purchaseItems.reduce((total, item) => {
-   235	            if (item.vat_percentage > 0) {
-   236	                const subtotalBeforeVat = item.subtotal / (1 + item.vat_percentage / 100);
-   237	                const vatAmount = item.subtotal - subtotalBeforeVat;
-   238	                return total + vatAmount;
-   239	            }
-   240	            return total;
-   241	        }, 0);
-   242	    };
-   243	    
-   244	    const handleSubmit = async (e: React.FormEvent) => {
-   245	        e.preventDefault();
-   246	        
-   247	        if (purchaseItems.length === 0) {
-   248	            alert('Silakan tambahkan minimal satu item');
-   249	            return;
-   250	        }
-   251	        
-   252	        try {
-   253	            setLoading(true);
-   254	            
-   255	            // Insert purchase record
-   256	            const { data: purchaseData, error: purchaseError } = await supabase
-   257	                .from('purchases')
-   258	                .insert({
-   259	                    supplier_id: formData.supplier_id || null,
-   260	                    invoice_number: formData.invoice_number,
-   261	                    date: formData.date,
-   262	                    due_date: formData.due_date || null,
-   263	                    total: total,
-   264	                    payment_status: formData.payment_status,
-   265	                    payment_method: formData.payment_method, 
-   266	                    vat_percentage: formData.vat_percentage,
-   267	                    is_vat_included: formData.is_vat_included,
-   268	                    vat_amount: calculateTotalVat(),
-   269	                    notes: formData.notes || null
-   270	                })
-   271	                .select('id')
-   272	                .single();
-   273	                
-   274	            if (purchaseError) throw purchaseError; 
-   275	            
-   276	            // Insert purchase items
-   277	            const purchaseItemsData = purchaseItems.map(item => ({
-   278	                purchase_id: purchaseData.id,
-   279	                item_id: item.item_id,
-   280	                quantity: item.quantity,
-   281	                discount: item.discount,
-   282	                price: item.price,
-   283	                subtotal: item.subtotal,
-   284	                unit: item.unit,
-   285	                vat_percentage: item.vat_percentage,
-   286	                batch_no: item.batch_no,
-   287	                expiry_date: item.expiry_date
-   288	            }));
-   289	            
-   290	            const { error: itemsError } = await supabase
-   291	                .from('purchase_items')
-   292	                .insert(purchaseItemsData);
-   293	                
-   294	            if (itemsError) throw itemsError;
-   295	            
-   296	            // Update item stocks
-   297	            for (const item of purchaseItems) {
-   298	                // Ambil data item untuk mendapatkan satuan dasar, stok saat ini, dan konversi
-   299	                const { data: itemData } = await supabase
-   300	                    .from('items')
-   301	                    .select('stock, base_unit, unit_conversions')
-   302	                    .eq('id', item.item_id)
-   303	                    .single();
-   304	                
-   305	                if (itemData) {
-   306	                    let quantityInBaseUnit = item.quantity;
-   307	                    
-   308	                    // Jika satuan pembelian berbeda dengan satuan dasar, konversikan
-   309	                    if (item.unit !== itemData.base_unit) {
-   310	                        const unitConversion = itemData.unit_conversions.find(
-   311	                            (uc: { unit_name: string; }) => uc.unit_name === item.unit
-   312	                        );
-   313	                        
-   314	                        if (unitConversion) {
-   315	                            // Konversikan ke satuan dasar
-   316	                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
-   317	                        }
-   318	                    }
-   319	                    
-   320	                    // Hitung stok baru dan update
-   321	                    const newStock = (itemData.stock || 0) + quantityInBaseUnit;
-   322	                    await supabase
-   323	                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
-   324	                }
-   325	            }
-   326	            
-   327	            navigate('/purchases');
-   328	        } catch (error) {
-   329	            console.error('Error creating purchase:', error);
-   330	            alert('Gagal menyimpan pembelian. Silakan coba lagi.');
-   331	        } finally {
-   332	            setLoading(false);
-   333	        }
-   334	    };
-   335	
-   336	    return {
-   337	        formData,
-   338	        suppliers,
-   339	        purchaseItems,
-   340	        total,
-   341	        loading,
-   342	        handleChange,
-   343	        addItem,
-   344	        updateItem,
-   345	        updateItemVat,
-   346	        updateItemExpiry,
-   347	        updateItemBatchNo,
-   348	        handleUnitChange,
-   349	        removeItem,
-   350	        handleSubmit
-   351	    };
-   352	};
+    41	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    42	    const [companyProfile, setCompanyProfile] = useState<any>(null);
+    43	    const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
+    44	    
+    45	    // Form data
+    46	    const [formData, setFormData] = useState<PurchaseFormData>({
+    47	        supplier_id: '',
+    48	        invoice_number: '',
+    49	        date: new Date().toISOString().slice(0, 10),
+    50	        due_date: '',
+    51	        payment_status: 'unpaid',
+    52	        payment_method: 'cash',
+    53	        vat_percentage: 11.0,
+    54	        is_vat_included: true,
+    55	        notes: ''
+    56	    });
+    57	    
+    58	    // Calculate total
+    59	    const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
+    60	    
+    61	    useEffect(() => {
+    62	        fetchSuppliers();
+    63	        fetchCompanyProfile();
+    64	    }, []);
+    65	    
+    66	    const fetchCompanyProfile = async () => {
+    67	        try {
+    68	            const { data, error } = await supabase
+    69	                .from('company_profiles')
+    70	                .select('*')
+    71	                .single();
+    72	                
+    73	            if (error) {
+    74	                console.error('Error fetching company profile:', error);
+    75	                return;
+    76	            }
+    77	            
+    78	            if (data) {
+    79	                setCompanyProfile(data);
+    80	            }
+    81	        } catch (error) {
+    82	            console.error('Error fetching company profile:', error);
+    83	        }
+    84	    };
+    85	
+    86	    const fetchSuppliers = async () => {
+    87	        try {
+    88	            const { data, error } = await supabase
+    89	                .from('suppliers')
+    90	                .select('id, name')
+    91	                .order('name');
+    92	                
+    93	            if (error) throw error;
+    94	            setSuppliers(data || []);
+    95	        } catch (error) {
+    96	            console.error('Error fetching suppliers:', error);
+    97	        }
+    98	    };
+    99	    
+   100	    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+   101	        const { name, value, type, checked } = e.target as HTMLInputElement;
+   102	        setFormData({
+   103	            ...formData,
+   104	            [name]: type === 'checkbox' ? checked : value
+   105	        });
+   106	    };
+   107	
+   108	    const addItem = (newItem: PurchaseItem) => {
+   109	        const newItems = [...purchaseItems, {
+   110	            ...newItem,
+   111	            vat_percentage: 0,
+   112	            batch_no: null,
+   113	            expiry_date: null,
+   114	            unit: newItem.unit || 'Unit',
+   115	            unit_conversion_rate: 1
+   116	        }];
+   117	        recalculateSubtotal(newItems);
+   118	        setPurchaseItems(newItems);
+   119	    };
+   120	    
+   121	    const updateItem = (id: string, field: 'quantity' | 'price' | 'discount', value: number) => {
+   122	        const updatedItems = purchaseItems.map(item => {
+   123	            if (item.id === id) {
+   124	                const quantity = field === 'quantity' ? value : item.quantity;
+   125	                const price = field === 'price' ? value : item.price;
+   126	                const discount = field === 'discount' ? value : item.discount;
+   127	                
+   128	                // Hitung subtotal dengan diskon
+   129	                let subtotal = quantity * price;
+   130	                if (discount > 0) {
+   131	                    const discountAmount = subtotal * (discount / 100);
+   132	                    subtotal -= discountAmount;
+   133	                }
+   134	                
+   135	                // Tambahkan VAT jika tidak termasuk
+   136	                if (item.vat_percentage > 0 && !formData.is_vat_included) {
+   137	                    const vatAmount = subtotal * (item.vat_percentage / 100);
+   138	                    subtotal += vatAmount;
+   139	                }
+   140	                return {
+   141	                    ...item,
+   142	                    [field]: value,
+   143	                    subtotal: subtotal
+   144	                };
+   145	            }
+   146	            return item;
+   147	        });
+   148	        
+   149	        setPurchaseItems(updatedItems);
+   150	    };
+   151	    
+   152	    // Fungsi untuk memperbarui VAT per item
+   153	    const updateItemVat = (id: string, vatPercentage: number) => {
+   154	        const updatedItems = purchaseItems.map(item => {
+   155	            if (item.id === id) {
+   156	                // Hitung subtotal dengan diskon dan VAT baru
+   157	                let subtotal = item.quantity * item.price;
+   158	                if (item.discount > 0) {
+   159	                    const discountAmount = subtotal * (item.discount / 100);
+   160	                    subtotal -= discountAmount;
+   161	                }
+   162	                
+   163	                // Tambahkan VAT jika tidak termasuk
+   164	                if (vatPercentage > 0 && !formData.is_vat_included) {
+   165	                    const vatAmount = subtotal * (vatPercentage / 100);
+   166	                    subtotal += vatAmount;
+   167	                }
+   168	                
+   169	                return {
+   170	                    ...item,
+   171	                    vat_percentage: vatPercentage,
+   172	                    subtotal: subtotal
+   173	                };
+   174	            }
+   175	            return item;
+   176	        });
+   177	        
+   178	        setPurchaseItems(updatedItems);
+   179	    };
+   180	
+   181	    // Fungsi untuk memperbarui tanggal kadaluarsa
+   182	    const updateItemExpiry = (id: string, expiryDate: string) => {
+   183	        setPurchaseItems(purchaseItems.map(item => 
+   184	            item.id === id ? {...item, expiry_date: expiryDate} : item
+   185	        ));
+   186	    };
+   187	
+   188	    // Fungsi untuk memperbarui nomor batch
+   189	    const updateItemBatchNo = (id: string, batchNo: string) => {
+   190	        setPurchaseItems(purchaseItems.map(item => 
+   191	            item.id === id ? {...item, batch_no: batchNo} : item
+   192	        ));
+   193	    };
+   194	
+   195	    // Fungsi untuk menghitung ulang semua subtotal
+   196	    const recalculateSubtotal = (items = purchaseItems) => {
+   197	        return items.map(item => {
+   198	            let subtotal = item.quantity * item.price;
+   199	            if (item.discount > 0) {
+   200	                const discountAmount = subtotal * (item.discount / 100);
+   201	                subtotal -= discountAmount;
+   202	            }
+   203	            
+   204	            if (item.vat_percentage > 0 && !formData.is_vat_included) {
+   205	                const vatAmount = subtotal * (item.vat_percentage / 100);
+   206	                subtotal += vatAmount;
+   207	            }
+   208	            
+   209	            return {
+   210	                ...item,
+   211	                subtotal: subtotal
+   212	            };
+   213	        });
+   214	    };
+   215	    
+   216	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   217	    const handleUnitChange = (id: string, unitName: string, getItemByID: (id: string) => any) => {
+   218	        const updatedItems = purchaseItems.map(item => {
+   219	            if (item.id === id) {
+   220	                const itemData = getItemByID(item.item_id);
+   221	                if (!itemData) return item;
+   222	                
+   223	                let price = itemData.base_price;
+   224	                let conversionRate = 1;
+   225	                
+   226	                // Jika bukan satuan dasar, cari harga berdasarkan konversi
+   227	                if (unitName !== itemData.base_unit) {
+   228	                    const unitConversion = itemData.unit_conversions?.find((uc: { unit_name: string; }) => uc.unit_name === unitName);
+   229	                    if (unitConversion) {
+   230	                        price = unitConversion.base_price || itemData.base_price / unitConversion.conversion_rate;
+   231	                        conversionRate = unitConversion.conversion_rate;
+   232	                    }
+   233	                }
+   234	
+   235	                const discountAmount = price * item.quantity * (item.discount / 100);
+   236	                
+   237	                return {
+   238	                    ...item,
+   239	                    unit: unitName,
+   240	                    price: price,
+   241	                    subtotal: price * item.quantity - discountAmount,
+   242	                    unit_conversion_rate: conversionRate
+   243	                };
+   244	            }
+   245	            return item;
+   246	        });
+   247	        
+   248	        setPurchaseItems(updatedItems);
+   249	    };
+   250	    
+   251	    const removeItem = (id: string) => {
+   252	        setPurchaseItems(purchaseItems.filter(item => item.id !== id));
+   253	    };
+   254	    
+   255	    // Calculate total VAT amount
+   256	    const calculateTotalVat = () => {
+   257	        return purchaseItems.reduce((total, item) => {
+   258	            if (item.vat_percentage > 0) {
+   259	                const subtotalBeforeVat = item.subtotal / (1 + item.vat_percentage / 100);
+   260	                const vatAmount = item.subtotal - subtotalBeforeVat;
+   261	                return total + vatAmount;
+   262	            }
+   263	            return total;
+   264	        }, 0);
+   265	    };
+   266	    
+   267	    const handleSubmit = async (e: React.FormEvent) => {
+   268	        e.preventDefault();
+   269	        
+   270	        if (purchaseItems.length === 0) {
+   271	            alert('Silakan tambahkan minimal satu item');
+   272	            return;
+   273	        }
+   274	        
+   275	        try {
+   276	            setLoading(true);
+   277	            
+   278	            // Insert purchase record
+   279	            const { data: purchaseData, error: purchaseError } = await supabase
+   280	                .from('purchases')
+   281	                .insert({
+   282	                    supplier_id: formData.supplier_id || null,
+   283	                    customer_name: companyProfile?.name || null,
+   284	                    customer_address: companyProfile?.address || null,
+   285	                    invoice_number: formData.invoice_number,
+   286	                    date: formData.date,
+   287	                    due_date: formData.due_date || null,
+   288	                    total: total,
+   289	                    payment_status: formData.payment_status,
+   290	                    payment_method: formData.payment_method, 
+   291	                    vat_percentage: formData.vat_percentage,
+   292	                    is_vat_included: formData.is_vat_included,
+   293	                    vat_amount: calculateTotalVat(),
+   294	                    notes: formData.notes || null
+   295	                })
+   296	                .select('id')
+   297	                .single();
+   298	                
+   299	            if (purchaseError) throw purchaseError; 
+   300	            
+   301	            // Insert purchase items
+   302	            const purchaseItemsData = purchaseItems.map(item => ({
+   303	                purchase_id: purchaseData.id,
+   304	                item_id: item.item_id,
+   305	                quantity: item.quantity,
+   306	                discount: item.discount,
+   307	                price: item.price,
+   308	                subtotal: item.subtotal,
+   309	                unit: item.unit,
+   310	                vat_percentage: item.vat_percentage,
+   311	                batch_no: item.batch_no,
+   312	                expiry_date: item.expiry_date
+   313	            }));
+   314	            
+   315	            const { error: itemsError } = await supabase
+   316	                .from('purchase_items')
+   317	                .insert(purchaseItemsData);
+   318	                
+   319	            if (itemsError) throw itemsError;
+   320	            
+   321	            // Update item stocks
+   322	            for (const item of purchaseItems) {
+   323	                // Ambil data item untuk mendapatkan satuan dasar, stok saat ini, dan konversi
+   324	                const { data: itemData } = await supabase
+   325	                    .from('items')
+   326	                    .select('stock, base_unit, unit_conversions')
+   327	                    .eq('id', item.item_id)
+   328	                    .single();
+   329	                
+   330	                if (itemData) {
+   331	                    let quantityInBaseUnit = item.quantity;
+   332	                    
+   333	                    // Jika satuan pembelian berbeda dengan satuan dasar, konversikan
+   334	                    if (item.unit !== itemData.base_unit) {
+   335	                        const unitConversion = itemData.unit_conversions.find(
+   336	                            (uc: { unit_name: string; }) => uc.unit_name === item.unit
+   337	                        );
+   338	                        
+   339	                        if (unitConversion) {
+   340	                            // Konversikan ke satuan dasar
+   341	                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
+   342	                        }
+   343	                    }
+   344	                    
+   345	                    // Hitung stok baru dan update
+   346	                    const newStock = (itemData.stock || 0) + quantityInBaseUnit;
+   347	                    await supabase
+   348	                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
+   349	                }
+   350	            }
+   351	            
+   352	            navigate('/purchases');
+   353	        } catch (error) {
+   354	            console.error('Error creating purchase:', error);
+   355	            alert('Gagal menyimpan pembelian. Silakan coba lagi.');
+   356	        } finally {
+   357	            setLoading(false);
+   358	        }
+   359	    };
+   360	
+   361	    return {
+   362	        formData,
+   363	        suppliers,
+   364	        purchaseItems,
+   365	        total,
+   366	        loading,
+   367	        handleChange,
+   368	        addItem,
+   369	        updateItem,
+   370	        updateItemVat,
+   371	        updateItemExpiry,
+   372	        updateItemBatchNo,
+   373	        handleUnitChange,
+   374	        removeItem,
+   375	        handleSubmit
+   376	    };
+   377	};
 
 
 ===============================================
@@ -5739,7 +5764,7 @@
    238	                            <div className="text-left">
    239	                                <h2 className="font-bold text-lg text-gray-800">Customer:</h2>
    240	                                <div className="text-sm text-gray-600">
-   241	                                    <p>{purchase.customer_name || 'Apotek & Klinik'}</p>
+   241	                                    <p>{purchase.customer_name || 'Data belum tersedia'}</p>
    242	                                    <p>{purchase.customer_address || 'Alamat belum tersedia'}</p>
    243	                                </div>
    244	                            </div>

@@ -18,6 +18,21 @@ const Profile = lazy(() => import('./pages/settings/Profile'));
 const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
 // Tambahkan halaman lain sesuai kebutuhan
 
+// Komponen placeholder untuk halaman yang belum diimplementasi
+const ComingSoon = ({ title }: { title: string }) => {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
+      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+      <p className="text-xl">Fitur ini akan segera hadir!</p>
+      <div className="mt-8 p-4 border border-blue-300 rounded-lg bg-blue-50 max-w-md">
+        <p className="text-blue-600 text-center">
+          Halaman ini sedang dalam pengembangan.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const { session, initialize } = useAuthStore();
   
@@ -97,8 +112,64 @@ function App() {
                 </Suspense>
               } 
             />
-            <Route path="orders" element={<div>Daftar Pesanan Beli (Coming Soon)</div>} />
-            <Route path="price-history" element={<div>Riwayat Harga Beli (Coming Soon)</div>} />
+            <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
+            <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
+          </Route>
+          
+          <Route path="inventory">
+            <Route 
+              index 
+              element={<ComingSoon title="Persediaan" />} 
+            />
+            <Route 
+              path="stock" 
+              element={<ComingSoon title="Stok Obat" />} 
+            />
+            <Route 
+              path="stock-opname" 
+              element={<ComingSoon title="Stok Opname" />} 
+            />
+            <Route 
+              path="expired" 
+              element={<ComingSoon title="Obat Kadaluarsa" />} 
+            />
+          </Route>
+          
+          <Route path="sales">
+            <Route 
+              index 
+              element={<ComingSoon title="Daftar Penjualan" />} 
+            />
+            <Route 
+              path="create" 
+              element={<ComingSoon title="Tambah Penjualan" />} 
+            />
+          </Route>
+          
+          <Route path="clinic">
+            <Route 
+              index 
+              element={<ComingSoon title="Klinik" />} 
+            />
+            <Route 
+              path="patients" 
+              element={<ComingSoon title="Daftar Pasien" />} 
+            />
+            <Route 
+              path="queue" 
+              element={<ComingSoon title="Antrian" />} 
+            />
+            <Route 
+              path="medical-records" 
+              element={<ComingSoon title="Rekam Medis" />} 
+            />
+          </Route>
+          
+          <Route path="reports">
+            <Route index element={<ComingSoon title="Laporan" />} />
+            <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
+            <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
+            <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
           </Route>
           
           <Route path="settings">
@@ -107,8 +178,8 @@ function App() {
                 <Profile />
               </Suspense>
             } />
-            <Route path="users" element={<div>Pengguna (Coming Soon)</div>} />
-            <Route path="app" element={<div>Pengaturan Aplikasi (Coming Soon)</div>} />
+            <Route path="users" element={<ComingSoon title="Pengguna" />} />
+            <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
           </Route>
           {/* Tambahkan route untuk modul lain */}
         </Route>
