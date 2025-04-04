@@ -5,7 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Loading } from "../../components/ui/Loading";
-import { FaArrowLeft, FaPrint, FaFilePdf } from "react-icons/fa";
+import { FaArrowLeft, FaFilePdf } from "react-icons/fa";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -147,12 +147,6 @@ const ViewPurchase = () => {
         };
     };
 
-    const handlePrint = () => {
-        if (printRef.current) {
-            window.print();
-        }
-    };
-
     const handleGeneratePDF = async () => {
         if (!printRef.current) return;
 
@@ -205,14 +199,16 @@ const ViewPurchase = () => {
     return (
         <Card>
             <div className="flex justify-between items-center mb-4 print:hidden">
-                <Button onClick={() => navigate("/purchases")} variant="outline">
-                    <FaArrowLeft className="mr-2" /> Kembali
+                <Button 
+                    type="button"
+                    variant="outline" 
+                    onClick={() => navigate("/purchases")}
+                >
+                    <div className="flex items-center">
+                        <FaArrowLeft className="mr-2" /> <span>Kembali</span>
+                    </div>
                 </Button>
-
-                <div className="flex space-x-3">
-                    <Button onClick={handlePrint} variant="secondary">
-                        <FaPrint className="mr-2" /> Cetak
-                    </Button>
+                <div>
                     <Button onClick={handleGeneratePDF}>
                         <FaFilePdf className="mr-2" /> Download PDF
                     </Button>
