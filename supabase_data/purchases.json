@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "4ab88918-cf55-4d09-838b-90c14fb44ff7",
+    "supplier_id": "e822fee9-035b-4d93-8bf0-d4fb51c18002",
+    "invoice_number": "TMP-XXXX-YYXX",
+    "date": "2025-04-04",
+    "total": 84416.5,
+    "payment_status": "unpaid",
+    "payment_method": "cash",
+    "notes": null,
+    "created_by": null,
+    "created_at": "2025-04-04T06:04:37.217057+00:00",
+    "updated_at": "2025-04-04T06:04:37.217057+00:00",
+    "so_number": null,
+    "due_date": "2025-04-04",
+    "vat_amount": 8766.5,
+    "vat_percentage": 11,
+    "is_vat_included": false
+  }
+]

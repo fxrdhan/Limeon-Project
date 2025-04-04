@@ -163,14 +163,14 @@ const ViewPurchase = () => {
 
         const imgData = canvas.toDataURL('image/png');
 
-        // A4 dimensions: 210 x 297 mm
+        // F4 dimensions: 215 x 330 mm
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
-            format: 'a4'
+            format: [215, 330]
         });
 
-        const imgWidth = 210;
+        const imgWidth = 215;
         const imgHeight = canvas.height * imgWidth / canvas.width;
 
         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
@@ -219,78 +219,92 @@ const ViewPurchase = () => {
 
             <div
                 ref={printRef}
-                className="bg-white p-8 shadow print:shadow-none"
-                style={{ width: "210mm", minHeight: "297mm", margin: "0 auto" }}
+                className="bg-white p-6 shadow print:shadow-none"
+                style={{ width: "215mm", minHeight: "330mm", margin: "0 auto" }}
             >
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-center mb-2">FAKTUR PEMBELIAN</h1>
                     <div className="border-b-2 border-gray-400 mb-4"></div>
 
-                    <div className="flex justify-between">
-                        <div>
-                            <h2 className="font-bold">Supplier:</h2>
+                    <div className="flex flex-col gap-4">
+                        <div className="text-left">
+                            <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Tidak ada supplier'}</h2>
+                            <div className="text-sm text-gray-600">
                             <p>{purchase.supplier?.name || 'Tidak ada supplier'}</p>
                             <p className="text-sm">{purchase.supplier?.address || ''}</p>
                             <p className="text-sm">Kontak: {purchase.supplier?.contact_person || '-'}</p>
+                            </div>
                         </div>
 
-                        <div className="text-right">
-                            <p><span className="font-bold">No. Faktur:</span> {purchase.invoice_number}</p>
-                            <p><span className="font-bold">Tanggal:</span> {new Date(purchase.date).toLocaleDateString('id-ID')}</p>
-                            {purchase.so_number && (
-                                <p><span className="font-bold">No. SO:</span> {purchase.so_number}</p>
-                            )}
-                            {purchase.due_date && (
-                                <p><span className="font-bold">Jatuh Tempo:</span> {new Date(purchase.due_date).toLocaleDateString('id-ID')}</p>
-                            )}
-                        </div>
+                        <table className="w-full border-collapse border mb-2">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="border p-2 text-sm">No. Faktur</th>
+                                    <th className="border p-2 text-sm">Tanggal</th>
+                                    <th className="border p-2 text-sm">Jatuh Tempo</th>
+                                    {purchase.so_number && (
+                                        <th className="border p-2 text-sm">No. SO</th>
+                                    )}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td className="border p-2 text-center text-sm">{purchase.invoice_number}</td>
+                                    <td className="border p-2 text-center text-sm">{new Date(purchase.date).toLocaleDateString('id-ID')}</td>
+                                    <td className="border p-2 text-center text-sm">{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</td>
+                                    {purchase.so_number && (
+                                        <td className="border p-2 text-center text-sm">{purchase.so_number}</td>
+                                    )}
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
                 <div className="mb-8">
                     <table className="w-full border-collapse">
                         <thead>
-                            <tr className="bg-gray-100">
-                                <th className="border p-2 text-left">No.</th>
-                                <th className="border p-2 text-left">Kode</th>
-                                <th className="border p-2 text-left">Nama Item</th>
-                                <th className="border p-2 text-center">Batch</th>
-                                <th className="border p-2 text-center">Exp</th>
-                                <th className="border p-2 text-center">Qty</th>
-                                <th className="border p-2 text-center">Satuan</th>
-                                <th className="border p-2 text-right">Harga</th>
-                                <th className="border p-2 text-right">Disc %</th>
+                            <tr className="bg-gray-100 text-xs">
+                                <th className="border p-1 text-left">No.</th>
+                                <th className="border p-1 text-left">Kode</th>
+                                <th className="border p-1 text-left">Nama Item</th>
+                                <th className="border p-1 text-center">Batch</th>
+                                <th className="border p-1 text-center">Exp</th>
+                                <th className="border p-1 text-center">Qty</th>
+                                <th className="border p-1 text-center">Satuan</th>
+                                <th className="border p-1 text-right">Harga</th>
+                                <th className="border p-1 text-right">Disc %</th>
                                 {!purchase.is_vat_included && (
-                                    <th className="border p-2 text-right">PPN %</th>
+                                    <th className="border p-1 text-right">PPN %</th>
                                 )}
-                                <th className="border p-2 text-right">Subtotal</th>
+                                <th className="border p-1 text-right">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
                             {items.length === 0 ? (
                                 <tr>
-                                    <td colSpan={purchase.is_vat_included ? 10 : 11} className="border p-3 text-center text-gray-500">
+                                    <td colSpan={purchase.is_vat_included ? 10 : 11} className="border p-2 text-center text-gray-500 text-xs">
                                         Tidak ada item
                                     </td>
                                 </tr>
                             ) : (
                                 items.map((item, index) => (
-                                    <tr key={item.id} className="hover:bg-gray-50">
-                                        <td className="border p-2 text-center">{index + 1}</td>
-                                        <td className="border p-2">{item.item?.code || '-'}</td>
-                                        <td className="border p-2">{item.item?.name || 'Item tidak ditemukan'}</td>
-                                        <td className="border p-2 text-center">{item.batch_no || '-'}</td>
-                                        <td className="border p-2 text-center">
+                                    <tr key={item.id} className="hover:bg-gray-50 text-xs">
+                                        <td className="border p-1 text-center">{index + 1}</td>
+                                        <td className="border p-1">{item.item?.code || '-'}</td>
+                                        <td className="border p-1">{item.item?.name || 'Item tidak ditemukan'}</td>
+                                        <td className="border p-1 text-center">{item.batch_no || '-'}</td>
+                                        <td className="border p-1 text-center">
                                             {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit' }) : '-'}
                                         </td>
-                                        <td className="border p-2 text-center">{item.quantity}</td>
-                                        <td className="border p-2 text-center">{item.unit}</td>
-                                        <td className="border p-2 text-right">{formatRupiah(item.price)}</td>
-                                        <td className="border p-2 text-right">{item.discount > 0 ? `${item.discount}%` : '-'}</td>
+                                        <td className="border p-1 text-center">{item.quantity}</td>
+                                        <td className="border p-1 text-center">{item.unit}</td>
+                                        <td className="border p-1 text-right">{formatRupiah(item.price)}</td>
+                                        <td className="border p-1 text-right">{item.discount > 0 ? `${item.discount}%` : '-'}</td>
                                         {!purchase.is_vat_included && (
-                                            <td className="border p-2 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}%` : '-'}</td>
+                                            <td className="border p-1 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}%` : '-'}</td>
                                         )}
-                                        <td className="border p-2 text-right">{formatRupiah(item.subtotal)}</td>
+                                        <td className="border p-1 text-right">{formatRupiah(item.subtotal)}</td>
                                     </tr>
                                 ))
                             )}
@@ -355,10 +369,10 @@ const ViewPurchase = () => {
                     </div>
                 </div>
 
-                <div className="mt-16 flex justify-end">
+                <div className="mt-10 flex justify-end">
                     <div className="text-center">
                         <p>Penerima,</p>
-                        <div className="h-16"></div>
+                        <div className="h-12"></div>
                         <p>(_________________)</p>
                     </div>
                 </div>
