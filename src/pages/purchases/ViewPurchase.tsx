@@ -233,11 +233,9 @@ const ViewPurchase = () => {
                         <div className="w-1/2">
                             {/* Supplier Info */}
                             <div className="text-left mb-4">
-                                <h2 className="font-bold text-lg text-gray-800">Supplier:</h2>
+                                <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Supplier'}</h2>
                                 <div className="text-sm text-gray-600">
-                                    <p className="font-semibold">{purchase.supplier?.name || 'Tidak ada supplier'}</p>
                                     <p>{purchase.supplier?.address || ''}</p>
-                                    <p>Kontak: {purchase.supplier?.contact_person || '-'}</p>
                                 </div>
                             </div>
                             
@@ -245,7 +243,7 @@ const ViewPurchase = () => {
                             <div className="text-left">
                                 <h2 className="font-bold text-lg text-gray-800">Customer:</h2>
                                 <div className="text-sm text-gray-600">
-                                    <p className="font-semibold">{purchase.customer_name || 'Apotek & Klinik'}</p>
+                                    <p>{purchase.customer_name || 'Apotek & Klinik'}</p>
                                     <p>{purchase.customer_address || 'Alamat belum tersedia'}</p>
                                 </div>
                             </div>
@@ -253,28 +251,14 @@ const ViewPurchase = () => {
                         
                         <div className="w-1/2">
                             {/* Faktur Info */}
-                            <table className="w-full border-collapse border">
-                                <thead className="bg-gray-100">
-                                    <tr>
-                                        <th className="border p-2 text-sm">No. Faktur</th>
-                                        <th className="border p-2 text-sm">Tanggal</th>
-                                        <th className="border p-2 text-sm">Jatuh Tempo</th>
-                                        {purchase.so_number && (
-                                            <th className="border p-2 text-sm">No. SO</th>
-                                        )}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td className="border p-2 text-center text-sm">{purchase.invoice_number}</td>
-                                        <td className="border p-2 text-center text-sm">{new Date(purchase.date).toLocaleDateString('id-ID')}</td>
-                                        <td className="border p-2 text-center text-sm">{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</td>
-                                        {purchase.so_number && (
-                                            <td className="border p-2 text-center text-sm">{purchase.so_number}</td>
-                                        )}
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div className="bg-gray-50 p-3 rounded">
+                                <p className="text-sm mb-1"><strong>No. Faktur:</strong> {purchase.invoice_number}</p>
+                                <p className="text-sm mb-1"><strong>Tanggal:</strong> {new Date(purchase.date).toLocaleDateString('id-ID')}</p>
+                                <p className="text-sm mb-1"><strong>Jatuh Tempo:</strong> {purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</p>
+                                {purchase.so_number && (
+                                    <p className="text-sm mb-1"><strong>No. SO:</strong> {purchase.so_number}</p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -332,34 +316,26 @@ const ViewPurchase = () => {
 
                 <div className="flex justify-between">
                     <div className="max-w-md">
-                        <h3 className="font-bold mb-2">Catatan:</h3>
-                        <p className="text-sm">{purchase.notes || '-'}</p>
-
-                        <div className="mt-4">
-                            <p className="font-bold mb-1">Diperiksa oleh:</p>
-                            <p className="text-sm">{purchase.checked_by || '-'}</p>
-                        </div>
-
-                        <div className="mt-4">
-                            <p className="font-bold">Status Pembayaran:
-                                <span className={`ml-2 ${purchase.payment_status === 'paid' ? 'text-green-600' :
-                                        purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
-                                    }`}>
-                                    {purchase.payment_status === 'paid' ? 'Lunas' :
-                                        purchase.payment_status === 'partial' ? 'Sebagian' : 'Belum Dibayar'}
-                                </span>
-                            </p>
-                            <p className="font-bold">Metode Pembayaran:
-                                <span className="ml-2">{
-                                    purchase.payment_method === 'cash' ? 'Tunai' :
-                                        purchase.payment_method === 'transfer' ? 'Transfer' :
-                                            purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method
-                                }</span>
-                            </p>
-                            {purchase.is_vat_included && (
-                                <p className="text-sm mt-2">* PPN sudah termasuk dalam harga</p>
-                            )}
-                        </div>
+                        <p className="text-sm mb-2"><strong>Diperiksa oleh:</strong> {purchase.supplier?.contact_person || purchase.checked_by || '-'}</p>
+                        
+                        <p className="text-sm mb-2"><strong>Status Pembayaran: </strong>
+                            <span className={`${purchase.payment_status === 'paid' ? 'text-green-600' :
+                                    purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
+                                }`}>
+                                {purchase.payment_status === 'paid' ? 'Lunas' :
+                                    purchase.payment_status === 'partial' ? 'Sebagian' : 'Belum Dibayar'}
+                            </span>
+                        </p>
+                        <p className="text-sm mb-2"><strong>Metode Pembayaran:</strong> {
+                            purchase.payment_method === 'cash' ? 'Tunai' :
+                                purchase.payment_method === 'transfer' ? 'Transfer' :
+                                    purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method
+                        }</p>
+                        
+                        <p className="text-sm mb-2"><strong>Catatan:</strong> {purchase.notes || '-'}</p>
+                        {purchase.is_vat_included && (
+                            <p className="text-sm mt-2">* PPN sudah termasuk dalam harga</p>
+                        )}
                     </div>
 
                     <div className="border p-4 min-w-[250px]">
@@ -389,14 +365,6 @@ const ViewPurchase = () => {
                             <span>TOTAL:</span>
                             <span>{formatRupiah(grandTotal)}</span>
                         </div>
-                    </div>
-                </div>
-
-                <div className="mt-10 flex justify-end">
-                    <div className="text-center">
-                        <p>Penerima,</p>
-                        <div className="h-12"></div>
-                        <p>(_________________)</p>
                     </div>
                 </div>
             </div>
