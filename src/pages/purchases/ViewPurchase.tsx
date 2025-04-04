@@ -250,12 +250,24 @@ const ViewPurchase = () => {
                         
                         <div className="w-1/2">
                             {/* Faktur Info */}
-                            <div className="bg-gray-50 p-3 rounded">
-                                <p className="text-sm mb-1"><strong>No. Faktur:</strong> {purchase.invoice_number}</p>
-                                <p className="text-sm mb-1"><strong>Tanggal:</strong> {new Date(purchase.date).toLocaleDateString('id-ID')}</p>
-                                <p className="text-sm mb-1"><strong>Jatuh Tempo:</strong> {purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</p>
+                            <div className="bg-gray-50 p-3 rounded text-sm">
+                                <div className="grid grid-cols-2 gap-2 mb-1">
+                                    <span className="text-right pr-2 font-bold">No. Faktur :</span>
+                                    <span>{purchase.invoice_number}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 mb-1">
+                                    <span className="text-right pr-2">Tanggal :</span>
+                                    <span>{new Date(purchase.date).toLocaleDateString('id-ID')}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 mb-1">
+                                    <span className="text-right pr-2">Jatuh Tempo :</span>
+                                    <span>{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</span>
+                                </div>
                                 {purchase.so_number && (
-                                    <p className="text-sm mb-1"><strong>No. SO:</strong> {purchase.so_number}</p>
+                                    <div className="grid grid-cols-2 gap-2 mb-1">
+                                        <span className="text-right pr-2">No. SO :</span>
+                                        <span>{purchase.so_number}</span>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -301,9 +313,9 @@ const ViewPurchase = () => {
                                         <td className="border p-1 text-center">{item.quantity}</td>
                                         <td className="border p-1 text-center">{item.unit}</td>
                                         <td className="border p-1 text-right">{item.price.toLocaleString('id-ID')}</td>
-                                        <td className="border p-1 text-right">{item.discount > 0 ? `${item.discount}` : '-'}</td>
+                                        <td className="border p-1 text-right">{item.discount > 0 ? `${item.discount}%` : '-'}</td>
                                         {!purchase.is_vat_included && (
-                                            <td className="border p-1 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}` : '-'}</td>
+                                            <td className="border p-1 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}%` : '-'}</td>
                                         )}
                                         <td className="border p-1 text-right">{item.subtotal.toLocaleString('id-ID')}</td>
                                     </tr>
@@ -315,28 +327,38 @@ const ViewPurchase = () => {
 
                 <div className="flex justify-between mt-8">
                     <div className="max-w-md">
-                        <p className="text-sm mb-2"><strong>Diperiksa oleh:</strong> {purchase.supplier?.contact_person || purchase.checked_by || '-'}</p>
+                        <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
+                            <span className="text-right pr-2">Diperiksa oleh :</span>
+                            <span>{purchase.supplier?.contact_person || purchase.checked_by || '-'}</span>
+                        </div>
                         
-                        <p className="text-sm mb-2"><strong>Status Pembayaran: </strong>
+                        <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
+                            <span className="text-right pr-2">Status Pembayaran :</span>
                             <span className={`${purchase.payment_status === 'paid' ? 'text-green-600' :
-                                    purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
-                                }`}>
+                                purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
+                            }`}>
                                 {purchase.payment_status === 'paid' ? 'Lunas' :
                                     purchase.payment_status === 'partial' ? 'Sebagian' : 'Belum Dibayar'}
                             </span>
-                        </p>
-                        <p className="text-sm mb-2"><strong>Metode Pembayaran:</strong> {
-                            purchase.payment_method === 'cash' ? 'Tunai' :
-                                purchase.payment_method === 'transfer' ? 'Transfer' :
-                                    purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method
-                        }</p>
+                        </div>
                         
-                        <p className="text-sm mb-2"><strong>Catatan:</strong> {purchase.notes || '-'}</p>
+                        <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
+                            <span className="text-right pr-2">Metode Pembayaran :</span>
+                            <span>{purchase.payment_method === 'cash' ? 'Tunai' : purchase.payment_method === 'transfer' ? 'Transfer' : purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method}</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
+                            <span className="text-right pr-2">Catatan :</span>
+                            <span>{purchase.notes || '-'}</span>
+                        </div>
                         {purchase.is_vat_included && (
-                            <p className="text-sm mt-2">* PPN sudah termasuk dalam harga</p>
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                                <span className="text-right pr-2"></span>
+                                <span className="text-sm">* PPN sudah termasuk dalam harga</span>
+                            </div>
                         )}
                     </div>
-
+                    
                     <div className="border p-4 min-w-[250px] text-sm">
                         <div className="grid grid-cols-2 gap-2 mb-2">
                             <span className="text-right pr-2">Subtotal :</span>
