@@ -15,6 +15,7 @@ const AddItem = lazy(() => import('./pages/master-data/AddItem'));
 const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
 const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
 const Profile = lazy(() => import('./pages/settings/Profile'));
+const PrintPurchase = lazy(() => import('./pages/purchases/PrintPurchase'));
 const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
 // Tambahkan halaman lain sesuai kebutuhan
 
@@ -46,6 +47,12 @@ function App() {
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
+
+        {/* Route khusus untuk tampilan cetak - tanpa layout */}
+        <Route path="/purchases/print-view" element={
+          <Suspense fallback={<div>Loading...</div>}>
+            <PrintPurchase />
+          </Suspense>} />
         
         <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
           <Route 
