@@ -7,6 +7,7 @@ import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Pagination } from "../../components/ui/Pagination";
 import { Loading } from "../../components/ui/Loading";
+import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 
 interface Item {
     id: string;
@@ -29,6 +30,7 @@ const ItemList = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const { openConfirmDialog } = useConfirmDialog();
 
     // Efek untuk debounce pencarian
     useEffect(() => {
@@ -261,22 +263,28 @@ const ItemList = () => {
     );
 
     async function handleDelete(id: string) {
-        if (window.confirm("Apakah Anda yakin ingin menghapus item ini?")) {
-            try {
-                const { error } = await supabase
-                    .from("items")
-                    .delete()
-                    .eq("id", id);
+        openConfirmDialog({
+            title: "Konfirmasi Hapus",
+            message: "Apakah Anda yakin ingin menghapus item ini?",
+            variant: "danger",
+            confirmText: "Hapus",
+            onConfirm: async () => {
+                try {
+                    const { error } = await supabase
+                        .from("items")
+                        .delete()
+                        .eq("id", id);
 
-                if (error) throw error;
+                    if (error) throw error;
 
-                // Refresh data
-                fetchItems(currentPage, debouncedSearch, itemsPerPage);
-            } catch (error) {
-                console.error("Error deleting item:", error);
-                alert("Gagal menghapus item. Silakan coba lagi.");
+                    // Refresh data
+                    fetchItems(currentPage, debouncedSearch, itemsPerPage);
+                } catch (error) {
+                    console.error("Error deleting item:", error);
+                    alert("Gagal menghapus item. Silakan coba lagi.");
+                }
             }
-        }
+        });
     }
 };
 

@@ -455,7 +455,7 @@
     google-auth-library "^9.14.2"
     ws "^8.18.0"
 
-"@headlessui/react@^2.2.0":
+"@headlessui/react@^2.2.1":
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/@headlessui/react/-/react-2.2.1.tgz#f694e669b741db97d9fab8de095e8bc3942404fb"
   integrity sha512-daiUqVLae8CKVjEVT19P/izW0aGK0GNhMSAeMlrDebKmoVZHcRRwbxzgtnEadUVDXyBsWo9/UH4KHeniO+0tMg==
