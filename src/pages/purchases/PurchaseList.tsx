@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaEye } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaEye, FaFileUpload } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
@@ -227,12 +227,21 @@ const PurchaseList = () => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Daftar Pembelian</h1>
 
-                <Link to="/purchases/create">
-                    <Button variant="primary">
-                        <FaPlus className="mr-2" />
-                        Tambah Pembelian Baru
-                    </Button>
-                </Link>
+                <div className="flex space-x-2">
+                    <Link to="/purchases/upload-invoice">
+                        <Button variant="secondary">
+                            <FaFileUpload className="mr-2" />
+                            Upload Faktur
+                        </Button>
+                    </Link>
+                    
+                    <Link to="/purchases/create">
+                        <Button variant="primary">
+                            <FaPlus className="mr-2" />
+                            Tambah Pembelian Baru
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <div className="mb-4 relative">

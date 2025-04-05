@@ -63,11 +63,14 @@
 │   │   │   ├── CreatePurchase.tsx
 │   │   │   ├── PrintPurchase.tsx
 │   │   │   ├── PurchaseList.tsx
+│   │   │   ├── UploadInvoice.tsx
 │   │   │   └── ViewPurchase.tsx
 │   │   ├── sales
 │   │   │   └── CreateSale.tsx
 │   │   └── settings
 │   │       └── Profile.tsx
+│   ├── services
+│   │   └── invoiceService.ts
 │   ├── store
 │   │   └── authStore.ts
 │   └── vite-env.d.ts
@@ -101,7 +104,7 @@
 ├── vite.config.ts
 └── yarn.lock
 
-20 directories, 82 files
+21 directories, 84 files
 
 
 ===============================================
@@ -510,190 +513,199 @@
     12	const UnitList = lazy(() => import('./pages/master-data/UnitList'));
     13	const TypeList = lazy(() => import('./pages/master-data/TypeList'));
     14	const AddItem = lazy(() => import('./pages/master-data/AddItem'));
-    15	const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
-    16	const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
-    17	const Profile = lazy(() => import('./pages/settings/Profile'));
-    18	const PrintPurchase = lazy(() => import('./pages/purchases/PrintPurchase'));
-    19	const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
-    20	// Tambahkan halaman lain sesuai kebutuhan
-    21	
-    22	// Komponen placeholder untuk halaman yang belum diimplementasi
-    23	const ComingSoon = ({ title }: { title: string }) => {
-    24	  return (
-    25	    <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
-    26	      <h2 className="text-2xl font-bold mb-4">{title}</h2>
-    27	      <p className="text-xl">Fitur ini akan segera hadir!</p>
-    28	      <div className="mt-8 p-4 border border-blue-300 rounded-lg bg-blue-50 max-w-md">
-    29	        <p className="text-blue-600 text-center">
-    30	          Halaman ini sedang dalam pengembangan.
-    31	        </p>
-    32	      </div>
-    33	    </div>
-    34	  );
-    35	};
-    36	
-    37	function App() {
-    38	  const { session, initialize } = useAuthStore();
-    39	  
-    40	  // Inisialisasi auth state saat aplikasi dimuat
-    41	  useEffect(() => {
-    42	    initialize();
-    43	  }, [initialize]);
-    44	  
-    45	
-    46	  return (
-    47	    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-    48	      <Routes>
-    49	        <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
-    50	
-    51	        {/* Route khusus untuk tampilan cetak - tanpa layout */}
-    52	        <Route path="/purchases/print-view" element={
-    53	          <Suspense fallback={<div>Loading...</div>}>
-    54	            <PrintPurchase />
-    55	          </Suspense>} />
-    56	        
-    57	        <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
-    58	          <Route 
-    59	            index 
-    60	            element={
-    61	            <div className="text-gray-800">
-    62	              <Suspense fallback={<div>Loading...</div>}>
-    63	                <Dashboard />
-    64	              </Suspense>
-    65	            </div>
-    66	          } />
-    67	          
-    68	          <Route path="master-data">
-    69	            <Route path="items" element={
-    70	              <Suspense fallback={<div>Loading...</div>}>
-    71	                <ItemList />
-    72	              </Suspense>
-    73	            } />
-    74	            <Route path="items/add" element={
-    75	              <Suspense fallback={<div>Loading...</div>}>
-    76	                <AddItem />
-    77	              </Suspense>
-    78	            } />
-    79	            <Route path="categories" element={
-    80	              <Suspense fallback={<div>Loading...</div>}>
-    81	                <CategoryList />
-    82	              </Suspense>
-    83	            } />
-    84	            <Route path="types" element={
-    85	              <Suspense fallback={<div>Loading...</div>}>
-    86	                <TypeList />
-    87	              </Suspense>
-    88	            } />
-    89	            <Route path="units" element={
-    90	              <Suspense fallback={<div>Loading...</div>}>
-    91	                <UnitList />
-    92	              </Suspense>
-    93	            } />
-    94	            {/* Tambahkan route lain sesuai kebutuhan */}
-    95	          </Route>
-    96	          
-    97	          <Route path="purchases">
-    98	            <Route 
-    99	              index 
-   100	              element={
-   101	                <Suspense fallback={<div>Loading...</div>}>
-   102	                  <PurchaseList />
-   103	                </Suspense>
-   104	              } 
-   105	            />
-   106	            <Route 
-   107	              path="create" 
-   108	              element={
-   109	                <Suspense fallback={<div>Loading...</div>}>
-   110	                  <CreatePurchase />
-   111	                </Suspense>
-   112	              } 
-   113	            />
-   114	            <Route 
-   115	              path="view/:id" 
-   116	              element={
-   117	                <Suspense fallback={<div>Loading...</div>}>
-   118	                  <ViewPurchase />
-   119	                </Suspense>
-   120	              } 
-   121	            />
-   122	            <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
-   123	            <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
-   124	          </Route>
-   125	          
-   126	          <Route path="inventory">
-   127	            <Route 
-   128	              index 
-   129	              element={<ComingSoon title="Persediaan" />} 
+    15	const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
+    16	const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
+    17	const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
+    18	const Profile = lazy(() => import('./pages/settings/Profile'));
+    19	const PrintPurchase = lazy(() => import('./pages/purchases/PrintPurchase'));
+    20	const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
+    21	// Tambahkan halaman lain sesuai kebutuhan
+    22	
+    23	// Komponen placeholder untuk halaman yang belum diimplementasi
+    24	const ComingSoon = ({ title }: { title: string }) => {
+    25	  return (
+    26	    <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
+    27	      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+    28	      <p className="text-xl">Fitur ini akan segera hadir!</p>
+    29	      <div className="mt-8 p-4 border border-blue-300 rounded-lg bg-blue-50 max-w-md">
+    30	        <p className="text-blue-600 text-center">
+    31	          Halaman ini sedang dalam pengembangan.
+    32	        </p>
+    33	      </div>
+    34	    </div>
+    35	  );
+    36	};
+    37	
+    38	function App() {
+    39	  const { session, initialize } = useAuthStore();
+    40	  
+    41	  // Inisialisasi auth state saat aplikasi dimuat
+    42	  useEffect(() => {
+    43	    initialize();
+    44	  }, [initialize]);
+    45	  
+    46	
+    47	  return (
+    48	    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    49	      <Routes>
+    50	        <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
+    51	
+    52	        {/* Route khusus untuk tampilan cetak - tanpa layout */}
+    53	        <Route path="/purchases/print-view" element={
+    54	          <Suspense fallback={<div>Loading...</div>}>
+    55	            <PrintPurchase />
+    56	          </Suspense>} />
+    57	        
+    58	        <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
+    59	          <Route 
+    60	            index 
+    61	            element={
+    62	            <div className="text-gray-800">
+    63	              <Suspense fallback={<div>Loading...</div>}>
+    64	                <Dashboard />
+    65	              </Suspense>
+    66	            </div>
+    67	          } />
+    68	          
+    69	          <Route path="master-data">
+    70	            <Route path="items" element={
+    71	              <Suspense fallback={<div>Loading...</div>}>
+    72	                <ItemList />
+    73	              </Suspense>
+    74	            } />
+    75	            <Route path="items/add" element={
+    76	              <Suspense fallback={<div>Loading...</div>}>
+    77	                <AddItem />
+    78	              </Suspense>
+    79	            } />
+    80	            <Route path="categories" element={
+    81	              <Suspense fallback={<div>Loading...</div>}>
+    82	                <CategoryList />
+    83	              </Suspense>
+    84	            } />
+    85	            <Route path="types" element={
+    86	              <Suspense fallback={<div>Loading...</div>}>
+    87	                <TypeList />
+    88	              </Suspense>
+    89	            } />
+    90	            <Route path="units" element={
+    91	              <Suspense fallback={<div>Loading...</div>}>
+    92	                <UnitList />
+    93	              </Suspense>
+    94	            } />
+    95	            {/* Tambahkan route lain sesuai kebutuhan */}
+    96	          </Route>
+    97	          
+    98	          <Route path="purchases">
+    99	            <Route 
+   100	              index 
+   101	              element={
+   102	                <Suspense fallback={<div>Loading...</div>}>
+   103	                  <PurchaseList />
+   104	                </Suspense>
+   105	              } 
+   106	            />
+   107	            <Route 
+   108	              path="create" 
+   109	              element={
+   110	                <Suspense fallback={<div>Loading...</div>}>
+   111	                  <CreatePurchase />
+   112	                </Suspense>
+   113	              } 
+   114	            />
+   115	            <Route 
+   116	              path="upload-invoice" 
+   117	              element={
+   118	                <Suspense fallback={<div>Loading...</div>}>
+   119	                  <UploadInvoice />
+   120	                </Suspense>
+   121	              } 
+   122	            />
+   123	            <Route 
+   124	              path="view/:id" 
+   125	              element={
+   126	                <Suspense fallback={<div>Loading...</div>}>
+   127	                  <ViewPurchase />
+   128	                </Suspense>
+   129	              } 
    130	            />
-   131	            <Route 
-   132	              path="stock" 
-   133	              element={<ComingSoon title="Stok Obat" />} 
-   134	            />
-   135	            <Route 
-   136	              path="stock-opname" 
-   137	              element={<ComingSoon title="Stok Opname" />} 
-   138	            />
-   139	            <Route 
-   140	              path="expired" 
-   141	              element={<ComingSoon title="Obat Kadaluarsa" />} 
-   142	            />
-   143	          </Route>
-   144	          
-   145	          <Route path="sales">
-   146	            <Route 
-   147	              index 
-   148	              element={<ComingSoon title="Daftar Penjualan" />} 
-   149	            />
-   150	            <Route 
-   151	              path="create" 
-   152	              element={<ComingSoon title="Tambah Penjualan" />} 
-   153	            />
-   154	          </Route>
-   155	          
-   156	          <Route path="clinic">
-   157	            <Route 
-   158	              index 
-   159	              element={<ComingSoon title="Klinik" />} 
-   160	            />
-   161	            <Route 
-   162	              path="patients" 
-   163	              element={<ComingSoon title="Daftar Pasien" />} 
-   164	            />
-   165	            <Route 
-   166	              path="queue" 
-   167	              element={<ComingSoon title="Antrian" />} 
-   168	            />
-   169	            <Route 
-   170	              path="medical-records" 
-   171	              element={<ComingSoon title="Rekam Medis" />} 
-   172	            />
-   173	          </Route>
-   174	          
-   175	          <Route path="reports">
-   176	            <Route index element={<ComingSoon title="Laporan" />} />
-   177	            <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
-   178	            <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
-   179	            <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
-   180	          </Route>
-   181	          
-   182	          <Route path="settings">
-   183	            <Route path="profile" element={
-   184	              <Suspense fallback={<div>Loading...</div>}>
-   185	                <Profile />
-   186	              </Suspense>
-   187	            } />
-   188	            <Route path="users" element={<ComingSoon title="Pengguna" />} />
-   189	            <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
-   190	          </Route>
-   191	          {/* Tambahkan route untuk modul lain */}
-   192	        </Route>
-   193	      </Routes>
-   194	    </Router>
-   195	  );
-   196	}
-   197	
-   198	export default App;
+   131	            <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
+   132	            <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
+   133	          </Route>
+   134	          
+   135	          <Route path="inventory">
+   136	            <Route 
+   137	              index 
+   138	              element={<ComingSoon title="Persediaan" />} 
+   139	            />
+   140	            <Route 
+   141	              path="stock" 
+   142	              element={<ComingSoon title="Stok Obat" />} 
+   143	            />
+   144	            <Route 
+   145	              path="stock-opname" 
+   146	              element={<ComingSoon title="Stok Opname" />} 
+   147	            />
+   148	            <Route 
+   149	              path="expired" 
+   150	              element={<ComingSoon title="Obat Kadaluarsa" />} 
+   151	            />
+   152	          </Route>
+   153	          
+   154	          <Route path="sales">
+   155	            <Route 
+   156	              index 
+   157	              element={<ComingSoon title="Daftar Penjualan" />} 
+   158	            />
+   159	            <Route 
+   160	              path="create" 
+   161	              element={<ComingSoon title="Tambah Penjualan" />} 
+   162	            />
+   163	          </Route>
+   164	          
+   165	          <Route path="clinic">
+   166	            <Route 
+   167	              index 
+   168	              element={<ComingSoon title="Klinik" />} 
+   169	            />
+   170	            <Route 
+   171	              path="patients" 
+   172	              element={<ComingSoon title="Daftar Pasien" />} 
+   173	            />
+   174	            <Route 
+   175	              path="queue" 
+   176	              element={<ComingSoon title="Antrian" />} 
+   177	            />
+   178	            <Route 
+   179	              path="medical-records" 
+   180	              element={<ComingSoon title="Rekam Medis" />} 
+   181	            />
+   182	          </Route>
+   183	          
+   184	          <Route path="reports">
+   185	            <Route index element={<ComingSoon title="Laporan" />} />
+   186	            <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
+   187	            <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
+   188	            <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
+   189	          </Route>
+   190	          
+   191	          <Route path="settings">
+   192	            <Route path="profile" element={
+   193	              <Suspense fallback={<div>Loading...</div>}>
+   194	                <Profile />
+   195	              </Suspense>
+   196	            } />
+   197	            <Route path="users" element={<ComingSoon title="Pengguna" />} />
+   198	            <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
+   199	          </Route>
+   200	          {/* Tambahkan route untuk modul lain */}
+   201	        </Route>
+   202	      </Routes>
+   203	    </Router>
+   204	  );
+   205	}
+   206	
+   207	export default App;
 
 
 ===============================================
@@ -3627,13 +3639,51 @@
     65	  }
     66	}
     67	
-    68	.faktur-a4 {
-    69	  width: 210mm;
-    70	  min-height: 297mm;
-    71	  padding: 10mm;
-    72	  margin: 0 auto;
-    73	  background: white;
-    74	}
+    68	/* Custom Scrollbar Styling */
+    69	/* Untuk Webkit (Chrome, Safari, Edge baru) */
+    70	::-webkit-scrollbar {
+    71	  width: 6px;
+    72	  height: 6px;
+    73	}
+    74	
+    75	::-webkit-scrollbar-track {
+    76	  background: rgba(0, 0, 0, 0.02);
+    77	  border-radius: 10px;
+    78	}
+    79	
+    80	::-webkit-scrollbar-thumb {
+    81	  background: rgba(26, 115, 232, 0.3);
+    82	  border-radius: 10px;
+    83	  transition: all 0.3s ease;
+    84	}
+    85	
+    86	::-webkit-scrollbar-thumb:hover {
+    87	  background: rgba(26, 115, 232, 0.5);
+    88	}
+    89	
+    90	/* Untuk Firefox */
+    91	* {
+    92	  scrollbar-width: thin;
+    93	  scrollbar-color: rgba(26, 115, 232, 0.3) rgba(0, 0, 0, 0.02);
+    94	}
+    95	
+    96	/* Kelas untuk menghilangkan scrollbar jika diperlukan */
+    97	.scrollbar-hidden {
+    98	  scrollbar-width: none;
+    99	  -ms-overflow-style: none;
+   100	}
+   101	
+   102	.scrollbar-hidden::-webkit-scrollbar {
+   103	  display: none;
+   104	}
+   105	
+   106	.faktur-a4 {
+   107	  width: 210mm;
+   108	  min-height: 297mm;
+   109	  padding: 10mm;
+   110	  margin: 0 auto;
+   111	  background: white;
+   112	}
 
 
 ===============================================
@@ -5817,7 +5867,7 @@
      1	import { useEffect, useState } from "react";
      2	import { Link } from "react-router-dom";
      3	import { supabase } from "../../lib/supabase";
-     4	import { FaPlus, FaEdit, FaTrash, FaSearch, FaEye } from "react-icons/fa";
+     4	import { FaPlus, FaEdit, FaTrash, FaSearch, FaEye, FaFileUpload } from "react-icons/fa";
      5	import { Card } from "../../components/ui/Card";
      6	import { Button } from "../../components/ui/Button";
      7	import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
@@ -6043,126 +6093,427 @@
    227	            <div className="flex justify-between items-center mb-6">
    228	                <h1 className="text-2xl font-bold text-gray-800">Daftar Pembelian</h1>
    229	
-   230	                <Link to="/purchases/create">
-   231	                    <Button variant="primary">
-   232	                        <FaPlus className="mr-2" />
-   233	                        Tambah Pembelian Baru
-   234	                    </Button>
-   235	                </Link>
-   236	            </div>
-   237	
-   238	            <div className="mb-4 relative">
-   239	                <input
-   240	                    type="text"
-   241	                    placeholder="Cari nomor faktur atau supplier..."
-   242	                    className="w-full p-3 border rounded-md pl-10"
-   243	                    value={search}
-   244	                    onChange={(e) => setSearch(e.target.value)}
-   245	                />
-   246	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-   247	            </div>
-   248	
-   249	            {loading ? (
-   250	                <Loading />
-   251	            ) : (
-   252	                <> 
-   253	                    {tableLoading ? (
-   254	                        <div>
-   255	                            <Loading/>
-   256	                        </div>
-   257	                    ) : (
-   258	                        <Table>
-   259	                            <TableHead>
-   260	                                <TableRow>
-   261	                                    <TableHeader>No. Faktur</TableHeader>
-   262	                                    <TableHeader>Tanggal</TableHeader>
-   263	                                    <TableHeader>Supplier</TableHeader>
-   264	                                    <TableHeader className="text-right">Total</TableHeader>
-   265	                                    <TableHeader className="text-center">Status Pembayaran</TableHeader>
-   266	                                    <TableHeader className="text-center">Metode Pembayaran</TableHeader>
-   267	                                    <TableHeader className="text-center">Aksi</TableHeader>
-   268	                                </TableRow>
-   269	                            </TableHead>
-   270	                            <TableBody>
-   271	                                {purchases.length === 0 ? (
-   272	                                    <TableRow>
-   273	                                        <TableCell
-   274	                                            colSpan={7}
-   275	                                            className="text-center text-gray-600"
-   276	                                        >
-   277	                                            {debouncedSearch ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"` : "Tidak ada data pembelian yang ditemukan"}
-   278	                                        </TableCell>
-   279	                                    </TableRow>
-   280	                                ) : (
-   281	                                    purchases.map((purchase) => (
-   282	                                        <TableRow key={purchase.id}>
-   283	                                            <TableCell>{purchase.invoice_number}</TableCell>
-   284	                                            <TableCell>
-   285	                                                {new Date(purchase.date).toLocaleDateString('id-ID', {
-   286	                                                    day: '2-digit',
-   287	                                                    month: 'short',
-   288	                                                    year: 'numeric'
-   289	                                                })}
-   290	                                            </TableCell>
-   291	                                            <TableCell>{purchase.supplier?.name || 'Tidak ada supplier'}</TableCell>
-   292	                                            <TableCell className="text-right">
-   293	                                                {purchase.total.toLocaleString('id-ID', {
-   294	                                                    style: 'currency',
-   295	                                                    currency: 'IDR'
-   296	                                                })}
-   297	                                            </TableCell>
-   298	                                            <TableCell className="text-center">
-   299	                                                <Badge variant={getStatusBadgeVariant(purchase.payment_status)}>
-   300	                                                    {getStatusLabel(purchase.payment_status)}
-   301	                                                </Badge>
-   302	                                            </TableCell>
-   303	                                            <TableCell className="text-center">
-   304	                                                {getPaymentMethodLabel(purchase.payment_method)}
-   305	                                            </TableCell>
-   306	                                            <TableCell className="text-center">
-   307	                                                <div className="flex justify-center space-x-2">
-   308	                                                    <Link to={`/purchases/view/${purchase.id}`}>
-   309	                                                        <Button variant="primary" size="sm">
-   310	                                                            <FaEye />
-   311	                                                        </Button>
-   312	                                                    </Link>
-   313	                                                    <Link to={`/purchases/edit/${purchase.id}`}>
-   314	                                                        <Button variant="secondary" size="sm">
-   315	                                                            <FaEdit />
-   316	                                                        </Button>
-   317	                                                    </Link>
-   318	                                                    <Button
-   319	                                                        variant="danger"
-   320	                                                        size="sm"
-   321	                                                        onClick={() => handleDelete(purchase.id)}
-   322	                                                    >
-   323	                                                        <FaTrash />
-   324	                                                    </Button>
-   325	                                                </div>
-   326	                                            </TableCell>
-   327	                                        </TableRow>
-   328	                                    ))
-   329	                                )}
-   330	                            </TableBody>
-   331	                        </Table>
-   332	                    )}
-   333	
-   334	                    <Pagination
-   335	                        currentPage={currentPage}
-   336	                        totalPages={totalPages}
-   337	                        totalItems={totalItems}
-   338	                        itemsPerPage={itemsPerPage}
-   339	                        itemsCount={purchases.length}
-   340	                        onPageChange={handlePageChange}
-   341	                        onItemsPerPageChange={handleItemsPerPageChange}
-   342	                    />
-   343	                </>
-   344	            )}
-   345	        </Card>
-   346	    );
-   347	};
-   348	
-   349	export default PurchaseList;
+   230	                <div className="flex space-x-2">
+   231	                    <Link to="/purchases/upload-invoice">
+   232	                        <Button variant="secondary">
+   233	                            <FaFileUpload className="mr-2" />
+   234	                            Upload Faktur
+   235	                        </Button>
+   236	                    </Link>
+   237	                    
+   238	                    <Link to="/purchases/create">
+   239	                        <Button variant="primary">
+   240	                            <FaPlus className="mr-2" />
+   241	                            Tambah Pembelian Baru
+   242	                        </Button>
+   243	                    </Link>
+   244	                </div>
+   245	            </div>
+   246	
+   247	            <div className="mb-4 relative">
+   248	                <input
+   249	                    type="text"
+   250	                    placeholder="Cari nomor faktur atau supplier..."
+   251	                    className="w-full p-3 border rounded-md pl-10"
+   252	                    value={search}
+   253	                    onChange={(e) => setSearch(e.target.value)}
+   254	                />
+   255	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+   256	            </div>
+   257	
+   258	            {loading ? (
+   259	                <Loading />
+   260	            ) : (
+   261	                <> 
+   262	                    {tableLoading ? (
+   263	                        <div>
+   264	                            <Loading/>
+   265	                        </div>
+   266	                    ) : (
+   267	                        <Table>
+   268	                            <TableHead>
+   269	                                <TableRow>
+   270	                                    <TableHeader>No. Faktur</TableHeader>
+   271	                                    <TableHeader>Tanggal</TableHeader>
+   272	                                    <TableHeader>Supplier</TableHeader>
+   273	                                    <TableHeader className="text-right">Total</TableHeader>
+   274	                                    <TableHeader className="text-center">Status Pembayaran</TableHeader>
+   275	                                    <TableHeader className="text-center">Metode Pembayaran</TableHeader>
+   276	                                    <TableHeader className="text-center">Aksi</TableHeader>
+   277	                                </TableRow>
+   278	                            </TableHead>
+   279	                            <TableBody>
+   280	                                {purchases.length === 0 ? (
+   281	                                    <TableRow>
+   282	                                        <TableCell
+   283	                                            colSpan={7}
+   284	                                            className="text-center text-gray-600"
+   285	                                        >
+   286	                                            {debouncedSearch ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"` : "Tidak ada data pembelian yang ditemukan"}
+   287	                                        </TableCell>
+   288	                                    </TableRow>
+   289	                                ) : (
+   290	                                    purchases.map((purchase) => (
+   291	                                        <TableRow key={purchase.id}>
+   292	                                            <TableCell>{purchase.invoice_number}</TableCell>
+   293	                                            <TableCell>
+   294	                                                {new Date(purchase.date).toLocaleDateString('id-ID', {
+   295	                                                    day: '2-digit',
+   296	                                                    month: 'short',
+   297	                                                    year: 'numeric'
+   298	                                                })}
+   299	                                            </TableCell>
+   300	                                            <TableCell>{purchase.supplier?.name || 'Tidak ada supplier'}</TableCell>
+   301	                                            <TableCell className="text-right">
+   302	                                                {purchase.total.toLocaleString('id-ID', {
+   303	                                                    style: 'currency',
+   304	                                                    currency: 'IDR'
+   305	                                                })}
+   306	                                            </TableCell>
+   307	                                            <TableCell className="text-center">
+   308	                                                <Badge variant={getStatusBadgeVariant(purchase.payment_status)}>
+   309	                                                    {getStatusLabel(purchase.payment_status)}
+   310	                                                </Badge>
+   311	                                            </TableCell>
+   312	                                            <TableCell className="text-center">
+   313	                                                {getPaymentMethodLabel(purchase.payment_method)}
+   314	                                            </TableCell>
+   315	                                            <TableCell className="text-center">
+   316	                                                <div className="flex justify-center space-x-2">
+   317	                                                    <Link to={`/purchases/view/${purchase.id}`}>
+   318	                                                        <Button variant="primary" size="sm">
+   319	                                                            <FaEye />
+   320	                                                        </Button>
+   321	                                                    </Link>
+   322	                                                    <Link to={`/purchases/edit/${purchase.id}`}>
+   323	                                                        <Button variant="secondary" size="sm">
+   324	                                                            <FaEdit />
+   325	                                                        </Button>
+   326	                                                    </Link>
+   327	                                                    <Button
+   328	                                                        variant="danger"
+   329	                                                        size="sm"
+   330	                                                        onClick={() => handleDelete(purchase.id)}
+   331	                                                    >
+   332	                                                        <FaTrash />
+   333	                                                    </Button>
+   334	                                                </div>
+   335	                                            </TableCell>
+   336	                                        </TableRow>
+   337	                                    ))
+   338	                                )}
+   339	                            </TableBody>
+   340	                        </Table>
+   341	                    )}
+   342	
+   343	                    <Pagination
+   344	                        currentPage={currentPage}
+   345	                        totalPages={totalPages}
+   346	                        totalItems={totalItems}
+   347	                        itemsPerPage={itemsPerPage}
+   348	                        itemsCount={purchases.length}
+   349	                        onPageChange={handlePageChange}
+   350	                        onItemsPerPageChange={handleItemsPerPageChange}
+   351	                    />
+   352	                </>
+   353	            )}
+   354	        </Card>
+   355	    );
+   356	};
+   357	
+   358	export default PurchaseList;
+
+
+===============================================
+= File: ./src/pages/purchases/UploadInvoice.tsx 
+===============================================
+
+     1	/* eslint-disable @typescript-eslint/no-explicit-any */
+     2	// src/pages/purchases/UploadInvoice.tsx
+     3	import { useState } from 'react';
+     4	import { useNavigate } from 'react-router-dom';
+     5	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
+     6	import { Button } from '../../components/ui/Button';
+     7	import { FaUpload, FaArrowLeft, FaCheck } from 'react-icons/fa';
+     8	import { uploadAndExtractInvoice } from '../../services/invoiceService';
+     9	
+    10	const UploadInvoice = () => {
+    11	    const navigate = useNavigate();
+    12	    const [file, setFile] = useState<File | null>(null);
+    13	    const [error, setError] = useState<string | null>(null);
+    14	    const [loading, setLoading] = useState(false);
+    15	    const [responseData, setResponseData] = useState<any>(null);
+    16	    const [uploadStep, setUploadStep] = useState<'upload' | 'confirm'>('upload');
+    17	
+    18	    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    19	        const selectedFile = e.target.files?.[0];
+    20	        setError(null);
+    21	        
+    22	        if (!selectedFile) {
+    23	            return;
+    24	        }
+    25	        
+    26	        // Validasi tipe file
+    27	        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    28	        if (!validTypes.includes(selectedFile.type)) {
+    29	            setError('Tipe file tidak valid. Harap unggah file PNG atau JPG.');
+    30	            setFile(null);
+    31	            return;
+    32	        }
+    33	        
+    34	        // Validasi ukuran file (5MB = 5 * 1024 * 1024 bytes)
+    35	        const maxSize = 5 * 1024 * 1024;
+    36	        if (selectedFile.size > maxSize) {
+    37	            setError('Ukuran file terlalu besar. Maksimum 5MB.');
+    38	            setFile(null);
+    39	            return;
+    40	        }
+    41	        
+    42	        setFile(selectedFile);
+    43	    };
+    44	
+    45	    const handleUpload = async () => {
+    46	        if (!file) {
+    47	            setError('Silakan pilih file gambar faktur terlebih dahulu.');
+    48	            return;
+    49	        }
+    50	        
+    51	        try {
+    52	            setLoading(true);
+    53	            const data = await uploadAndExtractInvoice(file);
+    54	            setResponseData(data);
+    55	            setUploadStep('confirm');
+    56	        } catch (err: any) {
+    57	            setError(`Gagal mengunggah dan mengekstrak faktur: ${err.message || 'Terjadi kesalahan'}`);
+    58	        } finally {
+    59	            setLoading(false);
+    60	        }
+    61	    };
+    62	    
+    63	    const handleConfirm = async () => {
+    64	        if (!responseData) return;
+    65	        
+    66	        try {
+    67	            setLoading(true);
+    68	            // const result = await saveInvoiceToDatabase(responseData);
+    69	            alert('Faktur berhasil disimpan!');
+    70	            navigate('/purchases');
+    71	        } catch (err: any) {
+    72	            setError(err.message || 'Gagal menyimpan data faktur');
+    73	        } finally {
+    74	            setLoading(false);
+    75	        }
+    76	    };
+    77	    
+    78	    const handleCancel = () => {
+    79	        if (uploadStep === 'confirm') {
+    80	            setUploadStep('upload');
+    81	            setResponseData(null);
+    82	        } else {
+    83	            navigate('/purchases');
+    84	        }
+    85	    };
+    86	
+    87	    return (
+    88	        <Card>
+    89	            <CardHeader>
+    90	                <CardTitle>
+    91	                    {uploadStep === 'upload' ? 'Unggah Faktur Pembelian' : 'Konfirmasi Data Faktur'}
+    92	                </CardTitle>
+    93	            </CardHeader>
+    94	            
+    95	            <CardContent>
+    96	                {error && (
+    97	                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    98	                        {error}
+    99	                    </div>
+   100	                )}
+   101	                
+   102	                {uploadStep === 'upload' ? (
+   103	                    <div className="space-y-6">
+   104	                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+   105	                            <div className="mb-4">
+   106	                                <FaUpload className="mx-auto h-12 w-12 text-gray-400" />
+   107	                                <p className="mt-2 text-sm text-gray-600">
+   108	                                    Klik atau seret untuk mengunggah gambar faktur
+   109	                                </p>
+   110	                                <p className="text-xs text-gray-500">
+   111	                                    PNG, JPG (Maks. 5MB)
+   112	                                </p>
+   113	                            </div>
+   114	                            
+   115	                            <input
+   116	                                type="file"
+   117	                                accept="image/png,image/jpeg,image/jpg"
+   118	                                onChange={handleFileChange}
+   119	                                className="w-full"
+   120	                            />
+   121	                            
+   122	                            {file && (
+   123	                                <div className="mt-4 text-left p-3 bg-gray-50 rounded-md">
+   124	                                    <p className="text-sm font-medium text-gray-700">File dipilih:</p>
+   125	                                    <p className="text-sm text-gray-600">{file.name}</p>
+   126	                                    <p className="text-xs text-gray-500">
+   127	                                        {(file.size / (1024 * 1024)).toFixed(2)} MB
+   128	                                    </p>
+   129	                                </div>
+   130	                            )}
+   131	                        </div>
+   132	                        
+   133	                        <div className="flex justify-end space-x-2">
+   134	                            <Button 
+   135	                                type="button" 
+   136	                                variant="outline" 
+   137	                                onClick={handleCancel}
+   138	                            >
+   139	                                <FaArrowLeft className="mr-2" /> Kembali
+   140	                            </Button>
+   141	                            
+   142	                            <Button 
+   143	                                type="button" 
+   144	                                onClick={handleUpload} 
+   145	                                disabled={!file || loading}
+   146	                                isLoading={loading}
+   147	                            >
+   148	                                <FaUpload className="mr-2" /> Unggah & Ekstrak
+   149	                            </Button>
+   150	                        </div>
+   151	                    </div>
+   152	                ) : (
+   153	                    <div className="space-y-6">
+   154	                        {responseData && (
+   155	                            <div>
+   156	                                <h3 className="text-lg font-medium mb-4">Data yang Diekstraksi:</h3>
+   157	                                
+   158	                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+   159	                                    <div className="border rounded-md p-4">
+   160	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Perusahaan</h4>
+   161	                                        <div className="space-y-1 text-sm">
+   162	                                            <p><span className="font-medium">Nama:</span> {responseData.company_details?.name || '-'}</p>
+   163	                                            <p><span className="font-medium">Alamat:</span> {responseData.company_details?.address || '-'}</p>
+   164	                                            <p><span className="font-medium">No. Lisensi PBF:</span> {responseData.company_details?.license_pbf || '-'}</p>
+   165	                                            <p><span className="font-medium">No. Lisensi DAK:</span> {responseData.company_details?.license_dak || '-'}</p>
+   166	                                            <p><span className="font-medium">No. Sertifikat CDOB:</span> {responseData.company_details?.certificate_cdob || '-'}</p>
+   167	                                        </div>
+   168	                                    </div>
+   169	                                    
+   170	                                    <div className="border rounded-md p-4">
+   171	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Faktur</h4>
+   172	                                        <div className="space-y-1 text-sm">
+   173	                                            <p><span className="font-medium">No. Faktur:</span> {responseData.invoice_information?.invoice_number || '-'}</p>
+   174	                                            <p><span className="font-medium">Tanggal:</span> {responseData.invoice_information?.invoice_date || '-'}</p>
+   175	                                            <p><span className="font-medium">No. SO:</span> {responseData.invoice_information?.so_number || '-'}</p>
+   176	                                            <p><span className="font-medium">Jatuh Tempo:</span> {responseData.invoice_information?.due_date || '-'}</p>
+   177	                                        </div>
+   178	                                    </div>
+   179	                                </div>
+   180	                                
+   181	                                <div className="border rounded-md p-4 mb-6">
+   182	                                    <h4 className="font-medium text-gray-700 mb-2">Informasi Pelanggan</h4>
+   183	                                    <div className="space-y-1 text-sm">
+   184	                                        <p><span className="font-medium">Nama:</span> {responseData.customer_information?.customer_name || '-'}</p>
+   185	                                        <p><span className="font-medium">Alamat:</span> {responseData.customer_information?.customer_address || '-'}</p>
+   186	                                        {responseData.customer_information?.customer_id && (
+   187	                                            <p><span className="font-medium">ID:</span> {responseData.customer_information.customer_id}</p>
+   188	                                        )}
+   189	                                    </div>
+   190	                                </div>
+   191	                                
+   192	                                <div className="mb-6">
+   193	                                    <h4 className="font-medium text-gray-700 mb-2">Daftar Produk</h4>
+   194	                                    <div className="overflow-x-auto">
+   195	                                        <table className="min-w-full bg-white border">
+   196	                                            <thead className="bg-gray-100">
+   197	                                                <tr>
+   198	                                                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+   199	                                                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Produk</th>
+   200	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+   201	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Satuan</th>
+   202	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">No. Batch</th>
+   203	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Exp</th>
+   204	                                                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
+   205	                                                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+   206	                                                </tr>
+   207	                                            </thead>
+   208	                                            <tbody className="divide-y divide-gray-200">
+   209	                                                {responseData.product_list?.map((product: any, index: number) => (
+   210	                                                    <tr key={index} className="text-sm">
+   211	                                                        <td className="py-2 px-3">{product.sku || '-'}</td>
+   212	                                                        <td className="py-2 px-3">{product.product_name || '-'}</td>
+   213	                                                        <td className="py-2 px-3 text-center">{product.quantity || '-'}</td>
+   214	                                                        <td className="py-2 px-3 text-center">{product.unit || '-'}</td>
+   215	                                                        <td className="py-2 px-3 text-center">{product.batch_number || '-'}</td>
+   216	                                                        <td className="py-2 px-3 text-center">{product.expiry_date || '-'}</td>
+   217	                                                        <td className="py-2 px-3 text-right">
+   218	                                                            {typeof product.unit_price === 'number' 
+   219	                                                                ? product.unit_price.toLocaleString('id-ID') 
+   220	                                                                : '-'}
+   221	                                                        </td>
+   222	                                                        <td className="py-2 px-3 text-right">
+   223	                                                            {typeof product.total_price === 'number' 
+   224	                                                                ? product.total_price.toLocaleString('id-ID') 
+   225	                                                                : '-'}
+   226	                                                        </td>
+   227	                                                    </tr>
+   228	                                                ))}
+   229	                                            </tbody>
+   230	                                        </table>
+   231	                                    </div>
+   232	                                </div>
+   233	                                
+   234	                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   235	                                    <div className="border rounded-md p-4">
+   236	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Tambahan</h4>
+   237	                                        <div className="space-y-1 text-sm">
+   238	                                            <p><span className="font-medium">Diperiksa oleh:</span> {responseData.additional_information?.checked_by || '-'}</p>
+   239	                                        </div>
+   240	                                    </div>
+   241	                                    
+   242	                                    <div className="border rounded-md p-4">
+   243	                                        <h4 className="font-medium text-gray-700 mb-2">Ringkasan Pembayaran</h4>
+   244	                                        <div className="space-y-1 text-sm">
+   245	                                            <p><span className="font-medium">Total Harga:</span> {responseData.payment_summary?.total_price?.toLocaleString('id-ID') || '-'}</p>
+   246	                                            <p><span className="font-medium">PPN:</span> {responseData.payment_summary?.vat?.toLocaleString('id-ID') || '-'}</p>
+   247	                                            <p className="font-medium">Total Faktur: 
+   248	                                                <span className="text-blue-600 ml-2">
+   249	                                                    {responseData.payment_summary?.invoice_total?.toLocaleString('id-ID') || '-'}
+   250	                                                </span>
+   251	                                            </p>
+   252	                                        </div>
+   253	                                    </div>
+   254	                                </div>
+   255	                            </div>
+   256	                        )}
+   257	                    </div>
+   258	                )}
+   259	            </CardContent>
+   260	            
+   261	            {uploadStep === 'confirm' && (
+   262	                <CardFooter className="flex justify-end space-x-2">
+   263	                    <Button 
+   264	                        type="button" 
+   265	                        variant="outline" 
+   266	                        onClick={handleCancel}
+   267	                    >
+   268	                        Kembali
+   269	                    </Button>
+   270	                    
+   271	                    <Button 
+   272	                        type="button" 
+   273	                        onClick={handleConfirm} 
+   274	                        disabled={loading}
+   275	                        isLoading={loading}
+   276	                    >
+   277	                        <FaCheck className="mr-2" />
+   278	                        Konfirmasi & Simpan
+   279	                    </Button>
+   280	                </CardFooter>
+   281	            )}
+   282	        </Card>
+   283	    );
+   284	};
+   285	
+   286	export default UploadInvoice;
 
 
 ===============================================
@@ -7208,6 +7559,286 @@
    214	};
    215	
    216	export default Profile;
+
+
+===============================================
+= File: ./src/services/invoiceService.ts 
+===============================================
+
+     1	// src/services/invoiceService.ts
+     2	import axios, { AxiosError } from 'axios';
+     3	import { supabase } from '../lib/supabase'; // Pastikan path ini benar relatif terhadap src/services/
+     4	
+     5	// URL ke backend ekstraksi faktur (Sebaiknya gunakan environment variable)
+     6	const API_URL = import.meta.env.VITE_INVOICE_EXTRACTOR_API_URL || 'http://localhost:3000/api/extract-invoice';
+     7	
+     8	// --- Definisikan Interface untuk Struktur Data Hasil Ekstraksi ---
+     9	
+    10	interface CompanyDetails {
+    11	    name?: string;
+    12	    address?: string;
+    13	    license_pbf?: string;
+    14	    license_dak?: string;
+    15	    certificate_cdob?: string;
+    16	}
+    17	
+    18	interface InvoiceInformation {
+    19	    invoice_number?: string;
+    20	    invoice_date?: string; // Pertimbangkan tipe Date jika backend mengembalikan format ISO
+    21	    so_number?: string;
+    22	    due_date?: string; // Pertimbangkan tipe Date
+    23	}
+    24	
+    25	interface CustomerInformation {
+    26	    customer_name?: string;
+    27	    customer_address?: string;
+    28	    customer_id?: string; // Jika ada
+    29	}
+    30	
+    31	interface ProductListItem {
+    32	    sku?: string;
+    33	    product_name?: string;
+    34	    quantity?: number;
+    35	    unit?: string;
+    36	    batch_number?: string;
+    37	    expiry_date?: string; // Tetap string karena format MM-YYYY dari Gemini, DB trigger akan konversi
+    38	    unit_price?: number;
+    39	    discount?: number; // Diskon sudah dalam angka, diproses oleh parseDiscountValue di server
+    40	    total_price?: number;
+    41	}
+    42	
+    43	interface PaymentSummary {
+    44	    total_price?: number; // Nilai numerik sudah diproses oleh parseNumericValue di server
+    45	    vat?: number; // PPN sudah dalam bentuk numerik
+    46	    invoice_total?: number; // Total sudah dalam bentuk numerik
+    47	}
+    48	
+    49	interface AdditionalInformation {
+    50	    checked_by?: string;
+    51	}
+    52	
+    53	// Interface utama untuk data hasil ekstraksi
+    54	interface ExtractedInvoiceData {
+    55	    company_details?: CompanyDetails;
+    56	    invoice_information?: InvoiceInformation;
+    57	    customer_information?: CustomerInformation;
+    58	    product_list?: ProductListItem[];
+    59	    payment_summary?: PaymentSummary;
+    60	    additional_information?: AdditionalInformation;
+    61	    // Tambahkan properti lain jika ada dari Gemini
+    62	    rawText?: string; // Untuk fallback jika parsing JSON gagal
+    63	}
+    64	
+    65	// --- Fungsi-fungsi Service ---
+    66	
+    67	/**
+    68	 * Mengunggah gambar faktur dan mengekstrak datanya menggunakan API backend.
+    69	 * @param {File} file - File gambar faktur.
+    70	 * @returns {Promise<ExtractedInvoiceData>} Data hasil ekstraksi.
+    71	 * @throws {Error} Jika terjadi kesalahan saat mengunggah atau mengekstrak.
+    72	 */
+    73	export async function uploadAndExtractInvoice(file: File): Promise<ExtractedInvoiceData> {
+    74	    const formData = new FormData();
+    75	    formData.append('image', file);
+    76	
+    77	    try {
+    78	        // Tentukan tipe data yang diharapkan dari response Axios
+    79	        const response = await axios.post<ExtractedInvoiceData>(API_URL, formData, {
+    80	            headers: {
+    81	                'Content-Type': 'multipart/form-data'
+    82	            }
+    83	        });
+    84	
+    85	        // Validasi dasar respons (opsional tapi bagus)
+    86	        const responseData = response.data;
+    87	        if (!responseData || typeof responseData !== 'object') {
+    88	            throw new Error('Format respons tidak valid dari API ekstraksi.');
+    89	        }
+    90	
+    91	        // Transformasi data dari format Gemini ke format yang diharapkan frontend
+    92	        const transformedData: ExtractedInvoiceData = {
+    93	            company_details: {
+    94	                name: responseData.company?.name,
+    95	                address: responseData.company?.address,
+    96	                license_pbf: responseData.company?.pbf_license_no?.toString(),
+    97	                license_dak: responseData.company?.dak_license_no?.toString(),
+    98	                certificate_cdob: responseData.company?.cdob_certificate_no?.toString()
+    99	            },
+   100	            invoice_information: {
+   101	                invoice_number: responseData.invoice?.number,
+   102	                invoice_date: responseData.invoice?.date,
+   103	                so_number: responseData.invoice?.so_number,
+   104	                due_date: responseData.invoice?.due_date
+   105	            },
+   106	            customer_information: {
+   107	                customer_name: responseData.customer?.name,
+   108	                customer_address: responseData.customer?.address
+   109	            },
+   110	            product_list: responseData.products?.map(p => ({
+   111	                sku: p.sku,
+   112	                product_name: p.product_name,
+   113	                quantity: p.count,
+   114	                unit: p.unit,
+   115	                batch_number: p.batch_no,
+   116	                expiry_date: p.expiry_date,
+   117	                unit_price: parseFloat(p.price_per_unit?.replace(/[^\d,]/g, '').replace(',', '.')),
+   118	                discount: parseFloat((p.discount || "-0%").replace(/[^0-9\.]/g, '')),
+   119	                total_price: parseFloat(p.total_price?.replace(/[^\d,]/g, '').replace(',', '.'))
+   120	            })),
+   121	            payment_summary: {
+   122	                total_price: parseFloat(responseData.payment_summary?.total_price?.replace(/[^\d,]/g, '').replace(',', '.')) || 0,
+   123	                vat: parseFloat(responseData.payment_summary?.vat?.replace(/[^\d,]/g, '').replace(',', '.')) || 0,
+   124	                invoice_total: parseFloat(responseData.payment_summary?.total_invoice?.replace(/[^\d,]/g, '').replace(',', '.')) || 0
+   125	            },
+   126	            additional_information: {
+   127	                checked_by: responseData.additional_information?.checked_by
+   128	            }
+   129	        };
+   130	
+   131	        return transformedData;
+   132	
+   133	    } catch (error) {
+   134	        console.error('Error mengekstrak faktur:', error);
+   135	        let errorMessage = 'Gagal mengekstrak data faktur. Silakan coba lagi.';
+   136	        if (axios.isAxiosError(error)) {
+   137	            const axiosError = error as AxiosError<{ error?: string; details?: string }>;
+   138	            if (axiosError.response?.data?.error) {
+   139	                errorMessage = axiosError.response.data.error;
+   140	                if (axiosError.response.data.details) {
+   141	                    errorMessage += `: ${axiosError.response.data.details}`;
+   142	                }
+   143	            } else if (axiosError.message) {
+   144	                errorMessage = axiosError.message;
+   145	            }
+   146	        } else if (error instanceof Error) {
+   147	            errorMessage = error.message;
+   148	        }
+   149	        throw new Error(errorMessage);
+   150	    }
+   151	}
+   152	
+   153	/**
+   154	 * Menyimpan data faktur hasil ekstraksi ke Supabase.
+   155	 * @param {ExtractedInvoiceData} extractedData - Data hasil ekstraksi dari Gemini.
+   156	 * @returns {Promise<{ id: string; success: boolean }>} Hasil operasi penyimpanan.
+   157	 * @throws {Error} Jika terjadi kesalahan saat menyimpan ke database.
+   158	 */
+   159	export async function saveInvoiceToDatabase(extractedData: ExtractedInvoiceData): Promise<{ id: string; success: boolean }> {
+   160	    try {
+   161	        // Validasi data penting sebelum insert
+   162	        if (!extractedData.invoice_information?.invoice_number) {
+   163	            throw new Error('Nomor faktur tidak ditemukan dalam data ekstraksi.');
+   164	        }
+   165	        if (!extractedData.invoice_information?.invoice_date) {
+   166	            throw new Error('Tanggal faktur tidak ditemukan dalam data ekstraksi.');
+   167	        }
+   168	        if (!extractedData.company_details?.name) {
+   169	            throw new Error('Nama supplier tidak ditemukan dalam data ekstraksi.');
+   170	        }
+   171	        if (!extractedData.customer_information?.customer_name) {
+   172	            throw new Error('Nama pelanggan tidak ditemukan dalam data ekstraksi.');
+   173	        }
+   174	
+   175	
+   176	        // 1. Simpan header faktur ke e_invoices
+   177	        const { data: invoiceData, error: invoiceError } = await supabase
+   178	            .from('e_invoices')
+   179	            .insert({
+   180	                invoice_number: extractedData.invoice_information.invoice_number,
+   181	                invoice_date: extractedData.invoice_information.invoice_date, // Pastikan format tanggal sesuai DB
+   182	                so_number: extractedData.invoice_information.so_number,
+   183	                due_date: extractedData.invoice_information.due_date, // Pastikan format tanggal sesuai DB
+   184	                supplier_name: extractedData.company_details.name,
+   185	                supplier_address: extractedData.company_details.address,
+   186	                pbf_license_number: extractedData.company_details.license_pbf,
+   187	                dak_license_number: extractedData.company_details.license_dak,
+   188	                cdob_certificate_number: extractedData.company_details.certificate_cdob,
+   189	                customer_name: extractedData.customer_information.customer_name,
+   190	                customer_address: extractedData.customer_information.customer_address,
+   191	                total_price: extractedData.payment_summary?.total_price ?? 0,
+   192	                ppn: extractedData.payment_summary?.vat ?? 0,
+   193	                total_invoice: extractedData.payment_summary?.invoice_total ?? 0,
+   194	                checked_by: extractedData.additional_information?.checked_by,
+   195	                json_data: extractedData // Simpan raw data untuk audit/debug
+   196	            })
+   197	            .select('id')
+   198	            .single();
+   199	
+   200	        if (invoiceError) {
+   201	            console.error("Supabase invoice insert error:", invoiceError);
+   202	            throw new Error(`Gagal menyimpan header faktur: ${invoiceError.message}`);
+   203	        }
+   204	        if (!invoiceData) {
+   205	            throw new Error('Gagal mendapatkan ID header faktur setelah insert.');
+   206	        }
+   207	
+   208	        // 2. Simpan item faktur ke e_invoice_items
+   209	        const invoiceItems = (extractedData.product_list ?? []).map((product: ProductListItem) => ({
+   210	            invoice_id: invoiceData.id,
+   211	            sku: product.sku,
+   212	            product_name: product.product_name ?? 'Produk Tidak Dikenal',
+   213	            quantity: product.quantity ?? 0,
+   214	            unit: product.unit,
+   215	            batch_number: product.batch_number,
+   216	            expiry_date: product.expiry_date, // Biarkan string, trigger DB akan konversi jika formatnya MM-YYYY
+   217	            unit_price: product.unit_price ?? 0,
+   218	            discount: product.discount ?? 0,
+   219	            total_price: product.total_price ?? 0
+   220	        }));
+   221	
+   222	        // Hanya insert jika ada item
+   223	        if (invoiceItems.length > 0) {
+   224	            const { error: itemsError } = await supabase
+   225	                .from('e_invoice_items')
+   226	                .insert(invoiceItems);
+   227	
+   228	            if (itemsError) {
+   229	                console.error("Supabase items insert error:", itemsError);
+   230	                // Pertimbangkan: Haruskah kita rollback insert header jika item gagal?
+   231	                // Untuk saat ini, kita lempar error saja.
+   232	                throw new Error(`Gagal menyimpan item faktur: ${itemsError.message}`);
+   233	            }
+   234	        } else {
+   235	            console.warn(`Invoice ${invoiceData.id} disimpan tanpa item produk.`);
+   236	        }
+   237	
+   238	
+   239	        return { id: invoiceData.id, success: true };
+   240	
+   241	    } catch (error: unknown) { // Tangkap error sebagai unknown
+   242	        console.error('Error menyimpan data faktur ke database:', error);
+   243	        // Pastikan kita melempar instance Error
+   244	        if (error instanceof Error) {
+   245	            throw new Error(`Gagal menyimpan faktur ke database: ${error.message}`);
+   246	        } else {
+   247	            throw new Error('Gagal menyimpan faktur ke database: Terjadi kesalahan tidak dikenal.');
+   248	        }
+   249	    }
+   250	}
+   251	
+   252	/**
+   253	 * Proses lengkap: upload, ekstrak.
+   254	 * (Fungsi simpan dipanggil terpisah setelah konfirmasi pengguna)
+   255	 * @param {File} file - File gambar faktur.
+   256	 * @returns {Promise<ExtractedInvoiceData>} Data hasil ekstraksi.
+   257	 * @throws {Error} Jika terjadi kesalahan saat memproses.
+   258	 */
+   259	export async function processInvoice(file: File): Promise<ExtractedInvoiceData> {
+   260	    try {
+   261	        // Langkah 1: Upload dan ekstrak
+   262	        const extractedData = await uploadAndExtractInvoice(file);
+   263	        return extractedData; // Kembalikan data untuk konfirmasi
+   264	    } catch (error: unknown) {
+   265	        console.error('Error processing invoice:', error);
+   266	        if (error instanceof Error) {
+   267	            throw new Error(
+   268	                error.message || 'Terjadi kesalahan saat memproses faktur'
+   269	            );
+   270	        } else {
+   271	            throw new Error('Terjadi kesalahan tidak dikenal saat memproses faktur');
+   272	        }
+   273	    }
+   274	}
 
 
 ===============================================
