@@ -353,39 +353,35 @@
     11	    "preview": "vite preview"
     12	  },
     13	  "dependencies": {
-    14	    "@google/genai": "^0.7.0",
-    15	    "@headlessui/react": "^2.2.0",
-    16	    "@supabase/supabase-js": "^2.49.3",
-    17	    "@tanstack/react-table": "^8.21.2",
-    18	    "autoprefixer": "^10.4.21",
-    19	    "axios": "^1.8.4",
-    20	    "chart.js": "^4.4.8",
-    21	    "html2canvas": "^1.4.1",
-    22	    "jspdf": "^3.0.1",
-    23	    "pdfmake": "^0.2.18",
-    24	    "postcss": "^8.5.3",
-    25	    "react": "^19.0.0",
-    26	    "react-chartjs-2": "^5.3.0",
-    27	    "react-dom": "^19.0.0",
-    28	    "react-icons": "^5.5.0",
-    29	    "react-router-dom": "^6.30.0",
-    30	    "zustand": "^5.0.3"
-    31	  },
-    32	  "devDependencies": {
-    33	    "@eslint/js": "^9.21.0",
-    34	    "@types/react": "^19.0.10",
-    35	    "@types/react-dom": "^19.0.4",
-    36	    "@vitejs/plugin-react": "^4.3.4",
-    37	    "eslint": "^9.21.0",
-    38	    "eslint-plugin-react-hooks": "^5.1.0",
-    39	    "eslint-plugin-react-refresh": "^0.4.19",
-    40	    "globals": "^15.15.0",
-    41	    "tailwindcss": "^3.4.17",
-    42	    "typescript": "~5.7.2",
-    43	    "typescript-eslint": "^8.24.1",
-    44	    "vite": "^6.2.0"
-    45	  }
-    46	}
+    14	    "@headlessui/react": "^2.2.1",
+    15	    "@supabase/supabase-js": "^2.49.3",
+    16	    "@tanstack/react-table": "^8.21.2",
+    17	    "autoprefixer": "^10.4.21",
+    18	    "axios": "^1.8.4",
+    19	    "chart.js": "^4.4.8",
+    20	    "postcss": "^8.5.3",
+    21	    "react": "^19.0.0",
+    22	    "react-chartjs-2": "^5.3.0",
+    23	    "react-dom": "^19.0.0",
+    24	    "react-icons": "^5.5.0",
+    25	    "react-router-dom": "^6.30.0",
+    26	    "zustand": "^5.0.3"
+    27	  },
+    28	  "devDependencies": {
+    29	    "@eslint/js": "^9.21.0",
+    30	    "@types/react": "^19.0.10",
+    31	    "@types/react-dom": "^19.0.4",
+    32	    "@vitejs/plugin-react": "^4.3.4",
+    33	    "eslint": "^9.21.0",
+    34	    "eslint-plugin-react-hooks": "^5.1.0",
+    35	    "eslint-plugin-react-refresh": "^0.4.19",
+    36	    "globals": "^15.15.0",
+    37	    "tailwindcss": "^3.4.17",
+    38	    "typescript": "~5.7.2",
+    39	    "typescript-eslint": "^8.24.1",
+    40	    "vite": "^6.2.0"
+    41	  }
+    42	}
 
 
 ===============================================
@@ -2295,7 +2291,7 @@
      2	import React, { createContext, useState, useContext, useCallback, Fragment } from 'react';
      3	import { createPortal } from 'react-dom';
      4	import { Button } from './Button';
-     5	import { classNames } from '../../lib/classNames';
+     5	import { Transition, TransitionChild } from '@headlessui/react';
      6	
      7	// Context untuk mengelola state dialog
      8	interface ConfirmDialogContextType {
@@ -2418,46 +2414,58 @@
    125	
    126	    // Gunakan portal untuk merender dialog di luar hierarki komponen
    127	    return createPortal(
-   128	        <Fragment>
-   129	            {isOpen && (
-   130	                <div
-   131	                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm transition-all duration-300 overflow-y-auto"
-   132	                    onClick={handleBackdropClick}
-   133	                >
-   134	                    <div
-   135	                        className={classNames(
-   136	                            "relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all duration-300 ease-out p-6",
-   137	                            isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95"
-   138	                        )}
-   139	                    >
-   140	                        <div className="text-lg font-semibold mb-2">{title}</div>
-   141	                        <div className="text-gray-600 mb-6">{message}</div>
-   142	
-   143	                        <div className="flex justify-end space-x-3">
-   144	                            <Button
-   145	                                type="button"
-   146	                                variant="outline"
-   147	                                onClick={handleCancel}
-   148	                            >
-   149	                                {cancelText}
-   150	                            </Button>
-   151	                            <Button
-   152	                                type="button"
-   153	                                variant={variant}
-   154	                                onClick={handleConfirm}
-   155	                            >
-   156	                                {confirmText}
-   157	                            </Button>
-   158	                        </div>
-   159	                    </div>
-   160	                </div>
-   161	            )}
-   162	        </Fragment>,
-   163	        document.body
-   164	    );
-   165	};
-   166	
-   167	export default ConfirmDialogProvider;
+   128	        <Transition show={isOpen} as={Fragment}>
+   129	            <div
+   130	                className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
+   131	                onClick={handleBackdropClick} // Backdrop click handler remains here
+   132	            >
+   133	                {/* Backdrop transition */}
+   134	                <div
+   135	                    className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+   136	                    aria-hidden="true"
+   137	                />
+   138	
+   139	                {/* Dialog panel transition */}
+   140	                <TransitionChild
+   141	                    as={Fragment}
+   142	                    enter="transition-all duration-300 ease-out"
+   143	                    enterFrom="opacity-0 scale-95"
+   144	                    enterTo="opacity-100 scale-100"
+   145	                    leave="transition-all duration-200 ease-in"
+   146	                    leaveFrom="opacity-100 scale-100"
+   147	                    leaveTo="opacity-0 scale-95"
+   148	                >
+   149	                    <div
+   150	                        className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+   151	                    >
+   152	                        <div className="text-lg font-semibold mb-2">{title}</div>
+   153	                        <div className="text-gray-600 mb-6">{message}</div>
+   154	
+   155	                        <div className="flex justify-end space-x-3">
+   156	                            <Button
+   157	                                type="button"
+   158	                                variant="outline"
+   159	                                onClick={handleCancel}
+   160	                            >
+   161	                                {cancelText}
+   162	                            </Button>
+   163	                            <Button
+   164	                                type="button"
+   165	                                variant={variant}
+   166	                                onClick={handleConfirm}
+   167	                            >
+   168	                                {confirmText}
+   169	                            </Button>
+   170	                        </div>
+   171	                    </div>
+   172	                </TransitionChild>
+   173	            </div>
+   174	        </Transition>,
+   175	        document.body
+   176	    );
+   177	};
+   178	
+   179	export default ConfirmDialogProvider;
 
 
 ===============================================
