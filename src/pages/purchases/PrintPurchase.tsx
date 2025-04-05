@@ -58,8 +58,8 @@ const PrintPurchase = () => {
     // Fungsi format currency dengan 2 digit desimal
     const formatCurrency = (value: number | bigint, prefix = '') => {
         const formatter = new Intl.NumberFormat('id-ID', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
         });
         return `${prefix}${formatter.format(value)}`;
     };
