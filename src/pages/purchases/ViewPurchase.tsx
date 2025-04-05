@@ -196,6 +196,14 @@ const ViewPurchase = () => {
         setScale(prev => Math.max(prev - 0.1, 0.5));
     };
 
+    const formatCurrency = (value: number | bigint, prefix = '') => {
+        const formatter = new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        return `${prefix}${formatter.format(value)}`;
+    };
+
     if (loading) {
         return <Loading message="Memuat data pembelian..." />;
     }
@@ -276,10 +284,10 @@ const ViewPurchase = () => {
                                 
                                 {/* Customer Info */}
                                 <div className="text-left">
-                                    <h2 className="font-bold text-lg text-gray-800">Customer:</h2>
-                                    <div className="text-sm text-gray-600">
-                                        <p>{purchase.customer_name || 'Data belum tersedia'}</p>
-                                        <p>{purchase.customer_address || 'Alamat belum tersedia'}</p>
+                                    <h2 className="text-sm text-gray-600">Customer:</h2>
+                                    <div className="text-sm ">
+                                        <p className="font-bold">{purchase.customer_name || 'Data belum tersedia'}</p>
+                                        <p className="text-gray-600">{purchase.customer_address || 'Alamat belum tersedia'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -352,12 +360,12 @@ const ViewPurchase = () => {
                                             </td>
                                             <td className="border p-1 text-center">{item.quantity}</td>
                                             <td className="border p-1 text-center">{item.unit}</td>
-                                            <td className="border p-1 text-right">{item.price.toLocaleString('id-ID')}</td>
+                                            <td className="border p-1 text-right">{formatCurrency(item.price)}</td>
                                             <td className="border p-1 text-right">{item.discount > 0 ? `${item.discount}%` : '-'}</td>
                                             {!purchase.is_vat_included && (
                                                 <td className="border p-1 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}%` : '-'}</td>
                                             )}
-                                            <td className="border p-1 text-right">{item.subtotal.toLocaleString('id-ID')}</td>
+                                            <td className="border p-1 text-right">{formatCurrency(item.subtotal)}</td>
                                         </tr>
                                     ))
                                 )}
@@ -408,33 +416,33 @@ const ViewPurchase = () => {
                             <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
                                 <span className="text-left">Subtotal</span>
                                 <span className="px-2">:</span>
-                                <span>{baseTotal.toLocaleString('id-ID')}</span>
+                                <span className="font-mono text-right">{formatCurrency(baseTotal)}</span>
                             </div>
 
                             <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
                                 <span className="text-left">Diskon</span>
                                 <span className="px-2">:</span>
-                                <span>-{discountTotal.toLocaleString('id-ID')}</span>
+                                <span className="font-mono text-right">{formatCurrency(discountTotal, '-')}</span>
                             </div>
 
                             <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
                                 <span className="text-left">Setelah Diskon</span>
                                 <span className="px-2">:</span>
-                                <span>{afterDiscountTotal.toLocaleString('id-ID')}</span>
+                                <span className="font-mono text-right">{formatCurrency(afterDiscountTotal)}</span>
                             </div>
 
                             {!purchase.is_vat_included && (
                                 <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
                                     <span className="text-left">PPN</span>
                                     <span className="px-2">:</span>
-                                    <span>+{vatTotal.toLocaleString('id-ID')}</span>
+                                    <span className="font-mono text-right">{formatCurrency(vatTotal, '+')}</span>
                                 </div>
                             )}
 
                             <div className="border-t pt-2 grid grid-cols-[1fr,auto,1fr] font-bold">
                                 <span className="text-left">TOTAL</span>
                                 <span className="px-2">:</span>
-                                <span>{grandTotal.toLocaleString('id-ID')}</span>
+                                <span className="font-mono text-right">{formatCurrency(grandTotal)}</span>
                             </div>
                         </div>
                     </div>

@@ -60,6 +60,7 @@
 │   │   │   └── UnitList.tsx
 │   │   ├── purchases
 │   │   │   ├── CreatePurchase.tsx
+│   │   │   ├── PrintPurchase.tsx
 │   │   │   ├── PurchaseList.tsx
 │   │   │   └── ViewPurchase.tsx
 │   │   ├── sales
@@ -99,7 +100,7 @@
 ├── vite.config.ts
 └── yarn.lock
 
-20 directories, 80 files
+20 directories, 81 files
 
 
 ===============================================
@@ -511,180 +512,187 @@
     15	const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
     16	const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
     17	const Profile = lazy(() => import('./pages/settings/Profile'));
-    18	const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
-    19	// Tambahkan halaman lain sesuai kebutuhan
-    20	
-    21	// Komponen placeholder untuk halaman yang belum diimplementasi
-    22	const ComingSoon = ({ title }: { title: string }) => {
-    23	  return (
-    24	    <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
-    25	      <h2 className="text-2xl font-bold mb-4">{title}</h2>
-    26	      <p className="text-xl">Fitur ini akan segera hadir!</p>
-    27	      <div className="mt-8 p-4 border border-blue-300 rounded-lg bg-blue-50 max-w-md">
-    28	        <p className="text-blue-600 text-center">
-    29	          Halaman ini sedang dalam pengembangan.
-    30	        </p>
-    31	      </div>
-    32	    </div>
-    33	  );
-    34	};
-    35	
-    36	function App() {
-    37	  const { session, initialize } = useAuthStore();
-    38	  
-    39	  // Inisialisasi auth state saat aplikasi dimuat
-    40	  useEffect(() => {
-    41	    initialize();
-    42	  }, [initialize]);
-    43	  
-    44	
-    45	  return (
-    46	    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-    47	      <Routes>
-    48	        <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
-    49	        
-    50	        <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
-    51	          <Route 
-    52	            index 
-    53	            element={
-    54	            <div className="text-gray-800">
-    55	              <Suspense fallback={<div>Loading...</div>}>
-    56	                <Dashboard />
-    57	              </Suspense>
-    58	            </div>
-    59	          } />
-    60	          
-    61	          <Route path="master-data">
-    62	            <Route path="items" element={
-    63	              <Suspense fallback={<div>Loading...</div>}>
-    64	                <ItemList />
-    65	              </Suspense>
-    66	            } />
-    67	            <Route path="items/add" element={
-    68	              <Suspense fallback={<div>Loading...</div>}>
-    69	                <AddItem />
-    70	              </Suspense>
-    71	            } />
-    72	            <Route path="categories" element={
-    73	              <Suspense fallback={<div>Loading...</div>}>
-    74	                <CategoryList />
-    75	              </Suspense>
-    76	            } />
-    77	            <Route path="types" element={
-    78	              <Suspense fallback={<div>Loading...</div>}>
-    79	                <TypeList />
-    80	              </Suspense>
-    81	            } />
-    82	            <Route path="units" element={
-    83	              <Suspense fallback={<div>Loading...</div>}>
-    84	                <UnitList />
-    85	              </Suspense>
-    86	            } />
-    87	            {/* Tambahkan route lain sesuai kebutuhan */}
-    88	          </Route>
-    89	          
-    90	          <Route path="purchases">
-    91	            <Route 
-    92	              index 
-    93	              element={
-    94	                <Suspense fallback={<div>Loading...</div>}>
-    95	                  <PurchaseList />
-    96	                </Suspense>
-    97	              } 
-    98	            />
-    99	            <Route 
-   100	              path="create" 
-   101	              element={
-   102	                <Suspense fallback={<div>Loading...</div>}>
-   103	                  <CreatePurchase />
-   104	                </Suspense>
-   105	              } 
-   106	            />
-   107	            <Route 
-   108	              path="view/:id" 
-   109	              element={
-   110	                <Suspense fallback={<div>Loading...</div>}>
-   111	                  <ViewPurchase />
-   112	                </Suspense>
-   113	              } 
-   114	            />
-   115	            <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
-   116	            <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
-   117	          </Route>
-   118	          
-   119	          <Route path="inventory">
-   120	            <Route 
-   121	              index 
-   122	              element={<ComingSoon title="Persediaan" />} 
-   123	            />
-   124	            <Route 
-   125	              path="stock" 
-   126	              element={<ComingSoon title="Stok Obat" />} 
-   127	            />
-   128	            <Route 
-   129	              path="stock-opname" 
-   130	              element={<ComingSoon title="Stok Opname" />} 
-   131	            />
-   132	            <Route 
-   133	              path="expired" 
-   134	              element={<ComingSoon title="Obat Kadaluarsa" />} 
-   135	            />
-   136	          </Route>
-   137	          
-   138	          <Route path="sales">
+    18	const PrintPurchase = lazy(() => import('./pages/purchases/PrintPurchase'));
+    19	const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
+    20	// Tambahkan halaman lain sesuai kebutuhan
+    21	
+    22	// Komponen placeholder untuk halaman yang belum diimplementasi
+    23	const ComingSoon = ({ title }: { title: string }) => {
+    24	  return (
+    25	    <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
+    26	      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+    27	      <p className="text-xl">Fitur ini akan segera hadir!</p>
+    28	      <div className="mt-8 p-4 border border-blue-300 rounded-lg bg-blue-50 max-w-md">
+    29	        <p className="text-blue-600 text-center">
+    30	          Halaman ini sedang dalam pengembangan.
+    31	        </p>
+    32	      </div>
+    33	    </div>
+    34	  );
+    35	};
+    36	
+    37	function App() {
+    38	  const { session, initialize } = useAuthStore();
+    39	  
+    40	  // Inisialisasi auth state saat aplikasi dimuat
+    41	  useEffect(() => {
+    42	    initialize();
+    43	  }, [initialize]);
+    44	  
+    45	
+    46	  return (
+    47	    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    48	      <Routes>
+    49	        <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
+    50	
+    51	        {/* Route khusus untuk tampilan cetak - tanpa layout */}
+    52	        <Route path="/purchases/print-view" element={
+    53	          <Suspense fallback={<div>Loading...</div>}>
+    54	            <PrintPurchase />
+    55	          </Suspense>} />
+    56	        
+    57	        <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
+    58	          <Route 
+    59	            index 
+    60	            element={
+    61	            <div className="text-gray-800">
+    62	              <Suspense fallback={<div>Loading...</div>}>
+    63	                <Dashboard />
+    64	              </Suspense>
+    65	            </div>
+    66	          } />
+    67	          
+    68	          <Route path="master-data">
+    69	            <Route path="items" element={
+    70	              <Suspense fallback={<div>Loading...</div>}>
+    71	                <ItemList />
+    72	              </Suspense>
+    73	            } />
+    74	            <Route path="items/add" element={
+    75	              <Suspense fallback={<div>Loading...</div>}>
+    76	                <AddItem />
+    77	              </Suspense>
+    78	            } />
+    79	            <Route path="categories" element={
+    80	              <Suspense fallback={<div>Loading...</div>}>
+    81	                <CategoryList />
+    82	              </Suspense>
+    83	            } />
+    84	            <Route path="types" element={
+    85	              <Suspense fallback={<div>Loading...</div>}>
+    86	                <TypeList />
+    87	              </Suspense>
+    88	            } />
+    89	            <Route path="units" element={
+    90	              <Suspense fallback={<div>Loading...</div>}>
+    91	                <UnitList />
+    92	              </Suspense>
+    93	            } />
+    94	            {/* Tambahkan route lain sesuai kebutuhan */}
+    95	          </Route>
+    96	          
+    97	          <Route path="purchases">
+    98	            <Route 
+    99	              index 
+   100	              element={
+   101	                <Suspense fallback={<div>Loading...</div>}>
+   102	                  <PurchaseList />
+   103	                </Suspense>
+   104	              } 
+   105	            />
+   106	            <Route 
+   107	              path="create" 
+   108	              element={
+   109	                <Suspense fallback={<div>Loading...</div>}>
+   110	                  <CreatePurchase />
+   111	                </Suspense>
+   112	              } 
+   113	            />
+   114	            <Route 
+   115	              path="view/:id" 
+   116	              element={
+   117	                <Suspense fallback={<div>Loading...</div>}>
+   118	                  <ViewPurchase />
+   119	                </Suspense>
+   120	              } 
+   121	            />
+   122	            <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
+   123	            <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
+   124	          </Route>
+   125	          
+   126	          <Route path="inventory">
+   127	            <Route 
+   128	              index 
+   129	              element={<ComingSoon title="Persediaan" />} 
+   130	            />
+   131	            <Route 
+   132	              path="stock" 
+   133	              element={<ComingSoon title="Stok Obat" />} 
+   134	            />
+   135	            <Route 
+   136	              path="stock-opname" 
+   137	              element={<ComingSoon title="Stok Opname" />} 
+   138	            />
    139	            <Route 
-   140	              index 
-   141	              element={<ComingSoon title="Daftar Penjualan" />} 
+   140	              path="expired" 
+   141	              element={<ComingSoon title="Obat Kadaluarsa" />} 
    142	            />
-   143	            <Route 
-   144	              path="create" 
-   145	              element={<ComingSoon title="Tambah Penjualan" />} 
-   146	            />
-   147	          </Route>
-   148	          
-   149	          <Route path="clinic">
+   143	          </Route>
+   144	          
+   145	          <Route path="sales">
+   146	            <Route 
+   147	              index 
+   148	              element={<ComingSoon title="Daftar Penjualan" />} 
+   149	            />
    150	            <Route 
-   151	              index 
-   152	              element={<ComingSoon title="Klinik" />} 
+   151	              path="create" 
+   152	              element={<ComingSoon title="Tambah Penjualan" />} 
    153	            />
-   154	            <Route 
-   155	              path="patients" 
-   156	              element={<ComingSoon title="Daftar Pasien" />} 
-   157	            />
-   158	            <Route 
-   159	              path="queue" 
-   160	              element={<ComingSoon title="Antrian" />} 
-   161	            />
-   162	            <Route 
-   163	              path="medical-records" 
-   164	              element={<ComingSoon title="Rekam Medis" />} 
-   165	            />
-   166	          </Route>
-   167	          
-   168	          <Route path="reports">
-   169	            <Route index element={<ComingSoon title="Laporan" />} />
-   170	            <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
-   171	            <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
-   172	            <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
+   154	          </Route>
+   155	          
+   156	          <Route path="clinic">
+   157	            <Route 
+   158	              index 
+   159	              element={<ComingSoon title="Klinik" />} 
+   160	            />
+   161	            <Route 
+   162	              path="patients" 
+   163	              element={<ComingSoon title="Daftar Pasien" />} 
+   164	            />
+   165	            <Route 
+   166	              path="queue" 
+   167	              element={<ComingSoon title="Antrian" />} 
+   168	            />
+   169	            <Route 
+   170	              path="medical-records" 
+   171	              element={<ComingSoon title="Rekam Medis" />} 
+   172	            />
    173	          </Route>
    174	          
-   175	          <Route path="settings">
-   176	            <Route path="profile" element={
-   177	              <Suspense fallback={<div>Loading...</div>}>
-   178	                <Profile />
-   179	              </Suspense>
-   180	            } />
-   181	            <Route path="users" element={<ComingSoon title="Pengguna" />} />
-   182	            <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
-   183	          </Route>
-   184	          {/* Tambahkan route untuk modul lain */}
-   185	        </Route>
-   186	      </Routes>
-   187	    </Router>
-   188	  );
-   189	}
-   190	
-   191	export default App;
+   175	          <Route path="reports">
+   176	            <Route index element={<ComingSoon title="Laporan" />} />
+   177	            <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
+   178	            <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
+   179	            <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
+   180	          </Route>
+   181	          
+   182	          <Route path="settings">
+   183	            <Route path="profile" element={
+   184	              <Suspense fallback={<div>Loading...</div>}>
+   185	                <Profile />
+   186	              </Suspense>
+   187	            } />
+   188	            <Route path="users" element={<ComingSoon title="Pengguna" />} />
+   189	            <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
+   190	          </Route>
+   191	          {/* Tambahkan route untuk modul lain */}
+   192	        </Route>
+   193	      </Routes>
+   194	    </Router>
+   195	  );
+   196	}
+   197	
+   198	export default App;
 
 
 ===============================================
@@ -3327,30 +3335,41 @@
     37	@media print {
     38	  @page {
     39	    size: A4;
-    40	    margin: 10mm;
+    40	    margin: 5mm;
     41	  }
     42	  
     43	  body {
     44	    -webkit-print-color-adjust: exact;
     45	    print-color-adjust: exact;
-    46	  }
-    47	  
-    48	  .print\:hidden {
-    49	    display: none !important;
-    50	  }
-    51	  
-    52	  .print\:shadow-none {
-    53	    box-shadow: none !important;
-    54	  }
-    55	}
-    56	
-    57	.faktur-a4 {
-    58	  width: 210mm;
-    59	  min-height: 297mm;
-    60	  padding: 10mm;
-    61	  margin: 0 auto;
-    62	  background: white;
-    63	}
+    46	    background-color: white !important;
+    47	    font-size: 12px !important;
+    48	  }
+    49	  
+    50	  .print\:hidden {
+    51	    display: none !important;
+    52	  }
+    53	
+    54	  .faktur-a4 {
+    55	    width: 100% !important;
+    56	    min-height: auto !important;
+    57	    padding: 0 !important;
+    58	    margin: 0 !important;
+    59	    box-shadow: none !important;
+    60	    border: none !important;
+    61	  }
+    62	  
+    63	  .print\:shadow-none {
+    64	    box-shadow: none !important;
+    65	  }
+    66	}
+    67	
+    68	.faktur-a4 {
+    69	  width: 210mm;
+    70	  min-height: 297mm;
+    71	  padding: 10mm;
+    72	  margin: 0 auto;
+    73	  background: white;
+    74	}
 
 
 ===============================================
@@ -5238,6 +5257,287 @@
 
 
 ===============================================
+= File: ./src/pages/purchases/PrintPurchase.tsx 
+===============================================
+
+     1	// src/pages/purchases/PrintPurchase.tsx
+     2	import { useEffect, useState } from "react";
+     3	
+     4	interface PurchaseData {
+     5	    id: string;
+     6	    invoice_number: string;
+     7	    date: string;
+     8	    due_date: string | null;
+     9	    so_number: string | null;
+    10	    total: number;
+    11	    payment_status: string;
+    12	    payment_method: string;
+    13	    vat_percentage: number;
+    14	    is_vat_included: boolean;
+    15	    vat_amount: number;
+    16	    notes: string | null;
+    17	    supplier: {
+    18	        name: string;
+    19	        address: string | null;
+    20	        contact_person: string | null;
+    21	    };
+    22	    customer_name?: string;
+    23	    customer_address?: string;
+    24	    checked_by?: string;
+    25	}
+    26	
+    27	interface PurchaseItem {
+    28	    id: string;
+    29	    item_id: string;
+    30	    item: {
+    31	        name: string;
+    32	        code: string;
+    33	    };
+    34	    quantity: number;
+    35	    price: number;
+    36	    discount: number;
+    37	    subtotal: number;
+    38	    vat_percentage: number;
+    39	    unit: string;
+    40	    batch_no: string | null;
+    41	    expiry_date: string | null;
+    42	}
+    43	
+    44	interface Subtotals {
+    45	    baseTotal: number;
+    46	    discountTotal: number;
+    47	    afterDiscountTotal: number;
+    48	    vatTotal: number;
+    49	    grandTotal: number;
+    50	}
+    51	
+    52	const PrintPurchase = () => {
+    53	    const [purchase, setPurchase] = useState<PurchaseData | null>(null);
+    54	    const [items, setItems] = useState<PurchaseItem[]>([]);
+    55	    const [subtotals, setSubtotals] = useState<Subtotals | null>(null);
+    56	    const [loading, setLoading] = useState(true);
+    57	
+    58	    useEffect(() => {
+    59	        // Ambil data dari sessionStorage yang disimpan oleh ViewPurchase
+    60	        const storedData = sessionStorage.getItem('purchaseData');
+    61	        if (storedData) {
+    62	            const data = JSON.parse(storedData);
+    63	            setPurchase(data.purchase);
+    64	            setItems(data.items);
+    65	            setSubtotals(data.subtotals);
+    66	        }
+    67	        setLoading(false);
+    68	
+    69	        // Auto print saat halaman selesai dimuat
+    70	        const timer = setTimeout(() => {
+    71	            window.print();
+    72	        }, 1000);
+    73	
+    74	        return () => clearTimeout(timer);
+    75	    }, []);
+    76	
+    77	    if (loading) {
+    78	        return <div className="text-center p-6">Memuat data...</div>;
+    79	    }
+    80	
+    81	    if (!purchase) {
+    82	        return (
+    83	            <div className="text-center p-6 text-red-500">
+    84	                Data faktur tidak ditemukan. Silakan kembali ke halaman sebelumnya.
+    85	            </div>
+    86	        );
+    87	    }
+    88	
+    89	    return (
+    90	        <div className="faktur-a4 bg-white">
+    91	            <div className="mb-8">
+    92	                <h1 className="text-2xl font-bold text-center mb-2">FAKTUR PEMBELIAN</h1>
+    93	                <div className="border-b-2 border-gray-400 mb-4"></div>
+    94	
+    95	                <div className="flex justify-between gap-4">
+    96	                    <div className="w-1/2">
+    97	                        {/* Supplier Info */}
+    98	                        <div className="text-left mb-4">
+    99	                            <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Supplier'}</h2>
+   100	                            <div className="text-sm text-gray-600">
+   101	                                <p>{purchase.supplier?.address || ''}</p>
+   102	                            </div>
+   103	                        </div>
+   104	                        
+   105	                        {/* Customer Info */}
+   106	                        <div className="text-left">
+   107	                            <h2 className="font-bold text-lg text-gray-800">Customer:</h2>
+   108	                            <div className="text-sm text-gray-600">
+   109	                                <p>{purchase.customer_name || 'Data belum tersedia'}</p>
+   110	                                <p>{purchase.customer_address || 'Alamat belum tersedia'}</p>
+   111	                            </div>
+   112	                        </div>
+   113	                    </div>
+   114	                    
+   115	                    <div className="w-1/2">
+   116	                        {/* Faktur Info */}
+   117	                        <div className="bg-gray-50 p-3 rounded text-sm">
+   118	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   119	                                <span className="text-left font-bold">No. Faktur</span>
+   120	                                <span className="px-2">:</span>
+   121	                                <span>{purchase.invoice_number}</span>
+   122	                            </div>
+   123	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   124	                                <span className="text-left">Tanggal</span>
+   125	                                <span className="px-2">:</span>
+   126	                                <span>{new Date(purchase.date).toLocaleDateString('id-ID')}</span>
+   127	                            </div>
+   128	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   129	                                <span className="text-left">Jatuh Tempo</span>
+   130	                                <span className="px-2">:</span>
+   131	                                <span>{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</span>
+   132	                            </div>
+   133	                            {purchase.so_number && (
+   134	                                <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   135	                                    <span className="text-left">No. SO</span>
+   136	                                    <span className="px-2">:</span>
+   137	                                    <span>{purchase.so_number}</span>
+   138	                                </div>
+   139	                            )}
+   140	                        </div>
+   141	                    </div>
+   142	                </div>
+   143	            </div>
+   144	
+   145	            <div className="mb-8">
+   146	                <table className="w-full border-collapse">
+   147	                    <thead>
+   148	                        <tr className="bg-gray-100 text-xs">
+   149	                            <th className="border p-1 pt-2 pb-2 text-left">No.</th>
+   150	                            <th className="border p-1 pt-2 pb-2 text-left">Kode</th>
+   151	                            <th className="border p-1 pt-2 pb-2 text-left">Nama Item</th>
+   152	                            <th className="border p-1 pt-2 pb-2 text-center">Batch</th>
+   153	                            <th className="border p-1 pt-2 pb-2 text-center">Exp</th>
+   154	                            <th className="border p-1 pt-2 pb-2 text-center">Qty</th>
+   155	                            <th className="border p-1 pt-2 pb-2 text-center">Satuan</th>
+   156	                            <th className="border p-1 pt-2 pb-2 text-right">Harga</th>
+   157	                            <th className="border p-1 pt-2 pb-2 text-right">Disc</th>
+   158	                            {!purchase.is_vat_included && (
+   159	                                <th className="border p-1 pt-2 pb-2 text-right">PPN</th>
+   160	                            )}
+   161	                            <th className="border p-1 pt-2 pb-2 text-right">Subtotal</th>
+   162	                        </tr>
+   163	                    </thead>
+   164	                    <tbody>
+   165	                        {items.length === 0 ? (
+   166	                            <tr>
+   167	                                <td colSpan={purchase.is_vat_included ? 10 : 11} className="border p-2 pt-3 pb-3 text-center text-gray-500 text-xs">
+   168	                                    Tidak ada item
+   169	                                </td>
+   170	                            </tr>
+   171	                        ) : (
+   172	                            items.map((item, index) => (
+   173	                                <tr key={item.id} className="hover:bg-gray-50 text-xs">
+   174	                                    <td className="border p-1 pt-2 pb-2 text-center">{index + 1}</td>
+   175	                                    <td className="border p-1 pt-2 pb-2">{item.item?.code || '-'}</td>
+   176	                                    <td className="border p-1 pt-2 pb-2">{item.item?.name || 'Item tidak ditemukan'}</td>
+   177	                                    <td className="border p-1 pt-2 pb-2 text-center">{item.batch_no || '-'}</td>
+   178	                                    <td className="border p-1 pt-2 pb-2 text-center">
+   179	                                        {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}
+   180	                                    </td>
+   181	                                    <td className="border p-1 pt-2 pb-2 text-center">{item.quantity}</td>
+   182	                                    <td className="border p-1 pt-2 pb-2 text-center">{item.unit}</td>
+   183	                                    <td className="border p-1 pt-2 pb-2 text-right">{item.price.toLocaleString('id-ID')}</td>
+   184	                                    <td className="border p-1 pt-2 pb-2 text-right">{item.discount > 0 ? `${item.discount}%` : '-'}</td>
+   185	                                    {!purchase.is_vat_included && (
+   186	                                        <td className="border p-1 pt-2 pb-2 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}%` : '-'}</td>
+   187	                                    )}
+   188	                                    <td className="border p-1 pt-2 pb-2 text-right">{item.subtotal.toLocaleString('id-ID')}</td>
+   189	                                </tr>
+   190	                            ))
+   191	                        )}
+   192	                    </tbody>
+   193	                </table>
+   194	            </div>
+   195	
+   196	            <div className="flex justify-between mt-8">
+   197	                <div className="max-w-md">
+   198	                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+   199	                        <span className="text-left">Diperiksa oleh</span>
+   200	                        <span className="px-2">:</span>
+   201	                        <span>{purchase.supplier?.contact_person || purchase.checked_by || '-'}</span>
+   202	                    </div>
+   203	                    
+   204	                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+   205	                        <span className="text-left">Status Pembayaran</span>
+   206	                        <span className="px-2">:</span>
+   207	                        <span className={`${purchase.payment_status === 'paid' ? 'text-green-600' :
+   208	                            purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
+   209	                        }`}>
+   210	                            {purchase.payment_status === 'paid' ? 'Lunas' :
+   211	                                purchase.payment_status === 'partial' ? 'Sebagian' : 'Belum Dibayar'}
+   212	                        </span>
+   213	                    </div>
+   214	                    
+   215	                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+   216	                        <span className="text-left">Metode Pembayaran</span>
+   217	                        <span className="px-2">:</span>
+   218	                        <span>{purchase.payment_method === 'cash' ? 'Tunai' : purchase.payment_method === 'transfer' ? 'Transfer' : purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method}</span>
+   219	                    </div>
+   220	                    
+   221	                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+   222	                        <span className="text-left">Catatan</span>
+   223	                        <span className="px-2">:</span>
+   224	                        <span>{purchase.notes || '-'}</span>
+   225	                    </div>
+   226	                    {purchase.is_vat_included && (
+   227	                        <div className="grid grid-cols-[1fr,auto,1fr] mt-2">
+   228	                            <span className="text-left"></span>
+   229	                            <span className="px-2"></span>
+   230	                            <span className="text-sm">* PPN sudah termasuk dalam harga</span>
+   231	                        </div>
+   232	                    )}
+   233	                </div>
+   234	                
+   235	                {subtotals && (
+   236	                    <div className="border p-4 min-w-[250px] text-sm">
+   237	                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   238	                            <span className="text-left">Subtotal</span>
+   239	                            <span className="px-2">:</span>
+   240	                            <span>{subtotals.baseTotal.toLocaleString('id-ID')}</span>
+   241	                        </div>
+   242	
+   243	                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   244	                            <span className="text-left">Diskon</span>
+   245	                            <span className="px-2">:</span>
+   246	                            <span>-{subtotals.discountTotal.toLocaleString('id-ID')}</span>
+   247	                        </div>
+   248	
+   249	                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   250	                            <span className="text-left">Setelah Diskon</span>
+   251	                            <span className="px-2">:</span>
+   252	                            <span>{subtotals.afterDiscountTotal.toLocaleString('id-ID')}</span>
+   253	                        </div>
+   254	
+   255	                        {!purchase.is_vat_included && (
+   256	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   257	                                <span className="text-left">PPN</span>
+   258	                                <span className="px-2">:</span>
+   259	                                <span>+{subtotals.vatTotal.toLocaleString('id-ID')}</span>
+   260	                            </div>
+   261	                        )}
+   262	
+   263	                        <div className="border-t pt-2 grid grid-cols-[1fr,auto,1fr] font-bold">
+   264	                            <span className="text-left">TOTAL</span>
+   265	                            <span className="px-2">:</span>
+   266	                            <span>{subtotals.grandTotal.toLocaleString('id-ID')}</span>
+   267	                        </div>
+   268	                    </div>
+   269	                )}
+   270	            </div>
+   271	        </div>
+   272	    );
+   273	};
+   274	
+   275	export default PrintPurchase;
+
+
+===============================================
 = File: ./src/pages/purchases/PurchaseList.tsx 
 ===============================================
 
@@ -5603,7 +5903,7 @@
      5	import { Card } from "../../components/ui/Card";
      6	import { Button } from "../../components/ui/Button";
      7	import { Loading } from "../../components/ui/Loading";
-     8	import { FaArrowLeft, FaFilePdf, FaSearchPlus, FaSearchMinus } from "react-icons/fa";
+     8	import { FaArrowLeft, FaFilePdf, FaSearchPlus, FaSearchMinus, FaPrint } from "react-icons/fa";
      9	import html2canvas from "html2canvas";
     10	import jsPDF from "jspdf";
     11	
@@ -5772,260 +6072,277 @@
    174	        pdf.save(`purchase-${purchase?.invoice_number}.pdf`);
    175	    };
    176	
-   177	    const increaseScale = () => {
-   178	        setScale(prev => Math.min(prev + 0.1, 1.5));
-   179	    };
-   180	
-   181	    const decreaseScale = () => {
-   182	        setScale(prev => Math.max(prev - 0.1, 0.5));
-   183	    };
-   184	
-   185	    if (loading) {
-   186	        return <Loading message="Memuat data pembelian..." />;
-   187	    }
-   188	
-   189	    if (!purchase) {
-   190	        return (
-   191	            <div className="text-center p-6">
-   192	                <p className="text-red-500 mb-4">Data pembelian tidak ditemukan</p>
-   193	                <Button onClick={() => navigate("/purchases")}>
-   194	                    <FaArrowLeft className="mr-2" /> Kembali ke Daftar Pembelian
-   195	                </Button>
-   196	            </div>
-   197	        );
-   198	    }
-   199	
-   200	    const {
-   201	        baseTotal,
-   202	        discountTotal,
-   203	        afterDiscountTotal,
-   204	        vatTotal,
-   205	        grandTotal
-   206	    } = calculateSubtotals();
-   207	
-   208	    return (
-   209	        <Card>
-   210	            <div className="flex justify-between items-center mb-4 print:hidden">
-   211	                <Button 
-   212	                    type="button"
-   213	                    variant="outline" 
-   214	                    onClick={() => navigate("/purchases")}
-   215	                >
-   216	                    <div className="flex items-center">
-   217	                        <FaArrowLeft className="mr-2" /> <span>Kembali</span>
-   218	                    </div>
-   219	                </Button>
-   220	                <div className="flex items-center gap-2">
-   221	                    <Button type="button" variant="outline" onClick={decreaseScale} title="Perkecil">
-   222	                        <FaSearchMinus />
-   223	                    </Button>
-   224	                    <span className="mx-1 text-sm">{Math.round(scale * 100)}%</span>
-   225	                    <Button type="button" variant="outline" onClick={increaseScale} title="Perbesar">
-   226	                        <FaSearchPlus />
-   227	                    </Button>
-   228	                    <Button onClick={handleGeneratePDF}>
-   229	                        <FaFilePdf className="mr-2" /> Download PDF
-   230	                    </Button>
-   231	                </div>
-   232	            </div>
-   233	
-   234	            <div className="overflow-auto" style={{ maxHeight: "85vh" }}>
-   235	                <div
-   236	                    ref={printRef}
-   237	                    className="bg-white p-6 shadow print:shadow-none transition-transform duration-200"
-   238	                    style={{ 
-   239	                        width: "215mm", 
-   240	                        minHeight: "330mm", 
-   241	                        margin: "0 auto",
-   242	                        transform: `scale(${scale})`,
-   243	                        transformOrigin: "top center"
-   244	                    }}
-   245	                >
-   246	                    <div className="mb-8">
-   247	                        <h1 className="text-2xl font-bold text-center mb-2">FAKTUR PEMBELIAN</h1>
-   248	                        <div className="border-b-2 border-gray-400 mb-4"></div>
-   249	
-   250	                        <div className="flex justify-between gap-4">
-   251	                            <div className="w-1/2">
-   252	                                {/* Supplier Info */}
-   253	                                <div className="text-left mb-4">
-   254	                                    <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Supplier'}</h2>
-   255	                                    <div className="text-sm text-gray-600">
-   256	                                        <p>{purchase.supplier?.address || ''}</p>
-   257	                                    </div>
-   258	                                </div>
-   259	                                
-   260	                                {/* Customer Info */}
-   261	                                <div className="text-left">
-   262	                                    <h2 className="font-bold text-lg text-gray-800">Customer:</h2>
-   263	                                    <div className="text-sm text-gray-600">
-   264	                                        <p>{purchase.customer_name || 'Data belum tersedia'}</p>
-   265	                                        <p>{purchase.customer_address || 'Alamat belum tersedia'}</p>
-   266	                                    </div>
-   267	                                </div>
-   268	                            </div>
-   269	                            
-   270	                            <div className="w-1/2">
-   271	                                {/* Faktur Info */}
-   272	                                <div className="bg-gray-50 p-3 rounded text-sm">
-   273	                                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
-   274	                                        <span className="text-left font-bold">No. Faktur</span>
-   275	                                        <span className="px-2">:</span>
-   276	                                        <span>{purchase.invoice_number}</span>
-   277	                                    </div>
-   278	                                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
-   279	                                        <span className="text-left">Tanggal</span>
-   280	                                        <span className="px-2">:</span>
-   281	                                        <span>{new Date(purchase.date).toLocaleDateString('id-ID')}</span>
-   282	                                    </div>
-   283	                                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
-   284	                                        <span className="text-left">Jatuh Tempo</span>
-   285	                                        <span className="px-2">:</span>
-   286	                                        <span>{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</span>
-   287	                                    </div>
-   288	                                    {purchase.so_number && (
-   289	                                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
-   290	                                            <span className="text-left">No. SO</span>
-   291	                                            <span className="px-2">:</span>
-   292	                                            <span>{purchase.so_number}</span>
-   293	                                        </div>
-   294	                                    )}
-   295	                                </div>
-   296	                            </div>
-   297	                        </div>
-   298	                    </div>
-   299	
-   300	                    <div className="mb-8">
-   301	                        <table className="w-full border-collapse">
-   302	                            <thead>
-   303	                                <tr className="bg-gray-100 text-xs">
-   304	                                    <th className="border p-1 text-left">No.</th>
-   305	                                    <th className="border p-1 text-left">Kode</th>
-   306	                                    <th className="border p-1 text-left">Nama Item</th>
-   307	                                    <th className="border p-1 text-center">Batch</th>
-   308	                                    <th className="border p-1 text-center">Exp</th>
-   309	                                    <th className="border p-1 text-center">Qty</th>
-   310	                                    <th className="border p-1 text-center">Satuan</th>
-   311	                                    <th className="border p-1 text-right">Harga</th>
-   312	                                    <th className="border p-1 text-right">Disc</th>
-   313	                                    {!purchase.is_vat_included && (
-   314	                                        <th className="border p-1 text-right">PPN</th>
-   315	                                    )}
-   316	                                    <th className="border p-1 text-right">Subtotal</th>
-   317	                                </tr>
-   318	                            </thead>
-   319	                            <tbody>
-   320	                                {items.length === 0 ? (
-   321	                                    <tr>
-   322	                                        <td colSpan={purchase.is_vat_included ? 10 : 11} className="border p-2 text-center text-gray-500 text-xs">
-   323	                                            Tidak ada item
-   324	                                        </td>
-   325	                                    </tr>
-   326	                                ) : (
-   327	                                    items.map((item, index) => (
-   328	                                        <tr key={item.id} className="hover:bg-gray-50 text-xs">
-   329	                                            <td className="border p-1 text-center">{index + 1}</td>
-   330	                                            <td className="border p-1">{item.item?.code || '-'}</td>
-   331	                                            <td className="border p-1">{item.item?.name || 'Item tidak ditemukan'}</td>
-   332	                                            <td className="border p-1 text-center">{item.batch_no || '-'}</td>
-   333	                                            <td className="border p-1 text-center">
-   334	                                                {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}
-   335	                                            </td>
-   336	                                            <td className="border p-1 text-center">{item.quantity}</td>
-   337	                                            <td className="border p-1 text-center">{item.unit}</td>
-   338	                                            <td className="border p-1 text-right">{item.price.toLocaleString('id-ID')}</td>
-   339	                                            <td className="border p-1 text-right">{item.discount > 0 ? `${item.discount}%` : '-'}</td>
-   340	                                            {!purchase.is_vat_included && (
-   341	                                                <td className="border p-1 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}%` : '-'}</td>
-   342	                                            )}
-   343	                                            <td className="border p-1 text-right">{item.subtotal.toLocaleString('id-ID')}</td>
-   344	                                        </tr>
-   345	                                    ))
-   346	                                )}
-   347	                            </tbody>
-   348	                        </table>
-   349	                    </div>
-   350	
-   351	                    <div className="flex justify-between mt-8">
-   352	                        <div className="max-w-md">
-   353	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
-   354	                                <span className="text-left">Diperiksa oleh</span>
-   355	                                <span className="px-2">:</span>
-   356	                                <span>{purchase.supplier?.contact_person || purchase.checked_by || '-'}</span>
-   357	                            </div>
-   358	                            
-   359	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
-   360	                                <span className="text-left">Status Pembayaran</span>
-   361	                                <span className="px-2">:</span>
-   362	                                <span className={`${purchase.payment_status === 'paid' ? 'text-green-600' :
-   363	                                    purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
-   364	                                }`}>
-   365	                                    {purchase.payment_status === 'paid' ? 'Lunas' :
-   366	                                        purchase.payment_status === 'partial' ? 'Sebagian' : 'Belum Dibayar'}
-   367	                                </span>
-   368	                            </div>
-   369	                            
+   177	    const openPrintableVersion = () => {
+   178	        // Simpan data faktur di sessionStorage untuk digunakan oleh halaman cetak
+   179	        sessionStorage.setItem('purchaseData', JSON.stringify({
+   180	            purchase: purchase,
+   181	            items: items,
+   182	            subtotals: calculateSubtotals()
+   183	        }));
+   184	        
+   185	        // Buka tab baru dengan halaman cetak
+   186	        const printWindow = window.open('/purchases/print-view', '_blank');
+   187	        if (printWindow)
+   188	            printWindow.focus();
+   189	    };
+   190	
+   191	    const increaseScale = () => {
+   192	        setScale(prev => Math.min(prev + 0.1, 1.5));
+   193	    };
+   194	
+   195	    const decreaseScale = () => {
+   196	        setScale(prev => Math.max(prev - 0.1, 0.5));
+   197	    };
+   198	
+   199	    if (loading) {
+   200	        return <Loading message="Memuat data pembelian..." />;
+   201	    }
+   202	
+   203	    if (!purchase) {
+   204	        return (
+   205	            <div className="text-center p-6">
+   206	                <p className="text-red-500 mb-4">Data pembelian tidak ditemukan</p>
+   207	                <Button onClick={() => navigate("/purchases")}>
+   208	                    <FaArrowLeft className="mr-2" /> Kembali ke Daftar Pembelian
+   209	                </Button>
+   210	            </div>
+   211	        );
+   212	    }
+   213	
+   214	    const {
+   215	        baseTotal,
+   216	        discountTotal,
+   217	        afterDiscountTotal,
+   218	        vatTotal,
+   219	        grandTotal
+   220	    } = calculateSubtotals();
+   221	
+   222	    return (
+   223	        <Card>
+   224	            <div className="flex justify-between items-center mb-4 print:hidden">
+   225	                <Button 
+   226	                    type="button"
+   227	                    variant="outline" 
+   228	                    onClick={() => navigate("/purchases")}
+   229	                >
+   230	                    <div className="flex items-center">
+   231	                        <FaArrowLeft className="mr-2" /> <span>Kembali</span>
+   232	                    </div>
+   233	                </Button>
+   234	                <div className="flex items-center gap-2">
+   235	                    <Button type="button" variant="outline" onClick={decreaseScale} title="Perkecil">
+   236	                        <FaSearchMinus />
+   237	                    </Button>
+   238	                    <span className="mx-1 text-sm">{Math.round(scale * 100)}%</span>
+   239	                    <Button type="button" variant="outline" onClick={increaseScale} title="Perbesar">
+   240	                        <FaSearchPlus />
+   241	                    </Button>
+   242	                    <Button onClick={handleGeneratePDF} className="mr-2">
+   243	                        <FaFilePdf className="mr-2" /> Download PDF
+   244	                    </Button>
+   245	                    <Button onClick={openPrintableVersion} variant="primary">
+   246	                        <FaPrint className="mr-2" /> Print View
+   247	                    </Button>
+   248	                </div>
+   249	            </div>
+   250	
+   251	            <div className="overflow-auto" style={{ maxHeight: "85vh" }}>
+   252	                <div
+   253	                    ref={printRef}
+   254	                    className="bg-white p-6 shadow print:shadow-none transition-transform duration-200"
+   255	                    style={{ 
+   256	                        width: "215mm", 
+   257	                        minHeight: "330mm", 
+   258	                        margin: "0 auto",
+   259	                        transform: `scale(${scale})`,
+   260	                        transformOrigin: "top center"
+   261	                    }}
+   262	                >
+   263	                    <div className="mb-8">
+   264	                        <h1 className="text-2xl font-bold text-center mb-2">FAKTUR PEMBELIAN</h1>
+   265	                        <div className="border-b-2 border-gray-400 mb-4"></div>
+   266	
+   267	                        <div className="flex justify-between gap-4">
+   268	                            <div className="w-1/2">
+   269	                                {/* Supplier Info */}
+   270	                                <div className="text-left mb-4">
+   271	                                    <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Supplier'}</h2>
+   272	                                    <div className="text-sm text-gray-600">
+   273	                                        <p>{purchase.supplier?.address || ''}</p>
+   274	                                    </div>
+   275	                                </div>
+   276	                                
+   277	                                {/* Customer Info */}
+   278	                                <div className="text-left">
+   279	                                    <h2 className="text-sm text-gray-600">Customer:</h2>
+   280	                                    <div className="text-sm ">
+   281	                                        <p className="font-bold">{purchase.customer_name || 'Data belum tersedia'}</p>
+   282	                                        <p className="text-gray-600">{purchase.customer_address || 'Alamat belum tersedia'}</p>
+   283	                                    </div>
+   284	                                </div>
+   285	                            </div>
+   286	                            
+   287	                            <div className="w-1/2">
+   288	                                {/* Faktur Info */}
+   289	                                <div className="bg-gray-50 p-3 rounded text-sm">
+   290	                                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   291	                                        <span className="text-left font-bold">No. Faktur</span>
+   292	                                        <span className="px-2">:</span>
+   293	                                        <span>{purchase.invoice_number}</span>
+   294	                                    </div>
+   295	                                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   296	                                        <span className="text-left">Tanggal</span>
+   297	                                        <span className="px-2">:</span>
+   298	                                        <span>{new Date(purchase.date).toLocaleDateString('id-ID')}</span>
+   299	                                    </div>
+   300	                                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   301	                                        <span className="text-left">Jatuh Tempo</span>
+   302	                                        <span className="px-2">:</span>
+   303	                                        <span>{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</span>
+   304	                                    </div>
+   305	                                    {purchase.so_number && (
+   306	                                        <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   307	                                            <span className="text-left">No. SO</span>
+   308	                                            <span className="px-2">:</span>
+   309	                                            <span>{purchase.so_number}</span>
+   310	                                        </div>
+   311	                                    )}
+   312	                                </div>
+   313	                            </div>
+   314	                        </div>
+   315	                    </div>
+   316	
+   317	                    <div className="mb-8">
+   318	                        <table className="w-full border-collapse">
+   319	                            <thead>
+   320	                                <tr className="bg-gray-100 text-xs">
+   321	                                    <th className="border p-1 text-left">No.</th>
+   322	                                    <th className="border p-1 text-left">Kode</th>
+   323	                                    <th className="border p-1 text-left">Nama Item</th>
+   324	                                    <th className="border p-1 text-center">Batch</th>
+   325	                                    <th className="border p-1 text-center">Exp</th>
+   326	                                    <th className="border p-1 text-center">Qty</th>
+   327	                                    <th className="border p-1 text-center">Satuan</th>
+   328	                                    <th className="border p-1 text-right">Harga</th>
+   329	                                    <th className="border p-1 text-right">Disc</th>
+   330	                                    {!purchase.is_vat_included && (
+   331	                                        <th className="border p-1 text-right">PPN</th>
+   332	                                    )}
+   333	                                    <th className="border p-1 text-right">Subtotal</th>
+   334	                                </tr>
+   335	                            </thead>
+   336	                            <tbody>
+   337	                                {items.length === 0 ? (
+   338	                                    <tr>
+   339	                                        <td colSpan={purchase.is_vat_included ? 10 : 11} className="border p-2 text-center text-gray-500 text-xs">
+   340	                                            Tidak ada item
+   341	                                        </td>
+   342	                                    </tr>
+   343	                                ) : (
+   344	                                    items.map((item, index) => (
+   345	                                        <tr key={item.id} className="hover:bg-gray-50 text-xs">
+   346	                                            <td className="border p-1 text-center">{index + 1}</td>
+   347	                                            <td className="border p-1">{item.item?.code || '-'}</td>
+   348	                                            <td className="border p-1">{item.item?.name || 'Item tidak ditemukan'}</td>
+   349	                                            <td className="border p-1 text-center">{item.batch_no || '-'}</td>
+   350	                                            <td className="border p-1 text-center">
+   351	                                                {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-'}
+   352	                                            </td>
+   353	                                            <td className="border p-1 text-center">{item.quantity}</td>
+   354	                                            <td className="border p-1 text-center">{item.unit}</td>
+   355	                                            <td className="border p-1 text-right">{item.price.toLocaleString('id-ID')}</td>
+   356	                                            <td className="border p-1 text-right">{item.discount > 0 ? `${item.discount}%` : '-'}</td>
+   357	                                            {!purchase.is_vat_included && (
+   358	                                                <td className="border p-1 text-right">{item.vat_percentage > 0 ? `${item.vat_percentage}%` : '-'}</td>
+   359	                                            )}
+   360	                                            <td className="border p-1 text-right">{item.subtotal.toLocaleString('id-ID')}</td>
+   361	                                        </tr>
+   362	                                    ))
+   363	                                )}
+   364	                            </tbody>
+   365	                        </table>
+   366	                    </div>
+   367	
+   368	                    <div className="flex justify-between mt-8">
+   369	                        <div className="max-w-md">
    370	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
-   371	                                <span className="text-left">Metode Pembayaran</span>
+   371	                                <span className="text-left">Diperiksa oleh</span>
    372	                                <span className="px-2">:</span>
-   373	                                <span>{purchase.payment_method === 'cash' ? 'Tunai' : purchase.payment_method === 'transfer' ? 'Transfer' : purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method}</span>
+   373	                                <span>{purchase.supplier?.contact_person || purchase.checked_by || '-'}</span>
    374	                            </div>
    375	                            
    376	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
-   377	                                <span className="text-left">Catatan</span>
+   377	                                <span className="text-left">Status Pembayaran</span>
    378	                                <span className="px-2">:</span>
-   379	                                <span>{purchase.notes || '-'}</span>
-   380	                            </div>
-   381	                            {purchase.is_vat_included && (
-   382	                                <div className="grid grid-cols-[1fr,auto,1fr] mt-2">
-   383	                                    <span className="text-left"></span>
-   384	                                    <span className="px-2"></span>
-   385	                                    <span className="text-sm">* PPN sudah termasuk dalam harga</span>
-   386	                                </div>
-   387	                            )}
-   388	                        </div>
-   389	                        
-   390	                        <div className="border p-4 min-w-[250px] text-sm">
-   391	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
-   392	                                <span className="text-left">Subtotal</span>
-   393	                                <span className="px-2">:</span>
-   394	                                <span>{baseTotal.toLocaleString('id-ID')}</span>
-   395	                            </div>
-   396	
-   397	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
-   398	                                <span className="text-left">Diskon</span>
-   399	                                <span className="px-2">:</span>
-   400	                                <span>-{discountTotal.toLocaleString('id-ID')}</span>
-   401	                            </div>
-   402	
-   403	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
-   404	                                <span className="text-left">Setelah Diskon</span>
-   405	                                <span className="px-2">:</span>
-   406	                                <span>{afterDiscountTotal.toLocaleString('id-ID')}</span>
-   407	                            </div>
-   408	
-   409	                            {!purchase.is_vat_included && (
-   410	                                <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
-   411	                                    <span className="text-left">PPN</span>
-   412	                                    <span className="px-2">:</span>
-   413	                                    <span>+{vatTotal.toLocaleString('id-ID')}</span>
-   414	                                </div>
-   415	                            )}
-   416	
-   417	                            <div className="border-t pt-2 grid grid-cols-[1fr,auto,1fr] font-bold">
-   418	                                <span className="text-left">TOTAL</span>
-   419	                                <span className="px-2">:</span>
-   420	                                <span>{grandTotal.toLocaleString('id-ID')}</span>
-   421	                            </div>
-   422	                        </div>
-   423	                    </div>
-   424	                </div>
-   425	            </div>
-   426	        </Card>
-   427	    );
-   428	};
-   429	
-   430	export default ViewPurchase;
+   379	                                <span className={`${purchase.payment_status === 'paid' ? 'text-green-600' :
+   380	                                    purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
+   381	                                }`}>
+   382	                                    {purchase.payment_status === 'paid' ? 'Lunas' :
+   383	                                        purchase.payment_status === 'partial' ? 'Sebagian' : 'Belum Dibayar'}
+   384	                                </span>
+   385	                            </div>
+   386	                            
+   387	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+   388	                                <span className="text-left">Metode Pembayaran</span>
+   389	                                <span className="px-2">:</span>
+   390	                                <span>{purchase.payment_method === 'cash' ? 'Tunai' : purchase.payment_method === 'transfer' ? 'Transfer' : purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method}</span>
+   391	                            </div>
+   392	                            
+   393	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+   394	                                <span className="text-left">Catatan</span>
+   395	                                <span className="px-2">:</span>
+   396	                                <span>{purchase.notes || '-'}</span>
+   397	                            </div>
+   398	                            {purchase.is_vat_included && (
+   399	                                <div className="grid grid-cols-[1fr,auto,1fr] mt-2">
+   400	                                    <span className="text-left"></span>
+   401	                                    <span className="px-2"></span>
+   402	                                    <span className="text-sm">* PPN sudah termasuk dalam harga</span>
+   403	                                </div>
+   404	                            )}
+   405	                        </div>
+   406	                        
+   407	                        <div className="border p-4 min-w-[250px] text-sm">
+   408	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   409	                                <span className="text-left">Subtotal</span>
+   410	                                <span className="px-2">:</span>
+   411	                                <span>{baseTotal.toLocaleString('id-ID')}</span>
+   412	                            </div>
+   413	
+   414	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   415	                                <span className="text-left">Diskon</span>
+   416	                                <span className="px-2">:</span>
+   417	                                <span>-{discountTotal.toLocaleString('id-ID')}</span>
+   418	                            </div>
+   419	
+   420	                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   421	                                <span className="text-left">Setelah Diskon</span>
+   422	                                <span className="px-2">:</span>
+   423	                                <span>{afterDiscountTotal.toLocaleString('id-ID')}</span>
+   424	                            </div>
+   425	
+   426	                            {!purchase.is_vat_included && (
+   427	                                <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+   428	                                    <span className="text-left">PPN</span>
+   429	                                    <span className="px-2">:</span>
+   430	                                    <span>+{vatTotal.toLocaleString('id-ID')}</span>
+   431	                                </div>
+   432	                            )}
+   433	
+   434	                            <div className="border-t pt-2 grid grid-cols-[1fr,auto,1fr] font-bold">
+   435	                                <span className="text-left">TOTAL</span>
+   436	                                <span className="px-2">:</span>
+   437	                                <span>{grandTotal.toLocaleString('id-ID')}</span>
+   438	                            </div>
+   439	                        </div>
+   440	                    </div>
+   441	                </div>
+   442	            </div>
+   443	        </Card>
+   444	    );
+   445	};
+   446	
+   447	export default ViewPurchase;
 
 
 ===============================================
