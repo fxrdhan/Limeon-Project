@@ -7601,7 +7601,7 @@
     34	    quantity?: number;
     35	    unit?: string;
     36	    batch_number?: string;
-    37	    expiry_date?: string; // Tetap string karena format MM-YYYY dari Gemini, DB trigger akan konversi
+    37	    expiry_date?: string; // String format MM-YYYY atau Date
     38	    unit_price?: number;
     39	    discount?: number; // Diskon sudah dalam angka, diproses oleh parseDiscountValue di server
     40	    total_price?: number;
@@ -7629,216 +7629,269 @@
     62	    rawText?: string; // Untuk fallback jika parsing JSON gagal
     63	}
     64	
-    65	// --- Fungsi-fungsi Service ---
-    66	
-    67	/**
-    68	 * Mengunggah gambar faktur dan mengekstrak datanya menggunakan API backend.
-    69	 * @param {File} file - File gambar faktur.
-    70	 * @returns {Promise<ExtractedInvoiceData>} Data hasil ekstraksi.
-    71	 * @throws {Error} Jika terjadi kesalahan saat mengunggah atau mengekstrak.
-    72	 */
-    73	export async function uploadAndExtractInvoice(file: File): Promise<ExtractedInvoiceData> {
-    74	    const formData = new FormData();
-    75	    formData.append('image', file);
-    76	
-    77	    try {
-    78	        // Tentukan tipe data yang diharapkan dari response Axios
-    79	        const response = await axios.post<ExtractedInvoiceData>(API_URL, formData, {
-    80	            headers: {
-    81	                'Content-Type': 'multipart/form-data'
-    82	            }
-    83	        });
-    84	
-    85	        // Validasi dasar respons (opsional tapi bagus)
-    86	        const responseData = response.data;
-    87	        if (!responseData || typeof responseData !== 'object') {
-    88	            throw new Error('Format respons tidak valid dari API ekstraksi.');
-    89	        }
-    90	
-    91	        // Transformasi data dari format Gemini ke format yang diharapkan frontend
-    92	        const transformedData: ExtractedInvoiceData = {
-    93	            company_details: {
-    94	                name: responseData.company?.name,
-    95	                address: responseData.company?.address,
-    96	                license_pbf: responseData.company?.pbf_license_no?.toString(),
-    97	                license_dak: responseData.company?.dak_license_no?.toString(),
-    98	                certificate_cdob: responseData.company?.cdob_certificate_no?.toString()
-    99	            },
-   100	            invoice_information: {
-   101	                invoice_number: responseData.invoice?.number,
-   102	                invoice_date: responseData.invoice?.date,
-   103	                so_number: responseData.invoice?.so_number,
-   104	                due_date: responseData.invoice?.due_date
-   105	            },
-   106	            customer_information: {
-   107	                customer_name: responseData.customer?.name,
-   108	                customer_address: responseData.customer?.address
-   109	            },
-   110	            product_list: responseData.products?.map(p => ({
-   111	                sku: p.sku,
-   112	                product_name: p.product_name,
-   113	                quantity: p.count,
-   114	                unit: p.unit,
-   115	                batch_number: p.batch_no,
-   116	                expiry_date: p.expiry_date,
-   117	                unit_price: parseFloat(p.price_per_unit?.replace(/[^\d,]/g, '').replace(',', '.')),
-   118	                discount: parseFloat((p.discount || "-0%").replace(/[^0-9\.]/g, '')),
-   119	                total_price: parseFloat(p.total_price?.replace(/[^\d,]/g, '').replace(',', '.'))
-   120	            })),
-   121	            payment_summary: {
-   122	                total_price: parseFloat(responseData.payment_summary?.total_price?.replace(/[^\d,]/g, '').replace(',', '.')) || 0,
-   123	                vat: parseFloat(responseData.payment_summary?.vat?.replace(/[^\d,]/g, '').replace(',', '.')) || 0,
-   124	                invoice_total: parseFloat(responseData.payment_summary?.total_invoice?.replace(/[^\d,]/g, '').replace(',', '.')) || 0
-   125	            },
-   126	            additional_information: {
-   127	                checked_by: responseData.additional_information?.checked_by
-   128	            }
-   129	        };
-   130	
-   131	        return transformedData;
-   132	
-   133	    } catch (error) {
-   134	        console.error('Error mengekstrak faktur:', error);
-   135	        let errorMessage = 'Gagal mengekstrak data faktur. Silakan coba lagi.';
-   136	        if (axios.isAxiosError(error)) {
-   137	            const axiosError = error as AxiosError<{ error?: string; details?: string }>;
-   138	            if (axiosError.response?.data?.error) {
-   139	                errorMessage = axiosError.response.data.error;
-   140	                if (axiosError.response.data.details) {
-   141	                    errorMessage += `: ${axiosError.response.data.details}`;
-   142	                }
-   143	            } else if (axiosError.message) {
-   144	                errorMessage = axiosError.message;
-   145	            }
-   146	        } else if (error instanceof Error) {
-   147	            errorMessage = error.message;
-   148	        }
-   149	        throw new Error(errorMessage);
-   150	    }
-   151	}
-   152	
-   153	/**
-   154	 * Menyimpan data faktur hasil ekstraksi ke Supabase.
-   155	 * @param {ExtractedInvoiceData} extractedData - Data hasil ekstraksi dari Gemini.
-   156	 * @returns {Promise<{ id: string; success: boolean }>} Hasil operasi penyimpanan.
-   157	 * @throws {Error} Jika terjadi kesalahan saat menyimpan ke database.
-   158	 */
-   159	export async function saveInvoiceToDatabase(extractedData: ExtractedInvoiceData): Promise<{ id: string; success: boolean }> {
-   160	    try {
-   161	        // Validasi data penting sebelum insert
-   162	        if (!extractedData.invoice_information?.invoice_number) {
-   163	            throw new Error('Nomor faktur tidak ditemukan dalam data ekstraksi.');
-   164	        }
-   165	        if (!extractedData.invoice_information?.invoice_date) {
-   166	            throw new Error('Tanggal faktur tidak ditemukan dalam data ekstraksi.');
-   167	        }
-   168	        if (!extractedData.company_details?.name) {
-   169	            throw new Error('Nama supplier tidak ditemukan dalam data ekstraksi.');
-   170	        }
-   171	        if (!extractedData.customer_information?.customer_name) {
-   172	            throw new Error('Nama pelanggan tidak ditemukan dalam data ekstraksi.');
-   173	        }
-   174	
-   175	
-   176	        // 1. Simpan header faktur ke e_invoices
-   177	        const { data: invoiceData, error: invoiceError } = await supabase
-   178	            .from('e_invoices')
-   179	            .insert({
-   180	                invoice_number: extractedData.invoice_information.invoice_number,
-   181	                invoice_date: extractedData.invoice_information.invoice_date, // Pastikan format tanggal sesuai DB
-   182	                so_number: extractedData.invoice_information.so_number,
-   183	                due_date: extractedData.invoice_information.due_date, // Pastikan format tanggal sesuai DB
-   184	                supplier_name: extractedData.company_details.name,
-   185	                supplier_address: extractedData.company_details.address,
-   186	                pbf_license_number: extractedData.company_details.license_pbf,
-   187	                dak_license_number: extractedData.company_details.license_dak,
-   188	                cdob_certificate_number: extractedData.company_details.certificate_cdob,
-   189	                customer_name: extractedData.customer_information.customer_name,
-   190	                customer_address: extractedData.customer_information.customer_address,
-   191	                total_price: extractedData.payment_summary?.total_price ?? 0,
-   192	                ppn: extractedData.payment_summary?.vat ?? 0,
-   193	                total_invoice: extractedData.payment_summary?.invoice_total ?? 0,
-   194	                checked_by: extractedData.additional_information?.checked_by,
-   195	                json_data: extractedData // Simpan raw data untuk audit/debug
-   196	            })
-   197	            .select('id')
-   198	            .single();
-   199	
-   200	        if (invoiceError) {
-   201	            console.error("Supabase invoice insert error:", invoiceError);
-   202	            throw new Error(`Gagal menyimpan header faktur: ${invoiceError.message}`);
-   203	        }
-   204	        if (!invoiceData) {
-   205	            throw new Error('Gagal mendapatkan ID header faktur setelah insert.');
-   206	        }
-   207	
-   208	        // 2. Simpan item faktur ke e_invoice_items
-   209	        const invoiceItems = (extractedData.product_list ?? []).map((product: ProductListItem) => ({
-   210	            invoice_id: invoiceData.id,
-   211	            sku: product.sku,
-   212	            product_name: product.product_name ?? 'Produk Tidak Dikenal',
-   213	            quantity: product.quantity ?? 0,
-   214	            unit: product.unit,
-   215	            batch_number: product.batch_number,
-   216	            expiry_date: product.expiry_date, // Biarkan string, trigger DB akan konversi jika formatnya MM-YYYY
-   217	            unit_price: product.unit_price ?? 0,
-   218	            discount: product.discount ?? 0,
-   219	            total_price: product.total_price ?? 0
-   220	        }));
-   221	
-   222	        // Hanya insert jika ada item
-   223	        if (invoiceItems.length > 0) {
-   224	            const { error: itemsError } = await supabase
-   225	                .from('e_invoice_items')
-   226	                .insert(invoiceItems);
+    65	// Interface untuk struktur data MENTAH yang dikembalikan oleh API backend (Gemini)
+    66	interface RawInvoiceData {
+    67	    company?: {
+    68	        name?: string;
+    69	        address?: string;
+    70	        pbf_license_no?: number | string;
+    71	        dak_license_no?: number | string;
+    72	        cdob_certificate_no?: number | string;
+    73	    };
+    74	    invoice?: {
+    75	        number?: string;
+    76	        date?: string;
+    77	        so_number?: string;
+    78	        due_date?: string;
+    79	    };
+    80	    customer?: {
+    81	        name?: string;
+    82	        address?: string;
+    83	    };
+    84	    products?: Array<{ // Tipe ini akan digunakan oleh parameter 'p' dalam map
+    85	        sku?: string;
+    86	        product_name?: string;
+    87	        count?: number; // Perhatikan nama 'count' dari Gemini
+    88	        unit?: string;
+    89	        batch_no?: string; // Perhatikan nama 'batch_no' dari Gemini
+    90	        expiry_date?: string; // Format MM-YYYY
+    91	        price_per_unit?: string; // Format string "RpX.XXX"
+    92	        discount?: string; // Format string "-X%"
+    93	        total_price?: string; // Format string "RpX.XXX"
+    94	    }>;
+    95	    payment_summary?: {
+    96	        total_price?: string;
+    97	        vat?: string;
+    98	        total_invoice?: string;
+    99	    };
+   100	    additional_information?: {
+   101	        checked_by?: string;
+   102	    };
+   103	    rawText?: string; // Fallback dari backend
+   104	}
+   105	
+   106	// --- Fungsi-fungsi Service ---
+   107	
+   108	/**
+   109	 * Mengunggah gambar faktur dan mengekstrak datanya menggunakan API backend.
+   110	 * @param {File} file - File gambar faktur.
+   111	 * @returns {Promise<ExtractedInvoiceData>} Data hasil ekstraksi.
+   112	 * @throws {Error} Jika terjadi kesalahan saat mengunggah atau mengekstrak.
+   113	 */
+   114	export async function uploadAndExtractInvoice(file: File): Promise<ExtractedInvoiceData> {
+   115	    const formData = new FormData();
+   116	    formData.append('image', file);
+   117	
+   118	    try {
+   119	        // Tentukan tipe data yang diharapkan dari response Axios (Gunakan RawInvoiceData)
+   120	        const response = await axios.post<RawInvoiceData>(API_URL, formData, {
+   121	            headers: {
+   122	                'Content-Type': 'multipart/form-data'
+   123	            }
+   124	        });
+   125	
+   126	        // Validasi dasar respons (opsional tapi bagus)
+   127	        const responseData = response.data;
+   128	        if (!responseData || typeof responseData !== 'object') {
+   129	            throw new Error('Format respons tidak valid dari API ekstraksi.');
+   130	        }
+   131	
+   132	        // Transformasi data dari format Gemini ke format yang diharapkan frontend
+   133	        const transformedData: ExtractedInvoiceData = {
+   134	            company_details: {
+   135	                name: responseData.company?.name, // Akses dari RawInvoiceData
+   136	                address: responseData.company?.address,
+   137	                license_pbf: responseData.company?.pbf_license_no?.toString(),
+   138	                license_dak: responseData.company?.dak_license_no?.toString(),
+   139	                certificate_cdob: responseData.company?.cdob_certificate_no?.toString()
+   140	            },
+   141	            invoice_information: {
+   142	                invoice_number: responseData.invoice?.number, // Akses dari RawInvoiceData
+   143	                invoice_date: responseData.invoice?.date,
+   144	                so_number: responseData.invoice?.so_number,
+   145	                due_date: responseData.invoice?.due_date
+   146	            },
+   147	            customer_information: {
+   148	                customer_name: responseData.customer?.name, // Akses dari RawInvoiceData
+   149	                customer_address: responseData.customer?.address
+   150	            },
+   151	            product_list: responseData.products?.map(p => { // Akses dari RawInvoiceData
+   152	                // Parsing harga dan total dari string "RpX.XXX" ke number
+   153	                const parseNumeric = (value?: string): number => {
+   154	                    if (!value) return 0;
+   155	                    return parseFloat(value.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+   156	                };
+   157	                // Parsing diskon dari string "-X%" ke number X
+   158	                const parseDiscount = (value?: string): number => {
+   159	                    if (!value) return 0;
+   160	                    return parseFloat(value.replace(/[^0-9.]/g, '')) || 0; // Hapus '-' dan '%'
+   161	                };
+   162	                return {
+   163	                    sku: p.sku,
+   164	                    product_name: p.product_name,
+   165	                    quantity: p.count, // Gunakan 'count' dari Gemini
+   166	                    unit: p.unit,
+   167	                    batch_number: p.batch_no, // Gunakan 'batch_no' dari Gemini
+   168	                    expiry_date: p.expiry_date, // Tetap string "MM-YYYY"
+   169	                    unit_price: parseNumeric(p.price_per_unit),
+   170	                    discount: parseDiscount(p.discount),
+   171	                    total_price: parseNumeric(p.total_price)
+   172	                };
+   173	            }),
+   174	            payment_summary: {
+   175	                total_price: parseFloat(responseData.payment_summary?.total_price ? responseData.payment_summary.total_price.replace(/[^\d,]/g, '').replace(',', '.') : '0') || 0, // Parsing dari string
+   176	                vat: parseFloat(responseData.payment_summary?.vat ? responseData.payment_summary.vat.replace(/[^\d,]/g, '').replace(',', '.') : '0') || 0, // Parsing dari string
+   177	                invoice_total: parseFloat(responseData.payment_summary?.total_invoice ? responseData.payment_summary.total_invoice.replace(/[^\d,]/g, '').replace(',', '.') : '0') || 0 // Parsing dari string
+   178	            },
+   179	            additional_information: {
+   180	                checked_by: responseData.additional_information?.checked_by
+   181	            }
+   182	        };
+   183	
+   184	        return transformedData;
+   185	
+   186	    } catch (error) {
+   187	        console.error('Error mengekstrak faktur:', error);
+   188	        let errorMessage = 'Gagal mengekstrak data faktur. Silakan coba lagi.';
+   189	        if (axios.isAxiosError(error)) {
+   190	            const axiosError = error as AxiosError<{ error?: string; details?: string }>;
+   191	            if (axiosError.response?.data?.error) {
+   192	                errorMessage = axiosError.response.data.error;
+   193	                if (axiosError.response.data.details) {
+   194	                    errorMessage += `: ${axiosError.response.data.details}`;
+   195	                }
+   196	            } else if (axiosError.message) {
+   197	                errorMessage = axiosError.message;
+   198	            }
+   199	        } else if (error instanceof Error) {
+   200	            errorMessage = error.message;
+   201	        }
+   202	        throw new Error(errorMessage);
+   203	    }
+   204	}
+   205	
+   206	/**
+   207	 * Menyimpan data faktur hasil ekstraksi ke Supabase.
+   208	 * @param {ExtractedInvoiceData} extractedData - Data hasil ekstraksi dari Gemini.
+   209	 * @returns {Promise<{ id: string; success: boolean }>} Hasil operasi penyimpanan.
+   210	 * @throws {Error} Jika terjadi kesalahan saat menyimpan ke database.
+   211	 */
+   212	export async function saveInvoiceToDatabase(extractedData: ExtractedInvoiceData): Promise<{ id: string; success: boolean }> { // Tetap gunakan ExtractedInvoiceData di sini
+   213	    try { // Data yang diterima fungsi ini SUDAH ditransformasi
+   214	        // Validasi data penting sebelum insert
+   215	        if (!extractedData.invoice_information?.invoice_number) {
+   216	            throw new Error('Nomor faktur tidak ditemukan dalam data ekstraksi.');
+   217	        }
+   218	        if (!extractedData.invoice_information?.invoice_date) {
+   219	            throw new Error('Tanggal faktur tidak ditemukan dalam data ekstraksi.');
+   220	        }
+   221	        if (!extractedData.company_details?.name) {
+   222	            throw new Error('Nama supplier tidak ditemukan dalam data ekstraksi.');
+   223	        }
+   224	        if (!extractedData.customer_information?.customer_name) {
+   225	            throw new Error('Nama pelanggan tidak ditemukan dalam data ekstraksi.');
+   226	        }
    227	
-   228	            if (itemsError) {
-   229	                console.error("Supabase items insert error:", itemsError);
-   230	                // Pertimbangkan: Haruskah kita rollback insert header jika item gagal?
-   231	                // Untuk saat ini, kita lempar error saja.
-   232	                throw new Error(`Gagal menyimpan item faktur: ${itemsError.message}`);
-   233	            }
-   234	        } else {
-   235	            console.warn(`Invoice ${invoiceData.id} disimpan tanpa item produk.`);
-   236	        }
-   237	
-   238	
-   239	        return { id: invoiceData.id, success: true };
-   240	
-   241	    } catch (error: unknown) { // Tangkap error sebagai unknown
-   242	        console.error('Error menyimpan data faktur ke database:', error);
-   243	        // Pastikan kita melempar instance Error
-   244	        if (error instanceof Error) {
-   245	            throw new Error(`Gagal menyimpan faktur ke database: ${error.message}`);
-   246	        } else {
-   247	            throw new Error('Gagal menyimpan faktur ke database: Terjadi kesalahan tidak dikenal.');
-   248	        }
-   249	    }
-   250	}
-   251	
-   252	/**
-   253	 * Proses lengkap: upload, ekstrak.
-   254	 * (Fungsi simpan dipanggil terpisah setelah konfirmasi pengguna)
-   255	 * @param {File} file - File gambar faktur.
-   256	 * @returns {Promise<ExtractedInvoiceData>} Data hasil ekstraksi.
-   257	 * @throws {Error} Jika terjadi kesalahan saat memproses.
-   258	 */
-   259	export async function processInvoice(file: File): Promise<ExtractedInvoiceData> {
-   260	    try {
-   261	        // Langkah 1: Upload dan ekstrak
-   262	        const extractedData = await uploadAndExtractInvoice(file);
-   263	        return extractedData; // Kembalikan data untuk konfirmasi
-   264	    } catch (error: unknown) {
-   265	        console.error('Error processing invoice:', error);
-   266	        if (error instanceof Error) {
-   267	            throw new Error(
-   268	                error.message || 'Terjadi kesalahan saat memproses faktur'
-   269	            );
-   270	        } else {
-   271	            throw new Error('Terjadi kesalahan tidak dikenal saat memproses faktur');
-   272	        }
-   273	    }
-   274	}
+   228	
+   229	        // 1. Simpan header faktur ke e_invoices
+   230	        const { data: invoiceData, error: invoiceError } = await supabase
+   231	            .from('e_invoices')
+   232	            .insert({
+   233	                invoice_number: extractedData.invoice_information.invoice_number,
+   234	                invoice_date: extractedData.invoice_information.invoice_date, // Pastikan format tanggal sesuai DB
+   235	                so_number: extractedData.invoice_information.so_number,
+   236	                due_date: extractedData.invoice_information.due_date, // Pastikan format tanggal sesuai DB
+   237	                supplier_name: extractedData.company_details.name,
+   238	                supplier_address: extractedData.company_details.address,
+   239	                pbf_license_number: extractedData.company_details.license_pbf,
+   240	                dak_license_number: extractedData.company_details.license_dak,
+   241	                cdob_certificate_number: extractedData.company_details.certificate_cdob,
+   242	                customer_name: extractedData.customer_information.customer_name,
+   243	                customer_address: extractedData.customer_information.customer_address,
+   244	                total_price: extractedData.payment_summary?.total_price ?? 0,
+   245	                ppn: extractedData.payment_summary?.vat ?? 0,
+   246	                total_invoice: extractedData.payment_summary?.invoice_total ?? 0,
+   247	                checked_by: extractedData.additional_information?.checked_by,
+   248	                json_data: extractedData // Simpan raw data untuk audit/debug
+   249	            })
+   250	            .select('id')
+   251	            .single();
+   252	
+   253	        if (invoiceError) {
+   254	            console.error("Supabase invoice insert error:", invoiceError);
+   255	            throw new Error(`Gagal menyimpan header faktur: ${invoiceError.message}`);
+   256	        }
+   257	        if (!invoiceData) {
+   258	            throw new Error('Gagal mendapatkan ID header faktur setelah insert.');
+   259	        }
+   260	
+   261	        // 2. Simpan item faktur ke e_invoice_items
+   262	        const invoiceItems = (extractedData.product_list ?? []).map((product: ProductListItem) => ({
+   263	            invoice_id: invoiceData.id,
+   264	            sku: product.sku,
+   265	            product_name: product.product_name ?? 'Produk Tidak Dikenal',
+   266	            quantity: product.quantity ?? 0,
+   267	            unit: product.unit,
+   268	            batch_number: product.batch_number,
+   269	            expiry_date: product.expiry_date, // Biarkan string, trigger DB akan konversi jika formatnya MM-YYYY
+   270	            unit_price: product.unit_price ?? 0,
+   271	            discount: product.discount ?? 0,
+   272	            total_price: product.total_price ?? 0
+   273	        }));
+   274	
+   275	        // Hanya insert jika ada item
+   276	        if (invoiceItems.length > 0) {
+   277	            const { error: itemsError } = await supabase
+   278	                .from('e_invoice_items')
+   279	                .insert(invoiceItems);
+   280	
+   281	            if (itemsError) {
+   282	                console.error("Supabase items insert error:", itemsError);
+   283	                // Pertimbangkan: Haruskah kita rollback insert header jika item gagal?
+   284	                // Untuk saat ini, kita lempar error saja.
+   285	                throw new Error(`Gagal menyimpan item faktur: ${itemsError.message}`);
+   286	            }
+   287	        } else {
+   288	            console.warn(`Invoice ${invoiceData.id} disimpan tanpa item produk.`);
+   289	        }
+   290	
+   291	
+   292	        return { id: invoiceData.id, success: true };
+   293	
+   294	    } catch (error: unknown) { // Tangkap error sebagai unknown
+   295	        console.error('Error menyimpan data faktur ke database:', error);
+   296	        // Pastikan kita melempar instance Error
+   297	        if (error instanceof Error) {
+   298	            throw new Error(`Gagal menyimpan faktur ke database: ${error.message}`);
+   299	        } else {
+   300	            throw new Error('Gagal menyimpan faktur ke database: Terjadi kesalahan tidak dikenal.');
+   301	        }
+   302	    }
+   303	}
+   304	
+   305	/**
+   306	 * Proses lengkap: upload, ekstrak.
+   307	 * (Fungsi simpan dipanggil terpisah setelah konfirmasi pengguna)
+   308	 * @param {File} file - File gambar faktur.
+   309	 * @returns {Promise<ExtractedInvoiceData>} Data hasil ekstraksi.
+   310	 * @throws {Error} Jika terjadi kesalahan saat memproses.
+   311	 */
+   312	export async function processInvoice(file: File): Promise<ExtractedInvoiceData> {
+   313	    try {
+   314	        // Langkah 1: Upload dan ekstrak
+   315	        const extractedData = await uploadAndExtractInvoice(file);
+   316	        return extractedData; // Kembalikan data untuk konfirmasi
+   317	    } catch (error: unknown) {
+   318	        console.error('Error processing invoice:', error);
+   319	        if (error instanceof Error) {
+   320	            throw new Error(
+   321	                error.message || 'Terjadi kesalahan saat memproses faktur'
+   322	            );
+   323	        } else {
+   324	            throw new Error('Terjadi kesalahan tidak dikenal saat memproses faktur');
+   325	        }
+   326	    }
+   327	}
 
 
 ===============================================

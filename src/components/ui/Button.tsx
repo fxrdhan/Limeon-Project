@@ -29,7 +29,7 @@ export const Button = ({
 }: ButtonProps) => {
     const variants = {
         primary: "rounded-md shadow-md bg-blue-500 flex items-center hover:bg-blue-600 text-white hover:text-white",
-        secondary: "rounded-md bg-blue-600 bg-secondary hover:bg-blue-700 text-white hover:text-white",
+        secondary: "rounded-md bg-blue-600 bg-secondary flex items-center hover:bg-blue-700 text-white hover:text-white",
         accent: "bg-accent hover:bg-red-600 text-white",
         outline: "border border-primary text-primary hover:bg-blue-50",
         text: "bg-transparent hover:bg-opacity-10 focus:outline-none focus:ring-0 focus:shadow-none",
