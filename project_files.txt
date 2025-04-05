@@ -30,6 +30,7 @@
 │   │       ├── Badge.tsx
 │   │       ├── Button.tsx
 │   │       ├── Card.tsx
+│   │       ├── ConfirmDialog.tsx
 │   │       ├── FormActions.tsx
 │   │       ├── FormComponents.tsx
 │   │       ├── Input.tsx
@@ -104,7 +105,7 @@
 ├── vite.config.ts
 └── yarn.lock
 
-21 directories, 84 files
+21 directories, 85 files
 
 
 ===============================================
@@ -505,207 +506,210 @@
      4	import Login from './pages/auth/Login';
      5	import './index.css';
      6	import { useAuthStore } from './store/authStore';
-     7	
-     8	// Lazy load pages
-     9	const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
-    10	const ItemList = lazy(() => import('./pages/master-data/ItemList'));
-    11	const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
-    12	const UnitList = lazy(() => import('./pages/master-data/UnitList'));
-    13	const TypeList = lazy(() => import('./pages/master-data/TypeList'));
-    14	const AddItem = lazy(() => import('./pages/master-data/AddItem'));
-    15	const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
-    16	const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
-    17	const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
-    18	const Profile = lazy(() => import('./pages/settings/Profile'));
-    19	const PrintPurchase = lazy(() => import('./pages/purchases/PrintPurchase'));
-    20	const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
-    21	// Tambahkan halaman lain sesuai kebutuhan
-    22	
-    23	// Komponen placeholder untuk halaman yang belum diimplementasi
-    24	const ComingSoon = ({ title }: { title: string }) => {
-    25	  return (
-    26	    <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
-    27	      <h2 className="text-2xl font-bold mb-4">{title}</h2>
-    28	      <p className="text-xl">Fitur ini akan segera hadir!</p>
-    29	      <div className="mt-8 p-4 border border-blue-300 rounded-lg bg-blue-50 max-w-md">
-    30	        <p className="text-blue-600 text-center">
-    31	          Halaman ini sedang dalam pengembangan.
-    32	        </p>
-    33	      </div>
-    34	    </div>
-    35	  );
-    36	};
-    37	
-    38	function App() {
-    39	  const { session, initialize } = useAuthStore();
-    40	  
-    41	  // Inisialisasi auth state saat aplikasi dimuat
-    42	  useEffect(() => {
-    43	    initialize();
-    44	  }, [initialize]);
-    45	  
-    46	
-    47	  return (
-    48	    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-    49	      <Routes>
-    50	        <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
-    51	
-    52	        {/* Route khusus untuk tampilan cetak - tanpa layout */}
-    53	        <Route path="/purchases/print-view" element={
-    54	          <Suspense fallback={<div>Loading...</div>}>
-    55	            <PrintPurchase />
-    56	          </Suspense>} />
-    57	        
-    58	        <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
-    59	          <Route 
-    60	            index 
-    61	            element={
-    62	            <div className="text-gray-800">
-    63	              <Suspense fallback={<div>Loading...</div>}>
-    64	                <Dashboard />
-    65	              </Suspense>
-    66	            </div>
-    67	          } />
-    68	          
-    69	          <Route path="master-data">
-    70	            <Route path="items" element={
-    71	              <Suspense fallback={<div>Loading...</div>}>
-    72	                <ItemList />
-    73	              </Suspense>
-    74	            } />
-    75	            <Route path="items/add" element={
-    76	              <Suspense fallback={<div>Loading...</div>}>
-    77	                <AddItem />
-    78	              </Suspense>
-    79	            } />
-    80	            <Route path="categories" element={
-    81	              <Suspense fallback={<div>Loading...</div>}>
-    82	                <CategoryList />
-    83	              </Suspense>
-    84	            } />
-    85	            <Route path="types" element={
-    86	              <Suspense fallback={<div>Loading...</div>}>
-    87	                <TypeList />
-    88	              </Suspense>
-    89	            } />
-    90	            <Route path="units" element={
-    91	              <Suspense fallback={<div>Loading...</div>}>
-    92	                <UnitList />
-    93	              </Suspense>
-    94	            } />
-    95	            {/* Tambahkan route lain sesuai kebutuhan */}
-    96	          </Route>
-    97	          
-    98	          <Route path="purchases">
-    99	            <Route 
-   100	              index 
-   101	              element={
-   102	                <Suspense fallback={<div>Loading...</div>}>
-   103	                  <PurchaseList />
-   104	                </Suspense>
-   105	              } 
-   106	            />
-   107	            <Route 
-   108	              path="create" 
-   109	              element={
-   110	                <Suspense fallback={<div>Loading...</div>}>
-   111	                  <CreatePurchase />
-   112	                </Suspense>
-   113	              } 
-   114	            />
-   115	            <Route 
-   116	              path="upload-invoice" 
-   117	              element={
-   118	                <Suspense fallback={<div>Loading...</div>}>
-   119	                  <UploadInvoice />
-   120	                </Suspense>
-   121	              } 
-   122	            />
-   123	            <Route 
-   124	              path="view/:id" 
-   125	              element={
-   126	                <Suspense fallback={<div>Loading...</div>}>
-   127	                  <ViewPurchase />
-   128	                </Suspense>
-   129	              } 
-   130	            />
-   131	            <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
-   132	            <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
-   133	          </Route>
-   134	          
-   135	          <Route path="inventory">
-   136	            <Route 
-   137	              index 
-   138	              element={<ComingSoon title="Persediaan" />} 
-   139	            />
-   140	            <Route 
-   141	              path="stock" 
-   142	              element={<ComingSoon title="Stok Obat" />} 
-   143	            />
-   144	            <Route 
-   145	              path="stock-opname" 
-   146	              element={<ComingSoon title="Stok Opname" />} 
-   147	            />
-   148	            <Route 
-   149	              path="expired" 
-   150	              element={<ComingSoon title="Obat Kadaluarsa" />} 
-   151	            />
-   152	          </Route>
-   153	          
-   154	          <Route path="sales">
-   155	            <Route 
-   156	              index 
-   157	              element={<ComingSoon title="Daftar Penjualan" />} 
-   158	            />
-   159	            <Route 
-   160	              path="create" 
-   161	              element={<ComingSoon title="Tambah Penjualan" />} 
-   162	            />
-   163	          </Route>
-   164	          
-   165	          <Route path="clinic">
-   166	            <Route 
-   167	              index 
-   168	              element={<ComingSoon title="Klinik" />} 
-   169	            />
-   170	            <Route 
-   171	              path="patients" 
-   172	              element={<ComingSoon title="Daftar Pasien" />} 
-   173	            />
-   174	            <Route 
-   175	              path="queue" 
-   176	              element={<ComingSoon title="Antrian" />} 
-   177	            />
-   178	            <Route 
-   179	              path="medical-records" 
-   180	              element={<ComingSoon title="Rekam Medis" />} 
-   181	            />
-   182	          </Route>
-   183	          
-   184	          <Route path="reports">
-   185	            <Route index element={<ComingSoon title="Laporan" />} />
-   186	            <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
-   187	            <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
-   188	            <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
-   189	          </Route>
-   190	          
-   191	          <Route path="settings">
-   192	            <Route path="profile" element={
-   193	              <Suspense fallback={<div>Loading...</div>}>
-   194	                <Profile />
-   195	              </Suspense>
-   196	            } />
-   197	            <Route path="users" element={<ComingSoon title="Pengguna" />} />
-   198	            <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
-   199	          </Route>
-   200	          {/* Tambahkan route untuk modul lain */}
-   201	        </Route>
-   202	      </Routes>
-   203	    </Router>
-   204	  );
-   205	}
-   206	
-   207	export default App;
+     7	import { ConfirmDialogProvider } from './components/ui/ConfirmDialog';
+     8	
+     9	// Lazy load pages
+    10	const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
+    11	const ItemList = lazy(() => import('./pages/master-data/ItemList'));
+    12	const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
+    13	const UnitList = lazy(() => import('./pages/master-data/UnitList'));
+    14	const TypeList = lazy(() => import('./pages/master-data/TypeList'));
+    15	const AddItem = lazy(() => import('./pages/master-data/AddItem'));
+    16	const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
+    17	const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
+    18	const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
+    19	const Profile = lazy(() => import('./pages/settings/Profile'));
+    20	const PrintPurchase = lazy(() => import('./pages/purchases/PrintPurchase'));
+    21	const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
+    22	// Tambahkan halaman lain sesuai kebutuhan
+    23	
+    24	// Komponen placeholder untuk halaman yang belum diimplementasi
+    25	const ComingSoon = ({ title }: { title: string }) => {
+    26	  return (
+    27	    <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
+    28	      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+    29	      <p className="text-xl">Fitur ini akan segera hadir!</p>
+    30	      <div className="mt-8 p-4 border border-blue-300 rounded-lg bg-blue-50 max-w-md">
+    31	        <p className="text-blue-600 text-center">
+    32	          Halaman ini sedang dalam pengembangan.
+    33	        </p>
+    34	      </div>
+    35	    </div>
+    36	  );
+    37	};
+    38	
+    39	function App() {
+    40	  const { session, initialize } = useAuthStore();
+    41	  
+    42	  // Inisialisasi auth state saat aplikasi dimuat
+    43	  useEffect(() => {
+    44	    initialize();
+    45	  }, [initialize]);
+    46	  
+    47	
+    48	  return (
+    49	    <ConfirmDialogProvider>
+    50	      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    51	        <Routes>
+    52	          <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
+    53	
+    54	          {/* Route khusus untuk tampilan cetak - tanpa layout */}
+    55	          <Route path="/purchases/print-view" element={
+    56	            <Suspense fallback={<div>Loading...</div>}>
+    57	              <PrintPurchase />
+    58	            </Suspense>} />
+    59	          
+    60	          <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
+    61	            <Route 
+    62	              index 
+    63	              element={
+    64	              <div className="text-gray-800">
+    65	                <Suspense fallback={<div>Loading...</div>}>
+    66	                  <Dashboard />
+    67	                </Suspense>
+    68	              </div>
+    69	            } />
+    70	            
+    71	            <Route path="master-data">
+    72	              <Route path="items" element={
+    73	                <Suspense fallback={<div>Loading...</div>}>
+    74	                  <ItemList />
+    75	                </Suspense>
+    76	              } />
+    77	              <Route path="items/add" element={
+    78	                <Suspense fallback={<div>Loading...</div>}>
+    79	                  <AddItem />
+    80	                </Suspense>
+    81	              } />
+    82	              <Route path="categories" element={
+    83	                <Suspense fallback={<div>Loading...</div>}>
+    84	                  <CategoryList />
+    85	                </Suspense>
+    86	              } />
+    87	              <Route path="types" element={
+    88	                <Suspense fallback={<div>Loading...</div>}>
+    89	                  <TypeList />
+    90	                </Suspense>
+    91	              } />
+    92	              <Route path="units" element={
+    93	                <Suspense fallback={<div>Loading...</div>}>
+    94	                  <UnitList />
+    95	                </Suspense>
+    96	              } />
+    97	              {/* Tambahkan route lain sesuai kebutuhan */}
+    98	            </Route>
+    99	            
+   100	            <Route path="purchases">
+   101	              <Route 
+   102	                index 
+   103	                element={
+   104	                  <Suspense fallback={<div>Loading...</div>}>
+   105	                    <PurchaseList />
+   106	                  </Suspense>
+   107	                } 
+   108	              />
+   109	              <Route 
+   110	                path="create" 
+   111	                element={
+   112	                  <Suspense fallback={<div>Loading...</div>}>
+   113	                    <CreatePurchase />
+   114	                  </Suspense>
+   115	                } 
+   116	              />
+   117	              <Route 
+   118	                path="upload-invoice" 
+   119	                element={
+   120	                  <Suspense fallback={<div>Loading...</div>}>
+   121	                    <UploadInvoice />
+   122	                  </Suspense>
+   123	                } 
+   124	              />
+   125	              <Route 
+   126	                path="view/:id" 
+   127	                element={
+   128	                  <Suspense fallback={<div>Loading...</div>}>
+   129	                    <ViewPurchase />
+   130	                  </Suspense>
+   131	                } 
+   132	              />
+   133	              <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
+   134	              <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
+   135	            </Route>
+   136	            
+   137	            <Route path="inventory">
+   138	              <Route 
+   139	                index 
+   140	                element={<ComingSoon title="Persediaan" />} 
+   141	              />
+   142	              <Route 
+   143	                path="stock" 
+   144	                element={<ComingSoon title="Stok Obat" />} 
+   145	              />
+   146	              <Route 
+   147	                path="stock-opname" 
+   148	                element={<ComingSoon title="Stok Opname" />} 
+   149	              />
+   150	              <Route 
+   151	                path="expired" 
+   152	                element={<ComingSoon title="Obat Kadaluarsa" />} 
+   153	              />
+   154	            </Route>
+   155	            
+   156	            <Route path="sales">
+   157	              <Route 
+   158	                index 
+   159	                element={<ComingSoon title="Daftar Penjualan" />} 
+   160	              />
+   161	              <Route 
+   162	                path="create" 
+   163	                element={<ComingSoon title="Tambah Penjualan" />} 
+   164	              />
+   165	            </Route>
+   166	            
+   167	            <Route path="clinic">
+   168	              <Route 
+   169	                index 
+   170	                element={<ComingSoon title="Klinik" />} 
+   171	              />
+   172	              <Route 
+   173	                path="patients" 
+   174	                element={<ComingSoon title="Daftar Pasien" />} 
+   175	              />
+   176	              <Route 
+   177	                path="queue" 
+   178	                element={<ComingSoon title="Antrian" />} 
+   179	              />
+   180	              <Route 
+   181	                path="medical-records" 
+   182	                element={<ComingSoon title="Rekam Medis" />} 
+   183	              />
+   184	            </Route>
+   185	            
+   186	            <Route path="reports">
+   187	              <Route index element={<ComingSoon title="Laporan" />} />
+   188	              <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
+   189	              <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
+   190	              <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
+   191	            </Route>
+   192	            
+   193	            <Route path="settings">
+   194	              <Route path="profile" element={
+   195	                <Suspense fallback={<div>Loading...</div>}>
+   196	                  <Profile />
+   197	                </Suspense>
+   198	              } />
+   199	              <Route path="users" element={<ComingSoon title="Pengguna" />} />
+   200	              <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
+   201	            </Route>
+   202	            {/* Tambahkan route untuk modul lain */}
+   203	          </Route>
+   204	        </Routes>
+   205	      </Router>
+   206	    </ConfirmDialogProvider>
+   207	  );
+   208	}
+   209	
+   210	export default App;
 
 
 ===============================================
@@ -2281,6 +2285,179 @@
     45	        </div>
     46	    );
     47	};
+
+
+===============================================
+= File: ./src/components/ui/ConfirmDialog.tsx 
+===============================================
+
+     1	// src/components/ui/ConfirmDialog.tsx
+     2	import React, { createContext, useState, useContext, useCallback, Fragment } from 'react';
+     3	import { createPortal } from 'react-dom';
+     4	import { Button } from './Button';
+     5	import { classNames } from '../../lib/classNames';
+     6	
+     7	// Context untuk mengelola state dialog
+     8	interface ConfirmDialogContextType {
+     9	    isOpen: boolean;
+    10	    title: string;
+    11	    message: string;
+    12	    confirmText: string;
+    13	    cancelText: string;
+    14	    onConfirm: () => void;
+    15	    onCancel: () => void;
+    16	    variant: 'danger' | 'primary';
+    17	    openConfirmDialog: (options: ConfirmDialogOptions) => void;
+    18	    closeConfirmDialog: () => void;
+    19	}
+    20	
+    21	interface ConfirmDialogOptions {
+    22	    title: string;
+    23	    message: string;
+    24	    confirmText?: string;
+    25	    cancelText?: string;
+    26	    onConfirm: () => void;
+    27	    onCancel?: () => void;
+    28	    variant?: 'danger' | 'primary';
+    29	}
+    30	
+    31	const initialState: ConfirmDialogContextType = {
+    32	    isOpen: false,
+    33	    title: '',
+    34	    message: '',
+    35	    confirmText: 'Ya',
+    36	    cancelText: 'Batal',
+    37	    onConfirm: () => { },
+    38	    onCancel: () => { },
+    39	    variant: 'primary',
+    40	    openConfirmDialog: () => { },
+    41	    closeConfirmDialog: () => { }
+    42	};
+    43	
+    44	const ConfirmDialogContext = createContext<ConfirmDialogContextType>(initialState);
+    45	
+    46	// Provider untuk modal
+    47	export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    48	    const [dialogState, setDialogState] = useState<Omit<ConfirmDialogContextType, 'openConfirmDialog' | 'closeConfirmDialog'>>(initialState);
+    49	
+    50	    // Fungsi untuk membuka dialog
+    51	    const openConfirmDialog = useCallback((options: ConfirmDialogOptions) => {
+    52	        setDialogState({
+    53	            isOpen: true,
+    54	            title: options.title,
+    55	            message: options.message,
+    56	            confirmText: options.confirmText || 'Ya',
+    57	            cancelText: options.cancelText || 'Batal',
+    58	            onConfirm: options.onConfirm,
+    59	            onCancel: options.onCancel || (() => { }),
+    60	            variant: options.variant || 'primary'
+    61	        });
+    62	    }, []);
+    63	
+    64	    // Fungsi untuk menutup dialog
+    65	    const closeConfirmDialog = useCallback(() => {
+    66	        setDialogState(state => ({
+    67	            ...state,
+    68	            isOpen: false
+    69	        }));
+    70	    }, []);
+    71	
+    72	    return (
+    73	        <ConfirmDialogContext.Provider
+    74	            value={{
+    75	                ...dialogState,
+    76	                openConfirmDialog,
+    77	                closeConfirmDialog
+    78	            }}
+    79	        >
+    80	            {children}
+    81	            <ConfirmDialogComponent />
+    82	        </ConfirmDialogContext.Provider>
+    83	    );
+    84	};
+    85	
+    86	// Hook untuk menggunakan confirm dialog
+    87	// eslint-disable-next-line react-refresh/only-export-components
+    88	export const useConfirmDialog = () => {
+    89	    const context = useContext(ConfirmDialogContext);
+    90	    if (!context) {
+    91	        throw new Error('useConfirmDialog must be used within a ConfirmDialogProvider');
+    92	    }
+    93	    return context;
+    94	};
+    95	
+    96	// Komponen dialog
+    97	const ConfirmDialogComponent: React.FC = () => {
+    98	    const {
+    99	        isOpen,
+   100	        title,
+   101	        message,
+   102	        confirmText,
+   103	        cancelText,
+   104	        onConfirm,
+   105	        onCancel,
+   106	        variant,
+   107	        closeConfirmDialog
+   108	    } = useContext(ConfirmDialogContext);
+   109	
+   110	    const handleConfirm = () => {
+   111	        onConfirm();
+   112	        closeConfirmDialog();
+   113	    };
+   114	
+   115	    const handleCancel = () => {
+   116	        onCancel();
+   117	        closeConfirmDialog();
+   118	    };
+   119	
+   120	    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+   121	        if (e.target === e.currentTarget) {
+   122	            handleCancel();
+   123	        }
+   124	    };
+   125	
+   126	    // Gunakan portal untuk merender dialog di luar hierarki komponen
+   127	    return createPortal(
+   128	        <Fragment>
+   129	            {isOpen && (
+   130	                <div
+   131	                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm transition-all duration-300 overflow-y-auto"
+   132	                    onClick={handleBackdropClick}
+   133	                >
+   134	                    <div
+   135	                        className={classNames(
+   136	                            "relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all duration-300 ease-out p-6",
+   137	                            isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95"
+   138	                        )}
+   139	                    >
+   140	                        <div className="text-lg font-semibold mb-2">{title}</div>
+   141	                        <div className="text-gray-600 mb-6">{message}</div>
+   142	
+   143	                        <div className="flex justify-end space-x-3">
+   144	                            <Button
+   145	                                type="button"
+   146	                                variant="outline"
+   147	                                onClick={handleCancel}
+   148	                            >
+   149	                                {cancelText}
+   150	                            </Button>
+   151	                            <Button
+   152	                                type="button"
+   153	                                variant={variant}
+   154	                                onClick={handleConfirm}
+   155	                            >
+   156	                                {confirmText}
+   157	                            </Button>
+   158	                        </div>
+   159	                    </div>
+   160	                </div>
+   161	            )}
+   162	        </Fragment>,
+   163	        document.body
+   164	    );
+   165	};
+   166	
+   167	export default ConfirmDialogProvider;
 
 
 ===============================================
@@ -4919,280 +5096,288 @@
      7	import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
      8	import { Pagination } from "../../components/ui/Pagination";
      9	import { Loading } from "../../components/ui/Loading";
-    10	
-    11	interface Item {
-    12	    id: string;
-    13	    name: string;
-    14	    code: string;
-    15	    category: { name: string };
-    16	    type: { name: string };
-    17	    unit: { name: string };
-    18	    base_price: number;
-    19	    sell_price: number;
-    20	    stock: number;
-    21	}
-    22	
-    23	const ItemList = () => {
-    24	    const [items, setItems] = useState<Item[]>([]);
-    25	    const [loading, setLoading] = useState(true);
-    26	    const [tableLoading, setTableLoading] = useState(false);
-    27	    const [search, setSearch] = useState("");
-    28	    const [debouncedSearch, setDebouncedSearch] = useState("");
-    29	    const [currentPage, setCurrentPage] = useState(1);
-    30	    const [totalItems, setTotalItems] = useState(0);
-    31	    const [itemsPerPage, setItemsPerPage] = useState(10);
-    32	
-    33	    // Efek untuk debounce pencarian
-    34	    useEffect(() => {
-    35	        const timer = setTimeout(() => {
-    36	            setDebouncedSearch(search);
-    37	            setCurrentPage(1); // Reset ke halaman pertama saat pencarian berubah
-    38	        }, 500);
-    39	
-    40	        return () => clearTimeout(timer);
-    41	    }, [search]);
-    42	
-    43	    // Efek untuk mengambil data saat parameter berubah
-    44	    useEffect(() => {
-    45	        fetchItems(currentPage, debouncedSearch, itemsPerPage);
-    46	    // eslint-disable-next-line react-hooks/exhaustive-deps
-    47	    }, [currentPage, debouncedSearch, itemsPerPage]);
-    48	
-    49	    const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
-    50	        try {
-    51	            // Hanya set loading untuk tabel, bukan seluruh komponen
-    52	            setTableLoading(true);
-    53	
-    54	            // Buat query dasar
-    55	            let query = supabase
-    56	                .from("items")
-    57	                .select(`
-    58	                id, 
-    59	                name, 
-    60	                code,
-    61	                base_price, 
-    62	                sell_price, 
-    63	                stock,
-    64	                category_id,
-    65	                type_id,
-    66	                unit_id
-    67	                `);
-    68	
-    69	            // Tambahkan pencarian jika ada
-    70	            if (searchTerm) {
-    71	                query = query.ilike('name', `%${searchTerm}%`);
-    72	            }
-    73	
-    74	            // Ambil total jumlah item untuk pagination
-    75	            // Membuat query terpisah untuk menghitung total item
-    76	            let countQuery = supabase
-    77	                .from("items")
-    78	                .select('id', { count: 'exact' });
-    79	
-    80	            // Tambahkan pencarian jika ada
-    81	            if (searchTerm) {
-    82	                countQuery = countQuery.ilike('name', `%${searchTerm}%`);
-    83	            }
-    84	
-    85	            const { count, error: countError } = await countQuery;
-    86	            if (countError) throw countError;
-    87	
-    88	            // Tambahkan pagination
-    89	            const from = (page - 1) * limit;
-    90	            const to = from + limit - 1;
-    91	
-    92	            const { data, error } = await query
-    93	                .order('name')
-    94	                .range(from, to);
-    95	
-    96	            if (error) {
-    97	                console.error("Error fetching items:", error);
-    98	                throw error;
-    99	            }
-   100	
-   101	            // Ambil data referensi
-   102	            const { data: categories } = await supabase.from("item_categories").select("id, name");
-   103	            const { data: types } = await supabase.from("item_types").select("id, name");
-   104	            const { data: units } = await supabase.from("item_units").select("id, name");
-   105	
-   106	            // Gabungkan data
-   107	            const completedData = (data || []).map(item => ({
-   108	                id: item.id,
-   109	                name: item.name,
-   110	                code: item.code,
-   111	                base_price: item.base_price,
-   112	                sell_price: item.sell_price,
-   113	                stock: item.stock,
-   114	                category: {
-   115	                    name: categories?.find(cat => cat.id === item.category_id)?.name || ""
-   116	                },
-   117	                type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
-   118	                unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
-   119	            }));
-   120	
-   121	            setTotalItems(count || 0);
-   122	            setItems(completedData);
-   123	        } catch (error) {
-   124	            console.error("Error fetching items:", error);
-   125	        } finally {
-   126	            setTableLoading(false);
-   127	            // Setelah loading pertama, set loading utama menjadi false
-   128	            if (loading) {
-   129	                setLoading(false);
-   130	            }
-   131	        }
-   132	    };
-   133	
-   134	    const handlePageChange = (newPage: number) => {
-   135	        setCurrentPage(newPage);
-   136	    };
-   137	
-   138	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-   139	        setItemsPerPage(Number(e.target.value));
-   140	        setCurrentPage(1); // Reset ke halaman pertama
-   141	    };
-   142	
-   143	    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    10	import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+    11	
+    12	interface Item {
+    13	    id: string;
+    14	    name: string;
+    15	    code: string;
+    16	    category: { name: string };
+    17	    type: { name: string };
+    18	    unit: { name: string };
+    19	    base_price: number;
+    20	    sell_price: number;
+    21	    stock: number;
+    22	}
+    23	
+    24	const ItemList = () => {
+    25	    const [items, setItems] = useState<Item[]>([]);
+    26	    const [loading, setLoading] = useState(true);
+    27	    const [tableLoading, setTableLoading] = useState(false);
+    28	    const [search, setSearch] = useState("");
+    29	    const [debouncedSearch, setDebouncedSearch] = useState("");
+    30	    const [currentPage, setCurrentPage] = useState(1);
+    31	    const [totalItems, setTotalItems] = useState(0);
+    32	    const [itemsPerPage, setItemsPerPage] = useState(10);
+    33	    const { openConfirmDialog } = useConfirmDialog();
+    34	
+    35	    // Efek untuk debounce pencarian
+    36	    useEffect(() => {
+    37	        const timer = setTimeout(() => {
+    38	            setDebouncedSearch(search);
+    39	            setCurrentPage(1); // Reset ke halaman pertama saat pencarian berubah
+    40	        }, 500);
+    41	
+    42	        return () => clearTimeout(timer);
+    43	    }, [search]);
+    44	
+    45	    // Efek untuk mengambil data saat parameter berubah
+    46	    useEffect(() => {
+    47	        fetchItems(currentPage, debouncedSearch, itemsPerPage);
+    48	    // eslint-disable-next-line react-hooks/exhaustive-deps
+    49	    }, [currentPage, debouncedSearch, itemsPerPage]);
+    50	
+    51	    const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
+    52	        try {
+    53	            // Hanya set loading untuk tabel, bukan seluruh komponen
+    54	            setTableLoading(true);
+    55	
+    56	            // Buat query dasar
+    57	            let query = supabase
+    58	                .from("items")
+    59	                .select(`
+    60	                id, 
+    61	                name, 
+    62	                code,
+    63	                base_price, 
+    64	                sell_price, 
+    65	                stock,
+    66	                category_id,
+    67	                type_id,
+    68	                unit_id
+    69	                `);
+    70	
+    71	            // Tambahkan pencarian jika ada
+    72	            if (searchTerm) {
+    73	                query = query.ilike('name', `%${searchTerm}%`);
+    74	            }
+    75	
+    76	            // Ambil total jumlah item untuk pagination
+    77	            // Membuat query terpisah untuk menghitung total item
+    78	            let countQuery = supabase
+    79	                .from("items")
+    80	                .select('id', { count: 'exact' });
+    81	
+    82	            // Tambahkan pencarian jika ada
+    83	            if (searchTerm) {
+    84	                countQuery = countQuery.ilike('name', `%${searchTerm}%`);
+    85	            }
+    86	
+    87	            const { count, error: countError } = await countQuery;
+    88	            if (countError) throw countError;
+    89	
+    90	            // Tambahkan pagination
+    91	            const from = (page - 1) * limit;
+    92	            const to = from + limit - 1;
+    93	
+    94	            const { data, error } = await query
+    95	                .order('name')
+    96	                .range(from, to);
+    97	
+    98	            if (error) {
+    99	                console.error("Error fetching items:", error);
+   100	                throw error;
+   101	            }
+   102	
+   103	            // Ambil data referensi
+   104	            const { data: categories } = await supabase.from("item_categories").select("id, name");
+   105	            const { data: types } = await supabase.from("item_types").select("id, name");
+   106	            const { data: units } = await supabase.from("item_units").select("id, name");
+   107	
+   108	            // Gabungkan data
+   109	            const completedData = (data || []).map(item => ({
+   110	                id: item.id,
+   111	                name: item.name,
+   112	                code: item.code,
+   113	                base_price: item.base_price,
+   114	                sell_price: item.sell_price,
+   115	                stock: item.stock,
+   116	                category: {
+   117	                    name: categories?.find(cat => cat.id === item.category_id)?.name || ""
+   118	                },
+   119	                type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
+   120	                unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
+   121	            }));
+   122	
+   123	            setTotalItems(count || 0);
+   124	            setItems(completedData);
+   125	        } catch (error) {
+   126	            console.error("Error fetching items:", error);
+   127	        } finally {
+   128	            setTableLoading(false);
+   129	            // Setelah loading pertama, set loading utama menjadi false
+   130	            if (loading) {
+   131	                setLoading(false);
+   132	            }
+   133	        }
+   134	    };
+   135	
+   136	    const handlePageChange = (newPage: number) => {
+   137	        setCurrentPage(newPage);
+   138	    };
+   139	
+   140	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+   141	        setItemsPerPage(Number(e.target.value));
+   142	        setCurrentPage(1); // Reset ke halaman pertama
+   143	    };
    144	
-   145	    return (
-   146	        <Card>
-   147	            <div className="flex justify-between items-center mb-6">
-   148	                <h1 className="text-2xl font-bold text-gray-800">Daftar Item</h1>
-   149	
-   150	                <Link
-   151	                    to="/master-data/items/add"
-   152	                >
-   153	                    <Button variant="primary">
-   154	                        <FaPlus className="mr-2" />
-   155	                        Tambah Item Baru
-   156	                    </Button>
-   157	                </Link>
-   158	            </div>
-   159	
-   160	            <div className="mb-4 relative">
-   161	                <input
-   162	                    type="text"
-   163	                    placeholder="Cari item..."
-   164	                    className="w-full p-3 border rounded-md pl-10"
-   165	                    value={search}
-   166	                    onChange={(e) => setSearch(e.target.value)}
-   167	                />
-   168	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-   169	            </div>
-   170	
-   171	            {loading ? (
-   172	                <Loading />
-   173	            ) : (
-   174	                <>
-   175	                    {tableLoading ? (
-   176	                        <div>
-   177	                            <Loading/>
-   178	                        </div>
-   179	                    ) : (
-   180	                        <Table>
-   181	                            <TableHead>
-   182	                                <TableRow>
-   183	                                    <TableHeader>Nama Item</TableHeader>
-   184	                                    <TableHeader>Kode</TableHeader>
-   185	                                    <TableHeader>Kategori</TableHeader>
-   186	                                    <TableHeader>Jenis</TableHeader>
-   187	                                    <TableHeader>Satuan</TableHeader>
-   188	                                    <TableHeader className="text-right">Harga Pokok</TableHeader>
-   189	                                    <TableHeader className="text-right">Harga Jual</TableHeader>
-   190	                                    <TableHeader className="text-right">Stok</TableHeader>
-   191	                                    <TableHeader className="text-center">Aksi</TableHeader>
-   192	                                </TableRow>
-   193	                            </TableHead>
-   194	                            <TableBody>
-   195	                                {items.length === 0 ? (
-   196	                                    <TableRow>
-   197	                                        <TableCell
-   198	                                            colSpan={9}
-   199	                                            className="text-center text-gray-600"
-   200	                                        >
-   201	                                            {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
-   202	                                        </TableCell>
-   203	                                    </TableRow>
-   204	                                ) : (
-   205	                                    items.map((item) => (
-   206	                                        <TableRow key={item.id}>
-   207	                                            <TableCell>{item.name}</TableCell>
-   208	                                            <TableCell>{item.code}</TableCell>
-   209	                                            <TableCell>{item.category.name}</TableCell>
-   210	                                            <TableCell>{item.type.name}</TableCell>
-   211	                                            <TableCell>{item.unit.name}</TableCell>
-   212	                                            <TableCell className="text-right">
-   213	                                                {item.base_price.toLocaleString("id-ID", {
-   214	                                                    style: "currency",
-   215	                                                    currency: "IDR",
-   216	                                                })}
-   217	                                            </TableCell>
-   218	                                            <TableCell className="text-right">
-   219	                                                {item.sell_price.toLocaleString("id-ID", {
-   220	                                                    style: "currency",
-   221	                                                    currency: "IDR",
-   222	                                                })}
-   223	                                            </TableCell>
-   224	                                            <TableCell className="text-right">{item.stock}</TableCell>
-   225	                                            <TableCell className="text-center">
-   226	                                                <div className="flex justify-center space-x-2">
-   227	                                                    <Link
-   228	                                                        to={`/master-data/items/edit/${item.id}`}
-   229	                                                    >
-   230	                                                        <Button variant="secondary" size="sm">
-   231	                                                            <FaEdit />
-   232	                                                        </Button>
-   233	                                                    </Link>
-   234	                                                    <Button
-   235	                                                        variant="danger"
-   236	                                                        size="sm"
-   237	                                                        onClick={() => handleDelete(item.id)}
-   238	                                                    >
-   239	                                                        <FaTrash />
-   240	                                                    </Button>
-   241	                                                </div>
-   242	                                            </TableCell>
-   243	                                        </TableRow>
-   244	                                    ))
-   245	                                )}
-   246	                            </TableBody>
-   247	                        </Table>
-   248	                    )}
-   249	                    <Pagination 
-   250	                        currentPage={currentPage}
-   251	                        totalPages={totalPages}
-   252	                        totalItems={totalItems}
-   253	                        itemsPerPage={itemsPerPage}
-   254	                        itemsCount={items.length}
-   255	                        onPageChange={handlePageChange}
-   256	                        onItemsPerPageChange={handleItemsPerPageChange}
-   257	                    />
-   258	                </>
-   259	            )}
-   260	        </Card>
-   261	    );
-   262	
-   263	    async function handleDelete(id: string) {
-   264	        if (window.confirm("Apakah Anda yakin ingin menghapus item ini?")) {
-   265	            try {
-   266	                const { error } = await supabase
-   267	                    .from("items")
-   268	                    .delete()
-   269	                    .eq("id", id);
-   270	
-   271	                if (error) throw error;
-   272	
-   273	                // Refresh data
-   274	                fetchItems(currentPage, debouncedSearch, itemsPerPage);
-   275	            } catch (error) {
-   276	                console.error("Error deleting item:", error);
-   277	                alert("Gagal menghapus item. Silakan coba lagi.");
-   278	            }
-   279	        }
-   280	    }
-   281	};
-   282	
-   283	export default ItemList;
+   145	    const totalPages = Math.ceil(totalItems / itemsPerPage);
+   146	
+   147	    return (
+   148	        <Card>
+   149	            <div className="flex justify-between items-center mb-6">
+   150	                <h1 className="text-2xl font-bold text-gray-800">Daftar Item</h1>
+   151	
+   152	                <Link
+   153	                    to="/master-data/items/add"
+   154	                >
+   155	                    <Button variant="primary">
+   156	                        <FaPlus className="mr-2" />
+   157	                        Tambah Item Baru
+   158	                    </Button>
+   159	                </Link>
+   160	            </div>
+   161	
+   162	            <div className="mb-4 relative">
+   163	                <input
+   164	                    type="text"
+   165	                    placeholder="Cari item..."
+   166	                    className="w-full p-3 border rounded-md pl-10"
+   167	                    value={search}
+   168	                    onChange={(e) => setSearch(e.target.value)}
+   169	                />
+   170	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+   171	            </div>
+   172	
+   173	            {loading ? (
+   174	                <Loading />
+   175	            ) : (
+   176	                <>
+   177	                    {tableLoading ? (
+   178	                        <div>
+   179	                            <Loading/>
+   180	                        </div>
+   181	                    ) : (
+   182	                        <Table>
+   183	                            <TableHead>
+   184	                                <TableRow>
+   185	                                    <TableHeader>Nama Item</TableHeader>
+   186	                                    <TableHeader>Kode</TableHeader>
+   187	                                    <TableHeader>Kategori</TableHeader>
+   188	                                    <TableHeader>Jenis</TableHeader>
+   189	                                    <TableHeader>Satuan</TableHeader>
+   190	                                    <TableHeader className="text-right">Harga Pokok</TableHeader>
+   191	                                    <TableHeader className="text-right">Harga Jual</TableHeader>
+   192	                                    <TableHeader className="text-right">Stok</TableHeader>
+   193	                                    <TableHeader className="text-center">Aksi</TableHeader>
+   194	                                </TableRow>
+   195	                            </TableHead>
+   196	                            <TableBody>
+   197	                                {items.length === 0 ? (
+   198	                                    <TableRow>
+   199	                                        <TableCell
+   200	                                            colSpan={9}
+   201	                                            className="text-center text-gray-600"
+   202	                                        >
+   203	                                            {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
+   204	                                        </TableCell>
+   205	                                    </TableRow>
+   206	                                ) : (
+   207	                                    items.map((item) => (
+   208	                                        <TableRow key={item.id}>
+   209	                                            <TableCell>{item.name}</TableCell>
+   210	                                            <TableCell>{item.code}</TableCell>
+   211	                                            <TableCell>{item.category.name}</TableCell>
+   212	                                            <TableCell>{item.type.name}</TableCell>
+   213	                                            <TableCell>{item.unit.name}</TableCell>
+   214	                                            <TableCell className="text-right">
+   215	                                                {item.base_price.toLocaleString("id-ID", {
+   216	                                                    style: "currency",
+   217	                                                    currency: "IDR",
+   218	                                                })}
+   219	                                            </TableCell>
+   220	                                            <TableCell className="text-right">
+   221	                                                {item.sell_price.toLocaleString("id-ID", {
+   222	                                                    style: "currency",
+   223	                                                    currency: "IDR",
+   224	                                                })}
+   225	                                            </TableCell>
+   226	                                            <TableCell className="text-right">{item.stock}</TableCell>
+   227	                                            <TableCell className="text-center">
+   228	                                                <div className="flex justify-center space-x-2">
+   229	                                                    <Link
+   230	                                                        to={`/master-data/items/edit/${item.id}`}
+   231	                                                    >
+   232	                                                        <Button variant="secondary" size="sm">
+   233	                                                            <FaEdit />
+   234	                                                        </Button>
+   235	                                                    </Link>
+   236	                                                    <Button
+   237	                                                        variant="danger"
+   238	                                                        size="sm"
+   239	                                                        onClick={() => handleDelete(item.id)}
+   240	                                                    >
+   241	                                                        <FaTrash />
+   242	                                                    </Button>
+   243	                                                </div>
+   244	                                            </TableCell>
+   245	                                        </TableRow>
+   246	                                    ))
+   247	                                )}
+   248	                            </TableBody>
+   249	                        </Table>
+   250	                    )}
+   251	                    <Pagination 
+   252	                        currentPage={currentPage}
+   253	                        totalPages={totalPages}
+   254	                        totalItems={totalItems}
+   255	                        itemsPerPage={itemsPerPage}
+   256	                        itemsCount={items.length}
+   257	                        onPageChange={handlePageChange}
+   258	                        onItemsPerPageChange={handleItemsPerPageChange}
+   259	                    />
+   260	                </>
+   261	            )}
+   262	        </Card>
+   263	    );
+   264	
+   265	    async function handleDelete(id: string) {
+   266	        openConfirmDialog({
+   267	            title: "Konfirmasi Hapus",
+   268	            message: "Apakah Anda yakin ingin menghapus item ini?",
+   269	            variant: "danger",
+   270	            confirmText: "Hapus",
+   271	            onConfirm: async () => {
+   272	                try {
+   273	                    const { error } = await supabase
+   274	                        .from("items")
+   275	                        .delete()
+   276	                        .eq("id", id);
+   277	
+   278	                    if (error) throw error;
+   279	
+   280	                    // Refresh data
+   281	                    fetchItems(currentPage, debouncedSearch, itemsPerPage);
+   282	                } catch (error) {
+   283	                    console.error("Error deleting item:", error);
+   284	                    alert("Gagal menghapus item. Silakan coba lagi.");
+   285	                }
+   286	            }
+   287	        });
+   288	    }
+   289	};
+   290	
+   291	export default ItemList;
 
 
 ===============================================
@@ -6366,154 +6551,160 @@
    136	                                variant="outline" 
    137	                                onClick={handleCancel}
    138	                            >
-   139	                                <FaArrowLeft className="mr-2" /> Kembali
-   140	                            </Button>
-   141	                            
-   142	                            <Button 
-   143	                                type="button" 
-   144	                                onClick={handleUpload} 
-   145	                                disabled={!file || loading}
-   146	                                isLoading={loading}
-   147	                            >
-   148	                                <FaUpload className="mr-2" /> Unggah & Ekstrak
-   149	                            </Button>
-   150	                        </div>
-   151	                    </div>
-   152	                ) : (
-   153	                    <div className="space-y-6">
-   154	                        {responseData && (
-   155	                            <div>
-   156	                                <h3 className="text-lg font-medium mb-4">Data yang Diekstraksi:</h3>
-   157	                                
-   158	                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-   159	                                    <div className="border rounded-md p-4">
-   160	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Perusahaan</h4>
-   161	                                        <div className="space-y-1 text-sm">
-   162	                                            <p><span className="font-medium">Nama:</span> {responseData.company_details?.name || '-'}</p>
-   163	                                            <p><span className="font-medium">Alamat:</span> {responseData.company_details?.address || '-'}</p>
-   164	                                            <p><span className="font-medium">No. Lisensi PBF:</span> {responseData.company_details?.license_pbf || '-'}</p>
-   165	                                            <p><span className="font-medium">No. Lisensi DAK:</span> {responseData.company_details?.license_dak || '-'}</p>
-   166	                                            <p><span className="font-medium">No. Sertifikat CDOB:</span> {responseData.company_details?.certificate_cdob || '-'}</p>
-   167	                                        </div>
-   168	                                    </div>
-   169	                                    
-   170	                                    <div className="border rounded-md p-4">
-   171	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Faktur</h4>
-   172	                                        <div className="space-y-1 text-sm">
-   173	                                            <p><span className="font-medium">No. Faktur:</span> {responseData.invoice_information?.invoice_number || '-'}</p>
-   174	                                            <p><span className="font-medium">Tanggal:</span> {responseData.invoice_information?.invoice_date || '-'}</p>
-   175	                                            <p><span className="font-medium">No. SO:</span> {responseData.invoice_information?.so_number || '-'}</p>
-   176	                                            <p><span className="font-medium">Jatuh Tempo:</span> {responseData.invoice_information?.due_date || '-'}</p>
-   177	                                        </div>
-   178	                                    </div>
-   179	                                </div>
-   180	                                
-   181	                                <div className="border rounded-md p-4 mb-6">
-   182	                                    <h4 className="font-medium text-gray-700 mb-2">Informasi Pelanggan</h4>
-   183	                                    <div className="space-y-1 text-sm">
-   184	                                        <p><span className="font-medium">Nama:</span> {responseData.customer_information?.customer_name || '-'}</p>
-   185	                                        <p><span className="font-medium">Alamat:</span> {responseData.customer_information?.customer_address || '-'}</p>
-   186	                                        {responseData.customer_information?.customer_id && (
-   187	                                            <p><span className="font-medium">ID:</span> {responseData.customer_information.customer_id}</p>
-   188	                                        )}
-   189	                                    </div>
-   190	                                </div>
-   191	                                
-   192	                                <div className="mb-6">
-   193	                                    <h4 className="font-medium text-gray-700 mb-2">Daftar Produk</h4>
-   194	                                    <div className="overflow-x-auto">
-   195	                                        <table className="min-w-full bg-white border">
-   196	                                            <thead className="bg-gray-100">
-   197	                                                <tr>
-   198	                                                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-   199	                                                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Produk</th>
-   200	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-   201	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Satuan</th>
-   202	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">No. Batch</th>
-   203	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Exp</th>
-   204	                                                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
-   205	                                                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-   206	                                                </tr>
-   207	                                            </thead>
-   208	                                            <tbody className="divide-y divide-gray-200">
-   209	                                                {responseData.product_list?.map((product: any, index: number) => (
-   210	                                                    <tr key={index} className="text-sm">
-   211	                                                        <td className="py-2 px-3">{product.sku || '-'}</td>
-   212	                                                        <td className="py-2 px-3">{product.product_name || '-'}</td>
-   213	                                                        <td className="py-2 px-3 text-center">{product.quantity || '-'}</td>
-   214	                                                        <td className="py-2 px-3 text-center">{product.unit || '-'}</td>
-   215	                                                        <td className="py-2 px-3 text-center">{product.batch_number || '-'}</td>
-   216	                                                        <td className="py-2 px-3 text-center">{product.expiry_date || '-'}</td>
-   217	                                                        <td className="py-2 px-3 text-right">
-   218	                                                            {typeof product.unit_price === 'number' 
-   219	                                                                ? product.unit_price.toLocaleString('id-ID') 
-   220	                                                                : '-'}
-   221	                                                        </td>
-   222	                                                        <td className="py-2 px-3 text-right">
-   223	                                                            {typeof product.total_price === 'number' 
-   224	                                                                ? product.total_price.toLocaleString('id-ID') 
-   225	                                                                : '-'}
-   226	                                                        </td>
-   227	                                                    </tr>
-   228	                                                ))}
-   229	                                            </tbody>
-   230	                                        </table>
-   231	                                    </div>
-   232	                                </div>
-   233	                                
-   234	                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-   235	                                    <div className="border rounded-md p-4">
-   236	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Tambahan</h4>
-   237	                                        <div className="space-y-1 text-sm">
-   238	                                            <p><span className="font-medium">Diperiksa oleh:</span> {responseData.additional_information?.checked_by || '-'}</p>
-   239	                                        </div>
-   240	                                    </div>
-   241	                                    
-   242	                                    <div className="border rounded-md p-4">
-   243	                                        <h4 className="font-medium text-gray-700 mb-2">Ringkasan Pembayaran</h4>
-   244	                                        <div className="space-y-1 text-sm">
-   245	                                            <p><span className="font-medium">Total Harga:</span> {responseData.payment_summary?.total_price?.toLocaleString('id-ID') || '-'}</p>
-   246	                                            <p><span className="font-medium">PPN:</span> {responseData.payment_summary?.vat?.toLocaleString('id-ID') || '-'}</p>
-   247	                                            <p className="font-medium">Total Faktur: 
-   248	                                                <span className="text-blue-600 ml-2">
-   249	                                                    {responseData.payment_summary?.invoice_total?.toLocaleString('id-ID') || '-'}
-   250	                                                </span>
-   251	                                            </p>
-   252	                                        </div>
-   253	                                    </div>
-   254	                                </div>
-   255	                            </div>
-   256	                        )}
-   257	                    </div>
-   258	                )}
-   259	            </CardContent>
-   260	            
-   261	            {uploadStep === 'confirm' && (
-   262	                <CardFooter className="flex justify-end space-x-2">
-   263	                    <Button 
-   264	                        type="button" 
-   265	                        variant="outline" 
-   266	                        onClick={handleCancel}
-   267	                    >
-   268	                        Kembali
-   269	                    </Button>
-   270	                    
-   271	                    <Button 
-   272	                        type="button" 
-   273	                        onClick={handleConfirm} 
-   274	                        disabled={loading}
-   275	                        isLoading={loading}
-   276	                    >
-   277	                        <FaCheck className="mr-2" />
-   278	                        Konfirmasi & Simpan
-   279	                    </Button>
-   280	                </CardFooter>
-   281	            )}
-   282	        </Card>
-   283	    );
-   284	};
-   285	
-   286	export default UploadInvoice;
+   139	                                <span className="flex items-center">
+   140	                                    <FaArrowLeft className="mr-2" />
+   141	                                    <span>Kembali</span>
+   142	                                </span>
+   143	                            </Button>
+   144	                            
+   145	                            <Button 
+   146	                                type="button" 
+   147	                                onClick={handleUpload} 
+   148	                                disabled={!file || loading}
+   149	                                isLoading={loading}
+   150	                            >
+   151	                                <FaUpload className="mr-2" /> Unggah & Ekstrak
+   152	                            </Button>
+   153	                        </div>
+   154	                    </div>
+   155	                ) : (
+   156	                    <div className="space-y-6">
+   157	                        {responseData && (
+   158	                            <div>
+   159	                                <h3 className="text-lg font-medium mb-4">Data yang Diekstraksi:</h3>
+   160	                                
+   161	                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+   162	                                    <div className="border rounded-md p-4">
+   163	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Perusahaan</h4>
+   164	                                        <div className="space-y-1 text-sm">
+   165	                                            <p><span className="font-medium">Nama:</span> {responseData.company_details?.name || '-'}</p>
+   166	                                            <p><span className="font-medium">Alamat:</span> {responseData.company_details?.address || '-'}</p>
+   167	                                            <p><span className="font-medium">No. Lisensi PBF:</span> {responseData.company_details?.license_pbf || '-'}</p>
+   168	                                            <p><span className="font-medium">No. Lisensi DAK:</span> {responseData.company_details?.license_dak || '-'}</p>
+   169	                                            <p><span className="font-medium">No. Sertifikat CDOB:</span> {responseData.company_details?.certificate_cdob || '-'}</p>
+   170	                                        </div>
+   171	                                    </div>
+   172	                                    
+   173	                                    <div className="border rounded-md p-4">
+   174	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Faktur</h4>
+   175	                                        <div className="space-y-1 text-sm">
+   176	                                            <p><span className="font-medium">No. Faktur:</span> {responseData.invoice_information?.invoice_number || '-'}</p>
+   177	                                            <p><span className="font-medium">Tanggal:</span> {responseData.invoice_information?.invoice_date || '-'}</p>
+   178	                                            <p><span className="font-medium">No. SO:</span> {responseData.invoice_information?.so_number || '-'}</p>
+   179	                                            <p><span className="font-medium">Jatuh Tempo:</span> {responseData.invoice_information?.due_date || '-'}</p>
+   180	                                        </div>
+   181	                                    </div>
+   182	                                </div>
+   183	                                
+   184	                                <div className="border rounded-md p-4 mb-6">
+   185	                                    <h4 className="font-medium text-gray-700 mb-2">Informasi Pelanggan</h4>
+   186	                                    <div className="space-y-1 text-sm">
+   187	                                        <p><span className="font-medium">Nama:</span> {responseData.customer_information?.customer_name || '-'}</p>
+   188	                                        <p><span className="font-medium">Alamat:</span> {responseData.customer_information?.customer_address || '-'}</p>
+   189	                                        {responseData.customer_information?.customer_id && (
+   190	                                            <p><span className="font-medium">ID:</span> {responseData.customer_information.customer_id}</p>
+   191	                                        )}
+   192	                                    </div>
+   193	                                </div>
+   194	                                
+   195	                                <div className="mb-6">
+   196	                                    <h4 className="font-medium text-gray-700 mb-2">Daftar Produk</h4>
+   197	                                    <div className="overflow-x-auto">
+   198	                                        <table className="min-w-full bg-white border">
+   199	                                            <thead className="bg-gray-100">
+   200	                                                <tr>
+   201	                                                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+   202	                                                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Produk</th>
+   203	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+   204	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Satuan</th>
+   205	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">No. Batch</th>
+   206	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Exp</th>
+   207	                                                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
+   208	                                                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+   209	                                                </tr>
+   210	                                            </thead>
+   211	                                            <tbody className="divide-y divide-gray-200">
+   212	                                                {responseData.product_list?.map((product: any, index: number) => (
+   213	                                                    <tr key={index} className="text-sm">
+   214	                                                        <td className="py-2 px-3">{product.sku || '-'}</td>
+   215	                                                        <td className="py-2 px-3">{product.product_name || '-'}</td>
+   216	                                                        <td className="py-2 px-3 text-center">{product.quantity || '-'}</td>
+   217	                                                        <td className="py-2 px-3 text-center">{product.unit || '-'}</td>
+   218	                                                        <td className="py-2 px-3 text-center">{product.batch_number || '-'}</td>
+   219	                                                        <td className="py-2 px-3 text-center">{product.expiry_date || '-'}</td>
+   220	                                                        <td className="py-2 px-3 text-right">
+   221	                                                            {typeof product.unit_price === 'number' 
+   222	                                                                ? product.unit_price.toLocaleString('id-ID') 
+   223	                                                                : '-'}
+   224	                                                        </td>
+   225	                                                        <td className="py-2 px-3 text-right">
+   226	                                                            {typeof product.total_price === 'number' 
+   227	                                                                ? product.total_price.toLocaleString('id-ID') 
+   228	                                                                : '-'}
+   229	                                                        </td>
+   230	                                                    </tr>
+   231	                                                ))}
+   232	                                            </tbody>
+   233	                                        </table>
+   234	                                    </div>
+   235	                                </div>
+   236	                                
+   237	                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   238	                                    <div className="border rounded-md p-4">
+   239	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Tambahan</h4>
+   240	                                        <div className="space-y-1 text-sm">
+   241	                                            <p><span className="font-medium">Diperiksa oleh:</span> {responseData.additional_information?.checked_by || '-'}</p>
+   242	                                        </div>
+   243	                                    </div>
+   244	                                    
+   245	                                    <div className="border rounded-md p-4">
+   246	                                        <h4 className="font-medium text-gray-700 mb-2">Ringkasan Pembayaran</h4>
+   247	                                        <div className="space-y-1 text-sm">
+   248	                                            <p><span className="font-medium">Total Harga:</span> {responseData.payment_summary?.total_price?.toLocaleString('id-ID') || '-'}</p>
+   249	                                            <p><span className="font-medium">PPN:</span> {responseData.payment_summary?.vat?.toLocaleString('id-ID') || '-'}</p>
+   250	                                            <p className="font-medium">Total Faktur: 
+   251	                                                <span className="text-blue-600 ml-2">
+   252	                                                    {responseData.payment_summary?.invoice_total?.toLocaleString('id-ID') || '-'}
+   253	                                                </span>
+   254	                                            </p>
+   255	                                        </div>
+   256	                                    </div>
+   257	                                </div>
+   258	                            </div>
+   259	                        )}
+   260	                    </div>
+   261	                )}
+   262	            </CardContent>
+   263	            
+   264	            {uploadStep === 'confirm' && (
+   265	                <CardFooter className="flex justify-end space-x-2">
+   266	                    <Button 
+   267	                        type="button" 
+   268	                        variant="outline" 
+   269	                        onClick={handleCancel}
+   270	                    >
+   271	                        <span className="flex items-center">
+   272	                            <FaArrowLeft className="mr-2" />
+   273	                            <span>Kembali</span>
+   274	                        </span>
+   275	                    </Button>
+   276	                    
+   277	                    <Button 
+   278	                        type="button" 
+   279	                        onClick={handleConfirm} 
+   280	                        disabled={loading}
+   281	                        isLoading={loading}
+   282	                    >
+   283	                        <FaCheck className="mr-2" />
+   284	                        Konfirmasi & Simpan
+   285	                    </Button>
+   286	                </CardFooter>
+   287	            )}
+   288	        </Card>
+   289	    );
+   290	};
+   291	
+   292	export default UploadInvoice;
 
 
 ===============================================
