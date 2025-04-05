@@ -5,9 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Loading } from "../../components/ui/Loading";
-import { FaArrowLeft, FaFilePdf, FaSearchPlus, FaSearchMinus, FaPrint } from "react-icons/fa";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { FaArrowLeft, FaSearchPlus, FaSearchMinus, FaPrint } from "react-icons/fa";
 
 interface PurchaseData {
     id: string;
@@ -148,32 +146,6 @@ const ViewPurchase = () => {
         };
     };
 
-    const handleGeneratePDF = async () => {
-        if (!printRef.current) return;
-
-        const element = printRef.current;
-        const canvas = await html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            logging: false
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-
-        // F4 dimensions: 215 x 330 mm
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: [215, 330]
-        });
-
-        const imgWidth = 215;
-        const imgHeight = canvas.height * imgWidth / canvas.width;
-
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-        pdf.save(`purchase-${purchase?.invoice_number}.pdf`);
-    };
-
     const openPrintableVersion = () => {
         // Simpan data faktur di sessionStorage untuk digunakan oleh halaman cetak
         sessionStorage.setItem('purchaseData', JSON.stringify({
@@ -246,9 +218,6 @@ const ViewPurchase = () => {
                     <span className="mx-1 text-sm">{Math.round(scale * 100)}%</span>
                     <Button type="button" variant="outline" onClick={increaseScale} title="Perbesar">
                         <FaSearchPlus />
-                    </Button>
-                    <Button onClick={handleGeneratePDF} className="mr-2">
-                        <FaFilePdf className="mr-2" /> Download PDF
                     </Button>
                     <Button onClick={openPrintableVersion} variant="primary">
                         <FaPrint className="mr-2" /> Print View
