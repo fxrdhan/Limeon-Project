@@ -136,7 +136,10 @@ const UploadInvoice = () => {
                                 variant="outline" 
                                 onClick={handleCancel}
                             >
-                                <FaArrowLeft className="mr-2" /> Kembali
+                                <span className="flex items-center">
+                                    <FaArrowLeft className="mr-2" />
+                                    <span>Kembali</span>
+                                </span>
                             </Button>
                             
                             <Button 
@@ -265,7 +268,10 @@ const UploadInvoice = () => {
                         variant="outline" 
                         onClick={handleCancel}
                     >
-                        Kembali
+                        <span className="flex items-center">
+                            <FaArrowLeft className="mr-2" />
+                            <span>Kembali</span>
+                        </span>
                     </Button>
                     
                     <Button 
