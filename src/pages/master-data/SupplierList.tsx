@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Loading } from '../../components/ui/Loading';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaEye } from 'react-icons/fa';
 import { Card, CardHeader, CardTitle } from '../../components/ui/Card'; // Reuse existing Card components if needed
+import DetailEditModal from '../../components/ui/DetailEditModal';
 
 interface Supplier {
     id: string;
@@ -21,6 +22,9 @@ const SupplierList = () => {
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         fetchSuppliers();
@@ -45,6 +49,46 @@ const SupplierList = () => {
             setLoading(false);
         }
     };
+    
+    const openSupplierDetail = (supplier: Supplier) => {
+        setSelectedSupplier(supplier);
+        setIsModalOpen(true);
+    };
+    
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setSelectedSupplier(null);
+    };
+    
+    const updateSupplier = async (updatedData: Partial<Supplier>) => {
+        if (!selectedSupplier) return;
+        
+        try {
+            setSaving(true);
+            const { error } = await supabase
+                .from('suppliers')
+                .update(updatedData)
+                .eq('id', selectedSupplier.id);
+                
+            if (error) throw error;
+            
+            // Refresh data setelah update
+            fetchSuppliers();
+        } catch (err) {
+            console.error("Error updating supplier:", err);
+            throw err;
+        } finally {
+            setSaving(false);
+        }
+    };
+    
+    const supplierFields = [
+        { key: 'name', label: 'Nama Supplier', editable: true },
+        { key: 'address', label: 'Alamat', type: 'textarea', editable: true },
+        { key: 'phone', label: 'Telepon', type: 'tel', editable: true },
+        { key: 'email', label: 'Email', type: 'email', editable: true },
+        { key: 'contact_person', label: 'Kontak Person', editable: true }
+    ];
 
     return (
         <Card className="bg-transparent shadow-none border-none">
@@ -62,7 +106,15 @@ const SupplierList = () => {
                         <div
                             key={supplier.id}
                             className="group relative aspect-video h-48 md:h-56 bg-gray-300 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl"
+                            onClick={() => openSupplierDetail(supplier)}
                         >
+                            {/* View Detail Button (visible on hover) */}
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <div className="bg-white rounded-full p-2 shadow-md">
+                                    <FaEye className="text-blue-500" />
+                                </div>
+                            </div>
+                           
                             {/* Background Image (Placeholder) */}
                             <img
                                 // Replace with actual supplier.image_url when available
@@ -108,6 +160,20 @@ const SupplierList = () => {
                 <div className="text-center text-gray-500 mt-8">
                     Belum ada data supplier.
                 </div>
+            )}
+            
+            {/* Modal Detail dan Edit */}
+            {isModalOpen && selectedSupplier && (
+                <DetailEditModal
+                    title={`Detail Supplier: ${selectedSupplier.name}`}
+                    data={selectedSupplier}
+                    fields={supplierFields}
+                    isOpen={isModalOpen}
+                    onClose={closeModal}
+                    onSave={updateSupplier}
+                    imageUrl={selectedSupplier.image_url}
+                    imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
+                />
             )}
         </Card>
     );
