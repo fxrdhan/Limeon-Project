@@ -1,3 +1,4 @@
+// src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import MainLayout from './components/layout/MainLayout';
@@ -13,6 +14,8 @@ const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
 const UnitList = lazy(() => import('./pages/master-data/UnitList'));
 const TypeList = lazy(() => import('./pages/master-data/TypeList'));
 const AddItem = lazy(() => import('./pages/master-data/AddItem'));
+// ---> ADD THIS IMPORT <---
+const SupplierList = lazy(() => import('./pages/master-data/SupplierList'));
 const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
 const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
 const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
@@ -38,12 +41,12 @@ const ComingSoon = ({ title }: { title: string }) => {
 
 function App() {
   const { session, initialize } = useAuthStore();
-  
+
   // Inisialisasi auth state saat aplikasi dimuat
   useEffect(() => {
     initialize();
   }, [initialize]);
-  
+
 
   return (
     <ConfirmDialogProvider>
@@ -56,10 +59,10 @@ function App() {
             <Suspense fallback={<div>Loading...</div>}>
               <PrintPurchase />
             </Suspense>} />
-          
+
           <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
-            <Route 
-              index 
+            <Route
+              index
               element={
               <div className="text-gray-800">
                 <Suspense fallback={<div>Loading...</div>}>
@@ -67,7 +70,7 @@ function App() {
                 </Suspense>
               </div>
             } />
-            
+
             <Route path="master-data">
               <Route path="items" element={
                 <Suspense fallback={<div>Loading...</div>}>
@@ -94,102 +97,108 @@ function App() {
                   <UnitList />
                 </Suspense>
               } />
-              {/* Tambahkan route lain sesuai kebutuhan */}
+               {/* ---> ADD THIS ROUTE <--- */}
+               <Route path="suppliers" element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <SupplierList />
+                </Suspense>
+               } />
+              {/* Tambahkan route lain sesuai kebutuhan (e.g., /add, /edit/:id for suppliers) */}
             </Route>
-            
+
             <Route path="purchases">
-              <Route 
-                index 
+              <Route
+                index
                 element={
                   <Suspense fallback={<div>Loading...</div>}>
                     <PurchaseList />
                   </Suspense>
-                } 
+                }
               />
-              <Route 
-                path="create" 
+              <Route
+                path="create"
                 element={
                   <Suspense fallback={<div>Loading...</div>}>
                     <CreatePurchase />
                   </Suspense>
-                } 
+                }
               />
-              <Route 
-                path="upload-invoice" 
+              <Route
+                path="upload-invoice"
                 element={
                   <Suspense fallback={<div>Loading...</div>}>
                     <UploadInvoice />
                   </Suspense>
-                } 
+                }
               />
-              <Route 
-                path="view/:id" 
+              <Route
+                path="view/:id"
                 element={
                   <Suspense fallback={<div>Loading...</div>}>
                     <ViewPurchase />
                   </Suspense>
-                } 
+                }
               />
               <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
               <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
             </Route>
-            
+
             <Route path="inventory">
-              <Route 
-                index 
-                element={<ComingSoon title="Persediaan" />} 
+              <Route
+                index
+                element={<ComingSoon title="Persediaan" />}
               />
-              <Route 
-                path="stock" 
-                element={<ComingSoon title="Stok Obat" />} 
+              <Route
+                path="stock"
+                element={<ComingSoon title="Stok Obat" />}
               />
-              <Route 
-                path="stock-opname" 
-                element={<ComingSoon title="Stok Opname" />} 
+              <Route
+                path="stock-opname"
+                element={<ComingSoon title="Stok Opname" />}
               />
-              <Route 
-                path="expired" 
-                element={<ComingSoon title="Obat Kadaluarsa" />} 
+              <Route
+                path="expired"
+                element={<ComingSoon title="Obat Kadaluarsa" />}
               />
             </Route>
-            
+
             <Route path="sales">
-              <Route 
-                index 
-                element={<ComingSoon title="Daftar Penjualan" />} 
+              <Route
+                index
+                element={<ComingSoon title="Daftar Penjualan" />}
               />
-              <Route 
-                path="create" 
-                element={<ComingSoon title="Tambah Penjualan" />} 
+              <Route
+                path="create"
+                element={<ComingSoon title="Tambah Penjualan" />}
               />
             </Route>
-            
+
             <Route path="clinic">
-              <Route 
-                index 
-                element={<ComingSoon title="Klinik" />} 
+              <Route
+                index
+                element={<ComingSoon title="Klinik" />}
               />
-              <Route 
-                path="patients" 
-                element={<ComingSoon title="Daftar Pasien" />} 
+              <Route
+                path="patients"
+                element={<ComingSoon title="Daftar Pasien" />}
               />
-              <Route 
-                path="queue" 
-                element={<ComingSoon title="Antrian" />} 
+              <Route
+                path="queue"
+                element={<ComingSoon title="Antrian" />}
               />
-              <Route 
-                path="medical-records" 
-                element={<ComingSoon title="Rekam Medis" />} 
+              <Route
+                path="medical-records"
+                element={<ComingSoon title="Rekam Medis" />}
               />
             </Route>
-            
+
             <Route path="reports">
               <Route index element={<ComingSoon title="Laporan" />} />
               <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
               <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
               <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
             </Route>
-            
+
             <Route path="settings">
               <Route path="profile" element={
                 <Suspense fallback={<div>Loading...</div>}>
