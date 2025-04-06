@@ -5639,162 +5639,158 @@
     24	    const [error, setError] = useState<string | null>(null);
     25	    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
     26	    const [isModalOpen, setIsModalOpen] = useState(false);
-    27	    const [saving, setSaving] = useState(false);
-    28	
-    29	    useEffect(() => {
-    30	        fetchSuppliers();
-    31	    }, []);
-    32	
-    33	    const fetchSuppliers = async () => {
-    34	        try {
-    35	            setLoading(true);
-    36	            setError(null);
-    37	            const { data, error } = await supabase
-    38	                .from('suppliers')
-    39	                .select('id, name, address, phone, email, contact_person, image_url')
-    40	                .order('name');
-    41	
-    42	            if (error) throw error;
-    43	            setSuppliers(data || []);
-    44	        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    45	        } catch (err: any) {
-    46	            console.error("Error fetching suppliers:", err);
-    47	            setError("Gagal memuat data supplier.");
-    48	        } finally {
-    49	            setLoading(false);
-    50	        }
-    51	    };
-    52	    
-    53	    const openSupplierDetail = (supplier: Supplier) => {
-    54	        setSelectedSupplier(supplier);
-    55	        setIsModalOpen(true);
-    56	    };
-    57	    
-    58	    const closeModal = () => {
-    59	        setIsModalOpen(false);
-    60	        setSelectedSupplier(null);
-    61	    };
-    62	    
-    63	    const updateSupplier = async (updatedData: Partial<Supplier>) => {
-    64	        if (!selectedSupplier) return;
-    65	        
-    66	        try {
-    67	            setSaving(true);
-    68	            const { error } = await supabase
-    69	                .from('suppliers')
-    70	                .update(updatedData)
-    71	                .eq('id', selectedSupplier.id);
-    72	                
-    73	            if (error) throw error;
-    74	            
-    75	            // Refresh data setelah update
-    76	            fetchSuppliers();
-    77	        } catch (err) {
-    78	            console.error("Error updating supplier:", err);
-    79	            throw err;
-    80	        } finally {
-    81	            setSaving(false);
-    82	        }
-    83	    };
-    84	    
-    85	    const supplierFields = [
-    86	        { key: 'name', label: 'Nama Supplier', editable: true },
-    87	        { key: 'address', label: 'Alamat', type: 'textarea', editable: true },
-    88	        { key: 'phone', label: 'Telepon', type: 'tel', editable: true },
-    89	        { key: 'email', label: 'Email', type: 'email', editable: true },
-    90	        { key: 'contact_person', label: 'Kontak Person', editable: true }
-    91	    ];
-    92	
-    93	    return (
-    94	        <Card className="bg-transparent shadow-none border-none">
-    95	            <CardHeader className="mb-6 px-0">
-    96	                <CardTitle>Daftar Supplier</CardTitle>
-    97	            </CardHeader>
-    98	
-    99	            {loading && <Loading message="Memuat supplier..." />}
-   100	            {error && <div className="text-center text-red-500">{error}</div>}
-   101	
-   102	            {!loading && !error && (
-   103	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
-   104	                    {/* Supplier Cards */}
-   105	                    {suppliers.map((supplier) => (
-   106	                        <div
-   107	                            key={supplier.id}
-   108	                            className="group relative aspect-video h-48 md:h-56 bg-gray-300 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl"
-   109	                            onClick={() => openSupplierDetail(supplier)}
-   110	                        >
-   111	                            {/* View Detail Button (visible on hover) */}
-   112	                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-   113	                                <div className="bg-white rounded-full p-2 shadow-md">
-   114	                                    <FaEye className="text-blue-500" />
-   115	                                </div>
-   116	                            </div>
-   117	                           
-   118	                            {/* Background Image (Placeholder) */}
-   119	                            <img
-   120	                                // Replace with actual supplier.image_url when available
-   121	                                src={supplier.image_url || `https://picsum.photos/seed/${supplier.id}/400/300`}
-   122	                                alt={`Gambar ${supplier.name}`}
-   123	                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
-   124	                            />
-   125	
-   126	                            {/* Name Overlay */}
-   127	                            {/* Tambahkan kelas untuk menyembunyikan overlay saat hover */}
-   128	                            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/65 via-black/40 to-transparent transition-opacity duration-500 ease-in-out group-hover:opacity-0">
-   129	                                <h3 className="text-white font-semibold truncate text-lg">
-   130	                                    {supplier.name}
-   131	                                </h3>
-   132	                            </div>
-   133	
-   134	                            {/* Address Hover Overlay */}
-   135	                            <div className="absolute inset-0 p-4 bg-black/70 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
-   136	                                <h3 className="text-white font-semibold truncate text-lg mb-1">
-   137	                                    {supplier.name}
-   138	                                </h3>
-   139	                                <p className="text-gray-200 text-sm line-clamp-3">
-   140	                                    {supplier.address || 'Alamat tidak tersedia'}
-   141	                                </p>
-   142	                                {/* Optional: Add more details on hover */}
-   143	                                {/* <p className="text-gray-300 text-xs mt-1">{supplier.phone || '-'}</p> */}
-   144	                                {/* <p className="text-gray-300 text-xs">{supplier.contact_person || '-'}</p> */}
-   145	                            </div>
-   146	                        </div>
-   147	                    ))}
-   148	
-   149	                    {/* Add New Supplier Card */}
-   150	                    <Link
-   151	                        to="/master-data/suppliers/add" // Adjust the route as needed
-   152	                        className="group aspect-video h-48 md:h-56 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-primary hover:text-primary hover:bg-blue-30/50 hover:shadow-lg transition-all duration-500 ease-in-out cursor-pointer transform hover:scale-105"
-   153	                    >
-   154	                        <FaPlus className="text-4xl mb-2 transition-all duration-500 ease-in-out group-hover:scale-125 group-hover:rotate-90" />
-   155	                        <span className="text-sm font-medium transition-all duration-500 ease-in-out group-hover:font-bold">Tambah Supplier Baru</span>
-   156	                    </Link>
-   157	                </div>
-   158	            )}
-   159	            {!loading && suppliers.length === 0 && !error && (
-   160	                <div className="text-center text-gray-500 mt-8">
-   161	                    Belum ada data supplier.
-   162	                </div>
-   163	            )}
-   164	            
-   165	            {/* Modal Detail dan Edit */}
-   166	            {isModalOpen && selectedSupplier && (
-   167	                <DetailEditModal
-   168	                    title={`Detail Supplier: ${selectedSupplier.name}`}
-   169	                    data={selectedSupplier}
-   170	                    fields={supplierFields}
-   171	                    isOpen={isModalOpen}
-   172	                    onClose={closeModal}
-   173	                    onSave={updateSupplier}
-   174	                    imageUrl={selectedSupplier.image_url}
-   175	                    imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
-   176	                />
-   177	            )}
-   178	        </Card>
-   179	    );
-   180	};
-   181	
-   182	export default SupplierList;
+    27	
+    28	    useEffect(() => {
+    29	        fetchSuppliers();
+    30	    }, []);
+    31	
+    32	    const fetchSuppliers = async () => {
+    33	        try {
+    34	            setLoading(true);
+    35	            setError(null);
+    36	            const { data, error } = await supabase
+    37	                .from('suppliers')
+    38	                .select('id, name, address, phone, email, contact_person, image_url')
+    39	                .order('name');
+    40	
+    41	            if (error) throw error;
+    42	            setSuppliers(data || []);
+    43	        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    44	        } catch (err: any) {
+    45	            console.error("Error fetching suppliers:", err);
+    46	            setError("Gagal memuat data supplier.");
+    47	        } finally {
+    48	            setLoading(false);
+    49	        }
+    50	    };
+    51	    
+    52	    const openSupplierDetail = (supplier: Supplier) => {
+    53	        setSelectedSupplier(supplier);
+    54	        setIsModalOpen(true);
+    55	    };
+    56	    
+    57	    const closeModal = () => {
+    58	        setIsModalOpen(false);
+    59	        setSelectedSupplier(null);
+    60	    };
+    61	    
+    62	    const updateSupplier = async (updatedData: Partial<Supplier>) => {
+    63	        if (!selectedSupplier) return;
+    64	        
+    65	        try {
+    66	            const { error } = await supabase
+    67	                .from('suppliers')
+    68	                .update(updatedData)
+    69	                .eq('id', selectedSupplier.id);
+    70	                
+    71	            if (error) throw error;
+    72	            
+    73	            // Refresh data setelah update
+    74	            fetchSuppliers();
+    75	        } catch (err) {
+    76	            console.error("Error updating supplier:", err);
+    77	            throw err;
+    78	        }
+    79	    };
+    80	    
+    81	    const supplierFields = [
+    82	        { key: 'name', label: 'Nama Supplier', type: 'text', editable: true },
+    83	        { key: 'address', label: 'Alamat', type: 'textarea', editable: true },
+    84	        { key: 'phone', label: 'Telepon', type: 'tel', editable: true },
+    85	        { key: 'email', label: 'Email', type: 'email', editable: true },
+    86	        { key: 'contact_person', label: 'Kontak Person', type: 'text', editable: true }
+    87	    ];
+    88	
+    89	    return (
+    90	        <Card className="bg-transparent shadow-none border-none">
+    91	            <CardHeader className="mb-6 px-0">
+    92	                <CardTitle>Daftar Supplier</CardTitle>
+    93	            </CardHeader>
+    94	
+    95	            {loading && <Loading message="Memuat supplier..." />}
+    96	            {error && <div className="text-center text-red-500">{error}</div>}
+    97	
+    98	            {!loading && !error && (
+    99	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
+   100	                    {/* Supplier Cards */}
+   101	                    {suppliers.map((supplier) => (
+   102	                        <div
+   103	                            key={supplier.id}
+   104	                            className="group relative aspect-video h-48 md:h-56 bg-gray-300 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl"
+   105	                            onClick={() => openSupplierDetail(supplier)}
+   106	                        >
+   107	                            {/* View Detail Button (visible on hover) */}
+   108	                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+   109	                                <div className="bg-white rounded-full p-2 shadow-md">
+   110	                                    <FaEye className="text-blue-500" />
+   111	                                </div>
+   112	                            </div>
+   113	                           
+   114	                            {/* Background Image (Placeholder) */}
+   115	                            <img
+   116	                                // Replace with actual supplier.image_url when available
+   117	                                src={supplier.image_url || `https://picsum.photos/seed/${supplier.id}/400/300`}
+   118	                                alt={`Gambar ${supplier.name}`}
+   119	                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
+   120	                            />
+   121	
+   122	                            {/* Name Overlay */}
+   123	                            {/* Tambahkan kelas untuk menyembunyikan overlay saat hover */}
+   124	                            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/65 via-black/40 to-transparent transition-opacity duration-500 ease-in-out group-hover:opacity-0">
+   125	                                <h3 className="text-white font-semibold truncate text-lg">
+   126	                                    {supplier.name}
+   127	                                </h3>
+   128	                            </div>
+   129	
+   130	                            {/* Address Hover Overlay */}
+   131	                            <div className="absolute inset-0 p-4 bg-black/70 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
+   132	                                <h3 className="text-white font-semibold truncate text-lg mb-1">
+   133	                                    {supplier.name}
+   134	                                </h3>
+   135	                                <p className="text-gray-200 text-sm line-clamp-3">
+   136	                                    {supplier.address || 'Alamat tidak tersedia'}
+   137	                                </p>
+   138	                                {/* Optional: Add more details on hover */}
+   139	                                {/* <p className="text-gray-300 text-xs mt-1">{supplier.phone || '-'}</p> */}
+   140	                                {/* <p className="text-gray-300 text-xs">{supplier.contact_person || '-'}</p> */}
+   141	                            </div>
+   142	                        </div>
+   143	                    ))}
+   144	
+   145	                    {/* Add New Supplier Card */}
+   146	                    <Link
+   147	                        to="/master-data/suppliers/add" // Adjust the route as needed
+   148	                        className="group aspect-video h-48 md:h-56 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-primary hover:text-primary hover:bg-blue-30/50 hover:shadow-lg transition-all duration-500 ease-in-out cursor-pointer transform hover:scale-105"
+   149	                    >
+   150	                        <FaPlus className="text-4xl mb-2 transition-all duration-500 ease-in-out group-hover:scale-125 group-hover:rotate-90" />
+   151	                        <span className="text-sm font-medium transition-all duration-500 ease-in-out group-hover:font-bold">Tambah Supplier Baru</span>
+   152	                    </Link>
+   153	                </div>
+   154	            )}
+   155	            {!loading && suppliers.length === 0 && !error && (
+   156	                <div className="text-center text-gray-500 mt-8">
+   157	                    Belum ada data supplier.
+   158	                </div>
+   159	            )}
+   160	            
+   161	            {/* Modal Detail dan Edit */}
+   162	            {isModalOpen && selectedSupplier && (
+   163	                <DetailEditModal
+   164	                    title={`Detail Supplier: ${selectedSupplier.name}`}
+   165	                    data={selectedSupplier}
+   166	                    fields={supplierFields}
+   167	                    isOpen={isModalOpen}
+   168	                    onClose={closeModal}
+   169	                    onSave={updateSupplier}
+   170	                    imageUrl={selectedSupplier.image_url || undefined}
+   171	                    imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
+   172	                />
+   173	            )}
+   174	        </Card>
+   175	    );
+   176	};
+   177	
+   178	export default SupplierList;
 
 
 ===============================================
