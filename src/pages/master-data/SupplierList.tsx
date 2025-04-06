@@ -18,13 +18,20 @@ interface Supplier {
     image_url?: string | null;
 }
 
+// Definisikan interface untuk field config sesuai dengan yang diharapkan DetailEditModal
+interface FieldConfig {
+    key: string;
+    label: string;
+    type?: 'text' | 'email' | 'tel' | 'textarea';
+    editable?: boolean;
+}
+
 const SupplierList = () => {
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         fetchSuppliers();
@@ -64,7 +71,6 @@ const SupplierList = () => {
         if (!selectedSupplier) return;
         
         try {
-            setSaving(true);
             const { error } = await supabase
                 .from('suppliers')
                 .update(updatedData)
@@ -77,17 +83,15 @@ const SupplierList = () => {
         } catch (err) {
             console.error("Error updating supplier:", err);
             throw err;
-        } finally {
-            setSaving(false);
         }
     };
     
-    const supplierFields = [
-        { key: 'name', label: 'Nama Supplier', editable: true },
+    const supplierFields: FieldConfig[] = [
+        { key: 'name', label: 'Nama Supplier', type: 'text', editable: true },
         { key: 'address', label: 'Alamat', type: 'textarea', editable: true },
         { key: 'phone', label: 'Telepon', type: 'tel', editable: true },
         { key: 'email', label: 'Email', type: 'email', editable: true },
-        { key: 'contact_person', label: 'Kontak Person', editable: true }
+        { key: 'contact_person', label: 'Kontak Person', type: 'text', editable: true }
     ];
 
     return (
@@ -171,7 +175,7 @@ const SupplierList = () => {
                     isOpen={isModalOpen}
                     onClose={closeModal}
                     onSave={updateSupplier}
-                    imageUrl={selectedSupplier.image_url}
+                    imageUrl={selectedSupplier.image_url || undefined}
                     imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
                 />
             )}
