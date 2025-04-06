@@ -27,6 +27,7 @@
 │   │   ├── tools
 │   │   │   └── UnitConversionManager.tsx
 │   │   └── ui
+│   │       ├── AddItemCard.tsx
 │   │       ├── Badge.tsx
 │   │       ├── Button.tsx
 │   │       ├── Card.tsx
@@ -34,6 +35,7 @@
 │   │       ├── DetailEditModal.tsx
 │   │       ├── FormActions.tsx
 │   │       ├── FormComponents.tsx
+│   │       ├── ImageCard.tsx
 │   │       ├── Input.tsx
 │   │       ├── Loading.tsx
 │   │       ├── Pagination.tsx
@@ -107,7 +109,7 @@
 ├── vite.config.ts
 └── yarn.lock
 
-21 directories, 87 files
+21 directories, 89 files
 
 
 ===============================================
@@ -2098,6 +2100,35 @@
 
 
 ===============================================
+= File: ./src/components/ui/AddItemCard.tsx 
+===============================================
+
+     1	import React from 'react';
+     2	import { FaPlus } from 'react-icons/fa';
+     3	import { Link } from 'react-router-dom';
+     4	
+     5	interface AddItemCardProps {
+     6	    label: string;
+     7	    to: string;
+     8	    className?: string;
+     9	}
+    10	
+    11	const AddItemCard: React.FC<AddItemCardProps> = ({ label, to, className }) => {
+    12	    return (
+    13	        <Link
+    14	            to={to}
+    15	            className={`group aspect-video h-48 md:h-56 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-primary hover:text-primary hover:bg-blue-50/50 hover:shadow-lg transition-all duration-500 ease-in-out cursor-pointer transform hover:scale-105 ${className || ''}`}
+    16	        >
+    17	            <FaPlus className="text-4xl mb-2 transition-all duration-500 ease-in-out group-hover:scale-125 group-hover:rotate-90" />
+    18	            <span className="text-sm font-medium transition-all duration-500 ease-in-out group-hover:font-bold">{label}</span>
+    19	        </Link>
+    20	    );
+    21	};
+    22	
+    23	export default AddItemCard;
+
+
+===============================================
 = File: ./src/components/ui/Badge.tsx 
 ===============================================
 
@@ -2779,6 +2810,59 @@
     38	        </div>
     39	    );
     40	};
+
+
+===============================================
+= File: ./src/components/ui/ImageCard.tsx 
+===============================================
+
+     1	import React from 'react';
+     2	
+     3	interface ImageCardProps {
+     4	    id: string;
+     5	    title: string;
+     6	    subtitle?: string;
+     7	    imageUrl?: string;
+     8	    fallbackImage?: string;
+     9	    onClick?: () => void;
+    10	    className?: string;
+    11	}
+    12	
+    13	const ImageCard: React.FC<ImageCardProps> = ({
+    14	    id,
+    15	    title,
+    16	    subtitle,
+    17	    imageUrl,
+    18	    fallbackImage,
+    19	    onClick,
+    20	    className
+    21	}) => {
+    22	    return (
+    23	        <div
+    24	            className={`group relative aspect-video h-48 md:h-56 bg-gray-300 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl ${className || ''}`}
+    25	            onClick={onClick}
+    26	        >
+    27	            {/* Background Image */}
+    28	            <img
+    29	                src={imageUrl || fallbackImage || `https://picsum.photos/seed/${id}/400/300`}
+    30	                alt={`Image for ${title}`}
+    31	                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+    32	            />
+    33	
+    34	            {/* Overlay with content on hover */}
+    35	            <div className="absolute inset-0 p-4 bg-white/70 backdrop-blur-sm flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
+    36	                <h3 className="text-gray-800 font-semibold truncate text-lg mb-1">
+    37	                    {title}
+    38	                </h3>
+    39	                {subtitle && (
+    40	                    <p className="text-gray-600 text-sm line-clamp-3">{subtitle}</p>
+    41	                )}
+    42	            </div>
+    43	        </div>
+    44	    );
+    45	};
+    46	
+    47	export default ImageCard;
 
 
 ===============================================
@@ -5615,12 +5699,12 @@
 
      1	// src/pages/master-data/SupplierList.tsx
      2	import { useEffect, useState } from 'react';
-     3	import { Link } from 'react-router-dom';
-     4	import { supabase } from '../../lib/supabase';
-     5	import { Loading } from '../../components/ui/Loading';
-     6	import { FaPlus, FaEye } from 'react-icons/fa';
-     7	import { Card, CardHeader, CardTitle } from '../../components/ui/Card'; // Reuse existing Card components if needed
-     8	import DetailEditModal from '../../components/ui/DetailEditModal';
+     3	import { supabase } from '../../lib/supabase';
+     4	import { Loading } from '../../components/ui/Loading';
+     5	import { Card, CardHeader, CardTitle } from '../../components/ui/Card';
+     6	import DetailEditModal from '../../components/ui/DetailEditModal';
+     7	import ImageCard from '../../components/ui/ImageCard';
+     8	import AddItemCard from '../../components/ui/AddItemCard';
      9	
     10	interface Supplier {
     11	    id: string;
@@ -5633,164 +5717,134 @@
     18	    image_url?: string | null;
     19	}
     20	
-    21	const SupplierList = () => {
-    22	    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    23	    const [loading, setLoading] = useState(true);
-    24	    const [error, setError] = useState<string | null>(null);
-    25	    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
-    26	    const [isModalOpen, setIsModalOpen] = useState(false);
-    27	
-    28	    useEffect(() => {
-    29	        fetchSuppliers();
-    30	    }, []);
-    31	
-    32	    const fetchSuppliers = async () => {
-    33	        try {
-    34	            setLoading(true);
-    35	            setError(null);
-    36	            const { data, error } = await supabase
-    37	                .from('suppliers')
-    38	                .select('id, name, address, phone, email, contact_person, image_url')
-    39	                .order('name');
-    40	
-    41	            if (error) throw error;
-    42	            setSuppliers(data || []);
-    43	        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    44	        } catch (err: any) {
-    45	            console.error("Error fetching suppliers:", err);
-    46	            setError("Gagal memuat data supplier.");
-    47	        } finally {
-    48	            setLoading(false);
-    49	        }
-    50	    };
-    51	    
-    52	    const openSupplierDetail = (supplier: Supplier) => {
-    53	        setSelectedSupplier(supplier);
-    54	        setIsModalOpen(true);
-    55	    };
-    56	    
-    57	    const closeModal = () => {
-    58	        setIsModalOpen(false);
-    59	        setSelectedSupplier(null);
-    60	    };
-    61	    
-    62	    const updateSupplier = async (updatedData: Partial<Supplier>) => {
-    63	        if (!selectedSupplier) return;
-    64	        
-    65	        try {
-    66	            const { error } = await supabase
-    67	                .from('suppliers')
-    68	                .update(updatedData)
-    69	                .eq('id', selectedSupplier.id);
-    70	                
-    71	            if (error) throw error;
-    72	            
-    73	            // Refresh data setelah update
-    74	            fetchSuppliers();
-    75	        } catch (err) {
-    76	            console.error("Error updating supplier:", err);
-    77	            throw err;
-    78	        }
-    79	    };
-    80	    
-    81	    const supplierFields = [
-    82	        { key: 'name', label: 'Nama Supplier', type: 'text', editable: true },
-    83	        { key: 'address', label: 'Alamat', type: 'textarea', editable: true },
-    84	        { key: 'phone', label: 'Telepon', type: 'tel', editable: true },
-    85	        { key: 'email', label: 'Email', type: 'email', editable: true },
-    86	        { key: 'contact_person', label: 'Kontak Person', type: 'text', editable: true }
-    87	    ];
-    88	
-    89	    return (
-    90	        <Card className="bg-transparent shadow-none border-none">
-    91	            <CardHeader className="mb-6 px-0">
-    92	                <CardTitle>Daftar Supplier</CardTitle>
-    93	            </CardHeader>
-    94	
-    95	            {loading && <Loading message="Memuat supplier..." />}
-    96	            {error && <div className="text-center text-red-500">{error}</div>}
-    97	
-    98	            {!loading && !error && (
-    99	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
-   100	                    {/* Supplier Cards */}
-   101	                    {suppliers.map((supplier) => (
-   102	                        <div
-   103	                            key={supplier.id}
-   104	                            className="group relative aspect-video h-48 md:h-56 bg-gray-300 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl"
-   105	                            onClick={() => openSupplierDetail(supplier)}
-   106	                        >
-   107	                            {/* View Detail Button (visible on hover) */}
-   108	                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-   109	                                <div className="bg-white rounded-full p-2 shadow-md">
-   110	                                    <FaEye className="text-blue-500" />
-   111	                                </div>
-   112	                            </div>
-   113	                           
-   114	                            {/* Background Image (Placeholder) */}
-   115	                            <img
-   116	                                // Replace with actual supplier.image_url when available
-   117	                                src={supplier.image_url || `https://picsum.photos/seed/${supplier.id}/400/300`}
-   118	                                alt={`Gambar ${supplier.name}`}
-   119	                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
-   120	                            />
-   121	
-   122	                            {/* Name Overlay */}
-   123	                            {/* Tambahkan kelas untuk menyembunyikan overlay saat hover */}
-   124	                            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/65 via-black/40 to-transparent transition-opacity duration-500 ease-in-out group-hover:opacity-0">
-   125	                                <h3 className="text-white font-semibold truncate text-lg">
-   126	                                    {supplier.name}
-   127	                                </h3>
-   128	                            </div>
-   129	
-   130	                            {/* Address Hover Overlay */}
-   131	                            <div className="absolute inset-0 p-4 bg-black/70 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
-   132	                                <h3 className="text-white font-semibold truncate text-lg mb-1">
-   133	                                    {supplier.name}
-   134	                                </h3>
-   135	                                <p className="text-gray-200 text-sm line-clamp-3">
-   136	                                    {supplier.address || 'Alamat tidak tersedia'}
-   137	                                </p>
-   138	                                {/* Optional: Add more details on hover */}
-   139	                                {/* <p className="text-gray-300 text-xs mt-1">{supplier.phone || '-'}</p> */}
-   140	                                {/* <p className="text-gray-300 text-xs">{supplier.contact_person || '-'}</p> */}
-   141	                            </div>
-   142	                        </div>
-   143	                    ))}
-   144	
-   145	                    {/* Add New Supplier Card */}
-   146	                    <Link
-   147	                        to="/master-data/suppliers/add" // Adjust the route as needed
-   148	                        className="group aspect-video h-48 md:h-56 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-primary hover:text-primary hover:bg-blue-30/50 hover:shadow-lg transition-all duration-500 ease-in-out cursor-pointer transform hover:scale-105"
-   149	                    >
-   150	                        <FaPlus className="text-4xl mb-2 transition-all duration-500 ease-in-out group-hover:scale-125 group-hover:rotate-90" />
-   151	                        <span className="text-sm font-medium transition-all duration-500 ease-in-out group-hover:font-bold">Tambah Supplier Baru</span>
-   152	                    </Link>
-   153	                </div>
-   154	            )}
-   155	            {!loading && suppliers.length === 0 && !error && (
-   156	                <div className="text-center text-gray-500 mt-8">
-   157	                    Belum ada data supplier.
-   158	                </div>
-   159	            )}
-   160	            
-   161	            {/* Modal Detail dan Edit */}
-   162	            {isModalOpen && selectedSupplier && (
-   163	                <DetailEditModal
-   164	                    title={`Detail Supplier: ${selectedSupplier.name}`}
-   165	                    data={selectedSupplier}
-   166	                    fields={supplierFields}
-   167	                    isOpen={isModalOpen}
-   168	                    onClose={closeModal}
-   169	                    onSave={updateSupplier}
-   170	                    imageUrl={selectedSupplier.image_url || undefined}
-   171	                    imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
-   172	                />
-   173	            )}
-   174	        </Card>
-   175	    );
-   176	};
-   177	
-   178	export default SupplierList;
+    21	// Definisikan interface untuk field config sesuai dengan yang diharapkan DetailEditModal
+    22	interface FieldConfig {
+    23	    key: string;
+    24	    label: string;
+    25	    type?: 'text' | 'email' | 'tel' | 'textarea';
+    26	    editable?: boolean;
+    27	}
+    28	
+    29	const SupplierList = () => {
+    30	    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    31	    const [loading, setLoading] = useState(true);
+    32	    const [error, setError] = useState<string | null>(null);
+    33	    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+    34	    const [isModalOpen, setIsModalOpen] = useState(false);
+    35	
+    36	    useEffect(() => {
+    37	        fetchSuppliers();
+    38	    }, []);
+    39	
+    40	    const fetchSuppliers = async () => {
+    41	        try {
+    42	            setLoading(true);
+    43	            setError(null);
+    44	            const { data, error } = await supabase
+    45	                .from('suppliers')
+    46	                .select('id, name, address, phone, email, contact_person, image_url')
+    47	                .order('name');
+    48	
+    49	            if (error) throw error;
+    50	            setSuppliers(data || []);
+    51	        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    52	        } catch (err: any) {
+    53	            console.error("Error fetching suppliers:", err);
+    54	            setError("Gagal memuat data supplier.");
+    55	        } finally {
+    56	            setLoading(false);
+    57	        }
+    58	    };
+    59	    
+    60	    const openSupplierDetail = (supplier: Supplier) => {
+    61	        setSelectedSupplier(supplier);
+    62	        setIsModalOpen(true);
+    63	    };
+    64	    
+    65	    const closeModal = () => {
+    66	        setIsModalOpen(false);
+    67	        setSelectedSupplier(null);
+    68	    };
+    69	    
+    70	    const updateSupplier = async (updatedData: Partial<Supplier>) => {
+    71	        if (!selectedSupplier) return;
+    72	        
+    73	        try {
+    74	            const { error } = await supabase
+    75	                .from('suppliers')
+    76	                .update(updatedData)
+    77	                .eq('id', selectedSupplier.id);
+    78	                
+    79	            if (error) throw error;
+    80	            
+    81	            // Refresh data setelah update
+    82	            fetchSuppliers();
+    83	        } catch (err) {
+    84	            console.error("Error updating supplier:", err);
+    85	            throw err;
+    86	        }
+    87	    };
+    88	    
+    89	    const supplierFields: FieldConfig[] = [
+    90	        { key: 'name', label: 'Nama Supplier', type: 'text', editable: true },
+    91	        { key: 'address', label: 'Alamat', type: 'textarea', editable: true },
+    92	        { key: 'phone', label: 'Telepon', type: 'tel', editable: true },
+    93	        { key: 'email', label: 'Email', type: 'email', editable: true },
+    94	        { key: 'contact_person', label: 'Kontak Person', type: 'text', editable: true }
+    95	    ];
+    96	
+    97	    return (
+    98	        <Card className="bg-transparent shadow-none border-none">
+    99	            <CardHeader className="mb-6 px-0">
+   100	                <CardTitle>Daftar Supplier</CardTitle>
+   101	            </CardHeader>
+   102	
+   103	            {loading && <Loading message="Memuat supplier..." />}
+   104	            {error && <div className="text-center text-red-500">{error}</div>}
+   105	
+   106	            {!loading && !error && (
+   107	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
+   108	                    {/* Supplier Cards */}
+   109	                    {suppliers.map((supplier) => (
+   110	                        <ImageCard
+   111	                            key={supplier.id}
+   112	                            id={supplier.id}
+   113	                            title={supplier.name}
+   114	                            subtitle={supplier.address || 'Alamat tidak tersedia'}
+   115	                            imageUrl={supplier.image_url ?? undefined}
+   116	                            fallbackImage={`https://picsum.photos/seed/${supplier.id}/400/300`}
+   117	                            onClick={() => openSupplierDetail(supplier)}
+   118	                        />
+   119	                    ))}
+   120	
+   121	                    {/* Add New Supplier Card */}
+   122	                    <AddItemCard label="Tambah Supplier Baru" to="/master-data/suppliers/add" />
+   123	                </div>
+   124	            )}
+   125	            {!loading && suppliers.length === 0 && !error && (
+   126	                <div className="text-center text-gray-500 mt-8">
+   127	                    Belum ada data supplier.
+   128	                </div>
+   129	            )}
+   130	            
+   131	            {/* Modal Detail dan Edit */}
+   132	            {isModalOpen && selectedSupplier && (
+   133	                <DetailEditModal
+   134	                    title={`Detail Supplier: ${selectedSupplier.name}`}
+   135	                    data={selectedSupplier}
+   136	                    fields={supplierFields}
+   137	                    isOpen={isModalOpen}
+   138	                    onClose={closeModal}
+   139	                    onSave={updateSupplier}
+   140	                    imageUrl={selectedSupplier.image_url || undefined}
+   141	                    imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
+   142	                />
+   143	            )}
+   144	        </Card>
+   145	    );
+   146	};
+   147	
+   148	export default SupplierList;
 
 
 ===============================================
