@@ -1,11 +1,11 @@
 // src/pages/master-data/SupplierList.tsx
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Loading } from '../../components/ui/Loading';
-import { FaPlus } from 'react-icons/fa';
-import { Card, CardHeader, CardTitle } from '../../components/ui/Card'; // Reuse existing Card components if needed
+import { Card, CardHeader, CardTitle } from '../../components/ui/Card';
 import DetailEditModal from '../../components/ui/DetailEditModal';
+import ImageCard from '../../components/ui/ImageCard';
+import AddItemCard from '../../components/ui/AddItemCard';
 
 interface Supplier {
     id: string;
@@ -107,42 +107,19 @@ const SupplierList = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
                     {/* Supplier Cards */}
                     {suppliers.map((supplier) => (
-                        <div
+                        <ImageCard
                             key={supplier.id}
-                            className="group relative aspect-video h-48 md:h-56 bg-gray-300 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl"
+                            id={supplier.id}
+                            title={supplier.name}
+                            subtitle={supplier.address || 'Alamat tidak tersedia'}
+                            imageUrl={supplier.image_url ?? undefined}
+                            fallbackImage={`https://picsum.photos/seed/${supplier.id}/400/300`}
                             onClick={() => openSupplierDetail(supplier)}
-                        >
-                            {/* Background Image (Placeholder) */}
-                            <img
-                                // Replace with actual supplier.image_url when available
-                                src={supplier.image_url || `https://picsum.photos/seed/${supplier.id}/400/300`}
-                                alt={`Gambar ${supplier.name}`}
-                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
-                            />
-
-                            {/* Overlay Alamat yang Muncul Saat Hover dengan Background Blur */}
-                            <div className="absolute inset-0 p-4 bg-white/70 backdrop-blur-sm flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
-                                <h3 className="text-gray-800 font-semibold truncate text-lg mb-1">
-                                    {supplier.name}
-                                </h3>
-                                <p className="text-gray-600 text-sm line-clamp-3"> 
-                                    {supplier.address || 'Alamat tidak tersedia'}
-                                </p>
-                                {/* Opsional: Detail tambahan saat hover */}
-                                {/* <p className="text-gray-200 text-xs mt-1">{supplier.phone || '-'}</p> */}
-                                {/* <p className="text-gray-200 text-xs">{supplier.contact_person || '-'}</p> */}
-                            </div>
-                        </div>
+                        />
                     ))}
 
                     {/* Add New Supplier Card */}
-                    <Link
-                        to="/master-data/suppliers/add" // Adjust the route as needed
-                        className="group aspect-video h-48 md:h-56 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-primary hover:text-primary hover:bg-blue-30/50 hover:shadow-lg transition-all duration-500 ease-in-out cursor-pointer transform hover:scale-105"
-                    >
-                        <FaPlus className="text-4xl mb-2 transition-all duration-500 ease-in-out group-hover:scale-125 group-hover:rotate-90" />
-                        <span className="text-sm font-medium transition-all duration-500 ease-in-out group-hover:font-bold">Tambah Supplier Baru</span>
-                    </Link>
+                    <AddItemCard label="Tambah Supplier Baru" to="/master-data/suppliers/add" />
                 </div>
             )}
             {!loading && suppliers.length === 0 && !error && (
