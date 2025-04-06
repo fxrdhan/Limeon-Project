@@ -5987,130 +5987,120 @@
      1	import { useEffect, useState } from "react";
      2	import { Link } from "react-router-dom";
      3	import { supabase } from "../../lib/supabase";
-     4	import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+     4	import { FaEdit, FaTrash } from "react-icons/fa";
      5	import { Card } from "../../components/ui/Card";
      6	import { Button } from "../../components/ui/Button";
-     7	import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+     7	// import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
      8	import { Loading } from "../../components/ui/Loading";
-     9	
-    10	interface Unit {
-    11	    id: string;
-    12	    name: string;
-    13	    description: string;
-    14	}
-    15	
-    16	const UnitList = () => {
-    17	    const [units, setUnits] = useState<Unit[]>([]);
-    18	    const [loading, setLoading] = useState(true);
-    19	
-    20	    useEffect(() => {
-    21	        fetchUnits();
-    22	    }, []);
-    23	
-    24	    const fetchUnits = async () => {
-    25	        try {
-    26	            setLoading(true);
-    27	            
-    28	            const { data, error } = await supabase
-    29	                .from("item_units")
-    30	                .select("*")
-    31	                .order("name");
-    32	                
-    33	            if (error) throw error;
-    34	            
-    35	            setUnits(data || []);
-    36	        } catch (error) {
-    37	            console.error("Error fetching units:", error);
-    38	        } finally {
-    39	            setLoading(false);
-    40	        }
-    41	    };
-    42	
-    43	    const handleDelete = async (id: string) => {
-    44	        if (window.confirm("Apakah Anda yakin ingin menghapus satuan item ini?")) {
-    45	            try {
-    46	                const { error } = await supabase
-    47	                    .from("item_units")
-    48	                    .delete()
-    49	                    .eq("id", id);
-    50	                
-    51	                if (error) throw error;
+     9	import ImageCard from "../../components/ui/ImageCard";
+    10	import AddItemCard from "../../components/ui/AddItemCard";
+    11	
+    12	interface Unit {
+    13	    id: string;
+    14	    name: string;
+    15	    description: string;
+    16	}
+    17	
+    18	const UnitList = () => {
+    19	    const [units, setUnits] = useState<Unit[]>([]);
+    20	    const [loading, setLoading] = useState(true);
+    21	
+    22	    useEffect(() => {
+    23	        fetchUnits();
+    24	    }, []);
+    25	
+    26	    const fetchUnits = async () => {
+    27	        try {
+    28	            setLoading(true);
+    29	            
+    30	            const { data, error } = await supabase
+    31	                .from("item_units")
+    32	                .select("*")
+    33	                .order("name");
+    34	                
+    35	            if (error) throw error;
+    36	            
+    37	            setUnits(data || []);
+    38	        } catch (error) {
+    39	            console.error("Error fetching units:", error);
+    40	        } finally {
+    41	            setLoading(false);
+    42	        }
+    43	    };
+    44	
+    45	    const handleDelete = async (id: string) => {
+    46	        if (window.confirm("Apakah Anda yakin ingin menghapus satuan item ini?")) {
+    47	            try {
+    48	                const { error } = await supabase
+    49	                    .from("item_units")
+    50	                    .delete()
+    51	                    .eq("id", id);
     52	                
-    53	                fetchUnits(); // Refresh data after deletion
-    54	            } catch (error) {
-    55	                console.error("Error deleting unit:", error);
-    56	                alert("Gagal menghapus satuan item. Silakan coba lagi.");
-    57	            }
-    58	        }
-    59	    };
-    60	
-    61	    return (
-    62	        <Card>
-    63	            <div className="flex justify-between items-center mb-6">
-    64	                <h1 className="text-2xl font-bold text-gray-800">Daftar Satuan Item</h1>
-    65	                
-    66	                <Link
-    67	                    to="/master-data/units/add"
-    68	                >
-    69	                    <Button variant="primary">
-    70	                        <FaPlus className="mr-2" />
-    71	                        Tambah Satuan Baru
-    72	                    </Button>
-    73	                </Link>
-    74	            </div>
-    75	            
-    76	            {loading ? (
-    77	                <Loading />
-    78	            ) : (
-    79	                <Table>
-    80	                    <TableHead>
-    81	                        <TableRow>
-    82	                            <TableHeader>Nama Satuan</TableHeader>
-    83	                            <TableHeader>Deskripsi</TableHeader>
-    84	                            <TableHeader className="text-center">Aksi</TableHeader>
-    85	                        </TableRow>
-    86	                    </TableHead>
-    87	                    <TableBody>
-    88	                            {units.length === 0 ? (
-    89	                                <TableRow>
-    90	                                    <TableCell colSpan={3} className="text-center text-gray-500">
-    91	                                        Tidak ada data satuan yang ditemukan
-    92	                                    </TableCell>
-    93	                                </TableRow>
-    94	                            ) : (
-    95	                                units.map((unit) => (
-    96	                                    <TableRow key={unit.id}>
-    97	                                        <TableCell>{unit.name}</TableCell>
-    98	                                        <TableCell>{unit.description}</TableCell>
-    99	                                        <TableCell className="text-center">
-   100	                                            <div className="flex justify-center space-x-2">
-   101	                                                <Link
-   102	                                                    to={`/master-data/units/edit/${unit.id}`}
-   103	                                                >
-   104	                                                    <Button variant="secondary" size="sm">
-   105	                                                        <FaEdit />
-   106	                                                    </Button>
-   107	                                                </Link>
-   108	                                                <Button 
-   109	                                                    variant="danger"
-   110	                                                    size="sm"
-   111	                                                    onClick={() => handleDelete(unit.id)}
-   112	                                                >
-   113	                                                    <FaTrash />
-   114	                                                </Button>
-   115	                                            </div>
-   116	                                        </TableCell>
-   117	                                    </TableRow>
-   118	                                ))
-   119	                            )}
-   120	                    </TableBody>
-   121	                </Table>
-   122	            )}
-   123	        </Card>
-   124	    );
-   125	};
-   126	
-   127	export default UnitList;
+    53	                if (error) throw error;
+    54	                
+    55	                fetchUnits(); // Refresh data after deletion
+    56	            } catch (error) {
+    57	                console.error("Error deleting unit:", error);
+    58	                alert("Gagal menghapus satuan item. Silakan coba lagi.");
+    59	            }
+    60	        }
+    61	    };
+    62	
+    63	    return (
+    64	        <Card>
+    65	            <div className="mb-6">
+    66	                <h1 className="text-2xl font-bold text-gray-800 mb-4">Daftar Satuan Item</h1>
+    67	            </div>            
+    68	
+    69	            {loading ? (
+    70	                <Loading />
+    71	            ) : (
+    72	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    73	                    {/* Unit Cards */}
+    74	                    {units.length === 0 ? (
+    75	                        <div className="text-center text-gray-500 col-span-full">
+    76	                            Tidak ada data satuan yang ditemukan
+    77	                        </div>
+    78	                    ) : (
+    79	                        units.map((unit) => (
+    80	                            <div key={unit.id} className="relative group">
+    81	                                <ImageCard
+    82	                                    id={unit.id}
+    83	                                    title={unit.name}
+    84	                                    subtitle={unit.description || 'Tidak ada deskripsi'}
+    85	                                    fallbackImage={`https://picsum.photos/seed/${unit.id}/400/300`}
+    86	                                    onClick={() => {}} // Bisa digunakan untuk modal edit
+    87	                                />
+    88	                                {/* Overlay untuk tombol aksi */}
+    89	                                <div className="absolute bottom-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+    90	                                    <Link
+    91	                                        to={`/master-data/units/edit/${unit.id}`}
+    92	                                    >
+    93	                                        <Button variant="secondary" size="sm">
+    94	                                            <FaEdit />
+    95	                                        </Button>
+    96	                                    </Link>
+    97	                                    <Button 
+    98	                                        variant="danger"
+    99	                                        size="sm"
+   100	                                        onClick={() => handleDelete(unit.id)}
+   101	                                    >
+   102	                                        <FaTrash />
+   103	                                    </Button>
+   104	                                </div>
+   105	                            </div>
+   106	                        ))
+   107	                    )}
+   108	
+   109	                    {/* Add New Unit Card */}
+   110	                    <AddItemCard label="Tambah Satuan Baru" to="/master-data/units/add" />
+   111	                </div>
+   112	            )}
+   113	        </Card>
+   114	    );
+   115	};
+   116	
+   117	export default UnitList;
 
 
 ===============================================
