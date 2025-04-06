@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Loading } from '../../components/ui/Loading';
-import { FaPlus, FaEye } from 'react-icons/fa';
+import { FaPlus } from 'react-icons/fa';
 import { Card, CardHeader, CardTitle } from '../../components/ui/Card'; // Reuse existing Card components if needed
 import DetailEditModal from '../../components/ui/DetailEditModal';
 
@@ -112,13 +112,6 @@ const SupplierList = () => {
                             className="group relative aspect-video h-48 md:h-56 bg-gray-300 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl"
                             onClick={() => openSupplierDetail(supplier)}
                         >
-                            {/* View Detail Button (visible on hover) */}
-                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                <div className="bg-white rounded-full p-2 shadow-md">
-                                    <FaEye className="text-blue-500" />
-                                </div>
-                            </div>
-                           
                             {/* Background Image (Placeholder) */}
                             <img
                                 // Replace with actual supplier.image_url when available
@@ -127,25 +120,17 @@ const SupplierList = () => {
                                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
                             />
 
-                            {/* Name Overlay */}
-                            {/* Tambahkan kelas untuk menyembunyikan overlay saat hover */}
-                            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/65 via-black/40 to-transparent transition-opacity duration-500 ease-in-out group-hover:opacity-0">
-                                <h3 className="text-white font-semibold truncate text-lg">
+                            {/* Overlay Alamat yang Muncul Saat Hover dengan Background Blur */}
+                            <div className="absolute inset-0 p-4 bg-white/70 backdrop-blur-sm flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
+                                <h3 className="text-gray-800 font-semibold truncate text-lg mb-1">
                                     {supplier.name}
                                 </h3>
-                            </div>
-
-                            {/* Address Hover Overlay */}
-                            <div className="absolute inset-0 p-4 bg-black/70 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
-                                <h3 className="text-white font-semibold truncate text-lg mb-1">
-                                    {supplier.name}
-                                </h3>
-                                <p className="text-gray-200 text-sm line-clamp-3">
+                                <p className="text-gray-600 text-sm line-clamp-3"> 
                                     {supplier.address || 'Alamat tidak tersedia'}
                                 </p>
-                                {/* Optional: Add more details on hover */}
-                                {/* <p className="text-gray-300 text-xs mt-1">{supplier.phone || '-'}</p> */}
-                                {/* <p className="text-gray-300 text-xs">{supplier.contact_person || '-'}</p> */}
+                                {/* Opsional: Detail tambahan saat hover */}
+                                {/* <p className="text-gray-200 text-xs mt-1">{supplier.phone || '-'}</p> */}
+                                {/* <p className="text-gray-200 text-xs">{supplier.contact_person || '-'}</p> */}
                             </div>
                         </div>
                     ))}
