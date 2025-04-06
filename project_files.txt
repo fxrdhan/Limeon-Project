@@ -58,6 +58,7 @@
 │   │   │   ├── AddItem.tsx
 │   │   │   ├── CategoryList.tsx
 │   │   │   ├── ItemList.tsx
+│   │   │   ├── SupplierList.tsx
 │   │   │   ├── TypeList.tsx
 │   │   │   └── UnitList.tsx
 │   │   ├── purchases
@@ -105,7 +106,7 @@
 ├── vite.config.ts
 └── yarn.lock
 
-21 directories, 85 files
+21 directories, 86 files
 
 
 ===============================================
@@ -496,216 +497,225 @@
 = File: ./src/App.tsx 
 ===============================================
 
-     1	import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-     2	import { Suspense, lazy, useEffect } from 'react';
-     3	import MainLayout from './components/layout/MainLayout';
-     4	import Login from './pages/auth/Login';
-     5	import './index.css';
-     6	import { useAuthStore } from './store/authStore';
-     7	import { ConfirmDialogProvider } from './components/ui/ConfirmDialog';
-     8	
-     9	// Lazy load pages
-    10	const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
-    11	const ItemList = lazy(() => import('./pages/master-data/ItemList'));
-    12	const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
-    13	const UnitList = lazy(() => import('./pages/master-data/UnitList'));
-    14	const TypeList = lazy(() => import('./pages/master-data/TypeList'));
-    15	const AddItem = lazy(() => import('./pages/master-data/AddItem'));
-    16	const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
-    17	const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
-    18	const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
-    19	const Profile = lazy(() => import('./pages/settings/Profile'));
-    20	const PrintPurchase = lazy(() => import('./pages/purchases/PrintPurchase'));
-    21	const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
-    22	// Tambahkan halaman lain sesuai kebutuhan
-    23	
-    24	// Komponen placeholder untuk halaman yang belum diimplementasi
-    25	const ComingSoon = ({ title }: { title: string }) => {
-    26	  return (
-    27	    <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
-    28	      <h2 className="text-2xl font-bold mb-4">{title}</h2>
-    29	      <p className="text-xl">Fitur ini akan segera hadir!</p>
-    30	      <div className="mt-8 p-4 border border-blue-300 rounded-lg bg-blue-50 max-w-md">
-    31	        <p className="text-blue-600 text-center">
-    32	          Halaman ini sedang dalam pengembangan.
-    33	        </p>
-    34	      </div>
-    35	    </div>
-    36	  );
-    37	};
-    38	
-    39	function App() {
-    40	  const { session, initialize } = useAuthStore();
-    41	  
-    42	  // Inisialisasi auth state saat aplikasi dimuat
-    43	  useEffect(() => {
-    44	    initialize();
-    45	  }, [initialize]);
-    46	  
-    47	
-    48	  return (
-    49	    <ConfirmDialogProvider>
-    50	      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-    51	        <Routes>
-    52	          <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
-    53	
-    54	          {/* Route khusus untuk tampilan cetak - tanpa layout */}
-    55	          <Route path="/purchases/print-view" element={
-    56	            <Suspense fallback={<div>Loading...</div>}>
-    57	              <PrintPurchase />
-    58	            </Suspense>} />
-    59	          
-    60	          <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
-    61	            <Route 
-    62	              index 
-    63	              element={
-    64	              <div className="text-gray-800">
-    65	                <Suspense fallback={<div>Loading...</div>}>
-    66	                  <Dashboard />
-    67	                </Suspense>
-    68	              </div>
-    69	            } />
-    70	            
-    71	            <Route path="master-data">
-    72	              <Route path="items" element={
-    73	                <Suspense fallback={<div>Loading...</div>}>
-    74	                  <ItemList />
-    75	                </Suspense>
-    76	              } />
-    77	              <Route path="items/add" element={
-    78	                <Suspense fallback={<div>Loading...</div>}>
-    79	                  <AddItem />
-    80	                </Suspense>
-    81	              } />
-    82	              <Route path="categories" element={
-    83	                <Suspense fallback={<div>Loading...</div>}>
-    84	                  <CategoryList />
-    85	                </Suspense>
-    86	              } />
-    87	              <Route path="types" element={
-    88	                <Suspense fallback={<div>Loading...</div>}>
-    89	                  <TypeList />
-    90	                </Suspense>
-    91	              } />
-    92	              <Route path="units" element={
-    93	                <Suspense fallback={<div>Loading...</div>}>
-    94	                  <UnitList />
-    95	                </Suspense>
-    96	              } />
-    97	              {/* Tambahkan route lain sesuai kebutuhan */}
-    98	            </Route>
-    99	            
-   100	            <Route path="purchases">
-   101	              <Route 
-   102	                index 
-   103	                element={
-   104	                  <Suspense fallback={<div>Loading...</div>}>
-   105	                    <PurchaseList />
-   106	                  </Suspense>
-   107	                } 
-   108	              />
-   109	              <Route 
-   110	                path="create" 
-   111	                element={
-   112	                  <Suspense fallback={<div>Loading...</div>}>
-   113	                    <CreatePurchase />
-   114	                  </Suspense>
-   115	                } 
-   116	              />
-   117	              <Route 
-   118	                path="upload-invoice" 
-   119	                element={
-   120	                  <Suspense fallback={<div>Loading...</div>}>
-   121	                    <UploadInvoice />
-   122	                  </Suspense>
-   123	                } 
-   124	              />
-   125	              <Route 
-   126	                path="view/:id" 
-   127	                element={
-   128	                  <Suspense fallback={<div>Loading...</div>}>
-   129	                    <ViewPurchase />
-   130	                  </Suspense>
-   131	                } 
-   132	              />
-   133	              <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
-   134	              <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
-   135	            </Route>
-   136	            
-   137	            <Route path="inventory">
-   138	              <Route 
-   139	                index 
-   140	                element={<ComingSoon title="Persediaan" />} 
+     1	// src/App.tsx
+     2	import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+     3	import { Suspense, lazy, useEffect } from 'react';
+     4	import MainLayout from './components/layout/MainLayout';
+     5	import Login from './pages/auth/Login';
+     6	import './index.css';
+     7	import { useAuthStore } from './store/authStore';
+     8	import { ConfirmDialogProvider } from './components/ui/ConfirmDialog';
+     9	
+    10	// Lazy load pages
+    11	const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
+    12	const ItemList = lazy(() => import('./pages/master-data/ItemList'));
+    13	const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
+    14	const UnitList = lazy(() => import('./pages/master-data/UnitList'));
+    15	const TypeList = lazy(() => import('./pages/master-data/TypeList'));
+    16	const AddItem = lazy(() => import('./pages/master-data/AddItem'));
+    17	// ---> ADD THIS IMPORT <---
+    18	const SupplierList = lazy(() => import('./pages/master-data/SupplierList'));
+    19	const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
+    20	const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
+    21	const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
+    22	const Profile = lazy(() => import('./pages/settings/Profile'));
+    23	const PrintPurchase = lazy(() => import('./pages/purchases/PrintPurchase'));
+    24	const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
+    25	// Tambahkan halaman lain sesuai kebutuhan
+    26	
+    27	// Komponen placeholder untuk halaman yang belum diimplementasi
+    28	const ComingSoon = ({ title }: { title: string }) => {
+    29	  return (
+    30	    <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
+    31	      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+    32	      <p className="text-xl">Fitur ini akan segera hadir!</p>
+    33	      <div className="mt-8 p-4 border border-blue-300 rounded-lg bg-blue-50 max-w-md">
+    34	        <p className="text-blue-600 text-center">
+    35	          Halaman ini sedang dalam pengembangan.
+    36	        </p>
+    37	      </div>
+    38	    </div>
+    39	  );
+    40	};
+    41	
+    42	function App() {
+    43	  const { session, initialize } = useAuthStore();
+    44	
+    45	  // Inisialisasi auth state saat aplikasi dimuat
+    46	  useEffect(() => {
+    47	    initialize();
+    48	  }, [initialize]);
+    49	
+    50	
+    51	  return (
+    52	    <ConfirmDialogProvider>
+    53	      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    54	        <Routes>
+    55	          <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
+    56	
+    57	          {/* Route khusus untuk tampilan cetak - tanpa layout */}
+    58	          <Route path="/purchases/print-view" element={
+    59	            <Suspense fallback={<div>Loading...</div>}>
+    60	              <PrintPurchase />
+    61	            </Suspense>} />
+    62	
+    63	          <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
+    64	            <Route
+    65	              index
+    66	              element={
+    67	              <div className="text-gray-800">
+    68	                <Suspense fallback={<div>Loading...</div>}>
+    69	                  <Dashboard />
+    70	                </Suspense>
+    71	              </div>
+    72	            } />
+    73	
+    74	            <Route path="master-data">
+    75	              <Route path="items" element={
+    76	                <Suspense fallback={<div>Loading...</div>}>
+    77	                  <ItemList />
+    78	                </Suspense>
+    79	              } />
+    80	              <Route path="items/add" element={
+    81	                <Suspense fallback={<div>Loading...</div>}>
+    82	                  <AddItem />
+    83	                </Suspense>
+    84	              } />
+    85	              <Route path="categories" element={
+    86	                <Suspense fallback={<div>Loading...</div>}>
+    87	                  <CategoryList />
+    88	                </Suspense>
+    89	              } />
+    90	              <Route path="types" element={
+    91	                <Suspense fallback={<div>Loading...</div>}>
+    92	                  <TypeList />
+    93	                </Suspense>
+    94	              } />
+    95	              <Route path="units" element={
+    96	                <Suspense fallback={<div>Loading...</div>}>
+    97	                  <UnitList />
+    98	                </Suspense>
+    99	              } />
+   100	               {/* ---> ADD THIS ROUTE <--- */}
+   101	               <Route path="suppliers" element={
+   102	                <Suspense fallback={<div>Loading...</div>}>
+   103	                  <SupplierList />
+   104	                </Suspense>
+   105	               } />
+   106	              {/* Tambahkan route lain sesuai kebutuhan (e.g., /add, /edit/:id for suppliers) */}
+   107	            </Route>
+   108	
+   109	            <Route path="purchases">
+   110	              <Route
+   111	                index
+   112	                element={
+   113	                  <Suspense fallback={<div>Loading...</div>}>
+   114	                    <PurchaseList />
+   115	                  </Suspense>
+   116	                }
+   117	              />
+   118	              <Route
+   119	                path="create"
+   120	                element={
+   121	                  <Suspense fallback={<div>Loading...</div>}>
+   122	                    <CreatePurchase />
+   123	                  </Suspense>
+   124	                }
+   125	              />
+   126	              <Route
+   127	                path="upload-invoice"
+   128	                element={
+   129	                  <Suspense fallback={<div>Loading...</div>}>
+   130	                    <UploadInvoice />
+   131	                  </Suspense>
+   132	                }
+   133	              />
+   134	              <Route
+   135	                path="view/:id"
+   136	                element={
+   137	                  <Suspense fallback={<div>Loading...</div>}>
+   138	                    <ViewPurchase />
+   139	                  </Suspense>
+   140	                }
    141	              />
-   142	              <Route 
-   143	                path="stock" 
-   144	                element={<ComingSoon title="Stok Obat" />} 
-   145	              />
-   146	              <Route 
-   147	                path="stock-opname" 
-   148	                element={<ComingSoon title="Stok Opname" />} 
-   149	              />
-   150	              <Route 
-   151	                path="expired" 
-   152	                element={<ComingSoon title="Obat Kadaluarsa" />} 
-   153	              />
-   154	            </Route>
-   155	            
-   156	            <Route path="sales">
-   157	              <Route 
-   158	                index 
-   159	                element={<ComingSoon title="Daftar Penjualan" />} 
-   160	              />
-   161	              <Route 
-   162	                path="create" 
-   163	                element={<ComingSoon title="Tambah Penjualan" />} 
-   164	              />
-   165	            </Route>
-   166	            
-   167	            <Route path="clinic">
-   168	              <Route 
-   169	                index 
-   170	                element={<ComingSoon title="Klinik" />} 
-   171	              />
-   172	              <Route 
-   173	                path="patients" 
-   174	                element={<ComingSoon title="Daftar Pasien" />} 
-   175	              />
-   176	              <Route 
-   177	                path="queue" 
-   178	                element={<ComingSoon title="Antrian" />} 
-   179	              />
-   180	              <Route 
-   181	                path="medical-records" 
-   182	                element={<ComingSoon title="Rekam Medis" />} 
-   183	              />
-   184	            </Route>
-   185	            
-   186	            <Route path="reports">
-   187	              <Route index element={<ComingSoon title="Laporan" />} />
-   188	              <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
-   189	              <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
-   190	              <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
-   191	            </Route>
-   192	            
-   193	            <Route path="settings">
-   194	              <Route path="profile" element={
-   195	                <Suspense fallback={<div>Loading...</div>}>
-   196	                  <Profile />
-   197	                </Suspense>
-   198	              } />
-   199	              <Route path="users" element={<ComingSoon title="Pengguna" />} />
-   200	              <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
-   201	            </Route>
-   202	            {/* Tambahkan route untuk modul lain */}
-   203	          </Route>
-   204	        </Routes>
-   205	      </Router>
-   206	    </ConfirmDialogProvider>
-   207	  );
-   208	}
-   209	
-   210	export default App;
+   142	              <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
+   143	              <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
+   144	            </Route>
+   145	
+   146	            <Route path="inventory">
+   147	              <Route
+   148	                index
+   149	                element={<ComingSoon title="Persediaan" />}
+   150	              />
+   151	              <Route
+   152	                path="stock"
+   153	                element={<ComingSoon title="Stok Obat" />}
+   154	              />
+   155	              <Route
+   156	                path="stock-opname"
+   157	                element={<ComingSoon title="Stok Opname" />}
+   158	              />
+   159	              <Route
+   160	                path="expired"
+   161	                element={<ComingSoon title="Obat Kadaluarsa" />}
+   162	              />
+   163	            </Route>
+   164	
+   165	            <Route path="sales">
+   166	              <Route
+   167	                index
+   168	                element={<ComingSoon title="Daftar Penjualan" />}
+   169	              />
+   170	              <Route
+   171	                path="create"
+   172	                element={<ComingSoon title="Tambah Penjualan" />}
+   173	              />
+   174	            </Route>
+   175	
+   176	            <Route path="clinic">
+   177	              <Route
+   178	                index
+   179	                element={<ComingSoon title="Klinik" />}
+   180	              />
+   181	              <Route
+   182	                path="patients"
+   183	                element={<ComingSoon title="Daftar Pasien" />}
+   184	              />
+   185	              <Route
+   186	                path="queue"
+   187	                element={<ComingSoon title="Antrian" />}
+   188	              />
+   189	              <Route
+   190	                path="medical-records"
+   191	                element={<ComingSoon title="Rekam Medis" />}
+   192	              />
+   193	            </Route>
+   194	
+   195	            <Route path="reports">
+   196	              <Route index element={<ComingSoon title="Laporan" />} />
+   197	              <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
+   198	              <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
+   199	              <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
+   200	            </Route>
+   201	
+   202	            <Route path="settings">
+   203	              <Route path="profile" element={
+   204	                <Suspense fallback={<div>Loading...</div>}>
+   205	                  <Profile />
+   206	                </Suspense>
+   207	              } />
+   208	              <Route path="users" element={<ComingSoon title="Pengguna" />} />
+   209	              <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
+   210	            </Route>
+   211	            {/* Tambahkan route untuk modul lain */}
+   212	          </Route>
+   213	        </Routes>
+   214	      </Router>
+   215	    </ConfirmDialogProvider>
+   216	  );
+   217	}
+   218	
+   219	export default App;
 
 
 ===============================================
@@ -5389,6 +5399,128 @@
 
 
 ===============================================
+= File: ./src/pages/master-data/SupplierList.tsx 
+===============================================
+
+     1	// src/pages/master-data/SupplierList.tsx
+     2	import { useEffect, useState } from 'react';
+     3	import { Link } from 'react-router-dom';
+     4	import { supabase } from '../../lib/supabase';
+     5	import { Loading } from '../../components/ui/Loading';
+     6	import { FaPlus } from 'react-icons/fa';
+     7	import { Card, CardHeader, CardTitle } from '../../components/ui/Card'; // Reuse existing Card components if needed
+     8	
+     9	interface Supplier {
+    10	    id: string;
+    11	    name: string;
+    12	    address: string | null;
+    13	    phone?: string | null;
+    14	    email?: string | null;
+    15	    contact_person?: string | null;
+    16	    // Field image_url dari database Supabase
+    17	    image_url?: string | null;
+    18	}
+    19	
+    20	const SupplierList = () => {
+    21	    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    22	    const [loading, setLoading] = useState(true);
+    23	    const [error, setError] = useState<string | null>(null);
+    24	
+    25	    useEffect(() => {
+    26	        fetchSuppliers();
+    27	    }, []);
+    28	
+    29	    const fetchSuppliers = async () => {
+    30	        try {
+    31	            setLoading(true);
+    32	            setError(null);
+    33	            const { data, error } = await supabase
+    34	                .from('suppliers')
+    35	                .select('id, name, address, phone, email, contact_person, image_url')
+    36	                .order('name');
+    37	
+    38	            if (error) throw error;
+    39	            setSuppliers(data || []);
+    40	        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    41	        } catch (err: any) {
+    42	            console.error("Error fetching suppliers:", err);
+    43	            setError("Gagal memuat data supplier.");
+    44	        } finally {
+    45	            setLoading(false);
+    46	        }
+    47	    };
+    48	
+    49	    return (
+    50	        <Card className="bg-transparent shadow-none border-none">
+    51	            <CardHeader className="mb-6 px-0">
+    52	                <CardTitle>Daftar Supplier</CardTitle>
+    53	            </CardHeader>
+    54	
+    55	            {loading && <Loading message="Memuat supplier..." />}
+    56	            {error && <div className="text-center text-red-500">{error}</div>}
+    57	
+    58	            {!loading && !error && (
+    59	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
+    60	                    {/* Supplier Cards */}
+    61	                    {suppliers.map((supplier) => (
+    62	                        <div
+    63	                            key={supplier.id}
+    64	                            className="group relative aspect-video h-48 md:h-56 bg-gray-300 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl"
+    65	                        >
+    66	                            {/* Background Image (Placeholder) */}
+    67	                            <img
+    68	                                // Replace with actual supplier.image_url when available
+    69	                                src={supplier.image_url || `https://picsum.photos/seed/${supplier.id}/400/300`}
+    70	                                alt={`Gambar ${supplier.name}`}
+    71	                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
+    72	                            />
+    73	
+    74	                            {/* Name Overlay */}
+    75	                            {/* Tambahkan kelas untuk menyembunyikan overlay saat hover */}
+    76	                            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/65 via-black/40 to-transparent transition-opacity duration-500 ease-in-out group-hover:opacity-0">
+    77	                                <h3 className="text-white font-semibold truncate text-lg">
+    78	                                    {supplier.name}
+    79	                                </h3>
+    80	                            </div>
+    81	
+    82	                            {/* Address Hover Overlay */}
+    83	                            <div className="absolute inset-0 p-4 bg-black/70 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
+    84	                                <h3 className="text-white font-semibold truncate text-lg mb-1">
+    85	                                    {supplier.name}
+    86	                                </h3>
+    87	                                <p className="text-gray-200 text-sm line-clamp-3">
+    88	                                    {supplier.address || 'Alamat tidak tersedia'}
+    89	                                </p>
+    90	                                {/* Optional: Add more details on hover */}
+    91	                                {/* <p className="text-gray-300 text-xs mt-1">{supplier.phone || '-'}</p> */}
+    92	                                {/* <p className="text-gray-300 text-xs">{supplier.contact_person || '-'}</p> */}
+    93	                            </div>
+    94	                        </div>
+    95	                    ))}
+    96	
+    97	                    {/* Add New Supplier Card */}
+    98	                    <Link
+    99	                        to="/master-data/suppliers/add" // Adjust the route as needed
+   100	                        className="group aspect-video h-48 md:h-56 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-primary hover:text-primary hover:bg-blue-30/50 hover:shadow-lg transition-all duration-500 ease-in-out cursor-pointer transform hover:scale-105"
+   101	                    >
+   102	                        <FaPlus className="text-4xl mb-2 transition-all duration-500 ease-in-out group-hover:scale-125 group-hover:rotate-90" />
+   103	                        <span className="text-sm font-medium transition-all duration-500 ease-in-out group-hover:font-bold">Tambah Supplier Baru</span>
+   104	                    </Link>
+   105	                </div>
+   106	            )}
+   107	            {!loading && suppliers.length === 0 && !error && (
+   108	                <div className="text-center text-gray-500 mt-8">
+   109	                    Belum ada data supplier.
+   110	                </div>
+   111	            )}
+   112	        </Card>
+   113	    );
+   114	};
+   115	
+   116	export default SupplierList;
+
+
+===============================================
 = File: ./src/pages/master-data/TypeList.tsx 
 ===============================================
 
@@ -5827,8 +5959,8 @@
     58	    // Fungsi format currency dengan 2 digit desimal
     59	    const formatCurrency = (value: number | bigint, prefix = '') => {
     60	        const formatter = new Intl.NumberFormat('id-ID', {
-    61	            minimumFractionDigits: 2,
-    62	            maximumFractionDigits: 2
+    61	            minimumFractionDigits: 0,
+    62	            maximumFractionDigits: 0
     63	        });
     64	        return `${prefix}${formatter.format(value)}`;
     65	    };
@@ -6891,8 +7023,8 @@
    170	
    171	    const formatCurrency = (value: number | bigint, prefix = '') => {
    172	        const formatter = new Intl.NumberFormat('id-ID', {
-   173	            minimumFractionDigits: 2,
-   174	            maximumFractionDigits: 2
+   173	            minimumFractionDigits: 0,
+   174	            maximumFractionDigits: 0
    175	        });
    176	        return `${prefix}${formatter.format(value)}`;
    177	    };
