@@ -31,6 +31,7 @@
 │   │       ├── Button.tsx
 │   │       ├── Card.tsx
 │   │       ├── ConfirmDialog.tsx
+│   │       ├── DetailEditModal.tsx
 │   │       ├── FormActions.tsx
 │   │       ├── FormComponents.tsx
 │   │       ├── Input.tsx
@@ -106,7 +107,7 @@
 ├── vite.config.ts
 └── yarn.lock
 
-21 directories, 86 files
+21 directories, 87 files
 
 
 ===============================================
@@ -2476,6 +2477,216 @@
    177	};
    178	
    179	export default ConfirmDialogProvider;
+
+
+===============================================
+= File: ./src/components/ui/DetailEditModal.tsx 
+===============================================
+
+     1	/* eslint-disable @typescript-eslint/no-explicit-any */
+     2	// src/components/master-data/DetailEditModal.tsx
+     3	import React, { useState } from 'react';
+     4	import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+     5	import { Button } from '../ui/Button';
+     6	
+     7	interface FieldConfig {
+     8	    key: string;
+     9	    label: string;
+    10	    type?: 'text' | 'email' | 'tel' | 'textarea';
+    11	    editable?: boolean;
+    12	}
+    13	
+    14	interface DetailEditModalProps {
+    15	    title: string;
+    16	    data: Record<string, any>;
+    17	    fields: FieldConfig[];
+    18	    isOpen: boolean;
+    19	    onClose: () => void;
+    20	    onSave: (updatedData: Record<string, any>) => Promise<void>;
+    21	    imageUrl?: string;
+    22	    imagePlaceholder?: string;
+    23	}
+    24	
+    25	const DetailEditModal: React.FC<DetailEditModalProps> = ({
+    26	    title,
+    27	    data,
+    28	    fields,
+    29	    isOpen,
+    30	    onClose,
+    31	    onSave,
+    32	    imageUrl,
+    33	    imagePlaceholder
+    34	}) => {
+    35	    const [editMode, setEditMode] = useState<Record<string, boolean>>({});
+    36	    const [editValues, setEditValues] = useState<Record<string, any>>({});
+    37	    const [loading, setLoading] = useState<Record<string, boolean>>({});
+    38	
+    39	    // Inisialisasi nilai editan dengan data saat ini
+    40	    React.useEffect(() => {
+    41	        if (isOpen && data) {
+    42	            const initialValues: Record<string, any> = {};
+    43	            fields.forEach(field => {
+    44	                initialValues[field.key] = data[field.key] !== null ? data[field.key] : '';
+    45	            });
+    46	            setEditValues(initialValues);
+    47	        }
+    48	    }, [isOpen, data, fields]);
+    49	
+    50	    if (!isOpen) return null;
+    51	
+    52	    const toggleEdit = (key: string) => {
+    53	        setEditMode(prev => ({
+    54	            ...prev,
+    55	            [key]: !prev[key]
+    56	        }));
+    57	    };
+    58	
+    59	    const handleChange = (key: string, value: any) => {
+    60	        setEditValues(prev => ({
+    61	            ...prev,
+    62	            [key]: value
+    63	        }));
+    64	    };
+    65	
+    66	    const handleSaveField = async (key: string) => {
+    67	        try {
+    68	            setLoading(prev => ({ ...prev, [key]: true }));
+    69	
+    70	            // Buat object dengan hanya field yang diubah
+    71	            const updatedData = { [key]: editValues[key] };
+    72	            await onSave(updatedData);
+    73	
+    74	            // Toggle off edit mode setelah berhasil
+    75	            toggleEdit(key);
+    76	        } catch (error) {
+    77	            console.error(`Error saving ${key}:`, error);
+    78	        } finally {
+    79	            setLoading(prev => ({ ...prev, [key]: false }));
+    80	        }
+    81	    };
+    82	
+    83	    const handleCancel = (key: string) => {
+    84	        // Reset nilai ke data asli
+    85	        setEditValues(prev => ({
+    86	            ...prev,
+    87	            [key]: data[key] !== null ? data[key] : ''
+    88	        }));
+    89	        toggleEdit(key);
+    90	    };
+    91	
+    92	    return (
+    93	        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+    94	            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    95	                <div className="flex justify-between items-center p-4 border-b">
+    96	                    <h2 className="text-xl font-semibold">{title}</h2>
+    97	                    <Button
+    98	                        variant="text"
+    99	                        onClick={onClose}
+   100	                        className="text-gray-500 hover:text-gray-700"
+   101	                    >
+   102	                        <FaTimes size={20} />
+   103	                    </Button>
+   104	                </div>
+   105	
+   106	                <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+   107	                    {/* Gambar Header (jika ada) */}
+   108	                    {(imageUrl || imagePlaceholder) && (
+   109	                        <div className="flex justify-center mb-6">
+   110	                            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200">
+   111	                                <img
+   112	                                    src={imageUrl || imagePlaceholder}
+   113	                                    alt={data.name || 'Detail'}
+   114	                                    className="w-full h-full object-cover"
+   115	                                />
+   116	                            </div>
+   117	                        </div>
+   118	                    )}
+   119	
+   120	                    {/* Fields */}
+   121	                    <div className="space-y-4">
+   122	                        {fields.map(field => (
+   123	                            <div key={field.key} className="bg-white rounded-md">
+   124	                                <div className="flex justify-between items-center mb-1">
+   125	                                    <label className="text-sm font-medium text-gray-600">{field.label}</label>
+   126	                                    {field.editable !== false && (
+   127	                                        <div className="flex space-x-2">
+   128	                                            {editMode[field.key] ? (
+   129	                                                <>
+   130	                                                    <Button
+   131	                                                        variant="text"
+   132	                                                        size="sm"
+   133	                                                        onClick={() => handleCancel(field.key)}
+   134	                                                        className="text-gray-500 hover:text-gray-700 p-1"
+   135	                                                    >
+   136	                                                        <FaTimes className="text-red-500" />
+   137	                                                    </Button>
+   138	                                                    <Button
+   139	                                                        variant="text"
+   140	                                                        size="sm"
+   141	                                                        onClick={() => handleSaveField(field.key)}
+   142	                                                        className="text-gray-500 hover:text-gray-700 p-1"
+   143	                                                        disabled={loading[field.key]}
+   144	                                                    >
+   145	                                                        {loading[field.key] ? (
+   146	                                                            <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin inline-block"></span>
+   147	                                                        ) : (
+   148	                                                            <FaCheck className="text-green-500" />
+   149	                                                        )}
+   150	                                                    </Button>
+   151	                                                </>
+   152	                                            ) : (
+   153	                                                <Button
+   154	                                                    variant="text"
+   155	                                                    size="sm"
+   156	                                                    onClick={() => toggleEdit(field.key)}
+   157	                                                    className="text-gray-500 hover:text-gray-700 p-1"
+   158	                                                >
+   159	                                                    <FaEdit />
+   160	                                                </Button>
+   161	                                            )}
+   162	                                        </div>
+   163	                                    )}
+   164	                                </div>
+   165	
+   166	                                {editMode[field.key] ? (
+   167	                                    field.type === 'textarea' ? (
+   168	                                        <textarea
+   169	                                            value={editValues[field.key] || ''}
+   170	                                            onChange={(e) => handleChange(field.key, e.target.value)}
+   171	                                            className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+   172	                                            rows={3}
+   173	                                        />
+   174	                                    ) : (
+   175	                                        <input
+   176	                                            type={field.type || 'text'}
+   177	                                            value={editValues[field.key] || ''}
+   178	                                            onChange={(e) => handleChange(field.key, e.target.value)}
+   179	                                            className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+   180	                                        />
+   181	                                    )
+   182	                                ) : (
+   183	                                    <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
+   184	                                        {data[field.key] || (
+   185	                                            <span className="text-gray-400 italic">Tidak ada data</span>
+   186	                                        )}
+   187	                                    </div>
+   188	                                )}
+   189	                            </div>
+   190	                        ))}
+   191	                    </div>
+   192	                </div>
+   193	
+   194	                <div className="p-4 border-t flex justify-end">
+   195	                    <Button variant="outline" onClick={onClose}>
+   196	                        Tutup
+   197	                    </Button>
+   198	                </div>
+   199	            </div>
+   200	        </div>
+   201	    );
+   202	};
+   203	
+   204	export default DetailEditModal;
 
 
 ===============================================
@@ -5407,117 +5618,183 @@
      3	import { Link } from 'react-router-dom';
      4	import { supabase } from '../../lib/supabase';
      5	import { Loading } from '../../components/ui/Loading';
-     6	import { FaPlus } from 'react-icons/fa';
+     6	import { FaPlus, FaEye } from 'react-icons/fa';
      7	import { Card, CardHeader, CardTitle } from '../../components/ui/Card'; // Reuse existing Card components if needed
-     8	
-     9	interface Supplier {
-    10	    id: string;
-    11	    name: string;
-    12	    address: string | null;
-    13	    phone?: string | null;
-    14	    email?: string | null;
-    15	    contact_person?: string | null;
-    16	    // Field image_url dari database Supabase
-    17	    image_url?: string | null;
-    18	}
-    19	
-    20	const SupplierList = () => {
-    21	    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    22	    const [loading, setLoading] = useState(true);
-    23	    const [error, setError] = useState<string | null>(null);
-    24	
-    25	    useEffect(() => {
-    26	        fetchSuppliers();
-    27	    }, []);
+     8	import DetailEditModal from '../../components/ui/DetailEditModal';
+     9	
+    10	interface Supplier {
+    11	    id: string;
+    12	    name: string;
+    13	    address: string | null;
+    14	    phone?: string | null;
+    15	    email?: string | null;
+    16	    contact_person?: string | null;
+    17	    // Field image_url dari database Supabase
+    18	    image_url?: string | null;
+    19	}
+    20	
+    21	const SupplierList = () => {
+    22	    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+    23	    const [loading, setLoading] = useState(true);
+    24	    const [error, setError] = useState<string | null>(null);
+    25	    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+    26	    const [isModalOpen, setIsModalOpen] = useState(false);
+    27	    const [saving, setSaving] = useState(false);
     28	
-    29	    const fetchSuppliers = async () => {
-    30	        try {
-    31	            setLoading(true);
-    32	            setError(null);
-    33	            const { data, error } = await supabase
-    34	                .from('suppliers')
-    35	                .select('id, name, address, phone, email, contact_person, image_url')
-    36	                .order('name');
-    37	
-    38	            if (error) throw error;
-    39	            setSuppliers(data || []);
-    40	        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    41	        } catch (err: any) {
-    42	            console.error("Error fetching suppliers:", err);
-    43	            setError("Gagal memuat data supplier.");
-    44	        } finally {
-    45	            setLoading(false);
-    46	        }
-    47	    };
-    48	
-    49	    return (
-    50	        <Card className="bg-transparent shadow-none border-none">
-    51	            <CardHeader className="mb-6 px-0">
-    52	                <CardTitle>Daftar Supplier</CardTitle>
-    53	            </CardHeader>
-    54	
-    55	            {loading && <Loading message="Memuat supplier..." />}
-    56	            {error && <div className="text-center text-red-500">{error}</div>}
-    57	
-    58	            {!loading && !error && (
-    59	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
-    60	                    {/* Supplier Cards */}
-    61	                    {suppliers.map((supplier) => (
-    62	                        <div
-    63	                            key={supplier.id}
-    64	                            className="group relative aspect-video h-48 md:h-56 bg-gray-300 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl"
-    65	                        >
-    66	                            {/* Background Image (Placeholder) */}
-    67	                            <img
-    68	                                // Replace with actual supplier.image_url when available
-    69	                                src={supplier.image_url || `https://picsum.photos/seed/${supplier.id}/400/300`}
-    70	                                alt={`Gambar ${supplier.name}`}
-    71	                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
-    72	                            />
-    73	
-    74	                            {/* Name Overlay */}
-    75	                            {/* Tambahkan kelas untuk menyembunyikan overlay saat hover */}
-    76	                            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/65 via-black/40 to-transparent transition-opacity duration-500 ease-in-out group-hover:opacity-0">
-    77	                                <h3 className="text-white font-semibold truncate text-lg">
-    78	                                    {supplier.name}
-    79	                                </h3>
-    80	                            </div>
-    81	
-    82	                            {/* Address Hover Overlay */}
-    83	                            <div className="absolute inset-0 p-4 bg-black/70 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
-    84	                                <h3 className="text-white font-semibold truncate text-lg mb-1">
-    85	                                    {supplier.name}
-    86	                                </h3>
-    87	                                <p className="text-gray-200 text-sm line-clamp-3">
-    88	                                    {supplier.address || 'Alamat tidak tersedia'}
-    89	                                </p>
-    90	                                {/* Optional: Add more details on hover */}
-    91	                                {/* <p className="text-gray-300 text-xs mt-1">{supplier.phone || '-'}</p> */}
-    92	                                {/* <p className="text-gray-300 text-xs">{supplier.contact_person || '-'}</p> */}
-    93	                            </div>
-    94	                        </div>
-    95	                    ))}
-    96	
-    97	                    {/* Add New Supplier Card */}
-    98	                    <Link
-    99	                        to="/master-data/suppliers/add" // Adjust the route as needed
-   100	                        className="group aspect-video h-48 md:h-56 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-primary hover:text-primary hover:bg-blue-30/50 hover:shadow-lg transition-all duration-500 ease-in-out cursor-pointer transform hover:scale-105"
-   101	                    >
-   102	                        <FaPlus className="text-4xl mb-2 transition-all duration-500 ease-in-out group-hover:scale-125 group-hover:rotate-90" />
-   103	                        <span className="text-sm font-medium transition-all duration-500 ease-in-out group-hover:font-bold">Tambah Supplier Baru</span>
-   104	                    </Link>
-   105	                </div>
-   106	            )}
-   107	            {!loading && suppliers.length === 0 && !error && (
-   108	                <div className="text-center text-gray-500 mt-8">
-   109	                    Belum ada data supplier.
-   110	                </div>
-   111	            )}
-   112	        </Card>
-   113	    );
-   114	};
-   115	
-   116	export default SupplierList;
+    29	    useEffect(() => {
+    30	        fetchSuppliers();
+    31	    }, []);
+    32	
+    33	    const fetchSuppliers = async () => {
+    34	        try {
+    35	            setLoading(true);
+    36	            setError(null);
+    37	            const { data, error } = await supabase
+    38	                .from('suppliers')
+    39	                .select('id, name, address, phone, email, contact_person, image_url')
+    40	                .order('name');
+    41	
+    42	            if (error) throw error;
+    43	            setSuppliers(data || []);
+    44	        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    45	        } catch (err: any) {
+    46	            console.error("Error fetching suppliers:", err);
+    47	            setError("Gagal memuat data supplier.");
+    48	        } finally {
+    49	            setLoading(false);
+    50	        }
+    51	    };
+    52	    
+    53	    const openSupplierDetail = (supplier: Supplier) => {
+    54	        setSelectedSupplier(supplier);
+    55	        setIsModalOpen(true);
+    56	    };
+    57	    
+    58	    const closeModal = () => {
+    59	        setIsModalOpen(false);
+    60	        setSelectedSupplier(null);
+    61	    };
+    62	    
+    63	    const updateSupplier = async (updatedData: Partial<Supplier>) => {
+    64	        if (!selectedSupplier) return;
+    65	        
+    66	        try {
+    67	            setSaving(true);
+    68	            const { error } = await supabase
+    69	                .from('suppliers')
+    70	                .update(updatedData)
+    71	                .eq('id', selectedSupplier.id);
+    72	                
+    73	            if (error) throw error;
+    74	            
+    75	            // Refresh data setelah update
+    76	            fetchSuppliers();
+    77	        } catch (err) {
+    78	            console.error("Error updating supplier:", err);
+    79	            throw err;
+    80	        } finally {
+    81	            setSaving(false);
+    82	        }
+    83	    };
+    84	    
+    85	    const supplierFields = [
+    86	        { key: 'name', label: 'Nama Supplier', editable: true },
+    87	        { key: 'address', label: 'Alamat', type: 'textarea', editable: true },
+    88	        { key: 'phone', label: 'Telepon', type: 'tel', editable: true },
+    89	        { key: 'email', label: 'Email', type: 'email', editable: true },
+    90	        { key: 'contact_person', label: 'Kontak Person', editable: true }
+    91	    ];
+    92	
+    93	    return (
+    94	        <Card className="bg-transparent shadow-none border-none">
+    95	            <CardHeader className="mb-6 px-0">
+    96	                <CardTitle>Daftar Supplier</CardTitle>
+    97	            </CardHeader>
+    98	
+    99	            {loading && <Loading message="Memuat supplier..." />}
+   100	            {error && <div className="text-center text-red-500">{error}</div>}
+   101	
+   102	            {!loading && !error && (
+   103	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
+   104	                    {/* Supplier Cards */}
+   105	                    {suppliers.map((supplier) => (
+   106	                        <div
+   107	                            key={supplier.id}
+   108	                            className="group relative aspect-video h-48 md:h-56 bg-gray-300 rounded-lg shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-xl"
+   109	                            onClick={() => openSupplierDetail(supplier)}
+   110	                        >
+   111	                            {/* View Detail Button (visible on hover) */}
+   112	                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+   113	                                <div className="bg-white rounded-full p-2 shadow-md">
+   114	                                    <FaEye className="text-blue-500" />
+   115	                                </div>
+   116	                            </div>
+   117	                           
+   118	                            {/* Background Image (Placeholder) */}
+   119	                            <img
+   120	                                // Replace with actual supplier.image_url when available
+   121	                                src={supplier.image_url || `https://picsum.photos/seed/${supplier.id}/400/300`}
+   122	                                alt={`Gambar ${supplier.name}`}
+   123	                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
+   124	                            />
+   125	
+   126	                            {/* Name Overlay */}
+   127	                            {/* Tambahkan kelas untuk menyembunyikan overlay saat hover */}
+   128	                            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/65 via-black/40 to-transparent transition-opacity duration-500 ease-in-out group-hover:opacity-0">
+   129	                                <h3 className="text-white font-semibold truncate text-lg">
+   130	                                    {supplier.name}
+   131	                                </h3>
+   132	                            </div>
+   133	
+   134	                            {/* Address Hover Overlay */}
+   135	                            <div className="absolute inset-0 p-4 bg-black/70 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
+   136	                                <h3 className="text-white font-semibold truncate text-lg mb-1">
+   137	                                    {supplier.name}
+   138	                                </h3>
+   139	                                <p className="text-gray-200 text-sm line-clamp-3">
+   140	                                    {supplier.address || 'Alamat tidak tersedia'}
+   141	                                </p>
+   142	                                {/* Optional: Add more details on hover */}
+   143	                                {/* <p className="text-gray-300 text-xs mt-1">{supplier.phone || '-'}</p> */}
+   144	                                {/* <p className="text-gray-300 text-xs">{supplier.contact_person || '-'}</p> */}
+   145	                            </div>
+   146	                        </div>
+   147	                    ))}
+   148	
+   149	                    {/* Add New Supplier Card */}
+   150	                    <Link
+   151	                        to="/master-data/suppliers/add" // Adjust the route as needed
+   152	                        className="group aspect-video h-48 md:h-56 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-primary hover:text-primary hover:bg-blue-30/50 hover:shadow-lg transition-all duration-500 ease-in-out cursor-pointer transform hover:scale-105"
+   153	                    >
+   154	                        <FaPlus className="text-4xl mb-2 transition-all duration-500 ease-in-out group-hover:scale-125 group-hover:rotate-90" />
+   155	                        <span className="text-sm font-medium transition-all duration-500 ease-in-out group-hover:font-bold">Tambah Supplier Baru</span>
+   156	                    </Link>
+   157	                </div>
+   158	            )}
+   159	            {!loading && suppliers.length === 0 && !error && (
+   160	                <div className="text-center text-gray-500 mt-8">
+   161	                    Belum ada data supplier.
+   162	                </div>
+   163	            )}
+   164	            
+   165	            {/* Modal Detail dan Edit */}
+   166	            {isModalOpen && selectedSupplier && (
+   167	                <DetailEditModal
+   168	                    title={`Detail Supplier: ${selectedSupplier.name}`}
+   169	                    data={selectedSupplier}
+   170	                    fields={supplierFields}
+   171	                    isOpen={isModalOpen}
+   172	                    onClose={closeModal}
+   173	                    onSave={updateSupplier}
+   174	                    imageUrl={selectedSupplier.image_url}
+   175	                    imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
+   176	                />
+   177	            )}
+   178	        </Card>
+   179	    );
+   180	};
+   181	
+   182	export default SupplierList;
 
 
 ===============================================
