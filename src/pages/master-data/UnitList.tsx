@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+// import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Loading } from "../../components/ui/Loading";
+import ImageCard from "../../components/ui/ImageCard";
+import AddItemCard from "../../components/ui/AddItemCard";
 
 interface Unit {
     id: string;
@@ -60,65 +62,53 @@ const UnitList = () => {
 
     return (
         <Card>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Daftar Satuan Item</h1>
-                
-                <Link
-                    to="/master-data/units/add"
-                >
-                    <Button variant="primary">
-                        <FaPlus className="mr-2" />
-                        Tambah Satuan Baru
-                    </Button>
-                </Link>
-            </div>
-            
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-gray-800 mb-4">Daftar Satuan Item</h1>
+            </div>            
+
             {loading ? (
                 <Loading />
             ) : (
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableHeader>Nama Satuan</TableHeader>
-                            <TableHeader>Deskripsi</TableHeader>
-                            <TableHeader className="text-center">Aksi</TableHeader>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                            {units.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-gray-500">
-                                        Tidak ada data satuan yang ditemukan
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                units.map((unit) => (
-                                    <TableRow key={unit.id}>
-                                        <TableCell>{unit.name}</TableCell>
-                                        <TableCell>{unit.description}</TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex justify-center space-x-2">
-                                                <Link
-                                                    to={`/master-data/units/edit/${unit.id}`}
-                                                >
-                                                    <Button variant="secondary" size="sm">
-                                                        <FaEdit />
-                                                    </Button>
-                                                </Link>
-                                                <Button 
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(unit.id)}
-                                                >
-                                                    <FaTrash />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                    </TableBody>
-                </Table>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {/* Unit Cards */}
+                    {units.length === 0 ? (
+                        <div className="text-center text-gray-500 col-span-full">
+                            Tidak ada data satuan yang ditemukan
+                        </div>
+                    ) : (
+                        units.map((unit) => (
+                            <div key={unit.id} className="relative group">
+                                <ImageCard
+                                    id={unit.id}
+                                    title={unit.name}
+                                    subtitle={unit.description || 'Tidak ada deskripsi'}
+                                    fallbackImage={`https://picsum.photos/seed/${unit.id}/400/300`}
+                                    onClick={() => {}} // Bisa digunakan untuk modal edit
+                                />
+                                {/* Overlay untuk tombol aksi */}
+                                <div className="absolute bottom-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <Link
+                                        to={`/master-data/units/edit/${unit.id}`}
+                                    >
+                                        <Button variant="secondary" size="sm">
+                                            <FaEdit />
+                                        </Button>
+                                    </Link>
+                                    <Button 
+                                        variant="danger"
+                                        size="sm"
+                                        onClick={() => handleDelete(unit.id)}
+                                    >
+                                        <FaTrash />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+
+                    {/* Add New Unit Card */}
+                    <AddItemCard label="Tambah Satuan Baru" to="/master-data/units/add" />
+                </div>
             )}
         </Card>
     );
