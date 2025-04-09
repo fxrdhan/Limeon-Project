@@ -5497,246 +5497,252 @@
     17	    const { openConfirmDialog } = useConfirmDialog();
     18	    const queryClient = useQueryClient();
     19	
-    20	    // Add an effect to invalidate cache when component mounts
+    20	    // Update this effect to use a more precise invalidation
     21	    useEffect(() => {
-    22	        // This ensures fresh data is loaded when returning from add/edit pages
-    23	        queryClient.invalidateQueries({ queryKey: ['items'] });
-    24	    }, [queryClient]);
-    25	
-    26	    const fetchItems = async (page: number, searchTerm: string, limit: number) => {
-    27	        const from = (page - 1) * limit;
-    28	        const to = from + limit - 1;
-    29	
-    30	        let itemsQuery = supabase
-    31	            .from("items")
-    32	            .select(`
-    33	                id,
-    34	                name,
-    35	                code,
-    36	                base_price,
-    37	                sell_price,
-    38	                stock,
-    39	                category_id,
-    40	                type_id,
-    41	                unit_id
-    42	            `);
-    43	
-    44	        let countQuery = supabase
-    45	            .from("items")
-    46	            .select('id', { count: 'exact' });
-    47	
-    48	        if (searchTerm) {
-    49	            itemsQuery = itemsQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
-    50	            countQuery = countQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
-    51	        }
-    52	
-    53	        const [itemsResult, countResult, categoriesRes, typesRes, unitsRes] = await Promise.all([
-    54	            itemsQuery.order('name').range(from, to),
-    55	            countQuery,
-    56	            supabase.from("item_categories").select("id, name"),
-    57	            supabase.from("item_types").select("id, name"),
-    58	            supabase.from("item_units").select("id, name")
-    59	        ]);
-    60	
-    61	        if (itemsResult.error) throw itemsResult.error;
-    62	        if (countResult.error) throw countResult.error;
+    22	        // Invalidate all item queries regardless of page, search, or itemsPerPage parameters
+    23	        queryClient.invalidateQueries({
+    24	            queryKey: ['items'],
+    25	            refetchType: 'all'
+    26	        });
+    27	    }, [queryClient]);
+    28	
+    29	    const fetchItems = async (page: number, searchTerm: string, limit: number) => {
+    30	        const from = (page - 1) * limit;
+    31	        const to = from + limit - 1;
+    32	
+    33	        let itemsQuery = supabase
+    34	            .from("items")
+    35	            .select(`
+    36	                id,
+    37	                name,
+    38	                code,
+    39	                base_price,
+    40	                sell_price,
+    41	                stock,
+    42	                category_id,
+    43	                type_id,
+    44	                unit_id
+    45	            `);
+    46	
+    47	        let countQuery = supabase
+    48	            .from("items")
+    49	            .select('id', { count: 'exact' });
+    50	
+    51	        if (searchTerm) {
+    52	            itemsQuery = itemsQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+    53	            countQuery = countQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+    54	        }
+    55	
+    56	        const [itemsResult, countResult, categoriesRes, typesRes, unitsRes] = await Promise.all([
+    57	            itemsQuery.order('name').range(from, to),
+    58	            countQuery,
+    59	            supabase.from("item_categories").select("id, name"),
+    60	            supabase.from("item_types").select("id, name"),
+    61	            supabase.from("item_units").select("id, name")
+    62	        ]);
     63	
-    64	        const categories = categoriesRes.data || [];
-    65	        const types = typesRes.data || [];
-    66	        const units = unitsRes.data || [];
-    67	
-    68	        const completedData = (itemsResult.data || []).map(item => ({
-    69	            id: item.id,
-    70	            name: item.name,
-    71	            code: item.code,
-    72	            base_price: item.base_price,
-    73	            sell_price: item.sell_price,
-    74	            stock: item.stock,
-    75	            category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
-    76	            type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
-    77	            unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
-    78	        }));
-    79	
-    80	        return { items: completedData, totalItems: countResult.count || 0 };
-    81	    };
+    64	        if (itemsResult.error) throw itemsResult.error;
+    65	        if (countResult.error) throw countResult.error;
+    66	
+    67	        const categories = categoriesRes.data || [];
+    68	        const types = typesRes.data || [];
+    69	        const units = unitsRes.data || [];
+    70	
+    71	        const completedData = (itemsResult.data || []).map(item => ({
+    72	            id: item.id,
+    73	            name: item.name,
+    74	            code: item.code,
+    75	            base_price: item.base_price,
+    76	            sell_price: item.sell_price,
+    77	            stock: item.stock,
+    78	            category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
+    79	            type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
+    80	            unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
+    81	        }));
     82	
-    83	    useEffect(() => {
-    84	        const timer = setTimeout(() => {
-    85	            setDebouncedSearch(search);
-    86	            setCurrentPage(1);
-    87	        }, 500);
-    88	
-    89	        return () => clearTimeout(timer);
-    90	    }, [search]);
+    83	        return { items: completedData, totalItems: countResult.count || 0 };
+    84	    };
+    85	
+    86	    useEffect(() => {
+    87	        const timer = setTimeout(() => {
+    88	            setDebouncedSearch(search);
+    89	            setCurrentPage(1);
+    90	        }, 500);
     91	
-    92	    const { data, isLoading, isError, error, isFetching } = useQuery({
-    93	        queryKey: ['items', currentPage, debouncedSearch, itemsPerPage],
-    94	        queryFn: () => fetchItems(currentPage, debouncedSearch, itemsPerPage),
-    95	        placeholderData: keepPreviousData,
-    96	        staleTime: 30 * 1000, // Reduced from 5 minutes to 30 seconds
-    97	        refetchOnMount: true, // Ensure refetch when component mounts
-    98	    });
-    99	
-   100	    const deleteItemMutation = useMutation({
-   101	        mutationFn: async (itemId: string) => {
-   102	            const { error } = await supabase.from("items").delete().eq("id", itemId);
-   103	            if (error) throw error;
-   104	        },
-   105	        onSuccess: () => {
-   106	            // Refetch all queries starting with ['items'] to update all views
-   107	            queryClient.refetchQueries({ queryKey: ['items'], type: 'all' });
-   108	            console.log("Item berhasil dihapus dan data di-refetch.");
-   109	        },
-   110	        onError: (error) => {
-   111	            console.error("Error deleting item:", error);
-   112	            alert("Gagal menghapus item. Silakan coba lagi.");
-   113	        },
-   114	    });
-   115	
-   116	    const items = data?.items || [];
-   117	    const totalItems = data?.totalItems || 0;
-   118	
-   119	    const handlePageChange = (newPage: number) => {
-   120	        setCurrentPage(newPage);
-   121	    };
-   122	
-   123	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-   124	        setItemsPerPage(Number(e.target.value));
-   125	        setCurrentPage(1);
-   126	    };
-   127	
-   128	    const totalPages = Math.ceil(totalItems / itemsPerPage);
-   129	
-   130	    return (
-   131	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
-   132	            <div className="flex justify-between items-center mb-6">
-   133	                <h1 className="text-2xl font-bold text-gray-800">Daftar Item</h1>
-   134	
-   135	                <Link
-   136	                    to="/master-data/items/add">
-   137	                    <Button variant="primary" className="flex items-center">
-   138	                        <FaPlus className="mr-2" />
-   139	                        Tambah Item Baru
-   140	                    </Button>
-   141	                </Link>
-   142	            </div>
-   143	
-   144	            <div className="mb-4 relative">
-   145	                <input
-   146	                    type="text"
-   147	                    placeholder="Cari item..."
-   148	                    className="w-full p-3 border rounded-md pl-10"
-   149	                    value={search}
-   150	                    onChange={(e) => setSearch(e.target.value)} />
-   151	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-   152	            </div>
-   153	
-   154	            {isLoading && <div className="text-center p-6">Memuat data awal...</div>}
-   155	            {isError && <div className="text-center p-6 text-red-500">Error: {error instanceof Error ? error.message : 'Gagal memuat data'}</div>}
-   156	
-   157	            {!isLoading && (
-   158	                <>
-   159	                    <Table>
-   160	                        <TableHead>
-   161	                            <TableRow>
-   162	                                <TableHeader>Nama Item</TableHeader>
-   163	                                <TableHeader>Kode</TableHeader>
-   164	                                <TableHeader>Kategori</TableHeader>
-   165	                                <TableHeader>Jenis</TableHeader>
-   166	                                <TableHeader>Satuan</TableHeader>
-   167	                                <TableHeader className="text-right">Harga Pokok</TableHeader>
-   168	                                <TableHeader className="text-right">Harga Jual</TableHeader>
-   169	                                <TableHeader className="text-right">Stok</TableHeader>
-   170	                                <TableHeader className="text-center">Aksi</TableHeader>
-   171	                            </TableRow>
-   172	                        </TableHead>
-   173	                        <TableBody>
-   174	                            {items.length === 0 ? (
-   175	                                <TableRow>
-   176	                                    <TableCell
-   177	                                        colSpan={9}
-   178	                                        className="text-center text-gray-600"
-   179	                                    >
-   180	                                        {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
-   181	                                    </TableCell>
-   182	                                </TableRow>
-   183	                            ) : (
-   184	                                items.map((item) => (
-   185	                                    <TableRow key={item.id}>
-   186	                                        <TableCell>{item.name}</TableCell>
-   187	                                        <TableCell>{item.code}</TableCell>
-   188	                                        <TableCell>{item.category.name}</TableCell>
-   189	                                        <TableCell>{item.type.name}</TableCell>
-   190	                                        <TableCell>{item.unit.name}</TableCell>
-   191	                                        <TableCell className="text-right">
-   192	                                            {item.base_price.toLocaleString("id-ID", {
-   193	                                                style: "currency",
-   194	                                                currency: "IDR",
-   195	                                            })}
-   196	                                        </TableCell>
+    92	        return () => clearTimeout(timer);
+    93	    }, [search]);
+    94	
+    95	    const { data, isLoading, isError, error, isFetching } = useQuery({
+    96	        queryKey: ['items', currentPage, debouncedSearch, itemsPerPage],
+    97	        queryFn: () => fetchItems(currentPage, debouncedSearch, itemsPerPage),
+    98	        placeholderData: keepPreviousData,
+    99	        staleTime: 30 * 1000, // Reduced from 5 minutes to 30 seconds
+   100	        refetchOnMount: true, // Ensure refetch when component mounts
+   101	    });
+   102	
+   103	    const deleteItemMutation = useMutation({
+   104	        mutationFn: async (itemId: string) => {
+   105	            const { error } = await supabase.from("items").delete().eq("id", itemId);
+   106	            if (error) throw error;
+   107	        },
+   108	        onSuccess: () => {
+   109	            // Update the invalidation strategy to match the useEffect approach
+   110	            queryClient.invalidateQueries({
+   111	                queryKey: ['items'],
+   112	                refetchType: 'all'
+   113	            });
+   114	            console.log("Item berhasil dihapus dan data di-refetch untuk semua ukuran halaman.");
+   115	        },
+   116	        onError: (error) => {
+   117	            console.error("Error deleting item:", error);
+   118	            alert("Gagal menghapus item. Silakan coba lagi.");
+   119	        },
+   120	    });
+   121	
+   122	    const items = data?.items || [];
+   123	    const totalItems = data?.totalItems || 0;
+   124	
+   125	    const handlePageChange = (newPage: number) => {
+   126	        setCurrentPage(newPage);
+   127	    };
+   128	
+   129	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+   130	        setItemsPerPage(Number(e.target.value));
+   131	        setCurrentPage(1);
+   132	    };
+   133	
+   134	    const totalPages = Math.ceil(totalItems / itemsPerPage);
+   135	
+   136	    return (
+   137	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+   138	            <div className="flex justify-between items-center mb-6">
+   139	                <h1 className="text-2xl font-bold text-gray-800">Daftar Item</h1>
+   140	
+   141	                <Link
+   142	                    to="/master-data/items/add">
+   143	                    <Button variant="primary" className="flex items-center">
+   144	                        <FaPlus className="mr-2" />
+   145	                        Tambah Item Baru
+   146	                    </Button>
+   147	                </Link>
+   148	            </div>
+   149	
+   150	            <div className="mb-4 relative">
+   151	                <input
+   152	                    type="text"
+   153	                    placeholder="Cari item..."
+   154	                    className="w-full p-3 border rounded-md pl-10"
+   155	                    value={search}
+   156	                    onChange={(e) => setSearch(e.target.value)} />
+   157	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+   158	            </div>
+   159	
+   160	            {isLoading && <div className="text-center p-6">Memuat data awal...</div>}
+   161	            {isError && <div className="text-center p-6 text-red-500">Error: {error instanceof Error ? error.message : 'Gagal memuat data'}</div>}
+   162	
+   163	            {!isLoading && (
+   164	                <>
+   165	                    <Table>
+   166	                        <TableHead>
+   167	                            <TableRow>
+   168	                                <TableHeader>Nama Item</TableHeader>
+   169	                                <TableHeader>Kode</TableHeader>
+   170	                                <TableHeader>Kategori</TableHeader>
+   171	                                <TableHeader>Jenis</TableHeader>
+   172	                                <TableHeader>Satuan</TableHeader>
+   173	                                <TableHeader className="text-right">Harga Pokok</TableHeader>
+   174	                                <TableHeader className="text-right">Harga Jual</TableHeader>
+   175	                                <TableHeader className="text-right">Stok</TableHeader>
+   176	                                <TableHeader className="text-center">Aksi</TableHeader>
+   177	                            </TableRow>
+   178	                        </TableHead>
+   179	                        <TableBody>
+   180	                            {items.length === 0 ? (
+   181	                                <TableRow>
+   182	                                    <TableCell
+   183	                                        colSpan={9}
+   184	                                        className="text-center text-gray-600"
+   185	                                    >
+   186	                                        {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
+   187	                                    </TableCell>
+   188	                                </TableRow>
+   189	                            ) : (
+   190	                                items.map((item) => (
+   191	                                    <TableRow key={item.id}>
+   192	                                        <TableCell>{item.name}</TableCell>
+   193	                                        <TableCell>{item.code}</TableCell>
+   194	                                        <TableCell>{item.category.name}</TableCell>
+   195	                                        <TableCell>{item.type.name}</TableCell>
+   196	                                        <TableCell>{item.unit.name}</TableCell>
    197	                                        <TableCell className="text-right">
-   198	                                            {item.sell_price.toLocaleString("id-ID", {
+   198	                                            {item.base_price.toLocaleString("id-ID", {
    199	                                                style: "currency",
    200	                                                currency: "IDR",
    201	                                            })}
    202	                                        </TableCell>
-   203	                                        <TableCell className="text-right">{item.stock}</TableCell>
-   204	                                        <TableCell className="text-center">
-   205	                                            <div className="flex justify-center space-x-2">
-   206	                                                <Link
-   207	                                                    to={`/master-data/items/edit/${item.id}`}
-   208	                                                >
-   209	                                                    <Button variant="secondary" size="sm">
-   210	                                                        <FaEdit />
-   211	                                                    </Button>
-   212	                                                </Link>
-   213	                                                <Button
-   214	                                                    variant="danger"
-   215	                                                    size="sm"
-   216	                                                    onClick={() => handleDelete(item.id)}
-   217	                                                    disabled={deleteItemMutation.isPending && deleteItemMutation.variables === item.id}
-   218	                                                >
-   219	                                                    {deleteItemMutation.isPending && deleteItemMutation.variables === item.id ? (
-   220	                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
-   221	                                                    ) : (
-   222	                                                        <FaTrash />
-   223	                                                    )}
-   224	                                                </Button>
-   225	                                            </div>
-   226	                                        </TableCell>
-   227	                                    </TableRow>
-   228	                                ))
-   229	                            )}
-   230	                        </TableBody>
-   231	                    </Table>
-   232	                    <Pagination
-   233	                        currentPage={currentPage}
-   234	                        totalPages={totalPages}
-   235	                        totalItems={totalItems}
-   236	                        itemsPerPage={itemsPerPage}
-   237	                        itemsCount={items.length}
-   238	                        onPageChange={handlePageChange}
-   239	                        onItemsPerPageChange={handleItemsPerPageChange}
-   240	                    />
-   241	                </>
-   242	            )}
-   243	        </Card>
-   244	    );
-   245	
-   246	    async function handleDelete(id: string) {
-   247	        openConfirmDialog({
-   248	            title: "Konfirmasi Hapus",
-   249	            message: "Apakah Anda yakin ingin menghapus item ini?",
-   250	            variant: "danger",
-   251	            confirmText: "Hapus",
-   252	            onConfirm: () => {
-   253	                deleteItemMutation.mutate(id);
-   254	            }
-   255	        });
-   256	    }
-   257	}
-   258	
-   259	export default ItemList;
+   203	                                        <TableCell className="text-right">
+   204	                                            {item.sell_price.toLocaleString("id-ID", {
+   205	                                                style: "currency",
+   206	                                                currency: "IDR",
+   207	                                            })}
+   208	                                        </TableCell>
+   209	                                        <TableCell className="text-right">{item.stock}</TableCell>
+   210	                                        <TableCell className="text-center">
+   211	                                            <div className="flex justify-center space-x-2">
+   212	                                                <Link
+   213	                                                    to={`/master-data/items/edit/${item.id}`}
+   214	                                                >
+   215	                                                    <Button variant="secondary" size="sm">
+   216	                                                        <FaEdit />
+   217	                                                    </Button>
+   218	                                                </Link>
+   219	                                                <Button
+   220	                                                    variant="danger"
+   221	                                                    size="sm"
+   222	                                                    onClick={() => handleDelete(item.id)}
+   223	                                                    disabled={deleteItemMutation.isPending && deleteItemMutation.variables === item.id}
+   224	                                                >
+   225	                                                    {deleteItemMutation.isPending && deleteItemMutation.variables === item.id ? (
+   226	                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
+   227	                                                    ) : (
+   228	                                                        <FaTrash />
+   229	                                                    )}
+   230	                                                </Button>
+   231	                                            </div>
+   232	                                        </TableCell>
+   233	                                    </TableRow>
+   234	                                ))
+   235	                            )}
+   236	                        </TableBody>
+   237	                    </Table>
+   238	                    <Pagination
+   239	                        currentPage={currentPage}
+   240	                        totalPages={totalPages}
+   241	                        totalItems={totalItems}
+   242	                        itemsPerPage={itemsPerPage}
+   243	                        itemsCount={items.length}
+   244	                        onPageChange={handlePageChange}
+   245	                        onItemsPerPageChange={handleItemsPerPageChange}
+   246	                    />
+   247	                </>
+   248	            )}
+   249	        </Card>
+   250	    );
+   251	
+   252	    async function handleDelete(id: string) {
+   253	        openConfirmDialog({
+   254	            title: "Konfirmasi Hapus",
+   255	            message: "Apakah Anda yakin ingin menghapus item ini?",
+   256	            variant: "danger",
+   257	            confirmText: "Hapus",
+   258	            onConfirm: () => {
+   259	                deleteItemMutation.mutate(id);
+   260	            }
+   261	        });
+   262	    }
+   263	}
+   264	
+   265	export default ItemList;
 
 
 ===============================================
