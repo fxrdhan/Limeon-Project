@@ -17,10 +17,13 @@ function ItemList() {
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
 
-    // Add an effect to invalidate cache when component mounts
+    // Update this effect to use a more precise invalidation
     useEffect(() => {
-        // This ensures fresh data is loaded when returning from add/edit pages
-        queryClient.invalidateQueries({ queryKey: ['items'] });
+        // Invalidate all item queries regardless of page, search, or itemsPerPage parameters
+        queryClient.invalidateQueries({
+            queryKey: ['items'],
+            refetchType: 'all'
+        });
     }, [queryClient]);
 
     const fetchItems = async (page: number, searchTerm: string, limit: number) => {
@@ -103,8 +106,12 @@ function ItemList() {
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['items'] });
-            console.log("Item berhasil dihapus");
+            // Update the invalidation strategy to match the useEffect approach
+            queryClient.invalidateQueries({
+                queryKey: ['items'],
+                refetchType: 'all'
+            });
+            console.log("Item berhasil dihapus dan data di-refetch untuk semua ukuran halaman.");
         },
         onError: (error) => {
             console.error("Error deleting item:", error);
