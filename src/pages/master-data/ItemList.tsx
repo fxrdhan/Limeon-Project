@@ -17,6 +17,12 @@ function ItemList() {
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
 
+    // Add an effect to invalidate cache when component mounts
+    useEffect(() => {
+        // This ensures fresh data is loaded when returning from add/edit pages
+        queryClient.invalidateQueries({ queryKey: ['items'] });
+    }, [queryClient]);
+
     const fetchItems = async (page: number, searchTerm: string, limit: number) => {
         const from = (page - 1) * limit;
         const to = from + limit - 1;
@@ -87,7 +93,8 @@ function ItemList() {
         queryKey: ['items', currentPage, debouncedSearch, itemsPerPage],
         queryFn: () => fetchItems(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
-        staleTime: 5 * 60 * 1000,
+        staleTime: 30 * 1000, // Reduced from 5 minutes to 30 seconds
+        refetchOnMount: true, // Ensure refetch when component mounts
     });
 
     const deleteItemMutation = useMutation({
