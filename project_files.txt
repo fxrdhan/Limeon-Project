@@ -360,32 +360,33 @@
     14	    "@headlessui/react": "^2.2.1",
     15	    "@supabase/supabase-js": "^2.49.3",
     16	    "@tanstack/react-table": "^8.21.2",
-    17	    "autoprefixer": "^10.4.21",
-    18	    "axios": "^1.8.4",
-    19	    "chart.js": "^4.4.8",
-    20	    "postcss": "^8.5.3",
-    21	    "react": "^19.0.0",
-    22	    "react-chartjs-2": "^5.3.0",
-    23	    "react-dom": "^19.0.0",
-    24	    "react-icons": "^5.5.0",
-    25	    "react-router-dom": "^6.30.0",
-    26	    "zustand": "^5.0.3"
-    27	  },
-    28	  "devDependencies": {
-    29	    "@eslint/js": "^9.21.0",
-    30	    "@types/react": "^19.0.10",
-    31	    "@types/react-dom": "^19.0.4",
-    32	    "@vitejs/plugin-react": "^4.3.4",
-    33	    "eslint": "^9.21.0",
-    34	    "eslint-plugin-react-hooks": "^5.1.0",
-    35	    "eslint-plugin-react-refresh": "^0.4.19",
-    36	    "globals": "^15.15.0",
-    37	    "tailwindcss": "^3.4.17",
-    38	    "typescript": "^5.8.3",
-    39	    "typescript-eslint": "^8.24.1",
-    40	    "vite": "^6.2.0"
-    41	  }
-    42	}
+    17	    "arktype": "^2.1.19",
+    18	    "autoprefixer": "^10.4.21",
+    19	    "axios": "^1.8.4",
+    20	    "chart.js": "^4.4.8",
+    21	    "postcss": "^8.5.3",
+    22	    "react": "^19.0.0",
+    23	    "react-chartjs-2": "^5.3.0",
+    24	    "react-dom": "^19.0.0",
+    25	    "react-icons": "^5.5.0",
+    26	    "react-router-dom": "^6.30.0",
+    27	    "zustand": "^5.0.3"
+    28	  },
+    29	  "devDependencies": {
+    30	    "@eslint/js": "^9.21.0",
+    31	    "@types/react": "^19.0.10",
+    32	    "@types/react-dom": "^19.0.4",
+    33	    "@vitejs/plugin-react": "^4.3.4",
+    34	    "eslint": "^9.21.0",
+    35	    "eslint-plugin-react-hooks": "^5.1.0",
+    36	    "eslint-plugin-react-refresh": "^0.4.19",
+    37	    "globals": "^15.15.0",
+    38	    "tailwindcss": "^3.4.17",
+    39	    "typescript": "^5.8.3",
+    40	    "typescript-eslint": "^8.24.1",
+    41	    "vite": "^6.2.0"
+    42	  }
+    43	}
 
 
 ===============================================
@@ -5423,7 +5424,7 @@
     21	    stock: number;
     22	}
     23	
-    24	const ItemList = () => {
+    24	function ItemList() {
     25	    const [items, setItems] = useState<Item[]>([]);
     26	    const [loading, setLoading] = useState(true);
     27	    const [tableLoading, setTableLoading] = useState(false);
@@ -5447,7 +5448,7 @@
     45	    // Efek untuk mengambil data saat parameter berubah
     46	    useEffect(() => {
     47	        fetchItems(currentPage, debouncedSearch, itemsPerPage);
-    48	    // eslint-disable-next-line react-hooks/exhaustive-deps
+    48	        // eslint-disable-next-line react-hooks/exhaustive-deps
     49	    }, [currentPage, debouncedSearch, itemsPerPage]);
     50	
     51	    const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
@@ -5567,130 +5568,128 @@
    165	                    placeholder="Cari item..."
    166	                    className="w-full p-3 border rounded-md pl-10"
    167	                    value={search}
-   168	                    onChange={(e) => setSearch(e.target.value)}
-   169	                />
-   170	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-   171	            </div>
-   172	
-   173	            {loading ? (
-   174	                <Loading />
-   175	            ) : (
-   176	                <>
-   177	                    {tableLoading ? (
-   178	                        <div>
-   179	                            <Loading/>
-   180	                        </div>
-   181	                    ) : (
-   182	                        <Table>
-   183	                            <TableHead>
-   184	                                <TableRow>
-   185	                                    <TableHeader>Nama Item</TableHeader>
-   186	                                    <TableHeader>Kode</TableHeader>
-   187	                                    <TableHeader>Kategori</TableHeader>
-   188	                                    <TableHeader>Jenis</TableHeader>
-   189	                                    <TableHeader>Satuan</TableHeader>
-   190	                                    <TableHeader className="text-right">Harga Pokok</TableHeader>
-   191	                                    <TableHeader className="text-right">Harga Jual</TableHeader>
-   192	                                    <TableHeader className="text-right">Stok</TableHeader>
-   193	                                    <TableHeader className="text-center">Aksi</TableHeader>
-   194	                                </TableRow>
-   195	                            </TableHead>
-   196	                            <TableBody>
-   197	                                {items.length === 0 ? (
-   198	                                    <TableRow>
-   199	                                        <TableCell
-   200	                                            colSpan={9}
-   201	                                            className="text-center text-gray-600"
-   202	                                        >
-   203	                                            {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
-   204	                                        </TableCell>
-   205	                                    </TableRow>
-   206	                                ) : (
-   207	                                    items.map((item) => (
-   208	                                        <TableRow key={item.id}>
-   209	                                            <TableCell>{item.name}</TableCell>
-   210	                                            <TableCell>{item.code}</TableCell>
-   211	                                            <TableCell>{item.category.name}</TableCell>
-   212	                                            <TableCell>{item.type.name}</TableCell>
-   213	                                            <TableCell>{item.unit.name}</TableCell>
-   214	                                            <TableCell className="text-right">
-   215	                                                {item.base_price.toLocaleString("id-ID", {
-   216	                                                    style: "currency",
-   217	                                                    currency: "IDR",
-   218	                                                })}
-   219	                                            </TableCell>
-   220	                                            <TableCell className="text-right">
-   221	                                                {item.sell_price.toLocaleString("id-ID", {
-   222	                                                    style: "currency",
-   223	                                                    currency: "IDR",
-   224	                                                })}
-   225	                                            </TableCell>
-   226	                                            <TableCell className="text-right">{item.stock}</TableCell>
-   227	                                            <TableCell className="text-center">
-   228	                                                <div className="flex justify-center space-x-2">
-   229	                                                    <Link
-   230	                                                        to={`/master-data/items/edit/${item.id}`}
-   231	                                                    >
-   232	                                                        <Button variant="secondary" size="sm">
-   233	                                                            <FaEdit />
-   234	                                                        </Button>
-   235	                                                    </Link>
-   236	                                                    <Button
-   237	                                                        variant="danger"
-   238	                                                        size="sm"
-   239	                                                        onClick={() => handleDelete(item.id)}
-   240	                                                    >
-   241	                                                        <FaTrash />
-   242	                                                    </Button>
-   243	                                                </div>
-   244	                                            </TableCell>
-   245	                                        </TableRow>
-   246	                                    ))
-   247	                                )}
-   248	                            </TableBody>
-   249	                        </Table>
-   250	                    )}
-   251	                    <Pagination 
-   252	                        currentPage={currentPage}
-   253	                        totalPages={totalPages}
-   254	                        totalItems={totalItems}
-   255	                        itemsPerPage={itemsPerPage}
-   256	                        itemsCount={items.length}
-   257	                        onPageChange={handlePageChange}
-   258	                        onItemsPerPageChange={handleItemsPerPageChange}
-   259	                    />
-   260	                </>
-   261	            )}
-   262	        </Card>
-   263	    );
-   264	
-   265	    async function handleDelete(id: string) {
-   266	        openConfirmDialog({
-   267	            title: "Konfirmasi Hapus",
-   268	            message: "Apakah Anda yakin ingin menghapus item ini?",
-   269	            variant: "danger",
-   270	            confirmText: "Hapus",
-   271	            onConfirm: async () => {
-   272	                try {
-   273	                    const { error } = await supabase
-   274	                        .from("items")
-   275	                        .delete()
-   276	                        .eq("id", id);
+   168	                    onChange={(e) => setSearch(e.target.value)} />
+   169	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+   170	            </div>
+   171	
+   172	            {loading ? (
+   173	                <Loading />
+   174	            ) : (
+   175	                <>
+   176	                    {tableLoading ? (
+   177	                        <div>
+   178	                            <Loading />
+   179	                        </div>
+   180	                    ) : (
+   181	                        <Table>
+   182	                            <TableHead>
+   183	                                <TableRow>
+   184	                                    <TableHeader>Nama Item</TableHeader>
+   185	                                    <TableHeader>Kode</TableHeader>
+   186	                                    <TableHeader>Kategori</TableHeader>
+   187	                                    <TableHeader>Jenis</TableHeader>
+   188	                                    <TableHeader>Satuan</TableHeader>
+   189	                                    <TableHeader className="text-right">Harga Pokok</TableHeader>
+   190	                                    <TableHeader className="text-right">Harga Jual</TableHeader>
+   191	                                    <TableHeader className="text-right">Stok</TableHeader>
+   192	                                    <TableHeader className="text-center">Aksi</TableHeader>
+   193	                                </TableRow>
+   194	                            </TableHead>
+   195	                            <TableBody>
+   196	                                {items.length === 0 ? (
+   197	                                    <TableRow>
+   198	                                        <TableCell
+   199	                                            colSpan={9}
+   200	                                            className="text-center text-gray-600"
+   201	                                        >
+   202	                                            {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
+   203	                                        </TableCell>
+   204	                                    </TableRow>
+   205	                                ) : (
+   206	                                    items.map((item) => (
+   207	                                        <TableRow key={item.id}>
+   208	                                            <TableCell>{item.name}</TableCell>
+   209	                                            <TableCell>{item.code}</TableCell>
+   210	                                            <TableCell>{item.category.name}</TableCell>
+   211	                                            <TableCell>{item.type.name}</TableCell>
+   212	                                            <TableCell>{item.unit.name}</TableCell>
+   213	                                            <TableCell className="text-right">
+   214	                                                {item.base_price.toLocaleString("id-ID", {
+   215	                                                    style: "currency",
+   216	                                                    currency: "IDR",
+   217	                                                })}
+   218	                                            </TableCell>
+   219	                                            <TableCell className="text-right">
+   220	                                                {item.sell_price.toLocaleString("id-ID", {
+   221	                                                    style: "currency",
+   222	                                                    currency: "IDR",
+   223	                                                })}
+   224	                                            </TableCell>
+   225	                                            <TableCell className="text-right">{item.stock}</TableCell>
+   226	                                            <TableCell className="text-center">
+   227	                                                <div className="flex justify-center space-x-2">
+   228	                                                    <Link
+   229	                                                        to={`/master-data/items/edit/${item.id}`}
+   230	                                                    >
+   231	                                                        <Button variant="secondary" size="sm">
+   232	                                                            <FaEdit />
+   233	                                                        </Button>
+   234	                                                    </Link>
+   235	                                                    <Button
+   236	                                                        variant="danger"
+   237	                                                        size="sm"
+   238	                                                        onClick={() => handleDelete(item.id)}
+   239	                                                    >
+   240	                                                        <FaTrash />
+   241	                                                    </Button>
+   242	                                                </div>
+   243	                                            </TableCell>
+   244	                                        </TableRow>
+   245	                                    ))
+   246	                                )}
+   247	                            </TableBody>
+   248	                        </Table>
+   249	                    )}
+   250	                    <Pagination
+   251	                        currentPage={currentPage}
+   252	                        totalPages={totalPages}
+   253	                        totalItems={totalItems}
+   254	                        itemsPerPage={itemsPerPage}
+   255	                        itemsCount={items.length}
+   256	                        onPageChange={handlePageChange}
+   257	                        onItemsPerPageChange={handleItemsPerPageChange} />
+   258	                </>
+   259	            )}
+   260	        </Card>
+   261	    );
+   262	
+   263	    async function handleDelete(id: string) {
+   264	        openConfirmDialog({
+   265	            title: "Konfirmasi Hapus",
+   266	            message: "Apakah Anda yakin ingin menghapus item ini?",
+   267	            variant: "danger",
+   268	            confirmText: "Hapus",
+   269	            onConfirm: async () => {
+   270	                try {
+   271	                    const { error } = await supabase
+   272	                        .from("items")
+   273	                        .delete()
+   274	                        .eq("id", id);
+   275	
+   276	                    if (error) throw error;
    277	
-   278	                    if (error) throw error;
-   279	
-   280	                    // Refresh data
-   281	                    fetchItems(currentPage, debouncedSearch, itemsPerPage);
-   282	                } catch (error) {
-   283	                    console.error("Error deleting item:", error);
-   284	                    alert("Gagal menghapus item. Silakan coba lagi.");
-   285	                }
-   286	            }
-   287	        });
-   288	    }
-   289	};
-   290	
-   291	export default ItemList;
+   278	                    // Refresh data
+   279	                    fetchItems(currentPage, debouncedSearch, itemsPerPage);
+   280	                } catch (error) {
+   281	                    console.error("Error deleting item:", error);
+   282	                    alert("Gagal menghapus item. Silakan coba lagi.");
+   283	                }
+   284	            }
+   285	        });
+   286	    }
+   287	}
+   288	
+   289	export default ItemList;
 
 
 ===============================================

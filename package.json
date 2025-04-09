@@ -13,6 +13,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.1",
     "@supabase/supabase-js": "^2.49.3",
+    "@tanstack/react-query": "^5.72.2",
     "@tanstack/react-table": "^8.21.2",
     "arktype": "^2.1.19",
     "autoprefixer": "^10.4.21",
