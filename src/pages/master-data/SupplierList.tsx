@@ -1,5 +1,6 @@
 // src/pages/master-data/SupplierList.tsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Loading } from '../../components/ui/Loading';
 import { Card, CardHeader, CardTitle } from '../../components/ui/Card';
@@ -14,11 +15,9 @@ interface Supplier {
     phone?: string | null;
     email?: string | null;
     contact_person?: string | null;
-    // Field image_url dari database Supabase
     image_url?: string | null;
 }
 
-// Definisikan interface untuk field config sesuai dengan yang diharapkan DetailEditModal
 interface FieldConfig {
     key: string;
     label: string;
@@ -27,65 +26,61 @@ interface FieldConfig {
 }
 
 const SupplierList = () => {
-    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    useEffect(() => {
-        fetchSuppliers();
-    }, []);
+    const queryClient = useQueryClient();
 
     const fetchSuppliers = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const { data, error } = await supabase
-                .from('suppliers')
-                .select('id, name, address, phone, email, contact_person, image_url')
-                .order('name');
+        const { data, error } = await supabase
+            .from('suppliers')
+            .select('id, name, address, phone, email, contact_person, image_url')
+            .order('name');
 
-            if (error) throw error;
-            setSuppliers(data || []);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-            console.error("Error fetching suppliers:", err);
-            setError("Gagal memuat data supplier.");
-        } finally {
-            setLoading(false);
-        }
+        if (error) throw error;
+        return data || [];
     };
-    
+
+    const { data: suppliers, isLoading, isError, error } = useQuery<Supplier[]>({
+        queryKey: ['suppliers'],
+        queryFn: fetchSuppliers,
+        staleTime: 30 * 1000,
+        refetchOnMount: true,
+    });
+
+    const queryError = error instanceof Error ? error : null;
+
+    const updateSupplier = async (updatedData: Partial<Supplier>) => {
+        if (!selectedSupplier) return;
+
+        const { error } = await supabase
+            .from('suppliers')
+            .update(updatedData)
+            .eq('id', selectedSupplier.id);
+
+        if (error) throw error;
+    };
+
+    const updateSupplierMutation = useMutation({
+        mutationFn: updateSupplier,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+        },
+        onError: (error) => {
+            console.error("Error updating supplier:", error);
+            alert(`Gagal memperbarui supplier: ${error.message}`);
+        },
+    });
+
     const openSupplierDetail = (supplier: Supplier) => {
         setSelectedSupplier(supplier);
         setIsModalOpen(true);
     };
-    
+
     const closeModal = () => {
         setIsModalOpen(false);
         setSelectedSupplier(null);
     };
-    
-    const updateSupplier = async (updatedData: Partial<Supplier>) => {
-        if (!selectedSupplier) return;
-        
-        try {
-            const { error } = await supabase
-                .from('suppliers')
-                .update(updatedData)
-                .eq('id', selectedSupplier.id);
-                
-            if (error) throw error;
-            
-            // Refresh data setelah update
-            fetchSuppliers();
-        } catch (err) {
-            console.error("Error updating supplier:", err);
-            throw err;
-        }
-    };
-    
+
     const supplierFields: FieldConfig[] = [
         { key: 'name', label: 'Nama Supplier', type: 'text', editable: true },
         { key: 'address', label: 'Alamat', type: 'textarea', editable: true },
@@ -100,13 +95,12 @@ const SupplierList = () => {
                 <CardTitle>Daftar Supplier</CardTitle>
             </CardHeader>
 
-            {loading && <Loading message="Memuat supplier..." />}
-            {error && <div className="text-center text-red-500">{error}</div>}
+            {isLoading && <Loading message="Memuat supplier..." />}
+            {isError && <div className="text-center text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>}
 
-            {!loading && !error && (
+            {!isLoading && !isError && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
-                    {/* Supplier Cards */}
-                    {suppliers.map((supplier) => (
+                    {(suppliers || []).map((supplier) => (
                         <ImageCard
                             key={supplier.id}
                             id={supplier.id}
@@ -117,18 +111,15 @@ const SupplierList = () => {
                             onClick={() => openSupplierDetail(supplier)}
                         />
                     ))}
-
-                    {/* Add New Supplier Card */}
                     <AddItemCard label="Tambah Supplier Baru" to="/master-data/suppliers/add" />
                 </div>
             )}
-            {!loading && suppliers.length === 0 && !error && (
+            {!isLoading && suppliers && suppliers.length === 0 && !isError && (
                 <div className="text-center text-gray-500 mt-8">
                     Belum ada data supplier.
                 </div>
             )}
-            
-            {/* Modal Detail dan Edit */}
+
             {isModalOpen && selectedSupplier && (
                 <DetailEditModal
                     title={`Detail Supplier: ${selectedSupplier.name}`}
@@ -136,7 +127,9 @@ const SupplierList = () => {
                     fields={supplierFields}
                     isOpen={isModalOpen}
                     onClose={closeModal}
-                    onSave={updateSupplier}
+                    onSave={async (updatedData) => {
+                        await updateSupplierMutation.mutateAsync(updatedData);
+                    }}
                     imageUrl={selectedSupplier.image_url || undefined}
                     imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
                 />
