@@ -15,6 +15,18 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
+"@ark/schema@0.45.9":
+  version "0.45.9"
+  resolved "https://registry.yarnpkg.com/@ark/schema/-/schema-0.45.9.tgz#5568adb91773f74412051be02be703dbcc1f2900"
+  integrity sha512-rG0v/JI0sibn/0wERAHTYVLCtEqoMP2IIlxnb+S5DrEjCI5wpubbZSWMDW50tZ8tV6FANu6zzHDeeKbp6lsZdg==
+  dependencies:
+    "@ark/util" "0.45.9"
+
+"@ark/util@0.45.9":
+  version "0.45.9"
+  resolved "https://registry.yarnpkg.com/@ark/util/-/util-0.45.9.tgz#233a59132d4b1b654c9272dcef7ae67108c01087"
+  integrity sha512-0WYNAb8aRGp7dNt6xIvIrRzL7V1XL3u3PK2vcklhtTrdaP235DjC9qJhzidrxtWr68mA5ySSjUrgrXk622bKkw==
+
 "@babel/code-frame@^7.26.2":
   version "7.26.2"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.26.2.tgz#4b5fab97d33338eff916235055f0ebc21e573a85"
@@ -998,6 +1010,14 @@ argparse@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/argparse/-/argparse-2.0.1.tgz#246f50f3ca78a3240f6c997e8a9bd1eac49e4b38"
   integrity sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==
+
+arktype@^2.1.19:
+  version "2.1.19"
+  resolved "https://registry.yarnpkg.com/arktype/-/arktype-2.1.19.tgz#56ab6fb71107c72a9918754049a05a39d42c864d"
+  integrity sha512-notORSuTSpfLV7rq0kYC4mTgIVlVR0xQuvtFxOaE9aKiXyON/kgoIBwZZcKeSSb4BebNcfJoGlxJicAUl/HMdw==
+  dependencies:
+    "@ark/schema" "0.45.9"
+    "@ark/util" "0.45.9"
 
 asynckit@^0.4.0:
   version "0.4.0"

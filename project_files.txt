@@ -381,7 +381,7 @@
     35	    "eslint-plugin-react-refresh": "^0.4.19",
     36	    "globals": "^15.15.0",
     37	    "tailwindcss": "^3.4.17",
-    38	    "typescript": "~5.7.2",
+    38	    "typescript": "^5.8.3",
     39	    "typescript-eslint": "^8.24.1",
     40	    "vite": "^6.2.0"
     41	  }
@@ -9993,4 +9993,10 @@
      4	// https://vite.dev/config/
      5	export default defineConfig({
      6	  plugins: [react()],
-     7	})
+     7	  server: {
+     8	    fs: {
+     9	      // Allow serving files from one level up from the project root
+    10	      allow: ['..']
+    11	    }
+    12	  }
+    13	})
