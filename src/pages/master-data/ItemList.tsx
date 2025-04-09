@@ -9,6 +9,14 @@ import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from ".
 import { Pagination } from "../../components/ui/Pagination";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 
+// Define the expected structure for an item within this component scope for clarity
+interface Item {
+    id: string;
+    name: string;
+    code: string;
+    // Add other fields if needed by other parts of the component
+}
+
 function ItemList() {
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -219,7 +227,7 @@ function ItemList() {
                                                 <Button
                                                     variant="danger"
                                                     size="sm"
-                                                    onClick={() => handleDelete(item.id)}
+                                                    onClick={() => handleDelete(item)}
                                                     disabled={deleteItemMutation.isPending && deleteItemMutation.variables === item.id}
                                                 >
                                                     {deleteItemMutation.isPending && deleteItemMutation.variables === item.id ? (
@@ -249,14 +257,15 @@ function ItemList() {
         </Card>
     );
 
-    async function handleDelete(id: string) {
+    async function handleDelete(item: Item) {
         openConfirmDialog({
             title: "Konfirmasi Hapus",
-            message: "Apakah Anda yakin ingin menghapus item ini?",
+            message: `Apakah Anda yakin ingin menghapus item "${item.name}"?`,
             variant: "danger",
             confirmText: "Hapus",
             onConfirm: () => {
-                deleteItemMutation.mutate(id);
+                // Use item.id for the mutation
+                deleteItemMutation.mutate(item.id);
             }
         });
     }
