@@ -21,7 +21,7 @@ interface Item {
     stock: number;
 }
 
-const ItemList = () => {
+function ItemList() {
     const [items, setItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(true);
     const [tableLoading, setTableLoading] = useState(false);
@@ -45,7 +45,7 @@ const ItemList = () => {
     // Efek untuk mengambil data saat parameter berubah
     useEffect(() => {
         fetchItems(currentPage, debouncedSearch, itemsPerPage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPage, debouncedSearch, itemsPerPage]);
 
     const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
@@ -165,8 +165,7 @@ const ItemList = () => {
                     placeholder="Cari item..."
                     className="w-full p-3 border rounded-md pl-10"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
+                    onChange={(e) => setSearch(e.target.value)} />
                 <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
             </div>
 
@@ -176,7 +175,7 @@ const ItemList = () => {
                 <>
                     {tableLoading ? (
                         <div>
-                            <Loading/>
+                            <Loading />
                         </div>
                     ) : (
                         <Table>
@@ -248,15 +247,14 @@ const ItemList = () => {
                             </TableBody>
                         </Table>
                     )}
-                    <Pagination 
+                    <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
                         totalItems={totalItems}
                         itemsPerPage={itemsPerPage}
                         itemsCount={items.length}
                         onPageChange={handlePageChange}
-                        onItemsPerPageChange={handleItemsPerPageChange}
-                    />
+                        onItemsPerPageChange={handleItemsPerPageChange} />
                 </>
             )}
         </Card>
@@ -286,6 +284,6 @@ const ItemList = () => {
             }
         });
     }
-};
+}
 
 export default ItemList;
