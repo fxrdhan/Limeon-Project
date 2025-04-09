@@ -53,18 +53,6 @@ const CategoryList = () => {
         },
     });
 
-    const handleDelete = async (id: string) => {
-        openConfirmDialog({
-            title: "Konfirmasi Hapus",
-            message: "Apakah Anda yakin ingin menghapus kategori item ini?",
-            variant: "danger",
-            confirmText: "Hapus",
-            onConfirm: () => {
-                deleteCategoryMutation.mutate(id);
-            }
-        });
-    };
-
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
@@ -112,7 +100,7 @@ const CategoryList = () => {
                                             <Button
                                                 variant="danger"
                                                 size="sm"
-                                                onClick={() => handleDelete(category.id)}
+                                                onClick={() => handleDelete(category)}
                                                 disabled={deleteCategoryMutation.isPending && deleteCategoryMutation.variables === category.id}
                                             >
                                                 <FaTrash />
@@ -127,6 +115,18 @@ const CategoryList = () => {
             )}
         </Card>
     );
+    
+    async function handleDelete(category: Category) {
+        openConfirmDialog({
+            title: "Konfirmasi Hapus",
+            message: `Apakah Anda yakin ingin menghapus kategori item "${category.name}"?`,
+            variant: "danger",
+            confirmText: "Hapus",
+            onConfirm: () => {
+                deleteCategoryMutation.mutate(category.id);
+            }
+        });
+    };
 };
 
 export default CategoryList;
