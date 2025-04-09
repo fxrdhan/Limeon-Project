@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/Button";
 import { Loading } from "../../components/ui/Loading";
 import ImageCard from "../../components/ui/ImageCard";
 import AddItemCard from "../../components/ui/AddItemCard";
+import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 
 interface Unit {
     id: string;
@@ -18,6 +19,7 @@ interface Unit {
 const UnitList = () => {
     const [units, setUnits] = useState<Unit[]>([]);
     const [loading, setLoading] = useState(true);
+    const { openConfirmDialog } = useConfirmDialog();
 
     useEffect(() => {
         fetchUnits();
@@ -43,21 +45,27 @@ const UnitList = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm("Apakah Anda yakin ingin menghapus satuan item ini?")) {
-            try {
-                const { error } = await supabase
-                    .from("item_units")
-                    .delete()
-                    .eq("id", id);
-                
-                if (error) throw error;
-                
-                fetchUnits(); // Refresh data after deletion
-            } catch (error) {
-                console.error("Error deleting unit:", error);
-                alert("Gagal menghapus satuan item. Silakan coba lagi.");
+        openConfirmDialog({
+            title: "Konfirmasi Hapus",
+            message: `Apakah Anda yakin ingin menghapus satuan item ini? Data yang terhubung mungkin akan terpengaruh.`,
+            variant: 'danger',
+            confirmText: "Hapus",
+            onConfirm: async () => {
+                try {
+                    const { error } = await supabase
+                        .from("item_units")
+                        .delete()
+                        .eq("id", id);
+
+                    if (error) throw error;
+
+                    fetchUnits(); // Refresh data after deletion
+                } catch (error) {
+                    console.error("Error deleting unit:", error);
+                    alert("Gagal menghapus satuan item. Silakan coba lagi.");
+                }
             }
-        }
+        });
     };
 
     return (

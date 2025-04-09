@@ -6,6 +6,7 @@ import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Loading } from "../../components/ui/Loading";
+import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 
 interface ItemType {
     id: string;
@@ -16,6 +17,7 @@ interface ItemType {
 const TypeList = () => {
     const [types, setTypes] = useState<ItemType[]>([]);
     const [loading, setLoading] = useState(true);
+    const { openConfirmDialog } = useConfirmDialog();
 
     useEffect(() => {
         fetchTypes();
@@ -106,21 +108,25 @@ const TypeList = () => {
     );
     
     async function handleDelete(id: string) {
-        if (window.confirm("Apakah Anda yakin ingin menghapus jenis item ini?")) {
-            try {
-                const { error } = await supabase
-                    .from("item_types")
-                    .delete()
-                    .eq("id", id);
-                
-                if (error) throw error;
-                
-                fetchTypes(); // Refresh data after deletion
-            } catch (error) {
-                console.error("Error deleting item type:", error);
-                alert("Gagal menghapus jenis item. Silakan coba lagi.");
+        openConfirmDialog({
+            title: "Konfirmasi Hapus",
+            message: `Apakah Anda yakin ingin menghapus jenis item ini? Data yang terhubung mungkin akan terpengaruh.`,
+            variant: 'danger',
+            confirmText: "Hapus",
+            onConfirm: async () => {
+                try {
+                    const { error } = await supabase
+                        .from("item_types")
+                        .delete()
+                        .eq("id", id);
+                    if (error) throw error;
+                    fetchTypes(); // Refresh data after deletion
+                } catch (error) {
+                    console.error("Error deleting item type:", error);
+                    alert("Gagal menghapus jenis item. Silakan coba lagi.");
+                }
             }
-        }
+        });
     }
 };
 

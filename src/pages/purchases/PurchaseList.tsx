@@ -9,6 +9,7 @@ import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from ".
 import { Pagination } from "../../components/ui/Pagination";
 import { Loading } from "../../components/ui/Loading";
 import { Badge } from "../../components/ui/Badge";
+import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 
 interface Purchase {
     id: string;
@@ -28,6 +29,7 @@ const PurchaseList = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const queryClient = useQueryClient();
+    const { openConfirmDialog } = useConfirmDialog();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -161,9 +163,15 @@ const PurchaseList = () => {
     };
 
     const handleDelete = (purchase: Purchase) => {
-        if (window.confirm("Apakah Anda yakin ingin menghapus pembelian ini?")) {
-            deletePurchaseMutation.mutate(purchase.id);
-        }
+        openConfirmDialog({
+            title: "Konfirmasi Hapus",
+            message: `Apakah Anda yakin ingin menghapus pembelian dengan nomor faktur "${purchase.invoice_number}"? Tindakan ini juga akan mengembalikan stok item yang terkait.`,
+            variant: 'danger',
+            confirmText: 'Hapus',
+            onConfirm: () => {
+                deletePurchaseMutation.mutate(purchase.id);
+            }
+        });
     };
 
     const getStatusBadgeVariant = (status: string) => {

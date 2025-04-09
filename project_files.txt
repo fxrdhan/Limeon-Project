@@ -5920,125 +5920,131 @@
      6	import { Button } from "../../components/ui/Button";
      7	import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
      8	import { Loading } from "../../components/ui/Loading";
-     9	
-    10	interface ItemType {
-    11	    id: string;
-    12	    name: string;
-    13	    description: string;
-    14	}
-    15	
-    16	const TypeList = () => {
-    17	    const [types, setTypes] = useState<ItemType[]>([]);
-    18	    const [loading, setLoading] = useState(true);
-    19	
-    20	    useEffect(() => {
-    21	        fetchTypes();
-    22	    }, []);
-    23	
-    24	    const fetchTypes = async () => {
-    25	        try {
-    26	            setLoading(true);
-    27	            
-    28	            const { data, error } = await supabase
-    29	                .from("item_types")
-    30	                .select("*")
-    31	                .order("name");
-    32	                
-    33	            if (error) throw error;
-    34	            
-    35	            setTypes(data || []);
-    36	        } catch (error) {
-    37	            console.error("Error fetching item types:", error);
-    38	        } finally {
-    39	            setLoading(false);
-    40	        }
-    41	    };
-    42	
-    43	    return (
-    44	        <Card>
-    45	            <div className="flex justify-between items-center mb-6">
-    46	                <h1 className="text-2xl font-bold text-gray-800">Daftar Jenis Item</h1>
-    47	                
-    48	                <Link
-    49	                    to="/master-data/types/add"
-    50	                >
-    51	                    <Button variant="primary">
-    52	                        <FaPlus className="mr-2" />
-    53	                        Tambah Jenis Item Baru
-    54	                    </Button>
-    55	                </Link>
-    56	            </div>
-    57	            
-    58	            {loading ? (
-    59	                <Loading />
-    60	            ) : (
-    61	                <Table>
-    62	                    <TableHead>
-    63	                        <TableRow>
-    64	                            <TableHeader>Nama Jenis</TableHeader>
-    65	                            <TableHeader>Deskripsi</TableHeader>
-    66	                            <TableHeader className="text-center">Aksi</TableHeader>
-    67	                        </TableRow>
-    68	                    </TableHead>
-    69	                    <TableBody>
-    70	                            {types.length === 0 ? (
-    71	                                <TableRow>
-    72	                                    <TableCell colSpan={3} className="text-center text-gray-500">
-    73	                                        Tidak ada data jenis item yang ditemukan
-    74	                                    </TableCell>
-    75	                                </TableRow>
-    76	                            ) : (
-    77	                                types.map((type) => (
-    78	                                    <TableRow key={type.id}>
-    79	                                        <TableCell>{type.name}</TableCell>
-    80	                                        <TableCell>{type.description}</TableCell>
-    81	                                        <TableCell className="text-center">
-    82	                                            <div className="flex justify-center space-x-2">
-    83	                                                <Link
-    84	                                                    to={`/master-data/types/edit/${type.id}`}
-    85	                                                >
-    86	                                                    <Button variant="secondary" size="sm">
-    87	                                                        <FaEdit />
-    88	                                                    </Button>
-    89	                                                </Link>
-    90	                                                <Button 
-    91	                                                    variant="danger"
-    92	                                                    size="sm"
-    93	                                                    onClick={() => handleDelete(type.id)}
-    94	                                                >
-    95	                                                    <FaTrash />
-    96	                                                </Button>
-    97	                                            </div>
-    98	                                        </TableCell>
-    99	                                    </TableRow>
-   100	                                ))
-   101	                            )}
-   102	                    </TableBody>
-   103	                </Table>
-   104	            )}
-   105	        </Card>
-   106	    );
-   107	    
-   108	    async function handleDelete(id: string) {
-   109	        if (window.confirm("Apakah Anda yakin ingin menghapus jenis item ini?")) {
-   110	            try {
-   111	                const { error } = await supabase
-   112	                    .from("item_types")
-   113	                    .delete()
-   114	                    .eq("id", id);
-   115	                
-   116	                if (error) throw error;
-   117	                
-   118	                fetchTypes(); // Refresh data after deletion
-   119	            } catch (error) {
-   120	                console.error("Error deleting item type:", error);
-   121	                alert("Gagal menghapus jenis item. Silakan coba lagi.");
-   122	            }
-   123	        }
-   124	    }
-   125	};
-   126	
-   127	export default TypeList;
+     9	import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+    10	
+    11	interface ItemType {
+    12	    id: string;
+    13	    name: string;
+    14	    description: string;
+    15	}
+    16	
+    17	const TypeList = () => {
+    18	    const [types, setTypes] = useState<ItemType[]>([]);
+    19	    const [loading, setLoading] = useState(true);
+    20	    const { openConfirmDialog } = useConfirmDialog();
+    21	
+    22	    useEffect(() => {
+    23	        fetchTypes();
+    24	    }, []);
+    25	
+    26	    const fetchTypes = async () => {
+    27	        try {
+    28	            setLoading(true);
+    29	            
+    30	            const { data, error } = await supabase
+    31	                .from("item_types")
+    32	                .select("*")
+    33	                .order("name");
+    34	                
+    35	            if (error) throw error;
+    36	            
+    37	            setTypes(data || []);
+    38	        } catch (error) {
+    39	            console.error("Error fetching item types:", error);
+    40	        } finally {
+    41	            setLoading(false);
+    42	        }
+    43	    };
+    44	
+    45	    return (
+    46	        <Card>
+    47	            <div className="flex justify-between items-center mb-6">
+    48	                <h1 className="text-2xl font-bold text-gray-800">Daftar Jenis Item</h1>
+    49	                
+    50	                <Link
+    51	                    to="/master-data/types/add"
+    52	                >
+    53	                    <Button variant="primary">
+    54	                        <FaPlus className="mr-2" />
+    55	                        Tambah Jenis Item Baru
+    56	                    </Button>
+    57	                </Link>
+    58	            </div>
+    59	            
+    60	            {loading ? (
+    61	                <Loading />
+    62	            ) : (
+    63	                <Table>
+    64	                    <TableHead>
+    65	                        <TableRow>
+    66	                            <TableHeader>Nama Jenis</TableHeader>
+    67	                            <TableHeader>Deskripsi</TableHeader>
+    68	                            <TableHeader className="text-center">Aksi</TableHeader>
+    69	                        </TableRow>
+    70	                    </TableHead>
+    71	                    <TableBody>
+    72	                            {types.length === 0 ? (
+    73	                                <TableRow>
+    74	                                    <TableCell colSpan={3} className="text-center text-gray-500">
+    75	                                        Tidak ada data jenis item yang ditemukan
+    76	                                    </TableCell>
+    77	                                </TableRow>
+    78	                            ) : (
+    79	                                types.map((type) => (
+    80	                                    <TableRow key={type.id}>
+    81	                                        <TableCell>{type.name}</TableCell>
+    82	                                        <TableCell>{type.description}</TableCell>
+    83	                                        <TableCell className="text-center">
+    84	                                            <div className="flex justify-center space-x-2">
+    85	                                                <Link
+    86	                                                    to={`/master-data/types/edit/${type.id}`}
+    87	                                                >
+    88	                                                    <Button variant="secondary" size="sm">
+    89	                                                        <FaEdit />
+    90	                                                    </Button>
+    91	                                                </Link>
+    92	                                                <Button 
+    93	                                                    variant="danger"
+    94	                                                    size="sm"
+    95	                                                    onClick={() => handleDelete(type.id)}
+    96	                                                >
+    97	                                                    <FaTrash />
+    98	                                                </Button>
+    99	                                            </div>
+   100	                                        </TableCell>
+   101	                                    </TableRow>
+   102	                                ))
+   103	                            )}
+   104	                    </TableBody>
+   105	                </Table>
+   106	            )}
+   107	        </Card>
+   108	    );
+   109	    
+   110	    async function handleDelete(id: string) {
+   111	        openConfirmDialog({
+   112	            title: "Konfirmasi Hapus",
+   113	            message: `Apakah Anda yakin ingin menghapus jenis item ini? Data yang terhubung mungkin akan terpengaruh.`,
+   114	            variant: 'danger',
+   115	            confirmText: "Hapus",
+   116	            onConfirm: async () => {
+   117	                try {
+   118	                    const { error } = await supabase
+   119	                        .from("item_types")
+   120	                        .delete()
+   121	                        .eq("id", id);
+   122	                    if (error) throw error;
+   123	                    fetchTypes(); // Refresh data after deletion
+   124	                } catch (error) {
+   125	                    console.error("Error deleting item type:", error);
+   126	                    alert("Gagal menghapus jenis item. Silakan coba lagi.");
+   127	                }
+   128	            }
+   129	        });
+   130	    }
+   131	};
+   132	
+   133	export default TypeList;
 
 
 ===============================================
@@ -6055,113 +6061,121 @@
      8	import { Loading } from "../../components/ui/Loading";
      9	import ImageCard from "../../components/ui/ImageCard";
     10	import AddItemCard from "../../components/ui/AddItemCard";
-    11	
-    12	interface Unit {
-    13	    id: string;
-    14	    name: string;
-    15	    description: string;
-    16	}
-    17	
-    18	const UnitList = () => {
-    19	    const [units, setUnits] = useState<Unit[]>([]);
-    20	    const [loading, setLoading] = useState(true);
-    21	
-    22	    useEffect(() => {
-    23	        fetchUnits();
-    24	    }, []);
-    25	
-    26	    const fetchUnits = async () => {
-    27	        try {
-    28	            setLoading(true);
-    29	            
-    30	            const { data, error } = await supabase
-    31	                .from("item_units")
-    32	                .select("*")
-    33	                .order("name");
-    34	                
-    35	            if (error) throw error;
-    36	            
-    37	            setUnits(data || []);
-    38	        } catch (error) {
-    39	            console.error("Error fetching units:", error);
-    40	        } finally {
-    41	            setLoading(false);
-    42	        }
-    43	    };
-    44	
-    45	    const handleDelete = async (id: string) => {
-    46	        if (window.confirm("Apakah Anda yakin ingin menghapus satuan item ini?")) {
-    47	            try {
-    48	                const { error } = await supabase
-    49	                    .from("item_units")
-    50	                    .delete()
-    51	                    .eq("id", id);
-    52	                
-    53	                if (error) throw error;
-    54	                
-    55	                fetchUnits(); // Refresh data after deletion
-    56	            } catch (error) {
-    57	                console.error("Error deleting unit:", error);
-    58	                alert("Gagal menghapus satuan item. Silakan coba lagi.");
-    59	            }
-    60	        }
-    61	    };
-    62	
-    63	    return (
-    64	        <Card>
-    65	            <div className="mb-6">
-    66	                <h1 className="text-2xl font-bold text-gray-800 mb-4">Daftar Satuan Item</h1>
-    67	            </div>            
-    68	
-    69	            {loading ? (
-    70	                <Loading />
-    71	            ) : (
-    72	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-    73	                    {/* Unit Cards */}
-    74	                    {units.length === 0 ? (
-    75	                        <div className="text-center text-gray-500 col-span-full">
-    76	                            Tidak ada data satuan yang ditemukan
-    77	                        </div>
-    78	                    ) : (
-    79	                        units.map((unit) => (
-    80	                            <div key={unit.id} className="relative group">
-    81	                                <ImageCard
-    82	                                    id={unit.id}
-    83	                                    title={unit.name}
-    84	                                    subtitle={unit.description || 'Tidak ada deskripsi'}
-    85	                                    fallbackImage={`https://picsum.photos/seed/${unit.id}/400/300`}
-    86	                                    onClick={() => {}} // Bisa digunakan untuk modal edit
-    87	                                />
-    88	                                {/* Overlay untuk tombol aksi */}
-    89	                                <div className="absolute bottom-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-    90	                                    <Link
-    91	                                        to={`/master-data/units/edit/${unit.id}`}
-    92	                                    >
-    93	                                        <Button variant="secondary" size="sm">
-    94	                                            <FaEdit />
-    95	                                        </Button>
-    96	                                    </Link>
-    97	                                    <Button 
-    98	                                        variant="danger"
-    99	                                        size="sm"
-   100	                                        onClick={() => handleDelete(unit.id)}
-   101	                                    >
-   102	                                        <FaTrash />
-   103	                                    </Button>
-   104	                                </div>
-   105	                            </div>
-   106	                        ))
-   107	                    )}
-   108	
-   109	                    {/* Add New Unit Card */}
-   110	                    <AddItemCard label="Tambah Satuan Baru" to="/master-data/units/add" />
-   111	                </div>
-   112	            )}
-   113	        </Card>
-   114	    );
-   115	};
+    11	import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+    12	
+    13	interface Unit {
+    14	    id: string;
+    15	    name: string;
+    16	    description: string;
+    17	}
+    18	
+    19	const UnitList = () => {
+    20	    const [units, setUnits] = useState<Unit[]>([]);
+    21	    const [loading, setLoading] = useState(true);
+    22	    const { openConfirmDialog } = useConfirmDialog();
+    23	
+    24	    useEffect(() => {
+    25	        fetchUnits();
+    26	    }, []);
+    27	
+    28	    const fetchUnits = async () => {
+    29	        try {
+    30	            setLoading(true);
+    31	            
+    32	            const { data, error } = await supabase
+    33	                .from("item_units")
+    34	                .select("*")
+    35	                .order("name");
+    36	                
+    37	            if (error) throw error;
+    38	            
+    39	            setUnits(data || []);
+    40	        } catch (error) {
+    41	            console.error("Error fetching units:", error);
+    42	        } finally {
+    43	            setLoading(false);
+    44	        }
+    45	    };
+    46	
+    47	    const handleDelete = async (id: string) => {
+    48	        openConfirmDialog({
+    49	            title: "Konfirmasi Hapus",
+    50	            message: `Apakah Anda yakin ingin menghapus satuan item ini? Data yang terhubung mungkin akan terpengaruh.`,
+    51	            variant: 'danger',
+    52	            confirmText: "Hapus",
+    53	            onConfirm: async () => {
+    54	                try {
+    55	                    const { error } = await supabase
+    56	                        .from("item_units")
+    57	                        .delete()
+    58	                        .eq("id", id);
+    59	
+    60	                    if (error) throw error;
+    61	
+    62	                    fetchUnits(); // Refresh data after deletion
+    63	                } catch (error) {
+    64	                    console.error("Error deleting unit:", error);
+    65	                    alert("Gagal menghapus satuan item. Silakan coba lagi.");
+    66	                }
+    67	            }
+    68	        });
+    69	    };
+    70	
+    71	    return (
+    72	        <Card>
+    73	            <div className="mb-6">
+    74	                <h1 className="text-2xl font-bold text-gray-800 mb-4">Daftar Satuan Item</h1>
+    75	            </div>            
+    76	
+    77	            {loading ? (
+    78	                <Loading />
+    79	            ) : (
+    80	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    81	                    {/* Unit Cards */}
+    82	                    {units.length === 0 ? (
+    83	                        <div className="text-center text-gray-500 col-span-full">
+    84	                            Tidak ada data satuan yang ditemukan
+    85	                        </div>
+    86	                    ) : (
+    87	                        units.map((unit) => (
+    88	                            <div key={unit.id} className="relative group">
+    89	                                <ImageCard
+    90	                                    id={unit.id}
+    91	                                    title={unit.name}
+    92	                                    subtitle={unit.description || 'Tidak ada deskripsi'}
+    93	                                    fallbackImage={`https://picsum.photos/seed/${unit.id}/400/300`}
+    94	                                    onClick={() => {}} // Bisa digunakan untuk modal edit
+    95	                                />
+    96	                                {/* Overlay untuk tombol aksi */}
+    97	                                <div className="absolute bottom-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+    98	                                    <Link
+    99	                                        to={`/master-data/units/edit/${unit.id}`}
+   100	                                    >
+   101	                                        <Button variant="secondary" size="sm">
+   102	                                            <FaEdit />
+   103	                                        </Button>
+   104	                                    </Link>
+   105	                                    <Button 
+   106	                                        variant="danger"
+   107	                                        size="sm"
+   108	                                        onClick={() => handleDelete(unit.id)}
+   109	                                    >
+   110	                                        <FaTrash />
+   111	                                    </Button>
+   112	                                </div>
+   113	                            </div>
+   114	                        ))
+   115	                    )}
    116	
-   117	export default UnitList;
+   117	                    {/* Add New Unit Card */}
+   118	                    <AddItemCard label="Tambah Satuan Baru" to="/master-data/units/add" />
+   119	                </div>
+   120	            )}
+   121	        </Card>
+   122	    );
+   123	};
+   124	
+   125	export default UnitList;
 
 
 ===============================================
@@ -6578,334 +6592,342 @@
      9	import { Pagination } from "../../components/ui/Pagination";
     10	import { Loading } from "../../components/ui/Loading";
     11	import { Badge } from "../../components/ui/Badge";
-    12	
-    13	interface Purchase {
-    14	    id: string;
-    15	    invoice_number: string;
-    16	    date: string;
-    17	    total: number;
-    18	    payment_status: string;
-    19	    payment_method: string;
-    20	    supplier: {
-    21	        name: string;
-    22	    };
-    23	}
-    24	
-    25	const PurchaseList = () => {
-    26	    const [search, setSearch] = useState("");
-    27	    const [debouncedSearch, setDebouncedSearch] = useState("");
-    28	    const [currentPage, setCurrentPage] = useState(1);
-    29	    const [itemsPerPage, setItemsPerPage] = useState(10);
-    30	    const queryClient = useQueryClient();
-    31	
-    32	    useEffect(() => {
-    33	        const timer = setTimeout(() => {
-    34	            setDebouncedSearch(search);
-    35	            setCurrentPage(1);
-    36	        }, 500);
-    37	
-    38	        return () => clearTimeout(timer);
-    39	    }, [search]);
-    40	
-    41	    const fetchPurchases = async (page: number, searchTerm: string, limit: number) => {
-    42	        try {
-    43	            let query = supabase
-    44	                .from("purchases")
-    45	                .select(`
-    46	                    id,
-    47	                    invoice_number,
-    48	                    date,
-    49	                    total,
-    50	                    payment_status,
-    51	                    payment_method,
-    52	                    supplier_id,
-    53	                    supplier:suppliers(name)
-    54	                `);
-    55	
-    56	            if (searchTerm) {
-    57	                query = query.or(`invoice_number.ilike.%${searchTerm}%,suppliers.name.ilike.%${searchTerm}%`);
-    58	            }
-    59	
-    60	            const countQuery = supabase
-    61	                .from("purchases")
-    62	                .select('id', { count: 'exact' });
-    63	
-    64	            if (searchTerm) {
-    65	                countQuery.or(`invoice_number.ilike.%${searchTerm}%,suppliers.name.ilike.%${searchTerm}%`);
-    66	            }
-    67	
-    68	            const { count, error: countError } = await countQuery;
-    69	            if (countError) throw countError;
-    70	
-    71	            const from = (page - 1) * limit;
-    72	            const to = from + limit - 1;
-    73	
-    74	            const { data, error } = await query
-    75	                .order('date', { ascending: false })
-    76	                .range(from, to);
-    77	
-    78	            if (error) throw error;
+    12	import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+    13	
+    14	interface Purchase {
+    15	    id: string;
+    16	    invoice_number: string;
+    17	    date: string;
+    18	    total: number;
+    19	    payment_status: string;
+    20	    payment_method: string;
+    21	    supplier: {
+    22	        name: string;
+    23	    };
+    24	}
+    25	
+    26	const PurchaseList = () => {
+    27	    const [search, setSearch] = useState("");
+    28	    const [debouncedSearch, setDebouncedSearch] = useState("");
+    29	    const [currentPage, setCurrentPage] = useState(1);
+    30	    const [itemsPerPage, setItemsPerPage] = useState(10);
+    31	    const queryClient = useQueryClient();
+    32	    const { openConfirmDialog } = useConfirmDialog();
+    33	
+    34	    useEffect(() => {
+    35	        const timer = setTimeout(() => {
+    36	            setDebouncedSearch(search);
+    37	            setCurrentPage(1);
+    38	        }, 500);
+    39	
+    40	        return () => clearTimeout(timer);
+    41	    }, [search]);
+    42	
+    43	    const fetchPurchases = async (page: number, searchTerm: string, limit: number) => {
+    44	        try {
+    45	            let query = supabase
+    46	                .from("purchases")
+    47	                .select(`
+    48	                    id,
+    49	                    invoice_number,
+    50	                    date,
+    51	                    total,
+    52	                    payment_status,
+    53	                    payment_method,
+    54	                    supplier_id,
+    55	                    supplier:suppliers(name)
+    56	                `);
+    57	
+    58	            if (searchTerm) {
+    59	                query = query.or(`invoice_number.ilike.%${searchTerm}%,suppliers.name.ilike.%${searchTerm}%`);
+    60	            }
+    61	
+    62	            const countQuery = supabase
+    63	                .from("purchases")
+    64	                .select('id', { count: 'exact' });
+    65	
+    66	            if (searchTerm) {
+    67	                countQuery.or(`invoice_number.ilike.%${searchTerm}%,suppliers.name.ilike.%${searchTerm}%`);
+    68	            }
+    69	
+    70	            const { count, error: countError } = await countQuery;
+    71	            if (countError) throw countError;
+    72	
+    73	            const from = (page - 1) * limit;
+    74	            const to = from + limit - 1;
+    75	
+    76	            const { data, error } = await query
+    77	                .order('date', { ascending: false })
+    78	                .range(from, to);
     79	
-    80	            const transformedData = data?.map(item => ({
-    81	                ...item,
-    82	                supplier: Array.isArray(item.supplier) ? item.supplier[0] : item.supplier
-    83	            })) || [];
-    84	            return { purchases: transformedData, totalItems: count || 0 };
-    85	        } catch (error) {
-    86	            console.error("Error fetching purchases:", error);
-    87	            throw error;
-    88	        }
-    89	    };
-    90	
-    91	    const { data, isLoading, isFetching } = useQuery({
-    92	        queryKey: ['purchases', currentPage, debouncedSearch, itemsPerPage],
-    93	        queryFn: () => fetchPurchases(currentPage, debouncedSearch, itemsPerPage),
-    94	        placeholderData: keepPreviousData,
-    95	        staleTime: 30 * 1000,
-    96	        refetchOnMount: true,
-    97	    });
-    98	
-    99	    const purchases = data?.purchases || [];
-   100	    const totalItems = data?.totalItems || 0;
-   101	
-   102	    const deletePurchaseMutation = useMutation({
-   103	        mutationFn: async (id: string) => {
-   104	            const { data: purchaseItems, error: itemsError } = await supabase
-   105	                .from("purchase_items")
-   106	                .select("item_id, quantity, unit")
-   107	                .eq("purchase_id", id);
-   108	
-   109	            if (itemsError) throw itemsError;
+    80	            if (error) throw error;
+    81	
+    82	            const transformedData = data?.map(item => ({
+    83	                ...item,
+    84	                supplier: Array.isArray(item.supplier) ? item.supplier[0] : item.supplier
+    85	            })) || [];
+    86	            return { purchases: transformedData, totalItems: count || 0 };
+    87	        } catch (error) {
+    88	            console.error("Error fetching purchases:", error);
+    89	            throw error;
+    90	        }
+    91	    };
+    92	
+    93	    const { data, isLoading, isFetching } = useQuery({
+    94	        queryKey: ['purchases', currentPage, debouncedSearch, itemsPerPage],
+    95	        queryFn: () => fetchPurchases(currentPage, debouncedSearch, itemsPerPage),
+    96	        placeholderData: keepPreviousData,
+    97	        staleTime: 30 * 1000,
+    98	        refetchOnMount: true,
+    99	    });
+   100	
+   101	    const purchases = data?.purchases || [];
+   102	    const totalItems = data?.totalItems || 0;
+   103	
+   104	    const deletePurchaseMutation = useMutation({
+   105	        mutationFn: async (id: string) => {
+   106	            const { data: purchaseItems, error: itemsError } = await supabase
+   107	                .from("purchase_items")
+   108	                .select("item_id, quantity, unit")
+   109	                .eq("purchase_id", id);
    110	
-   111	            for (const item of purchaseItems || []) {
-   112	                const { data: itemData } = await supabase
-   113	                    .from('items')
-   114	                    .select('stock, base_unit, unit_conversions')
-   115	                    .eq('id', item.item_id)
-   116	                    .single();
-   117	
-   118	                if (itemData) {
-   119	                    let quantityInBaseUnit = item.quantity;
-   120	
-   121	                    if (item.unit !== itemData.base_unit) {
-   122	                        const unitConversion = itemData.unit_conversions.find(
-   123	                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   124	                            (uc: { unit_name: any; }) => uc.unit_name === item.unit
-   125	                        );
-   126	
-   127	                        if (unitConversion) {
-   128	                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
-   129	                        }
-   130	                    }
-   131	
-   132	                    const newStock = Math.max(0, (itemData.stock || 0) - quantityInBaseUnit);
-   133	                    await supabase
-   134	                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
-   135	                }
-   136	            }
-   137	
-   138	            const { error } = await supabase
-   139	                .from("purchases")
-   140	                .delete()
-   141	                .eq("id", id);
-   142	
-   143	            if (error) throw error;
-   144	        },
-   145	        onSuccess: () => {
-   146	            queryClient.invalidateQueries({ queryKey: ['purchases'] });
-   147	        },
-   148	        onError: (error) => {
-   149	            console.error("Error deleting purchase:", error);
-   150	            alert(`Gagal menghapus pembelian: ${error.message}`);
-   151	        },
-   152	    });
-   153	
-   154	    const handlePageChange = (newPage: number) => {
-   155	        setCurrentPage(newPage);
-   156	    };
-   157	
-   158	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-   159	        setItemsPerPage(Number(e.target.value));
-   160	        setCurrentPage(1);
-   161	    };
-   162	
-   163	    const handleDelete = (purchase: Purchase) => {
-   164	        if (window.confirm("Apakah Anda yakin ingin menghapus pembelian ini?")) {
-   165	            deletePurchaseMutation.mutate(purchase.id);
-   166	        }
-   167	    };
-   168	
-   169	    const getStatusBadgeVariant = (status: string) => {
-   170	        switch (status) {
-   171	            case 'paid':
-   172	                return 'success';
-   173	            case 'partial':
-   174	                return 'warning';
-   175	            case 'unpaid':
-   176	                return 'danger';
-   177	            default:
-   178	                return 'secondary';
-   179	        }
-   180	    };
-   181	
-   182	    const getStatusLabel = (status: string) => {
-   183	        switch (status) {
-   184	            case 'paid':
-   185	                return 'Lunas';
-   186	            case 'partial':
-   187	                return 'Sebagian';
-   188	            case 'unpaid':
-   189	                return 'Belum Bayar';
-   190	            default:
-   191	                return status;
-   192	        }
-   193	    };
-   194	
-   195	    const getPaymentMethodLabel = (method: string) => {
-   196	        switch (method) {
-   197	            case 'cash':
-   198	                return 'Tunai';
-   199	            case 'transfer':
-   200	                return 'Transfer';
-   201	            case 'credit':
-   202	                return 'Kredit';
-   203	            default:
-   204	                return method;
-   205	        }
-   206	    };
-   207	
-   208	    const totalPages = Math.ceil(totalItems / itemsPerPage);
-   209	
-   210	    return (
-   211	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
-   212	            <div className="flex justify-between items-center mb-6">
-   213	                <h1 className="text-2xl font-bold text-gray-800">Daftar Pembelian</h1>
-   214	
-   215	                <div className="flex space-x-2">
-   216	                    <Link to="/purchases/upload-invoice">
-   217	                        <Button variant="secondary">
-   218	                            <FaFileUpload className="mr-2" />
-   219	                            Upload Faktur
-   220	                        </Button>
-   221	                    </Link>
-   222	                    
-   223	                    <Link to="/purchases/create">
-   224	                        <Button variant="primary">
-   225	                            <FaPlus className="mr-2" />
-   226	                            Tambah Pembelian Baru
-   227	                        </Button>
-   228	                    </Link>
-   229	                </div>
-   230	            </div>
-   231	
-   232	            <div className="mb-4 relative">
-   233	                <input
-   234	                    type="text"
-   235	                    placeholder="Cari nomor faktur atau supplier..."
-   236	                    className="w-full p-3 border rounded-md pl-10"
-   237	                    value={search}
-   238	                    onChange={(e) => setSearch(e.target.value)}
-   239	                />
-   240	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-   241	            </div>
-   242	
-   243	            {isLoading ? (
-   244	                <Loading message="Memuat data pembelian..." />
-   245	            ) : (
-   246	                <> 
-   247	                    <Table>
-   248	                        <TableHead>
-   249	                            <TableRow>
-   250	                                <TableHeader>No. Faktur</TableHeader>
-   251	                                <TableHeader>Tanggal</TableHeader>
-   252	                                <TableHeader>Supplier</TableHeader>
-   253	                                <TableHeader className="text-right">Total</TableHeader>
-   254	                                <TableHeader className="text-center">Status Pembayaran</TableHeader>
-   255	                                <TableHeader className="text-center">Metode Pembayaran</TableHeader>
-   256	                                <TableHeader className="text-center">Aksi</TableHeader>
-   257	                            </TableRow>
-   258	                        </TableHead>
-   259	                        <TableBody>
-   260	                            {purchases.length === 0 ? (
-   261	                                <TableRow>
-   262	                                    <TableCell
-   263	                                        colSpan={7}
-   264	                                        className="text-center text-gray-600"
-   265	                                    >
-   266	                                        {debouncedSearch ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"` : "Tidak ada data pembelian yang ditemukan"}
-   267	                                    </TableCell>
-   268	                                </TableRow>
-   269	                            ) : (
-   270	                                purchases.map((purchase) => (
-   271	                                    <TableRow key={purchase.id}>
-   272	                                        <TableCell>{purchase.invoice_number}</TableCell>
-   273	                                        <TableCell>
-   274	                                            {new Date(purchase.date).toLocaleDateString('id-ID', {
-   275	                                                day: '2-digit',
-   276	                                                month: 'short',
-   277	                                                year: 'numeric'
-   278	                                            })}
-   279	                                        </TableCell>
-   280	                                        <TableCell>{purchase.supplier?.name || 'Tidak ada supplier'}</TableCell>
-   281	                                        <TableCell className="text-right">
-   282	                                            {purchase.total.toLocaleString('id-ID', {
-   283	                                                style: 'currency',
-   284	                                                currency: 'IDR'
-   285	                                            })}
-   286	                                        </TableCell>
-   287	                                        <TableCell className="text-center">
-   288	                                            <Badge variant={getStatusBadgeVariant(purchase.payment_status)}>
-   289	                                                {getStatusLabel(purchase.payment_status)}
-   290	                                            </Badge>
-   291	                                        </TableCell>
-   292	                                        <TableCell className="text-center">
-   293	                                            {getPaymentMethodLabel(purchase.payment_method)}
+   111	            if (itemsError) throw itemsError;
+   112	
+   113	            for (const item of purchaseItems || []) {
+   114	                const { data: itemData } = await supabase
+   115	                    .from('items')
+   116	                    .select('stock, base_unit, unit_conversions')
+   117	                    .eq('id', item.item_id)
+   118	                    .single();
+   119	
+   120	                if (itemData) {
+   121	                    let quantityInBaseUnit = item.quantity;
+   122	
+   123	                    if (item.unit !== itemData.base_unit) {
+   124	                        const unitConversion = itemData.unit_conversions.find(
+   125	                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   126	                            (uc: { unit_name: any; }) => uc.unit_name === item.unit
+   127	                        );
+   128	
+   129	                        if (unitConversion) {
+   130	                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
+   131	                        }
+   132	                    }
+   133	
+   134	                    const newStock = Math.max(0, (itemData.stock || 0) - quantityInBaseUnit);
+   135	                    await supabase
+   136	                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
+   137	                }
+   138	            }
+   139	
+   140	            const { error } = await supabase
+   141	                .from("purchases")
+   142	                .delete()
+   143	                .eq("id", id);
+   144	
+   145	            if (error) throw error;
+   146	        },
+   147	        onSuccess: () => {
+   148	            queryClient.invalidateQueries({ queryKey: ['purchases'] });
+   149	        },
+   150	        onError: (error) => {
+   151	            console.error("Error deleting purchase:", error);
+   152	            alert(`Gagal menghapus pembelian: ${error.message}`);
+   153	        },
+   154	    });
+   155	
+   156	    const handlePageChange = (newPage: number) => {
+   157	        setCurrentPage(newPage);
+   158	    };
+   159	
+   160	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+   161	        setItemsPerPage(Number(e.target.value));
+   162	        setCurrentPage(1);
+   163	    };
+   164	
+   165	    const handleDelete = (purchase: Purchase) => {
+   166	        openConfirmDialog({
+   167	            title: "Konfirmasi Hapus",
+   168	            message: `Apakah Anda yakin ingin menghapus pembelian dengan nomor faktur "${purchase.invoice_number}"? Tindakan ini juga akan mengembalikan stok item yang terkait.`,
+   169	            variant: 'danger',
+   170	            confirmText: 'Hapus',
+   171	            onConfirm: () => {
+   172	                deletePurchaseMutation.mutate(purchase.id);
+   173	            }
+   174	        });
+   175	    };
+   176	
+   177	    const getStatusBadgeVariant = (status: string) => {
+   178	        switch (status) {
+   179	            case 'paid':
+   180	                return 'success';
+   181	            case 'partial':
+   182	                return 'warning';
+   183	            case 'unpaid':
+   184	                return 'danger';
+   185	            default:
+   186	                return 'secondary';
+   187	        }
+   188	    };
+   189	
+   190	    const getStatusLabel = (status: string) => {
+   191	        switch (status) {
+   192	            case 'paid':
+   193	                return 'Lunas';
+   194	            case 'partial':
+   195	                return 'Sebagian';
+   196	            case 'unpaid':
+   197	                return 'Belum Bayar';
+   198	            default:
+   199	                return status;
+   200	        }
+   201	    };
+   202	
+   203	    const getPaymentMethodLabel = (method: string) => {
+   204	        switch (method) {
+   205	            case 'cash':
+   206	                return 'Tunai';
+   207	            case 'transfer':
+   208	                return 'Transfer';
+   209	            case 'credit':
+   210	                return 'Kredit';
+   211	            default:
+   212	                return method;
+   213	        }
+   214	    };
+   215	
+   216	    const totalPages = Math.ceil(totalItems / itemsPerPage);
+   217	
+   218	    return (
+   219	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+   220	            <div className="flex justify-between items-center mb-6">
+   221	                <h1 className="text-2xl font-bold text-gray-800">Daftar Pembelian</h1>
+   222	
+   223	                <div className="flex space-x-2">
+   224	                    <Link to="/purchases/upload-invoice">
+   225	                        <Button variant="secondary">
+   226	                            <FaFileUpload className="mr-2" />
+   227	                            Upload Faktur
+   228	                        </Button>
+   229	                    </Link>
+   230	                    
+   231	                    <Link to="/purchases/create">
+   232	                        <Button variant="primary">
+   233	                            <FaPlus className="mr-2" />
+   234	                            Tambah Pembelian Baru
+   235	                        </Button>
+   236	                    </Link>
+   237	                </div>
+   238	            </div>
+   239	
+   240	            <div className="mb-4 relative">
+   241	                <input
+   242	                    type="text"
+   243	                    placeholder="Cari nomor faktur atau supplier..."
+   244	                    className="w-full p-3 border rounded-md pl-10"
+   245	                    value={search}
+   246	                    onChange={(e) => setSearch(e.target.value)}
+   247	                />
+   248	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+   249	            </div>
+   250	
+   251	            {isLoading ? (
+   252	                <Loading message="Memuat data pembelian..." />
+   253	            ) : (
+   254	                <> 
+   255	                    <Table>
+   256	                        <TableHead>
+   257	                            <TableRow>
+   258	                                <TableHeader>No. Faktur</TableHeader>
+   259	                                <TableHeader>Tanggal</TableHeader>
+   260	                                <TableHeader>Supplier</TableHeader>
+   261	                                <TableHeader className="text-right">Total</TableHeader>
+   262	                                <TableHeader className="text-center">Status Pembayaran</TableHeader>
+   263	                                <TableHeader className="text-center">Metode Pembayaran</TableHeader>
+   264	                                <TableHeader className="text-center">Aksi</TableHeader>
+   265	                            </TableRow>
+   266	                        </TableHead>
+   267	                        <TableBody>
+   268	                            {purchases.length === 0 ? (
+   269	                                <TableRow>
+   270	                                    <TableCell
+   271	                                        colSpan={7}
+   272	                                        className="text-center text-gray-600"
+   273	                                    >
+   274	                                        {debouncedSearch ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"` : "Tidak ada data pembelian yang ditemukan"}
+   275	                                    </TableCell>
+   276	                                </TableRow>
+   277	                            ) : (
+   278	                                purchases.map((purchase) => (
+   279	                                    <TableRow key={purchase.id}>
+   280	                                        <TableCell>{purchase.invoice_number}</TableCell>
+   281	                                        <TableCell>
+   282	                                            {new Date(purchase.date).toLocaleDateString('id-ID', {
+   283	                                                day: '2-digit',
+   284	                                                month: 'short',
+   285	                                                year: 'numeric'
+   286	                                            })}
+   287	                                        </TableCell>
+   288	                                        <TableCell>{purchase.supplier?.name || 'Tidak ada supplier'}</TableCell>
+   289	                                        <TableCell className="text-right">
+   290	                                            {purchase.total.toLocaleString('id-ID', {
+   291	                                                style: 'currency',
+   292	                                                currency: 'IDR'
+   293	                                            })}
    294	                                        </TableCell>
    295	                                        <TableCell className="text-center">
-   296	                                            <div className="flex justify-center space-x-2">
-   297	                                                <Link to={`/purchases/view/${purchase.id}`}>
-   298	                                                    <Button variant="primary" size="sm">
-   299	                                                        <FaEye />
-   300	                                                    </Button>
-   301	                                                </Link>
-   302	                                                <Link to={`/purchases/edit/${purchase.id}`}>
-   303	                                                    <Button variant="secondary" size="sm">
-   304	                                                        <FaEdit />
-   305	                                                    </Button>
-   306	                                                </Link>
-   307	                                                <Button
-   308	                                                    variant="danger"
-   309	                                                    size="sm"
-   310	                                                    onClick={() => handleDelete(purchase)}
-   311	                                                    disabled={deletePurchaseMutation.isPending && deletePurchaseMutation.variables === purchase.id}
-   312	                                                >
-   313	                                                    {deletePurchaseMutation.isPending && deletePurchaseMutation.variables === purchase.id ?
-   314	                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span> : <FaTrash /> }
-   315	                                                </Button>
-   316	                                            </div>
-   317	                                        </TableCell>
-   318	                                    </TableRow>
-   319	                                ))
-   320	                            )}
-   321	                        </TableBody>
-   322	                    </Table>
-   323	
-   324	                    <Pagination
-   325	                        currentPage={currentPage}
-   326	                        totalPages={totalPages}
-   327	                        totalItems={totalItems}
-   328	                        itemsPerPage={itemsPerPage}
-   329	                        itemsCount={purchases.length}
-   330	                        onPageChange={handlePageChange}
-   331	                        onItemsPerPageChange={handleItemsPerPageChange}
-   332	                    />
-   333	                </>
-   334	            )}
-   335	        </Card>
-   336	    );
-   337	};
-   338	
-   339	export default PurchaseList;
+   296	                                            <Badge variant={getStatusBadgeVariant(purchase.payment_status)}>
+   297	                                                {getStatusLabel(purchase.payment_status)}
+   298	                                            </Badge>
+   299	                                        </TableCell>
+   300	                                        <TableCell className="text-center">
+   301	                                            {getPaymentMethodLabel(purchase.payment_method)}
+   302	                                        </TableCell>
+   303	                                        <TableCell className="text-center">
+   304	                                            <div className="flex justify-center space-x-2">
+   305	                                                <Link to={`/purchases/view/${purchase.id}`}>
+   306	                                                    <Button variant="primary" size="sm">
+   307	                                                        <FaEye />
+   308	                                                    </Button>
+   309	                                                </Link>
+   310	                                                <Link to={`/purchases/edit/${purchase.id}`}>
+   311	                                                    <Button variant="secondary" size="sm">
+   312	                                                        <FaEdit />
+   313	                                                    </Button>
+   314	                                                </Link>
+   315	                                                <Button
+   316	                                                    variant="danger"
+   317	                                                    size="sm"
+   318	                                                    onClick={() => handleDelete(purchase)}
+   319	                                                    disabled={deletePurchaseMutation.isPending && deletePurchaseMutation.variables === purchase.id}
+   320	                                                >
+   321	                                                    {deletePurchaseMutation.isPending && deletePurchaseMutation.variables === purchase.id ?
+   322	                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span> : <FaTrash /> }
+   323	                                                </Button>
+   324	                                            </div>
+   325	                                        </TableCell>
+   326	                                    </TableRow>
+   327	                                ))
+   328	                            )}
+   329	                        </TableBody>
+   330	                    </Table>
+   331	
+   332	                    <Pagination
+   333	                        currentPage={currentPage}
+   334	                        totalPages={totalPages}
+   335	                        totalItems={totalItems}
+   336	                        itemsPerPage={itemsPerPage}
+   337	                        itemsCount={purchases.length}
+   338	                        onPageChange={handlePageChange}
+   339	                        onItemsPerPageChange={handleItemsPerPageChange}
+   340	                    />
+   341	                </>
+   342	            )}
+   343	        </Card>
+   344	    );
+   345	};
+   346	
+   347	export default PurchaseList;
 
 
 ===============================================
