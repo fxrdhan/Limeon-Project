@@ -38,6 +38,7 @@
 │   │       ├── ImageCard.tsx
 │   │       ├── Input.tsx
 │   │       ├── Loading.tsx
+│   │       ├── OfflineAlert.tsx
 │   │       ├── Pagination.tsx
 │   │       └── Table.tsx
 │   ├── hooks
@@ -111,7 +112,7 @@
 ├── vite.config.ts
 └── yarn.lock
 
-21 directories, 91 files
+21 directories, 92 files
 
 
 ===============================================
@@ -514,15 +515,15 @@
      6	import './index.css';
      7	import { useAuthStore } from './store/authStore';
      8	import { ConfirmDialogProvider } from './components/ui/ConfirmDialog';
-     9	
-    10	// Lazy load pages
-    11	const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
-    12	const ItemList = lazy(() => import('./pages/master-data/ItemList'));
-    13	const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
-    14	const UnitList = lazy(() => import('./pages/master-data/UnitList'));
-    15	const TypeList = lazy(() => import('./pages/master-data/TypeList'));
-    16	const AddItem = lazy(() => import('./pages/master-data/AddItem'));
-    17	// ---> ADD THIS IMPORT <---
+     9	import OfflineAlert from './components/ui/OfflineAlert';
+    10	
+    11	// Lazy load pages
+    12	const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
+    13	const ItemList = lazy(() => import('./pages/master-data/ItemList'));
+    14	const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
+    15	const UnitList = lazy(() => import('./pages/master-data/UnitList'));
+    16	const TypeList = lazy(() => import('./pages/master-data/TypeList'));
+    17	const AddItem = lazy(() => import('./pages/master-data/AddItem'));
     18	const SupplierList = lazy(() => import('./pages/master-data/SupplierList'));
     19	const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
     20	const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
@@ -559,53 +560,53 @@
     51	  return (
     52	    <ConfirmDialogProvider>
     53	      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-    54	        <Routes>
-    55	          <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
-    56	
-    57	          {/* Route khusus untuk tampilan cetak - tanpa layout */}
-    58	          <Route path="/purchases/print-view" element={
-    59	            <Suspense fallback={<div>Loading...</div>}>
-    60	              <PrintPurchase />
-    61	            </Suspense>} />
-    62	
-    63	          <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
-    64	            <Route
-    65	              index
-    66	              element={
-    67	              <div className="text-gray-800">
-    68	                <Suspense fallback={<div>Loading...</div>}>
-    69	                  <Dashboard />
-    70	                </Suspense>
-    71	              </div>
-    72	            } />
-    73	
-    74	            <Route path="master-data">
-    75	              <Route path="items" element={
-    76	                <Suspense fallback={<div>Loading...</div>}>
-    77	                  <ItemList />
-    78	                </Suspense>
-    79	              } />
-    80	              <Route path="items/add" element={
-    81	                <Suspense fallback={<div>Loading...</div>}>
-    82	                  <AddItem />
-    83	                </Suspense>
-    84	              } />
-    85	              <Route path="categories" element={
-    86	                <Suspense fallback={<div>Loading...</div>}>
-    87	                  <CategoryList />
-    88	                </Suspense>
-    89	              } />
-    90	              <Route path="types" element={
-    91	                <Suspense fallback={<div>Loading...</div>}>
-    92	                  <TypeList />
-    93	                </Suspense>
-    94	              } />
-    95	              <Route path="units" element={
-    96	                <Suspense fallback={<div>Loading...</div>}>
-    97	                  <UnitList />
-    98	                </Suspense>
-    99	              } />
-   100	               {/* ---> ADD THIS ROUTE <--- */}
+    54	        <OfflineAlert />
+    55	        <Routes>
+    56	          <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
+    57	
+    58	          {/* Route khusus untuk tampilan cetak - tanpa layout */}
+    59	          <Route path="/purchases/print-view" element={
+    60	            <Suspense fallback={<div>Loading...</div>}>
+    61	              <PrintPurchase />
+    62	            </Suspense>} />
+    63	
+    64	          <Route path="/" element={session ? <MainLayout /> : <Navigate to="/login" />}>
+    65	            <Route
+    66	              index
+    67	              element={
+    68	              <div className="text-gray-800">
+    69	                <Suspense fallback={<div>Loading...</div>}>
+    70	                  <Dashboard />
+    71	                </Suspense>
+    72	              </div>
+    73	            } />
+    74	
+    75	            <Route path="master-data">
+    76	              <Route path="items" element={
+    77	                <Suspense fallback={<div>Loading...</div>}>
+    78	                  <ItemList />
+    79	                </Suspense>
+    80	              } />
+    81	              <Route path="items/add" element={
+    82	                <Suspense fallback={<div>Loading...</div>}>
+    83	                  <AddItem />
+    84	                </Suspense>
+    85	              } />
+    86	              <Route path="categories" element={
+    87	                <Suspense fallback={<div>Loading...</div>}>
+    88	                  <CategoryList />
+    89	                </Suspense>
+    90	              } />
+    91	              <Route path="types" element={
+    92	                <Suspense fallback={<div>Loading...</div>}>
+    93	                  <TypeList />
+    94	                </Suspense>
+    95	              } />
+    96	              <Route path="units" element={
+    97	                <Suspense fallback={<div>Loading...</div>}>
+    98	                  <UnitList />
+    99	                </Suspense>
+   100	              } />
    101	               <Route path="suppliers" element={
    102	                <Suspense fallback={<div>Loading...</div>}>
    103	                  <SupplierList />
@@ -2930,6 +2931,40 @@
     11	        <p className="mt-2 text-gray-600">{message}</p>
     12	    </div>
     13	);
+
+
+===============================================
+= File: ./src/components/ui/OfflineAlert.tsx 
+===============================================
+
+     1	import { useEffect, useState } from 'react';
+     2	
+     3	const OfflineAlert = () => {
+     4	    const [isOffline, setIsOffline] = useState(!navigator.onLine);
+     5	
+     6	    useEffect(() => {
+     7	        const handleOnline = () => setIsOffline(false);
+     8	        const handleOffline = () => setIsOffline(true);
+     9	
+    10	        window.addEventListener('online', handleOnline);
+    11	        window.addEventListener('offline', handleOffline);
+    12	
+    13	        return () => {
+    14	            window.removeEventListener('online', handleOnline);
+    15	            window.removeEventListener('offline', handleOffline);
+    16	        };
+    17	    }, []);
+    18	
+    19	    if (!isOffline) return null;
+    20	
+    21	    return (
+    22	        <div style={{ backgroundColor: 'red', color: 'white', padding: '10px', textAlign: 'center' }}>
+    23	            You are offline. Some features may not be available.
+    24	        </div>
+    25	    );
+    26	};
+    27	
+    28	export default OfflineAlert;
 
 
 ===============================================
