@@ -17,6 +17,7 @@ interface PurchaseItemsTableProps {
     onUnitChange: (id: string, unitName: string) => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getItemByID: (itemId: string) => any;
+    isEmptyMessage?: string | null; // add this line
 }
 
 const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
@@ -29,7 +30,8 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
     onUpdateItemVat,
     onUpdateItemExpiry,
     onUpdateItemBatchNo,
-    getItemByID
+    getItemByID,
+    isEmptyMessage // add this line
 }) => {
     return (
         <>
@@ -54,7 +56,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                     {purchaseItems.length === 0 ? (
                         <TableRow>
                             <TableCell colSpan={12} className="text-center text-gray-500">
-                                Belum ada item ditambahkan
+                                {isEmptyMessage ?? 'Belum ada item ditambahkan'}
                             </TableCell>
                         </TableRow>
                     ) : (
