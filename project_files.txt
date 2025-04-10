@@ -2071,46 +2071,49 @@
    153	                                    </TableCell>
    154	                                </TableRow>
    155	                            ) : (
-   156	                                unitConversions.map((uc) => (
-   157	                                    <TableRow key={uc.id}>
-   158	                                        <TableCell>{uc.unit.name}</TableCell>
-   159	                                        <TableCell>
-   160	                                            1 {baseUnit} = {uc.conversion} {uc.unit.name}
-   161	                                        </TableCell>
+   156	                                // Filter untuk menghilangkan duplikat berdasarkan unit.name
+   157	                                unitConversions.filter((uc, index, self) => 
+   158	                                    index === self.findIndex(u => u.unit.name === uc.unit.name)
+   159	                                ).map((uc) => (
+   160	                                    <TableRow key={uc.id}>
+   161	                                        <TableCell>{uc.unit.name}</TableCell>
    162	                                        <TableCell>
-   163	                                            {(uc.basePrice || 0).toLocaleString("id-ID", {
-   164	                                                style: "currency",
-   165	                                                currency: "IDR",
-   166	                                            })}
-   167	                                        </TableCell>
-   168	                                        <TableCell className="text-center">
-   169	                                            <Button
-   170	                                                variant="danger"
-   171	                                                size="sm"
-   172	                                                onClick={() => removeUnitConversion(uc.id)}
-   173	                                            >
-   174	                                                <FaTrash />
-   175	                                            </Button>
-   176	                                        </TableCell>
-   177	                                    </TableRow>
-   178	                                ))
-   179	                            )}
-   180	                        </TableBody>
-   181	                    </Table>
-   182	                </div>
-   183	
-   184	                <div className="mt-4 text-sm text-gray-600">
-   185	                    <ul className="list-disc pl-5 space-y-1">
-   186	                        <li>Harga pokok satuan turunan dihitung dengan: Harga pokok satuan dasar ÷ jumlah satuan turunan.</li>
-   187	                        <li className="text-red-500 font-semibold">PENTING: Disarankan untuk tidak mengubah satuan jika sudah terdapat transaksi yang berhubungan dengan item ini.</li>
-   188	                    </ul>
-   189	                </div>
-   190	            </div>
-   191	        </FormSection>
-   192	    );
-   193	};
-   194	
-   195	export default UnitConversionManager;
+   163	                                            1 {baseUnit} = {uc.conversion} {uc.unit.name}
+   164	                                        </TableCell>
+   165	                                        <TableCell>
+   166	                                            {(uc.basePrice || 0).toLocaleString("id-ID", {
+   167	                                                style: "currency",
+   168	                                                currency: "IDR",
+   169	                                            })}
+   170	                                        </TableCell>
+   171	                                        <TableCell className="text-center">
+   172	                                            <Button
+   173	                                                variant="danger"
+   174	                                                size="sm"
+   175	                                                onClick={() => removeUnitConversion(uc.id)}
+   176	                                            >
+   177	                                                <FaTrash />
+   178	                                            </Button>
+   179	                                        </TableCell>
+   180	                                    </TableRow>
+   181	                                ))
+   182	                            )}
+   183	                        </TableBody>
+   184	                    </Table>
+   185	                </div>
+   186	
+   187	                <div className="mt-4 text-sm text-gray-600">
+   188	                    <ul className="list-disc pl-5 space-y-1">
+   189	                        <li>Harga pokok satuan turunan dihitung dengan: Harga pokok satuan dasar ÷ jumlah satuan turunan.</li>
+   190	                        <li className="text-red-500 font-semibold">PENTING: Disarankan untuk tidak mengubah satuan jika sudah terdapat transaksi yang berhubungan dengan item ini.</li>
+   191	                    </ul>
+   192	                </div>
+   193	            </div>
+   194	        </FormSection>
+   195	    );
+   196	};
+   197	
+   198	export default UnitConversionManager;
 
 
 ===============================================
@@ -3409,33 +3412,33 @@
    237	
    238	            unitConversionHook.setBaseUnit(data.base_unit || "");
    239	            unitConversionHook.setBasePrice(data.base_price || 0);
-   240	
-   241	            let conversions = [];
-   242	            if (data.unit_conversions) {
-   243	                if (typeof data.unit_conversions === 'string') {
-   244	                    try {
-   245	                        conversions = JSON.parse(data.unit_conversions);
-   246	                    } catch (e) {
-   247	                        console.error("Error parsing unit_conversions:", e);
-   248	                        conversions = [];
-   249	                    }
-   250	                } else {
-   251	                    conversions = data.unit_conversions;
-   252	                }
-   253	            }
-   254	
-   255	            if (Array.isArray(conversions)) {
-   256	                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   257	                unitConversionHook.conversions.forEach((conv: any) => {
-   258	                    unitConversionHook.removeUnitConversion(conv.id);
-   259	                });
-   260	
-   261	                for (const conv of conversions) {
-   262	                    const unit = await getUnitById(conv.unit_name);
-   263	                    if (unit) {
-   264	                        unitConversionHook.addUnitConversion({
-   265	                            unit: unit,
-   266	                            conversion: conv.conversion_rate || 0,
+   240	            unitConversionHook.skipNextRecalculation();
+   241	
+   242	            const currentConversions = [...unitConversionHook.conversions];
+   243	            for (const conv of currentConversions) {
+   244	                unitConversionHook.removeUnitConversion(conv.id);
+   245	            }
+   246	
+   247	            let conversions = [];
+   248	            if (data.unit_conversions) {
+   249	                try {
+   250	                    conversions = typeof data.unit_conversions === 'string'
+   251	                        ? JSON.parse(data.unit_conversions)
+   252	                        : data.unit_conversions;
+   253	                } catch (e) {
+   254	                    console.error("Error parsing unit_conversions:", e);
+   255	                    conversions = [];
+   256	                }
+   257	            }
+   258	
+   259	            if (Array.isArray(conversions)) {
+   260	                for (const conv of conversions) {
+   261	                    const unit = await getUnitById(conv.unit_name);
+   262	                    if (unit) {
+   263	                        unitConversionHook.addUnitConversion({
+   264	                            unit: unit,
+   265	                            conversion: conv.conversion_rate || 0,
+   266	                            basePrice: conv.base_price,
    267	                        });
    268	                    }
    269	                }
@@ -4126,7 +4129,7 @@
     19	    basePrice: number;
     20	    setBasePrice: React.Dispatch<React.SetStateAction<number>>;
     21	    unitConversions: UnitConversion[];
-    22	    addUnitConversion: (unitConversion: Omit<UnitConversion, "id" | "basePrice">) => void;
+    22	    addUnitConversion: (unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => void;
     23	    removeUnitConversion: (id: string) => void;
     24	    unitConversionFormData: {
     25	        unit: string;
@@ -4137,89 +4140,105 @@
     30	        conversion: number;
     31	    }>>;
     32	    recalculateBasePrices: () => void;
-    33	    availableUnits: UnitData[];
-    34	}
-    35	
-    36	export interface UnitData {
-    37	    id: string;
-    38	    name: string;
-    39	}
-    40	
-    41	export const useUnitConversion = (): UseUnitConversionReturn => {
-    42	    const [baseUnit, setBaseUnit] = useState<string>("");
-    43	    const [basePrice, setBasePrice] = useState<number>(0);
-    44	    const [unitConversions, setUnitConversions] = useState<UnitConversion[]>([]);
-    45	    const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
-    46	
-    47	    const [unitConversionFormData, setUnitConversionFormData] = useState({
-    48	        unit: "",
-    49	        conversion: 0,
-    50	    });
-    51	
-    52	    // Fetch available units from database
-    53	    useEffect(() => {
-    54	        const fetchUnits = async () => {
-    55	            const { data } = await supabase
-    56	                .from("item_units")
-    57	                .select("id, name")
-    58	                .order("name");
-    59	            
-    60	            if (data) {
-    61	                setAvailableUnits(data);
-    62	            }
-    63	        };
-    64	
-    65	        fetchUnits();
-    66	    }, []);
+    33	    skipNextRecalculation: () => void;
+    34	    availableUnits: UnitData[];
+    35	    resetConversions: () => void;
+    36	}
+    37	
+    38	export interface UnitData {
+    39	    id: string;
+    40	    name: string;
+    41	}
+    42	
+    43	export const useUnitConversion = (): UseUnitConversionReturn => {
+    44	    const [baseUnit, setBaseUnit] = useState<string>("");
+    45	    const [basePrice, setBasePrice] = useState<number>(0);
+    46	    const [unitConversions, setUnitConversions] = useState<UnitConversion[]>([]);
+    47	    const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
+    48	    const [skipRecalculation, setSkipRecalculation] = useState<boolean>(false);
+    49	
+    50	    const [unitConversionFormData, setUnitConversionFormData] = useState({
+    51	        unit: "",
+    52	        conversion: 0,
+    53	    });
+    54	
+    55	    // Fetch available units from database
+    56	    useEffect(() => {
+    57	        const fetchUnits = async () => {
+    58	            const { data } = await supabase
+    59	                .from("item_units")
+    60	                .select("id, name")
+    61	                .order("name");
+    62	            
+    63	            if (data) {
+    64	                setAvailableUnits(data);
+    65	            }
+    66	        };
     67	
-    68	    // Fungsi untuk menambah konversi satuan
-    69	    const addUnitConversion = useCallback((unitConversion: Omit<UnitConversion, "id" | "basePrice">) => {
-    70	        // Hitung harga per unit kecil (misal: per tablet)
-    71	        // Jika 1 strip = 10 tablet dan harga strip 50.000,
-    72	        // maka harga per tablet = 50.000 / 10 = 5.000
-    73	        const calculatedBasePrice = basePrice / unitConversion.conversion;
-    74	        
-    75	        const newUnitConversion: UnitConversion = {
-    76	            ...unitConversion,
-    77	            id: Date.now().toString(),
-    78	            basePrice: calculatedBasePrice,
-    79	        };
-    80	        setUnitConversions(prevConversions => [...prevConversions, newUnitConversion]);
-    81	    }, [basePrice]);
-    82	
-    83	    // Fungsi untuk menghapus konversi satuan
-    84	    const removeUnitConversion = useCallback((id: string) => {
-    85	        setUnitConversions(prevConversions => prevConversions.filter(uc => uc.id !== id));
-    86	    }, []);
-    87	
-    88	    // Menghitung ulang harga pokok untuk semua konversi berdasarkan harga pokok dasar
-    89	    const recalculateBasePrices = useCallback(() => {
-    90	        if (basePrice <= 0 || unitConversions.length === 0) return;
-    91	        
-    92	        setUnitConversions(prevConversions => 
-    93	            prevConversions.map(uc => ({
-    94	                ...uc,
-    95	                basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0
-    96	            }))
-    97	        );
-    98	    // eslint-disable-next-line react-hooks/exhaustive-deps
-    99	    }, [basePrice]);
-   100	
-   101	    return {
-   102	        baseUnit,
-   103	        setBaseUnit,
-   104	        basePrice,
-   105	        setBasePrice,
-   106	        conversions: unitConversions,
-   107	        unitConversions,
-   108	        addUnitConversion,
-   109	        removeUnitConversion,
-   110	        unitConversionFormData,
-   111	        setUnitConversionFormData,
-   112	        recalculateBasePrices,
-   113	        availableUnits
-   114	    };
-   115	};
+    68	        fetchUnits();
+    69	    }, []);
+    70	
+    71	    // Fungsi untuk menambah konversi satuan
+    72	    const addUnitConversion = useCallback((unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => {
+    73	        const calculatedBasePrice = unitConversion.basePrice !== undefined 
+    74	            ? unitConversion.basePrice 
+    75	            : basePrice / unitConversion.conversion;
+    76	        
+    77	        const newUnitConversion: UnitConversion = {
+    78	            ...unitConversion,
+    79	            id: Date.now().toString(),
+    80	            basePrice: calculatedBasePrice,
+    81	        };
+    82	        setUnitConversions(prevConversions => [...prevConversions, newUnitConversion]);
+    83	    }, [basePrice]);
+    84	
+    85	    // Fungsi untuk menghapus konversi satuan
+    86	    const removeUnitConversion = useCallback((id: string) => {
+    87	        setUnitConversions(prevConversions => prevConversions.filter(uc => uc.id !== id));
+    88	    }, []);
+    89	
+    90	    // Menghitung ulang harga pokok untuk semua konversi berdasarkan harga pokok dasar
+    91	    const recalculateBasePrices = useCallback(() => {
+    92	        if (skipRecalculation) {
+    93	            setSkipRecalculation(false);
+    94	            return;
+    95	        }
+    96	        
+    97	        if (basePrice <= 0 || unitConversions.length === 0) return;
+    98	        
+    99	        setUnitConversions(prevConversions => 
+   100	            prevConversions.map(uc => ({
+   101	                ...uc,
+   102	                basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0
+   103	            }))
+   104	        );
+   105	    }, [basePrice, skipRecalculation, unitConversions.length]);
+   106	
+   107	    const skipNextRecalculation = useCallback(() => {
+   108	        setSkipRecalculation(true);
+   109	    }, []);
+   110	
+   111	    const resetConversions = useCallback(() => {
+   112	        setUnitConversions([]);
+   113	    }, []);
+   114	
+   115	    return {
+   116	        baseUnit,
+   117	        setBaseUnit,
+   118	        basePrice,
+   119	        setBasePrice,
+   120	        conversions: unitConversions,
+   121	        unitConversions,
+   122	        addUnitConversion,
+   123	        removeUnitConversion,
+   124	        unitConversionFormData,
+   125	        setUnitConversionFormData,
+   126	        recalculateBasePrices,
+   127	        skipNextRecalculation,
+   128	        availableUnits,
+   129	        resetConversions
+   130	    };
+   131	};
 
 
 ===============================================

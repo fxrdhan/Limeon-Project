@@ -19,7 +19,7 @@ export interface UseUnitConversionReturn {
     basePrice: number;
     setBasePrice: React.Dispatch<React.SetStateAction<number>>;
     unitConversions: UnitConversion[];
-    addUnitConversion: (unitConversion: Omit<UnitConversion, "id" | "basePrice">) => void;
+    addUnitConversion: (unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => void;
     removeUnitConversion: (id: string) => void;
     unitConversionFormData: {
         unit: string;
@@ -30,7 +30,9 @@ export interface UseUnitConversionReturn {
         conversion: number;
     }>>;
     recalculateBasePrices: () => void;
+    skipNextRecalculation: () => void;
     availableUnits: UnitData[];
+    resetConversions: () => void;
 }
 
 export interface UnitData {
@@ -43,6 +45,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
     const [basePrice, setBasePrice] = useState<number>(0);
     const [unitConversions, setUnitConversions] = useState<UnitConversion[]>([]);
     const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
+    const [skipRecalculation, setSkipRecalculation] = useState<boolean>(false);
 
     const [unitConversionFormData, setUnitConversionFormData] = useState({
         unit: "",
@@ -66,11 +69,10 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
     }, []);
 
     // Fungsi untuk menambah konversi satuan
-    const addUnitConversion = useCallback((unitConversion: Omit<UnitConversion, "id" | "basePrice">) => {
-        // Hitung harga per unit kecil (misal: per tablet)
-        // Jika 1 strip = 10 tablet dan harga strip 50.000,
-        // maka harga per tablet = 50.000 / 10 = 5.000
-        const calculatedBasePrice = basePrice / unitConversion.conversion;
+    const addUnitConversion = useCallback((unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => {
+        const calculatedBasePrice = unitConversion.basePrice !== undefined 
+            ? unitConversion.basePrice 
+            : basePrice / unitConversion.conversion;
         
         const newUnitConversion: UnitConversion = {
             ...unitConversion,
@@ -87,6 +89,11 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
 
     // Menghitung ulang harga pokok untuk semua konversi berdasarkan harga pokok dasar
     const recalculateBasePrices = useCallback(() => {
+        if (skipRecalculation) {
+            setSkipRecalculation(false);
+            return;
+        }
+        
         if (basePrice <= 0 || unitConversions.length === 0) return;
         
         setUnitConversions(prevConversions => 
@@ -95,8 +102,15 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
                 basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0
             }))
         );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [basePrice]);
+    }, [basePrice, skipRecalculation, unitConversions.length]);
+
+    const skipNextRecalculation = useCallback(() => {
+        setSkipRecalculation(true);
+    }, []);
+
+    const resetConversions = useCallback(() => {
+        setUnitConversions([]);
+    }, []);
 
     return {
         baseUnit,
@@ -110,6 +124,8 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         unitConversionFormData,
         setUnitConversionFormData,
         recalculateBasePrices,
-        availableUnits
+        skipNextRecalculation,
+        availableUnits,
+        resetConversions
     };
 };
