@@ -6,6 +6,7 @@ import Login from './pages/auth/Login';
 import './index.css';
 import { useAuthStore } from './store/authStore';
 import { ConfirmDialogProvider } from './components/ui/ConfirmDialog';
+import OfflineAlert from './components/ui/OfflineAlert';
 
 // Lazy load pages
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
@@ -14,7 +15,6 @@ const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
 const UnitList = lazy(() => import('./pages/master-data/UnitList'));
 const TypeList = lazy(() => import('./pages/master-data/TypeList'));
 const AddItem = lazy(() => import('./pages/master-data/AddItem'));
-// ---> ADD THIS IMPORT <---
 const SupplierList = lazy(() => import('./pages/master-data/SupplierList'));
 const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
 const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
@@ -51,6 +51,7 @@ function App() {
   return (
     <ConfirmDialogProvider>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <OfflineAlert />
         <Routes>
           <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
 
@@ -97,7 +98,6 @@ function App() {
                   <UnitList />
                 </Suspense>
               } />
-               {/* ---> ADD THIS ROUTE <--- */}
                <Route path="suppliers" element={
                 <Suspense fallback={<div>Loading...</div>}>
                   <SupplierList />
