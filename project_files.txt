@@ -1690,219 +1690,221 @@
     17	    onUnitChange: (id: string, unitName: string) => void;
     18	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     19	    getItemByID: (itemId: string) => any;
-    20	}
-    21	
-    22	const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
-    23	    purchaseItems,
-    24	    total,
-    25	    isVatIncluded,
-    26	    onUpdateItem,
-    27	    onRemoveItem,
-    28	    onUnitChange,
-    29	    onUpdateItemVat,
-    30	    onUpdateItemExpiry,
-    31	    onUpdateItemBatchNo,
-    32	    getItemByID
-    33	}) => {
-    34	    return (
-    35	        <>
-    36	            <Table>
-    37	                <TableHead>
-    38	                    <TableRow>
-    39	                        <TableHeader className="w-12 text-center">No</TableHeader>
-    40	                        <TableHeader className="w-24">Kode</TableHeader>
-    41	                        <TableHeader className="w-full">Nama</TableHeader>
-    42	                        <TableHeader className="w-28 text-center">Batch No.</TableHeader>
-    43	                        <TableHeader className="w-32 text-center">Kadaluarsa</TableHeader>
-    44	                        <TableHeader className="w-20 text-center">Jumlah</TableHeader>
-    45	                        <TableHeader className="w-24 text-center">Satuan</TableHeader>
-    46	                        <TableHeader className="w-28 text-right">Harga</TableHeader>
-    47	                        <TableHeader className="w-10 text-right">Disc</TableHeader>
-    48	                        {!isVatIncluded && <TableHeader className="w-10 text-right">VAT</TableHeader>}
-    49	                        <TableHeader className="w-28 text-right">Subtotal</TableHeader>
-    50	                        <TableHeader className="w-16 text-center">Aksi</TableHeader>
-    51	                    </TableRow>
-    52	                </TableHead>
-    53	                <TableBody>
-    54	                    {purchaseItems.length === 0 ? (
-    55	                        <TableRow>
-    56	                            <TableCell colSpan={12} className="text-center text-gray-500">
-    57	                                Belum ada item ditambahkan
-    58	                            </TableCell>
-    59	                        </TableRow>
-    60	                    ) : (
-    61	                        purchaseItems.map((item, index) => (
-    62	                            <TableRow key={item.id}>
-    63	                                <TableCell className="text-center">{index + 1}</TableCell>
-    64	                                <TableCell>{getItemByID(item.item_id)?.code || '-'}</TableCell>
-    65	                                <TableCell>{item.item_name}</TableCell>
-    66	                                <TableCell>
-    67	                                    <input
-    68	                                        type="text"
-    69	                                        value={item.batch_no || ''}
-    70	                                        onChange={(e) => onUpdateItemBatchNo(item.id, e.target.value)}
-    71	                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
-    72	                                        placeholder="No Batch"
-    73	                                    />
-    74	                                </TableCell>
-    75	                                <TableCell>
-    76	                                    <input
-    77	                                        type="date"
-    78	                                        value={item.expiry_date || ''}
-    79	                                        onChange={(e) => onUpdateItemExpiry(item.id, e.target.value)}
-    80	                                        className="w-32 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
-    81	                                        min={new Date().toISOString().split('T')[0]}
-    82	                                        title="Tanggal Kadaluarsa"
-    83	                                    />
-    84	                                </TableCell>
-    85	                                <TableCell className="text-center">
-    86	                                    <input
-    87	                                        type="number"
-    88	                                        onFocus={(e) => e.target.select()}
-    89	                                        onClick={(e) => (e.target as HTMLInputElement).select()}
-    90	                                        value={item.quantity}
-    91	                                        onChange={(e) => {
-    92	                                            const inputValue = e.target.value;
-    93	                                            
-    94	                                            // Izinkan input kosong untuk sementara agar user bisa mengetik ulang
-    95	                                            if (inputValue === '') {
-    96	                                                onUpdateItem(item.id, 'quantity', 0); // Gunakan 0 sementara
-    97	                                                return;
-    98	                                            }
-    99	                                            
-   100	                                            // Untuk input tidak kosong, parse dan update
-   101	                                            const newValue = parseInt(inputValue, 10);
-   102	                                            if (!isNaN(newValue) && newValue >= 0) {
-   103	                                                onUpdateItem(item.id, 'quantity', newValue);
-   104	                                            }
-   105	                                        }}
-   106	                                        onBlur={() => {
-   107	                                            // Pastikan nilai minimum 1 ketika input kehilangan fokus
-   108	                                            const numericValue = parseInt(item.quantity.toString(), 10);
-   109	                                            onUpdateItem(item.id, 'quantity', numericValue < 1 ? 1 : numericValue);
-   110	                                        }}
-   111	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
-   112	                                    />
-   113	                                </TableCell>
-   114	                                <TableCell className="text-center">
-   115	                                    <select
-   116	                                        value={item.unit}
-   117	                                        onChange={(e) => onUnitChange(item.id, e.target.value)}
-   118	                                        className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center appearance-none cursor-pointer"
-   119	                                    >
-   120	                                        <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
-   121	                                            {getItemByID(item.item_id)?.base_unit || 'Unit'}
-   122	                                        </option>
-   123	                                        {getItemByID(item.item_id)?.unit_conversions?.map((uc: { id: string; unit_name: string }) => (
-   124	                                            <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
-   125	                                        ))}
-   126	                                    </select>
-   127	                                </TableCell>
-   128	                                <TableCell className="text-right">
-   129	                                    <input
-   130	                                        type="text"
-   131	                                        value={item.price === 0 ? '' : formatRupiah(item.price)}
-   132	                                        onChange={(e) => {
-   133	                                            const numericValue = extractNumericValue(e.target.value);
-   134	                                            onUpdateItem(item.id, 'price', numericValue);
-   135	                                        }}
-   136	                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   137	                                        placeholder="Rp 0"
-   138	                                    />
-   139	                                </TableCell>
-   140	                                <TableCell className="text-right">
-   141	                                    <input
-   142	                                        type="text"
-   143	                                        value={item.discount === 0 ? '' : `${item.discount}%`}
-   144	                                        onChange={(e) => {
-   145	                                            // Hapus tanda % jika ada
-   146	                                            let inputValue = e.target.value;
-   147	                                            if (inputValue.endsWith('%')) {
-   148	                                                inputValue = inputValue.slice(0, -1);
-   149	                                            }
-   150	                                            
-   151	                                            // Ambil nilai numerik saja tanpa %
-   152	                                            const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
-   153	                                            onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
-   154	                                        }}
-   155	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   156	                                        placeholder="0%"
-   157	                                        onKeyDown={(e) => {
-   158	                                            // Tangani backspace saat kursor berada di akhir input
-   159	                                            if (e.key === 'Backspace' && 
-   160	                                                item.discount > 0 && 
-   161	                                                e.currentTarget.selectionStart === e.currentTarget.value.length) {
-   162	                                                // Cegah perilaku default dan update nilai secara manual
-   163	                                                e.preventDefault();
-   164	                                                const newValue = Math.floor(item.discount / 10);
-   165	                                                onUpdateItem(item.id, 'discount', newValue);
-   166	                                            }
-   167	                                        }}
-   168	                                    />
-   169	                                </TableCell>
-   170	                                {!isVatIncluded && (
-   171	                                    <TableCell className="text-right">
-   172	                                        <input
-   173	                                            type="text"
-   174	                                            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
-   175	                                            onChange={(e) => {
-   176	                                                // Hapus tanda % jika ada
-   177	                                                let inputValue = e.target.value;
-   178	                                                if (inputValue.endsWith('%')) {
-   179	                                                    inputValue = inputValue.slice(0, -1);
-   180	                                                }
-   181	                                                
-   182	                                                // Ambil nilai numerik saja tanpa %
-   183	                                                const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
-   184	                                                onUpdateItemVat(item.id, Math.min(numericValue, 100));
-   185	                                            }}
-   186	                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
-   187	                                            placeholder="0%"
-   188	                                            onKeyDown={(e) => {
-   189	                                                // Tangani backspace saat kursor berada di akhir input
-   190	                                                if (e.key === 'Backspace' && 
-   191	                                                    item.vat_percentage > 0 && 
-   192	                                                    e.currentTarget.selectionStart === e.currentTarget.value.length) {
-   193	                                                    // Cegah perilaku default dan update nilai secara manual
-   194	                                                    e.preventDefault();
-   195	                                                    const newValue = Math.floor(item.vat_percentage / 10);
-   196	                                                    onUpdateItemVat(item.id, newValue);
-   197	                                                }
-   198	                                            }}
-   199	                                        />
-   200	                                    </TableCell>
-   201	                                )}
-   202	                                <TableCell className="text-right">
-   203	                                    {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   204	                                </TableCell>
-   205	                                <TableCell className="text-center">
-   206	                                    <Button
-   207	                                        type="button"
-   208	                                        variant="danger"
-   209	                                        size="sm"
-   210	                                        onClick={() => onRemoveItem(item.id)}
-   211	                                    >
-   212	                                        <FaTrash />
-   213	                                    </Button>
-   214	                                </TableCell>
-   215	                            </TableRow>
-   216	                        ))
-   217	                    )}
-   218	                </TableBody>
-   219	            </Table>
-   220	            
-   221	            {/* Total display outside the table */}
-   222	            <div className="flex justify-end items-center mt-4 font-semibold text-lg">
-   223	                <div className="mr-4">Total:</div>
-   224	                <div className="w-40 text-right">
-   225	                    {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   226	                </div>
-   227	            </div>
-   228	        </>
-   229	    );
-   230	};
-   231	
-   232	export default PurchaseItemsTable;
+    20	    isEmptyMessage?: string | null; // add this line
+    21	}
+    22	
+    23	const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
+    24	    purchaseItems,
+    25	    total,
+    26	    isVatIncluded,
+    27	    onUpdateItem,
+    28	    onRemoveItem,
+    29	    onUnitChange,
+    30	    onUpdateItemVat,
+    31	    onUpdateItemExpiry,
+    32	    onUpdateItemBatchNo,
+    33	    getItemByID,
+    34	    isEmptyMessage // add this line
+    35	}) => {
+    36	    return (
+    37	        <>
+    38	            <Table>
+    39	                <TableHead>
+    40	                    <TableRow>
+    41	                        <TableHeader className="w-12 text-center">No</TableHeader>
+    42	                        <TableHeader className="w-24">Kode</TableHeader>
+    43	                        <TableHeader className="w-full">Nama</TableHeader>
+    44	                        <TableHeader className="w-28 text-center">Batch No.</TableHeader>
+    45	                        <TableHeader className="w-32 text-center">Kadaluarsa</TableHeader>
+    46	                        <TableHeader className="w-20 text-center">Jumlah</TableHeader>
+    47	                        <TableHeader className="w-24 text-center">Satuan</TableHeader>
+    48	                        <TableHeader className="w-28 text-right">Harga</TableHeader>
+    49	                        <TableHeader className="w-10 text-right">Disc</TableHeader>
+    50	                        {!isVatIncluded && <TableHeader className="w-10 text-right">VAT</TableHeader>}
+    51	                        <TableHeader className="w-28 text-right">Subtotal</TableHeader>
+    52	                        <TableHeader className="w-16 text-center">Aksi</TableHeader>
+    53	                    </TableRow>
+    54	                </TableHead>
+    55	                <TableBody>
+    56	                    {purchaseItems.length === 0 ? (
+    57	                        <TableRow>
+    58	                            <TableCell colSpan={12} className="text-center text-gray-500">
+    59	                                {isEmptyMessage ?? 'Belum ada item ditambahkan'}
+    60	                            </TableCell>
+    61	                        </TableRow>
+    62	                    ) : (
+    63	                        purchaseItems.map((item, index) => (
+    64	                            <TableRow key={item.id}>
+    65	                                <TableCell className="text-center">{index + 1}</TableCell>
+    66	                                <TableCell>{getItemByID(item.item_id)?.code || '-'}</TableCell>
+    67	                                <TableCell>{item.item_name}</TableCell>
+    68	                                <TableCell>
+    69	                                    <input
+    70	                                        type="text"
+    71	                                        value={item.batch_no || ''}
+    72	                                        onChange={(e) => onUpdateItemBatchNo(item.id, e.target.value)}
+    73	                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+    74	                                        placeholder="No Batch"
+    75	                                    />
+    76	                                </TableCell>
+    77	                                <TableCell>
+    78	                                    <input
+    79	                                        type="date"
+    80	                                        value={item.expiry_date || ''}
+    81	                                        onChange={(e) => onUpdateItemExpiry(item.id, e.target.value)}
+    82	                                        className="w-32 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+    83	                                        min={new Date().toISOString().split('T')[0]}
+    84	                                        title="Tanggal Kadaluarsa"
+    85	                                    />
+    86	                                </TableCell>
+    87	                                <TableCell className="text-center">
+    88	                                    <input
+    89	                                        type="number"
+    90	                                        onFocus={(e) => e.target.select()}
+    91	                                        onClick={(e) => (e.target as HTMLInputElement).select()}
+    92	                                        value={item.quantity}
+    93	                                        onChange={(e) => {
+    94	                                            const inputValue = e.target.value;
+    95	                                            
+    96	                                            // Izinkan input kosong untuk sementara agar user bisa mengetik ulang
+    97	                                            if (inputValue === '') {
+    98	                                                onUpdateItem(item.id, 'quantity', 0); // Gunakan 0 sementara
+    99	                                                return;
+   100	                                            }
+   101	                                            
+   102	                                            // Untuk input tidak kosong, parse dan update
+   103	                                            const newValue = parseInt(inputValue, 10);
+   104	                                            if (!isNaN(newValue) && newValue >= 0) {
+   105	                                                onUpdateItem(item.id, 'quantity', newValue);
+   106	                                            }
+   107	                                        }}
+   108	                                        onBlur={() => {
+   109	                                            // Pastikan nilai minimum 1 ketika input kehilangan fokus
+   110	                                            const numericValue = parseInt(item.quantity.toString(), 10);
+   111	                                            onUpdateItem(item.id, 'quantity', numericValue < 1 ? 1 : numericValue);
+   112	                                        }}
+   113	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+   114	                                    />
+   115	                                </TableCell>
+   116	                                <TableCell className="text-center">
+   117	                                    <select
+   118	                                        value={item.unit}
+   119	                                        onChange={(e) => onUnitChange(item.id, e.target.value)}
+   120	                                        className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center appearance-none cursor-pointer"
+   121	                                    >
+   122	                                        <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
+   123	                                            {getItemByID(item.item_id)?.base_unit || 'Unit'}
+   124	                                        </option>
+   125	                                        {getItemByID(item.item_id)?.unit_conversions?.map((uc: { id: string; unit_name: string }) => (
+   126	                                            <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
+   127	                                        ))}
+   128	                                    </select>
+   129	                                </TableCell>
+   130	                                <TableCell className="text-right">
+   131	                                    <input
+   132	                                        type="text"
+   133	                                        value={item.price === 0 ? '' : formatRupiah(item.price)}
+   134	                                        onChange={(e) => {
+   135	                                            const numericValue = extractNumericValue(e.target.value);
+   136	                                            onUpdateItem(item.id, 'price', numericValue);
+   137	                                        }}
+   138	                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   139	                                        placeholder="Rp 0"
+   140	                                    />
+   141	                                </TableCell>
+   142	                                <TableCell className="text-right">
+   143	                                    <input
+   144	                                        type="text"
+   145	                                        value={item.discount === 0 ? '' : `${item.discount}%`}
+   146	                                        onChange={(e) => {
+   147	                                            // Hapus tanda % jika ada
+   148	                                            let inputValue = e.target.value;
+   149	                                            if (inputValue.endsWith('%')) {
+   150	                                                inputValue = inputValue.slice(0, -1);
+   151	                                            }
+   152	                                            
+   153	                                            // Ambil nilai numerik saja tanpa %
+   154	                                            const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
+   155	                                            onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
+   156	                                        }}
+   157	                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   158	                                        placeholder="0%"
+   159	                                        onKeyDown={(e) => {
+   160	                                            // Tangani backspace saat kursor berada di akhir input
+   161	                                            if (e.key === 'Backspace' && 
+   162	                                                item.discount > 0 && 
+   163	                                                e.currentTarget.selectionStart === e.currentTarget.value.length) {
+   164	                                                // Cegah perilaku default dan update nilai secara manual
+   165	                                                e.preventDefault();
+   166	                                                const newValue = Math.floor(item.discount / 10);
+   167	                                                onUpdateItem(item.id, 'discount', newValue);
+   168	                                            }
+   169	                                        }}
+   170	                                    />
+   171	                                </TableCell>
+   172	                                {!isVatIncluded && (
+   173	                                    <TableCell className="text-right">
+   174	                                        <input
+   175	                                            type="text"
+   176	                                            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
+   177	                                            onChange={(e) => {
+   178	                                                // Hapus tanda % jika ada
+   179	                                                let inputValue = e.target.value;
+   180	                                                if (inputValue.endsWith('%')) {
+   181	                                                    inputValue = inputValue.slice(0, -1);
+   182	                                                }
+   183	                                                
+   184	                                                // Ambil nilai numerik saja tanpa %
+   185	                                                const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
+   186	                                                onUpdateItemVat(item.id, Math.min(numericValue, 100));
+   187	                                            }}
+   188	                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+   189	                                            placeholder="0%"
+   190	                                            onKeyDown={(e) => {
+   191	                                                // Tangani backspace saat kursor berada di akhir input
+   192	                                                if (e.key === 'Backspace' && 
+   193	                                                    item.vat_percentage > 0 && 
+   194	                                                    e.currentTarget.selectionStart === e.currentTarget.value.length) {
+   195	                                                    // Cegah perilaku default dan update nilai secara manual
+   196	                                                    e.preventDefault();
+   197	                                                    const newValue = Math.floor(item.vat_percentage / 10);
+   198	                                                    onUpdateItemVat(item.id, newValue);
+   199	                                                }
+   200	                                            }}
+   201	                                        />
+   202	                                    </TableCell>
+   203	                                )}
+   204	                                <TableCell className="text-right">
+   205	                                    {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   206	                                </TableCell>
+   207	                                <TableCell className="text-center">
+   208	                                    <Button
+   209	                                        type="button"
+   210	                                        variant="danger"
+   211	                                        size="sm"
+   212	                                        onClick={() => onRemoveItem(item.id)}
+   213	                                    >
+   214	                                        <FaTrash />
+   215	                                    </Button>
+   216	                                </TableCell>
+   217	                            </TableRow>
+   218	                        ))
+   219	                    )}
+   220	                </TableBody>
+   221	            </Table>
+   222	            
+   223	            {/* Total display outside the table */}
+   224	            <div className="flex justify-end items-center mt-4 font-semibold text-lg">
+   225	                <div className="mr-4">Total:</div>
+   226	                <div className="w-40 text-right">
+   227	                    {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   228	                </div>
+   229	            </div>
+   230	        </>
+   231	    );
+   232	};
+   233	
+   234	export default PurchaseItemsTable;
 
 
 ===============================================
@@ -3142,9 +3144,9 @@
     46	    );
     47	};
     48	
-    49	export const TableCell = ({ children, className }: TableCellProps) => {
+    49	export const TableCell = ({ children, className, colSpan }: TableCellProps) => {
     50	    return (
-    51	        <td className={classNames('py-3 px-3 text-gray-700 align-middle', className)}>
+    51	        <td colSpan={colSpan} className={classNames('py-3 px-3 text-gray-700 align-middle', className)}>
     52	            {children}
     53	        </td>
     54	    );
@@ -5541,133 +5543,135 @@
    221	                        </FormSection>
    222	
    223	                        <FormSection title="Harga Pokok & Jual">
-   224	                            {/* Ubah grid menjadi 5 kolom untuk menempatkan persentase di tengah */}
-   225	                            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
-   226	                                <FormField label="Satuan Dasar">
-   227	                                    <Input
-   228	                                        type="text"
-   229	                                        value={unitConversionHook.baseUnit}
-   230	                                        readOnly
-   231	                                        className={inputClassName}
-   232	                                    />
-   233	                                </FormField>
-   234	                                
-   235	                                <FormField label="Harga Pokok">
-   236	                                    <Input
-   237	                                        type="text"
-   238	                                        name="base_price"
-   239	                                        value={displayBasePrice}
-   240	                                        placeholder="Rp 0"
-   241	                                        onChange={handleChange}
-   242	                                        min="0"
-   243	                                        className={inputClassName}
-   244	                                        required
-   245	                                    />
-   246	                                </FormField>
-   247	                                
-   248	                                {/* Elemen untuk menampilkan persentase keuntungan */}
-   249	                                <div className="text-center md:mt-6">
-   250	                                    {calculateProfitPercentage() !== null ? (
-   251	                                        <span className={`text-sm font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-   252	                                            <FaArrowRight className="inline mr-1" />
-   253	                                            {calculateProfitPercentage()!.toFixed(1)}%
-   254	                                        </span>
-   255	                                    ) : (
-   256	                                        <span className="text-sm text-gray-500">-</span>
-   257	                                    )}
-   258	                                </div>
-   259	
-   260	                                {/* Field Harga Jual */}
-   261	                                <FormField label="Harga Jual">
-   262	                                    <Input
-   263	                                        type="text"
-   264	                                        name="sell_price"
-   265	                                        value={displaySellPrice}
-   266	                                        placeholder="Rp 0"
-   267	                                        onChange={handleChange}
-   268	                                        min="0"
-   269	                                        className={inputClassName}
-   270	                                        required
-   271	                                    />
-   272	                                </FormField>
-   273	                            </div>
-   274	                        </FormSection>
-   275	
-   276	                        <UnitConversionManager unitConversionHook={unitConversionHook} />
+   224	                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+   225	                                <FormField label="Satuan Dasar">
+   226	                                    <Input
+   227	                                        type="text"
+   228	                                        value={unitConversionHook.baseUnit}
+   229	                                        readOnly
+   230	                                        className={inputClassName}
+   231	                                        style={unitConversionHook.baseUnit === "" ? {
+   232	                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
+   233	                                        } : {}}
+   234	                                    />
+   235	                                </FormField>
+   236	                                
+   237	                                <FormField label="Harga Pokok">
+   238	                                    <Input
+   239	                                        type="text"
+   240	                                        name="base_price"
+   241	                                        value={displayBasePrice}
+   242	                                        placeholder="Rp 0"
+   243	                                        onChange={handleChange}
+   244	                                        min="0"
+   245	                                        className={inputClassName}
+   246	                                        required
+   247	                                    />
+   248	                                </FormField>
+   249	                                
+   250	                                {/* Elemen untuk menampilkan persentase keuntungan */}
+   251	                                <div className="text-center md:mt-6">
+   252	                                    {calculateProfitPercentage() !== null ? (
+   253	                                        <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}> {/* Changed text-sm to text-lg */}
+   254	                                            <FaArrowRight className="inline mr-2" />
+   255	                                            {calculateProfitPercentage()!.toFixed(1)}%
+   256	                                        </span>
+   257	                                    ) : (
+   258	                                        <span className="text-sm text-gray-500">-</span>
+   259	                                    )}
+   260	                                </div>
+   261	
+   262	                                {/* Field Harga Jual */}
+   263	                                <FormField label="Harga Jual">
+   264	                                    <Input
+   265	                                        type="text"
+   266	                                        name="sell_price"
+   267	                                        value={displaySellPrice}
+   268	                                        placeholder="Rp 0"
+   269	                                        onChange={handleChange}
+   270	                                        min="0"
+   271	                                        className={inputClassName}
+   272	                                        required
+   273	                                    />
+   274	                                </FormField>
+   275	                            </div>
+   276	                        </FormSection>
    277	
-   278	                        <FormSection title="Pengaturan Tambahan">
-   279	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-   280	                                <FormField label="Status Jual">
-   281	                                    <div className={radioGroupClassName}>
-   282	                                        <label className="inline-flex items-center">
-   283	                                            <input
-   284	                                                type="radio"
-   285	                                                name="is_active"
-   286	                                                checked={formData.is_active}
-   287	                                                onChange={() => updateFormData({ is_active: true })}
-   288	                                                className="form-radio h-5 w-5 text-primary"
-   289	                                            />
-   290	                                            <span className="ml-2">Masih dijual</span>
-   291	                                        </label>
-   292	                                        <label className="inline-flex items-center">
-   293	                                            <input
-   294	                                                type="radio"
-   295	                                                name="is_active"
-   296	                                                checked={!formData.is_active}
-   297	                                                onChange={() => updateFormData({ is_active: false })}
-   298	                                                className="form-radio h-5 w-5 text-primary"
-   299	                                            />
-   300	                                            <span className="ml-2">Tidak Dijual</span>
-   301	                                        </label>
-   302	                                    </div>
-   303	                                </FormField>
-   304	
-   305	                                <FormField label="Stok Minimal">
-   306	                                    <Input
-   307	                                        type="number"
-   308	                                        name="min_stock"
-   309	                                        value={formData.min_stock}
-   310	                                        onChange={handleChange}
-   311	                                        className={inputClassName}
-   312	                                        required
-   313	                                    />
-   314	                                </FormField>
-   315	                            </div>
-   316	
-   317	                            <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
-   318	                                <label className="inline-flex items-center">
-   319	                                    <input
-   320	                                        type="checkbox"
-   321	                                        name="has_expiry_date"
-   322	                                        checked={formData.has_expiry_date}
-   323	                                        disabled={!formData.is_medicine}
-   324	                                        onChange={handleChange}
-   325	                                        className="form-checkbox h-5 w-5 text-primary"
-   326	                                    />
-   327	                                    <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
-   328	                                </label>
-   329	                                <div className="mt-1 text-sm text-gray-500">
-   330	                                    Jika dicentang, obat ini akan menggunakan metode FEFO
-   331	                                    (First Expired First Out)
-   332	                                </div>
-   333	                            </div>
-   334	                        </FormSection>
-   335	                    </CardContent>
-   336	
-   337	                    <CardFooter className="flex justify-between">
-   338	                        <FormActions
-   339	                            onCancel={() => navigate("/master-data/items")}
-   340	                            isDisabled={false}
-   341	                            isSaving={saving}
-   342	                        />
-   343	                    </CardFooter>
-   344	                </form>
-   345	            </Card>
-   346	        </div>
-   347	    );
-   348	};
-   349	
-   350	export default AddItem;
+   278	                        <UnitConversionManager unitConversionHook={unitConversionHook} />
+   279	
+   280	                        <FormSection title="Pengaturan Tambahan">
+   281	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   282	                                <FormField label="Status Jual">
+   283	                                    <div className={radioGroupClassName}>
+   284	                                        <label className="inline-flex items-center">
+   285	                                            <input
+   286	                                                type="radio"
+   287	                                                name="is_active"
+   288	                                                checked={formData.is_active}
+   289	                                                onChange={() => updateFormData({ is_active: true })}
+   290	                                                className="form-radio h-5 w-5 text-primary"
+   291	                                            />
+   292	                                            <span className="ml-2">Masih dijual</span>
+   293	                                        </label>
+   294	                                        <label className="inline-flex items-center">
+   295	                                            <input
+   296	                                                type="radio"
+   297	                                                name="is_active"
+   298	                                                checked={!formData.is_active}
+   299	                                                onChange={() => updateFormData({ is_active: false })}
+   300	                                                className="form-radio h-5 w-5 text-primary"
+   301	                                            />
+   302	                                            <span className="ml-2">Tidak Dijual</span>
+   303	                                        </label>
+   304	                                    </div>
+   305	                                </FormField>
+   306	
+   307	                                <FormField label="Stok Minimal">
+   308	                                    <Input
+   309	                                        type="number"
+   310	                                        name="min_stock"
+   311	                                        value={formData.min_stock}
+   312	                                        onChange={handleChange}
+   313	                                        className={inputClassName}
+   314	                                        required
+   315	                                    />
+   316	                                </FormField>
+   317	                            </div>
+   318	
+   319	                            <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
+   320	                                <label className="inline-flex items-center">
+   321	                                    <input
+   322	                                        type="checkbox"
+   323	                                        name="has_expiry_date"
+   324	                                        checked={formData.has_expiry_date}
+   325	                                        disabled={!formData.is_medicine}
+   326	                                        onChange={handleChange}
+   327	                                        className="form-checkbox h-5 w-5 text-primary"
+   328	                                    />
+   329	                                    <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
+   330	                                </label>
+   331	                                <div className="mt-1 text-sm text-gray-500">
+   332	                                    Jika dicentang, obat ini akan menggunakan metode FEFO
+   333	                                    (First Expired First Out)
+   334	                                </div>
+   335	                            </div>
+   336	                        </FormSection>
+   337	                    </CardContent>
+   338	
+   339	                    <CardFooter className="flex justify-between">
+   340	                        <FormActions
+   341	                            onCancel={() => navigate("/master-data/items")}
+   342	                            isDisabled={false}
+   343	                            isSaving={saving}
+   344	                        />
+   345	                    </CardFooter>
+   346	                </form>
+   347	            </Card>
+   348	        </div>
+   349	    );
+   350	};
+   351	
+   352	export default AddItem;
 
 
 ===============================================
@@ -5829,266 +5833,276 @@
     15	    name: string;
     16	    code: string;
     17	    sell_price: number;
-    18	    // Add other fields if needed by other parts of the component
-    19	}
-    20	
-    21	function ItemList() {
-    22	    const [search, setSearch] = useState("");
-    23	    const [debouncedSearch, setDebouncedSearch] = useState("");
-    24	    const [currentPage, setCurrentPage] = useState(1);
-    25	    const [itemsPerPage, setItemsPerPage] = useState(10);
-    26	    const { openConfirmDialog } = useConfirmDialog();
-    27	    const queryClient = useQueryClient();
-    28	
-    29	    // Update this effect to use a more precise invalidation
-    30	    useEffect(() => {
-    31	        // Invalidate all item queries regardless of page, search, or itemsPerPage parameters
-    32	        queryClient.invalidateQueries({
-    33	            queryKey: ['items'],
-    34	            refetchType: 'all'
-    35	        });
-    36	    }, [queryClient]);
-    37	
-    38	    const fetchItems = async (page: number, searchTerm: string, limit: number) => {
-    39	        const from = (page - 1) * limit;
-    40	        const to = from + limit - 1;
-    41	
-    42	        let itemsQuery = supabase
-    43	            .from("items")
-    44	            .select(`
-    45	                id,
-    46	                name,
-    47	                code,
-    48	                base_price,
-    49	                sell_price,
-    50	                stock,
-    51	                category_id,
-    52	                type_id,
-    53	                unit_id
-    54	            `);
-    55	
-    56	        let countQuery = supabase
-    57	            .from("items")
-    58	            .select('id', { count: 'exact' });
-    59	
-    60	        if (searchTerm) {
-    61	            itemsQuery = itemsQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
-    62	            countQuery = countQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
-    63	        }
-    64	
-    65	        const [itemsResult, countResult, categoriesRes, typesRes, unitsRes] = await Promise.all([
-    66	            itemsQuery.order('name').range(from, to),
-    67	            countQuery,
-    68	            supabase.from("item_categories").select("id, name"),
-    69	            supabase.from("item_types").select("id, name"),
-    70	            supabase.from("item_units").select("id, name")
-    71	        ]);
-    72	
-    73	        if (itemsResult.error) throw itemsResult.error;
-    74	        if (countResult.error) throw countResult.error;
-    75	
-    76	        const categories = categoriesRes.data || [];
-    77	        const types = typesRes.data || [];
-    78	        const units = unitsRes.data || [];
-    79	
-    80	        const completedData = (itemsResult.data || []).map(item => ({
-    81	            id: item.id,
-    82	            name: item.name,
-    83	            code: item.code,
-    84	            base_price: item.base_price,
-    85	            sell_price: item.sell_price,
-    86	            stock: item.stock,
-    87	            category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
-    88	            type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
-    89	            unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
-    90	        }));
-    91	
-    92	        return { items: completedData, totalItems: countResult.count || 0 };
-    93	    };
+    18	    unit_conversions?: { unit_name: string }[];
+    19	    // Add other fields if needed by other parts of the component
+    20	}
+    21	
+    22	function ItemList() {
+    23	    const [search, setSearch] = useState("");
+    24	    const [debouncedSearch, setDebouncedSearch] = useState("");
+    25	    const [currentPage, setCurrentPage] = useState(1);
+    26	    const [itemsPerPage, setItemsPerPage] = useState(10);
+    27	    const { openConfirmDialog } = useConfirmDialog();
+    28	    const queryClient = useQueryClient();
+    29	
+    30	    // Update this effect to use a more precise invalidation
+    31	    useEffect(() => {
+    32	        // Invalidate all item queries regardless of page, search, or itemsPerPage parameters
+    33	        queryClient.invalidateQueries({
+    34	            queryKey: ['items'],
+    35	            refetchType: 'all'
+    36	        });
+    37	    }, [queryClient]);
+    38	
+    39	    const fetchItems = async (page: number, searchTerm: string, limit: number) => {
+    40	        const from = (page - 1) * limit;
+    41	        const to = from + limit - 1;
+    42	
+    43	        let itemsQuery = supabase
+    44	            .from("items")
+    45	            .select(`
+    46	                id,
+    47	                name,
+    48	                code,
+    49	                base_price,
+    50	                sell_price,
+    51	                stock,
+    52	                unit_conversions,
+    53	                category_id,
+    54	                type_id,
+    55	                unit_id
+    56	            `);
+    57	
+    58	        let countQuery = supabase
+    59	            .from("items")
+    60	            .select('id', { count: 'exact' });
+    61	
+    62	        if (searchTerm) {
+    63	            itemsQuery = itemsQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+    64	            countQuery = countQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+    65	        }
+    66	
+    67	        const [itemsResult, countResult, categoriesRes, typesRes, unitsRes] = await Promise.all([
+    68	            itemsQuery.order('name').range(from, to),
+    69	            countQuery,
+    70	            supabase.from("item_categories").select("id, name"),
+    71	            supabase.from("item_types").select("id, name"),
+    72	            supabase.from("item_units").select("id, name")
+    73	        ]);
+    74	
+    75	        if (itemsResult.error) throw itemsResult.error;
+    76	        if (countResult.error) throw countResult.error;
+    77	
+    78	        const categories = categoriesRes.data || [];
+    79	        const types = typesRes.data || [];
+    80	        const units = unitsRes.data || [];
+    81	
+    82	        const completedData = (itemsResult.data || []).map(item => ({
+    83	            id: item.id,
+    84	            name: item.name,
+    85	            code: item.code,
+    86	            base_price: item.base_price,
+    87	            sell_price: item.sell_price,
+    88	            stock: item.stock,
+    89	            unit_conversions: typeof item.unit_conversions === 'string' ? JSON.parse(item.unit_conversions || '[]') : (item.unit_conversions || []), // Parse JSON if needed
+    90	            category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
+    91	            type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
+    92	            unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
+    93	        }));
     94	
-    95	    useEffect(() => {
-    96	        const timer = setTimeout(() => {
-    97	            setDebouncedSearch(search);
-    98	            setCurrentPage(1);
-    99	        }, 500);
-   100	
-   101	        return () => clearTimeout(timer);
-   102	    }, [search]);
+    95	        return { items: completedData, totalItems: countResult.count || 0 };
+    96	    };
+    97	
+    98	    useEffect(() => {
+    99	        const timer = setTimeout(() => {
+   100	            setDebouncedSearch(search);
+   101	            setCurrentPage(1);
+   102	        }, 500);
    103	
-   104	    const { data, isLoading, isError, error, isFetching } = useQuery({
-   105	        queryKey: ['items', currentPage, debouncedSearch, itemsPerPage],
-   106	        queryFn: () => fetchItems(currentPage, debouncedSearch, itemsPerPage),
-   107	        placeholderData: keepPreviousData,
-   108	        staleTime: 30 * 1000, // Reduced from 5 minutes to 30 seconds
-   109	        refetchOnMount: true, // Ensure refetch when component mounts
-   110	    });
-   111	
-   112	    const deleteItemMutation = useMutation({
-   113	        mutationFn: async (itemId: string) => {
-   114	            const { error } = await supabase.from("items").delete().eq("id", itemId);
-   115	            if (error) throw error;
-   116	        },
-   117	        onSuccess: () => {
-   118	            // Update the invalidation strategy to match the useEffect approach
-   119	            queryClient.invalidateQueries({
-   120	                queryKey: ['items'],
-   121	                refetchType: 'all'
-   122	            });
-   123	            console.log("Item berhasil dihapus dan data di-refetch untuk semua ukuran halaman.");
-   124	        },
-   125	        onError: (error) => {
-   126	            console.error("Error deleting item:", error);
-   127	            alert("Gagal menghapus item. Silakan coba lagi.");
-   128	        },
-   129	    });
-   130	
-   131	    const items = data?.items || [];
-   132	    const totalItems = data?.totalItems || 0;
+   104	        return () => clearTimeout(timer);
+   105	    }, [search]);
+   106	
+   107	    const { data, isLoading, isError, error, isFetching } = useQuery({
+   108	        queryKey: ['items', currentPage, debouncedSearch, itemsPerPage],
+   109	        queryFn: () => fetchItems(currentPage, debouncedSearch, itemsPerPage),
+   110	        placeholderData: keepPreviousData,
+   111	        staleTime: 30 * 1000, // Reduced from 5 minutes to 30 seconds
+   112	        refetchOnMount: true, // Ensure refetch when component mounts
+   113	    });
+   114	
+   115	    const deleteItemMutation = useMutation({
+   116	        mutationFn: async (itemId: string) => {
+   117	            const { error } = await supabase.from("items").delete().eq("id", itemId);
+   118	            if (error) throw error;
+   119	        },
+   120	        onSuccess: () => {
+   121	            // Update the invalidation strategy to match the useEffect approach
+   122	            queryClient.invalidateQueries({
+   123	                queryKey: ['items'],
+   124	                refetchType: 'all'
+   125	            });
+   126	            console.log("Item berhasil dihapus dan data di-refetch untuk semua ukuran halaman.");
+   127	        },
+   128	        onError: (error) => {
+   129	            console.error("Error deleting item:", error);
+   130	            alert("Gagal menghapus item. Silakan coba lagi.");
+   131	        },
+   132	    });
    133	
-   134	    const handlePageChange = (newPage: number) => {
-   135	        setCurrentPage(newPage);
-   136	    };
-   137	
-   138	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-   139	        setItemsPerPage(Number(e.target.value));
-   140	        setCurrentPage(1);
-   141	    };
-   142	
-   143	    const totalPages = Math.ceil(totalItems / itemsPerPage);
-   144	
-   145	    return (
-   146	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
-   147	            <div className="flex justify-between items-center mb-6">
-   148	                <h1 className="text-2xl font-bold text-gray-800">Daftar Item</h1>
-   149	
-   150	                <Link
-   151	                    to="/master-data/items/add">
-   152	                    <Button variant="primary" className="flex items-center">
-   153	                        <FaPlus className="mr-2" />
-   154	                        Tambah Item Baru
-   155	                    </Button>
-   156	                </Link>
-   157	            </div>
-   158	
-   159	            <div className="mb-4 relative">
-   160	                <input
-   161	                    type="text"
-   162	                    placeholder="Cari item..."
-   163	                    className="w-full p-3 border rounded-md pl-10"
-   164	                    value={search}
-   165	                    onChange={(e) => setSearch(e.target.value)} />
-   166	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-   167	            </div>
-   168	
-   169	            {isLoading && <div className="text-center p-6">Memuat data awal...</div>}
-   170	            {isError && <div className="text-center p-6 text-red-500">Error: {error instanceof Error ? error.message : 'Gagal memuat data'}</div>}
+   134	    const items = data?.items || [];
+   135	    const totalItems = data?.totalItems || 0;
+   136	
+   137	    const handlePageChange = (newPage: number) => {
+   138	        setCurrentPage(newPage);
+   139	    };
+   140	
+   141	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+   142	        setItemsPerPage(Number(e.target.value));
+   143	        setCurrentPage(1);
+   144	    };
+   145	
+   146	    const totalPages = Math.ceil(totalItems / itemsPerPage);
+   147	
+   148	    return (
+   149	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+   150	            <div className="flex justify-between items-center mb-6">
+   151	                <h1 className="text-2xl font-bold text-gray-800">Daftar Item</h1>
+   152	
+   153	                <Link
+   154	                    to="/master-data/items/add">
+   155	                    <Button variant="primary" className="flex items-center">
+   156	                        <FaPlus className="mr-2" />
+   157	                        Tambah Item Baru
+   158	                    </Button>
+   159	                </Link>
+   160	            </div>
+   161	
+   162	            <div className="mb-4 relative">
+   163	                <input
+   164	                    type="text"
+   165	                    placeholder="Cari item..."
+   166	                    className="w-full p-3 border rounded-md pl-10"
+   167	                    value={search}
+   168	                    onChange={(e) => setSearch(e.target.value)} />
+   169	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+   170	            </div>
    171	
-   172	            {!isLoading && (
-   173	                <>
-   174	                    <Table>
-   175	                        <TableHead>
-   176	                            <TableRow>
-   177	                                <TableHeader>Nama Item</TableHeader>
-   178	                                <TableHeader>Kode</TableHeader>
-   179	                                <TableHeader>Kategori</TableHeader>
-   180	                                <TableHeader>Jenis</TableHeader>
-   181	                                <TableHeader>Satuan</TableHeader>
-   182	                                <TableHeader className="text-right">Harga Pokok</TableHeader>
-   183	                                <TableHeader className="text-right">Harga Jual</TableHeader>
-   184	                                <TableHeader className="text-right">Stok</TableHeader>
-   185	                                <TableHeader className="text-center">Aksi</TableHeader>
-   186	                            </TableRow>
-   187	                        </TableHead>
-   188	                        <TableBody>
-   189	                            {items.length === 0 ? (
-   190	                                <TableRow>
-   191	                                    <TableCell
-   192	                                        colSpan={9}
-   193	                                        className="text-center text-gray-600"
-   194	                                    >
-   195	                                        {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
-   196	                                    </TableCell>
-   197	                                </TableRow>
-   198	                            ) : (
-   199	                                items.map((item) => (
-   200	                                    <TableRow key={item.id}>
-   201	                                        <TableCell>{item.name}</TableCell>
-   202	                                        <TableCell>{item.code}</TableCell>
-   203	                                        <TableCell>{item.category.name}</TableCell>
-   204	                                        <TableCell>{item.type.name}</TableCell>
-   205	                                        <TableCell>{item.unit.name}</TableCell>
-   206	                                        <TableCell className="text-right">
-   207	                                            {item.base_price.toLocaleString("id-ID", {
-   208	                                                style: "currency",
-   209	                                                currency: "IDR",
-   210	                                            })}
-   211	                                        </TableCell>
-   212	                                        <TableCell className="text-right">
-   213	                                            {item.sell_price.toLocaleString("id-ID", {
-   214	                                                style: "currency",
-   215	                                                currency: "IDR",
-   216	                                                minimumFractionDigits: 0,
-   217	                                                maximumFractionDigits: 0,
-   218	                                            })}
-   219	                                        </TableCell>
-   220	                                        <TableCell className="text-right">{item.stock}</TableCell>
-   221	                                        <TableCell className="text-center">
-   222	                                            <div className="flex justify-center space-x-2">
-   223	                                                <Link
-   224	                                                    to={`/master-data/items/edit/${item.id}`}
-   225	                                                >
-   226	                                                    <Button variant="secondary" size="sm">
-   227	                                                        <FaEdit />
-   228	                                                    </Button>
-   229	                                                </Link>
-   230	                                                <Button
-   231	                                                    variant="danger"
-   232	                                                    size="sm"
-   233	                                                    onClick={() => handleDelete(item)}
-   234	                                                    disabled={deleteItemMutation.isPending && deleteItemMutation.variables === item.id}
+   172	            {isLoading && <div className="text-center p-6">Memuat data awal...</div>}
+   173	            {isError && <div className="text-center p-6 text-red-500">Error: {error instanceof Error ? error.message : 'Gagal memuat data'}</div>}
+   174	
+   175	            {!isLoading && (
+   176	                <>
+   177	                    <Table>
+   178	                        <TableHead>
+   179	                            <TableRow>
+   180	                                <TableHeader>Nama Item</TableHeader>
+   181	                                <TableHeader>Kode</TableHeader>
+   182	                                <TableHeader>Kategori</TableHeader>
+   183	                                <TableHeader>Jenis</TableHeader>
+   184	                                <TableHeader>Satuan</TableHeader>
+   185	                                <TableHeader>Satuan Turunan</TableHeader> {/* Add new header */}
+   186	                                <TableHeader className="text-right">Harga Pokok</TableHeader>
+   187	                                <TableHeader className="text-right">Harga Jual</TableHeader>
+   188	                                <TableHeader className="text-right">Stok</TableHeader>
+   189	                                <TableHeader className="text-center">Aksi</TableHeader>
+   190	                            </TableRow>
+   191	                        </TableHead>
+   192	                        <TableBody>
+   193	                            {items.length === 0 ? (
+   194	                                <TableRow>
+   195	                                    <TableCell
+   196	                                        colSpan={10} // Update colspan
+   197	                                        className="text-center text-gray-600"
+   198	                                    >
+   199	                                        {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
+   200	                                    </TableCell>
+   201	                                </TableRow>
+   202	                            ) : (
+   203	                                items.map((item) => (
+   204	                                    <TableRow key={item.id}>
+   205	                                        <TableCell>{item.name}</TableCell>
+   206	                                        <TableCell>{item.code}</TableCell>
+   207	                                        <TableCell>{item.category.name}</TableCell>
+   208	                                        <TableCell>{item.type.name}</TableCell>
+   209	                                        <TableCell>{item.unit.name}</TableCell>
+   210	                                        {/* Display derived units */}
+   211	                                        <TableCell>
+   212	                                            {item.unit_conversions && item.unit_conversions.length > 0
+   213	                                                ? item.unit_conversions.map((uc: { unit_name: string }) => uc.unit_name).join(', ')
+   214	                                                : '-'}
+   215	                                        </TableCell>
+   216	                                        <TableCell className="text-right">
+   217	                                            {item.base_price.toLocaleString("id-ID", {
+   218	                                                style: "currency",
+   219	                                                currency: "IDR",
+   220	                                            })}
+   221	                                        </TableCell>
+   222	                                        <TableCell className="text-right">
+   223	                                            {item.sell_price.toLocaleString("id-ID", {
+   224	                                                style: "currency",
+   225	                                                currency: "IDR",
+   226	                                                minimumFractionDigits: 0,
+   227	                                                maximumFractionDigits: 0,
+   228	                                            })}
+   229	                                        </TableCell>
+   230	                                        <TableCell className="text-right">{item.stock}</TableCell>
+   231	                                        <TableCell className="text-center">
+   232	                                            <div className="flex justify-center space-x-2">
+   233	                                                <Link
+   234	                                                    to={`/master-data/items/edit/${item.id}`}
    235	                                                >
-   236	                                                    {deleteItemMutation.isPending && deleteItemMutation.variables === item.id ? (
-   237	                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
-   238	                                                    ) : (
-   239	                                                        <FaTrash />
-   240	                                                    )}
-   241	                                                </Button>
-   242	                                            </div>
-   243	                                        </TableCell>
-   244	                                    </TableRow>
-   245	                                ))
-   246	                            )}
-   247	                        </TableBody>
-   248	                    </Table>
-   249	                    <Pagination
-   250	                        currentPage={currentPage}
-   251	                        totalPages={totalPages}
-   252	                        totalItems={totalItems}
-   253	                        itemsPerPage={itemsPerPage}
-   254	                        itemsCount={items.length}
-   255	                        onPageChange={handlePageChange}
-   256	                        onItemsPerPageChange={handleItemsPerPageChange}
-   257	                    />
-   258	                </>
-   259	            )}
-   260	        </Card>
-   261	    );
-   262	
-   263	    async function handleDelete(item: Item) {
-   264	        openConfirmDialog({
-   265	            title: "Konfirmasi Hapus",
-   266	            message: `Apakah Anda yakin ingin menghapus item "${item.name}"?`,
-   267	            variant: "danger",
-   268	            confirmText: "Hapus",
-   269	            onConfirm: () => {
-   270	                // Use item.id for the mutation
-   271	                deleteItemMutation.mutate(item.id);
-   272	            }
-   273	        });
-   274	    }
-   275	}
-   276	
-   277	export default ItemList;
+   236	                                                    <Button variant="secondary" size="sm">
+   237	                                                        <FaEdit />
+   238	                                                    </Button>
+   239	                                                </Link>
+   240	                                                <Button
+   241	                                                    variant="danger"
+   242	                                                    size="sm"
+   243	                                                    onClick={() => handleDelete(item)}
+   244	                                                    disabled={deleteItemMutation.isPending && deleteItemMutation.variables === item.id}
+   245	                                                >
+   246	                                                    {deleteItemMutation.isPending && deleteItemMutation.variables === item.id ? (
+   247	                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
+   248	                                                    ) : (
+   249	                                                        <FaTrash />
+   250	                                                    )}
+   251	                                                </Button>
+   252	                                            </div>
+   253	                                        </TableCell>
+   254	                                    </TableRow>
+   255	                                ))
+   256	                            )}
+   257	                        </TableBody>
+   258	                    </Table>
+   259	                    <Pagination
+   260	                        currentPage={currentPage}
+   261	                        totalPages={totalPages}
+   262	                        totalItems={totalItems}
+   263	                        itemsPerPage={itemsPerPage}
+   264	                        itemsCount={items.length}
+   265	                        onPageChange={handlePageChange}
+   266	                        onItemsPerPageChange={handleItemsPerPageChange}
+   267	                    />
+   268	                </>
+   269	            )}
+   270	        </Card>
+   271	    );
+   272	
+   273	    async function handleDelete(item: Item) {
+   274	        openConfirmDialog({
+   275	            title: "Konfirmasi Hapus",
+   276	            message: `Apakah Anda yakin ingin menghapus item "${item.name}"?`,
+   277	            variant: "danger",
+   278	            confirmText: "Hapus",
+   279	            onConfirm: () => {
+   280	                // Use item.id for the mutation
+   281	                deleteItemMutation.mutate(item.id);
+   282	            }
+   283	        });
+   284	    }
+   285	}
+   286	
+   287	export default ItemList;
 
 
 ===============================================
@@ -6635,23 +6649,24 @@
     84	                            onUpdateItemBatchNo={updateItemBatchNo}
     85	                            onUnitChange={onHandleUnitChange}
     86	                            getItemByID={getItemByID}
-    87	                        />
-    88	                    </FormSection>
-    89	                </CardContent>
-    90	                
-    91	                <CardFooter className="flex justify-between">
-    92	                    <FormActions
-    93	                        onCancel={() => navigate('/purchases')}
-    94	                        isSaving={loading}
-    95	                        isDisabled={purchaseItems.length === 0}
-    96	                    />
-    97	                </CardFooter>
-    98	            </form>
-    99	        </Card>
-   100	    );
-   101	};
-   102	
-   103	export default CreatePurchase;
+    87	                            isEmptyMessage={(purchaseItems.length === 0) ? "Belum ada item ditambahkan" : null}
+    88	                        />
+    89	                    </FormSection>
+    90	                </CardContent>
+    91	                
+    92	                <CardFooter className="flex justify-between">
+    93	                    <FormActions
+    94	                        onCancel={() => navigate('/purchases')}
+    95	                        isSaving={loading}
+    96	                        isDisabled={purchaseItems.length === 0}
+    97	                    />
+    98	                </CardFooter>
+    99	            </form>
+   100	        </Card>
+   101	    );
+   102	};
+   103	
+   104	export default CreatePurchase;
 
 
 ===============================================

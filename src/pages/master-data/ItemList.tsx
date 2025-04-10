@@ -15,6 +15,7 @@ interface Item {
     name: string;
     code: string;
     sell_price: number;
+    unit_conversions?: { unit_name: string }[];
     // Add other fields if needed by other parts of the component
 }
 
@@ -48,6 +49,7 @@ function ItemList() {
                 base_price,
                 sell_price,
                 stock,
+                unit_conversions,
                 category_id,
                 type_id,
                 unit_id
@@ -84,6 +86,7 @@ function ItemList() {
             base_price: item.base_price,
             sell_price: item.sell_price,
             stock: item.stock,
+            unit_conversions: typeof item.unit_conversions === 'string' ? JSON.parse(item.unit_conversions || '[]') : (item.unit_conversions || []), // Parse JSON if needed
             category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
             type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
             unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
@@ -179,6 +182,7 @@ function ItemList() {
                                 <TableHeader>Kategori</TableHeader>
                                 <TableHeader>Jenis</TableHeader>
                                 <TableHeader>Satuan</TableHeader>
+                                <TableHeader>Satuan Turunan</TableHeader> {/* Add new header */}
                                 <TableHeader className="text-right">Harga Pokok</TableHeader>
                                 <TableHeader className="text-right">Harga Jual</TableHeader>
                                 <TableHeader className="text-right">Stok</TableHeader>
@@ -189,7 +193,7 @@ function ItemList() {
                             {items.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={9}
+                                        colSpan={10} // Update colspan
                                         className="text-center text-gray-600"
                                     >
                                         {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
@@ -203,6 +207,12 @@ function ItemList() {
                                         <TableCell>{item.category.name}</TableCell>
                                         <TableCell>{item.type.name}</TableCell>
                                         <TableCell>{item.unit.name}</TableCell>
+                                        {/* Display derived units */}
+                                        <TableCell>
+                                            {item.unit_conversions && item.unit_conversions.length > 0
+                                                ? item.unit_conversions.map((uc: { unit_name: string }) => uc.unit_name).join(', ')
+                                                : '-'}
+                                        </TableCell>
                                         <TableCell className="text-right">
                                             {item.base_price.toLocaleString("id-ID", {
                                                 style: "currency",
