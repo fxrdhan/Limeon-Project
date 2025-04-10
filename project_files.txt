@@ -5323,327 +5323,351 @@
      3	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
      4	import { FormActions } from "../../components/ui/FormActions";
      5	import { Input } from "../../components/ui/Input";
-     6	import { FormSection, FormField } from "../../components/ui/FormComponents";
-     7	import { useAddItemForm } from "../../hooks/useAddItemForm";
-     8	import UnitConversionManager from "../../components/tools/UnitConversionManager";
-     9	
-    10	// Style constants
-    11	const inputClassName = "w-full";
-    12	const selectClassName = "bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
-    13	const addButtonClassName = "ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600";
-    14	const radioGroupClassName = "space-x-6";
-    15	const textareaClassName = "w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
-    16	
-    17	const AddItem = () => {
-    18	    const navigate = useNavigate();
-    19	
-    20	    const {
-    21	        formData, displayBasePrice, displaySellPrice, categories, types, units,
-    22	        saving, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
-    23	        unitConversionHook
-    24	    } = useAddItemForm();
-    25	
-    26	    // Modified handleSelectChange to update baseUnit automatically
-    27	    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    28	        const { name, value } = e.target;
-    29	        originalHandleSelectChange(e);
-    30	        
-    31	        // Set baseUnit automatically when unit_id changes
-    32	        if (name === 'unit_id' && value) {
-    33	            const selectedUnit = units.find(unit => unit.id === value);
-    34	            if (selectedUnit) {
-    35	                unitConversionHook.setBaseUnit(selectedUnit.name);
-    36	            }
-    37	        }
-    38	    };
-    39	
-    40	    // Efek untuk memperbarui basePrice pada unitConversionHook saat harga pokok berubah
-    41	    useEffect(() => {
-    42	        // Perbarui nilai basePrice di unitConversionHook ketika formData.base_price berubah
-    43	        if (formData.base_price > 0) {
-    44	            unitConversionHook.setBasePrice(formData.base_price);
-    45	        }
-    46	    // eslint-disable-next-line react-hooks/exhaustive-deps
-    47	    }, [formData.base_price]);
-    48	
-    49	    return (
-    50	        <div>
-    51	            <Card>
-    52	                <CardHeader>
-    53	                    <CardTitle>Tambah Data Item Baru</CardTitle>
-    54	                </CardHeader>
-    55	
-    56	                <form onSubmit={handleSubmit}>
-    57	                    <CardContent className="space-y-6">
-    58	                        <FormSection title="Data Umum">
-    59	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    60	                                <FormField label="Kode Item">
-    61	                                    <Input
-    62	                                        name="code"
-    63	                                        value={formData.code}
-    64	                                        disabled={true}
-    65	                                        className={inputClassName}
-    66	                                        style={formData.code === "" ? {
-    67	                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
-    68	                                        } : {}}
-    69	                                    />
-    70	                                </FormField>
-    71	                            </div>
-    72	
-    73	                            <FormField label="Nama Item">
-    74	                                <Input
-    75	                                    name="name"
-    76	                                    value={formData.name}
-    77	                                    onChange={handleChange}
-    78	                                    className={inputClassName}
-    79	                                    required
-    80	                                />
-    81	                            </FormField>
+     6	import { FaArrowRight } from 'react-icons/fa'; // Import ikon panah
+     7	import { FormSection, FormField } from "../../components/ui/FormComponents";
+     8	import { useAddItemForm } from "../../hooks/useAddItemForm";
+     9	import UnitConversionManager from "../../components/tools/UnitConversionManager";
+    10	
+    11	// Style constants
+    12	const inputClassName = "w-full";
+    13	const selectClassName = "bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
+    14	const addButtonClassName = "ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600";
+    15	const radioGroupClassName = "space-x-6";
+    16	const textareaClassName = "w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
+    17	
+    18	const AddItem = () => {
+    19	    const navigate = useNavigate();
+    20	
+    21	    const {
+    22	        formData, displayBasePrice, displaySellPrice, categories, types, units,
+    23	        saving, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
+    24	        unitConversionHook
+    25	    } = useAddItemForm();
+    26	
+    27	    // Modified handleSelectChange to update baseUnit automatically
+    28	    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    29	        const { name, value } = e.target;
+    30	        originalHandleSelectChange(e);
+    31	        
+    32	        // Set baseUnit automatically when unit_id changes
+    33	        if (name === 'unit_id' && value) {
+    34	            const selectedUnit = units.find(unit => unit.id === value);
+    35	            if (selectedUnit) {
+    36	                unitConversionHook.setBaseUnit(selectedUnit.name);
+    37	            }
+    38	        }
+    39	    };
+    40	
+    41	    // Efek untuk memperbarui basePrice pada unitConversionHook saat harga pokok berubah
+    42	    useEffect(() => {
+    43	        // Perbarui nilai basePrice di unitConversionHook ketika formData.base_price berubah
+    44	        if (formData.base_price > 0) {
+    45	            unitConversionHook.setBasePrice(formData.base_price);
+    46	        }
+    47	    // eslint-disable-next-line react-hooks/exhaustive-deps
+    48	    }, [formData.base_price]);
+    49	
+    50	    // Fungsi untuk menghitung persentase keuntungan
+    51	    const calculateProfitPercentage = () => {
+    52	        const { base_price, sell_price } = formData;
+    53	        if (base_price > 0 && sell_price >= 0) {
+    54	            return ((sell_price - base_price) / base_price) * 100;
+    55	        }
+    56	        return null; // Kembalikan null jika harga pokok 0 atau negatif
+    57	    };
+    58	
+    59	    return (
+    60	        <div>
+    61	            <Card>
+    62	                <CardHeader>
+    63	                    <CardTitle>Tambah Data Item Baru</CardTitle>
+    64	                </CardHeader>
+    65	
+    66	                <form onSubmit={handleSubmit}>
+    67	                    <CardContent className="space-y-6">
+    68	                        <FormSection title="Data Umum">
+    69	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    70	                                <FormField label="Kode Item">
+    71	                                    <Input
+    72	                                        name="code"
+    73	                                        value={formData.code}
+    74	                                        disabled={true}
+    75	                                        className={inputClassName}
+    76	                                        style={formData.code === "" ? {
+    77	                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
+    78	                                        } : {}}
+    79	                                    />
+    80	                                </FormField>
+    81	                            </div>
     82	
-    83	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    84	                                <FormField label="Jenis">
-    85	                                    <div className="flex">
-    86	                                        {categories.length === 0 && (
-    87	                                            <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
-    88	                                        )}
-    89	                                        <select
-    90	                                            name="type_id" 
-    91	                                            value={formData.type_id}
-    92	                                            onChange={handleSelectChange}
-    93	                                            className={selectClassName}
-    94	                                            required
-    95	                                        >
-    96	                                            <option value="">-- Pilih Jenis --</option>
-    97	                                            {types.map((type) => (
-    98	                                                <option key={type.id} value={type.id}>
-    99	                                                    {type.name}
-   100	                                                </option>
-   101	                                            ))}
-   102	                                        </select>
-   103	                                        <button
-   104	                                            type="button"
-   105	                                            className={addButtonClassName}
-   106	                                            onClick={() => navigate("/master-data/types/add")}
-   107	                                        >
-   108	                                            +
-   109	                                        </button>
-   110	                                    </div>
-   111	                                </FormField>
-   112	
-   113	                                <FormField label="Kategori">
-   114	                                    <div className="flex">
-   115	                                        <select
-   116	                                            name="category_id"
-   117	                                            value={formData.category_id}
-   118	                                            onChange={handleSelectChange}
-   119	                                            className={selectClassName}
-   120	                                            required
-   121	                                        >
-   122	                                            <option value="">-- Pilih Kategori --</option>
-   123	                                            {categories.map((category) => (
-   124	                                                <option key={category.id} value={category.id}>
-   125	                                                    {category.name}
-   126	                                                </option>
-   127	                                            ))}
-   128	                                        </select>
-   129	                                        <button
-   130	                                            type="button"
-   131	                                            className={addButtonClassName}
-   132	                                            onClick={() => navigate("/master-data/categories/add")}
-   133	                                        >
-   134	                                            +
-   135	                                        </button>
-   136	                                    </div>
-   137	                                </FormField>
-   138	                            </div>
-   139	
-   140	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-   141	                                <FormField label="Satuan">
-   142	                                    <div className="flex">
-   143	                                        <select
-   144	                                            name="unit_id"
-   145	                                            value={formData.unit_id}
-   146	                                            onChange={handleSelectChange}
-   147	                                            className={selectClassName}
-   148	                                            required
-   149	                                        >
-   150	                                            <option value="">-- Pilih Satuan --</option>
-   151	                                            {units.map((unit) => (
-   152	                                                <option key={unit.id} value={unit.id}>
-   153	                                                    {unit.name}
-   154	                                                </option>
-   155	                                            ))}
-   156	                                        </select>
-   157	                                        <button
-   158	                                            type="button"
-   159	                                            className={addButtonClassName}
-   160	                                            onClick={() => navigate("/master-data/units/add")}
-   161	                                        >
-   162	                                            +
-   163	                                        </button>
-   164	                                    </div>
-   165	                                </FormField>
-   166	
-   167	                                <FormField label="Rak">
-   168	                                    <Input
-   169	                                        name="rack"
-   170	                                        value={formData.rack}
-   171	                                        onChange={handleChange}
-   172	                                        className={inputClassName}
-   173	                                    />
-   174	                                </FormField>
-   175	                            </div>
+    83	                            <FormField label="Nama Item">
+    84	                                <Input
+    85	                                    name="name"
+    86	                                    value={formData.name}
+    87	                                    onChange={handleChange}
+    88	                                    className={inputClassName}
+    89	                                    required
+    90	                                />
+    91	                            </FormField>
+    92	
+    93	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    94	                                <FormField label="Jenis">
+    95	                                    <div className="flex">
+    96	                                        {categories.length === 0 && (
+    97	                                            <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
+    98	                                        )}
+    99	                                        <select
+   100	                                            name="type_id" 
+   101	                                            value={formData.type_id}
+   102	                                            onChange={handleSelectChange}
+   103	                                            className={selectClassName}
+   104	                                            required
+   105	                                        >
+   106	                                            <option value="">-- Pilih Jenis --</option>
+   107	                                            {types.map((type) => (
+   108	                                                <option key={type.id} value={type.id}>
+   109	                                                    {type.name}
+   110	                                                </option>
+   111	                                            ))}
+   112	                                        </select>
+   113	                                        <button
+   114	                                            type="button"
+   115	                                            className={addButtonClassName}
+   116	                                            onClick={() => navigate("/master-data/types/add")}
+   117	                                        >
+   118	                                            +
+   119	                                        </button>
+   120	                                    </div>
+   121	                                </FormField>
+   122	
+   123	                                <FormField label="Kategori">
+   124	                                    <div className="flex">
+   125	                                        <select
+   126	                                            name="category_id"
+   127	                                            value={formData.category_id}
+   128	                                            onChange={handleSelectChange}
+   129	                                            className={selectClassName}
+   130	                                            required
+   131	                                        >
+   132	                                            <option value="">-- Pilih Kategori --</option>
+   133	                                            {categories.map((category) => (
+   134	                                                <option key={category.id} value={category.id}>
+   135	                                                    {category.name}
+   136	                                                </option>
+   137	                                            ))}
+   138	                                        </select>
+   139	                                        <button
+   140	                                            type="button"
+   141	                                            className={addButtonClassName}
+   142	                                            onClick={() => navigate("/master-data/categories/add")}
+   143	                                        >
+   144	                                            +
+   145	                                        </button>
+   146	                                    </div>
+   147	                                </FormField>
+   148	                            </div>
+   149	
+   150	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   151	                                <FormField label="Satuan">
+   152	                                    <div className="flex">
+   153	                                        <select
+   154	                                            name="unit_id"
+   155	                                            value={formData.unit_id}
+   156	                                            onChange={handleSelectChange}
+   157	                                            className={selectClassName}
+   158	                                            required
+   159	                                        >
+   160	                                            <option value="">-- Pilih Satuan --</option>
+   161	                                            {units.map((unit) => (
+   162	                                                <option key={unit.id} value={unit.id}>
+   163	                                                    {unit.name}
+   164	                                                </option>
+   165	                                            ))}
+   166	                                        </select>
+   167	                                        <button
+   168	                                            type="button"
+   169	                                            className={addButtonClassName}
+   170	                                            onClick={() => navigate("/master-data/units/add")}
+   171	                                        >
+   172	                                            +
+   173	                                        </button>
+   174	                                    </div>
+   175	                                </FormField>
    176	
-   177	                            <FormField label="Jenis Produk">
-   178	                                <div className={radioGroupClassName}>
-   179	                                    <label className="inline-flex items-center">
-   180	                                        <input
-   181	                                            type="radio"
-   182	                                            name="is_medicine"
-   183	                                            checked={formData.is_medicine}
-   184	                                            onChange={() => updateFormData({ is_medicine: true })}
-   185	                                            className="form-radio h-5 w-5 text-primary"
-   186	                                        />
-   187	                                        <span className="ml-2">Obat</span>
-   188	                                    </label>
+   177	                                <FormField label="Rak">
+   178	                                    <Input
+   179	                                        name="rack"
+   180	                                        value={formData.rack}
+   181	                                        onChange={handleChange}
+   182	                                        className={inputClassName}
+   183	                                    />
+   184	                                </FormField>
+   185	                            </div>
+   186	
+   187	                            <FormField label="Jenis Produk">
+   188	                                <div className={radioGroupClassName}>
    189	                                    <label className="inline-flex items-center">
    190	                                        <input
    191	                                            type="radio"
    192	                                            name="is_medicine"
-   193	                                            checked={!formData.is_medicine}
-   194	                                            onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
+   193	                                            checked={formData.is_medicine}
+   194	                                            onChange={() => updateFormData({ is_medicine: true })}
    195	                                            className="form-radio h-5 w-5 text-primary"
    196	                                        />
-   197	                                        <span className="ml-2">Non-Obat</span>
+   197	                                        <span className="ml-2">Obat</span>
    198	                                    </label>
-   199	                                </div>
-   200	                            </FormField>
-   201	
-   202	                            <FormField label="Keterangan">
-   203	                                <textarea
-   204	                                    name="description"
-   205	                                    value={formData.description}
-   206	                                    onChange={handleChange}
-   207	                                    className={textareaClassName}
-   208	                                    rows={3}
-   209	                                />
+   199	                                    <label className="inline-flex items-center">
+   200	                                        <input
+   201	                                            type="radio"
+   202	                                            name="is_medicine"
+   203	                                            checked={!formData.is_medicine}
+   204	                                            onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
+   205	                                            className="form-radio h-5 w-5 text-primary"
+   206	                                        />
+   207	                                        <span className="ml-2">Non-Obat</span>
+   208	                                    </label>
+   209	                                </div>
    210	                            </FormField>
-   211	                        </FormSection>
-   212	
-   213	                        <FormSection title="Harga Pokok & Jual">
-   214	                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-   215	                                <FormField label="Satuan Dasar">
-   216	                                    <Input
-   217	                                        type="text"
-   218	                                        value={unitConversionHook.baseUnit}
-   219	                                        readOnly
-   220	                                        className={inputClassName}
-   221	                                    />
-   222	                                </FormField>
-   223	                                
-   224	                                <FormField label="Harga Pokok">
-   225	                                    <Input
-   226	                                        type="text"
-   227	                                        name="base_price"
-   228	                                        value={displayBasePrice}
-   229	                                        placeholder="Rp 0"
-   230	                                        onChange={handleChange}
-   231	                                        min="0"
-   232	                                        className={inputClassName}
-   233	                                        required
-   234	                                    />
-   235	                                </FormField>
-   236	
-   237	                                <FormField label="Harga Jual">
-   238	                                    <Input
-   239	                                        type="text"
-   240	                                        name="sell_price"
-   241	                                        value={displaySellPrice}
-   242	                                        placeholder="Rp 0"
-   243	                                        onChange={handleChange}
-   244	                                        min="0"
-   245	                                        className={inputClassName}
-   246	                                        required
-   247	                                    />
-   248	                                </FormField>
-   249	                            </div>
-   250	                        </FormSection>
-   251	
-   252	                        <UnitConversionManager unitConversionHook={unitConversionHook} />
-   253	
-   254	                        <FormSection title="Pengaturan Tambahan">
-   255	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-   256	                                <FormField label="Status Jual">
-   257	                                    <div className={radioGroupClassName}>
-   258	                                        <label className="inline-flex items-center">
-   259	                                            <input
-   260	                                                type="radio"
-   261	                                                name="is_active"
-   262	                                                checked={formData.is_active}
-   263	                                                onChange={() => updateFormData({ is_active: true })}
-   264	                                                className="form-radio h-5 w-5 text-primary"
-   265	                                            />
-   266	                                            <span className="ml-2">Masih dijual</span>
-   267	                                        </label>
-   268	                                        <label className="inline-flex items-center">
-   269	                                            <input
-   270	                                                type="radio"
-   271	                                                name="is_active"
-   272	                                                checked={!formData.is_active}
-   273	                                                onChange={() => updateFormData({ is_active: false })}
-   274	                                                className="form-radio h-5 w-5 text-primary"
-   275	                                            />
-   276	                                            <span className="ml-2">Tidak Dijual</span>
-   277	                                        </label>
-   278	                                    </div>
-   279	                                </FormField>
-   280	
-   281	                                <FormField label="Stok Minimal">
-   282	                                    <Input
-   283	                                        type="number"
-   284	                                        name="min_stock"
-   285	                                        value={formData.min_stock}
-   286	                                        onChange={handleChange}
-   287	                                        className={inputClassName}
-   288	                                        required
-   289	                                    />
-   290	                                </FormField>
-   291	                            </div>
-   292	
-   293	                            <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
-   294	                                <label className="inline-flex items-center">
-   295	                                    <input
-   296	                                        type="checkbox"
-   297	                                        name="has_expiry_date"
-   298	                                        checked={formData.has_expiry_date}
-   299	                                        disabled={!formData.is_medicine}
-   300	                                        onChange={handleChange}
-   301	                                        className="form-checkbox h-5 w-5 text-primary"
-   302	                                    />
-   303	                                    <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
-   304	                                </label>
-   305	                                <div className="mt-1 text-sm text-gray-500">
-   306	                                    Jika dicentang, obat ini akan menggunakan metode FEFO
-   307	                                    (First Expired First Out)
-   308	                                </div>
-   309	                            </div>
-   310	                        </FormSection>
-   311	                    </CardContent>
-   312	
-   313	                    <CardFooter className="flex justify-between">
-   314	                        <FormActions
-   315	                            onCancel={() => navigate("/master-data/items")}
-   316	                            isDisabled={false}
-   317	                            isSaving={saving}
-   318	                        />
-   319	                    </CardFooter>
-   320	                </form>
-   321	            </Card>
-   322	        </div>
-   323	    );
-   324	};
-   325	
-   326	export default AddItem;
+   211	
+   212	                            <FormField label="Keterangan">
+   213	                                <textarea
+   214	                                    name="description"
+   215	                                    value={formData.description}
+   216	                                    onChange={handleChange}
+   217	                                    className={textareaClassName}
+   218	                                    rows={3}
+   219	                                />
+   220	                            </FormField>
+   221	                        </FormSection>
+   222	
+   223	                        <FormSection title="Harga Pokok & Jual">
+   224	                            {/* Ubah grid menjadi 5 kolom untuk menempatkan persentase di tengah */}
+   225	                            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
+   226	                                <FormField label="Satuan Dasar">
+   227	                                    <Input
+   228	                                        type="text"
+   229	                                        value={unitConversionHook.baseUnit}
+   230	                                        readOnly
+   231	                                        className={inputClassName}
+   232	                                    />
+   233	                                </FormField>
+   234	                                
+   235	                                <FormField label="Harga Pokok">
+   236	                                    <Input
+   237	                                        type="text"
+   238	                                        name="base_price"
+   239	                                        value={displayBasePrice}
+   240	                                        placeholder="Rp 0"
+   241	                                        onChange={handleChange}
+   242	                                        min="0"
+   243	                                        className={inputClassName}
+   244	                                        required
+   245	                                    />
+   246	                                </FormField>
+   247	                                
+   248	                                {/* Elemen untuk menampilkan persentase keuntungan */}
+   249	                                <div className="text-center md:mt-6">
+   250	                                    {calculateProfitPercentage() !== null ? (
+   251	                                        <span className={`text-sm font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+   252	                                            <FaArrowRight className="inline mr-1" />
+   253	                                            {calculateProfitPercentage()!.toFixed(1)}%
+   254	                                        </span>
+   255	                                    ) : (
+   256	                                        <span className="text-sm text-gray-500">-</span>
+   257	                                    )}
+   258	                                </div>
+   259	
+   260	                                {/* Field Harga Jual */}
+   261	                                <FormField label="Harga Jual">
+   262	                                    <Input
+   263	                                        type="text"
+   264	                                        name="sell_price"
+   265	                                        value={displaySellPrice}
+   266	                                        placeholder="Rp 0"
+   267	                                        onChange={handleChange}
+   268	                                        min="0"
+   269	                                        className={inputClassName}
+   270	                                        required
+   271	                                    />
+   272	                                </FormField>
+   273	                            </div>
+   274	                        </FormSection>
+   275	
+   276	                        <UnitConversionManager unitConversionHook={unitConversionHook} />
+   277	
+   278	                        <FormSection title="Pengaturan Tambahan">
+   279	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   280	                                <FormField label="Status Jual">
+   281	                                    <div className={radioGroupClassName}>
+   282	                                        <label className="inline-flex items-center">
+   283	                                            <input
+   284	                                                type="radio"
+   285	                                                name="is_active"
+   286	                                                checked={formData.is_active}
+   287	                                                onChange={() => updateFormData({ is_active: true })}
+   288	                                                className="form-radio h-5 w-5 text-primary"
+   289	                                            />
+   290	                                            <span className="ml-2">Masih dijual</span>
+   291	                                        </label>
+   292	                                        <label className="inline-flex items-center">
+   293	                                            <input
+   294	                                                type="radio"
+   295	                                                name="is_active"
+   296	                                                checked={!formData.is_active}
+   297	                                                onChange={() => updateFormData({ is_active: false })}
+   298	                                                className="form-radio h-5 w-5 text-primary"
+   299	                                            />
+   300	                                            <span className="ml-2">Tidak Dijual</span>
+   301	                                        </label>
+   302	                                    </div>
+   303	                                </FormField>
+   304	
+   305	                                <FormField label="Stok Minimal">
+   306	                                    <Input
+   307	                                        type="number"
+   308	                                        name="min_stock"
+   309	                                        value={formData.min_stock}
+   310	                                        onChange={handleChange}
+   311	                                        className={inputClassName}
+   312	                                        required
+   313	                                    />
+   314	                                </FormField>
+   315	                            </div>
+   316	
+   317	                            <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
+   318	                                <label className="inline-flex items-center">
+   319	                                    <input
+   320	                                        type="checkbox"
+   321	                                        name="has_expiry_date"
+   322	                                        checked={formData.has_expiry_date}
+   323	                                        disabled={!formData.is_medicine}
+   324	                                        onChange={handleChange}
+   325	                                        className="form-checkbox h-5 w-5 text-primary"
+   326	                                    />
+   327	                                    <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
+   328	                                </label>
+   329	                                <div className="mt-1 text-sm text-gray-500">
+   330	                                    Jika dicentang, obat ini akan menggunakan metode FEFO
+   331	                                    (First Expired First Out)
+   332	                                </div>
+   333	                            </div>
+   334	                        </FormSection>
+   335	                    </CardContent>
+   336	
+   337	                    <CardFooter className="flex justify-between">
+   338	                        <FormActions
+   339	                            onCancel={() => navigate("/master-data/items")}
+   340	                            isDisabled={false}
+   341	                            isSaving={saving}
+   342	                        />
+   343	                    </CardFooter>
+   344	                </form>
+   345	            </Card>
+   346	        </div>
+   347	    );
+   348	};
+   349	
+   350	export default AddItem;
 
 
 ===============================================
