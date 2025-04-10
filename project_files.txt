@@ -2938,33 +2938,52 @@
 ===============================================
 
      1	import { useEffect, useState } from 'react';
-     2	
-     3	const OfflineAlert = () => {
-     4	    const [isOffline, setIsOffline] = useState(!navigator.onLine);
-     5	
-     6	    useEffect(() => {
-     7	        const handleOnline = () => setIsOffline(false);
-     8	        const handleOffline = () => setIsOffline(true);
-     9	
-    10	        window.addEventListener('online', handleOnline);
-    11	        window.addEventListener('offline', handleOffline);
-    12	
-    13	        return () => {
-    14	            window.removeEventListener('online', handleOnline);
-    15	            window.removeEventListener('offline', handleOffline);
-    16	        };
-    17	    }, []);
-    18	
-    19	    if (!isOffline) return null;
-    20	
-    21	    return (
-    22	        <div style={{ backgroundColor: 'red', color: 'white', padding: '10px', textAlign: 'center' }}>
-    23	            You are offline. Some features may not be available.
-    24	        </div>
-    25	    );
-    26	};
+     2	import { FaWifi } from 'react-icons/fa';
+     3	
+     4	const OfflineAlert = () => {
+     5	    const [isOffline, setIsOffline] = useState(!navigator.onLine);
+     6	    const [justCameOnline, setJustCameOnline] = useState(false);
+     7	
+     8	    useEffect(() => {
+     9	        const handleOnline = () => {
+    10	            setIsOffline(false);
+    11	            setJustCameOnline(true);
+    12	            // Auto-dismiss the online notification after 3 seconds
+    13	            setTimeout(() => setJustCameOnline(false), 3000);
+    14	        };
+    15	        const handleOffline = () => setIsOffline(true);
+    16	
+    17	        window.addEventListener('online', handleOnline);
+    18	        window.addEventListener('offline', handleOffline);
+    19	
+    20	        return () => {
+    21	            window.removeEventListener('online', handleOnline);
+    22	            window.removeEventListener('offline', handleOffline);
+    23	        };
+    24	    }, []);
+    25	
+    26	    if (!isOffline && !justCameOnline) return null;
     27	
-    28	export default OfflineAlert;
+    28	    return (
+    29	        <div
+    30	            className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 ${
+    31	                isOffline 
+    32	                    ? "bg-gradient-to-r from-red-500 to-orange-500 animate-pulse" 
+    33	                    : "bg-gradient-to-r from-green-500 to-teal-500"
+    34	            } text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3`}
+    35	            role="alert"
+    36	        >
+    37	            <FaWifi className="text-xl" />
+    38	            <span className="font-medium">
+    39	                {isOffline 
+    40	                    ? "Koneksi terputus. Anda sedang offline. Beberapa fitur mungkin tidak berfungsi."
+    41	                    : "Koneksi tersambung kembali. Anda sedang online."}
+    42	            </span>
+    43	        </div>
+    44	    );
+    45	};
+    46	
+    47	export default OfflineAlert;
 
 
 ===============================================
