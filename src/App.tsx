@@ -83,6 +83,11 @@ function App() {
                   <AddItem />
                 </Suspense>
               } />
+              <Route path="items/edit/:id" element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AddItem />
+                </Suspense>
+              } />
               <Route path="categories" element={
                 <Suspense fallback={<div>Loading...</div>}>
                   <CategoryList />

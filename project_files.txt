@@ -592,140 +592,145 @@
     83	                  <AddItem />
     84	                </Suspense>
     85	              } />
-    86	              <Route path="categories" element={
+    86	              <Route path="items/edit/:id" element={
     87	                <Suspense fallback={<div>Loading...</div>}>
-    88	                  <CategoryList />
+    88	                  <AddItem />
     89	                </Suspense>
     90	              } />
-    91	              <Route path="types" element={
+    91	              <Route path="categories" element={
     92	                <Suspense fallback={<div>Loading...</div>}>
-    93	                  <TypeList />
+    93	                  <CategoryList />
     94	                </Suspense>
     95	              } />
-    96	              <Route path="units" element={
+    96	              <Route path="types" element={
     97	                <Suspense fallback={<div>Loading...</div>}>
-    98	                  <UnitList />
+    98	                  <TypeList />
     99	                </Suspense>
    100	              } />
-   101	               <Route path="suppliers" element={
+   101	              <Route path="units" element={
    102	                <Suspense fallback={<div>Loading...</div>}>
-   103	                  <SupplierList />
+   103	                  <UnitList />
    104	                </Suspense>
-   105	               } />
-   106	              {/* Tambahkan route lain sesuai kebutuhan (e.g., /add, /edit/:id for suppliers) */}
-   107	            </Route>
-   108	
-   109	            <Route path="purchases">
-   110	              <Route
-   111	                index
-   112	                element={
-   113	                  <Suspense fallback={<div>Loading...</div>}>
-   114	                    <PurchaseList />
-   115	                  </Suspense>
-   116	                }
-   117	              />
-   118	              <Route
-   119	                path="create"
-   120	                element={
-   121	                  <Suspense fallback={<div>Loading...</div>}>
-   122	                    <CreatePurchase />
-   123	                  </Suspense>
-   124	                }
-   125	              />
-   126	              <Route
-   127	                path="upload-invoice"
-   128	                element={
-   129	                  <Suspense fallback={<div>Loading...</div>}>
-   130	                    <UploadInvoice />
-   131	                  </Suspense>
-   132	                }
-   133	              />
-   134	              <Route
-   135	                path="view/:id"
-   136	                element={
-   137	                  <Suspense fallback={<div>Loading...</div>}>
-   138	                    <ViewPurchase />
-   139	                  </Suspense>
-   140	                }
-   141	              />
-   142	              <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
-   143	              <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
-   144	            </Route>
-   145	
-   146	            <Route path="inventory">
-   147	              <Route
-   148	                index
-   149	                element={<ComingSoon title="Persediaan" />}
-   150	              />
-   151	              <Route
-   152	                path="stock"
-   153	                element={<ComingSoon title="Stok Obat" />}
-   154	              />
-   155	              <Route
-   156	                path="stock-opname"
-   157	                element={<ComingSoon title="Stok Opname" />}
-   158	              />
-   159	              <Route
-   160	                path="expired"
-   161	                element={<ComingSoon title="Obat Kadaluarsa" />}
-   162	              />
-   163	            </Route>
-   164	
-   165	            <Route path="sales">
-   166	              <Route
-   167	                index
-   168	                element={<ComingSoon title="Daftar Penjualan" />}
-   169	              />
-   170	              <Route
-   171	                path="create"
-   172	                element={<ComingSoon title="Tambah Penjualan" />}
-   173	              />
-   174	            </Route>
-   175	
-   176	            <Route path="clinic">
-   177	              <Route
-   178	                index
-   179	                element={<ComingSoon title="Klinik" />}
-   180	              />
-   181	              <Route
-   182	                path="patients"
-   183	                element={<ComingSoon title="Daftar Pasien" />}
-   184	              />
-   185	              <Route
-   186	                path="queue"
-   187	                element={<ComingSoon title="Antrian" />}
-   188	              />
-   189	              <Route
-   190	                path="medical-records"
-   191	                element={<ComingSoon title="Rekam Medis" />}
-   192	              />
-   193	            </Route>
-   194	
-   195	            <Route path="reports">
-   196	              <Route index element={<ComingSoon title="Laporan" />} />
-   197	              <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
-   198	              <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
-   199	              <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
-   200	            </Route>
-   201	
-   202	            <Route path="settings">
-   203	              <Route path="profile" element={
-   204	                <Suspense fallback={<div>Loading...</div>}>
-   205	                  <Profile />
-   206	                </Suspense>
-   207	              } />
-   208	              <Route path="users" element={<ComingSoon title="Pengguna" />} />
-   209	              <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
-   210	            </Route>
-   211	            {/* Tambahkan route untuk modul lain */}
-   212	          </Route>
-   213	        </Routes>
-   214	      </Router>
-   215	    </ConfirmDialogProvider>
-   216	  );
-   217	}
-   218	
-   219	export default App;
+   105	              } />
+   106	               <Route path="suppliers" element={
+   107	                <Suspense fallback={<div>Loading...</div>}>
+   108	                  <SupplierList />
+   109	                </Suspense>
+   110	               } />
+   111	              {/* Tambahkan route lain sesuai kebutuhan (e.g., /add, /edit/:id for suppliers) */}
+   112	            </Route>
+   113	
+   114	            <Route path="purchases">
+   115	              <Route
+   116	                index
+   117	                element={
+   118	                  <Suspense fallback={<div>Loading...</div>}>
+   119	                    <PurchaseList />
+   120	                  </Suspense>
+   121	                }
+   122	              />
+   123	              <Route
+   124	                path="create"
+   125	                element={
+   126	                  <Suspense fallback={<div>Loading...</div>}>
+   127	                    <CreatePurchase />
+   128	                  </Suspense>
+   129	                }
+   130	              />
+   131	              <Route
+   132	                path="upload-invoice"
+   133	                element={
+   134	                  <Suspense fallback={<div>Loading...</div>}>
+   135	                    <UploadInvoice />
+   136	                  </Suspense>
+   137	                }
+   138	              />
+   139	              <Route
+   140	                path="view/:id"
+   141	                element={
+   142	                  <Suspense fallback={<div>Loading...</div>}>
+   143	                    <ViewPurchase />
+   144	                  </Suspense>
+   145	                }
+   146	              />
+   147	              <Route path="orders" element={<ComingSoon title="Daftar Pesanan Beli" />} />
+   148	              <Route path="price-history" element={<ComingSoon title="Riwayat Harga Beli" />} />
+   149	            </Route>
+   150	
+   151	            <Route path="inventory">
+   152	              <Route
+   153	                index
+   154	                element={<ComingSoon title="Persediaan" />}
+   155	              />
+   156	              <Route
+   157	                path="stock"
+   158	                element={<ComingSoon title="Stok Obat" />}
+   159	              />
+   160	              <Route
+   161	                path="stock-opname"
+   162	                element={<ComingSoon title="Stok Opname" />}
+   163	              />
+   164	              <Route
+   165	                path="expired"
+   166	                element={<ComingSoon title="Obat Kadaluarsa" />}
+   167	              />
+   168	            </Route>
+   169	
+   170	            <Route path="sales">
+   171	              <Route
+   172	                index
+   173	                element={<ComingSoon title="Daftar Penjualan" />}
+   174	              />
+   175	              <Route
+   176	                path="create"
+   177	                element={<ComingSoon title="Tambah Penjualan" />}
+   178	              />
+   179	            </Route>
+   180	
+   181	            <Route path="clinic">
+   182	              <Route
+   183	                index
+   184	                element={<ComingSoon title="Klinik" />}
+   185	              />
+   186	              <Route
+   187	                path="patients"
+   188	                element={<ComingSoon title="Daftar Pasien" />}
+   189	              />
+   190	              <Route
+   191	                path="queue"
+   192	                element={<ComingSoon title="Antrian" />}
+   193	              />
+   194	              <Route
+   195	                path="medical-records"
+   196	                element={<ComingSoon title="Rekam Medis" />}
+   197	              />
+   198	            </Route>
+   199	
+   200	            <Route path="reports">
+   201	              <Route index element={<ComingSoon title="Laporan" />} />
+   202	              <Route path="sales" element={<ComingSoon title="Laporan Penjualan" />} />
+   203	              <Route path="purchases" element={<ComingSoon title="Laporan Pembelian" />} />
+   204	              <Route path="stock" element={<ComingSoon title="Laporan Stok" />} />
+   205	            </Route>
+   206	
+   207	            <Route path="settings">
+   208	              <Route path="profile" element={
+   209	                <Suspense fallback={<div>Loading...</div>}>
+   210	                  <Profile />
+   211	                </Suspense>
+   212	              } />
+   213	              <Route path="users" element={<ComingSoon title="Pengguna" />} />
+   214	              <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
+   215	            </Route>
+   216	            {/* Tambahkan route untuk modul lain */}
+   217	          </Route>
+   218	        </Routes>
+   219	      </Router>
+   220	    </ConfirmDialogProvider>
+   221	  );
+   222	}
+   223	
+   224	export default App;
 
 
 ===============================================
@@ -3195,336 +3200,440 @@
     28	    rack: string;
     29	    description: string;
     30	    base_price: number;
-    31	    sell_price: number; // Add sell_price
+    31	    sell_price: number;
     32	    min_stock: number;
     33	    is_active: boolean;
     34	    is_medicine: boolean;
     35	    has_expiry_date: boolean;
     36	}
     37	
-    38	export const useAddItemForm = () => {
+    38	export const useAddItemForm = (itemId?: string) => {
     39	    const navigate = useNavigate();
     40	    const [loading, setLoading] = useState(false);
     41	    const [saving, setSaving] = useState(false);
-    42	    const [categories, setCategories] = useState<Category[]>([]);
-    43	    const [types, setTypes] = useState<MedicineType[]>([]);
-    44	    const [units, setUnits] = useState<Unit[]>([]);
-    45	    // State untuk nilai yang ditampilkan dengan format mata uang
+    42	    const [isEditMode, setIsEditMode] = useState(false);
+    43	    const [categories, setCategories] = useState<Category[]>([]);
+    44	    const [types, setTypes] = useState<MedicineType[]>([]);
+    45	    const [units, setUnits] = useState<Unit[]>([]);
     46	    const [displayBasePrice, setDisplayBasePrice] = useState('');
     47	    const [displaySellPrice, setDisplaySellPrice] = useState('');
     48	
-    49	    // Hook untuk konversi satuan
-    50	    const unitConversionHook = useUnitConversion();
-    51	
-    52	    // Form state
-    53	    const [formData, setFormData] = useState<FormData>({
-    54	        code: "", // Kode akan dibuat otomatis
-    55	        name: "",
-    56	        type_id: "",
-    57	        category_id: "",
-    58	        unit_id: "",
-    59	        rack: "",
-    60	        description: "",
-    61	        base_price: 0,
-    62	        sell_price: 0, // Initialize sell_price
-    63	        min_stock: 10,
-    64	        is_active: true,
-    65	        is_medicine: true,
-    66	        has_expiry_date: false,
-    67	    });
-    68	
-    69	    // Fungsi untuk memperbarui formData secara lebih mudah
-    70	    const updateFormData = (newData: Partial<FormData>) => {
-    71	        setFormData(prev => ({
-    72	            ...prev,
-    73	            ...newData
-    74	        }));
-    75	    };
-    76	
-    77	    // Fungsi helper untuk menghasilkan kode dinamis
-    78	    const generateTypeCode = (typeId: string): string => {
-    79	        const selectedType = types.find(type => type.id === typeId);
-    80	        if (!selectedType) return "X";
-    81	
-    82	        // Gunakan kode khusus untuk setiap jenis obat
-    83	        const typeName = selectedType.name.toLowerCase();
-    84	        if (typeName.includes("bebas") && !typeName.includes("terbatas")) return "B";
-    85	        if (typeName.includes("bebas terbatas")) return "T";
-    86	        if (typeName.includes("keras")) return "K";
-    87	        if (typeName.includes("narkotika")) return "N";
-    88	        if (typeName.includes("fitofarmaka")) return "F";
-    89	        if (typeName.includes("herbal")) return "H";
-    90	        
-    91	        // Fallback ke huruf pertama jika tidak ada yang cocok
-    92	        return selectedType.name.charAt(0).toUpperCase();
-    93	    };
-    94	    
-    95	    const generateUnitCode = (unitId: string): string => {
-    96	        const selectedUnit = units.find(unit => unit.id === unitId);
-    97	        if (!selectedUnit) return "X";
-    98	
-    99	        // Ambil huruf pertama dari nama unit
-   100	        return selectedUnit.name.charAt(0).toUpperCase();
-   101	    };
-   102	
-   103	    const generateCategoryCode = (categoryId: string): string => {
-   104	        const selectedCategory = categories.find(category => category.id === categoryId);
-   105	        if (!selectedCategory) return "XX";
-   106	
-   107	        const name = selectedCategory.name;
-   108	
-   109	        // Cek apakah kategori dimulai dengan "Anti"
-   110	        if (name.toLowerCase().startsWith("anti")) {
-   111	            // Untuk kategori yang dimulai dengan "Anti"
-   112	            // Ambil "A" dari "Anti" dan huruf pertama dari kata selanjutnya
-   113	            const baseName = name.slice(4); // Hilangkan "Anti" dari awal
-   114	            if (baseName.length > 0) {
-   115	                return "A" + baseName.charAt(0).toUpperCase();
-   116	            }
-   117	            return "A";
-   118	        } else {
-   119	            // Untuk kategori lainnya, ambil 2 huruf pertama
-   120	            if (name.length >= 2) {
-   121	                return name.substring(0, 2).toUpperCase();
-   122	            } else if (name.length === 1) {
-   123	                return name.toUpperCase() + "X";
-   124	            } else {
-   125	                return "XX";
-   126	            }
-   127	        }
-   128	    };
-   129	
-   130	    useEffect(() => {
-   131	        fetchMasterData();
-   132	    }, []);
-   133	
-   134	    useEffect(() => {
-   135	        const generateItemCode = async () => {
-   136	            // Jika tipe, kategori, atau satuan belum dipilih, keluar dari fungsi
-   137	            if (!formData.type_id || !formData.category_id || !formData.unit_id)
-   138	                return;
-   139	
-   140	            const typeCode = generateTypeCode(formData.type_id);
-   141	            const unitCode = generateUnitCode(formData.unit_id);
-   142	            const categoryCode = generateCategoryCode(formData.category_id);
-   143	
-   144	            const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
+    49	    const unitConversionHook = useUnitConversion();
+    50	
+    51	    const [formData, setFormData] = useState<FormData>({
+    52	        code: "",
+    53	        name: "",
+    54	        type_id: "",
+    55	        category_id: "",
+    56	        unit_id: "",
+    57	        rack: "",
+    58	        description: "",
+    59	        base_price: 0,
+    60	        sell_price: 0,
+    61	        min_stock: 10,
+    62	        is_active: true,
+    63	        is_medicine: true,
+    64	        has_expiry_date: false,
+    65	    });
+    66	
+    67	    const updateFormData = (newData: Partial<FormData>) => {
+    68	        setFormData(prev => ({
+    69	            ...prev,
+    70	            ...newData
+    71	        }));
+    72	    };
+    73	
+    74	    const generateTypeCode = (typeId: string): string => {
+    75	        const selectedType = types.find(type => type.id === typeId);
+    76	        if (!selectedType) return "X";
+    77	
+    78	        const typeName = selectedType.name.toLowerCase();
+    79	        if (typeName.includes("bebas") && !typeName.includes("terbatas")) return "B";
+    80	        if (typeName.includes("bebas terbatas")) return "T";
+    81	        if (typeName.includes("keras")) return "K";
+    82	        if (typeName.includes("narkotika")) return "N";
+    83	        if (typeName.includes("fitofarmaka")) return "F";
+    84	        if (typeName.includes("herbal")) return "H";
+    85	
+    86	        return selectedType.name.charAt(0).toUpperCase();
+    87	    };
+    88	
+    89	    const generateUnitCode = (unitId: string): string => {
+    90	        const selectedUnit = units.find(unit => unit.id === unitId);
+    91	        if (!selectedUnit) return "X";
+    92	
+    93	        return selectedUnit.name.charAt(0).toUpperCase();
+    94	    };
+    95	
+    96	    const generateCategoryCode = (categoryId: string): string => {
+    97	        const selectedCategory = categories.find(category => category.id === categoryId);
+    98	        if (!selectedCategory) return "XX";
+    99	
+   100	        const name = selectedCategory.name;
+   101	
+   102	        if (name.toLowerCase().startsWith("anti")) {
+   103	            const baseName = name.slice(4);
+   104	            if (baseName.length > 0) {
+   105	                return "A" + baseName.charAt(0).toUpperCase();
+   106	            }
+   107	            return "A";
+   108	        } else {
+   109	            if (name.length >= 2) {
+   110	                return name.substring(0, 2).toUpperCase();
+   111	            } else if (name.length === 1) {
+   112	                return name.toUpperCase() + "X";
+   113	            } else {
+   114	                return "XX";
+   115	            }
+   116	        }
+   117	    };
+   118	
+   119	    useEffect(() => {
+   120	        fetchMasterData();
+   121	        if (itemId) {
+   122	            fetchItemData(itemId);
+   123	            setIsEditMode(true);
+   124	        }
+   125	    // eslint-disable-next-line react-hooks/exhaustive-deps
+   126	    }, [itemId]);
+   127	
+   128	    useEffect(() => {
+   129	        const generateItemCode = async () => {
+   130	            if (!formData.type_id || !formData.category_id || !formData.unit_id)
+   131	                return;
+   132	
+   133	            const typeCode = generateTypeCode(formData.type_id);
+   134	            const unitCode = generateUnitCode(formData.unit_id);
+   135	            const categoryCode = generateCategoryCode(formData.category_id);
+   136	
+   137	            const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
+   138	
+   139	            try {
+   140	                const { data } = await supabase
+   141	                    .from("items")
+   142	                    .select("code")
+   143	                    .ilike("code", `${codePrefix}%`)
+   144	                    .order("code", { ascending: false });
    145	
-   146	            // Cek database untuk mendapatkan urutan terakhir
-   147	            try {
-   148	                const { data } = await supabase
-   149	                    .from("items")
-   150	                    .select("code")
-   151	                    .ilike("code", `${codePrefix}%`)
-   152	                    .order("code", { ascending: false });
-   153	
-   154	                let sequence = 1; // Default mulai dari 1
-   155	
-   156	                if (data && data.length > 0) {
-   157	                    // Ekstrak nomor urut dari kode yang sudah ada
-   158	                    const lastSequenceStr = data[0].code.substring(codePrefix.length);
-   159	                    const lastSequence = parseInt(lastSequenceStr);
-   160	
-   161	                    if (!isNaN(lastSequence)) {
-   162	                        sequence = lastSequence + 1;
-   163	                    }
-   164	                }
-   165	
-   166	                // Format: membuat kode 2 digit (01, 02, ..., dst)
-   167	                const sequenceStr = sequence.toString().padStart(2, "0");
-   168	                const generatedCode = `${codePrefix}${sequenceStr}`;
-   169	
-   170	                // Update form
-   171	                setFormData(prevFormData => ({
-   172	                    ...prevFormData,
-   173	                    code: generatedCode,
-   174	                }));
-   175	            } catch (error) {
-   176	                console.error("Error generating item code:", error);
-   177	            }
-   178	        };
-   179	
-   180	        // Hanya generate code jika data master sudah dimuat dan semua pilihan sudah dipilih
-   181	        if (formData.type_id && formData.category_id && formData.unit_id &&
-   182	            categories.length > 0 && types.length > 0 && units.length > 0) {
-   183	            generateItemCode();
-   184	        }
-   185	    // eslint-disable-next-line react-hooks/exhaustive-deps
-   186	    }, [formData.type_id, formData.category_id, formData.unit_id, categories, types, units]);
-   187	
-   188	    const fetchMasterData = async () => {
-   189	        setLoading(true);
-   190	        try {
-   191	            // Fetch categories
-   192	            const { data: categoriesData } = await supabase
-   193	                .from("item_categories")
-   194	                .select("id, name")
-   195	                .order("name");
-   196	
-   197	            // Fetch types
-   198	            const { data: typesData } = await supabase
-   199	                .from("item_types")
-   200	                .select("id, name")
-   201	                .order("name");
-   202	
-   203	            // Fetch units
-   204	            const { data: unitsData } = await supabase
-   205	                .from("item_units")
-   206	                .select("id, name")
-   207	                .order("name");
-   208	
-   209	            if (categoriesData) setCategories(categoriesData);
-   210	            if (typesData) setTypes(typesData);
-   211	            if (unitsData) setUnits(unitsData);
-   212	        } catch (error) {
-   213	            console.error("Error fetching master data:", error);
-   214	        } finally {
-   215	            setLoading(false);
-   216	        }
-   217	    };
+   146	                let sequence = 1;
+   147	
+   148	                if (data && data.length > 0) {
+   149	                    const lastSequenceStr = data[0].code.substring(codePrefix.length);
+   150	                    const lastSequence = parseInt(lastSequenceStr);
+   151	
+   152	                    if (!isNaN(lastSequence)) {
+   153	                        sequence = lastSequence + 1;
+   154	                    }
+   155	                }
+   156	
+   157	                const sequenceStr = sequence.toString().padStart(2, "0");
+   158	                const generatedCode = `${codePrefix}${sequenceStr}`;
+   159	
+   160	                setFormData(prevFormData => ({
+   161	                    ...prevFormData,
+   162	                    code: generatedCode,
+   163	                }));
+   164	            } catch (error) {
+   165	                console.error("Error generating item code:", error);
+   166	            }
+   167	        };
+   168	
+   169	        if (formData.type_id && formData.category_id && formData.unit_id &&
+   170	            categories.length > 0 && types.length > 0 && units.length > 0) {
+   171	            generateItemCode();
+   172	        }
+   173	    // eslint-disable-next-line react-hooks/exhaustive-deps
+   174	    }, [formData.type_id, formData.category_id, formData.unit_id, categories, types, units]);
+   175	
+   176	    const fetchMasterData = async () => {
+   177	        setLoading(true);
+   178	        try {
+   179	            const { data: categoriesData } = await supabase
+   180	                .from("item_categories")
+   181	                .select("id, name")
+   182	                .order("name");
+   183	
+   184	            const { data: typesData } = await supabase
+   185	                .from("item_types")
+   186	                .select("id, name")
+   187	                .order("name");
+   188	
+   189	            const { data: unitsData } = await supabase
+   190	                .from("item_units")
+   191	                .select("id, name")
+   192	                .order("name");
+   193	
+   194	            if (categoriesData) setCategories(categoriesData);
+   195	            if (typesData) setTypes(typesData);
+   196	            if (unitsData) setUnits(unitsData);
+   197	        } catch (error) {
+   198	            console.error("Error fetching master data:", error);
+   199	        } finally {
+   200	            setLoading(false);
+   201	        }
+   202	    };
+   203	
+   204	    const fetchItemData = async (id: string) => {
+   205	        try {
+   206	            setLoading(true);
+   207	            const { data, error } = await supabase
+   208	                .from("items")
+   209	                .select(`
+   210	                    *,
+   211	                    unit_conversions
+   212	                `)
+   213	                .eq("id", id)
+   214	                .single();
+   215	
+   216	            if (error) throw error;
+   217	            if (!data) throw new Error("Item tidak ditemukan");
    218	
-   219	    const handleChange = (
-   220	        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-   221	        const { name, value, type } = e.target as HTMLInputElement;
-   222	
-   223	        if (name === "base_price" || name === "sell_price") {
-   224	            // Untuk input harga
-   225	            const numericInt = extractNumericValue(value);
-   226	
-   227	            // Update formData dengan nilai numerik
-   228	            setFormData({
-   229	                ...formData,
-   230	                [name]: numericInt
-   231	            });
-   232	
-   233	            // Update display value dengan format Rupiah
-   234	            const formattedValue = formatRupiah(numericInt);
-   235	            if (name === "base_price") {
-   236	                setDisplayBasePrice(formattedValue);
-   237	            } else if (name === "sell_price") { // Handle sell_price specifically
-   238	                setDisplaySellPrice(formattedValue);
-   239	            } 
-   240	        } else if (type === "checkbox") {
-   241	            const { checked } = e.target as HTMLInputElement;
-   242	            setFormData({
-   243	                ...formData,
-   244	                [name]: checked,
-   245	            });
-   246	        } else if (type === "number") {
-   247	            setFormData({
-   248	                ...formData,
-   249	                [name]: parseFloat(value) || 0,
-   250	            });
-   251	        } else {
-   252	            setFormData({
-   253	                ...formData,
-   254	                [name]: value,
-   255	            });
-   256	        }
-   257	    };
-   258	
-   259	    // Modifikasi handleChange untuk menjamin pemicu generate kode
-   260	    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-   261	        const { name, value } = e.target;
-   262	        setFormData(prevFormData => ({
-   263	            ...prevFormData,
-   264	            [name]: value,
-   265	        }));
-   266	    };
-   267	
-   268	    const handleSubmit = async (e: React.FormEvent) => {
-   269	        e.preventDefault();
-   270	        setSaving(true);
-   271	
-   272	        try {
-   273	            // Check jika nama obat sudah ada
-   274	            const { data: existingMedicine } = await supabase
-   275	                .from("items")
-   276	                .select("id")
-   277	                .eq("name", formData.name);
+   219	            setFormData({
+   220	                code: data.code || "",
+   221	                name: data.name || "",
+   222	                type_id: data.type_id || "",
+   223	                category_id: data.category_id || "",
+   224	                unit_id: data.unit_id || "",
+   225	                rack: data.rack || "",
+   226	                description: data.description || "",
+   227	                base_price: data.base_price || 0,
+   228	                sell_price: data.sell_price || 0,
+   229	                min_stock: data.min_stock || 10,
+   230	                is_active: data.is_active !== undefined ? data.is_active : true,
+   231	                is_medicine: data.is_medicine !== undefined ? data.is_medicine : true,
+   232	                has_expiry_date: data.has_expiry_date !== undefined ? data.has_expiry_date : false,
+   233	            });
+   234	
+   235	            setDisplayBasePrice(formatRupiah(data.base_price || 0));
+   236	            setDisplaySellPrice(formatRupiah(data.sell_price || 0));
+   237	
+   238	            unitConversionHook.setBaseUnit(data.base_unit || "");
+   239	            unitConversionHook.setBasePrice(data.base_price || 0);
+   240	
+   241	            let conversions = [];
+   242	            if (data.unit_conversions) {
+   243	                if (typeof data.unit_conversions === 'string') {
+   244	                    try {
+   245	                        conversions = JSON.parse(data.unit_conversions);
+   246	                    } catch (e) {
+   247	                        console.error("Error parsing unit_conversions:", e);
+   248	                        conversions = [];
+   249	                    }
+   250	                } else {
+   251	                    conversions = data.unit_conversions;
+   252	                }
+   253	            }
+   254	
+   255	            if (Array.isArray(conversions)) {
+   256	                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   257	                unitConversionHook.conversions.forEach((conv: any) => {
+   258	                    unitConversionHook.removeUnitConversion(conv.id);
+   259	                });
+   260	
+   261	                for (const conv of conversions) {
+   262	                    const unit = await getUnitById(conv.unit_name);
+   263	                    if (unit) {
+   264	                        unitConversionHook.addUnitConversion({
+   265	                            unit: unit,
+   266	                            conversion: conv.conversion_rate || 0,
+   267	                        });
+   268	                    }
+   269	                }
+   270	            }
+   271	        } catch (error) {
+   272	            console.error("Error fetching item data:", error);
+   273	            alert("Gagal memuat data item. Silakan coba lagi.");
+   274	        } finally {
+   275	            setLoading(false);
+   276	        }
+   277	    };
    278	
-   279	            if (existingMedicine && existingMedicine.length > 0) {
-   280	                alert("Nama obat sudah ada. Silakan gunakan nama lain.");
-   281	                setSaving(false);
-   282	                return;
-   283	            }
-   284	
-   285	            // 1. Insert item utama (dengan satuan dasar)
-   286	            const mainItemData = {
-   287	                name: formData.name,
-   288	                category_id: formData.category_id,
-   289	                type_id: formData.type_id,
-   290	                unit_id: formData.unit_id,
-   291	                base_price: formData.base_price, 
-   292	                sell_price: formData.sell_price, // Add sell_price to insert data
-   293	                stock: 0, // Default stok awal 0
-   294	                min_stock: formData.min_stock,
-   295	                description: formData.description || null,
-   296	                is_active: formData.is_active,
-   297	                rack: formData.rack || null,
-   298	                code: formData.code,
-   299	                is_medicine: formData.is_medicine,
-   300	                base_unit: unitConversionHook.baseUnit,
-   301	                unit_conversions: JSON.stringify(unitConversionHook.conversions),
-   302	                has_expiry_date: formData.has_expiry_date,
-   303	            };
+   279	    const getUnitById = async (unitName: string) => {
+   280	        try {
+   281	            const { data } = await supabase
+   282	                .from("item_units")
+   283	                .select("id, name")
+   284	                .eq("name", unitName)
+   285	                .single();
+   286	            return data;
+   287	        } catch (error) {
+   288	            console.error("Error fetching unit:", error);
+   289	            return null;
+   290	        }
+   291	    };
+   292	
+   293	    const handleChange = (
+   294	        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+   295	        const { name, value, type } = e.target as HTMLInputElement;
+   296	
+   297	        if (name === "base_price" || name === "sell_price") {
+   298	            const numericInt = extractNumericValue(value);
+   299	
+   300	            setFormData({
+   301	                ...formData,
+   302	                [name]: numericInt
+   303	            });
    304	
-   305	            const { data: newItem, error: mainError } = await supabase
-   306	                .from("items")
-   307	                .insert(mainItemData)
-   308	                .select("id")
-   309	                .single();
-   310	
-   311	            if (mainError) throw mainError;
-   312	
-   313	            // 2. Insert unit conversions ke tabel terpisah
-   314	            if (unitConversionHook.conversions.length > 0 && newItem) {
-   315	                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   316	                const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
-   317	                    item_id: newItem.id,
-   318	                    unit_name: uc.unit.name,
-   319	                    conversion_rate: uc.conversion,
-   320	                    base_price: uc.basePrice,
-   321	                    created_at: new Date()
-   322	                }));
-   323	
-   324	                // Insert ke tabel unit_conversions
-   325	                const { error: conversionError } = await supabase
-   326	                    .from("unit_conversions")
-   327	                    .insert(conversionRecords);
-   328	
-   329	                if (conversionError) {
-   330	                    console.error("Error saving unit conversions:", conversionError);
-   331	                    // Lanjutkan meskipun ada error pada konversi unit
-   332	                }
-   333	            }
-   334	
-   335	            // Redirect ke halaman daftar obat
-   336	            navigate("/master-data/items");
-   337	        } catch (error) {
-   338	            console.error("Error saving item:", error);
-   339	            alert("Gagal menyimpan data item. Silakan coba lagi.");
-   340	        } finally {
-   341	            setSaving(false);
-   342	        }
-   343	    };
-   344	
-   345	    return {
-   346	        formData,
-   347	        displayBasePrice,
-   348	        displaySellPrice, // Return displaySellPrice
-   349	        categories,
-   350	        types,
-   351	        units,
-   352	        loading,
-   353	        saving,
-   354	        handleChange,
-   355	        handleSelectChange,
-   356	        handleSubmit,
-   357	        unitConversionHook,
-   358	        updateFormData
-   359	    };
-   360	};
+   305	            const formattedValue = formatRupiah(numericInt);
+   306	            if (name === "base_price") {
+   307	                setDisplayBasePrice(formattedValue);
+   308	            } else if (name === "sell_price") {
+   309	                setDisplaySellPrice(formattedValue);
+   310	            }
+   311	        } else if (type === "checkbox") {
+   312	            const { checked } = e.target as HTMLInputElement;
+   313	            setFormData({
+   314	                ...formData,
+   315	                [name]: checked,
+   316	            });
+   317	        } else if (type === "number") {
+   318	            setFormData({
+   319	                ...formData,
+   320	                [name]: parseFloat(value) || 0,
+   321	            });
+   322	        } else {
+   323	            setFormData({
+   324	                ...formData,
+   325	                [name]: value,
+   326	            });
+   327	        }
+   328	    };
+   329	
+   330	    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+   331	        const { name, value } = e.target;
+   332	        setFormData(prevFormData => ({
+   333	            ...prevFormData,
+   334	            [name]: value,
+   335	        }));
+   336	    };
+   337	
+   338	    const handleSubmit = async (e: React.FormEvent) => {
+   339	        e.preventDefault();
+   340	        setSaving(true);
+   341	
+   342	        try {
+   343	            if (isEditMode) {
+   344	                const itemUpdateData = {
+   345	                    name: formData.name,
+   346	                    category_id: formData.category_id,
+   347	                    type_id: formData.type_id,
+   348	                    unit_id: formData.unit_id,
+   349	                    base_price: formData.base_price, 
+   350	                    sell_price: formData.sell_price,
+   351	                    min_stock: formData.min_stock,
+   352	                    description: formData.description || null,
+   353	                    is_active: formData.is_active,
+   354	                    rack: formData.rack || null,
+   355	                    code: formData.code,
+   356	                    is_medicine: formData.is_medicine,
+   357	                    base_unit: unitConversionHook.baseUnit,
+   358	                    has_expiry_date: formData.has_expiry_date,
+   359	                };
+   360	
+   361	                const { error: updateError } = await supabase
+   362	                    .from("items")
+   363	                    .update(itemUpdateData)
+   364	                    .eq("id", itemId);
+   365	
+   366	                if (updateError) throw updateError;
+   367	
+   368	                await supabase
+   369	                    .from("unit_conversions")
+   370	                    .delete()
+   371	                    .eq("item_id", itemId);
+   372	
+   373	                if (unitConversionHook.conversions.length > 0) {
+   374	                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   375	                    const conversionRecords = unitConversionHook.conversions.map((uc: any) => ({
+   376	                        item_id: itemId,
+   377	                        unit_name: uc.unit.name,
+   378	                        conversion_rate: uc.conversion,
+   379	                        base_price: uc.basePrice,
+   380	                        created_at: new Date()
+   381	                    }));
+   382	
+   383	                    const { error: conversionError } = await supabase
+   384	                        .from("unit_conversions")
+   385	                        .insert(conversionRecords);
+   386	
+   387	                    if (conversionError) {
+   388	                        console.error("Error saving unit conversions:", conversionError);
+   389	                    }
+   390	                }
+   391	            } else {
+   392	                const mainItemData = {
+   393	                    name: formData.name,
+   394	                    category_id: formData.category_id,
+   395	                    type_id: formData.type_id,
+   396	                    unit_id: formData.unit_id,
+   397	                    base_price: formData.base_price, 
+   398	                    sell_price: formData.sell_price,
+   399	                    stock: 0,
+   400	                    min_stock: formData.min_stock,
+   401	                    description: formData.description || null,
+   402	                    is_active: formData.is_active,
+   403	                    rack: formData.rack || null,
+   404	                    code: formData.code,
+   405	                    is_medicine: formData.is_medicine,
+   406	                    base_unit: unitConversionHook.baseUnit,
+   407	                    unit_conversions: JSON.stringify(unitConversionHook.conversions),
+   408	                    has_expiry_date: formData.has_expiry_date,
+   409	                };
+   410	
+   411	                const { data: newItem, error: mainError } = await supabase
+   412	                    .from("items")
+   413	                    .insert(mainItemData)
+   414	                    .select("id")
+   415	                    .single();
+   416	
+   417	                if (mainError) throw mainError;
+   418	
+   419	                if (unitConversionHook.conversions.length > 0 && newItem) {
+   420	                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   421	                    const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
+   422	                        item_id: newItem.id,
+   423	                        unit_name: uc.unit.name,
+   424	                        conversion_rate: uc.conversion,
+   425	                        base_price: uc.basePrice,
+   426	                        created_at: new Date()
+   427	                    }));
+   428	
+   429	                    const { error: conversionError } = await supabase
+   430	                        .from("unit_conversions")
+   431	                        .insert(conversionRecords);
+   432	
+   433	                    if (conversionError) {
+   434	                        console.error("Error saving unit conversions:", conversionError);
+   435	                    }
+   436	                }
+   437	            }
+   438	
+   439	            navigate("/master-data/items");
+   440	        } catch (error) {
+   441	            console.error("Error saving item:", error);
+   442	            alert("Gagal menyimpan data item. Silakan coba lagi.");
+   443	        } finally {
+   444	            setSaving(false);
+   445	        }
+   446	    };
+   447	
+   448	    return {
+   449	        formData,
+   450	        displayBasePrice,
+   451	        displaySellPrice,
+   452	        categories,
+   453	        types,
+   454	        units,
+   455	        loading,
+   456	        saving,
+   457	        isEditMode,
+   458	        handleChange,
+   459	        handleSelectChange,
+   460	        handleSubmit,
+   461	        unitConversionHook,
+   462	        updateFormData
+   463	    };
+   464	};
 
 
 ===============================================
@@ -5320,7 +5429,7 @@
 = File: ./src/pages/master-data/AddItem.tsx 
 ===============================================
 
-     1	import { useNavigate } from "react-router-dom";
+     1	import { useNavigate, useParams } from "react-router-dom";
      2	import { useEffect } from "react";
      3	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
      4	import { FormActions } from "../../components/ui/FormActions";
@@ -5339,339 +5448,352 @@
     17	
     18	const AddItem = () => {
     19	    const navigate = useNavigate();
-    20	
-    21	    const {
-    22	        formData, displayBasePrice, displaySellPrice, categories, types, units,
-    23	        saving, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
-    24	        unitConversionHook
-    25	    } = useAddItemForm();
-    26	
-    27	    // Modified handleSelectChange to update baseUnit automatically
-    28	    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    29	        const { name, value } = e.target;
-    30	        originalHandleSelectChange(e);
-    31	        
-    32	        // Set baseUnit automatically when unit_id changes
-    33	        if (name === 'unit_id' && value) {
-    34	            const selectedUnit = units.find(unit => unit.id === value);
-    35	            if (selectedUnit) {
-    36	                unitConversionHook.setBaseUnit(selectedUnit.name);
-    37	            }
-    38	        }
-    39	    };
-    40	
-    41	    // Efek untuk memperbarui basePrice pada unitConversionHook saat harga pokok berubah
-    42	    useEffect(() => {
-    43	        // Perbarui nilai basePrice di unitConversionHook ketika formData.base_price berubah
-    44	        if (formData.base_price > 0) {
-    45	            unitConversionHook.setBasePrice(formData.base_price);
-    46	        }
-    47	    // eslint-disable-next-line react-hooks/exhaustive-deps
-    48	    }, [formData.base_price]);
-    49	
-    50	    // Fungsi untuk menghitung persentase keuntungan
-    51	    const calculateProfitPercentage = () => {
-    52	        const { base_price, sell_price } = formData;
-    53	        if (base_price > 0 && sell_price >= 0) {
-    54	            return ((sell_price - base_price) / base_price) * 100;
-    55	        }
-    56	        return null; // Kembalikan null jika harga pokok 0 atau negatif
-    57	    };
-    58	
-    59	    return (
-    60	        <div>
-    61	            <Card>
-    62	                <CardHeader>
-    63	                    <CardTitle>Tambah Data Item Baru</CardTitle>
-    64	                </CardHeader>
-    65	
-    66	                <form onSubmit={handleSubmit}>
-    67	                    <CardContent className="space-y-6">
-    68	                        <FormSection title="Data Umum">
-    69	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    70	                                <FormField label="Kode Item">
-    71	                                    <Input
-    72	                                        name="code"
-    73	                                        value={formData.code}
-    74	                                        disabled={true}
-    75	                                        className={inputClassName}
-    76	                                        style={formData.code === "" ? {
-    77	                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
-    78	                                        } : {}}
-    79	                                    />
-    80	                                </FormField>
-    81	                            </div>
-    82	
-    83	                            <FormField label="Nama Item">
-    84	                                <Input
-    85	                                    name="name"
-    86	                                    value={formData.name}
-    87	                                    onChange={handleChange}
-    88	                                    className={inputClassName}
-    89	                                    required
-    90	                                />
-    91	                            </FormField>
-    92	
-    93	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    94	                                <FormField label="Jenis">
-    95	                                    <div className="flex">
-    96	                                        {categories.length === 0 && (
-    97	                                            <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
-    98	                                        )}
-    99	                                        <select
-   100	                                            name="type_id" 
-   101	                                            value={formData.type_id}
-   102	                                            onChange={handleSelectChange}
-   103	                                            className={selectClassName}
-   104	                                            required
-   105	                                        >
-   106	                                            <option value="">-- Pilih Jenis --</option>
-   107	                                            {types.map((type) => (
-   108	                                                <option key={type.id} value={type.id}>
-   109	                                                    {type.name}
-   110	                                                </option>
-   111	                                            ))}
-   112	                                        </select>
-   113	                                        <button
-   114	                                            type="button"
-   115	                                            className={addButtonClassName}
-   116	                                            onClick={() => navigate("/master-data/types/add")}
+    20	    const { id } = useParams<{ id: string }>();
+    21	
+    22	    const {
+    23	        formData, displayBasePrice, displaySellPrice, categories, types, units,
+    24	        saving, loading, isEditMode, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
+    25	        unitConversionHook
+    26	    } = useAddItemForm(id);
+    27	
+    28	    // Modified handleSelectChange to update baseUnit automatically
+    29	    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    30	        const { name, value } = e.target;
+    31	        originalHandleSelectChange(e);
+    32	        
+    33	        // Set baseUnit automatically when unit_id changes
+    34	        if (name === 'unit_id' && value) {
+    35	            const selectedUnit = units.find(unit => unit.id === value);
+    36	            if (selectedUnit) {
+    37	                unitConversionHook.setBaseUnit(selectedUnit.name);
+    38	            }
+    39	        }
+    40	    };
+    41	
+    42	    // Efek untuk memperbarui basePrice pada unitConversionHook saat harga pokok berubah
+    43	    useEffect(() => {
+    44	        // Perbarui nilai basePrice di unitConversionHook ketika formData.base_price berubah
+    45	        if (formData.base_price > 0) {
+    46	            unitConversionHook.setBasePrice(formData.base_price);
+    47	        }
+    48	    // eslint-disable-next-line react-hooks/exhaustive-deps
+    49	    }, [formData.base_price]);
+    50	
+    51	    // Fungsi untuk menghitung persentase keuntungan
+    52	    const calculateProfitPercentage = () => {
+    53	        const { base_price, sell_price } = formData;
+    54	        if (base_price > 0 && sell_price >= 0) {
+    55	            return ((sell_price - base_price) / base_price) * 100;
+    56	        }
+    57	        return null; // Kembalikan null jika harga pokok 0 atau negatif
+    58	    };
+    59	
+    60	    if (loading) {
+    61	        return (
+    62	            <Card>
+    63	                <CardContent className="flex justify-center items-center h-40">
+    64	                    <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+    65	                    <span className="ml-3">Memuat data...</span>
+    66	                </CardContent>
+    67	            </Card>
+    68	        );
+    69	    }
+    70	
+    71	    return (
+    72	        <div>
+    73	            <Card>
+    74	                <CardHeader>
+    75	                    <CardTitle>{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
+    76	                </CardHeader>
+    77	
+    78	                <form onSubmit={handleSubmit}>
+    79	                    <CardContent className="space-y-6">
+    80	                        <FormSection title="Data Umum">
+    81	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    82	                                <FormField label="Kode Item">
+    83	                                    <Input
+    84	                                        name="code"
+    85	                                        value={formData.code}
+    86	                                        disabled={isEditMode}
+    87	                                        className={inputClassName}
+    88	                                        style={formData.code === "" ? {
+    89	                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
+    90	                                        } : {}}
+    91	                                    />
+    92	                                </FormField>
+    93	                            </div>
+    94	
+    95	                            <FormField label="Nama Item">
+    96	                                <Input
+    97	                                    name="name"
+    98	                                    value={formData.name}
+    99	                                    onChange={handleChange}
+   100	                                    className={inputClassName}
+   101	                                    required
+   102	                                />
+   103	                            </FormField>
+   104	
+   105	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   106	                                <FormField label="Jenis">
+   107	                                    <div className="flex">
+   108	                                        {categories.length === 0 && (
+   109	                                            <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
+   110	                                        )}
+   111	                                        <select
+   112	                                            name="type_id" 
+   113	                                            value={formData.type_id}
+   114	                                            onChange={handleSelectChange}
+   115	                                            className={selectClassName}
+   116	                                            required
    117	                                        >
-   118	                                            +
-   119	                                        </button>
-   120	                                    </div>
-   121	                                </FormField>
-   122	
-   123	                                <FormField label="Kategori">
-   124	                                    <div className="flex">
-   125	                                        <select
-   126	                                            name="category_id"
-   127	                                            value={formData.category_id}
-   128	                                            onChange={handleSelectChange}
-   129	                                            className={selectClassName}
-   130	                                            required
-   131	                                        >
-   132	                                            <option value="">-- Pilih Kategori --</option>
-   133	                                            {categories.map((category) => (
-   134	                                                <option key={category.id} value={category.id}>
-   135	                                                    {category.name}
-   136	                                                </option>
-   137	                                            ))}
-   138	                                        </select>
-   139	                                        <button
-   140	                                            type="button"
-   141	                                            className={addButtonClassName}
-   142	                                            onClick={() => navigate("/master-data/categories/add")}
+   118	                                            <option value="">-- Pilih Jenis --</option>
+   119	                                            {types.map((type) => (
+   120	                                                <option key={type.id} value={type.id}>
+   121	                                                    {type.name}
+   122	                                                </option>
+   123	                                            ))}
+   124	                                        </select>
+   125	                                        <button
+   126	                                            type="button"
+   127	                                            className={addButtonClassName}
+   128	                                            onClick={() => navigate("/master-data/types/add")}
+   129	                                        >
+   130	                                            +
+   131	                                        </button>
+   132	                                    </div>
+   133	                                </FormField>
+   134	
+   135	                                <FormField label="Kategori">
+   136	                                    <div className="flex">
+   137	                                        <select
+   138	                                            name="category_id"
+   139	                                            value={formData.category_id}
+   140	                                            onChange={handleSelectChange}
+   141	                                            className={selectClassName}
+   142	                                            required
    143	                                        >
-   144	                                            +
-   145	                                        </button>
-   146	                                    </div>
-   147	                                </FormField>
-   148	                            </div>
-   149	
-   150	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-   151	                                <FormField label="Satuan">
-   152	                                    <div className="flex">
-   153	                                        <select
-   154	                                            name="unit_id"
-   155	                                            value={formData.unit_id}
-   156	                                            onChange={handleSelectChange}
-   157	                                            className={selectClassName}
-   158	                                            required
-   159	                                        >
-   160	                                            <option value="">-- Pilih Satuan --</option>
-   161	                                            {units.map((unit) => (
-   162	                                                <option key={unit.id} value={unit.id}>
-   163	                                                    {unit.name}
-   164	                                                </option>
-   165	                                            ))}
-   166	                                        </select>
-   167	                                        <button
-   168	                                            type="button"
-   169	                                            className={addButtonClassName}
-   170	                                            onClick={() => navigate("/master-data/units/add")}
+   144	                                            <option value="">-- Pilih Kategori --</option>
+   145	                                            {categories.map((category) => (
+   146	                                                <option key={category.id} value={category.id}>
+   147	                                                    {category.name}
+   148	                                                </option>
+   149	                                            ))}
+   150	                                        </select>
+   151	                                        <button
+   152	                                            type="button"
+   153	                                            className={addButtonClassName}
+   154	                                            onClick={() => navigate("/master-data/categories/add")}
+   155	                                        >
+   156	                                            +
+   157	                                        </button>
+   158	                                    </div>
+   159	                                </FormField>
+   160	                            </div>
+   161	
+   162	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   163	                                <FormField label="Satuan">
+   164	                                    <div className="flex">
+   165	                                        <select
+   166	                                            name="unit_id"
+   167	                                            value={formData.unit_id}
+   168	                                            onChange={handleSelectChange}
+   169	                                            className={selectClassName}
+   170	                                            required
    171	                                        >
-   172	                                            +
-   173	                                        </button>
-   174	                                    </div>
-   175	                                </FormField>
-   176	
-   177	                                <FormField label="Rak">
-   178	                                    <Input
-   179	                                        name="rack"
-   180	                                        value={formData.rack}
-   181	                                        onChange={handleChange}
-   182	                                        className={inputClassName}
-   183	                                    />
-   184	                                </FormField>
-   185	                            </div>
-   186	
-   187	                            <FormField label="Jenis Produk">
-   188	                                <div className={radioGroupClassName}>
-   189	                                    <label className="inline-flex items-center">
-   190	                                        <input
-   191	                                            type="radio"
-   192	                                            name="is_medicine"
-   193	                                            checked={formData.is_medicine}
-   194	                                            onChange={() => updateFormData({ is_medicine: true })}
-   195	                                            className="form-radio h-5 w-5 text-primary"
-   196	                                        />
-   197	                                        <span className="ml-2">Obat</span>
-   198	                                    </label>
-   199	                                    <label className="inline-flex items-center">
-   200	                                        <input
-   201	                                            type="radio"
-   202	                                            name="is_medicine"
-   203	                                            checked={!formData.is_medicine}
-   204	                                            onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
-   205	                                            className="form-radio h-5 w-5 text-primary"
-   206	                                        />
-   207	                                        <span className="ml-2">Non-Obat</span>
-   208	                                    </label>
-   209	                                </div>
-   210	                            </FormField>
-   211	
-   212	                            <FormField label="Keterangan">
-   213	                                <textarea
-   214	                                    name="description"
-   215	                                    value={formData.description}
-   216	                                    onChange={handleChange}
-   217	                                    className={textareaClassName}
-   218	                                    rows={3}
-   219	                                />
-   220	                            </FormField>
-   221	                        </FormSection>
-   222	
-   223	                        <FormSection title="Harga Pokok & Jual">
-   224	                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-   225	                                <FormField label="Satuan Dasar">
-   226	                                    <Input
-   227	                                        type="text"
-   228	                                        value={unitConversionHook.baseUnit}
-   229	                                        readOnly
-   230	                                        className={inputClassName}
-   231	                                        style={unitConversionHook.baseUnit === "" ? {
-   232	                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
-   233	                                        } : {}}
-   234	                                    />
-   235	                                </FormField>
-   236	                                
-   237	                                <FormField label="Harga Pokok">
+   172	                                            <option value="">-- Pilih Satuan --</option>
+   173	                                            {units.map((unit) => (
+   174	                                                <option key={unit.id} value={unit.id}>
+   175	                                                    {unit.name}
+   176	                                                </option>
+   177	                                            ))}
+   178	                                        </select>
+   179	                                        <button
+   180	                                            type="button"
+   181	                                            className={addButtonClassName}
+   182	                                            onClick={() => navigate("/master-data/units/add")}
+   183	                                        >
+   184	                                            +
+   185	                                        </button>
+   186	                                    </div>
+   187	                                </FormField>
+   188	
+   189	                                <FormField label="Rak">
+   190	                                    <Input
+   191	                                        name="rack"
+   192	                                        value={formData.rack}
+   193	                                        onChange={handleChange}
+   194	                                        className={inputClassName}
+   195	                                    />
+   196	                                </FormField>
+   197	                            </div>
+   198	
+   199	                            <FormField label="Jenis Produk">
+   200	                                <div className={radioGroupClassName}>
+   201	                                    <label className="inline-flex items-center">
+   202	                                        <input
+   203	                                            type="radio"
+   204	                                            name="is_medicine"
+   205	                                            checked={formData.is_medicine}
+   206	                                            onChange={() => updateFormData({ is_medicine: true })}
+   207	                                            className="form-radio h-5 w-5 text-primary"
+   208	                                        />
+   209	                                        <span className="ml-2">Obat</span>
+   210	                                    </label>
+   211	                                    <label className="inline-flex items-center">
+   212	                                        <input
+   213	                                            type="radio"
+   214	                                            name="is_medicine"
+   215	                                            checked={!formData.is_medicine}
+   216	                                            onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
+   217	                                            className="form-radio h-5 w-5 text-primary"
+   218	                                        />
+   219	                                        <span className="ml-2">Non-Obat</span>
+   220	                                    </label>
+   221	                                </div>
+   222	                            </FormField>
+   223	
+   224	                            <FormField label="Keterangan">
+   225	                                <textarea
+   226	                                    name="description"
+   227	                                    value={formData.description}
+   228	                                    onChange={handleChange}
+   229	                                    className={textareaClassName}
+   230	                                    rows={3}
+   231	                                />
+   232	                            </FormField>
+   233	                        </FormSection>
+   234	
+   235	                        <FormSection title="Harga Pokok & Jual">
+   236	                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+   237	                                <FormField label="Satuan Dasar">
    238	                                    <Input
    239	                                        type="text"
-   240	                                        name="base_price"
-   241	                                        value={displayBasePrice}
-   242	                                        placeholder="Rp 0"
-   243	                                        onChange={handleChange}
-   244	                                        min="0"
-   245	                                        className={inputClassName}
-   246	                                        required
-   247	                                    />
-   248	                                </FormField>
-   249	                                
-   250	                                {/* Elemen untuk menampilkan persentase keuntungan */}
-   251	                                <div className="text-center md:mt-6">
-   252	                                    {calculateProfitPercentage() !== null ? (
-   253	                                        <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}> {/* Changed text-sm to text-lg */}
-   254	                                            <FaArrowRight className="inline mr-2" />
-   255	                                            {calculateProfitPercentage()!.toFixed(1)}%
-   256	                                        </span>
-   257	                                    ) : (
-   258	                                        <span className="text-sm text-gray-500">-</span>
-   259	                                    )}
-   260	                                </div>
-   261	
-   262	                                {/* Field Harga Jual */}
-   263	                                <FormField label="Harga Jual">
-   264	                                    <Input
-   265	                                        type="text"
-   266	                                        name="sell_price"
-   267	                                        value={displaySellPrice}
-   268	                                        placeholder="Rp 0"
-   269	                                        onChange={handleChange}
-   270	                                        min="0"
-   271	                                        className={inputClassName}
-   272	                                        required
-   273	                                    />
-   274	                                </FormField>
-   275	                            </div>
-   276	                        </FormSection>
-   277	
-   278	                        <UnitConversionManager unitConversionHook={unitConversionHook} />
-   279	
-   280	                        <FormSection title="Pengaturan Tambahan">
-   281	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-   282	                                <FormField label="Status Jual">
-   283	                                    <div className={radioGroupClassName}>
-   284	                                        <label className="inline-flex items-center">
-   285	                                            <input
-   286	                                                type="radio"
-   287	                                                name="is_active"
-   288	                                                checked={formData.is_active}
-   289	                                                onChange={() => updateFormData({ is_active: true })}
-   290	                                                className="form-radio h-5 w-5 text-primary"
-   291	                                            />
-   292	                                            <span className="ml-2">Masih dijual</span>
-   293	                                        </label>
-   294	                                        <label className="inline-flex items-center">
-   295	                                            <input
-   296	                                                type="radio"
-   297	                                                name="is_active"
-   298	                                                checked={!formData.is_active}
-   299	                                                onChange={() => updateFormData({ is_active: false })}
-   300	                                                className="form-radio h-5 w-5 text-primary"
-   301	                                            />
-   302	                                            <span className="ml-2">Tidak Dijual</span>
-   303	                                        </label>
-   304	                                    </div>
-   305	                                </FormField>
-   306	
-   307	                                <FormField label="Stok Minimal">
-   308	                                    <Input
-   309	                                        type="number"
-   310	                                        name="min_stock"
-   311	                                        value={formData.min_stock}
-   312	                                        onChange={handleChange}
-   313	                                        className={inputClassName}
-   314	                                        required
-   315	                                    />
-   316	                                </FormField>
-   317	                            </div>
+   240	                                        value={unitConversionHook.baseUnit}
+   241	                                        readOnly
+   242	                                        className={inputClassName}
+   243	                                        style={unitConversionHook.baseUnit === "" ? {
+   244	                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
+   245	                                        } : {}}
+   246	                                    />
+   247	                                </FormField>
+   248	                                
+   249	                                <FormField label="Harga Pokok">
+   250	                                    <Input
+   251	                                        type="text"
+   252	                                        name="base_price"
+   253	                                        value={displayBasePrice}
+   254	                                        placeholder="Rp 0"
+   255	                                        onChange={handleChange}
+   256	                                        min="0"
+   257	                                        className={inputClassName}
+   258	                                        required
+   259	                                    />
+   260	                                </FormField>
+   261	                                
+   262	                                {/* Elemen untuk menampilkan persentase keuntungan */}
+   263	                                <div className="text-center md:mt-6">
+   264	                                    {calculateProfitPercentage() !== null ? (
+   265	                                        <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}> {/* Changed text-sm to text-lg */}
+   266	                                            <FaArrowRight className="inline mr-2" />
+   267	                                            {calculateProfitPercentage()!.toFixed(1)}%
+   268	                                        </span>
+   269	                                    ) : (
+   270	                                        <span className="text-sm text-gray-500">-</span>
+   271	                                    )}
+   272	                                </div>
+   273	
+   274	                                {/* Field Harga Jual */}
+   275	                                <FormField label="Harga Jual">
+   276	                                    <Input
+   277	                                        type="text"
+   278	                                        name="sell_price"
+   279	                                        value={displaySellPrice}
+   280	                                        placeholder="Rp 0"
+   281	                                        onChange={handleChange}
+   282	                                        min="0"
+   283	                                        className={inputClassName}
+   284	                                        required
+   285	                                    />
+   286	                                </FormField>
+   287	                            </div>
+   288	                        </FormSection>
+   289	
+   290	                        <UnitConversionManager unitConversionHook={unitConversionHook} />
+   291	
+   292	                        <FormSection title="Pengaturan Tambahan">
+   293	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   294	                                <FormField label="Status Jual">
+   295	                                    <div className={radioGroupClassName}>
+   296	                                        <label className="inline-flex items-center">
+   297	                                            <input
+   298	                                                type="radio"
+   299	                                                name="is_active"
+   300	                                                checked={formData.is_active}
+   301	                                                onChange={() => updateFormData({ is_active: true })}
+   302	                                                className="form-radio h-5 w-5 text-primary"
+   303	                                            />
+   304	                                            <span className="ml-2">Masih dijual</span>
+   305	                                        </label>
+   306	                                        <label className="inline-flex items-center">
+   307	                                            <input
+   308	                                                type="radio"
+   309	                                                name="is_active"
+   310	                                                checked={!formData.is_active}
+   311	                                                onChange={() => updateFormData({ is_active: false })}
+   312	                                                className="form-radio h-5 w-5 text-primary"
+   313	                                            />
+   314	                                            <span className="ml-2">Tidak Dijual</span>
+   315	                                        </label>
+   316	                                    </div>
+   317	                                </FormField>
    318	
-   319	                            <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
-   320	                                <label className="inline-flex items-center">
-   321	                                    <input
-   322	                                        type="checkbox"
-   323	                                        name="has_expiry_date"
-   324	                                        checked={formData.has_expiry_date}
-   325	                                        disabled={!formData.is_medicine}
-   326	                                        onChange={handleChange}
-   327	                                        className="form-checkbox h-5 w-5 text-primary"
-   328	                                    />
-   329	                                    <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
-   330	                                </label>
-   331	                                <div className="mt-1 text-sm text-gray-500">
-   332	                                    Jika dicentang, obat ini akan menggunakan metode FEFO
-   333	                                    (First Expired First Out)
-   334	                                </div>
-   335	                            </div>
-   336	                        </FormSection>
-   337	                    </CardContent>
-   338	
-   339	                    <CardFooter className="flex justify-between">
-   340	                        <FormActions
-   341	                            onCancel={() => navigate("/master-data/items")}
-   342	                            isDisabled={false}
-   343	                            isSaving={saving}
-   344	                        />
-   345	                    </CardFooter>
-   346	                </form>
-   347	            </Card>
-   348	        </div>
-   349	    );
-   350	};
-   351	
-   352	export default AddItem;
+   319	                                <FormField label="Stok Minimal">
+   320	                                    <Input
+   321	                                        type="number"
+   322	                                        name="min_stock"
+   323	                                        value={formData.min_stock}
+   324	                                        onChange={handleChange}
+   325	                                        className={inputClassName}
+   326	                                        required
+   327	                                    />
+   328	                                </FormField>
+   329	                            </div>
+   330	
+   331	                            <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
+   332	                                <label className="inline-flex items-center">
+   333	                                    <input
+   334	                                        type="checkbox"
+   335	                                        name="has_expiry_date"
+   336	                                        checked={formData.has_expiry_date}
+   337	                                        disabled={!formData.is_medicine}
+   338	                                        onChange={handleChange}
+   339	                                        className="form-checkbox h-5 w-5 text-primary"
+   340	                                    />
+   341	                                    <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
+   342	                                </label>
+   343	                                <div className="mt-1 text-sm text-gray-500">
+   344	                                    Jika dicentang, obat ini akan menggunakan metode FEFO
+   345	                                    (First Expired First Out)
+   346	                                </div>
+   347	                            </div>
+   348	                        </FormSection>
+   349	                    </CardContent>
+   350	
+   351	                    <CardFooter className="flex justify-between">
+   352	                        <FormActions
+   353	                            onCancel={() => navigate("/master-data/items")}
+   354	                            isDisabled={false}
+   355	                            isSaving={saving}
+   356	                            saveText={isEditMode ? 'Update' : 'Simpan'}
+   357	                        />
+   358	                    </CardFooter>
+   359	                </form>
+   360	            </Card>
+   361	        </div>
+   362	    );
+   363	};
+   364	
+   365	export default AddItem;
 
 
 ===============================================

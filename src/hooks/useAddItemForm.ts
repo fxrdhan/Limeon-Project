@@ -28,30 +28,28 @@ interface FormData {
     rack: string;
     description: string;
     base_price: number;
-    sell_price: number; // Add sell_price
+    sell_price: number;
     min_stock: number;
     is_active: boolean;
     is_medicine: boolean;
     has_expiry_date: boolean;
 }
 
-export const useAddItemForm = () => {
+export const useAddItemForm = (itemId?: string) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
     const [types, setTypes] = useState<MedicineType[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
-    // State untuk nilai yang ditampilkan dengan format mata uang
     const [displayBasePrice, setDisplayBasePrice] = useState('');
     const [displaySellPrice, setDisplaySellPrice] = useState('');
 
-    // Hook untuk konversi satuan
     const unitConversionHook = useUnitConversion();
 
-    // Form state
     const [formData, setFormData] = useState<FormData>({
-        code: "", // Kode akan dibuat otomatis
+        code: "",
         name: "",
         type_id: "",
         category_id: "",
@@ -59,14 +57,13 @@ export const useAddItemForm = () => {
         rack: "",
         description: "",
         base_price: 0,
-        sell_price: 0, // Initialize sell_price
+        sell_price: 0,
         min_stock: 10,
         is_active: true,
         is_medicine: true,
         has_expiry_date: false,
     });
 
-    // Fungsi untuk memperbarui formData secara lebih mudah
     const updateFormData = (newData: Partial<FormData>) => {
         setFormData(prev => ({
             ...prev,
@@ -74,12 +71,10 @@ export const useAddItemForm = () => {
         }));
     };
 
-    // Fungsi helper untuk menghasilkan kode dinamis
     const generateTypeCode = (typeId: string): string => {
         const selectedType = types.find(type => type.id === typeId);
         if (!selectedType) return "X";
 
-        // Gunakan kode khusus untuk setiap jenis obat
         const typeName = selectedType.name.toLowerCase();
         if (typeName.includes("bebas") && !typeName.includes("terbatas")) return "B";
         if (typeName.includes("bebas terbatas")) return "T";
@@ -87,16 +82,14 @@ export const useAddItemForm = () => {
         if (typeName.includes("narkotika")) return "N";
         if (typeName.includes("fitofarmaka")) return "F";
         if (typeName.includes("herbal")) return "H";
-        
-        // Fallback ke huruf pertama jika tidak ada yang cocok
+
         return selectedType.name.charAt(0).toUpperCase();
     };
-    
+
     const generateUnitCode = (unitId: string): string => {
         const selectedUnit = units.find(unit => unit.id === unitId);
         if (!selectedUnit) return "X";
 
-        // Ambil huruf pertama dari nama unit
         return selectedUnit.name.charAt(0).toUpperCase();
     };
 
@@ -106,17 +99,13 @@ export const useAddItemForm = () => {
 
         const name = selectedCategory.name;
 
-        // Cek apakah kategori dimulai dengan "Anti"
         if (name.toLowerCase().startsWith("anti")) {
-            // Untuk kategori yang dimulai dengan "Anti"
-            // Ambil "A" dari "Anti" dan huruf pertama dari kata selanjutnya
-            const baseName = name.slice(4); // Hilangkan "Anti" dari awal
+            const baseName = name.slice(4);
             if (baseName.length > 0) {
                 return "A" + baseName.charAt(0).toUpperCase();
             }
             return "A";
         } else {
-            // Untuk kategori lainnya, ambil 2 huruf pertama
             if (name.length >= 2) {
                 return name.substring(0, 2).toUpperCase();
             } else if (name.length === 1) {
@@ -129,11 +118,15 @@ export const useAddItemForm = () => {
 
     useEffect(() => {
         fetchMasterData();
-    }, []);
+        if (itemId) {
+            fetchItemData(itemId);
+            setIsEditMode(true);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [itemId]);
 
     useEffect(() => {
         const generateItemCode = async () => {
-            // Jika tipe, kategori, atau satuan belum dipilih, keluar dari fungsi
             if (!formData.type_id || !formData.category_id || !formData.unit_id)
                 return;
 
@@ -143,7 +136,6 @@ export const useAddItemForm = () => {
 
             const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
 
-            // Cek database untuk mendapatkan urutan terakhir
             try {
                 const { data } = await supabase
                     .from("items")
@@ -151,10 +143,9 @@ export const useAddItemForm = () => {
                     .ilike("code", `${codePrefix}%`)
                     .order("code", { ascending: false });
 
-                let sequence = 1; // Default mulai dari 1
+                let sequence = 1;
 
                 if (data && data.length > 0) {
-                    // Ekstrak nomor urut dari kode yang sudah ada
                     const lastSequenceStr = data[0].code.substring(codePrefix.length);
                     const lastSequence = parseInt(lastSequenceStr);
 
@@ -163,11 +154,9 @@ export const useAddItemForm = () => {
                     }
                 }
 
-                // Format: membuat kode 2 digit (01, 02, ..., dst)
                 const sequenceStr = sequence.toString().padStart(2, "0");
                 const generatedCode = `${codePrefix}${sequenceStr}`;
 
-                // Update form
                 setFormData(prevFormData => ({
                     ...prevFormData,
                     code: generatedCode,
@@ -177,7 +166,6 @@ export const useAddItemForm = () => {
             }
         };
 
-        // Hanya generate code jika data master sudah dimuat dan semua pilihan sudah dipilih
         if (formData.type_id && formData.category_id && formData.unit_id &&
             categories.length > 0 && types.length > 0 && units.length > 0) {
             generateItemCode();
@@ -188,19 +176,16 @@ export const useAddItemForm = () => {
     const fetchMasterData = async () => {
         setLoading(true);
         try {
-            // Fetch categories
             const { data: categoriesData } = await supabase
                 .from("item_categories")
                 .select("id, name")
                 .order("name");
 
-            // Fetch types
             const { data: typesData } = await supabase
                 .from("item_types")
                 .select("id, name")
                 .order("name");
 
-            // Fetch units
             const { data: unitsData } = await supabase
                 .from("item_units")
                 .select("id, name")
@@ -216,27 +201,113 @@ export const useAddItemForm = () => {
         }
     };
 
+    const fetchItemData = async (id: string) => {
+        try {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from("items")
+                .select(`
+                    *,
+                    unit_conversions
+                `)
+                .eq("id", id)
+                .single();
+
+            if (error) throw error;
+            if (!data) throw new Error("Item tidak ditemukan");
+
+            setFormData({
+                code: data.code || "",
+                name: data.name || "",
+                type_id: data.type_id || "",
+                category_id: data.category_id || "",
+                unit_id: data.unit_id || "",
+                rack: data.rack || "",
+                description: data.description || "",
+                base_price: data.base_price || 0,
+                sell_price: data.sell_price || 0,
+                min_stock: data.min_stock || 10,
+                is_active: data.is_active !== undefined ? data.is_active : true,
+                is_medicine: data.is_medicine !== undefined ? data.is_medicine : true,
+                has_expiry_date: data.has_expiry_date !== undefined ? data.has_expiry_date : false,
+            });
+
+            setDisplayBasePrice(formatRupiah(data.base_price || 0));
+            setDisplaySellPrice(formatRupiah(data.sell_price || 0));
+
+            unitConversionHook.setBaseUnit(data.base_unit || "");
+            unitConversionHook.setBasePrice(data.base_price || 0);
+
+            let conversions = [];
+            if (data.unit_conversions) {
+                if (typeof data.unit_conversions === 'string') {
+                    try {
+                        conversions = JSON.parse(data.unit_conversions);
+                    } catch (e) {
+                        console.error("Error parsing unit_conversions:", e);
+                        conversions = [];
+                    }
+                } else {
+                    conversions = data.unit_conversions;
+                }
+            }
+
+            if (Array.isArray(conversions)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                unitConversionHook.conversions.forEach((conv: any) => {
+                    unitConversionHook.removeUnitConversion(conv.id);
+                });
+
+                for (const conv of conversions) {
+                    const unit = await getUnitById(conv.unit_name);
+                    if (unit) {
+                        unitConversionHook.addUnitConversion({
+                            unit: unit,
+                            conversion: conv.conversion_rate || 0,
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching item data:", error);
+            alert("Gagal memuat data item. Silakan coba lagi.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getUnitById = async (unitName: string) => {
+        try {
+            const { data } = await supabase
+                .from("item_units")
+                .select("id, name")
+                .eq("name", unitName)
+                .single();
+            return data;
+        } catch (error) {
+            console.error("Error fetching unit:", error);
+            return null;
+        }
+    };
+
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target as HTMLInputElement;
 
         if (name === "base_price" || name === "sell_price") {
-            // Untuk input harga
             const numericInt = extractNumericValue(value);
 
-            // Update formData dengan nilai numerik
             setFormData({
                 ...formData,
                 [name]: numericInt
             });
 
-            // Update display value dengan format Rupiah
             const formattedValue = formatRupiah(numericInt);
             if (name === "base_price") {
                 setDisplayBasePrice(formattedValue);
-            } else if (name === "sell_price") { // Handle sell_price specifically
+            } else if (name === "sell_price") {
                 setDisplaySellPrice(formattedValue);
-            } 
+            }
         } else if (type === "checkbox") {
             const { checked } = e.target as HTMLInputElement;
             setFormData({
@@ -256,7 +327,6 @@ export const useAddItemForm = () => {
         }
     };
 
-    // Modifikasi handleChange untuk menjamin pemicu generate kode
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prevFormData => ({
@@ -270,69 +340,102 @@ export const useAddItemForm = () => {
         setSaving(true);
 
         try {
-            // Check jika nama obat sudah ada
-            const { data: existingMedicine } = await supabase
-                .from("items")
-                .select("id")
-                .eq("name", formData.name);
+            if (isEditMode) {
+                const itemUpdateData = {
+                    name: formData.name,
+                    category_id: formData.category_id,
+                    type_id: formData.type_id,
+                    unit_id: formData.unit_id,
+                    base_price: formData.base_price, 
+                    sell_price: formData.sell_price,
+                    min_stock: formData.min_stock,
+                    description: formData.description || null,
+                    is_active: formData.is_active,
+                    rack: formData.rack || null,
+                    code: formData.code,
+                    is_medicine: formData.is_medicine,
+                    base_unit: unitConversionHook.baseUnit,
+                    has_expiry_date: formData.has_expiry_date,
+                };
 
-            if (existingMedicine && existingMedicine.length > 0) {
-                alert("Nama obat sudah ada. Silakan gunakan nama lain.");
-                setSaving(false);
-                return;
-            }
+                const { error: updateError } = await supabase
+                    .from("items")
+                    .update(itemUpdateData)
+                    .eq("id", itemId);
 
-            // 1. Insert item utama (dengan satuan dasar)
-            const mainItemData = {
-                name: formData.name,
-                category_id: formData.category_id,
-                type_id: formData.type_id,
-                unit_id: formData.unit_id,
-                base_price: formData.base_price, 
-                sell_price: formData.sell_price, // Add sell_price to insert data
-                stock: 0, // Default stok awal 0
-                min_stock: formData.min_stock,
-                description: formData.description || null,
-                is_active: formData.is_active,
-                rack: formData.rack || null,
-                code: formData.code,
-                is_medicine: formData.is_medicine,
-                base_unit: unitConversionHook.baseUnit,
-                unit_conversions: JSON.stringify(unitConversionHook.conversions),
-                has_expiry_date: formData.has_expiry_date,
-            };
+                if (updateError) throw updateError;
 
-            const { data: newItem, error: mainError } = await supabase
-                .from("items")
-                .insert(mainItemData)
-                .select("id")
-                .single();
-
-            if (mainError) throw mainError;
-
-            // 2. Insert unit conversions ke tabel terpisah
-            if (unitConversionHook.conversions.length > 0 && newItem) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
-                    item_id: newItem.id,
-                    unit_name: uc.unit.name,
-                    conversion_rate: uc.conversion,
-                    base_price: uc.basePrice,
-                    created_at: new Date()
-                }));
-
-                // Insert ke tabel unit_conversions
-                const { error: conversionError } = await supabase
+                await supabase
                     .from("unit_conversions")
-                    .insert(conversionRecords);
+                    .delete()
+                    .eq("item_id", itemId);
 
-                if (conversionError) {
-                    console.error("Error saving unit conversions:", conversionError);
-                    // Lanjutkan meskipun ada error pada konversi unit
+                if (unitConversionHook.conversions.length > 0) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const conversionRecords = unitConversionHook.conversions.map((uc: any) => ({
+                        item_id: itemId,
+                        unit_name: uc.unit.name,
+                        conversion_rate: uc.conversion,
+                        base_price: uc.basePrice,
+                        created_at: new Date()
+                    }));
+
+                    const { error: conversionError } = await supabase
+                        .from("unit_conversions")
+                        .insert(conversionRecords);
+
+                    if (conversionError) {
+                        console.error("Error saving unit conversions:", conversionError);
+                    }
+                }
+            } else {
+                const mainItemData = {
+                    name: formData.name,
+                    category_id: formData.category_id,
+                    type_id: formData.type_id,
+                    unit_id: formData.unit_id,
+                    base_price: formData.base_price, 
+                    sell_price: formData.sell_price,
+                    stock: 0,
+                    min_stock: formData.min_stock,
+                    description: formData.description || null,
+                    is_active: formData.is_active,
+                    rack: formData.rack || null,
+                    code: formData.code,
+                    is_medicine: formData.is_medicine,
+                    base_unit: unitConversionHook.baseUnit,
+                    unit_conversions: JSON.stringify(unitConversionHook.conversions),
+                    has_expiry_date: formData.has_expiry_date,
+                };
+
+                const { data: newItem, error: mainError } = await supabase
+                    .from("items")
+                    .insert(mainItemData)
+                    .select("id")
+                    .single();
+
+                if (mainError) throw mainError;
+
+                if (unitConversionHook.conversions.length > 0 && newItem) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
+                        item_id: newItem.id,
+                        unit_name: uc.unit.name,
+                        conversion_rate: uc.conversion,
+                        base_price: uc.basePrice,
+                        created_at: new Date()
+                    }));
+
+                    const { error: conversionError } = await supabase
+                        .from("unit_conversions")
+                        .insert(conversionRecords);
+
+                    if (conversionError) {
+                        console.error("Error saving unit conversions:", conversionError);
+                    }
                 }
             }
 
-            // Redirect ke halaman daftar obat
             navigate("/master-data/items");
         } catch (error) {
             console.error("Error saving item:", error);
@@ -345,12 +448,13 @@ export const useAddItemForm = () => {
     return {
         formData,
         displayBasePrice,
-        displaySellPrice, // Return displaySellPrice
+        displaySellPrice,
         categories,
         types,
         units,
         loading,
         saving,
+        isEditMode,
         handleChange,
         handleSelectChange,
         handleSubmit,
