@@ -2532,210 +2532,208 @@
 = File: ./src/components/ui/DetailEditModal.tsx 
 ===============================================
 
-     1	/* eslint-disable @typescript-eslint/no-explicit-any */
-     2	// src/components/master-data/DetailEditModal.tsx
-     3	import React, { useState } from 'react';
-     4	import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
-     5	import { Button } from '../ui/Button';
-     6	
-     7	interface FieldConfig {
-     8	    key: string;
-     9	    label: string;
-    10	    type?: 'text' | 'email' | 'tel' | 'textarea';
-    11	    editable?: boolean;
-    12	}
-    13	
-    14	interface DetailEditModalProps {
-    15	    title: string;
-    16	    data: Record<string, any>;
-    17	    fields: FieldConfig[];
-    18	    isOpen: boolean;
-    19	    onClose: () => void;
-    20	    onSave: (updatedData: Record<string, any>) => Promise<void>;
-    21	    imageUrl?: string;
-    22	    imagePlaceholder?: string;
-    23	}
-    24	
-    25	const DetailEditModal: React.FC<DetailEditModalProps> = ({
-    26	    title,
-    27	    data,
-    28	    fields,
-    29	    isOpen,
-    30	    onClose,
-    31	    onSave,
-    32	    imageUrl,
-    33	    imagePlaceholder
-    34	}) => {
-    35	    const [editMode, setEditMode] = useState<Record<string, boolean>>({});
-    36	    const [editValues, setEditValues] = useState<Record<string, any>>({});
-    37	    const [loading, setLoading] = useState<Record<string, boolean>>({});
-    38	
-    39	    // Inisialisasi nilai editan dengan data saat ini
-    40	    React.useEffect(() => {
-    41	        if (isOpen && data) {
-    42	            const initialValues: Record<string, any> = {};
-    43	            fields.forEach(field => {
-    44	                initialValues[field.key] = data[field.key] !== null ? data[field.key] : '';
-    45	            });
-    46	            setEditValues(initialValues);
-    47	        }
-    48	    }, [isOpen, data, fields]);
-    49	
-    50	    if (!isOpen) return null;
-    51	
-    52	    const toggleEdit = (key: string) => {
-    53	        setEditMode(prev => ({
-    54	            ...prev,
-    55	            [key]: !prev[key]
-    56	        }));
-    57	    };
-    58	
-    59	    const handleChange = (key: string, value: any) => {
-    60	        setEditValues(prev => ({
-    61	            ...prev,
-    62	            [key]: value
-    63	        }));
-    64	    };
-    65	
-    66	    const handleSaveField = async (key: string) => {
-    67	        try {
-    68	            setLoading(prev => ({ ...prev, [key]: true }));
-    69	
-    70	            // Buat object dengan hanya field yang diubah
-    71	            const updatedData = { [key]: editValues[key] };
-    72	            await onSave(updatedData);
-    73	
-    74	            // Toggle off edit mode setelah berhasil
-    75	            toggleEdit(key);
-    76	        } catch (error) {
-    77	            console.error(`Error saving ${key}:`, error);
-    78	        } finally {
-    79	            setLoading(prev => ({ ...prev, [key]: false }));
-    80	        }
-    81	    };
-    82	
-    83	    const handleCancel = (key: string) => {
-    84	        // Reset nilai ke data asli
-    85	        setEditValues(prev => ({
-    86	            ...prev,
-    87	            [key]: data[key] !== null ? data[key] : ''
-    88	        }));
-    89	        toggleEdit(key);
-    90	    };
-    91	
-    92	    return (
-    93	        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-    94	            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-    95	                <div className="flex justify-between items-center p-4 border-b">
-    96	                    <h2 className="text-xl font-semibold">{title}</h2>
-    97	                    <Button
-    98	                        variant="text"
-    99	                        onClick={onClose}
-   100	                        className="text-gray-500 hover:text-gray-700"
-   101	                    >
-   102	                        <FaTimes size={20} />
-   103	                    </Button>
-   104	                </div>
-   105	
-   106	                <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-   107	                    {/* Gambar Header (jika ada) */}
-   108	                    {(imageUrl || imagePlaceholder) && (
-   109	                        <div className="flex justify-center mb-6">
-   110	                            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200">
-   111	                                <img
-   112	                                    src={imageUrl || imagePlaceholder}
-   113	                                    alt={data.name || 'Detail'}
-   114	                                    className="w-full h-full object-cover"
-   115	                                />
-   116	                            </div>
-   117	                        </div>
-   118	                    )}
-   119	
-   120	                    {/* Fields */}
-   121	                    <div className="space-y-4">
-   122	                        {fields.map(field => (
-   123	                            <div key={field.key} className="bg-white rounded-md">
-   124	                                <div className="flex justify-between items-center mb-1">
-   125	                                    <label className="text-sm font-medium text-gray-600">{field.label}</label>
-   126	                                    {field.editable !== false && (
-   127	                                        <div className="flex space-x-2">
-   128	                                            {editMode[field.key] ? (
-   129	                                                <>
-   130	                                                    <Button
-   131	                                                        variant="text"
-   132	                                                        size="sm"
-   133	                                                        onClick={() => handleCancel(field.key)}
-   134	                                                        className="text-gray-500 hover:text-gray-700 p-1"
-   135	                                                    >
-   136	                                                        <FaTimes className="text-red-500" />
-   137	                                                    </Button>
-   138	                                                    <Button
-   139	                                                        variant="text"
-   140	                                                        size="sm"
-   141	                                                        onClick={() => handleSaveField(field.key)}
-   142	                                                        className="text-gray-500 hover:text-gray-700 p-1"
-   143	                                                        disabled={loading[field.key]}
-   144	                                                    >
-   145	                                                        {loading[field.key] ? (
-   146	                                                            <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin inline-block"></span>
-   147	                                                        ) : (
-   148	                                                            <FaCheck className="text-green-500" />
-   149	                                                        )}
-   150	                                                    </Button>
-   151	                                                </>
-   152	                                            ) : (
-   153	                                                <Button
-   154	                                                    variant="text"
-   155	                                                    size="sm"
-   156	                                                    onClick={() => toggleEdit(field.key)}
-   157	                                                    className="text-gray-500 hover:text-gray-700 p-1"
-   158	                                                >
-   159	                                                    <FaEdit />
-   160	                                                </Button>
-   161	                                            )}
-   162	                                        </div>
-   163	                                    )}
-   164	                                </div>
-   165	
-   166	                                {editMode[field.key] ? (
-   167	                                    field.type === 'textarea' ? (
-   168	                                        <textarea
-   169	                                            value={editValues[field.key] || ''}
-   170	                                            onChange={(e) => handleChange(field.key, e.target.value)}
-   171	                                            className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-   172	                                            rows={3}
-   173	                                        />
-   174	                                    ) : (
-   175	                                        <input
-   176	                                            type={field.type || 'text'}
-   177	                                            value={editValues[field.key] || ''}
-   178	                                            onChange={(e) => handleChange(field.key, e.target.value)}
-   179	                                            className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-   180	                                        />
-   181	                                    )
-   182	                                ) : (
-   183	                                    <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
-   184	                                        {data[field.key] || (
-   185	                                            <span className="text-gray-400 italic">Tidak ada data</span>
-   186	                                        )}
-   187	                                    </div>
-   188	                                )}
-   189	                            </div>
-   190	                        ))}
-   191	                    </div>
-   192	                </div>
-   193	
-   194	                <div className="p-4 border-t flex justify-end">
-   195	                    <Button variant="outline" onClick={onClose}>
-   196	                        Tutup
-   197	                    </Button>
-   198	                </div>
-   199	            </div>
-   200	        </div>
-   201	    );
-   202	};
-   203	
-   204	export default DetailEditModal;
+     1	// src/components/master-data/DetailEditModal.tsx
+     2	import React, { useState } from 'react';
+     3	import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+     4	import { Button } from '../ui/Button';
+     5	
+     6	interface FieldConfig {
+     7	    key: string;
+     8	    label: string;
+     9	    type?: 'text' | 'email' | 'tel' | 'textarea';
+    10	    editable?: boolean;
+    11	}
+    12	
+    13	interface DetailEditModalProps {
+    14	    title: string;
+    15	    data: Record<string, string | number | boolean | null>; // Use a more specific type than any
+    16	    fields: FieldConfig[];
+    17	    isOpen: boolean;
+    18	    onClose: () => void;
+    19	    onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>; // Use a more specific type than any
+    20	    imageUrl?: string;
+    21	    imagePlaceholder?: string;
+    22	}
+    23	
+    24	const DetailEditModal: React.FC<DetailEditModalProps> = ({
+    25	    title,
+    26	    data,
+    27	    fields,
+    28	    isOpen,
+    29	    onClose,
+    30	    onSave,
+    31	    imageUrl,
+    32	    imagePlaceholder
+    33	}) => {
+    34	    const [editMode, setEditMode] = useState<Record<string, boolean>>({});
+    35	    const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({}); // Use a more specific type than any
+    36	    const [loading, setLoading] = useState<Record<string, boolean>>({});
+    37	
+    38	    // Inisialisasi nilai editan dengan data saat ini
+    39	    React.useEffect(() => {
+    40	        if (isOpen && data) {
+    41	            const initialValues: Record<string, string | number | boolean | null> = {}; // Use a more specific type than any
+    42	            fields.forEach(field => {
+    43	                initialValues[field.key] = data[field.key]; // Assign directly, handle null/undefined later if needed
+    44	            });
+    45	            setEditValues(initialValues);
+    46	        }
+    47	    }, [isOpen, data, fields]);
+    48	
+    49	    if (!isOpen) return null;
+    50	
+    51	    const toggleEdit = (key: string) => {
+    52	        setEditMode(prev => ({
+    53	            ...prev,
+    54	            [key]: !prev[key]
+    55	        }));
+    56	    };
+    57	
+    58	    const handleChange = (key: string, value: string) => { // Assume value from input/textarea is string
+    59	        setEditValues(prev => ({
+    60	            ...prev,
+    61	            [key]: value
+    62	        }));
+    63	    };
+    64	
+    65	    const handleSaveField = async (key: string) => {
+    66	        try {
+    67	            setLoading(prev => ({ ...prev, [key]: true }));
+    68	
+    69	            // Buat object dengan hanya field yang diubah
+    70	            const updatedData = { [key]: editValues[key] };
+    71	            await onSave(updatedData);
+    72	
+    73	            // Toggle off edit mode setelah berhasil
+    74	            toggleEdit(key);
+    75	        } catch (error) {
+    76	            console.error(`Error saving ${key}:`, error);
+    77	        } finally {
+    78	            setLoading(prev => ({ ...prev, [key]: false }));
+    79	        }
+    80	    };
+    81	
+    82	    const handleCancel = (key: string) => {
+    83	        setEditValues(prev => ({
+    84	            ...prev,
+    85	            [key]: data[key] // Reset to original value (could be null)
+    86	        }));
+    87	        toggleEdit(key);
+    88	    };
+    89	
+    90	    return (
+    91	        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+    92	            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    93	                <div className="flex justify-between items-center p-4 border-b">
+    94	                    <h2 className="text-xl font-semibold">{title}</h2>
+    95	                    <Button
+    96	                        variant="text"
+    97	                        onClick={onClose}
+    98	                        className="text-gray-500 hover:text-gray-700"
+    99	                    >
+   100	                        <FaTimes size={20} />
+   101	                    </Button>
+   102	                </div>
+   103	
+   104	                <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+   105	                    {/* Gambar Header (jika ada) */}
+   106	                    {(imageUrl || imagePlaceholder) && (
+   107	                        <div className="flex justify-center mb-6">
+   108	                            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200">
+   109	                                <img
+   110	                                    src={imageUrl || imagePlaceholder}
+   111	                                    alt={String(data.name ?? 'Detail')}
+   112	                                    className="w-full h-full object-cover"
+   113	                                />
+   114	                            </div>
+   115	                        </div>
+   116	                    )}
+   117	
+   118	                    {/* Fields */}
+   119	                    <div className="space-y-4">
+   120	                        {fields.map(field => (
+   121	                            <div key={field.key} className="bg-white rounded-md">
+   122	                                <div className="flex justify-between items-center mb-1">
+   123	                                    <label className="text-sm font-medium text-gray-600">{field.label}</label>
+   124	                                    {field.editable !== false && (
+   125	                                        <div className="flex space-x-2">
+   126	                                            {editMode[field.key] ? (
+   127	                                                <>
+   128	                                                    <Button
+   129	                                                        variant="text"
+   130	                                                        size="sm"
+   131	                                                        onClick={() => handleCancel(field.key)}
+   132	                                                        className="text-gray-500 hover:text-gray-700 p-1"
+   133	                                                    >
+   134	                                                        <FaTimes className="text-red-500" />
+   135	                                                    </Button>
+   136	                                                    <Button
+   137	                                                        variant="text"
+   138	                                                        size="sm"
+   139	                                                        onClick={() => handleSaveField(field.key)}
+   140	                                                        className="text-gray-500 hover:text-gray-700 p-1"
+   141	                                                        disabled={loading[field.key]}
+   142	                                                    >
+   143	                                                        {loading[field.key] ? (
+   144	                                                            <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin inline-block"></span>
+   145	                                                        ) : (
+   146	                                                            <FaCheck className="text-green-500" />
+   147	                                                        )}
+   148	                                                    </Button>
+   149	                                                </>
+   150	                                            ) : (
+   151	                                                <Button
+   152	                                                    variant="text"
+   153	                                                    size="sm"
+   154	                                                    onClick={() => toggleEdit(field.key)}
+   155	                                                    className="text-gray-500 hover:text-gray-700 p-1"
+   156	                                                >
+   157	                                                    <FaEdit />
+   158	                                                </Button>
+   159	                                            )}
+   160	                                        </div>
+   161	                                    )}
+   162	                                </div>
+   163	
+   164	                                {editMode[field.key] ? (
+   165	                                    field.type === 'textarea' ? (
+   166	                                        <textarea
+   167	                                            value={String(editValues[field.key] ?? '')} // Ensure value is string
+   168	                                            onChange={(e) => handleChange(field.key, e.target.value)}
+   169	                                            className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+   170	                                            rows={3}
+   171	                                        />
+   172	                                    ) : (
+   173	                                        <input
+   174	                                            type={field.type || 'text'}
+   175	                                            value={String(editValues[field.key] ?? '')} // Ensure value is string
+   176	                                            onChange={(e) => handleChange(field.key, e.target.value)}
+   177	                                            className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+   178	                                        />
+   179	                                    )
+   180	                                ) : (
+   181	                                    <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
+   182	                                        {String(data[field.key] ?? '') || ( // Display original data, convert to string
+   183	                                            <span className="text-gray-400 italic">Tidak ada data</span>
+   184	                                        )}
+   185	                                    </div>
+   186	                                )}
+   187	                            </div>
+   188	                        ))}
+   189	                    </div>
+   190	                </div>
+   191	
+   192	                <div className="p-4 border-t flex justify-end">
+   193	                    <Button variant="outline" onClick={onClose}>
+   194	                        Tutup
+   195	                    </Button>
+   196	                </div>
+   197	            </div>
+   198	        </div>
+   199	    );
+   200	};
+   201	
+   202	export default DetailEditModal;
 
 
 ===============================================
