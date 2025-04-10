@@ -1994,126 +1994,127 @@
     76	        addUnitConversion({
     77	            unit: selectedUnit,
     78	            conversion: unitConversionFormData.conversion,
-    79	        });
-    80	
-    81	        // Reset form
-    82	        setUnitConversionFormData({
-    83	            unit: "",
-    84	            conversion: 0,
-    85	        });
-    86	    };
-    87	
-    88	    return (
-    89	        <FormSection title="Satuan dan Konversi">
-    90	            <div>
-    91	                <h3 className="text-lg font-medium mb-3">Konversi Satuan</h3>
-    92	                <p className="text-sm text-gray-600 mb-3">
-    93	                    Tentukan berapa banyak satuan turunan dalam satu satuan dasar.
-    94	                </p>
-    95	
-    96	                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-    97	                    <FormField label="Satuan Konversi">
-    98	                        <select
-    99	                            name="unit"
-   100	                            value={unitConversionFormData.unit}
-   101	                            onChange={handleConversionFormChange}
-   102	                            className="w-full p-3 border rounded-md"
-   103	                        >
-   104	                            <option value="">-- Pilih Satuan --</option>
-   105	                            {availableUnits
-   106	                                .filter(unit => unit.name !== baseUnit)
-   107	                                .filter(unit => !unitConversions.some(uc => uc.unit.name === unit.name))
-   108	                                .map(unit => (
-   109	                                <option key={unit.id} value={unit.name}>
-   110	                                    {unit.name}
-   111	                                </option>
-   112	                            ))}
-   113	                        </select>
-   114	                    </FormField>
-   115	
-   116	                    <FormField label={`1 ${baseUnit || 'satuan dasar'} = ? ${unitConversionFormData.unit || 'satuan'}`}>
-   117	                        <div className="flex space-x-2">
-   118	                            <Input
-   119	                                name="conversion"
-   120	                                value={unitConversionFormData.conversion || ""}
-   121	                                onChange={handleConversionFormChange}
-   122	                                type="number"
-   123	                                min="1"
-   124	                                placeholder="Jumlah satuan dasar"
-   125	                                className="w-full"
-   126	                            />
-   127	                            <Button
-   128	                                type="button"
-   129	                                onClick={handleAddConversion}
-   130	                                className="whitespace-nowrap"
-   131	                            >
-   132	                                Tambah Satuan
-   133	                            </Button>
-   134	                        </div>
-   135	                    </FormField>
-   136	                </div>
-   137	
-   138	                <div className="border rounded-lg overflow-hidden">
-   139	                    <Table>
-   140	                        <TableHead>
-   141	                            <TableRow>
-   142	                                <TableHeader>Satuan Turunan</TableHeader>
-   143	                                <TableHeader>Konversi</TableHeader>
-   144	                                <TableHeader>Harga Pokok</TableHeader>
-   145	                                <TableHeader className="text-center">Aksi</TableHeader>
-   146	                            </TableRow>
-   147	                        </TableHead>
-   148	                        <TableBody>
-   149	                            {unitConversions.length === 0 ? (
-   150	                                <TableRow>
-   151	                                    <TableCell colSpan={4} className="text-center text-gray-500">
-   152	                                        Belum ada data konversi
-   153	                                    </TableCell>
-   154	                                </TableRow>
-   155	                            ) : (
-   156	                                // Filter untuk menghilangkan duplikat berdasarkan unit.name
-   157	                                unitConversions.filter((uc, index, self) => 
-   158	                                    index === self.findIndex(u => u.unit.name === uc.unit.name)
-   159	                                ).map((uc) => (
-   160	                                    <TableRow key={uc.id}>
-   161	                                        <TableCell>{uc.unit.name}</TableCell>
-   162	                                        <TableCell>
-   163	                                            1 {baseUnit} = {uc.conversion} {uc.unit.name}
-   164	                                        </TableCell>
-   165	                                        <TableCell>
-   166	                                            {(uc.basePrice || 0).toLocaleString("id-ID", {
-   167	                                                style: "currency",
-   168	                                                currency: "IDR",
-   169	                                            })}
-   170	                                        </TableCell>
-   171	                                        <TableCell className="text-center">
-   172	                                            <Button
-   173	                                                variant="danger"
-   174	                                                size="sm"
-   175	                                                onClick={() => removeUnitConversion(uc.id)}
-   176	                                            >
-   177	                                                <FaTrash />
-   178	                                            </Button>
-   179	                                        </TableCell>
-   180	                                    </TableRow>
-   181	                                ))
-   182	                            )}
-   183	                        </TableBody>
-   184	                    </Table>
-   185	                </div>
-   186	
-   187	                <div className="mt-4 text-sm text-gray-600">
-   188	                    <ul className="list-disc pl-5 space-y-1">
-   189	                        <li>Harga pokok satuan turunan dihitung dengan: Harga pokok satuan dasar ÷ jumlah satuan turunan.</li>
-   190	                        <li className="text-red-500 font-semibold">PENTING: Disarankan untuk tidak mengubah satuan jika sudah terdapat transaksi yang berhubungan dengan item ini.</li>
-   191	                    </ul>
-   192	                </div>
-   193	            </div>
-   194	        </FormSection>
-   195	    );
-   196	};
-   197	
-   198	export default UnitConversionManager;
+    79	            basePrice: 0
+    80	        });
+    81	
+    82	        // Reset form
+    83	        setUnitConversionFormData({
+    84	            unit: "",
+    85	            conversion: 0,
+    86	        });
+    87	    };
+    88	
+    89	    return (
+    90	        <FormSection title="Satuan dan Konversi">
+    91	            <div>
+    92	                <h3 className="text-lg font-medium mb-3">Konversi Satuan</h3>
+    93	                <p className="text-sm text-gray-600 mb-3">
+    94	                    Tentukan berapa banyak satuan turunan dalam satu satuan dasar.
+    95	                </p>
+    96	
+    97	                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    98	                    <FormField label="Satuan Konversi">
+    99	                        <select
+   100	                            name="unit"
+   101	                            value={unitConversionFormData.unit}
+   102	                            onChange={handleConversionFormChange}
+   103	                            className="w-full p-3 border rounded-md"
+   104	                        >
+   105	                            <option value="">-- Pilih Satuan --</option>
+   106	                            {availableUnits
+   107	                                .filter(unit => unit.name !== baseUnit)
+   108	                                .filter(unit => !unitConversions.some(uc => uc.unit.name === unit.name))
+   109	                                .map(unit => (
+   110	                                <option key={unit.id} value={unit.name}>
+   111	                                    {unit.name}
+   112	                                </option>
+   113	                            ))}
+   114	                        </select>
+   115	                    </FormField>
+   116	
+   117	                    <FormField label={`1 ${baseUnit || 'satuan dasar'} = ? ${unitConversionFormData.unit || 'satuan'}`}>
+   118	                        <div className="flex space-x-2">
+   119	                            <Input
+   120	                                name="conversion"
+   121	                                value={unitConversionFormData.conversion || ""}
+   122	                                onChange={handleConversionFormChange}
+   123	                                type="number"
+   124	                                min="1"
+   125	                                placeholder="Jumlah satuan dasar"
+   126	                                className="w-full"
+   127	                            />
+   128	                            <Button
+   129	                                type="button"
+   130	                                onClick={handleAddConversion}
+   131	                                className="whitespace-nowrap"
+   132	                            >
+   133	                                Tambah Satuan
+   134	                            </Button>
+   135	                        </div>
+   136	                    </FormField>
+   137	                </div>
+   138	
+   139	                <div className="border rounded-lg overflow-hidden">
+   140	                    <Table>
+   141	                        <TableHead>
+   142	                            <TableRow>
+   143	                                <TableHeader>Satuan Turunan</TableHeader>
+   144	                                <TableHeader>Konversi</TableHeader>
+   145	                                <TableHeader>Harga Pokok</TableHeader>
+   146	                                <TableHeader className="text-center">Aksi</TableHeader>
+   147	                            </TableRow>
+   148	                        </TableHead>
+   149	                        <TableBody>
+   150	                            {unitConversions.length === 0 ? (
+   151	                                <TableRow>
+   152	                                    <TableCell colSpan={4} className="text-center text-gray-500">
+   153	                                        Belum ada data konversi
+   154	                                    </TableCell>
+   155	                                </TableRow>
+   156	                            ) : (
+   157	                                // Filter untuk menghilangkan duplikat berdasarkan unit.name
+   158	                                unitConversions.filter((uc, index, self) => 
+   159	                                    index === self.findIndex(u => u.unit.name === uc.unit.name)
+   160	                                ).map((uc) => (
+   161	                                    <TableRow key={uc.id}>
+   162	                                        <TableCell>{uc.unit.name}</TableCell>
+   163	                                        <TableCell>
+   164	                                            1 {baseUnit} = {uc.conversion} {uc.unit.name}
+   165	                                        </TableCell>
+   166	                                        <TableCell>
+   167	                                            {(uc.basePrice || 0).toLocaleString("id-ID", {
+   168	                                                style: "currency",
+   169	                                                currency: "IDR",
+   170	                                            })}
+   171	                                        </TableCell>
+   172	                                        <TableCell className="text-center">
+   173	                                            <Button
+   174	                                                variant="danger"
+   175	                                                size="sm"
+   176	                                                onClick={() => removeUnitConversion(uc.id)}
+   177	                                            >
+   178	                                                <FaTrash />
+   179	                                            </Button>
+   180	                                        </TableCell>
+   181	                                    </TableRow>
+   182	                                ))
+   183	                            )}
+   184	                        </TableBody>
+   185	                    </Table>
+   186	                </div>
+   187	
+   188	                <div className="mt-4 text-sm text-gray-600">
+   189	                    <ul className="list-disc pl-5 space-y-1">
+   190	                        <li>Harga pokok satuan turunan dihitung dengan: Harga pokok satuan dasar ÷ jumlah satuan turunan.</li>
+   191	                        <li className="text-red-500 font-semibold">PENTING: Disarankan untuk tidak mengubah satuan jika sudah terdapat transaksi yang berhubungan dengan item ini.</li>
+   192	                    </ul>
+   193	                </div>
+   194	            </div>
+   195	        </FormSection>
+   196	    );
+   197	};
+   198	
+   199	export default UnitConversionManager;
 
 
 ===============================================
