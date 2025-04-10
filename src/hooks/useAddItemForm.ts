@@ -28,20 +28,12 @@ interface FormData {
     rack: string;
     description: string;
     base_price: number;
-    sell_price: number;
+    sell_price: number; // Add sell_price
     min_stock: number;
     is_active: boolean;
     is_medicine: boolean;
     has_expiry_date: boolean;
 }
-
-// interface UnitConversion {
-//     unit: {
-//         id: string;
-//     };
-//     conversion: number;
-//     basePrice: number;
-// }
 
 export const useAddItemForm = () => {
     const navigate = useNavigate();
@@ -67,7 +59,7 @@ export const useAddItemForm = () => {
         rack: "",
         description: "",
         base_price: 0,
-        sell_price: 0,
+        sell_price: 0, // Initialize sell_price
         min_stock: 10,
         is_active: true,
         is_medicine: true,
@@ -242,9 +234,9 @@ export const useAddItemForm = () => {
             const formattedValue = formatRupiah(numericInt);
             if (name === "base_price") {
                 setDisplayBasePrice(formattedValue);
-            } else {
+            } else if (name === "sell_price") { // Handle sell_price specifically
                 setDisplaySellPrice(formattedValue);
-            }
+            } 
         } else if (type === "checkbox") {
             const { checked } = e.target as HTMLInputElement;
             setFormData({
@@ -296,8 +288,8 @@ export const useAddItemForm = () => {
                 category_id: formData.category_id,
                 type_id: formData.type_id,
                 unit_id: formData.unit_id,
-                base_price: formData.base_price,
-                sell_price: formData.sell_price,
+                base_price: formData.base_price, 
+                sell_price: formData.sell_price, // Add sell_price to insert data
                 stock: 0, // Default stok awal 0
                 min_stock: formData.min_stock,
                 description: formData.description || null,
@@ -353,7 +345,7 @@ export const useAddItemForm = () => {
     return {
         formData,
         displayBasePrice,
-        displaySellPrice,
+        displaySellPrice, // Return displaySellPrice
         categories,
         types,
         units,

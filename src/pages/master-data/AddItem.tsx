@@ -18,7 +18,7 @@ const AddItem = () => {
     const navigate = useNavigate();
 
     const {
-        formData, displayBasePrice, categories, types, units,
+        formData, displayBasePrice, displaySellPrice, categories, types, units,
         saving, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
         unitConversionHook
     } = useAddItemForm();
@@ -210,7 +210,7 @@ const AddItem = () => {
                             </FormField>
                         </FormSection>
 
-                        <FormSection title="Harga Pokok">
+                        <FormSection title="Harga Pokok & Jual">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <FormField label="Satuan Dasar">
                                     <Input
@@ -226,6 +226,19 @@ const AddItem = () => {
                                         type="text"
                                         name="base_price"
                                         value={displayBasePrice}
+                                        placeholder="Rp 0"
+                                        onChange={handleChange}
+                                        min="0"
+                                        className={inputClassName}
+                                        required
+                                    />
+                                </FormField>
+
+                                <FormField label="Harga Jual">
+                                    <Input
+                                        type="text"
+                                        name="sell_price"
+                                        value={displaySellPrice}
                                         placeholder="Rp 0"
                                         onChange={handleChange}
                                         min="0"

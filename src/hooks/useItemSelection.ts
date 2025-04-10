@@ -6,6 +6,7 @@ export interface Item {
     name: string;
     code?: string;
     base_price: number;
+    sell_price: number; // Add sell_price
     stock: number;
     unit_id: string;
     base_unit: string;
@@ -27,7 +28,7 @@ export const useItemSelection = () => {
         try {
             const { data, error } = await supabase
                 .from('items')
-                .select('id, name, code, base_price, stock, unit_id, base_unit, unit_conversions')
+                .select('id, name, code, base_price, sell_price, stock, unit_id, base_unit, unit_conversions') // Select sell_price
                 .order('name');
                 
             if (error) throw error;
