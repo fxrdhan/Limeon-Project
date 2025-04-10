@@ -1,5 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { usePrefetchQueries } from '../../lib/prefetchQueries';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -29,6 +31,10 @@ ChartJS.register(
 
 const Dashboard = () => {
     const [demoMode, setDemoMode] = useState(false);
+
+    // Gunakan hook prefetch untuk mengambil semua data ke cache
+    usePrefetchQueries();
+
     const [stats, setStats] = useState({
         totalSales: 0,
         totalPurchases: 0,

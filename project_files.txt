@@ -49,6 +49,7 @@
 │   ├── lib
 │   │   ├── classNames.ts
 │   │   ├── formatters.ts
+│   │   ├── prefetchQueries.ts
 │   │   ├── queryUtils.ts
 │   │   └── supabase.ts
 │   ├── main.tsx
@@ -110,7 +111,7 @@
 ├── vite.config.ts
 └── yarn.lock
 
-21 directories, 90 files
+21 directories, 91 files
 
 
 ===============================================
@@ -4215,6 +4216,242 @@
 
 
 ===============================================
+= File: ./src/lib/prefetchQueries.ts 
+===============================================
+
+     1	import { useQueryClient } from '@tanstack/react-query';
+     2	import { useEffect } from 'react';
+     3	import { supabase } from './supabase';
+     4	
+     5	// Fungsi-fungsi fetcher yang akan di-prefetch
+     6	const fetchCategories = async () => {
+     7	    const { data, error } = await supabase
+     8	        .from("item_categories")
+     9	        .select("*")
+    10	        .order("name");
+    11	
+    12	    if (error) throw error;
+    13	    return data || [];
+    14	};
+    15	
+    16	const fetchTypes = async () => {
+    17	    const { data, error } = await supabase
+    18	        .from("item_types")
+    19	        .select("id, name, description")
+    20	        .order("name");
+    21	    if (error) throw error;
+    22	    return data || [];
+    23	};
+    24	
+    25	const fetchUnits = async (page = 1, limit = 10) => {
+    26	    const from = (page - 1) * limit;
+    27	    const to = from + limit - 1;
+    28	
+    29	    const { data, error, count } = await supabase
+    30	        .from("item_units")
+    31	        .select("id, name, description", { count: 'exact' })
+    32	        .order("name")
+    33	        .range(from, to);
+    34	
+    35	    if (error) throw error;
+    36	    return { units: data || [], totalItems: count || 0 };
+    37	};
+    38	
+    39	const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
+    40	    const from = (page - 1) * limit;
+    41	    const to = from + limit - 1;
+    42	
+    43	    let itemsQuery = supabase
+    44	        .from("items")
+    45	        .select(`
+    46	      id,
+    47	      name,
+    48	      code,
+    49	      base_price,
+    50	      sell_price,
+    51	      stock,
+    52	      category_id,
+    53	      type_id,
+    54	      unit_id
+    55	    `);
+    56	
+    57	    let countQuery = supabase
+    58	        .from("items")
+    59	        .select('id', { count: 'exact' });
+    60	
+    61	    if (searchTerm) {
+    62	        itemsQuery = itemsQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+    63	        countQuery = countQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+    64	    }
+    65	
+    66	    const [itemsResult, countResult, categoriesRes, typesRes, unitsRes] = await Promise.all([
+    67	        itemsQuery.order('name').range(from, to),
+    68	        countQuery,
+    69	        supabase.from("item_categories").select("id, name"),
+    70	        supabase.from("item_types").select("id, name"),
+    71	        supabase.from("item_units").select("id, name")
+    72	    ]);
+    73	
+    74	    if (itemsResult.error) throw itemsResult.error;
+    75	    if (countResult.error) throw countResult.error;
+    76	
+    77	    const categories = categoriesRes.data || [];
+    78	    const types = typesRes.data || [];
+    79	    const units = unitsRes.data || [];
+    80	
+    81	    const completedData = (itemsResult.data || []).map(item => ({
+    82	        id: item.id,
+    83	        name: item.name,
+    84	        code: item.code,
+    85	        base_price: item.base_price,
+    86	        sell_price: item.sell_price,
+    87	        stock: item.stock,
+    88	        category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
+    89	        type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
+    90	        unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
+    91	    }));
+    92	
+    93	    return { items: completedData, totalItems: countResult.count || 0 };
+    94	};
+    95	
+    96	const fetchSuppliers = async () => {
+    97	    const { data, error } = await supabase
+    98	        .from('suppliers')
+    99	        .select('id, name, address, phone, email, contact_person, image_url')
+   100	        .order('name');
+   101	
+   102	    if (error) throw error;
+   103	    return data || [];
+   104	};
+   105	
+   106	const fetchProfile = async () => {
+   107	    const { data, error } = await supabase
+   108	        .from('company_profiles')
+   109	        .select('*')
+   110	        .single();
+   111	
+   112	    if (error && error.code !== 'PGRST116') {
+   113	        throw new Error(error.message);
+   114	    }
+   115	    return data;
+   116	};
+   117	
+   118	const fetchPurchases = async (page = 1, searchTerm = '', limit = 10) => {
+   119	    try {
+   120	        let query = supabase
+   121	            .from("purchases")
+   122	            .select(`
+   123	        id,
+   124	        invoice_number,
+   125	        date,
+   126	        total,
+   127	        payment_status,
+   128	        payment_method,
+   129	        supplier_id,
+   130	        supplier:suppliers(name)
+   131	      `);
+   132	
+   133	        if (searchTerm) {
+   134	            query = query.or(`invoice_number.ilike.%${searchTerm}%,suppliers.name.ilike.%${searchTerm}%`);
+   135	        }
+   136	
+   137	        const countQuery = supabase
+   138	            .from("purchases")
+   139	            .select('id', { count: 'exact' });
+   140	
+   141	        if (searchTerm) {
+   142	            countQuery.or(`invoice_number.ilike.%${searchTerm}%,suppliers.name.ilike.%${searchTerm}%`);
+   143	        }
+   144	
+   145	        const { count, error: countError } = await countQuery;
+   146	        if (countError) throw countError;
+   147	
+   148	        const from = (page - 1) * limit;
+   149	        const to = from + limit - 1;
+   150	
+   151	        const { data, error } = await query
+   152	            .order('date', { ascending: false })
+   153	            .range(from, to);
+   154	
+   155	        if (error) throw error;
+   156	
+   157	        const transformedData = data?.map(item => ({
+   158	            ...item,
+   159	            supplier: Array.isArray(item.supplier) ? item.supplier[0] : item.supplier
+   160	        })) || [];
+   161	        return { purchases: transformedData, totalItems: count || 0 };
+   162	    } catch (error) {
+   163	        console.error("Error fetching purchases:", error);
+   164	        throw error;
+   165	    }
+   166	};
+   167	
+   168	// Hook untuk prefetch semua query
+   169	export const usePrefetchQueries = () => {
+   170	    const queryClient = useQueryClient();
+   171	
+   172	    useEffect(() => {
+   173	        const prefetchAll = async () => {
+   174	            console.log('Memulai prefetching semua data...');
+   175	
+   176	            // Prefetch categories
+   177	            queryClient.prefetchQuery({
+   178	                queryKey: ['categories'],
+   179	                queryFn: fetchCategories,
+   180	                staleTime: 30 * 1000,
+   181	            });
+   182	
+   183	            // Prefetch types
+   184	            queryClient.prefetchQuery({
+   185	                queryKey: ['types'],
+   186	                queryFn: fetchTypes,
+   187	                staleTime: 30 * 1000,
+   188	            });
+   189	
+   190	            // Prefetch units - page 1
+   191	            queryClient.prefetchQuery({
+   192	                queryKey: ['units', 1, 10],
+   193	                queryFn: () => fetchUnits(1, 10),
+   194	                staleTime: 30 * 1000,
+   195	            });
+   196	
+   197	            // Prefetch items - page 1, empty search
+   198	            queryClient.prefetchQuery({
+   199	                queryKey: ['items', 1, '', 10],
+   200	                queryFn: () => fetchItems(1, '', 10),
+   201	                staleTime: 30 * 1000,
+   202	            });
+   203	
+   204	            // Prefetch suppliers
+   205	            queryClient.prefetchQuery({
+   206	                queryKey: ['suppliers'],
+   207	                queryFn: fetchSuppliers,
+   208	                staleTime: 30 * 1000,
+   209	            });
+   210	
+   211	            // Prefetch company profile
+   212	            queryClient.prefetchQuery({
+   213	                queryKey: ['companyProfile'],
+   214	                queryFn: fetchProfile,
+   215	                staleTime: 30 * 1000,
+   216	            });
+   217	
+   218	            // Prefetch purchases - page 1, empty search
+   219	            queryClient.prefetchQuery({
+   220	                queryKey: ['purchases', 1, '', 10],
+   221	                queryFn: () => fetchPurchases(1, '', 10),
+   222	                staleTime: 30 * 1000,
+   223	            });
+   224	
+   225	            console.log('Semua data berhasil di-prefetch!');
+   226	        };
+   227	
+   228	        prefetchAll();
+   229	    }, [queryClient]);
+   230	};
+
+
+===============================================
 = File: ./src/lib/queryUtils.ts 
 ===============================================
 
@@ -4387,641 +4624,647 @@
 = File: ./src/pages/dashboard/Dashboard.tsx 
 ===============================================
 
-     1	import { useEffect, useState, useCallback } from 'react';
-     2	import { supabase } from '../../lib/supabase';
-     3	import {
-     4	    Chart as ChartJS,
-     5	    CategoryScale,
-     6	    LinearScale,
-     7	    PointElement,
-     8	    LineElement,
-     9	    BarElement,
-    10	    Title,
-    11	    Tooltip,
-    12	    Legend,
-    13	    ArcElement
-    14	} from 'chart.js';
-    15	import { Line, Pie, Bar, Doughnut } from 'react-chartjs-2';
-    16	import { FaShoppingBag, FaShoppingCart, FaBoxes, FaExclamationTriangle } from 'react-icons/fa';
-    17	
-    18	ChartJS.register(
-    19	    CategoryScale,
-    20	    LinearScale,
-    21	    PointElement,
-    22	    LineElement,
-    23	    BarElement,
-    24	    Title,
-    25	    Tooltip,
-    26	    Legend,
-    27	    ArcElement
-    28	);
-    29	
-    30	const Dashboard = () => {
-    31	    const [demoMode, setDemoMode] = useState(false);
-    32	    const [stats, setStats] = useState({
-    33	        totalSales: 0,
-    34	        totalPurchases: 0,
-    35	        totalMedicines: 0,
-    36	        lowStockCount: 0
-    37	    });
-    38	
-    39	    const [salesData, setSalesData] = useState<{
-    40	        labels: string[];
-    41	        datasets: {
-    42	            label: string;
-    43	            data: number[];
-    44	            borderColor: string;
-    45	            backgroundColor: string;
-    46	        }[];
-    47	    }>({
-    48	        labels: [],
-    49	        datasets: []
-    50	    });
-    51	
-    52	    const [topMedicines, setTopMedicines] = useState<{
-    53	        labels: string[];
-    54	        datasets: {
-    55	            label: string;
-    56	            data: number[];
-    57	            backgroundColor: string[];
-    58	            borderColor: string[];
-    59	            borderWidth: number;
-    60	        }[];
-    61	    }>({
-    62	        labels: [],
-    63	        datasets: []
-    64	    });
-    65	
-    66	    useEffect(() => {
-    67	        if (!demoMode) {
-    68	            fetchStats();
-    69	            fetchSalesData();
-    70	            fetchTopMedicines();
-    71	        }
-    72	    }, []);
-    73	
-    74	    const fetchStats = async () => {
-    75	        // Get total sales
-    76	        const { data: salesData } = await supabase
-    77	            .from('sales')
-    78	            .select('total');
+     1	/* eslint-disable react-hooks/exhaustive-deps */
+     2	import { useEffect, useState } from 'react';
+     3	import { supabase } from '../../lib/supabase';
+     4	import { usePrefetchQueries } from '../../lib/prefetchQueries';
+     5	import {
+     6	    Chart as ChartJS,
+     7	    CategoryScale,
+     8	    LinearScale,
+     9	    PointElement,
+    10	    LineElement,
+    11	    BarElement,
+    12	    Title,
+    13	    Tooltip,
+    14	    Legend,
+    15	    ArcElement
+    16	} from 'chart.js';
+    17	import { Line, Pie, Bar, Doughnut } from 'react-chartjs-2';
+    18	import { FaShoppingBag, FaShoppingCart, FaBoxes, FaExclamationTriangle } from 'react-icons/fa';
+    19	
+    20	ChartJS.register(
+    21	    CategoryScale,
+    22	    LinearScale,
+    23	    PointElement,
+    24	    LineElement,
+    25	    BarElement,
+    26	    Title,
+    27	    Tooltip,
+    28	    Legend,
+    29	    ArcElement
+    30	);
+    31	
+    32	const Dashboard = () => {
+    33	    const [demoMode, setDemoMode] = useState(false);
+    34	
+    35	    // Gunakan hook prefetch untuk mengambil semua data ke cache
+    36	    usePrefetchQueries();
+    37	
+    38	    const [stats, setStats] = useState({
+    39	        totalSales: 0,
+    40	        totalPurchases: 0,
+    41	        totalMedicines: 0,
+    42	        lowStockCount: 0
+    43	    });
+    44	
+    45	    const [salesData, setSalesData] = useState<{
+    46	        labels: string[];
+    47	        datasets: {
+    48	            label: string;
+    49	            data: number[];
+    50	            borderColor: string;
+    51	            backgroundColor: string;
+    52	        }[];
+    53	    }>({
+    54	        labels: [],
+    55	        datasets: []
+    56	    });
+    57	
+    58	    const [topMedicines, setTopMedicines] = useState<{
+    59	        labels: string[];
+    60	        datasets: {
+    61	            label: string;
+    62	            data: number[];
+    63	            backgroundColor: string[];
+    64	            borderColor: string[];
+    65	            borderWidth: number;
+    66	        }[];
+    67	    }>({
+    68	        labels: [],
+    69	        datasets: []
+    70	    });
+    71	
+    72	    useEffect(() => {
+    73	        if (!demoMode) {
+    74	            fetchStats();
+    75	            fetchSalesData();
+    76	            fetchTopMedicines();
+    77	        }
+    78	    }, []);
     79	
-    80	        const totalSales = salesData
-    81	            ? salesData.reduce((sum, sale) => sum + sale.total, 0)
-    82	            : 0;
-    83	
-    84	        // Get total purchases
-    85	        const { data: purchasesData } = await supabase
-    86	            .from('purchases')
-    87	            .select('total');
-    88	
-    89	        const totalPurchases = purchasesData
-    90	            ? purchasesData.reduce((sum, purchase) => sum + purchase.total, 0)
-    91	            : 0;
-    92	
-    93	        // Get total medicines
-    94	        const { count: totalMedicines } = await supabase
-    95	            .from('medicines')
-    96	            .select('*', { count: 'exact' });
-    97	
-    98	        // Get low stock count
-    99	        const { count: lowStockCount } = await supabase
-   100	            .from('medicines')
-   101	            .select('*', { count: 'exact' })
-   102	            .lt('stock', 10);
+    80	    const fetchStats = async () => {
+    81	        // Get total sales
+    82	        const { data: salesData } = await supabase
+    83	            .from('sales')
+    84	            .select('total');
+    85	
+    86	        const totalSales = salesData
+    87	            ? salesData.reduce((sum, sale) => sum + sale.total, 0)
+    88	            : 0;
+    89	
+    90	        // Get total purchases
+    91	        const { data: purchasesData } = await supabase
+    92	            .from('purchases')
+    93	            .select('total');
+    94	
+    95	        const totalPurchases = purchasesData
+    96	            ? purchasesData.reduce((sum, purchase) => sum + purchase.total, 0)
+    97	            : 0;
+    98	
+    99	        // Get total medicines
+   100	        const { count: totalMedicines } = await supabase
+   101	            .from('medicines')
+   102	            .select('*', { count: 'exact' });
    103	
-   104	        setStats({
-   105	            totalSales,
-   106	            totalPurchases,
-   107	            totalMedicines: totalMedicines || 0,
-   108	            lowStockCount: lowStockCount || 0
-   109	        });
-   110	    };
-   111	
-   112	    const fetchSalesData = async () => {
-   113	        // Get sales data for the last 7 days
-   114	        const now = new Date();
-   115	        const sevenDaysAgo = new Date(now.setDate(now.getDate() - 6));
-   116	        sevenDaysAgo.setHours(0, 0, 0, 0);
+   104	        // Get low stock count
+   105	        const { count: lowStockCount } = await supabase
+   106	            .from('medicines')
+   107	            .select('*', { count: 'exact' })
+   108	            .lt('stock', 10);
+   109	
+   110	        setStats({
+   111	            totalSales,
+   112	            totalPurchases,
+   113	            totalMedicines: totalMedicines || 0,
+   114	            lowStockCount: lowStockCount || 0
+   115	        });
+   116	    };
    117	
-   118	        const { data } = await supabase
-   119	            .from('sales')
-   120	            .select('date, total')
-   121	            .gte('date', sevenDaysAgo.toISOString())
-   122	            .order('date');
+   118	    const fetchSalesData = async () => {
+   119	        // Get sales data for the last 7 days
+   120	        const now = new Date();
+   121	        const sevenDaysAgo = new Date(now.setDate(now.getDate() - 6));
+   122	        sevenDaysAgo.setHours(0, 0, 0, 0);
    123	
-   124	        if (!data) return;
-   125	
-   126	        // Group by date
-   127	        const salesByDate = data.reduce<Record<string, number>>((acc, sale) => {
-   128	            const date = new Date(sale.date).toLocaleDateString();
-   129	            if (!acc[date]) acc[date] = 0;
-   130	            acc[date] += sale.total;
-   131	            return acc;
-   132	        }, {});
-   133	
-   134	        // Generate data for the last 7 days
-   135	        const labels = [];
-   136	        const values = [];
-   137	
-   138	        for (let i = 0; i < 7; i++) {
-   139	            const date = new Date();
-   140	            date.setDate(date.getDate() - (6 - i));
-   141	            const dateStr = date.toLocaleDateString();
-   142	            labels.push(dateStr);
-   143	            values.push(salesByDate[dateStr] || 0);
-   144	        }
-   145	
-   146	        setSalesData({
-   147	            labels,
-   148	            datasets: [
-   149	                {
-   150	                    label: 'Penjualan Harian',
-   151	                    data: values,
-   152	                    borderColor: 'rgb(53, 162, 235)',
-   153	                    backgroundColor: 'rgba(53, 162, 235, 0.5)',
-   154	                }
-   155	            ]
-   156	        });
-   157	    };
-   158	
-   159	    const fetchTopMedicines = async () => {
-   160	        // Get top 5 selling medicines
-   161	        const { data } = await supabase
-   162	            .rpc('get_top_selling_medicines', { limit_count: 5 });
-   163	
-   164	        if (!data) return;
-   165	
-   166	        interface TopSellingMedicine {
-   167	            name: string;
-   168	            total_quantity: number;
-   169	        }
-   170	
-   171	        setTopMedicines({
-   172	            labels: data.map((item: TopSellingMedicine) => item.name),
-   173	            datasets: [
-   174	                {
-   175	                    label: 'Obat Terlaris',
-   176	                    data: data.map((item: TopSellingMedicine) => item.total_quantity),
-   177	                    backgroundColor: [
-   178	                        'rgba(255, 99, 132, 0.6)',
-   179	                        'rgba(54, 162, 235, 0.6)',
-   180	                        'rgba(255, 206, 86, 0.6)',
-   181	                        'rgba(75, 192, 192, 0.6)',
-   182	                        'rgba(153, 102, 255, 0.6)'
-   183	                    ],
-   184	                    borderColor: [
-   185	                        'rgba(255, 99, 132, 1)',
-   186	                        'rgba(54, 162, 235, 1)',
-   187	                        'rgba(255, 206, 86, 1)',
-   188	                        'rgba(75, 192, 192, 1)',
-   189	                        'rgba(153, 102, 255, 1)'
-   190	                    ],
-   191	                    borderWidth: 1,
-   192	                }
-   193	            ]
-   194	        });
-   195	    };
-   196	
-   197	    const toggleDemoMode = () => {
-   198	        setDemoMode(!demoMode);
-   199	    };
-   200	
-   201	    return (
-   202	        <div className="min-h-screen">
-   203	            <div className="flex justify-between items-center mb-6">
-   204	                <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-   205	                <button 
-   206	                    onClick={toggleDemoMode}
-   207	                    className={`px-4 py-2 rounded-md font-medium shadow-md border ${demoMode ? 'bg-red-500 text-white border-red-600' : 'bg-blue-500 text-white border-blue-600 hover:bg-blue-700'}`}
-   208	                >
-   209	                    {demoMode ? 'Disable Demo Mode' : 'Demo Mode'}
-   210	                </button>
-   211	            </div>
-   212	
-   213	            {demoMode ? (
-   214	                <ModernDashboard />
-   215	            ) : (
-   216	                <RegularDashboard 
-   217	                    stats={stats} 
-   218	                    salesData={salesData} 
-   219	                    topMedicines={topMedicines} 
-   220	                />
-   221	            )}
-   222	        </div>
-   223	    );
-   224	};
-   225	
-   226	// Komponen untuk dashboard regular (asli)
-   227	const RegularDashboard = ({ stats, salesData, topMedicines }) => {
-   228	    return (
-   229	        <div>
-   230	            {/* <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1> */}
+   124	        const { data } = await supabase
+   125	            .from('sales')
+   126	            .select('date, total')
+   127	            .gte('date', sevenDaysAgo.toISOString())
+   128	            .order('date');
+   129	
+   130	        if (!data) return;
+   131	
+   132	        // Group by date
+   133	        const salesByDate = data.reduce<Record<string, number>>((acc, sale) => {
+   134	            const date = new Date(sale.date).toLocaleDateString();
+   135	            if (!acc[date]) acc[date] = 0;
+   136	            acc[date] += sale.total;
+   137	            return acc;
+   138	        }, {});
+   139	
+   140	        // Generate data for the last 7 days
+   141	        const labels = [];
+   142	        const values = [];
+   143	
+   144	        for (let i = 0; i < 7; i++) {
+   145	            const date = new Date();
+   146	            date.setDate(date.getDate() - (6 - i));
+   147	            const dateStr = date.toLocaleDateString();
+   148	            labels.push(dateStr);
+   149	            values.push(salesByDate[dateStr] || 0);
+   150	        }
+   151	
+   152	        setSalesData({
+   153	            labels,
+   154	            datasets: [
+   155	                {
+   156	                    label: 'Penjualan Harian',
+   157	                    data: values,
+   158	                    borderColor: 'rgb(53, 162, 235)',
+   159	                    backgroundColor: 'rgba(53, 162, 235, 0.5)',
+   160	                }
+   161	            ]
+   162	        });
+   163	    };
+   164	
+   165	    const fetchTopMedicines = async () => {
+   166	        // Get top 5 selling medicines
+   167	        const { data } = await supabase
+   168	            .rpc('get_top_selling_medicines', { limit_count: 5 });
+   169	
+   170	        if (!data) return;
+   171	
+   172	        interface TopSellingMedicine {
+   173	            name: string;
+   174	            total_quantity: number;
+   175	        }
+   176	
+   177	        setTopMedicines({
+   178	            labels: data.map((item: TopSellingMedicine) => item.name),
+   179	            datasets: [
+   180	                {
+   181	                    label: 'Obat Terlaris',
+   182	                    data: data.map((item: TopSellingMedicine) => item.total_quantity),
+   183	                    backgroundColor: [
+   184	                        'rgba(255, 99, 132, 0.6)',
+   185	                        'rgba(54, 162, 235, 0.6)',
+   186	                        'rgba(255, 206, 86, 0.6)',
+   187	                        'rgba(75, 192, 192, 0.6)',
+   188	                        'rgba(153, 102, 255, 0.6)'
+   189	                    ],
+   190	                    borderColor: [
+   191	                        'rgba(255, 99, 132, 1)',
+   192	                        'rgba(54, 162, 235, 1)',
+   193	                        'rgba(255, 206, 86, 1)',
+   194	                        'rgba(75, 192, 192, 1)',
+   195	                        'rgba(153, 102, 255, 1)'
+   196	                    ],
+   197	                    borderWidth: 1,
+   198	                }
+   199	            ]
+   200	        });
+   201	    };
+   202	
+   203	    const toggleDemoMode = () => {
+   204	        setDemoMode(!demoMode);
+   205	    };
+   206	
+   207	    return (
+   208	        <div className="min-h-screen">
+   209	            <div className="flex justify-between items-center mb-6">
+   210	                <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+   211	                <button 
+   212	                    onClick={toggleDemoMode}
+   213	                    className={`px-4 py-2 rounded-md font-medium shadow-md border ${demoMode ? 'bg-red-500 text-white border-red-600' : 'bg-blue-500 text-white border-blue-600 hover:bg-blue-700'}`}
+   214	                >
+   215	                    {demoMode ? 'Disable Demo Mode' : 'Demo Mode'}
+   216	                </button>
+   217	            </div>
+   218	
+   219	            {demoMode ? (
+   220	                <ModernDashboard />
+   221	            ) : (
+   222	                <RegularDashboard 
+   223	                    stats={stats} 
+   224	                    salesData={salesData} 
+   225	                    topMedicines={topMedicines} 
+   226	                />
+   227	            )}
+   228	        </div>
+   229	    );
+   230	};
    231	
-   232	            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-   233	                <div className="bg-white p-6 rounded-lg shadow">
-   234	                    <div className="flex items-center">
-   235	                        <div className="p-3 rounded-full bg-blue-100 mr-4">
-   236	                            <FaShoppingBag className="text-blue-500 text-xl" />
-   237	                        </div>
-   238	                        <div>
-   239	                            <h2 className="text-sm text-gray-500">Total Penjualan</h2>
-   240	                            <p className="text-xl font-semibold">
-   241	                                {stats.totalSales.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   242	                            </p>
+   232	// Komponen untuk dashboard regular (asli)
+   233	const RegularDashboard = ({ stats, salesData, topMedicines }) => {
+   234	    return (
+   235	        <div>
+   236	            {/* <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1> */}
+   237	
+   238	            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+   239	                <div className="bg-white p-6 rounded-lg shadow">
+   240	                    <div className="flex items-center">
+   241	                        <div className="p-3 rounded-full bg-blue-100 mr-4">
+   242	                            <FaShoppingBag className="text-blue-500 text-xl" />
    243	                        </div>
-   244	                    </div>
-   245	                </div>
-   246	
-   247	                <div className="bg-white p-6 rounded-lg shadow">
-   248	                    <div className="flex items-center">
-   249	                        <div className="p-3 rounded-full bg-green-100 mr-4">
-   250	                            <FaShoppingCart className="text-green-500 text-xl" />
-   251	                        </div>
-   252	                        <div>
-   253	                            <h2 className="text-sm text-gray-500">Total Pembelian</h2>
-   254	                            <p className="text-xl font-semibold">
-   255	                                {stats.totalPurchases.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   256	                            </p>
+   244	                        <div>
+   245	                            <h2 className="text-sm text-gray-500">Total Penjualan</h2>
+   246	                            <p className="text-xl font-semibold">
+   247	                                {stats.totalSales.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   248	                            </p>
+   249	                        </div>
+   250	                    </div>
+   251	                </div>
+   252	
+   253	                <div className="bg-white p-6 rounded-lg shadow">
+   254	                    <div className="flex items-center">
+   255	                        <div className="p-3 rounded-full bg-green-100 mr-4">
+   256	                            <FaShoppingCart className="text-green-500 text-xl" />
    257	                        </div>
-   258	                    </div>
-   259	                </div>
-   260	
-   261	                <div className="bg-white p-6 rounded-lg shadow">
-   262	                    <div className="flex items-center">
-   263	                        <div className="p-3 rounded-full bg-purple-100 mr-4">
-   264	                            <FaBoxes className="text-purple-500 text-xl" />
-   265	                        </div>
-   266	                        <div>
-   267	                            <h2 className="text-sm text-gray-500">Total Obat</h2>
-   268	                            <p className="text-xl font-semibold">{stats.totalMedicines}</p>
-   269	                        </div>
-   270	                    </div>
-   271	                </div>
-   272	
-   273	                <div className="bg-white p-6 rounded-lg shadow">
-   274	                    <div className="flex items-center">
-   275	                        <div className="p-3 rounded-full bg-red-100 mr-4">
-   276	                            <FaExclamationTriangle className="text-red-500 text-xl" />
-   277	                        </div>
-   278	                        <div>
-   279	                            <h2 className="text-sm text-gray-500">Stok Menipis</h2>
-   280	                            <p className="text-xl font-semibold">{stats.lowStockCount}</p>
-   281	                        </div>
-   282	                    </div>
-   283	                </div>
-   284	            </div>
-   285	
-   286	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-   287	                <div className="bg-white p-6 rounded-lg shadow">
-   288	                    <h2 className="text-lg font-semibold mb-4">Penjualan 7 Hari Terakhir</h2>
-   289	                    <div className="h-64">
-   290	                        <Line
-   291	                            data={salesData}
-   292	                            options={{
-   293	                                responsive: true,
-   294	                                maintainAspectRatio: false,
-   295	                                scales: {
-   296	                                    y: {
-   297	                                        beginAtZero: true
-   298	                                    }
-   299	                                }
-   300	                            }}
-   301	                        />
-   302	                    </div>
-   303	                </div>
-   304	
-   305	                <div className="bg-white p-6 rounded-lg shadow">
-   306	                    <h2 className="text-lg font-semibold mb-4">Obat Terlaris</h2>
-   307	                    <div className="h-64">
-   308	                        <Pie
-   309	                            data={topMedicines}
-   310	                            options={{
-   311	                                responsive: true,
-   312	                                maintainAspectRatio: false
-   313	                            }}
-   314	                        />
-   315	                    </div>
-   316	                </div>
-   317	            </div>
-   318	        </div>
-   319	    );
-   320	};
-   321	
-   322	// Komponen untuk dashboard modern (mode demo)
-   323	const ModernDashboard = () => {
-   324	    // Data dummy untuk mode demo
-   325	    const demoData = {
-   326	        totalCustomer: 120,
-   327	        totalSales: 234,
-   328	        totalProfit: 456,
-   329	        outOfStock: 56,
-   330	        
-   331	        expiringMedicines: [
-   332	            { name: 'Doxycycline', expiryDate: '24 Dec 2021', quantity: 40 },
-   333	            { name: 'Abetis', expiryDate: '24 Dec 2021', quantity: 40 },
-   334	            { name: 'Disulfit 10ml', expiryDate: '24 Dec 2021', quantity: 40 },
-   335	            { name: 'Cerox CV', expiryDate: '24 Dec 2021', quantity: 40 },
-   336	            { name: 'Fluciox', expiryDate: '24 Dec 2021', quantity: 40 },
-   337	        ],
-   338	        
-   339	        recentOrders: [
-   340	            { medicine: 'Paricol 15mg', batchNo: '78367834', quantity: 40, status: 'Delivered', price: 23.00 },
-   341	            { medicine: 'Abetis 20mg', batchNo: '88832433', quantity: 40, status: 'Pending', price: 23.00 },
-   342	            { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
-   343	            { medicine: 'Abetis 20mg', batchNo: '45578866', quantity: 40, status: 'Delivered', price: 23.00 },
-   344	            { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
-   345	        ],
-   346	        
-   347	        monthlyData: [
-   348	            { month: 'Jan', value: 40 },
-   349	            { month: 'Feb', value: 35 },
-   350	            { month: 'Mar', value: 35 },
-   351	            { month: 'Apr', value: 45 },
-   352	            { month: 'May', value: 40 },
-   353	            { month: 'Jun', value: 50 },
-   354	            { month: 'Jul', value: 60 },
-   355	            { month: 'Aug', value: 40 },
-   356	            { month: 'Sep', value: 45 },
-   357	            { month: 'Oct', value: 40 },
-   358	            { month: 'Nov', value: 35 },
-   359	            { month: 'Dec', value: 30 },
-   360	        ],
-   361	        
-   362	        todayReport: {
-   363	            totalEarning: 5098.00,
-   364	            purchasePercentage: 65,
-   365	            cashReceivedPercentage: 75,
-   366	            bankReceivePercentage: 45,
-   367	            servicePercentage: 85
-   368	        }
-   369	    };
-   370	    
-   371	    // Data untuk Monthly Progress chart
-   372	    const monthlyProgressData = {
-   373	        labels: demoData.monthlyData.map(item => item.month),
-   374	        datasets: [
-   375	            {
-   376	                label: 'Penjualan Bulanan',
-   377	                data: demoData.monthlyData.map(item => item.value),
-   378	                backgroundColor: demoData.monthlyData.map(item => 
-   379	                    item.month === 'Jul' ? '#1a73e8' : '#4ade80'
-   380	                ),
-   381	                borderRadius: 6,
-   382	                borderSkipped: false,
-   383	            }
-   384	        ]
-   385	    };
-   386	    
-   387	    // Data untuk Today's Report chart (doughnut chart)
-   388	    const todayReportData = {
-   389	        labels: ['Pembelian', 'Penerimaan Tunai', 'Penerimaan Bank', 'Layanan'],
-   390	        datasets: [
-   391	            {
-   392	                data: [
-   393	                    demoData.todayReport.purchasePercentage,
-   394	                    demoData.todayReport.cashReceivedPercentage,
-   395	                    demoData.todayReport.bankReceivePercentage,
-   396	                    demoData.todayReport.servicePercentage
-   397	                ],
-   398	                backgroundColor: [
-   399	                    '#3b82f6',
-   400	                    '#f43f5e',
-   401	                    '#f97316',
-   402	                    '#4ade80'
+   258	                        <div>
+   259	                            <h2 className="text-sm text-gray-500">Total Pembelian</h2>
+   260	                            <p className="text-xl font-semibold">
+   261	                                {stats.totalPurchases.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   262	                            </p>
+   263	                        </div>
+   264	                    </div>
+   265	                </div>
+   266	
+   267	                <div className="bg-white p-6 rounded-lg shadow">
+   268	                    <div className="flex items-center">
+   269	                        <div className="p-3 rounded-full bg-purple-100 mr-4">
+   270	                            <FaBoxes className="text-purple-500 text-xl" />
+   271	                        </div>
+   272	                        <div>
+   273	                            <h2 className="text-sm text-gray-500">Total Obat</h2>
+   274	                            <p className="text-xl font-semibold">{stats.totalMedicines}</p>
+   275	                        </div>
+   276	                    </div>
+   277	                </div>
+   278	
+   279	                <div className="bg-white p-6 rounded-lg shadow">
+   280	                    <div className="flex items-center">
+   281	                        <div className="p-3 rounded-full bg-red-100 mr-4">
+   282	                            <FaExclamationTriangle className="text-red-500 text-xl" />
+   283	                        </div>
+   284	                        <div>
+   285	                            <h2 className="text-sm text-gray-500">Stok Menipis</h2>
+   286	                            <p className="text-xl font-semibold">{stats.lowStockCount}</p>
+   287	                        </div>
+   288	                    </div>
+   289	                </div>
+   290	            </div>
+   291	
+   292	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   293	                <div className="bg-white p-6 rounded-lg shadow">
+   294	                    <h2 className="text-lg font-semibold mb-4">Penjualan 7 Hari Terakhir</h2>
+   295	                    <div className="h-64">
+   296	                        <Line
+   297	                            data={salesData}
+   298	                            options={{
+   299	                                responsive: true,
+   300	                                maintainAspectRatio: false,
+   301	                                scales: {
+   302	                                    y: {
+   303	                                        beginAtZero: true
+   304	                                    }
+   305	                                }
+   306	                            }}
+   307	                        />
+   308	                    </div>
+   309	                </div>
+   310	
+   311	                <div className="bg-white p-6 rounded-lg shadow">
+   312	                    <h2 className="text-lg font-semibold mb-4">Obat Terlaris</h2>
+   313	                    <div className="h-64">
+   314	                        <Pie
+   315	                            data={topMedicines}
+   316	                            options={{
+   317	                                responsive: true,
+   318	                                maintainAspectRatio: false
+   319	                            }}
+   320	                        />
+   321	                    </div>
+   322	                </div>
+   323	            </div>
+   324	        </div>
+   325	    );
+   326	};
+   327	
+   328	// Komponen untuk dashboard modern (mode demo)
+   329	const ModernDashboard = () => {
+   330	    // Data dummy untuk mode demo
+   331	    const demoData = {
+   332	        totalCustomer: 120,
+   333	        totalSales: 234,
+   334	        totalProfit: 456,
+   335	        outOfStock: 56,
+   336	        
+   337	        expiringMedicines: [
+   338	            { name: 'Doxycycline', expiryDate: '24 Dec 2021', quantity: 40 },
+   339	            { name: 'Abetis', expiryDate: '24 Dec 2021', quantity: 40 },
+   340	            { name: 'Disulfit 10ml', expiryDate: '24 Dec 2021', quantity: 40 },
+   341	            { name: 'Cerox CV', expiryDate: '24 Dec 2021', quantity: 40 },
+   342	            { name: 'Fluciox', expiryDate: '24 Dec 2021', quantity: 40 },
+   343	        ],
+   344	        
+   345	        recentOrders: [
+   346	            { medicine: 'Paricol 15mg', batchNo: '78367834', quantity: 40, status: 'Delivered', price: 23.00 },
+   347	            { medicine: 'Abetis 20mg', batchNo: '88832433', quantity: 40, status: 'Pending', price: 23.00 },
+   348	            { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
+   349	            { medicine: 'Abetis 20mg', batchNo: '45578866', quantity: 40, status: 'Delivered', price: 23.00 },
+   350	            { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
+   351	        ],
+   352	        
+   353	        monthlyData: [
+   354	            { month: 'Jan', value: 40 },
+   355	            { month: 'Feb', value: 35 },
+   356	            { month: 'Mar', value: 35 },
+   357	            { month: 'Apr', value: 45 },
+   358	            { month: 'May', value: 40 },
+   359	            { month: 'Jun', value: 50 },
+   360	            { month: 'Jul', value: 60 },
+   361	            { month: 'Aug', value: 40 },
+   362	            { month: 'Sep', value: 45 },
+   363	            { month: 'Oct', value: 40 },
+   364	            { month: 'Nov', value: 35 },
+   365	            { month: 'Dec', value: 30 },
+   366	        ],
+   367	        
+   368	        todayReport: {
+   369	            totalEarning: 5098.00,
+   370	            purchasePercentage: 65,
+   371	            cashReceivedPercentage: 75,
+   372	            bankReceivePercentage: 45,
+   373	            servicePercentage: 85
+   374	        }
+   375	    };
+   376	    
+   377	    // Data untuk Monthly Progress chart
+   378	    const monthlyProgressData = {
+   379	        labels: demoData.monthlyData.map(item => item.month),
+   380	        datasets: [
+   381	            {
+   382	                label: 'Penjualan Bulanan',
+   383	                data: demoData.monthlyData.map(item => item.value),
+   384	                backgroundColor: demoData.monthlyData.map(item => 
+   385	                    item.month === 'Jul' ? '#1a73e8' : '#4ade80'
+   386	                ),
+   387	                borderRadius: 6,
+   388	                borderSkipped: false,
+   389	            }
+   390	        ]
+   391	    };
+   392	    
+   393	    // Data untuk Today's Report chart (doughnut chart)
+   394	    const todayReportData = {
+   395	        labels: ['Pembelian', 'Penerimaan Tunai', 'Penerimaan Bank', 'Layanan'],
+   396	        datasets: [
+   397	            {
+   398	                data: [
+   399	                    demoData.todayReport.purchasePercentage,
+   400	                    demoData.todayReport.cashReceivedPercentage,
+   401	                    demoData.todayReport.bankReceivePercentage,
+   402	                    demoData.todayReport.servicePercentage
    403	                ],
-   404	                borderWidth: 0,
-   405	                cutout: '55%'
-   406	            }
-   407	        ]
-   408	    };
-   409	
-   410	    return (
-   411	        <div className="bg-gray-50 p-6 rounded-xl">
-   412	            {/* Cards Row */}
-   413	            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-   414	                {/* Total Customer Card */}
-   415	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
-   416	                    <div>
-   417	                        <p className="text-sm text-gray-500 mb-1">Total Customer</p>
-   418	                        <p className="text-2xl font-bold">{demoData.totalCustomer}</p>
-   419	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
-   420	                    </div>
-   421	                    <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-   422	                        <span className="text-indigo-500">👥</span>
-   423	                    </div>
-   424	                </div>
-   425	                
-   426	                {/* Total Sale Card */}
-   427	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
-   428	                    <div>
-   429	                        <p className="text-sm text-gray-500 mb-1">Total Sale</p>
-   430	                        <p className="text-2xl font-bold">{demoData.totalSales}</p>
-   431	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
-   432	                    </div>
-   433	                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-   434	                        <span className="text-green-500">🛒</span>
-   435	                    </div>
-   436	                </div>
-   437	                
-   438	                {/* Total Profit Card */}
-   439	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
-   440	                    <div>
-   441	                        <p className="text-sm text-gray-500 mb-1">Total Profit</p>
-   442	                        <p className="text-2xl font-bold">${demoData.totalProfit}</p>
-   443	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
-   444	                    </div>
-   445	                    <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
-   446	                        <span className="text-yellow-500">💰</span>
-   447	                    </div>
-   448	                </div>
-   449	                
-   450	                {/* Out of Stock Card */}
-   451	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
-   452	                    <div>
-   453	                        <p className="text-sm text-gray-500 mb-1">Out of Stock</p>
-   454	                        <p className="text-2xl font-bold">{demoData.outOfStock}</p>
-   455	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
-   456	                    </div>
-   457	                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-   458	                        <span className="text-red-500">⚠️</span>
-   459	                    </div>
-   460	                </div>
-   461	            </div>
-   462	            
-   463	            {/* Tables and Charts */}
-   464	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-   465	                {/* Expiring List */}
-   466	                <div className="bg-white p-4 rounded-xl shadow-sm">
-   467	                    <div className="flex justify-between items-center mb-4">
-   468	                        <h2 className="text-lg font-semibold">Expiring List</h2>
-   469	                        <button className="text-xs text-primary">Lihat Semua</button>
-   470	                    </div>
-   471	                    
-   472	                    <div className="overflow-x-auto">
-   473	                        <table className="w-full">
-   474	                            <thead>
-   475	                                <tr className="text-left text-xs text-gray-500">
-   476	                                    <th className="pb-2">Medicine name</th>
-   477	                                    <th className="pb-2">Expiry Date</th>
-   478	                                    <th className="pb-2">Quantity</th>
-   479	                                    <th className="pb-2">Chart</th>
-   480	                                    <th className="pb-2">Return</th>
-   481	                                </tr>
-   482	                            </thead>
-   483	                            <tbody className="divide-y divide-gray-100">
-   484	                                {demoData.expiringMedicines.map((medicine, index) => (
-   485	                                    <tr key={index} className="text-sm">
-   486	                                        <td className="py-3">{medicine.name}</td>
-   487	                                        <td className="py-3">{medicine.expiryDate}</td>
-   488	                                        <td className="py-3">{medicine.quantity}</td>
-   489	                                        <td className="py-3">
-   490	                                            <div className="h-6 w-10 text-green-500">📈</div>
-   491	                                        </td>
-   492	                                        <td className="py-3">
-   493	                                            <button className="text-gray-400">↩️</button>
-   494	                                        </td>
-   495	                                    </tr>
-   496	                                ))}
-   497	                            </tbody>
-   498	                        </table>
-   499	                    </div>
-   500	                </div>
-   501	                
-   502	                {/* Recent Orders */}
-   503	                <div className="bg-white p-4 rounded-xl shadow-sm">
-   504	                    <div className="flex justify-between items-center mb-4">
-   505	                        <h2 className="text-lg font-semibold">Recent Order's</h2>
-   506	                        <button className="text-xs text-primary">Lihat Semua</button>
-   507	                    </div>
-   508	                    
-   509	                    <div className="overflow-x-auto">
-   510	                        <table className="w-full">
-   511	                            <thead>
-   512	                                <tr className="text-left text-xs text-gray-500">
-   513	                                    <th className="pb-2">Medicine name</th>
-   514	                                    <th className="pb-2">Batch No.</th>
-   515	                                    <th className="pb-2">Quantity</th>
-   516	                                    <th className="pb-2">Status</th>
-   517	                                    <th className="pb-2 text-right">Price</th>
-   518	                                </tr>
-   519	                            </thead>
-   520	                            <tbody className="divide-y divide-gray-100">
-   521	                                {demoData.recentOrders.map((order, index) => (
-   522	                                    <tr key={index} className="text-sm">
-   523	                                        <td className="py-3">{order.medicine}</td>
-   524	                                        <td className="py-3">{order.batchNo}</td>
-   525	                                        <td className="py-3">{order.quantity}</td>
-   526	                                        <td className="py-3">
-   527	                                            <span className={`px-2 py-1 rounded-full text-xs 
-   528	                                                ${order.status === 'Delivered' ? 'bg-blue-100 text-blue-600' : 
-   529	                                                  order.status === 'Pending' ? 'bg-yellow-100 text-yellow-600' : 
-   530	                                                  'bg-red-100 text-red-600'}`}>
-   531	                                                {order.status}
-   532	                                            </span>
-   533	                                        </td>
-   534	                                        <td className="py-3 text-right">${order.price.toFixed(2)}</td>
-   535	                                    </tr>
-   536	                                ))}
-   537	                            </tbody>
-   538	                        </table>
-   539	                    </div>
-   540	                </div>
-   541	            </div>
-   542	            
-   543	            {/* Charts Row */}
-   544	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-   545	                {/* Monthly Progress */}
-   546	                <div className="bg-white p-4 rounded-xl shadow-sm">
-   547	                    <div className="flex justify-between items-center mb-4">
-   548	                        <h2 className="text-lg font-semibold">Monthly Progress</h2>
-   549	                        <select className="text-sm border rounded px-2 py-1">
-   550	                            <option>Monthly</option>
-   551	                            <option>Weekly</option>
-   552	                            <option>Daily</option>
-   553	                        </select>
-   554	                    </div>
-   555	                    
-   556	                    <div className="h-64">
-   557	                        <Bar 
-   558	                            data={monthlyProgressData} 
-   559	                            options={{
-   560	                                responsive: true,
-   561	                                maintainAspectRatio: false,
-   562	                                plugins: {
-   563	                                    legend: {
-   564	                                        display: false
-   565	                                    },
-   566	                                    tooltip: {
-   567	                                        callbacks: {
-   568	                                            title: (context) => {
-   569	                                                const label = context[0].label;
-   570	                                                if (label === 'Sep') {
-   571	                                                    return 'September';
-   572	                                                }
-   573	                                                return label;
-   574	                                            },
-   575	                                            label: (context) => {
-   576	                                                return `Sales: ${context.parsed.y}`;
-   577	                                            }
-   578	                                        }
-   579	                                    }
-   580	                                },
-   581	                                scales: {
-   582	                                    y: {
-   583	                                        beginAtZero: true,
-   584	                                        grid: {
-   585	                                            display: false
-   586	                                        }
-   587	                                    },
-   588	                                    x: {
-   589	                                        grid: {
-   590	                                            display: false
-   591	                                        }
-   592	                                    }
-   593	                                }
-   594	                            }}
-   595	                        />
-   596	                    </div>
-   597	                </div>
-   598	                
-   599	                {/* Today's Report */}
-   600	                <div className="bg-white p-4 rounded-xl shadow-sm">
-   601	                    <h2 className="text-lg font-semibold mb-4">Today's Report</h2>
-   602	                    
-   603	                    <div className="flex items-center justify-center">
-   604	                        <div className="h-64 w-64 relative flex items-center justify-center">
-   605	                            <Doughnut 
-   606	                                data={todayReportData}
-   607	                                options={{
-   608	                                    responsive: true,
-   609	                                    maintainAspectRatio: false,
-   610	                                    plugins: {
-   611	                                        legend: {
-   612	                                            display: false
-   613	                                        }
-   614	                                    }
-   615	                                }}
-   616	                            />
-   617	                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-   618	                                <p className="text-sm text-gray-500">Total Earning</p>
-   619	                                <p className="text-xl font-bold">${demoData.todayReport.totalEarning.toFixed(2)}</p>
-   620	                            </div>
-   621	                        </div>
-   622	                        <div className="ml-4">
-   623	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span> Total Purchase</div>
-   624	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-red-500 mr-2"></span> Cash Received</div>
-   625	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-orange-500 mr-2"></span> Bank Receive</div>
-   626	                            <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span> Total Service</div>
+   404	                backgroundColor: [
+   405	                    '#3b82f6',
+   406	                    '#f43f5e',
+   407	                    '#f97316',
+   408	                    '#4ade80'
+   409	                ],
+   410	                borderWidth: 0,
+   411	                cutout: '55%'
+   412	            }
+   413	        ]
+   414	    };
+   415	
+   416	    return (
+   417	        <div className="bg-gray-50 p-6 rounded-xl">
+   418	            {/* Cards Row */}
+   419	            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+   420	                {/* Total Customer Card */}
+   421	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+   422	                    <div>
+   423	                        <p className="text-sm text-gray-500 mb-1">Total Customer</p>
+   424	                        <p className="text-2xl font-bold">{demoData.totalCustomer}</p>
+   425	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+   426	                    </div>
+   427	                    <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+   428	                        <span className="text-indigo-500">👥</span>
+   429	                    </div>
+   430	                </div>
+   431	                
+   432	                {/* Total Sale Card */}
+   433	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+   434	                    <div>
+   435	                        <p className="text-sm text-gray-500 mb-1">Total Sale</p>
+   436	                        <p className="text-2xl font-bold">{demoData.totalSales}</p>
+   437	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+   438	                    </div>
+   439	                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+   440	                        <span className="text-green-500">🛒</span>
+   441	                    </div>
+   442	                </div>
+   443	                
+   444	                {/* Total Profit Card */}
+   445	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+   446	                    <div>
+   447	                        <p className="text-sm text-gray-500 mb-1">Total Profit</p>
+   448	                        <p className="text-2xl font-bold">${demoData.totalProfit}</p>
+   449	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+   450	                    </div>
+   451	                    <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+   452	                        <span className="text-yellow-500">💰</span>
+   453	                    </div>
+   454	                </div>
+   455	                
+   456	                {/* Out of Stock Card */}
+   457	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+   458	                    <div>
+   459	                        <p className="text-sm text-gray-500 mb-1">Out of Stock</p>
+   460	                        <p className="text-2xl font-bold">{demoData.outOfStock}</p>
+   461	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+   462	                    </div>
+   463	                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+   464	                        <span className="text-red-500">⚠️</span>
+   465	                    </div>
+   466	                </div>
+   467	            </div>
+   468	            
+   469	            {/* Tables and Charts */}
+   470	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+   471	                {/* Expiring List */}
+   472	                <div className="bg-white p-4 rounded-xl shadow-sm">
+   473	                    <div className="flex justify-between items-center mb-4">
+   474	                        <h2 className="text-lg font-semibold">Expiring List</h2>
+   475	                        <button className="text-xs text-primary">Lihat Semua</button>
+   476	                    </div>
+   477	                    
+   478	                    <div className="overflow-x-auto">
+   479	                        <table className="w-full">
+   480	                            <thead>
+   481	                                <tr className="text-left text-xs text-gray-500">
+   482	                                    <th className="pb-2">Medicine name</th>
+   483	                                    <th className="pb-2">Expiry Date</th>
+   484	                                    <th className="pb-2">Quantity</th>
+   485	                                    <th className="pb-2">Chart</th>
+   486	                                    <th className="pb-2">Return</th>
+   487	                                </tr>
+   488	                            </thead>
+   489	                            <tbody className="divide-y divide-gray-100">
+   490	                                {demoData.expiringMedicines.map((medicine, index) => (
+   491	                                    <tr key={index} className="text-sm">
+   492	                                        <td className="py-3">{medicine.name}</td>
+   493	                                        <td className="py-3">{medicine.expiryDate}</td>
+   494	                                        <td className="py-3">{medicine.quantity}</td>
+   495	                                        <td className="py-3">
+   496	                                            <div className="h-6 w-10 text-green-500">📈</div>
+   497	                                        </td>
+   498	                                        <td className="py-3">
+   499	                                            <button className="text-gray-400">↩️</button>
+   500	                                        </td>
+   501	                                    </tr>
+   502	                                ))}
+   503	                            </tbody>
+   504	                        </table>
+   505	                    </div>
+   506	                </div>
+   507	                
+   508	                {/* Recent Orders */}
+   509	                <div className="bg-white p-4 rounded-xl shadow-sm">
+   510	                    <div className="flex justify-between items-center mb-4">
+   511	                        <h2 className="text-lg font-semibold">Recent Order's</h2>
+   512	                        <button className="text-xs text-primary">Lihat Semua</button>
+   513	                    </div>
+   514	                    
+   515	                    <div className="overflow-x-auto">
+   516	                        <table className="w-full">
+   517	                            <thead>
+   518	                                <tr className="text-left text-xs text-gray-500">
+   519	                                    <th className="pb-2">Medicine name</th>
+   520	                                    <th className="pb-2">Batch No.</th>
+   521	                                    <th className="pb-2">Quantity</th>
+   522	                                    <th className="pb-2">Status</th>
+   523	                                    <th className="pb-2 text-right">Price</th>
+   524	                                </tr>
+   525	                            </thead>
+   526	                            <tbody className="divide-y divide-gray-100">
+   527	                                {demoData.recentOrders.map((order, index) => (
+   528	                                    <tr key={index} className="text-sm">
+   529	                                        <td className="py-3">{order.medicine}</td>
+   530	                                        <td className="py-3">{order.batchNo}</td>
+   531	                                        <td className="py-3">{order.quantity}</td>
+   532	                                        <td className="py-3">
+   533	                                            <span className={`px-2 py-1 rounded-full text-xs 
+   534	                                                ${order.status === 'Delivered' ? 'bg-blue-100 text-blue-600' : 
+   535	                                                  order.status === 'Pending' ? 'bg-yellow-100 text-yellow-600' : 
+   536	                                                  'bg-red-100 text-red-600'}`}>
+   537	                                                {order.status}
+   538	                                            </span>
+   539	                                        </td>
+   540	                                        <td className="py-3 text-right">${order.price.toFixed(2)}</td>
+   541	                                    </tr>
+   542	                                ))}
+   543	                            </tbody>
+   544	                        </table>
+   545	                    </div>
+   546	                </div>
+   547	            </div>
+   548	            
+   549	            {/* Charts Row */}
+   550	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   551	                {/* Monthly Progress */}
+   552	                <div className="bg-white p-4 rounded-xl shadow-sm">
+   553	                    <div className="flex justify-between items-center mb-4">
+   554	                        <h2 className="text-lg font-semibold">Monthly Progress</h2>
+   555	                        <select className="text-sm border rounded px-2 py-1">
+   556	                            <option>Monthly</option>
+   557	                            <option>Weekly</option>
+   558	                            <option>Daily</option>
+   559	                        </select>
+   560	                    </div>
+   561	                    
+   562	                    <div className="h-64">
+   563	                        <Bar 
+   564	                            data={monthlyProgressData} 
+   565	                            options={{
+   566	                                responsive: true,
+   567	                                maintainAspectRatio: false,
+   568	                                plugins: {
+   569	                                    legend: {
+   570	                                        display: false
+   571	                                    },
+   572	                                    tooltip: {
+   573	                                        callbacks: {
+   574	                                            title: (context) => {
+   575	                                                const label = context[0].label;
+   576	                                                if (label === 'Sep') {
+   577	                                                    return 'September';
+   578	                                                }
+   579	                                                return label;
+   580	                                            },
+   581	                                            label: (context) => {
+   582	                                                return `Sales: ${context.parsed.y}`;
+   583	                                            }
+   584	                                        }
+   585	                                    }
+   586	                                },
+   587	                                scales: {
+   588	                                    y: {
+   589	                                        beginAtZero: true,
+   590	                                        grid: {
+   591	                                            display: false
+   592	                                        }
+   593	                                    },
+   594	                                    x: {
+   595	                                        grid: {
+   596	                                            display: false
+   597	                                        }
+   598	                                    }
+   599	                                }
+   600	                            }}
+   601	                        />
+   602	                    </div>
+   603	                </div>
+   604	                
+   605	                {/* Today's Report */}
+   606	                <div className="bg-white p-4 rounded-xl shadow-sm">
+   607	                    <h2 className="text-lg font-semibold mb-4">Today's Report</h2>
+   608	                    
+   609	                    <div className="flex items-center justify-center">
+   610	                        <div className="h-64 w-64 relative flex items-center justify-center">
+   611	                            <Doughnut 
+   612	                                data={todayReportData}
+   613	                                options={{
+   614	                                    responsive: true,
+   615	                                    maintainAspectRatio: false,
+   616	                                    plugins: {
+   617	                                        legend: {
+   618	                                            display: false
+   619	                                        }
+   620	                                    }
+   621	                                }}
+   622	                            />
+   623	                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+   624	                                <p className="text-sm text-gray-500">Total Earning</p>
+   625	                                <p className="text-xl font-bold">${demoData.todayReport.totalEarning.toFixed(2)}</p>
+   626	                            </div>
    627	                        </div>
-   628	                    </div>
-   629	                </div>
-   630	            </div>
-   631	        </div>
-   632	    );
-   633	};
-   634	
-   635	export default Dashboard;
+   628	                        <div className="ml-4">
+   629	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span> Total Purchase</div>
+   630	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-red-500 mr-2"></span> Cash Received</div>
+   631	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-orange-500 mr-2"></span> Bank Receive</div>
+   632	                            <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span> Total Service</div>
+   633	                        </div>
+   634	                    </div>
+   635	                </div>
+   636	            </div>
+   637	        </div>
+   638	    );
+   639	};
+   640	
+   641	export default Dashboard;
 
 
 ===============================================
