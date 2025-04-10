@@ -84,6 +84,7 @@ const CreatePurchase: React.FC = () => {
                             onUpdateItemBatchNo={updateItemBatchNo}
                             onUnitChange={onHandleUnitChange}
                             getItemByID={getItemByID}
+                            isEmptyMessage={(purchaseItems.length === 0) ? "Belum ada item ditambahkan" : null}
                         />
                     </FormSection>
                 </CardContent>

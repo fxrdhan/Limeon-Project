@@ -46,9 +46,9 @@ export const TableRow = ({ children, className }: TableProps) => {
     );
 };
 
-export const TableCell = ({ children, className }: TableCellProps) => {
+export const TableCell = ({ children, className, colSpan }: TableCellProps) => {
     return (
-        <td className={classNames('py-3 px-3 text-gray-700 align-middle', className)}>
+        <td colSpan={colSpan} className={classNames('py-3 px-3 text-gray-700 align-middle', className)}>
             {children}
         </td>
     );
