@@ -3193,344 +3193,336 @@
     28	    rack: string;
     29	    description: string;
     30	    base_price: number;
-    31	    sell_price: number;
+    31	    sell_price: number; // Add sell_price
     32	    min_stock: number;
     33	    is_active: boolean;
     34	    is_medicine: boolean;
     35	    has_expiry_date: boolean;
     36	}
     37	
-    38	// interface UnitConversion {
-    39	//     unit: {
-    40	//         id: string;
-    41	//     };
-    42	//     conversion: number;
-    43	//     basePrice: number;
-    44	// }
-    45	
-    46	export const useAddItemForm = () => {
-    47	    const navigate = useNavigate();
-    48	    const [loading, setLoading] = useState(false);
-    49	    const [saving, setSaving] = useState(false);
-    50	    const [categories, setCategories] = useState<Category[]>([]);
-    51	    const [types, setTypes] = useState<MedicineType[]>([]);
-    52	    const [units, setUnits] = useState<Unit[]>([]);
-    53	    // State untuk nilai yang ditampilkan dengan format mata uang
-    54	    const [displayBasePrice, setDisplayBasePrice] = useState('');
-    55	    const [displaySellPrice, setDisplaySellPrice] = useState('');
-    56	
-    57	    // Hook untuk konversi satuan
-    58	    const unitConversionHook = useUnitConversion();
-    59	
-    60	    // Form state
-    61	    const [formData, setFormData] = useState<FormData>({
-    62	        code: "", // Kode akan dibuat otomatis
-    63	        name: "",
-    64	        type_id: "",
-    65	        category_id: "",
-    66	        unit_id: "",
-    67	        rack: "",
-    68	        description: "",
-    69	        base_price: 0,
-    70	        sell_price: 0,
-    71	        min_stock: 10,
-    72	        is_active: true,
-    73	        is_medicine: true,
-    74	        has_expiry_date: false,
-    75	    });
+    38	export const useAddItemForm = () => {
+    39	    const navigate = useNavigate();
+    40	    const [loading, setLoading] = useState(false);
+    41	    const [saving, setSaving] = useState(false);
+    42	    const [categories, setCategories] = useState<Category[]>([]);
+    43	    const [types, setTypes] = useState<MedicineType[]>([]);
+    44	    const [units, setUnits] = useState<Unit[]>([]);
+    45	    // State untuk nilai yang ditampilkan dengan format mata uang
+    46	    const [displayBasePrice, setDisplayBasePrice] = useState('');
+    47	    const [displaySellPrice, setDisplaySellPrice] = useState('');
+    48	
+    49	    // Hook untuk konversi satuan
+    50	    const unitConversionHook = useUnitConversion();
+    51	
+    52	    // Form state
+    53	    const [formData, setFormData] = useState<FormData>({
+    54	        code: "", // Kode akan dibuat otomatis
+    55	        name: "",
+    56	        type_id: "",
+    57	        category_id: "",
+    58	        unit_id: "",
+    59	        rack: "",
+    60	        description: "",
+    61	        base_price: 0,
+    62	        sell_price: 0, // Initialize sell_price
+    63	        min_stock: 10,
+    64	        is_active: true,
+    65	        is_medicine: true,
+    66	        has_expiry_date: false,
+    67	    });
+    68	
+    69	    // Fungsi untuk memperbarui formData secara lebih mudah
+    70	    const updateFormData = (newData: Partial<FormData>) => {
+    71	        setFormData(prev => ({
+    72	            ...prev,
+    73	            ...newData
+    74	        }));
+    75	    };
     76	
-    77	    // Fungsi untuk memperbarui formData secara lebih mudah
-    78	    const updateFormData = (newData: Partial<FormData>) => {
-    79	        setFormData(prev => ({
-    80	            ...prev,
-    81	            ...newData
-    82	        }));
-    83	    };
-    84	
-    85	    // Fungsi helper untuk menghasilkan kode dinamis
-    86	    const generateTypeCode = (typeId: string): string => {
-    87	        const selectedType = types.find(type => type.id === typeId);
-    88	        if (!selectedType) return "X";
-    89	
-    90	        // Gunakan kode khusus untuk setiap jenis obat
-    91	        const typeName = selectedType.name.toLowerCase();
-    92	        if (typeName.includes("bebas") && !typeName.includes("terbatas")) return "B";
-    93	        if (typeName.includes("bebas terbatas")) return "T";
-    94	        if (typeName.includes("keras")) return "K";
-    95	        if (typeName.includes("narkotika")) return "N";
-    96	        if (typeName.includes("fitofarmaka")) return "F";
-    97	        if (typeName.includes("herbal")) return "H";
-    98	        
-    99	        // Fallback ke huruf pertama jika tidak ada yang cocok
-   100	        return selectedType.name.charAt(0).toUpperCase();
+    77	    // Fungsi helper untuk menghasilkan kode dinamis
+    78	    const generateTypeCode = (typeId: string): string => {
+    79	        const selectedType = types.find(type => type.id === typeId);
+    80	        if (!selectedType) return "X";
+    81	
+    82	        // Gunakan kode khusus untuk setiap jenis obat
+    83	        const typeName = selectedType.name.toLowerCase();
+    84	        if (typeName.includes("bebas") && !typeName.includes("terbatas")) return "B";
+    85	        if (typeName.includes("bebas terbatas")) return "T";
+    86	        if (typeName.includes("keras")) return "K";
+    87	        if (typeName.includes("narkotika")) return "N";
+    88	        if (typeName.includes("fitofarmaka")) return "F";
+    89	        if (typeName.includes("herbal")) return "H";
+    90	        
+    91	        // Fallback ke huruf pertama jika tidak ada yang cocok
+    92	        return selectedType.name.charAt(0).toUpperCase();
+    93	    };
+    94	    
+    95	    const generateUnitCode = (unitId: string): string => {
+    96	        const selectedUnit = units.find(unit => unit.id === unitId);
+    97	        if (!selectedUnit) return "X";
+    98	
+    99	        // Ambil huruf pertama dari nama unit
+   100	        return selectedUnit.name.charAt(0).toUpperCase();
    101	    };
-   102	    
-   103	    const generateUnitCode = (unitId: string): string => {
-   104	        const selectedUnit = units.find(unit => unit.id === unitId);
-   105	        if (!selectedUnit) return "X";
+   102	
+   103	    const generateCategoryCode = (categoryId: string): string => {
+   104	        const selectedCategory = categories.find(category => category.id === categoryId);
+   105	        if (!selectedCategory) return "XX";
    106	
-   107	        // Ambil huruf pertama dari nama unit
-   108	        return selectedUnit.name.charAt(0).toUpperCase();
-   109	    };
-   110	
-   111	    const generateCategoryCode = (categoryId: string): string => {
-   112	        const selectedCategory = categories.find(category => category.id === categoryId);
-   113	        if (!selectedCategory) return "XX";
-   114	
-   115	        const name = selectedCategory.name;
-   116	
-   117	        // Cek apakah kategori dimulai dengan "Anti"
-   118	        if (name.toLowerCase().startsWith("anti")) {
-   119	            // Untuk kategori yang dimulai dengan "Anti"
-   120	            // Ambil "A" dari "Anti" dan huruf pertama dari kata selanjutnya
-   121	            const baseName = name.slice(4); // Hilangkan "Anti" dari awal
-   122	            if (baseName.length > 0) {
-   123	                return "A" + baseName.charAt(0).toUpperCase();
-   124	            }
-   125	            return "A";
-   126	        } else {
-   127	            // Untuk kategori lainnya, ambil 2 huruf pertama
-   128	            if (name.length >= 2) {
-   129	                return name.substring(0, 2).toUpperCase();
-   130	            } else if (name.length === 1) {
-   131	                return name.toUpperCase() + "X";
-   132	            } else {
-   133	                return "XX";
-   134	            }
-   135	        }
-   136	    };
-   137	
-   138	    useEffect(() => {
-   139	        fetchMasterData();
-   140	    }, []);
-   141	
-   142	    useEffect(() => {
-   143	        const generateItemCode = async () => {
-   144	            // Jika tipe, kategori, atau satuan belum dipilih, keluar dari fungsi
-   145	            if (!formData.type_id || !formData.category_id || !formData.unit_id)
-   146	                return;
-   147	
-   148	            const typeCode = generateTypeCode(formData.type_id);
-   149	            const unitCode = generateUnitCode(formData.unit_id);
-   150	            const categoryCode = generateCategoryCode(formData.category_id);
-   151	
-   152	            const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
+   107	        const name = selectedCategory.name;
+   108	
+   109	        // Cek apakah kategori dimulai dengan "Anti"
+   110	        if (name.toLowerCase().startsWith("anti")) {
+   111	            // Untuk kategori yang dimulai dengan "Anti"
+   112	            // Ambil "A" dari "Anti" dan huruf pertama dari kata selanjutnya
+   113	            const baseName = name.slice(4); // Hilangkan "Anti" dari awal
+   114	            if (baseName.length > 0) {
+   115	                return "A" + baseName.charAt(0).toUpperCase();
+   116	            }
+   117	            return "A";
+   118	        } else {
+   119	            // Untuk kategori lainnya, ambil 2 huruf pertama
+   120	            if (name.length >= 2) {
+   121	                return name.substring(0, 2).toUpperCase();
+   122	            } else if (name.length === 1) {
+   123	                return name.toUpperCase() + "X";
+   124	            } else {
+   125	                return "XX";
+   126	            }
+   127	        }
+   128	    };
+   129	
+   130	    useEffect(() => {
+   131	        fetchMasterData();
+   132	    }, []);
+   133	
+   134	    useEffect(() => {
+   135	        const generateItemCode = async () => {
+   136	            // Jika tipe, kategori, atau satuan belum dipilih, keluar dari fungsi
+   137	            if (!formData.type_id || !formData.category_id || !formData.unit_id)
+   138	                return;
+   139	
+   140	            const typeCode = generateTypeCode(formData.type_id);
+   141	            const unitCode = generateUnitCode(formData.unit_id);
+   142	            const categoryCode = generateCategoryCode(formData.category_id);
+   143	
+   144	            const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
+   145	
+   146	            // Cek database untuk mendapatkan urutan terakhir
+   147	            try {
+   148	                const { data } = await supabase
+   149	                    .from("items")
+   150	                    .select("code")
+   151	                    .ilike("code", `${codePrefix}%`)
+   152	                    .order("code", { ascending: false });
    153	
-   154	            // Cek database untuk mendapatkan urutan terakhir
-   155	            try {
-   156	                const { data } = await supabase
-   157	                    .from("items")
-   158	                    .select("code")
-   159	                    .ilike("code", `${codePrefix}%`)
-   160	                    .order("code", { ascending: false });
-   161	
-   162	                let sequence = 1; // Default mulai dari 1
-   163	
-   164	                if (data && data.length > 0) {
-   165	                    // Ekstrak nomor urut dari kode yang sudah ada
-   166	                    const lastSequenceStr = data[0].code.substring(codePrefix.length);
-   167	                    const lastSequence = parseInt(lastSequenceStr);
-   168	
-   169	                    if (!isNaN(lastSequence)) {
-   170	                        sequence = lastSequence + 1;
-   171	                    }
-   172	                }
-   173	
-   174	                // Format: membuat kode 2 digit (01, 02, ..., dst)
-   175	                const sequenceStr = sequence.toString().padStart(2, "0");
-   176	                const generatedCode = `${codePrefix}${sequenceStr}`;
-   177	
-   178	                // Update form
-   179	                setFormData(prevFormData => ({
-   180	                    ...prevFormData,
-   181	                    code: generatedCode,
-   182	                }));
-   183	            } catch (error) {
-   184	                console.error("Error generating item code:", error);
-   185	            }
-   186	        };
+   154	                let sequence = 1; // Default mulai dari 1
+   155	
+   156	                if (data && data.length > 0) {
+   157	                    // Ekstrak nomor urut dari kode yang sudah ada
+   158	                    const lastSequenceStr = data[0].code.substring(codePrefix.length);
+   159	                    const lastSequence = parseInt(lastSequenceStr);
+   160	
+   161	                    if (!isNaN(lastSequence)) {
+   162	                        sequence = lastSequence + 1;
+   163	                    }
+   164	                }
+   165	
+   166	                // Format: membuat kode 2 digit (01, 02, ..., dst)
+   167	                const sequenceStr = sequence.toString().padStart(2, "0");
+   168	                const generatedCode = `${codePrefix}${sequenceStr}`;
+   169	
+   170	                // Update form
+   171	                setFormData(prevFormData => ({
+   172	                    ...prevFormData,
+   173	                    code: generatedCode,
+   174	                }));
+   175	            } catch (error) {
+   176	                console.error("Error generating item code:", error);
+   177	            }
+   178	        };
+   179	
+   180	        // Hanya generate code jika data master sudah dimuat dan semua pilihan sudah dipilih
+   181	        if (formData.type_id && formData.category_id && formData.unit_id &&
+   182	            categories.length > 0 && types.length > 0 && units.length > 0) {
+   183	            generateItemCode();
+   184	        }
+   185	    // eslint-disable-next-line react-hooks/exhaustive-deps
+   186	    }, [formData.type_id, formData.category_id, formData.unit_id, categories, types, units]);
    187	
-   188	        // Hanya generate code jika data master sudah dimuat dan semua pilihan sudah dipilih
-   189	        if (formData.type_id && formData.category_id && formData.unit_id &&
-   190	            categories.length > 0 && types.length > 0 && units.length > 0) {
-   191	            generateItemCode();
-   192	        }
-   193	    // eslint-disable-next-line react-hooks/exhaustive-deps
-   194	    }, [formData.type_id, formData.category_id, formData.unit_id, categories, types, units]);
-   195	
-   196	    const fetchMasterData = async () => {
-   197	        setLoading(true);
-   198	        try {
-   199	            // Fetch categories
-   200	            const { data: categoriesData } = await supabase
-   201	                .from("item_categories")
-   202	                .select("id, name")
-   203	                .order("name");
-   204	
-   205	            // Fetch types
-   206	            const { data: typesData } = await supabase
-   207	                .from("item_types")
-   208	                .select("id, name")
-   209	                .order("name");
-   210	
-   211	            // Fetch units
-   212	            const { data: unitsData } = await supabase
-   213	                .from("item_units")
-   214	                .select("id, name")
-   215	                .order("name");
-   216	
-   217	            if (categoriesData) setCategories(categoriesData);
-   218	            if (typesData) setTypes(typesData);
-   219	            if (unitsData) setUnits(unitsData);
-   220	        } catch (error) {
-   221	            console.error("Error fetching master data:", error);
-   222	        } finally {
-   223	            setLoading(false);
-   224	        }
-   225	    };
+   188	    const fetchMasterData = async () => {
+   189	        setLoading(true);
+   190	        try {
+   191	            // Fetch categories
+   192	            const { data: categoriesData } = await supabase
+   193	                .from("item_categories")
+   194	                .select("id, name")
+   195	                .order("name");
+   196	
+   197	            // Fetch types
+   198	            const { data: typesData } = await supabase
+   199	                .from("item_types")
+   200	                .select("id, name")
+   201	                .order("name");
+   202	
+   203	            // Fetch units
+   204	            const { data: unitsData } = await supabase
+   205	                .from("item_units")
+   206	                .select("id, name")
+   207	                .order("name");
+   208	
+   209	            if (categoriesData) setCategories(categoriesData);
+   210	            if (typesData) setTypes(typesData);
+   211	            if (unitsData) setUnits(unitsData);
+   212	        } catch (error) {
+   213	            console.error("Error fetching master data:", error);
+   214	        } finally {
+   215	            setLoading(false);
+   216	        }
+   217	    };
+   218	
+   219	    const handleChange = (
+   220	        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+   221	        const { name, value, type } = e.target as HTMLInputElement;
+   222	
+   223	        if (name === "base_price" || name === "sell_price") {
+   224	            // Untuk input harga
+   225	            const numericInt = extractNumericValue(value);
    226	
-   227	    const handleChange = (
-   228	        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-   229	        const { name, value, type } = e.target as HTMLInputElement;
-   230	
-   231	        if (name === "base_price" || name === "sell_price") {
-   232	            // Untuk input harga
-   233	            const numericInt = extractNumericValue(value);
-   234	
-   235	            // Update formData dengan nilai numerik
-   236	            setFormData({
-   237	                ...formData,
-   238	                [name]: numericInt
-   239	            });
-   240	
-   241	            // Update display value dengan format Rupiah
-   242	            const formattedValue = formatRupiah(numericInt);
-   243	            if (name === "base_price") {
-   244	                setDisplayBasePrice(formattedValue);
-   245	            } else {
-   246	                setDisplaySellPrice(formattedValue);
-   247	            }
-   248	        } else if (type === "checkbox") {
-   249	            const { checked } = e.target as HTMLInputElement;
-   250	            setFormData({
-   251	                ...formData,
-   252	                [name]: checked,
-   253	            });
-   254	        } else if (type === "number") {
-   255	            setFormData({
-   256	                ...formData,
-   257	                [name]: parseFloat(value) || 0,
-   258	            });
-   259	        } else {
-   260	            setFormData({
-   261	                ...formData,
-   262	                [name]: value,
-   263	            });
-   264	        }
-   265	    };
-   266	
-   267	    // Modifikasi handleChange untuk menjamin pemicu generate kode
-   268	    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-   269	        const { name, value } = e.target;
-   270	        setFormData(prevFormData => ({
-   271	            ...prevFormData,
-   272	            [name]: value,
-   273	        }));
-   274	    };
-   275	
-   276	    const handleSubmit = async (e: React.FormEvent) => {
-   277	        e.preventDefault();
-   278	        setSaving(true);
-   279	
-   280	        try {
-   281	            // Check jika nama obat sudah ada
-   282	            const { data: existingMedicine } = await supabase
-   283	                .from("items")
-   284	                .select("id")
-   285	                .eq("name", formData.name);
-   286	
-   287	            if (existingMedicine && existingMedicine.length > 0) {
-   288	                alert("Nama obat sudah ada. Silakan gunakan nama lain.");
-   289	                setSaving(false);
-   290	                return;
-   291	            }
-   292	
-   293	            // 1. Insert item utama (dengan satuan dasar)
-   294	            const mainItemData = {
-   295	                name: formData.name,
-   296	                category_id: formData.category_id,
-   297	                type_id: formData.type_id,
-   298	                unit_id: formData.unit_id,
-   299	                base_price: formData.base_price,
-   300	                sell_price: formData.sell_price,
-   301	                stock: 0, // Default stok awal 0
-   302	                min_stock: formData.min_stock,
-   303	                description: formData.description || null,
-   304	                is_active: formData.is_active,
-   305	                rack: formData.rack || null,
-   306	                code: formData.code,
-   307	                is_medicine: formData.is_medicine,
-   308	                base_unit: unitConversionHook.baseUnit,
-   309	                unit_conversions: JSON.stringify(unitConversionHook.conversions),
-   310	                has_expiry_date: formData.has_expiry_date,
-   311	            };
+   227	            // Update formData dengan nilai numerik
+   228	            setFormData({
+   229	                ...formData,
+   230	                [name]: numericInt
+   231	            });
+   232	
+   233	            // Update display value dengan format Rupiah
+   234	            const formattedValue = formatRupiah(numericInt);
+   235	            if (name === "base_price") {
+   236	                setDisplayBasePrice(formattedValue);
+   237	            } else if (name === "sell_price") { // Handle sell_price specifically
+   238	                setDisplaySellPrice(formattedValue);
+   239	            } 
+   240	        } else if (type === "checkbox") {
+   241	            const { checked } = e.target as HTMLInputElement;
+   242	            setFormData({
+   243	                ...formData,
+   244	                [name]: checked,
+   245	            });
+   246	        } else if (type === "number") {
+   247	            setFormData({
+   248	                ...formData,
+   249	                [name]: parseFloat(value) || 0,
+   250	            });
+   251	        } else {
+   252	            setFormData({
+   253	                ...formData,
+   254	                [name]: value,
+   255	            });
+   256	        }
+   257	    };
+   258	
+   259	    // Modifikasi handleChange untuk menjamin pemicu generate kode
+   260	    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+   261	        const { name, value } = e.target;
+   262	        setFormData(prevFormData => ({
+   263	            ...prevFormData,
+   264	            [name]: value,
+   265	        }));
+   266	    };
+   267	
+   268	    const handleSubmit = async (e: React.FormEvent) => {
+   269	        e.preventDefault();
+   270	        setSaving(true);
+   271	
+   272	        try {
+   273	            // Check jika nama obat sudah ada
+   274	            const { data: existingMedicine } = await supabase
+   275	                .from("items")
+   276	                .select("id")
+   277	                .eq("name", formData.name);
+   278	
+   279	            if (existingMedicine && existingMedicine.length > 0) {
+   280	                alert("Nama obat sudah ada. Silakan gunakan nama lain.");
+   281	                setSaving(false);
+   282	                return;
+   283	            }
+   284	
+   285	            // 1. Insert item utama (dengan satuan dasar)
+   286	            const mainItemData = {
+   287	                name: formData.name,
+   288	                category_id: formData.category_id,
+   289	                type_id: formData.type_id,
+   290	                unit_id: formData.unit_id,
+   291	                base_price: formData.base_price, 
+   292	                sell_price: formData.sell_price, // Add sell_price to insert data
+   293	                stock: 0, // Default stok awal 0
+   294	                min_stock: formData.min_stock,
+   295	                description: formData.description || null,
+   296	                is_active: formData.is_active,
+   297	                rack: formData.rack || null,
+   298	                code: formData.code,
+   299	                is_medicine: formData.is_medicine,
+   300	                base_unit: unitConversionHook.baseUnit,
+   301	                unit_conversions: JSON.stringify(unitConversionHook.conversions),
+   302	                has_expiry_date: formData.has_expiry_date,
+   303	            };
+   304	
+   305	            const { data: newItem, error: mainError } = await supabase
+   306	                .from("items")
+   307	                .insert(mainItemData)
+   308	                .select("id")
+   309	                .single();
+   310	
+   311	            if (mainError) throw mainError;
    312	
-   313	            const { data: newItem, error: mainError } = await supabase
-   314	                .from("items")
-   315	                .insert(mainItemData)
-   316	                .select("id")
-   317	                .single();
-   318	
-   319	            if (mainError) throw mainError;
-   320	
-   321	            // 2. Insert unit conversions ke tabel terpisah
-   322	            if (unitConversionHook.conversions.length > 0 && newItem) {
-   323	                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   324	                const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
-   325	                    item_id: newItem.id,
-   326	                    unit_name: uc.unit.name,
-   327	                    conversion_rate: uc.conversion,
-   328	                    base_price: uc.basePrice,
-   329	                    created_at: new Date()
-   330	                }));
-   331	
-   332	                // Insert ke tabel unit_conversions
-   333	                const { error: conversionError } = await supabase
-   334	                    .from("unit_conversions")
-   335	                    .insert(conversionRecords);
-   336	
-   337	                if (conversionError) {
-   338	                    console.error("Error saving unit conversions:", conversionError);
-   339	                    // Lanjutkan meskipun ada error pada konversi unit
-   340	                }
-   341	            }
-   342	
-   343	            // Redirect ke halaman daftar obat
-   344	            navigate("/master-data/items");
-   345	        } catch (error) {
-   346	            console.error("Error saving item:", error);
-   347	            alert("Gagal menyimpan data item. Silakan coba lagi.");
-   348	        } finally {
-   349	            setSaving(false);
-   350	        }
-   351	    };
-   352	
-   353	    return {
-   354	        formData,
-   355	        displayBasePrice,
-   356	        displaySellPrice,
-   357	        categories,
-   358	        types,
-   359	        units,
-   360	        loading,
-   361	        saving,
-   362	        handleChange,
-   363	        handleSelectChange,
-   364	        handleSubmit,
-   365	        unitConversionHook,
-   366	        updateFormData
-   367	    };
-   368	};
+   313	            // 2. Insert unit conversions ke tabel terpisah
+   314	            if (unitConversionHook.conversions.length > 0 && newItem) {
+   315	                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   316	                const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
+   317	                    item_id: newItem.id,
+   318	                    unit_name: uc.unit.name,
+   319	                    conversion_rate: uc.conversion,
+   320	                    base_price: uc.basePrice,
+   321	                    created_at: new Date()
+   322	                }));
+   323	
+   324	                // Insert ke tabel unit_conversions
+   325	                const { error: conversionError } = await supabase
+   326	                    .from("unit_conversions")
+   327	                    .insert(conversionRecords);
+   328	
+   329	                if (conversionError) {
+   330	                    console.error("Error saving unit conversions:", conversionError);
+   331	                    // Lanjutkan meskipun ada error pada konversi unit
+   332	                }
+   333	            }
+   334	
+   335	            // Redirect ke halaman daftar obat
+   336	            navigate("/master-data/items");
+   337	        } catch (error) {
+   338	            console.error("Error saving item:", error);
+   339	            alert("Gagal menyimpan data item. Silakan coba lagi.");
+   340	        } finally {
+   341	            setSaving(false);
+   342	        }
+   343	    };
+   344	
+   345	    return {
+   346	        formData,
+   347	        displayBasePrice,
+   348	        displaySellPrice, // Return displaySellPrice
+   349	        categories,
+   350	        types,
+   351	        units,
+   352	        loading,
+   353	        saving,
+   354	        handleChange,
+   355	        handleSelectChange,
+   356	        handleSubmit,
+   357	        unitConversionHook,
+   358	        updateFormData
+   359	    };
+   360	};
 
 
 ===============================================
@@ -3545,73 +3537,74 @@
      6	    name: string;
      7	    code?: string;
      8	    base_price: number;
-     9	    stock: number;
-    10	    unit_id: string;
-    11	    base_unit: string;
-    12	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    13	    unit_conversions: any[];
-    14	}
-    15	
-    16	export const useItemSelection = () => {
-    17	    const [items, setItems] = useState<Item[]>([]);
-    18	    const [searchItem, setSearchItem] = useState('');
-    19	    const [showItemDropdown, setShowItemDropdown] = useState(false);
-    20	    const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-    21	
-    22	    useEffect(() => {
-    23	        fetchItems();
-    24	    }, []);
-    25	
-    26	    const fetchItems = async () => {
-    27	        try {
-    28	            const { data, error } = await supabase
-    29	                .from('items')
-    30	                .select('id, name, code, base_price, stock, unit_id, base_unit, unit_conversions')
-    31	                .order('name');
-    32	                
-    33	            if (error) throw error;
-    34	            setItems(data || []);
-    35	        } catch (error) {
-    36	            console.error('Error fetching items:', error);
-    37	        }
-    38	    };
-    39	    
-    40	    const getItemByID = (itemId: string): Item | undefined => {
-    41	        const item = items.find(item => item.id === itemId);
-    42	        if (item) {
-    43	            // Parse unit_conversions if it's a string
-    44	            if (typeof item.unit_conversions === 'string') {
-    45	                try {
-    46	                    item.unit_conversions = JSON.parse(item.unit_conversions || '[]');
-    47	                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    48	                } catch (e) {
-    49	                    item.unit_conversions = [];
-    50	                }
-    51	            }
-    52	            // Ensure unit_conversions is always an array
-    53	            item.unit_conversions = item.unit_conversions || [];
-    54	        }
-    55	        return item;
-    56	    };
-    57	
-    58	    // Filter items based on search input
-    59	    const filteredItems = items.filter(item =>
-    60	        item.name.toLowerCase().includes(searchItem.toLowerCase()) || 
-    61	        (item.code && item.code.toLowerCase().includes(searchItem.toLowerCase()))
-    62	    );
-    63	
-    64	    return {
-    65	        items,
-    66	        searchItem,
-    67	        setSearchItem,
-    68	        showItemDropdown,
-    69	        setShowItemDropdown,
-    70	        selectedItem,
-    71	        setSelectedItem,
-    72	        filteredItems,
-    73	        getItemByID
-    74	    };
-    75	};
+     9	    sell_price: number; // Add sell_price
+    10	    stock: number;
+    11	    unit_id: string;
+    12	    base_unit: string;
+    13	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    14	    unit_conversions: any[];
+    15	}
+    16	
+    17	export const useItemSelection = () => {
+    18	    const [items, setItems] = useState<Item[]>([]);
+    19	    const [searchItem, setSearchItem] = useState('');
+    20	    const [showItemDropdown, setShowItemDropdown] = useState(false);
+    21	    const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+    22	
+    23	    useEffect(() => {
+    24	        fetchItems();
+    25	    }, []);
+    26	
+    27	    const fetchItems = async () => {
+    28	        try {
+    29	            const { data, error } = await supabase
+    30	                .from('items')
+    31	                .select('id, name, code, base_price, sell_price, stock, unit_id, base_unit, unit_conversions') // Select sell_price
+    32	                .order('name');
+    33	                
+    34	            if (error) throw error;
+    35	            setItems(data || []);
+    36	        } catch (error) {
+    37	            console.error('Error fetching items:', error);
+    38	        }
+    39	    };
+    40	    
+    41	    const getItemByID = (itemId: string): Item | undefined => {
+    42	        const item = items.find(item => item.id === itemId);
+    43	        if (item) {
+    44	            // Parse unit_conversions if it's a string
+    45	            if (typeof item.unit_conversions === 'string') {
+    46	                try {
+    47	                    item.unit_conversions = JSON.parse(item.unit_conversions || '[]');
+    48	                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    49	                } catch (e) {
+    50	                    item.unit_conversions = [];
+    51	                }
+    52	            }
+    53	            // Ensure unit_conversions is always an array
+    54	            item.unit_conversions = item.unit_conversions || [];
+    55	        }
+    56	        return item;
+    57	    };
+    58	
+    59	    // Filter items based on search input
+    60	    const filteredItems = items.filter(item =>
+    61	        item.name.toLowerCase().includes(searchItem.toLowerCase()) || 
+    62	        (item.code && item.code.toLowerCase().includes(searchItem.toLowerCase()))
+    63	    );
+    64	
+    65	    return {
+    66	        items,
+    67	        searchItem,
+    68	        setSearchItem,
+    69	        showItemDropdown,
+    70	        setShowItemDropdown,
+    71	        selectedItem,
+    72	        setSelectedItem,
+    73	        filteredItems,
+    74	        getItemByID
+    75	    };
+    76	};
 
 
 ===============================================
@@ -5345,7 +5338,7 @@
     18	    const navigate = useNavigate();
     19	
     20	    const {
-    21	        formData, displayBasePrice, categories, types, units,
+    21	        formData, displayBasePrice, displaySellPrice, categories, types, units,
     22	        saving, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
     23	        unitConversionHook
     24	    } = useAddItemForm();
@@ -5537,7 +5530,7 @@
    210	                            </FormField>
    211	                        </FormSection>
    212	
-   213	                        <FormSection title="Harga Pokok">
+   213	                        <FormSection title="Harga Pokok & Jual">
    214	                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
    215	                                <FormField label="Satuan Dasar">
    216	                                    <Input
@@ -5560,84 +5553,97 @@
    233	                                        required
    234	                                    />
    235	                                </FormField>
-   236	                            </div>
-   237	                        </FormSection>
-   238	
-   239	                        <UnitConversionManager unitConversionHook={unitConversionHook} />
-   240	
-   241	                        <FormSection title="Pengaturan Tambahan">
-   242	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-   243	                                <FormField label="Status Jual">
-   244	                                    <div className={radioGroupClassName}>
-   245	                                        <label className="inline-flex items-center">
-   246	                                            <input
-   247	                                                type="radio"
-   248	                                                name="is_active"
-   249	                                                checked={formData.is_active}
-   250	                                                onChange={() => updateFormData({ is_active: true })}
-   251	                                                className="form-radio h-5 w-5 text-primary"
-   252	                                            />
-   253	                                            <span className="ml-2">Masih dijual</span>
-   254	                                        </label>
-   255	                                        <label className="inline-flex items-center">
-   256	                                            <input
-   257	                                                type="radio"
-   258	                                                name="is_active"
-   259	                                                checked={!formData.is_active}
-   260	                                                onChange={() => updateFormData({ is_active: false })}
-   261	                                                className="form-radio h-5 w-5 text-primary"
-   262	                                            />
-   263	                                            <span className="ml-2">Tidak Dijual</span>
-   264	                                        </label>
-   265	                                    </div>
-   266	                                </FormField>
-   267	
-   268	                                <FormField label="Stok Minimal">
-   269	                                    <Input
-   270	                                        type="number"
-   271	                                        name="min_stock"
-   272	                                        value={formData.min_stock}
-   273	                                        onChange={handleChange}
-   274	                                        className={inputClassName}
-   275	                                        required
-   276	                                    />
-   277	                                </FormField>
-   278	                            </div>
-   279	
-   280	                            <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
-   281	                                <label className="inline-flex items-center">
-   282	                                    <input
-   283	                                        type="checkbox"
-   284	                                        name="has_expiry_date"
-   285	                                        checked={formData.has_expiry_date}
-   286	                                        disabled={!formData.is_medicine}
-   287	                                        onChange={handleChange}
-   288	                                        className="form-checkbox h-5 w-5 text-primary"
+   236	
+   237	                                <FormField label="Harga Jual">
+   238	                                    <Input
+   239	                                        type="text"
+   240	                                        name="sell_price"
+   241	                                        value={displaySellPrice}
+   242	                                        placeholder="Rp 0"
+   243	                                        onChange={handleChange}
+   244	                                        min="0"
+   245	                                        className={inputClassName}
+   246	                                        required
+   247	                                    />
+   248	                                </FormField>
+   249	                            </div>
+   250	                        </FormSection>
+   251	
+   252	                        <UnitConversionManager unitConversionHook={unitConversionHook} />
+   253	
+   254	                        <FormSection title="Pengaturan Tambahan">
+   255	                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   256	                                <FormField label="Status Jual">
+   257	                                    <div className={radioGroupClassName}>
+   258	                                        <label className="inline-flex items-center">
+   259	                                            <input
+   260	                                                type="radio"
+   261	                                                name="is_active"
+   262	                                                checked={formData.is_active}
+   263	                                                onChange={() => updateFormData({ is_active: true })}
+   264	                                                className="form-radio h-5 w-5 text-primary"
+   265	                                            />
+   266	                                            <span className="ml-2">Masih dijual</span>
+   267	                                        </label>
+   268	                                        <label className="inline-flex items-center">
+   269	                                            <input
+   270	                                                type="radio"
+   271	                                                name="is_active"
+   272	                                                checked={!formData.is_active}
+   273	                                                onChange={() => updateFormData({ is_active: false })}
+   274	                                                className="form-radio h-5 w-5 text-primary"
+   275	                                            />
+   276	                                            <span className="ml-2">Tidak Dijual</span>
+   277	                                        </label>
+   278	                                    </div>
+   279	                                </FormField>
+   280	
+   281	                                <FormField label="Stok Minimal">
+   282	                                    <Input
+   283	                                        type="number"
+   284	                                        name="min_stock"
+   285	                                        value={formData.min_stock}
+   286	                                        onChange={handleChange}
+   287	                                        className={inputClassName}
+   288	                                        required
    289	                                    />
-   290	                                    <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
-   291	                                </label>
-   292	                                <div className="mt-1 text-sm text-gray-500">
-   293	                                    Jika dicentang, obat ini akan menggunakan metode FEFO
-   294	                                    (First Expired First Out)
-   295	                                </div>
-   296	                            </div>
-   297	                        </FormSection>
-   298	                    </CardContent>
-   299	
-   300	                    <CardFooter className="flex justify-between">
-   301	                        <FormActions
-   302	                            onCancel={() => navigate("/master-data/items")}
-   303	                            isDisabled={false}
-   304	                            isSaving={saving}
-   305	                        />
-   306	                    </CardFooter>
-   307	                </form>
-   308	            </Card>
-   309	        </div>
-   310	    );
-   311	};
+   290	                                </FormField>
+   291	                            </div>
+   292	
+   293	                            <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
+   294	                                <label className="inline-flex items-center">
+   295	                                    <input
+   296	                                        type="checkbox"
+   297	                                        name="has_expiry_date"
+   298	                                        checked={formData.has_expiry_date}
+   299	                                        disabled={!formData.is_medicine}
+   300	                                        onChange={handleChange}
+   301	                                        className="form-checkbox h-5 w-5 text-primary"
+   302	                                    />
+   303	                                    <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
+   304	                                </label>
+   305	                                <div className="mt-1 text-sm text-gray-500">
+   306	                                    Jika dicentang, obat ini akan menggunakan metode FEFO
+   307	                                    (First Expired First Out)
+   308	                                </div>
+   309	                            </div>
+   310	                        </FormSection>
+   311	                    </CardContent>
    312	
-   313	export default AddItem;
+   313	                    <CardFooter className="flex justify-between">
+   314	                        <FormActions
+   315	                            onCancel={() => navigate("/master-data/items")}
+   316	                            isDisabled={false}
+   317	                            isSaving={saving}
+   318	                        />
+   319	                    </CardFooter>
+   320	                </form>
+   321	            </Card>
+   322	        </div>
+   323	    );
+   324	};
+   325	
+   326	export default AddItem;
 
 
 ===============================================
@@ -5798,264 +5804,267 @@
     14	    id: string;
     15	    name: string;
     16	    code: string;
-    17	    // Add other fields if needed by other parts of the component
-    18	}
-    19	
-    20	function ItemList() {
-    21	    const [search, setSearch] = useState("");
-    22	    const [debouncedSearch, setDebouncedSearch] = useState("");
-    23	    const [currentPage, setCurrentPage] = useState(1);
-    24	    const [itemsPerPage, setItemsPerPage] = useState(10);
-    25	    const { openConfirmDialog } = useConfirmDialog();
-    26	    const queryClient = useQueryClient();
-    27	
-    28	    // Update this effect to use a more precise invalidation
-    29	    useEffect(() => {
-    30	        // Invalidate all item queries regardless of page, search, or itemsPerPage parameters
-    31	        queryClient.invalidateQueries({
-    32	            queryKey: ['items'],
-    33	            refetchType: 'all'
-    34	        });
-    35	    }, [queryClient]);
-    36	
-    37	    const fetchItems = async (page: number, searchTerm: string, limit: number) => {
-    38	        const from = (page - 1) * limit;
-    39	        const to = from + limit - 1;
-    40	
-    41	        let itemsQuery = supabase
-    42	            .from("items")
-    43	            .select(`
-    44	                id,
-    45	                name,
-    46	                code,
-    47	                base_price,
-    48	                sell_price,
-    49	                stock,
-    50	                category_id,
-    51	                type_id,
-    52	                unit_id
-    53	            `);
-    54	
-    55	        let countQuery = supabase
-    56	            .from("items")
-    57	            .select('id', { count: 'exact' });
-    58	
-    59	        if (searchTerm) {
-    60	            itemsQuery = itemsQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
-    61	            countQuery = countQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
-    62	        }
-    63	
-    64	        const [itemsResult, countResult, categoriesRes, typesRes, unitsRes] = await Promise.all([
-    65	            itemsQuery.order('name').range(from, to),
-    66	            countQuery,
-    67	            supabase.from("item_categories").select("id, name"),
-    68	            supabase.from("item_types").select("id, name"),
-    69	            supabase.from("item_units").select("id, name")
-    70	        ]);
-    71	
-    72	        if (itemsResult.error) throw itemsResult.error;
-    73	        if (countResult.error) throw countResult.error;
-    74	
-    75	        const categories = categoriesRes.data || [];
-    76	        const types = typesRes.data || [];
-    77	        const units = unitsRes.data || [];
-    78	
-    79	        const completedData = (itemsResult.data || []).map(item => ({
-    80	            id: item.id,
-    81	            name: item.name,
-    82	            code: item.code,
-    83	            base_price: item.base_price,
-    84	            sell_price: item.sell_price,
-    85	            stock: item.stock,
-    86	            category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
-    87	            type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
-    88	            unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
-    89	        }));
-    90	
-    91	        return { items: completedData, totalItems: countResult.count || 0 };
-    92	    };
-    93	
-    94	    useEffect(() => {
-    95	        const timer = setTimeout(() => {
-    96	            setDebouncedSearch(search);
-    97	            setCurrentPage(1);
-    98	        }, 500);
-    99	
-   100	        return () => clearTimeout(timer);
-   101	    }, [search]);
-   102	
-   103	    const { data, isLoading, isError, error, isFetching } = useQuery({
-   104	        queryKey: ['items', currentPage, debouncedSearch, itemsPerPage],
-   105	        queryFn: () => fetchItems(currentPage, debouncedSearch, itemsPerPage),
-   106	        placeholderData: keepPreviousData,
-   107	        staleTime: 30 * 1000, // Reduced from 5 minutes to 30 seconds
-   108	        refetchOnMount: true, // Ensure refetch when component mounts
-   109	    });
-   110	
-   111	    const deleteItemMutation = useMutation({
-   112	        mutationFn: async (itemId: string) => {
-   113	            const { error } = await supabase.from("items").delete().eq("id", itemId);
-   114	            if (error) throw error;
-   115	        },
-   116	        onSuccess: () => {
-   117	            // Update the invalidation strategy to match the useEffect approach
-   118	            queryClient.invalidateQueries({
-   119	                queryKey: ['items'],
-   120	                refetchType: 'all'
-   121	            });
-   122	            console.log("Item berhasil dihapus dan data di-refetch untuk semua ukuran halaman.");
-   123	        },
-   124	        onError: (error) => {
-   125	            console.error("Error deleting item:", error);
-   126	            alert("Gagal menghapus item. Silakan coba lagi.");
-   127	        },
-   128	    });
-   129	
-   130	    const items = data?.items || [];
-   131	    const totalItems = data?.totalItems || 0;
-   132	
-   133	    const handlePageChange = (newPage: number) => {
-   134	        setCurrentPage(newPage);
-   135	    };
-   136	
-   137	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-   138	        setItemsPerPage(Number(e.target.value));
-   139	        setCurrentPage(1);
-   140	    };
-   141	
-   142	    const totalPages = Math.ceil(totalItems / itemsPerPage);
-   143	
-   144	    return (
-   145	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
-   146	            <div className="flex justify-between items-center mb-6">
-   147	                <h1 className="text-2xl font-bold text-gray-800">Daftar Item</h1>
-   148	
-   149	                <Link
-   150	                    to="/master-data/items/add">
-   151	                    <Button variant="primary" className="flex items-center">
-   152	                        <FaPlus className="mr-2" />
-   153	                        Tambah Item Baru
-   154	                    </Button>
-   155	                </Link>
-   156	            </div>
-   157	
-   158	            <div className="mb-4 relative">
-   159	                <input
-   160	                    type="text"
-   161	                    placeholder="Cari item..."
-   162	                    className="w-full p-3 border rounded-md pl-10"
-   163	                    value={search}
-   164	                    onChange={(e) => setSearch(e.target.value)} />
-   165	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-   166	            </div>
-   167	
-   168	            {isLoading && <div className="text-center p-6">Memuat data awal...</div>}
-   169	            {isError && <div className="text-center p-6 text-red-500">Error: {error instanceof Error ? error.message : 'Gagal memuat data'}</div>}
-   170	
-   171	            {!isLoading && (
-   172	                <>
-   173	                    <Table>
-   174	                        <TableHead>
-   175	                            <TableRow>
-   176	                                <TableHeader>Nama Item</TableHeader>
-   177	                                <TableHeader>Kode</TableHeader>
-   178	                                <TableHeader>Kategori</TableHeader>
-   179	                                <TableHeader>Jenis</TableHeader>
-   180	                                <TableHeader>Satuan</TableHeader>
-   181	                                <TableHeader className="text-right">Harga Pokok</TableHeader>
-   182	                                <TableHeader className="text-right">Harga Jual</TableHeader>
-   183	                                <TableHeader className="text-right">Stok</TableHeader>
-   184	                                <TableHeader className="text-center">Aksi</TableHeader>
-   185	                            </TableRow>
-   186	                        </TableHead>
-   187	                        <TableBody>
-   188	                            {items.length === 0 ? (
-   189	                                <TableRow>
-   190	                                    <TableCell
-   191	                                        colSpan={9}
-   192	                                        className="text-center text-gray-600"
-   193	                                    >
-   194	                                        {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
-   195	                                    </TableCell>
-   196	                                </TableRow>
-   197	                            ) : (
-   198	                                items.map((item) => (
-   199	                                    <TableRow key={item.id}>
-   200	                                        <TableCell>{item.name}</TableCell>
-   201	                                        <TableCell>{item.code}</TableCell>
-   202	                                        <TableCell>{item.category.name}</TableCell>
-   203	                                        <TableCell>{item.type.name}</TableCell>
-   204	                                        <TableCell>{item.unit.name}</TableCell>
-   205	                                        <TableCell className="text-right">
-   206	                                            {item.base_price.toLocaleString("id-ID", {
-   207	                                                style: "currency",
-   208	                                                currency: "IDR",
-   209	                                            })}
-   210	                                        </TableCell>
-   211	                                        <TableCell className="text-right">
-   212	                                            {item.sell_price.toLocaleString("id-ID", {
-   213	                                                style: "currency",
-   214	                                                currency: "IDR",
-   215	                                            })}
-   216	                                        </TableCell>
-   217	                                        <TableCell className="text-right">{item.stock}</TableCell>
-   218	                                        <TableCell className="text-center">
-   219	                                            <div className="flex justify-center space-x-2">
-   220	                                                <Link
-   221	                                                    to={`/master-data/items/edit/${item.id}`}
-   222	                                                >
-   223	                                                    <Button variant="secondary" size="sm">
-   224	                                                        <FaEdit />
-   225	                                                    </Button>
-   226	                                                </Link>
-   227	                                                <Button
-   228	                                                    variant="danger"
-   229	                                                    size="sm"
-   230	                                                    onClick={() => handleDelete(item)}
-   231	                                                    disabled={deleteItemMutation.isPending && deleteItemMutation.variables === item.id}
-   232	                                                >
-   233	                                                    {deleteItemMutation.isPending && deleteItemMutation.variables === item.id ? (
-   234	                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
-   235	                                                    ) : (
-   236	                                                        <FaTrash />
-   237	                                                    )}
-   238	                                                </Button>
-   239	                                            </div>
-   240	                                        </TableCell>
-   241	                                    </TableRow>
-   242	                                ))
-   243	                            )}
-   244	                        </TableBody>
-   245	                    </Table>
-   246	                    <Pagination
-   247	                        currentPage={currentPage}
-   248	                        totalPages={totalPages}
-   249	                        totalItems={totalItems}
-   250	                        itemsPerPage={itemsPerPage}
-   251	                        itemsCount={items.length}
-   252	                        onPageChange={handlePageChange}
-   253	                        onItemsPerPageChange={handleItemsPerPageChange}
-   254	                    />
-   255	                </>
-   256	            )}
-   257	        </Card>
-   258	    );
-   259	
-   260	    async function handleDelete(item: Item) {
-   261	        openConfirmDialog({
-   262	            title: "Konfirmasi Hapus",
-   263	            message: `Apakah Anda yakin ingin menghapus item "${item.name}"?`,
-   264	            variant: "danger",
-   265	            confirmText: "Hapus",
-   266	            onConfirm: () => {
-   267	                // Use item.id for the mutation
-   268	                deleteItemMutation.mutate(item.id);
-   269	            }
-   270	        });
-   271	    }
-   272	}
-   273	
-   274	export default ItemList;
+    17	    sell_price: number;
+    18	    // Add other fields if needed by other parts of the component
+    19	}
+    20	
+    21	function ItemList() {
+    22	    const [search, setSearch] = useState("");
+    23	    const [debouncedSearch, setDebouncedSearch] = useState("");
+    24	    const [currentPage, setCurrentPage] = useState(1);
+    25	    const [itemsPerPage, setItemsPerPage] = useState(10);
+    26	    const { openConfirmDialog } = useConfirmDialog();
+    27	    const queryClient = useQueryClient();
+    28	
+    29	    // Update this effect to use a more precise invalidation
+    30	    useEffect(() => {
+    31	        // Invalidate all item queries regardless of page, search, or itemsPerPage parameters
+    32	        queryClient.invalidateQueries({
+    33	            queryKey: ['items'],
+    34	            refetchType: 'all'
+    35	        });
+    36	    }, [queryClient]);
+    37	
+    38	    const fetchItems = async (page: number, searchTerm: string, limit: number) => {
+    39	        const from = (page - 1) * limit;
+    40	        const to = from + limit - 1;
+    41	
+    42	        let itemsQuery = supabase
+    43	            .from("items")
+    44	            .select(`
+    45	                id,
+    46	                name,
+    47	                code,
+    48	                base_price,
+    49	                sell_price,
+    50	                stock,
+    51	                category_id,
+    52	                type_id,
+    53	                unit_id
+    54	            `);
+    55	
+    56	        let countQuery = supabase
+    57	            .from("items")
+    58	            .select('id', { count: 'exact' });
+    59	
+    60	        if (searchTerm) {
+    61	            itemsQuery = itemsQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+    62	            countQuery = countQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+    63	        }
+    64	
+    65	        const [itemsResult, countResult, categoriesRes, typesRes, unitsRes] = await Promise.all([
+    66	            itemsQuery.order('name').range(from, to),
+    67	            countQuery,
+    68	            supabase.from("item_categories").select("id, name"),
+    69	            supabase.from("item_types").select("id, name"),
+    70	            supabase.from("item_units").select("id, name")
+    71	        ]);
+    72	
+    73	        if (itemsResult.error) throw itemsResult.error;
+    74	        if (countResult.error) throw countResult.error;
+    75	
+    76	        const categories = categoriesRes.data || [];
+    77	        const types = typesRes.data || [];
+    78	        const units = unitsRes.data || [];
+    79	
+    80	        const completedData = (itemsResult.data || []).map(item => ({
+    81	            id: item.id,
+    82	            name: item.name,
+    83	            code: item.code,
+    84	            base_price: item.base_price,
+    85	            sell_price: item.sell_price,
+    86	            stock: item.stock,
+    87	            category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
+    88	            type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
+    89	            unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
+    90	        }));
+    91	
+    92	        return { items: completedData, totalItems: countResult.count || 0 };
+    93	    };
+    94	
+    95	    useEffect(() => {
+    96	        const timer = setTimeout(() => {
+    97	            setDebouncedSearch(search);
+    98	            setCurrentPage(1);
+    99	        }, 500);
+   100	
+   101	        return () => clearTimeout(timer);
+   102	    }, [search]);
+   103	
+   104	    const { data, isLoading, isError, error, isFetching } = useQuery({
+   105	        queryKey: ['items', currentPage, debouncedSearch, itemsPerPage],
+   106	        queryFn: () => fetchItems(currentPage, debouncedSearch, itemsPerPage),
+   107	        placeholderData: keepPreviousData,
+   108	        staleTime: 30 * 1000, // Reduced from 5 minutes to 30 seconds
+   109	        refetchOnMount: true, // Ensure refetch when component mounts
+   110	    });
+   111	
+   112	    const deleteItemMutation = useMutation({
+   113	        mutationFn: async (itemId: string) => {
+   114	            const { error } = await supabase.from("items").delete().eq("id", itemId);
+   115	            if (error) throw error;
+   116	        },
+   117	        onSuccess: () => {
+   118	            // Update the invalidation strategy to match the useEffect approach
+   119	            queryClient.invalidateQueries({
+   120	                queryKey: ['items'],
+   121	                refetchType: 'all'
+   122	            });
+   123	            console.log("Item berhasil dihapus dan data di-refetch untuk semua ukuran halaman.");
+   124	        },
+   125	        onError: (error) => {
+   126	            console.error("Error deleting item:", error);
+   127	            alert("Gagal menghapus item. Silakan coba lagi.");
+   128	        },
+   129	    });
+   130	
+   131	    const items = data?.items || [];
+   132	    const totalItems = data?.totalItems || 0;
+   133	
+   134	    const handlePageChange = (newPage: number) => {
+   135	        setCurrentPage(newPage);
+   136	    };
+   137	
+   138	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+   139	        setItemsPerPage(Number(e.target.value));
+   140	        setCurrentPage(1);
+   141	    };
+   142	
+   143	    const totalPages = Math.ceil(totalItems / itemsPerPage);
+   144	
+   145	    return (
+   146	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+   147	            <div className="flex justify-between items-center mb-6">
+   148	                <h1 className="text-2xl font-bold text-gray-800">Daftar Item</h1>
+   149	
+   150	                <Link
+   151	                    to="/master-data/items/add">
+   152	                    <Button variant="primary" className="flex items-center">
+   153	                        <FaPlus className="mr-2" />
+   154	                        Tambah Item Baru
+   155	                    </Button>
+   156	                </Link>
+   157	            </div>
+   158	
+   159	            <div className="mb-4 relative">
+   160	                <input
+   161	                    type="text"
+   162	                    placeholder="Cari item..."
+   163	                    className="w-full p-3 border rounded-md pl-10"
+   164	                    value={search}
+   165	                    onChange={(e) => setSearch(e.target.value)} />
+   166	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+   167	            </div>
+   168	
+   169	            {isLoading && <div className="text-center p-6">Memuat data awal...</div>}
+   170	            {isError && <div className="text-center p-6 text-red-500">Error: {error instanceof Error ? error.message : 'Gagal memuat data'}</div>}
+   171	
+   172	            {!isLoading && (
+   173	                <>
+   174	                    <Table>
+   175	                        <TableHead>
+   176	                            <TableRow>
+   177	                                <TableHeader>Nama Item</TableHeader>
+   178	                                <TableHeader>Kode</TableHeader>
+   179	                                <TableHeader>Kategori</TableHeader>
+   180	                                <TableHeader>Jenis</TableHeader>
+   181	                                <TableHeader>Satuan</TableHeader>
+   182	                                <TableHeader className="text-right">Harga Pokok</TableHeader>
+   183	                                <TableHeader className="text-right">Harga Jual</TableHeader>
+   184	                                <TableHeader className="text-right">Stok</TableHeader>
+   185	                                <TableHeader className="text-center">Aksi</TableHeader>
+   186	                            </TableRow>
+   187	                        </TableHead>
+   188	                        <TableBody>
+   189	                            {items.length === 0 ? (
+   190	                                <TableRow>
+   191	                                    <TableCell
+   192	                                        colSpan={9}
+   193	                                        className="text-center text-gray-600"
+   194	                                    >
+   195	                                        {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
+   196	                                    </TableCell>
+   197	                                </TableRow>
+   198	                            ) : (
+   199	                                items.map((item) => (
+   200	                                    <TableRow key={item.id}>
+   201	                                        <TableCell>{item.name}</TableCell>
+   202	                                        <TableCell>{item.code}</TableCell>
+   203	                                        <TableCell>{item.category.name}</TableCell>
+   204	                                        <TableCell>{item.type.name}</TableCell>
+   205	                                        <TableCell>{item.unit.name}</TableCell>
+   206	                                        <TableCell className="text-right">
+   207	                                            {item.base_price.toLocaleString("id-ID", {
+   208	                                                style: "currency",
+   209	                                                currency: "IDR",
+   210	                                            })}
+   211	                                        </TableCell>
+   212	                                        <TableCell className="text-right">
+   213	                                            {item.sell_price.toLocaleString("id-ID", {
+   214	                                                style: "currency",
+   215	                                                currency: "IDR",
+   216	                                                minimumFractionDigits: 0,
+   217	                                                maximumFractionDigits: 0,
+   218	                                            })}
+   219	                                        </TableCell>
+   220	                                        <TableCell className="text-right">{item.stock}</TableCell>
+   221	                                        <TableCell className="text-center">
+   222	                                            <div className="flex justify-center space-x-2">
+   223	                                                <Link
+   224	                                                    to={`/master-data/items/edit/${item.id}`}
+   225	                                                >
+   226	                                                    <Button variant="secondary" size="sm">
+   227	                                                        <FaEdit />
+   228	                                                    </Button>
+   229	                                                </Link>
+   230	                                                <Button
+   231	                                                    variant="danger"
+   232	                                                    size="sm"
+   233	                                                    onClick={() => handleDelete(item)}
+   234	                                                    disabled={deleteItemMutation.isPending && deleteItemMutation.variables === item.id}
+   235	                                                >
+   236	                                                    {deleteItemMutation.isPending && deleteItemMutation.variables === item.id ? (
+   237	                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
+   238	                                                    ) : (
+   239	                                                        <FaTrash />
+   240	                                                    )}
+   241	                                                </Button>
+   242	                                            </div>
+   243	                                        </TableCell>
+   244	                                    </TableRow>
+   245	                                ))
+   246	                            )}
+   247	                        </TableBody>
+   248	                    </Table>
+   249	                    <Pagination
+   250	                        currentPage={currentPage}
+   251	                        totalPages={totalPages}
+   252	                        totalItems={totalItems}
+   253	                        itemsPerPage={itemsPerPage}
+   254	                        itemsCount={items.length}
+   255	                        onPageChange={handlePageChange}
+   256	                        onItemsPerPageChange={handleItemsPerPageChange}
+   257	                    />
+   258	                </>
+   259	            )}
+   260	        </Card>
+   261	    );
+   262	
+   263	    async function handleDelete(item: Item) {
+   264	        openConfirmDialog({
+   265	            title: "Konfirmasi Hapus",
+   266	            message: `Apakah Anda yakin ingin menghapus item "${item.name}"?`,
+   267	            variant: "danger",
+   268	            confirmText: "Hapus",
+   269	            onConfirm: () => {
+   270	                // Use item.id for the mutation
+   271	                deleteItemMutation.mutate(item.id);
+   272	            }
+   273	        });
+   274	    }
+   275	}
+   276	
+   277	export default ItemList;
 
 
 ===============================================

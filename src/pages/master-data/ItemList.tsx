@@ -14,6 +14,7 @@ interface Item {
     id: string;
     name: string;
     code: string;
+    sell_price: number;
     // Add other fields if needed by other parts of the component
 }
 
@@ -212,6 +213,8 @@ function ItemList() {
                                             {item.sell_price.toLocaleString("id-ID", {
                                                 style: "currency",
                                                 currency: "IDR",
+                                                minimumFractionDigits: 0,
+                                                maximumFractionDigits: 0,
                                             })}
                                         </TableCell>
                                         <TableCell className="text-right">{item.stock}</TableCell>
