@@ -8093,7 +8093,7 @@
 ===============================================
 
      1	/* eslint-disable @typescript-eslint/no-explicit-any */
-     2	import { useState } from 'react';
+     2	import { useState, useEffect } from 'react'; // Import useEffect
      3	import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
      4	import { supabase } from '../../lib/supabase';
      5	import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
@@ -8114,7 +8114,7 @@
     20	
     21	const Profile = () => {
     22	    const [editMode, setEditMode] = useState<Record<string, boolean>>({});
-    23	    const [editValues, setEditValues] = useState<Record<string, string>>({});
+    23	    const [editValues, setEditValues] = useState<Record<string, string | null>>({}); // Allow null values
     24	    const queryClient = useQueryClient();
     25	
     26	    const fetchProfile = async () => {
@@ -8134,172 +8134,175 @@
     40	        queryFn: fetchProfile,
     41	        staleTime: 30 * 1000,
     42	        refetchOnMount: true,
-    43	        refetchOnWindowFocus: false,
-    44	        onSuccess: (data) => {
-    45	            if (data) {
-    46	                const initialValues: Record<string, string | null> = {};
-    47	                Object.keys(data).forEach((key) => {
-    48	                    initialValues[key] = (data as any)[key] ?? '';
-    49	                });
-    50	                setEditValues(initialValues);
-    51	            }
-    52	        }
-    53	    });
-    54	
-    55	    const updateProfileMutation = useMutation({
-    56	        mutationFn: async ({ field, value }: { field: string, value: string | null }) => {
-    57	            if (!profile) throw new Error("Profil tidak ditemukan untuk diperbarui.");
-    58	
-    59	            const { error } = await supabase
-    60	                .from('company_profiles')
-    61	                .update({ [field]: value === '' ? null : value })
-    62	                .eq('id', profile.id);
-    63	
-    64	            if (error) throw new Error(error.message);
-    65	        },
-    66	        onSuccess: (_, variables) => {
-    67	            queryClient.invalidateQueries({ queryKey: ['companyProfile'] });
-    68	            setEditMode(prev => ({ ...prev, [variables.field]: false }));
-    69	        },
-    70	        onError: (error) => {
-    71	            console.error('Error updating profile:', error);
-    72	            alert(`Gagal memperbarui profil: ${error.message}`);
-    73	        }
-    74	    });
-    75	
-    76	    const toggleEdit = (field: string) => {
-    77	        setEditMode(prev => ({ ...prev, [field]: !prev[field] }));
-    78	        if (editMode[field] && profile) {
-    79	            setEditValues(prev => ({ ...prev, [field]: (profile as any)[field] ?? '' }));
-    80	        }
-    81	    };
-    82	
-    83	    const handleSave = (field: string) => {
-    84	        updateProfileMutation.mutate({ field, value: editValues[field] });
-    85	    };
-    86	
-    87	    const handleCancel = (field: string) => {
-    88	        if (profile) {
-    89	            setEditValues(prev => ({ ...prev, [field]: (profile as any)[field] ?? '' }));
-    90	        }
-    91	        setEditMode(prev => ({ ...prev, [field]: false }));
-    92	    };
-    93	
-    94	    const handleChange = (field: string, value: string) => {
-    95	        setEditValues((prev) => ({
-    96	            ...prev,
-    97	            [field]: value,
-    98	        }));
-    99	    };
-   100	
-   101	    const ProfileField = ({ label, field }: { label: string; field: string; }) => {
-   102	        return (
-   103	            <div className="mb-4">
-   104	                <div className="flex justify-between items-center mb-1">
-   105	                    <label className="text-sm font-medium text-gray-600">{label}</label>
-   106	                    {editMode[field] ? (
-   107	                        <div className="flex space-x-1">
-   108	                            <Button variant="text" size="sm" onClick={() => handleCancel(field)} className="p-1 text-gray-500 hover:text-red-500"><FaTimes /></Button>
-   109	                            <Button variant="text" size="sm" onClick={() => handleSave(field)} className="p-1 text-gray-500 hover:text-green-500" disabled={updateProfileMutation.isPending}>
-   110	                                {updateProfileMutation.isPending && updateProfileMutation.variables?.field === field ? <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span> : <FaCheck />}
-   111	                            </Button>
-   112	                        </div>
-   113	                    ) : (
-   114	                        <Button variant="text" size="sm" onClick={() => toggleEdit(field)} className="p-1 text-gray-500 hover:text-primary">
-   115	                            <FaEdit />
-   116	                        </Button>
-   117	                    )}
-   118	                </div>
-   119	                {editMode[field] ? (
-   120	                    <input
-   121	                        type="text"
-   122	                        value={editValues[field] || ''}
-   123	                        onChange={(e) => handleChange(field, e.target.value)}
-   124	                        className="w-full p-2 border rounded-md"
-   125	                    />
-   126	                ) : (
-   127	                    <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
-   128	                        {(profile && (profile as any)[field]) || <span className="text-gray-400 italic">Tidak ada data</span>}
-   129	                    </div>
-   130	                )}
-   131	            </div>
-   132	        );
-   133	    };
-   134	
-   135	    if (isLoading) {
-   136	        return <div className="text-center p-6">Memuat profil perusahaan...</div>;
-   137	    }
-   138	
-   139	    if (isError) {
-   140	        return <div className="text-center p-6 text-red-500">Error: {(error as Error).message}</div>;
-   141	    }
-   142	
-   143	    return (
-   144	        <Card>
-   145	            <CardHeader>
-   146	                <CardTitle>Profil Perusahaan</CardTitle>
-   147	                <p className="text-sm text-gray-500 mt-1">Kelola informasi detail mengenai apotek atau klinik Anda.</p>
-   148	            </CardHeader>
-   149	            <CardContent>
-   150	                {!profile ? (
-   151	                    <div className="text-center">
-   152	                        <p className="mb-4">Belum ada data profil. Tambahkan profil perusahaan Anda.</p>
-   153	                        <Button onClick={createProfile}>Tambah Profil</Button>
-   154	                    </div>
-   155	                ) : (
-   156	                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
-   157	                        <div>
-   158	                            <ProfileField label="Nama Perusahaan" field="name" />
-   159	                            <ProfileField label="Alamat" field="address" />
-   160	                            <ProfileField label="Nomor Telepon" field="phone" />
-   161	                            <ProfileField label="Email" field="email" />
-   162	                        </div>
-   163	                        <div>
-   164	                            <ProfileField label="Website" field="website" />
-   165	                            <ProfileField label="NPWP" field="tax_id" />
-   166	                            <ProfileField label="Nama Apoteker Penanggung Jawab" field="pharmacist_name" />
-   167	                            <ProfileField label="No. STRA / SIPA Apoteker" field="pharmacist_license" />
-   168	                        </div>
-   169	                    </div>
-   170	                )}
-   171	            </CardContent>
-   172	        </Card>
-   173	    );
-   174	
-   175	    async function createProfile() {
-   176	        try {
-   177	            const { data, error } = await supabase
-   178	                .from('company_profiles')
-   179	                .insert({
-   180	                    name: 'Nama Apotek/Klinik Anda',
-   181	                    address: 'Alamat Lengkap Apotek/Klinik Anda',
-   182	                })
-   183	                .select()
-   184	                .single();
-   185	
-   186	            if (error) {
-   187	                console.error('Error creating profile:', error);
-   188	                alert(`Gagal membuat profil: ${error.message}`);
-   189	                return;
-   190	            }
-   191	
-   192	            if (data) {
-   193	                queryClient.invalidateQueries({ queryKey: ['companyProfile'] });
-   194	                const initialValues: Record<string, string> = {};
-   195	                Object.keys(data).forEach((key) => {
-   196	                    initialValues[key] = (data as any)[key] ?? '';
-   197	                });
-   198	                setEditValues(initialValues);
-   199	                alert('Profil berhasil dibuat. Silakan lengkapi data.');
-   200	            }
-   201	        } catch (error) {
-   202	            console.error('Error:', error);
-   203	            alert(`Terjadi kesalahan saat membuat profil: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`);
-   204	        }
-   205	    }
-   206	};
-   207	
-   208	export default Profile;
+    43	        refetchOnWindowFocus: false
+    44	    });
+    45	
+    46	    // Set initial values when profile data is fetched
+    47	    useEffect(() => {
+    48	        if (profile) {
+    49	            const initialValues: Record<string, string | null> = {};
+    50	            Object.keys(profile).forEach((key) => {
+    51	                initialValues[key] = (profile as any)[key] ?? '';
+    52	            });
+    53	            setEditValues(initialValues);
+    54	        }
+    55	    }, [profile]);
+    56	
+    57	    const updateProfileMutation = useMutation({
+    58	        mutationFn: async ({ field, value }: { field: string, value: string | null }) => {
+    59	            // Add null check for profile before accessing id
+    60	            if (!profile?.id) throw new Error("Profil ID tidak ditemukan untuk diperbarui.");
+    61	
+    62	            const { error } = await supabase
+    63	                .from('company_profiles')
+    64	                .update({ [field]: value === '' ? null : value })
+    65	                .eq('id', profile.id);
+    66	
+    67	            if (error) throw new Error(error.message);
+    68	        },
+    69	        onSuccess: (_, variables) => {
+    70	            queryClient.invalidateQueries({ queryKey: ['companyProfile'] });
+    71	            setEditMode(prev => ({ ...prev, [variables.field]: false }));
+    72	        },
+    73	        onError: (error) => {
+    74	            console.error('Error updating profile:', error);
+    75	            alert(`Gagal memperbarui profil: ${error.message}`);
+    76	        }
+    77	    });
+    78	
+    79	    const toggleEdit = (field: string) => {
+    80	        setEditMode(prev => ({ ...prev, [field]: !prev[field] }));
+    81	        if (editMode[field] && profile) {
+    82	            setEditValues(prev => ({ ...prev, [field]: (profile as any)[field] ?? '' }));
+    83	        }
+    84	    };
+    85	
+    86	    const handleSave = (field: string) => {
+    87	        updateProfileMutation.mutate({ field, value: editValues[field] });
+    88	    };
+    89	
+    90	    const handleCancel = (field: string) => {
+    91	        if (profile) {
+    92	            setEditValues(prev => ({ ...prev, [field]: (profile as any)[field] ?? '' }));
+    93	        }
+    94	        setEditMode(prev => ({ ...prev, [field]: false }));
+    95	    };
+    96	
+    97	    const handleChange = (field: string, value: string) => {
+    98	        setEditValues((prev: Record<string, string | null>) => ({ // Explicitly type prev
+    99	            ...prev,
+   100	            [field]: value,
+   101	        }));
+   102	    };
+   103	
+   104	    const ProfileField = ({ label, field }: { label: string; field: string; }) => {
+   105	        return (
+   106	            <div className="mb-4">
+   107	                <div className="flex justify-between items-center mb-1">
+   108	                    <label className="text-sm font-medium text-gray-600">{label}</label>
+   109	                    {editMode[field] ? (
+   110	                        <div className="flex space-x-1">
+   111	                            <Button variant="text" size="sm" onClick={() => handleCancel(field)} className="p-1 text-gray-500 hover:text-red-500"><FaTimes /></Button>
+   112	                            <Button variant="text" size="sm" onClick={() => handleSave(field)} className="p-1 text-gray-500 hover:text-green-500" disabled={updateProfileMutation.isPending}>
+   113	                                {updateProfileMutation.isPending && updateProfileMutation.variables?.field === field ? <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span> : <FaCheck />}
+   114	                            </Button>
+   115	                        </div>
+   116	                    ) : (
+   117	                        <Button variant="text" size="sm" onClick={() => toggleEdit(field)} className="p-1 text-gray-500 hover:text-primary">
+   118	                            <FaEdit />
+   119	                        </Button>
+   120	                    )}
+   121	                </div>
+   122	                {editMode[field] ? (
+   123	                    <input
+   124	                        type="text"
+   125	                        value={editValues[field] || ''}
+   126	                        onChange={(e) => handleChange(field, e.target.value)}
+   127	                        className="w-full p-2 border rounded-md"
+   128	                    />
+   129	                ) : (
+   130	                    <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
+   131	                        {(profile && (profile as any)[field]) || <span className="text-gray-400 italic">Tidak ada data</span>}
+   132	                    </div>
+   133	                )}
+   134	            </div>
+   135	        );
+   136	    };
+   137	
+   138	    if (isLoading) {
+   139	        return <div className="text-center p-6">Memuat profil perusahaan...</div>;
+   140	    }
+   141	
+   142	    if (isError) {
+   143	        return <div className="text-center p-6 text-red-500">Error: {(error as Error).message}</div>;
+   144	    }
+   145	
+   146	    return (
+   147	        <Card>
+   148	            <CardHeader>
+   149	                <CardTitle>Profil Perusahaan</CardTitle>
+   150	                <p className="text-sm text-gray-500 mt-1">Kelola informasi detail mengenai apotek atau klinik Anda.</p>
+   151	            </CardHeader>
+   152	            <CardContent>
+   153	                {!profile ? (
+   154	                    <div className="text-center">
+   155	                        <p className="mb-4">Belum ada data profil. Tambahkan profil perusahaan Anda.</p>
+   156	                        <Button onClick={createProfile}>Tambah Profil</Button>
+   157	                    </div>
+   158	                ) : (
+   159	                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+   160	                        <div>
+   161	                            <ProfileField label="Nama Perusahaan" field="name" />
+   162	                            <ProfileField label="Alamat" field="address" />
+   163	                            <ProfileField label="Nomor Telepon" field="phone" />
+   164	                            <ProfileField label="Email" field="email" />
+   165	                        </div>
+   166	                        <div>
+   167	                            <ProfileField label="Website" field="website" />
+   168	                            <ProfileField label="NPWP" field="tax_id" />
+   169	                            <ProfileField label="Nama Apoteker Penanggung Jawab" field="pharmacist_name" />
+   170	                            <ProfileField label="No. STRA / SIPA Apoteker" field="pharmacist_license" />
+   171	                        </div>
+   172	                    </div>
+   173	                )}
+   174	            </CardContent>
+   175	        </Card>
+   176	    );
+   177	
+   178	    async function createProfile() {
+   179	        try {
+   180	            const { data, error } = await supabase
+   181	                .from('company_profiles')
+   182	                .insert({
+   183	                    name: 'Nama Apotek/Klinik Anda',
+   184	                    address: 'Alamat Lengkap Apotek/Klinik Anda',
+   185	                })
+   186	                .select()
+   187	                .single();
+   188	
+   189	            if (error) {
+   190	                console.error('Error creating profile:', error);
+   191	                alert(`Gagal membuat profil: ${error.message}`);
+   192	                return;
+   193	            }
+   194	
+   195	            if (data) {
+   196	                queryClient.invalidateQueries({ queryKey: ['companyProfile'] });
+   197	                const initialValues: Record<string, string> = {};
+   198	                Object.keys(data).forEach((key) => {
+   199	                    initialValues[key] = (data as any)[key] ?? '';
+   200	                });
+   201	                setEditValues(initialValues);
+   202	                alert('Profil berhasil dibuat. Silakan lengkapi data.');
+   203	            }
+   204	        } catch (error) {
+   205	            console.error('Error:', error);
+   206	            alert(`Terjadi kesalahan saat membuat profil: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`);
+   207	        }
+   208	    }
+   209	};
+   210	
+   211	export default Profile;
 
 
 ===============================================

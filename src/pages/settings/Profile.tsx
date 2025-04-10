@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Import useEffect
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { supabase } from '../../lib/supabase';
 import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
@@ -20,7 +20,7 @@ interface CompanyProfile {
 
 const Profile = () => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
-    const [editValues, setEditValues] = useState<Record<string, string>>({});
+    const [editValues, setEditValues] = useState<Record<string, string | null>>({}); // Allow null values
     const queryClient = useQueryClient();
 
     const fetchProfile = async () => {
@@ -40,21 +40,24 @@ const Profile = () => {
         queryFn: fetchProfile,
         staleTime: 30 * 1000,
         refetchOnMount: true,
-        refetchOnWindowFocus: false,
-        onSuccess: (data) => {
-            if (data) {
-                const initialValues: Record<string, string | null> = {};
-                Object.keys(data).forEach((key) => {
-                    initialValues[key] = (data as any)[key] ?? '';
-                });
-                setEditValues(initialValues);
-            }
-        }
+        refetchOnWindowFocus: false
     });
+
+    // Set initial values when profile data is fetched
+    useEffect(() => {
+        if (profile) {
+            const initialValues: Record<string, string | null> = {};
+            Object.keys(profile).forEach((key) => {
+                initialValues[key] = (profile as any)[key] ?? '';
+            });
+            setEditValues(initialValues);
+        }
+    }, [profile]);
 
     const updateProfileMutation = useMutation({
         mutationFn: async ({ field, value }: { field: string, value: string | null }) => {
-            if (!profile) throw new Error("Profil tidak ditemukan untuk diperbarui.");
+            // Add null check for profile before accessing id
+            if (!profile?.id) throw new Error("Profil ID tidak ditemukan untuk diperbarui.");
 
             const { error } = await supabase
                 .from('company_profiles')
@@ -92,7 +95,7 @@ const Profile = () => {
     };
 
     const handleChange = (field: string, value: string) => {
-        setEditValues((prev) => ({
+        setEditValues((prev: Record<string, string | null>) => ({ // Explicitly type prev
             ...prev,
             [field]: value,
         }));
