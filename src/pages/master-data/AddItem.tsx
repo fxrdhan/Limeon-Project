@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { FormActions } from "../../components/ui/FormActions";
@@ -17,12 +17,13 @@ const textareaClassName = "w-full p-2 border border-gray-300 rounded-md focus:ou
 
 const AddItem = () => {
     const navigate = useNavigate();
+    const { id } = useParams<{ id: string }>();
 
     const {
         formData, displayBasePrice, displaySellPrice, categories, types, units,
-        saving, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
+        saving, loading, isEditMode, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
         unitConversionHook
-    } = useAddItemForm();
+    } = useAddItemForm(id);
 
     // Modified handleSelectChange to update baseUnit automatically
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -56,11 +57,22 @@ const AddItem = () => {
         return null; // Kembalikan null jika harga pokok 0 atau negatif
     };
 
+    if (loading) {
+        return (
+            <Card>
+                <CardContent className="flex justify-center items-center h-40">
+                    <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+                    <span className="ml-3">Memuat data...</span>
+                </CardContent>
+            </Card>
+        );
+    }
+
     return (
         <div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Tambah Data Item Baru</CardTitle>
+                    <CardTitle>{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
                 </CardHeader>
 
                 <form onSubmit={handleSubmit}>
@@ -71,7 +83,7 @@ const AddItem = () => {
                                     <Input
                                         name="code"
                                         value={formData.code}
-                                        disabled={true}
+                                        disabled={isEditMode}
                                         className={inputClassName}
                                         style={formData.code === "" ? {
                                             background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
@@ -341,6 +353,7 @@ const AddItem = () => {
                             onCancel={() => navigate("/master-data/items")}
                             isDisabled={false}
                             isSaving={saving}
+                            saveText={isEditMode ? 'Update' : 'Simpan'}
                         />
                     </CardFooter>
                 </form>
