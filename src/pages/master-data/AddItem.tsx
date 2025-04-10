@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { FormActions } from "../../components/ui/FormActions";
 import { Input } from "../../components/ui/Input";
+import { FaArrowRight } from 'react-icons/fa'; // Import ikon panah
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
@@ -45,6 +46,15 @@ const AddItem = () => {
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.base_price]);
+
+    // Fungsi untuk menghitung persentase keuntungan
+    const calculateProfitPercentage = () => {
+        const { base_price, sell_price } = formData;
+        if (base_price > 0 && sell_price >= 0) {
+            return ((sell_price - base_price) / base_price) * 100;
+        }
+        return null; // Kembalikan null jika harga pokok 0 atau negatif
+    };
 
     return (
         <div>
@@ -211,13 +221,16 @@ const AddItem = () => {
                         </FormSection>
 
                         <FormSection title="Harga Pokok & Jual">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                                 <FormField label="Satuan Dasar">
                                     <Input
                                         type="text"
                                         value={unitConversionHook.baseUnit}
                                         readOnly
                                         className={inputClassName}
+                                        style={unitConversionHook.baseUnit === "" ? {
+                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
+                                        } : {}}
                                     />
                                 </FormField>
                                 
@@ -233,7 +246,20 @@ const AddItem = () => {
                                         required
                                     />
                                 </FormField>
+                                
+                                {/* Elemen untuk menampilkan persentase keuntungan */}
+                                <div className="text-center md:mt-6">
+                                    {calculateProfitPercentage() !== null ? (
+                                        <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}> {/* Changed text-sm to text-lg */}
+                                            <FaArrowRight className="inline mr-2" />
+                                            {calculateProfitPercentage()!.toFixed(1)}%
+                                        </span>
+                                    ) : (
+                                        <span className="text-sm text-gray-500">-</span>
+                                    )}
+                                </div>
 
+                                {/* Field Harga Jual */}
                                 <FormField label="Harga Jual">
                                     <Input
                                         type="text"
