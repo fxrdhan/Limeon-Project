@@ -2,6 +2,7 @@ import React from 'react';
 import { FaTrash } from 'react-icons/fa';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../ui/Table';
 import { Button } from '../ui/Button';
+import { Item } from '../../hooks/useItemSelection'; // Import Item type
 import { formatRupiah, extractNumericValue } from '../../lib/formatters';
 import { PurchaseItem } from '../../hooks/usePurchaseForm';
 
@@ -15,8 +16,7 @@ interface PurchaseItemsTableProps {
     onUpdateItemExpiry: (id: string, expiryDate: string) => void;
     onUpdateItemBatchNo: (id: string, batchNo: string) => void;
     onUnitChange: (id: string, unitName: string) => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getItemByID: (itemId: string) => any;
+    getItemByID: (itemId: string) => Item | undefined; // Use specific Item type or undefined if not found
     isEmptyMessage?: string | null; // add this line
 }
 

@@ -1680,21 +1680,21 @@
      2	import { FaTrash } from 'react-icons/fa';
      3	import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../ui/Table';
      4	import { Button } from '../ui/Button';
-     5	import { formatRupiah, extractNumericValue } from '../../lib/formatters';
-     6	import { PurchaseItem } from '../../hooks/usePurchaseForm';
-     7	
-     8	interface PurchaseItemsTableProps {
-     9	    purchaseItems: PurchaseItem[];
-    10	    total: number;
-    11	    isVatIncluded: boolean;
-    12	    onUpdateItem: (id: string, field: 'quantity' | 'price' | 'discount', value: number) => void;
-    13	    onRemoveItem: (id: string) => void;
-    14	    onUpdateItemVat: (id: string, vatPercentage: number) => void;
-    15	    onUpdateItemExpiry: (id: string, expiryDate: string) => void;
-    16	    onUpdateItemBatchNo: (id: string, batchNo: string) => void;
-    17	    onUnitChange: (id: string, unitName: string) => void;
-    18	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    19	    getItemByID: (itemId: string) => any;
+     5	import { Item } from '../../hooks/useItemSelection'; // Import Item type
+     6	import { formatRupiah, extractNumericValue } from '../../lib/formatters';
+     7	import { PurchaseItem } from '../../hooks/usePurchaseForm';
+     8	
+     9	interface PurchaseItemsTableProps {
+    10	    purchaseItems: PurchaseItem[];
+    11	    total: number;
+    12	    isVatIncluded: boolean;
+    13	    onUpdateItem: (id: string, field: 'quantity' | 'price' | 'discount', value: number) => void;
+    14	    onRemoveItem: (id: string) => void;
+    15	    onUpdateItemVat: (id: string, vatPercentage: number) => void;
+    16	    onUpdateItemExpiry: (id: string, expiryDate: string) => void;
+    17	    onUpdateItemBatchNo: (id: string, batchNo: string) => void;
+    18	    onUnitChange: (id: string, unitName: string) => void;
+    19	    getItemByID: (itemId: string) => Item | undefined; // Use specific Item type or undefined if not found
     20	    isEmptyMessage?: string | null; // add this line
     21	}
     22	
