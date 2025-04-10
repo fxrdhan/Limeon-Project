@@ -153,7 +153,10 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                unitConversions.map((uc) => (
+                                // Filter untuk menghilangkan duplikat berdasarkan unit.name
+                                unitConversions.filter((uc, index, self) => 
+                                    index === self.findIndex(u => u.unit.name === uc.unit.name)
+                                ).map((uc) => (
                                     <TableRow key={uc.id}>
                                         <TableCell>{uc.unit.name}</TableCell>
                                         <TableCell>

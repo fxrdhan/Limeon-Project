@@ -237,33 +237,33 @@ export const useAddItemForm = (itemId?: string) => {
 
             unitConversionHook.setBaseUnit(data.base_unit || "");
             unitConversionHook.setBasePrice(data.base_price || 0);
+            unitConversionHook.skipNextRecalculation();
+
+            const currentConversions = [...unitConversionHook.conversions];
+            for (const conv of currentConversions) {
+                unitConversionHook.removeUnitConversion(conv.id);
+            }
 
             let conversions = [];
             if (data.unit_conversions) {
-                if (typeof data.unit_conversions === 'string') {
-                    try {
-                        conversions = JSON.parse(data.unit_conversions);
-                    } catch (e) {
-                        console.error("Error parsing unit_conversions:", e);
-                        conversions = [];
-                    }
-                } else {
-                    conversions = data.unit_conversions;
+                try {
+                    conversions = typeof data.unit_conversions === 'string'
+                        ? JSON.parse(data.unit_conversions)
+                        : data.unit_conversions;
+                } catch (e) {
+                    console.error("Error parsing unit_conversions:", e);
+                    conversions = [];
                 }
             }
 
             if (Array.isArray(conversions)) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                unitConversionHook.conversions.forEach((conv: any) => {
-                    unitConversionHook.removeUnitConversion(conv.id);
-                });
-
                 for (const conv of conversions) {
                     const unit = await getUnitById(conv.unit_name);
                     if (unit) {
                         unitConversionHook.addUnitConversion({
                             unit: unit,
                             conversion: conv.conversion_rate || 0,
+                            basePrice: conv.base_price,
                         });
                     }
                 }
