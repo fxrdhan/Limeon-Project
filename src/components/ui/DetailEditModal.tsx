@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/master-data/DetailEditModal.tsx
 import React, { useState } from 'react';
 import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
@@ -13,11 +12,11 @@ interface FieldConfig {
 
 interface DetailEditModalProps {
     title: string;
-    data: Record<string, any>;
+    data: Record<string, string | number | boolean | null>; // Use a more specific type than any
     fields: FieldConfig[];
     isOpen: boolean;
     onClose: () => void;
-    onSave: (updatedData: Record<string, any>) => Promise<void>;
+    onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>; // Use a more specific type than any
     imageUrl?: string;
     imagePlaceholder?: string;
 }
@@ -33,15 +32,15 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     imagePlaceholder
 }) => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
-    const [editValues, setEditValues] = useState<Record<string, any>>({});
+    const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({}); // Use a more specific type than any
     const [loading, setLoading] = useState<Record<string, boolean>>({});
 
     // Inisialisasi nilai editan dengan data saat ini
     React.useEffect(() => {
         if (isOpen && data) {
-            const initialValues: Record<string, any> = {};
+            const initialValues: Record<string, string | number | boolean | null> = {}; // Use a more specific type than any
             fields.forEach(field => {
-                initialValues[field.key] = data[field.key] !== null ? data[field.key] : '';
+                initialValues[field.key] = data[field.key]; // Assign directly, handle null/undefined later if needed
             });
             setEditValues(initialValues);
         }
@@ -56,7 +55,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         }));
     };
 
-    const handleChange = (key: string, value: any) => {
+    const handleChange = (key: string, value: string) => { // Assume value from input/textarea is string
         setEditValues(prev => ({
             ...prev,
             [key]: value
@@ -81,10 +80,9 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     };
 
     const handleCancel = (key: string) => {
-        // Reset nilai ke data asli
         setEditValues(prev => ({
             ...prev,
-            [key]: data[key] !== null ? data[key] : ''
+            [key]: data[key] // Reset to original value (could be null)
         }));
         toggleEdit(key);
     };
@@ -110,7 +108,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                             <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200">
                                 <img
                                     src={imageUrl || imagePlaceholder}
-                                    alt={data.name || 'Detail'}
+                                    alt={String(data.name ?? 'Detail')}
                                     className="w-full h-full object-cover"
                                 />
                             </div>
@@ -166,7 +164,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                 {editMode[field.key] ? (
                                     field.type === 'textarea' ? (
                                         <textarea
-                                            value={editValues[field.key] || ''}
+                                            value={String(editValues[field.key] ?? '')} // Ensure value is string
                                             onChange={(e) => handleChange(field.key, e.target.value)}
                                             className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                                             rows={3}
@@ -174,14 +172,14 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                     ) : (
                                         <input
                                             type={field.type || 'text'}
-                                            value={editValues[field.key] || ''}
+                                            value={String(editValues[field.key] ?? '')} // Ensure value is string
                                             onChange={(e) => handleChange(field.key, e.target.value)}
                                             className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     )
                                 ) : (
                                     <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
-                                        {data[field.key] || (
+                                        {String(data[field.key] ?? '') || ( // Display original data, convert to string
                                             <span className="text-gray-400 italic">Tidak ada data</span>
                                         )}
                                     </div>
