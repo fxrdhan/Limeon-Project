@@ -8092,222 +8092,214 @@
 = File: ./src/pages/settings/Profile.tsx 
 ===============================================
 
-     1	import { useEffect, useState } from 'react';
-     2	import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
-     3	import { supabase } from '../../lib/supabase';
-     4	import { FaEdit, FaCheck } from 'react-icons/fa';
-     5	import { Button } from '../../components/ui/Button';
-     6	
-     7	interface CompanyProfile {
-     8	    id: string;
-     9	    name: string;
-    10	    address: string;
-    11	    phone: string | null;
-    12	    email: string | null;
-    13	    website: string | null;
-    14	    tax_id: string | null;
-    15	    pharmacist_name: string | null;
-    16	    pharmacist_license: string | null;
-    17	}
-    18	
-    19	const Profile = () => {
-    20	    const [profile, setProfile] = useState<CompanyProfile | null>(null);
-    21	    const [loading, setLoading] = useState(true);
+     1	/* eslint-disable @typescript-eslint/no-explicit-any */
+     2	import { useState } from 'react';
+     3	import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+     4	import { supabase } from '../../lib/supabase';
+     5	import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+     6	import { Button } from '../../components/ui/Button';
+     7	import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+     8	
+     9	interface CompanyProfile {
+    10	    id: string;
+    11	    name: string;
+    12	    address: string;
+    13	    phone: string | null;
+    14	    email: string | null;
+    15	    website: string | null;
+    16	    tax_id: string | null;
+    17	    pharmacist_name: string | null;
+    18	    pharmacist_license: string | null;
+    19	}
+    20	
+    21	const Profile = () => {
     22	    const [editMode, setEditMode] = useState<Record<string, boolean>>({});
     23	    const [editValues, setEditValues] = useState<Record<string, string>>({});
-    24	
-    25	    useEffect(() => {
-    26	        fetchProfile();
-    27	    }, []);
-    28	
-    29	    const fetchProfile = async () => {
-    30	        try {
-    31	            setLoading(true);
-    32	            const { data, error } = await supabase
-    33	                .from('company_profiles')
-    34	                .select('*')
-    35	                .single();
-    36	
-    37	            if (error) {
-    38	                console.error('Error fetching profile:', error);
-    39	                if (error.code === 'PGRST116') {
-    40	                    // No data found, we'll handle this case in the UI
-    41	                } else {
-    42	                    throw error;
-    43	                }
-    44	            }
-    45	
-    46	            if (data) {
-    47	                setProfile(data);
-    48	                // Initialize edit values
-    49	                const initialValues: Record<string, string> = {};
-    50	                Object.entries(data).forEach(([key, value]) => {
-    51	                    if (typeof value === 'string') {
-    52	                        initialValues[key] = value;
-    53	                    } else if (value === null) {
-    54	                        initialValues[key] = '';
-    55	                    }
-    56	                });
-    57	                setEditValues(initialValues);
-    58	            }
-    59	        } catch (error) {
-    60	            console.error('Error:', error);
-    61	        } finally {
-    62	            setLoading(false);
-    63	        }
-    64	    };
-    65	
-    66	    const toggleEdit = (field: string) => {
-    67	        if (editMode[field]) {
-    68	            // Save changes
-    69	            saveField(field, editValues[field] || '');
-    70	        }
-    71	        setEditMode((prev) => ({
-    72	            ...prev,
-    73	            [field]: !prev[field],
-    74	        }));
-    75	    };
-    76	
-    77	    const handleChange = (field: string, value: string) => {
-    78	        setEditValues((prev) => ({
-    79	            ...prev,
-    80	            [field]: value,
-    81	        }));
-    82	    };
-    83	
-    84	    const saveField = async (field: string, value: string) => {
-    85	        if (!profile) return;
+    24	    const queryClient = useQueryClient();
+    25	
+    26	    const fetchProfile = async () => {
+    27	        const { data, error } = await supabase
+    28	            .from('company_profiles')
+    29	            .select('*')
+    30	            .single();
+    31	
+    32	        if (error && error.code !== 'PGRST116') {
+    33	            throw new Error(error.message);
+    34	        }
+    35	        return data;
+    36	    };
+    37	
+    38	    const { data: profile, isLoading, isError, error } = useQuery<CompanyProfile | null>({
+    39	        queryKey: ['companyProfile'],
+    40	        queryFn: fetchProfile,
+    41	        staleTime: 30 * 1000,
+    42	        refetchOnMount: true,
+    43	        refetchOnWindowFocus: false,
+    44	        onSuccess: (data) => {
+    45	            if (data) {
+    46	                const initialValues: Record<string, string | null> = {};
+    47	                Object.keys(data).forEach((key) => {
+    48	                    initialValues[key] = (data as any)[key] ?? '';
+    49	                });
+    50	                setEditValues(initialValues);
+    51	            }
+    52	        }
+    53	    });
+    54	
+    55	    const updateProfileMutation = useMutation({
+    56	        mutationFn: async ({ field, value }: { field: string, value: string | null }) => {
+    57	            if (!profile) throw new Error("Profil tidak ditemukan untuk diperbarui.");
+    58	
+    59	            const { error } = await supabase
+    60	                .from('company_profiles')
+    61	                .update({ [field]: value === '' ? null : value })
+    62	                .eq('id', profile.id);
+    63	
+    64	            if (error) throw new Error(error.message);
+    65	        },
+    66	        onSuccess: (_, variables) => {
+    67	            queryClient.invalidateQueries({ queryKey: ['companyProfile'] });
+    68	            setEditMode(prev => ({ ...prev, [variables.field]: false }));
+    69	        },
+    70	        onError: (error) => {
+    71	            console.error('Error updating profile:', error);
+    72	            alert(`Gagal memperbarui profil: ${error.message}`);
+    73	        }
+    74	    });
+    75	
+    76	    const toggleEdit = (field: string) => {
+    77	        setEditMode(prev => ({ ...prev, [field]: !prev[field] }));
+    78	        if (editMode[field] && profile) {
+    79	            setEditValues(prev => ({ ...prev, [field]: (profile as any)[field] ?? '' }));
+    80	        }
+    81	    };
+    82	
+    83	    const handleSave = (field: string) => {
+    84	        updateProfileMutation.mutate({ field, value: editValues[field] });
+    85	    };
     86	
-    87	        try {
-    88	            const { error } = await supabase
-    89	                .from('company_profiles')
-    90	                .update({ [field]: value })
-    91	                .eq('id', profile.id);
-    92	
-    93	            if (error) {
-    94	                console.error('Error updating profile:', error);
-    95	                return;
-    96	            }
-    97	
-    98	            // Update local state
-    99	            setProfile((prev) => prev ? {
-   100	                ...prev,
-   101	                [field]: value,
-   102	            } : null);
-   103	        } catch (error) {
-   104	            console.error('Error saving field:', error);
-   105	        }
-   106	    };
-   107	
-   108	    const ProfileField = ({
-   109	        label,
-   110	        field,
-   111	        value
-   112	    }: {
-   113	        label: string;
-   114	        field: string;
-   115	        value: string | null;
-   116	    }) => {
-   117	        return (
-   118	            <div className="mb-4">
-   119	                <div className="flex justify-between items-center mb-1">
-   120	                    <label className="text-sm font-medium text-gray-600">{label}</label>
-   121	                    <Button
-   122	                        variant="text"
-   123	                        size="sm"
-   124	                        onClick={() => toggleEdit(field)}
-   125	                        className="p-1 text-gray-500 hover:text-gray-700"
-   126	                    >
-   127	                        {editMode[field] ? <FaCheck className="text-green-500" /> : <FaEdit />}
-   128	                    </Button>
-   129	                </div>
-   130	                {editMode[field] ? (
-   131	                    <input
-   132	                        type="text"
-   133	                        value={editValues[field] || ''}
-   134	                        onChange={(e) => handleChange(field, e.target.value)}
-   135	                        className="w-full p-2 border rounded-md"
-   136	                    />
-   137	                ) : (
-   138	                    <div className="p-2 bg-gray-50 rounded-md">
-   139	                        {value || <span className="text-gray-400 italic">Tidak ada data</span>}
-   140	                    </div>
-   141	                )}
-   142	            </div>
-   143	        );
-   144	    };
-   145	
-   146	    if (loading) {
-   147	        return <div className="text-center p-6">Memuat data...</div>;
-   148	    }
-   149	
-   150	    return (
-   151	        <Card>
-   152	            <CardHeader>
-   153	                <CardTitle>Profil Perusahaan</CardTitle>
-   154	            </CardHeader>
-   155	            <CardContent>
-   156	                {!profile ? (
-   157	                    <div className="text-center">
-   158	                        <p className="mb-4">Belum ada data profil. Tambahkan profil perusahaan Anda.</p>
-   159	                        <Button onClick={createProfile}>Tambah Profil</Button>
-   160	                    </div>
-   161	                ) : (
-   162	                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    87	    const handleCancel = (field: string) => {
+    88	        if (profile) {
+    89	            setEditValues(prev => ({ ...prev, [field]: (profile as any)[field] ?? '' }));
+    90	        }
+    91	        setEditMode(prev => ({ ...prev, [field]: false }));
+    92	    };
+    93	
+    94	    const handleChange = (field: string, value: string) => {
+    95	        setEditValues((prev) => ({
+    96	            ...prev,
+    97	            [field]: value,
+    98	        }));
+    99	    };
+   100	
+   101	    const ProfileField = ({ label, field }: { label: string; field: string; }) => {
+   102	        return (
+   103	            <div className="mb-4">
+   104	                <div className="flex justify-between items-center mb-1">
+   105	                    <label className="text-sm font-medium text-gray-600">{label}</label>
+   106	                    {editMode[field] ? (
+   107	                        <div className="flex space-x-1">
+   108	                            <Button variant="text" size="sm" onClick={() => handleCancel(field)} className="p-1 text-gray-500 hover:text-red-500"><FaTimes /></Button>
+   109	                            <Button variant="text" size="sm" onClick={() => handleSave(field)} className="p-1 text-gray-500 hover:text-green-500" disabled={updateProfileMutation.isPending}>
+   110	                                {updateProfileMutation.isPending && updateProfileMutation.variables?.field === field ? <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span> : <FaCheck />}
+   111	                            </Button>
+   112	                        </div>
+   113	                    ) : (
+   114	                        <Button variant="text" size="sm" onClick={() => toggleEdit(field)} className="p-1 text-gray-500 hover:text-primary">
+   115	                            <FaEdit />
+   116	                        </Button>
+   117	                    )}
+   118	                </div>
+   119	                {editMode[field] ? (
+   120	                    <input
+   121	                        type="text"
+   122	                        value={editValues[field] || ''}
+   123	                        onChange={(e) => handleChange(field, e.target.value)}
+   124	                        className="w-full p-2 border rounded-md"
+   125	                    />
+   126	                ) : (
+   127	                    <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
+   128	                        {(profile && (profile as any)[field]) || <span className="text-gray-400 italic">Tidak ada data</span>}
+   129	                    </div>
+   130	                )}
+   131	            </div>
+   132	        );
+   133	    };
+   134	
+   135	    if (isLoading) {
+   136	        return <div className="text-center p-6">Memuat profil perusahaan...</div>;
+   137	    }
+   138	
+   139	    if (isError) {
+   140	        return <div className="text-center p-6 text-red-500">Error: {(error as Error).message}</div>;
+   141	    }
+   142	
+   143	    return (
+   144	        <Card>
+   145	            <CardHeader>
+   146	                <CardTitle>Profil Perusahaan</CardTitle>
+   147	                <p className="text-sm text-gray-500 mt-1">Kelola informasi detail mengenai apotek atau klinik Anda.</p>
+   148	            </CardHeader>
+   149	            <CardContent>
+   150	                {!profile ? (
+   151	                    <div className="text-center">
+   152	                        <p className="mb-4">Belum ada data profil. Tambahkan profil perusahaan Anda.</p>
+   153	                        <Button onClick={createProfile}>Tambah Profil</Button>
+   154	                    </div>
+   155	                ) : (
+   156	                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+   157	                        <div>
+   158	                            <ProfileField label="Nama Perusahaan" field="name" />
+   159	                            <ProfileField label="Alamat" field="address" />
+   160	                            <ProfileField label="Nomor Telepon" field="phone" />
+   161	                            <ProfileField label="Email" field="email" />
+   162	                        </div>
    163	                        <div>
-   164	                            <ProfileField label="Nama Perusahaan" field="name" value={profile.name} />
-   165	                            <ProfileField label="Alamat" field="address" value={profile.address} />
-   166	                            <ProfileField label="Nomor Telepon" field="phone" value={profile.phone} />
-   167	                            <ProfileField label="Email" field="email" value={profile.email} />
+   164	                            <ProfileField label="Website" field="website" />
+   165	                            <ProfileField label="NPWP" field="tax_id" />
+   166	                            <ProfileField label="Nama Apoteker Penanggung Jawab" field="pharmacist_name" />
+   167	                            <ProfileField label="No. STRA / SIPA Apoteker" field="pharmacist_license" />
    168	                        </div>
-   169	                        <div>
-   170	                            <ProfileField label="Website" field="website" value={profile.website} />
-   171	                            <ProfileField label="NPWP" field="tax_id" value={profile.tax_id} />
-   172	                            <ProfileField label="Nama Apoteker" field="pharmacist_name" value={profile.pharmacist_name} />
-   173	                            <ProfileField label="No. STRA/SIPA" field="pharmacist_license" value={profile.pharmacist_license} />
-   174	                        </div>
-   175	                    </div>
-   176	                )}
-   177	            </CardContent>
-   178	        </Card>
-   179	    );
-   180	
-   181	    async function createProfile() {
-   182	        try {
-   183	            const { data, error } = await supabase
-   184	                .from('company_profiles')
-   185	                .insert({
-   186	                    name: 'Apotek Mekar Sehat Sukaraya Karangbahagia',
-   187	                    address: 'PURI NIRWANA RESIDENCE BLOK EJ-01, Desa/Kel. Sukaraya, Kec. Karangbahagia, Kab. Bekasi, 17530 Indonesia',
-   188	                })
-   189	                .select()
-   190	                .single();
+   169	                    </div>
+   170	                )}
+   171	            </CardContent>
+   172	        </Card>
+   173	    );
+   174	
+   175	    async function createProfile() {
+   176	        try {
+   177	            const { data, error } = await supabase
+   178	                .from('company_profiles')
+   179	                .insert({
+   180	                    name: 'Nama Apotek/Klinik Anda',
+   181	                    address: 'Alamat Lengkap Apotek/Klinik Anda',
+   182	                })
+   183	                .select()
+   184	                .single();
+   185	
+   186	            if (error) {
+   187	                console.error('Error creating profile:', error);
+   188	                alert(`Gagal membuat profil: ${error.message}`);
+   189	                return;
+   190	            }
    191	
-   192	            if (error) {
-   193	                console.error('Error creating profile:', error);
-   194	                return;
-   195	            }
-   196	
-   197	            if (data) {
-   198	                setProfile(data);
-   199	                // Inisialisasi nilai edit dengan data yang ada
-   200	                const initialValues: Record<string, string> = {};
-   201	                Object.entries(data).forEach(([key, value]) => {
-   202	                    if (typeof value === 'string') {
-   203	                        initialValues[key] = value;
-   204	                    } else if (value === null) {
-   205	                        initialValues[key] = '';
-   206	                    }
-   207	                });
-   208	                setEditValues(initialValues);
-   209	            }
-   210	        } catch (error) {
-   211	            console.error('Error:', error);
-   212	        }
-   213	    }
-   214	};
-   215	
-   216	export default Profile;
+   192	            if (data) {
+   193	                queryClient.invalidateQueries({ queryKey: ['companyProfile'] });
+   194	                const initialValues: Record<string, string> = {};
+   195	                Object.keys(data).forEach((key) => {
+   196	                    initialValues[key] = (data as any)[key] ?? '';
+   197	                });
+   198	                setEditValues(initialValues);
+   199	                alert('Profil berhasil dibuat. Silakan lengkapi data.');
+   200	            }
+   201	        } catch (error) {
+   202	            console.error('Error:', error);
+   203	            alert(`Terjadi kesalahan saat membuat profil: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`);
+   204	        }
+   205	    }
+   206	};
+   207	
+   208	export default Profile;
 
 
 ===============================================
