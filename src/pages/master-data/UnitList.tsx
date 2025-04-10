@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from "../../lib/supabase";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
@@ -7,6 +7,8 @@ import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Loading } from "../../components/ui/Loading";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { Pagination } from "../../components/ui/Pagination";
+import { useState } from "react";
 
 interface Unit {
     id: string;
@@ -15,26 +17,37 @@ interface Unit {
 }
 
 const UnitList = () => {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
 
-    const fetchUnits = async () => {
-        const { data, error } = await supabase
+    const fetchUnits = async (page: number, limit: number) => {
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        const { data, error, count } = await supabase
             .from("item_units")
-            .select("id, name, description")
-            .order("name");
+            .select("id, name, description", { count: 'exact' })
+            .order("name")
+            .range(from, to);
+
         if (error) throw error;
-        return data || [];
+        return { units: data || [], totalItems: count || 0 };
     };
 
-    const { data: units = [], isLoading, isError, error } = useQuery<Unit[]>({
-        queryKey: ['units'],
-        queryFn: fetchUnits,
+    const { data, isLoading, isFetching, isError, error } = useQuery({
+        queryKey: ['units', currentPage, itemsPerPage],
+        queryFn: () => fetchUnits(currentPage, itemsPerPage),
+        placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
         refetchOnMount: true,
     });
 
+    const units = data?.units || [];
+    const totalItems = data?.totalItems || 0;
     const queryError = error instanceof Error ? error : null;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     const deleteUnitMutation = useMutation({
         mutationFn: async (unitId: string) => {
@@ -62,8 +75,17 @@ const UnitList = () => {
         });
     };
 
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
+
+    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1);
+    };
+
     return (
-        <Card>
+        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Daftar Satuan Item</h1>
                 <Link to="/master-data/units/add">
@@ -74,8 +96,8 @@ const UnitList = () => {
                 </Link>
             </div>
 
-            {isLoading ? (
-                <Loading />
+            {isLoading && !data ? (
+                <Loading message="Memuat satuan..." />
             ) : isError ? (
                 <div className="text-center p-6 text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>
             ) : (
@@ -122,6 +144,15 @@ const UnitList = () => {
                     </TableBody>
                 </Table>
             )}
+            <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                itemsCount={units.length}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+            />
         </Card>
     );
 };

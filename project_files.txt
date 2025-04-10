@@ -6054,7 +6054,7 @@
 ===============================================
 
      1	import { Link } from "react-router-dom";
-     2	import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+     2	import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
      3	import { supabase } from "../../lib/supabase";
      4	import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
      5	import { Card } from "../../components/ui/Card";
@@ -6062,126 +6062,157 @@
      7	import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
      8	import { Loading } from "../../components/ui/Loading";
      9	import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
-    10	
-    11	interface Unit {
-    12	    id: string;
-    13	    name: string;
-    14	    description: string;
-    15	}
-    16	
-    17	const UnitList = () => {
-    18	    const { openConfirmDialog } = useConfirmDialog();
-    19	    const queryClient = useQueryClient();
-    20	
-    21	    const fetchUnits = async () => {
-    22	        const { data, error } = await supabase
-    23	            .from("item_units")
-    24	            .select("id, name, description")
-    25	            .order("name");
-    26	        if (error) throw error;
-    27	        return data || [];
-    28	    };
-    29	
-    30	    const { data: units = [], isLoading, isError, error } = useQuery<Unit[]>({
-    31	        queryKey: ['units'],
-    32	        queryFn: fetchUnits,
-    33	        staleTime: 30 * 1000,
-    34	        refetchOnMount: true,
-    35	    });
-    36	
-    37	    const queryError = error instanceof Error ? error : null;
+    10	import { Pagination } from "../../components/ui/Pagination";
+    11	import { useState } from "react";
+    12	
+    13	interface Unit {
+    14	    id: string;
+    15	    name: string;
+    16	    description: string;
+    17	}
+    18	
+    19	const UnitList = () => {
+    20	    const [currentPage, setCurrentPage] = useState(1);
+    21	    const [itemsPerPage, setItemsPerPage] = useState(10);
+    22	    const { openConfirmDialog } = useConfirmDialog();
+    23	    const queryClient = useQueryClient();
+    24	
+    25	    const fetchUnits = async (page: number, limit: number) => {
+    26	        const from = (page - 1) * limit;
+    27	        const to = from + limit - 1;
+    28	
+    29	        const { data, error, count } = await supabase
+    30	            .from("item_units")
+    31	            .select("id, name, description", { count: 'exact' })
+    32	            .order("name")
+    33	            .range(from, to);
+    34	
+    35	        if (error) throw error;
+    36	        return { units: data || [], totalItems: count || 0 };
+    37	    };
     38	
-    39	    const deleteUnitMutation = useMutation({
-    40	        mutationFn: async (unitId: string) => {
-    41	            const { error } = await supabase.from("item_units").delete().eq("id", unitId);
-    42	            if (error) throw error;
-    43	        },
-    44	        onSuccess: () => {
-    45	            queryClient.invalidateQueries({ queryKey: ['units'] });
-    46	        },
-    47	        onError: (error) => {
-    48	            console.error("Error deleting unit:", error);
-    49	            alert(`Gagal menghapus satuan item: ${error.message}`);
-    50	        },
-    51	    });
-    52	
-    53	    const handleDelete = (unit: Unit) => {
-    54	        openConfirmDialog({
-    55	            title: "Konfirmasi Hapus",
-    56	            message: `Apakah Anda yakin ingin menghapus satuan item "${unit.name}"? Data yang terhubung mungkin akan terpengaruh.`,
-    57	            variant: 'danger',
-    58	            confirmText: "Hapus",
-    59	            onConfirm: () => {
-    60	                deleteUnitMutation.mutate(unit.id);
-    61	            }
-    62	        });
-    63	    };
-    64	
-    65	    return (
-    66	        <Card>
-    67	            <div className="flex justify-between items-center mb-6">
-    68	                <h1 className="text-2xl font-bold text-gray-800">Daftar Satuan Item</h1>
-    69	                <Link to="/master-data/units/add">
-    70	                    <Button variant="primary" className="flex items-center">
-    71	                        <FaPlus className="mr-2" />
-    72	                        Tambah Satuan Baru
-    73	                    </Button>
-    74	                </Link>
-    75	            </div>
-    76	
-    77	            {isLoading ? (
-    78	                <Loading />
-    79	            ) : isError ? (
-    80	                <div className="text-center p-6 text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>
-    81	            ) : (
-    82	                <Table>
-    83	                    <TableHead>
-    84	                        <TableRow>
-    85	                            <TableHeader>Nama Satuan</TableHeader>
-    86	                            <TableHeader>Deskripsi</TableHeader>
-    87	                            <TableHeader className="text-center">Aksi</TableHeader>
-    88	                        </TableRow>
-    89	                    </TableHead>
-    90	                    <TableBody>
-    91	                        {units.length === 0 ? (
-    92	                            <TableRow>
-    93	                                <TableCell colSpan={3} className="text-center text-gray-500">
-    94	                                    Tidak ada data satuan yang ditemukan
-    95	                                </TableCell>
-    96	                            </TableRow>
-    97	                        ) : (
-    98	                            units.map((unit) => (
-    99	                                <TableRow key={unit.id}>
-   100	                                    <TableCell>{unit.name}</TableCell>
-   101	                                    <TableCell>{unit.description || '-'}</TableCell>
-   102	                                    <TableCell className="text-center">
-   103	                                        <div className="flex justify-center space-x-2">
-   104	                                            <Link to={`/master-data/units/edit/${unit.id}`}>
-   105	                                                <Button variant="secondary" size="sm">
-   106	                                                    <FaEdit />
-   107	                                                </Button>
-   108	                                            </Link>
-   109	                                            <Button 
-   110	                                                variant="danger"
-   111	                                                size="sm"
-   112	                                                onClick={() => handleDelete(unit)}
-   113	                                                disabled={deleteUnitMutation.isPending && deleteUnitMutation.variables === unit.id}
-   114	                                            >
-   115	                                                <FaTrash />
-   116	                                            </Button>
-   117	                                        </div>
-   118	                                    </TableCell>
-   119	                                </TableRow>
-   120	                            ))
-   121	                        )}
-   122	                    </TableBody>
-   123	                </Table>
-   124	            )}
-   125	        </Card>
-   126	    );
-   127	};
-   128	
-   129	export default UnitList;
+    39	    const { data, isLoading, isFetching, isError, error } = useQuery({
+    40	        queryKey: ['units', currentPage, itemsPerPage],
+    41	        queryFn: () => fetchUnits(currentPage, itemsPerPage),
+    42	        placeholderData: keepPreviousData,
+    43	        staleTime: 30 * 1000,
+    44	        refetchOnMount: true,
+    45	    });
+    46	
+    47	    const units = data?.units || [];
+    48	    const totalItems = data?.totalItems || 0;
+    49	    const queryError = error instanceof Error ? error : null;
+    50	    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    51	
+    52	    const deleteUnitMutation = useMutation({
+    53	        mutationFn: async (unitId: string) => {
+    54	            const { error } = await supabase.from("item_units").delete().eq("id", unitId);
+    55	            if (error) throw error;
+    56	        },
+    57	        onSuccess: () => {
+    58	            queryClient.invalidateQueries({ queryKey: ['units'] });
+    59	        },
+    60	        onError: (error) => {
+    61	            console.error("Error deleting unit:", error);
+    62	            alert(`Gagal menghapus satuan item: ${error.message}`);
+    63	        },
+    64	    });
+    65	
+    66	    const handleDelete = (unit: Unit) => {
+    67	        openConfirmDialog({
+    68	            title: "Konfirmasi Hapus",
+    69	            message: `Apakah Anda yakin ingin menghapus satuan item "${unit.name}"? Data yang terhubung mungkin akan terpengaruh.`,
+    70	            variant: 'danger',
+    71	            confirmText: "Hapus",
+    72	            onConfirm: () => {
+    73	                deleteUnitMutation.mutate(unit.id);
+    74	            }
+    75	        });
+    76	    };
+    77	
+    78	    const handlePageChange = (newPage: number) => {
+    79	        setCurrentPage(newPage);
+    80	    };
+    81	
+    82	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    83	        setItemsPerPage(Number(e.target.value));
+    84	        setCurrentPage(1);
+    85	    };
+    86	
+    87	    return (
+    88	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+    89	            <div className="flex justify-between items-center mb-6">
+    90	                <h1 className="text-2xl font-bold text-gray-800">Daftar Satuan Item</h1>
+    91	                <Link to="/master-data/units/add">
+    92	                    <Button variant="primary" className="flex items-center">
+    93	                        <FaPlus className="mr-2" />
+    94	                        Tambah Satuan Baru
+    95	                    </Button>
+    96	                </Link>
+    97	            </div>
+    98	
+    99	            {isLoading && !data ? (
+   100	                <Loading message="Memuat satuan..." />
+   101	            ) : isError ? (
+   102	                <div className="text-center p-6 text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>
+   103	            ) : (
+   104	                <Table>
+   105	                    <TableHead>
+   106	                        <TableRow>
+   107	                            <TableHeader>Nama Satuan</TableHeader>
+   108	                            <TableHeader>Deskripsi</TableHeader>
+   109	                            <TableHeader className="text-center">Aksi</TableHeader>
+   110	                        </TableRow>
+   111	                    </TableHead>
+   112	                    <TableBody>
+   113	                        {units.length === 0 ? (
+   114	                            <TableRow>
+   115	                                <TableCell colSpan={3} className="text-center text-gray-500">
+   116	                                    Tidak ada data satuan yang ditemukan
+   117	                                </TableCell>
+   118	                            </TableRow>
+   119	                        ) : (
+   120	                            units.map((unit) => (
+   121	                                <TableRow key={unit.id}>
+   122	                                    <TableCell>{unit.name}</TableCell>
+   123	                                    <TableCell>{unit.description || '-'}</TableCell>
+   124	                                    <TableCell className="text-center">
+   125	                                        <div className="flex justify-center space-x-2">
+   126	                                            <Link to={`/master-data/units/edit/${unit.id}`}>
+   127	                                                <Button variant="secondary" size="sm">
+   128	                                                    <FaEdit />
+   129	                                                </Button>
+   130	                                            </Link>
+   131	                                            <Button 
+   132	                                                variant="danger"
+   133	                                                size="sm"
+   134	                                                onClick={() => handleDelete(unit)}
+   135	                                                disabled={deleteUnitMutation.isPending && deleteUnitMutation.variables === unit.id}
+   136	                                            >
+   137	                                                <FaTrash />
+   138	                                            </Button>
+   139	                                        </div>
+   140	                                    </TableCell>
+   141	                                </TableRow>
+   142	                            ))
+   143	                        )}
+   144	                    </TableBody>
+   145	                </Table>
+   146	            )}
+   147	            <Pagination
+   148	                currentPage={currentPage}
+   149	                totalPages={totalPages}
+   150	                totalItems={totalItems}
+   151	                itemsPerPage={itemsPerPage}
+   152	                itemsCount={units.length}
+   153	                onPageChange={handlePageChange}
+   154	                onItemsPerPageChange={handleItemsPerPageChange}
+   155	            />
+   156	        </Card>
+   157	    );
+   158	};
+   159	
+   160	export default UnitList;
 
 
 ===============================================
