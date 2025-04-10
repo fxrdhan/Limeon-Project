@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from "../../lib/supabase";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
@@ -15,41 +15,64 @@ interface ItemType {
 }
 
 const TypeList = () => {
-    const [types, setTypes] = useState<ItemType[]>([]);
-    const [loading, setLoading] = useState(true);
     const { openConfirmDialog } = useConfirmDialog();
-
-    useEffect(() => {
-        fetchTypes();
-    }, []);
+    const queryClient = useQueryClient();
 
     const fetchTypes = async () => {
         try {
-            setLoading(true);
-            
             const { data, error } = await supabase
                 .from("item_types")
-                .select("*")
+                .select("id, name, description")
                 .order("name");
-                
             if (error) throw error;
-            
-            setTypes(data || []);
+            return data || [];
         } catch (error) {
             console.error("Error fetching item types:", error);
-        } finally {
-            setLoading(false);
+            throw error;
         }
+    };
+
+    const { data: types = [], isLoading, isError, error } = useQuery<ItemType[]>({
+        queryKey: ['types'],
+        queryFn: fetchTypes,
+        staleTime: 30 * 1000,
+        refetchOnMount: true,
+    });
+
+    const queryError = error instanceof Error ? error : null;
+
+    const deleteTypeMutation = useMutation({
+        mutationFn: async (typeId: string) => {
+            const { error } = await supabase.from("item_types").delete().eq("id", typeId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['types'] });
+            console.log("Jenis item berhasil dihapus, cache diinvalidasi.");
+        },
+        onError: (error) => {
+            console.error("Error deleting item type:", error);
+            alert(`Gagal menghapus jenis item: ${error.message}`);
+        },
+    });
+
+    const handleDelete = async (type: ItemType) => {
+        openConfirmDialog({
+            title: "Konfirmasi Hapus",
+            message: `Apakah Anda yakin ingin menghapus jenis item "${type.name}"? Data yang terhubung mungkin akan terpengaruh.`,
+            variant: 'danger',
+            confirmText: "Hapus",
+            onConfirm: () => {
+                deleteTypeMutation.mutate(type.id);
+            }
+        });
     };
 
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Daftar Jenis Item</h1>
-                
-                <Link
-                    to="/master-data/types/add"
-                >
+                <Link to="/master-data/types/add">
                     <Button variant="primary">
                         <FaPlus className="mr-2" />
                         Tambah Jenis Item Baru
@@ -57,8 +80,10 @@ const TypeList = () => {
                 </Link>
             </div>
             
-            {loading ? (
+            {isLoading ? (
                 <Loading />
+            ) : isError ? (
+                <div className="text-center p-6 text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>
             ) : (
                 <Table>
                     <TableHead>
@@ -69,65 +94,42 @@ const TypeList = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                            {types.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-gray-500">
-                                        Tidak ada data jenis item yang ditemukan
+                        {types.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center text-gray-500">
+                                    Tidak ada data jenis item yang ditemukan
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            types.map((type) => (
+                                <TableRow key={type.id}>
+                                    <TableCell>{type.name}</TableCell>
+                                    <TableCell>{type.description}</TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="flex justify-center space-x-2">
+                                            <Link to={`/master-data/types/edit/${type.id}`}>
+                                                <Button variant="secondary" size="sm">
+                                                    <FaEdit />
+                                                </Button>
+                                            </Link>
+                                            <Button 
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => handleDelete(type)}
+                                                disabled={deleteTypeMutation.isPending && deleteTypeMutation.variables === type.id}
+                                            >
+                                                <FaTrash />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
-                            ) : (
-                                types.map((type) => (
-                                    <TableRow key={type.id}>
-                                        <TableCell>{type.name}</TableCell>
-                                        <TableCell>{type.description}</TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex justify-center space-x-2">
-                                                <Link
-                                                    to={`/master-data/types/edit/${type.id}`}
-                                                >
-                                                    <Button variant="secondary" size="sm">
-                                                        <FaEdit />
-                                                    </Button>
-                                                </Link>
-                                                <Button 
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(type.id)}
-                                                >
-                                                    <FaTrash />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             )}
         </Card>
     );
-    
-    async function handleDelete(id: string) {
-        openConfirmDialog({
-            title: "Konfirmasi Hapus",
-            message: `Apakah Anda yakin ingin menghapus jenis item ini? Data yang terhubung mungkin akan terpengaruh.`,
-            variant: 'danger',
-            confirmText: "Hapus",
-            onConfirm: async () => {
-                try {
-                    const { error } = await supabase
-                        .from("item_types")
-                        .delete()
-                        .eq("id", id);
-                    if (error) throw error;
-                    fetchTypes(); // Refresh data after deletion
-                } catch (error) {
-                    console.error("Error deleting item type:", error);
-                    alert("Gagal menghapus jenis item. Silakan coba lagi.");
-                }
-            }
-        });
-    }
 };
 
 export default TypeList;
