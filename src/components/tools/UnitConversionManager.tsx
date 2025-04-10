@@ -76,6 +76,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         addUnitConversion({
             unit: selectedUnit,
             conversion: unitConversionFormData.conversion,
+            basePrice: 0
         });
 
         // Reset form
