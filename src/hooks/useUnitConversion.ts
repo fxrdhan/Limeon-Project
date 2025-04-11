@@ -12,8 +12,7 @@ export interface UnitConversion {
 }
 
 export interface UseUnitConversionReturn {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    conversions: any;
+    conversions: UnitConversion[];
     baseUnit: string;
     setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
     basePrice: number;
