@@ -4643,65 +4643,89 @@
 = File: ./src/lib/queryUtils.ts 
 ===============================================
 
-     1	import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-     2	import { supabase } from './supabase';
-     3	
-     4	// Fungsi untuk mengambil data dengan cache
-     5	export function useSupabaseQuery(key, fetcher, options = {}) {
-     6	  return useQuery({
-     7	    queryKey: Array.isArray(key) ? key : [key],
-     8	    queryFn: fetcher,
-     9	    ...options,
-    10	  });
-    11	}
-    12	
-    13	// Fungsi untuk mutasi data dengan invalidasi cache otomatis
-    14	export function useSupabaseMutation(key, mutationFn, options = {}) {
-    15	  const queryClient = useQueryClient();
-    16	  
-    17	  return useMutation({
-    18	    mutationFn,
-    19	    onSuccess: (data, variables, context) => {
-    20	      // Invalidasi cache setelah mutasi berhasil
-    21	      if (Array.isArray(key)) {
-    22	        queryClient.invalidateQueries({ queryKey: key });
-    23	      } else {
-    24	        queryClient.invalidateQueries({ queryKey: [key] });
-    25	      }
-    26	      
-    27	      if (options.onSuccess) {
-    28	        options.onSuccess(data, variables, context);
-    29	      }
-    30	    },
-    31	    ...options,
-    32	  });
-    33	}
+     1	import {
+     2	  useQuery,
+     3	  useMutation,
+     4	  useQueryClient,
+     5	  QueryKey,
+     6	  UseQueryOptions,
+     7	  UseMutationOptions,
+     8	  MutationFunction,
+     9	} from '@tanstack/react-query';
+    10	import { RealtimePostgresChangesPayload } from '@supabase/supabase-js'; // Import Supabase specific type
+    11	import { supabase } from './supabase';
+    12	import React from 'react'; // Import React for useEffect
+    13	
+    14	// Fungsi untuk mengambil data dengan cache
+    15	export function useSupabaseQuery<TQueryFnData = unknown, TError = Error, TData = TQueryFnData>(
+    16	  key: QueryKey,
+    17	  fetcher: () => Promise<TQueryFnData>,
+    18	  options: Omit<UseQueryOptions<TQueryFnData, TError, TData, QueryKey>, 'queryKey' | 'queryFn'> = {},
+    19	) {
+    20	  return useQuery({
+    21	    queryKey: Array.isArray(key) ? key : [key],
+    22	    queryFn: fetcher,
+    23	    ...options,
+    24	  });
+    25	}
+    26	
+    27	// Fungsi untuk mutasi data dengan invalidasi cache otomatis
+    28	export function useSupabaseMutation<TData = unknown, TError = Error, TVariables = void, TContext = unknown>(
+    29	  key: QueryKey | string, // Allow string or array key
+    30	  mutationFn: MutationFunction<TData, TVariables>,
+    31	  options: Omit<UseMutationOptions<TData, TError, TVariables, TContext>, 'mutationFn'> = {},
+    32	) {
+    33	  const queryClient = useQueryClient();
     34	
-    35	// Fungsi untuk mendengarkan perubahan data di Supabase
-    36	export function useSupabaseSubscription(tableName, onDataChange) {
-    37	  const queryClient = useQueryClient();
-    38	  
-    39	  React.useEffect(() => {
-    40	    const subscription = supabase
-    41	      .channel(`public:${tableName}`)
-    42	      .on('postgres_changes', 
-    43	          { event: '*', schema: 'public', table: tableName }, 
-    44	          (payload) => {
-    45	            // Eksekusi callback yang diberikan
-    46	            if (onDataChange) {
-    47	              onDataChange(payload);
-    48	            }
-    49	            
-    50	            // Invalidasi query terkait
-    51	            queryClient.invalidateQueries({ queryKey: [tableName] });
-    52	          })
-    53	      .subscribe();
-    54	      
-    55	    return () => {
-    56	      supabase.removeChannel(subscription);
-    57	    };
-    58	  }, [tableName, onDataChange, queryClient]);
-    59	}
+    35	  return useMutation({
+    36	    mutationFn,
+    37	    onSuccess: (data: TData, variables: TVariables, context: TContext | undefined) => {
+    38	      // Invalidasi cache setelah mutasi berhasil
+    39	      if (Array.isArray(key)) {
+    40	        queryClient.invalidateQueries({ queryKey: key });
+    41	      } else {
+    42	        queryClient.invalidateQueries({ queryKey: [key] });
+    43	      }
+    44	
+    45	      // Call original onSuccess if provided
+    46	      if (options?.onSuccess) {
+    47	        if (context !== undefined) { // Check if context is not undefined before calling
+    48	          options.onSuccess(data, variables, context);
+    49	        }
+    50	      }
+    51	    },
+    52	    ...options,
+    53	  });
+    54	}
+    55	
+    56	// Fungsi untuk mendengarkan perubahan data di Supabase
+    57	export function useSupabaseSubscription<T extends Record<string, unknown> = Record<string, unknown>>( // Use Record<string, unknown> instead of any
+    58	  tableName: string,
+    59	  onDataChange: (payload: RealtimePostgresChangesPayload<T>) => void,
+    60	) {
+    61	  const queryClient = useQueryClient();
+    62	
+    63	  React.useEffect(() => {
+    64	    const subscription = supabase
+    65	      .channel(`public:${tableName}`)
+    66	      .on('postgres_changes',
+    67	          { event: '*', schema: 'public', table: tableName },
+    68	          (payload: RealtimePostgresChangesPayload<T>) => {
+    69	            // Eksekusi callback yang diberikan
+    70	            if (onDataChange) {
+    71	              onDataChange(payload);
+    72	            }
+    73	
+    74	            // Invalidasi query terkait
+    75	            queryClient.invalidateQueries({ queryKey: [tableName] });
+    76	          })
+    77	      .subscribe();
+    78	
+    79	    return () => {
+    80	      supabase.removeChannel(subscription);
+    81	    };
+    82	  }, [tableName, onDataChange, queryClient]);
+    83	}
 
 
 ===============================================
