@@ -1,10 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { Item } from './useItemSelection';
 
 interface Supplier {
     id: string;
     name: string;
+}
+
+// Define CompanyProfile based on src/pages/settings/Profile.tsx
+interface CompanyProfile {
+    id: string;
+    name: string;
+    address: string;
+    phone: string | null;
+    email: string | null;
+    website: string | null;
+    tax_id: string | null;
+    pharmacist_name: string | null;
+    pharmacist_license: string | null;
 }
 
 export interface PurchaseFormData {
@@ -38,8 +52,7 @@ export const usePurchaseForm = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [companyProfile, setCompanyProfile] = useState<any>(null);
+    const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
     const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
     
     // Form data
@@ -213,27 +226,28 @@ export const usePurchaseForm = () => {
         });
     };
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleUnitChange = (id: string, unitName: string, getItemByID: (id: string) => any) => {
-        const updatedItems = purchaseItems.map(item => {
+    const handleUnitChange = (id: string, unitName: string, getItemByID: (itemId: string) => Item | undefined) => {
+        const updatedItems = purchaseItems.map((item) => {
             if (item.id === id) {
                 const itemData = getItemByID(item.item_id);
                 if (!itemData) return item;
-                
+
                 let price = itemData.base_price;
                 let conversionRate = 1;
-                
+
                 // Jika bukan satuan dasar, cari harga berdasarkan konversi
                 if (unitName !== itemData.base_unit) {
-                    const unitConversion = itemData.unit_conversions?.find((uc: { unit_name: string; }) => uc.unit_name === unitName);
+                    // Corrected: Access unit name via uc.unit.name and check if unit_conversions is an array
+                    const unitConversionsArray = Array.isArray(itemData.unit_conversions) ? itemData.unit_conversions : [];
+                    const unitConversion = unitConversionsArray.find(uc => uc.unit.name === unitName);
                     if (unitConversion) {
-                        price = unitConversion.base_price || itemData.base_price / unitConversion.conversion_rate;
-                        conversionRate = unitConversion.conversion_rate;
+                        price = unitConversion.basePrice || itemData.base_price / unitConversion.conversion; // Corrected: basePrice, conversion
+                        conversionRate = unitConversion.conversion; // Corrected: conversion
                     }
                 }
 
                 const discountAmount = price * item.quantity * (item.discount / 100);
-                
+
                 return {
                     ...item,
                     unit: unitName,
@@ -244,7 +258,7 @@ export const usePurchaseForm = () => {
             }
             return item;
         });
-        
+
         setPurchaseItems(updatedItems);
     };
     
