@@ -7238,230 +7238,229 @@
    121	                    let quantityInBaseUnit = item.quantity;
    122	
    123	                    if (item.unit !== itemData.base_unit) {
-   124	                        const unitConversion = itemData.unit_conversions.find(
-   125	                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   126	                            (uc: { unit_name: any; }) => uc.unit_name === item.unit
-   127	                        );
-   128	
-   129	                        if (unitConversion) {
-   130	                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
-   131	                        }
-   132	                    }
-   133	
-   134	                    const newStock = Math.max(0, (itemData.stock || 0) - quantityInBaseUnit);
-   135	                    await supabase
-   136	                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
-   137	                }
-   138	            }
-   139	
-   140	            const { error } = await supabase
-   141	                .from("purchases")
-   142	                .delete()
-   143	                .eq("id", id);
-   144	
-   145	            if (error) throw error;
-   146	        },
-   147	        onSuccess: () => {
-   148	            queryClient.invalidateQueries({ queryKey: ['purchases'] });
-   149	        },
-   150	        onError: (error) => {
-   151	            console.error("Error deleting purchase:", error);
-   152	            alert(`Gagal menghapus pembelian: ${error.message}`);
-   153	        },
-   154	    });
-   155	
-   156	    const handlePageChange = (newPage: number) => {
-   157	        setCurrentPage(newPage);
-   158	    };
-   159	
-   160	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-   161	        setItemsPerPage(Number(e.target.value));
-   162	        setCurrentPage(1);
-   163	    };
-   164	
-   165	    const handleDelete = (purchase: Purchase) => {
-   166	        openConfirmDialog({
-   167	            title: "Konfirmasi Hapus",
-   168	            message: `Apakah Anda yakin ingin menghapus pembelian dengan nomor faktur "${purchase.invoice_number}"? Tindakan ini juga akan mengembalikan stok item yang terkait.`,
-   169	            variant: 'danger',
-   170	            confirmText: 'Hapus',
-   171	            onConfirm: () => {
-   172	                deletePurchaseMutation.mutate(purchase.id);
-   173	            }
-   174	        });
-   175	    };
-   176	
-   177	    const getStatusBadgeVariant = (status: string) => {
-   178	        switch (status) {
-   179	            case 'paid':
-   180	                return 'success';
-   181	            case 'partial':
-   182	                return 'warning';
-   183	            case 'unpaid':
-   184	                return 'danger';
-   185	            default:
-   186	                return 'secondary';
-   187	        }
-   188	    };
-   189	
-   190	    const getStatusLabel = (status: string) => {
-   191	        switch (status) {
-   192	            case 'paid':
-   193	                return 'Lunas';
-   194	            case 'partial':
-   195	                return 'Sebagian';
-   196	            case 'unpaid':
-   197	                return 'Belum Bayar';
-   198	            default:
-   199	                return status;
-   200	        }
-   201	    };
-   202	
-   203	    const getPaymentMethodLabel = (method: string) => {
-   204	        switch (method) {
-   205	            case 'cash':
-   206	                return 'Tunai';
-   207	            case 'transfer':
-   208	                return 'Transfer';
-   209	            case 'credit':
-   210	                return 'Kredit';
-   211	            default:
-   212	                return method;
-   213	        }
-   214	    };
-   215	
-   216	    const totalPages = Math.ceil(totalItems / itemsPerPage);
-   217	
-   218	    return (
-   219	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
-   220	            <div className="flex justify-between items-center mb-6">
-   221	                <h1 className="text-2xl font-bold text-gray-800">Daftar Pembelian</h1>
-   222	
-   223	                <div className="flex space-x-2">
-   224	                    <Link to="/purchases/upload-invoice">
-   225	                        <Button variant="secondary">
-   226	                            <FaFileUpload className="mr-2" />
-   227	                            Upload Faktur
-   228	                        </Button>
-   229	                    </Link>
-   230	                    
-   231	                    <Link to="/purchases/create">
-   232	                        <Button variant="primary">
-   233	                            <FaPlus className="mr-2" />
-   234	                            Tambah Pembelian Baru
-   235	                        </Button>
-   236	                    </Link>
-   237	                </div>
-   238	            </div>
-   239	
-   240	            <div className="mb-4 relative">
-   241	                <input
-   242	                    type="text"
-   243	                    placeholder="Cari nomor faktur atau supplier..."
-   244	                    className="w-full p-3 border rounded-md pl-10"
-   245	                    value={search}
-   246	                    onChange={(e) => setSearch(e.target.value)}
-   247	                />
-   248	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-   249	            </div>
-   250	
-   251	            {isLoading ? (
-   252	                <Loading message="Memuat data pembelian..." />
-   253	            ) : (
-   254	                <> 
-   255	                    <Table>
-   256	                        <TableHead>
-   257	                            <TableRow>
-   258	                                <TableHeader>No. Faktur</TableHeader>
-   259	                                <TableHeader>Tanggal</TableHeader>
-   260	                                <TableHeader>Supplier</TableHeader>
-   261	                                <TableHeader className="text-right">Total</TableHeader>
-   262	                                <TableHeader className="text-center">Status Pembayaran</TableHeader>
-   263	                                <TableHeader className="text-center">Metode Pembayaran</TableHeader>
-   264	                                <TableHeader className="text-center">Aksi</TableHeader>
-   265	                            </TableRow>
-   266	                        </TableHead>
-   267	                        <TableBody>
-   268	                            {purchases.length === 0 ? (
-   269	                                <TableRow>
-   270	                                    <TableCell
-   271	                                        colSpan={7}
-   272	                                        className="text-center text-gray-600"
-   273	                                    >
-   274	                                        {debouncedSearch ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"` : "Tidak ada data pembelian yang ditemukan"}
-   275	                                    </TableCell>
-   276	                                </TableRow>
-   277	                            ) : (
-   278	                                purchases.map((purchase) => (
-   279	                                    <TableRow key={purchase.id}>
-   280	                                        <TableCell>{purchase.invoice_number}</TableCell>
-   281	                                        <TableCell>
-   282	                                            {new Date(purchase.date).toLocaleDateString('id-ID', {
-   283	                                                day: '2-digit',
-   284	                                                month: 'short',
-   285	                                                year: 'numeric'
-   286	                                            })}
-   287	                                        </TableCell>
-   288	                                        <TableCell>{purchase.supplier?.name || 'Tidak ada supplier'}</TableCell>
-   289	                                        <TableCell className="text-right">
-   290	                                            {purchase.total.toLocaleString('id-ID', {
-   291	                                                style: 'currency',
-   292	                                                currency: 'IDR'
-   293	                                            })}
-   294	                                        </TableCell>
-   295	                                        <TableCell className="text-center">
-   296	                                            <Badge variant={getStatusBadgeVariant(purchase.payment_status)}>
-   297	                                                {getStatusLabel(purchase.payment_status)}
-   298	                                            </Badge>
-   299	                                        </TableCell>
-   300	                                        <TableCell className="text-center">
-   301	                                            {getPaymentMethodLabel(purchase.payment_method)}
-   302	                                        </TableCell>
-   303	                                        <TableCell className="text-center">
-   304	                                            <div className="flex justify-center space-x-2">
-   305	                                                <Link to={`/purchases/view/${purchase.id}`}>
-   306	                                                    <Button variant="primary" size="sm">
-   307	                                                        <FaEye />
-   308	                                                    </Button>
-   309	                                                </Link>
-   310	                                                <Link to={`/purchases/edit/${purchase.id}`}>
-   311	                                                    <Button variant="secondary" size="sm">
-   312	                                                        <FaEdit />
-   313	                                                    </Button>
-   314	                                                </Link>
-   315	                                                <Button
-   316	                                                    variant="danger"
-   317	                                                    size="sm"
-   318	                                                    onClick={() => handleDelete(purchase)}
-   319	                                                    disabled={deletePurchaseMutation.isPending && deletePurchaseMutation.variables === purchase.id}
-   320	                                                >
-   321	                                                    {deletePurchaseMutation.isPending && deletePurchaseMutation.variables === purchase.id ?
-   322	                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span> : <FaTrash /> }
-   323	                                                </Button>
-   324	                                            </div>
-   325	                                        </TableCell>
-   326	                                    </TableRow>
-   327	                                ))
-   328	                            )}
-   329	                        </TableBody>
-   330	                    </Table>
-   331	
-   332	                    <Pagination
-   333	                        currentPage={currentPage}
-   334	                        totalPages={totalPages}
-   335	                        totalItems={totalItems}
-   336	                        itemsPerPage={itemsPerPage}
-   337	                        itemsCount={purchases.length}
-   338	                        onPageChange={handlePageChange}
-   339	                        onItemsPerPageChange={handleItemsPerPageChange}
-   340	                    />
-   341	                </>
-   342	            )}
-   343	        </Card>
-   344	    );
-   345	};
-   346	
-   347	export default PurchaseList;
+   124	                        const unitConversion = itemData.unit_conversions?.find(
+   125	                            (uc: { unit_name: string; conversion_rate: number }) => uc.unit_name === item.unit
+   126	                        );
+   127	
+   128	                        if (unitConversion) {
+   129	                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
+   130	                        }
+   131	                    }
+   132	
+   133	                    const newStock = Math.max(0, (itemData.stock || 0) - quantityInBaseUnit);
+   134	                    await supabase
+   135	                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
+   136	                }
+   137	            }
+   138	
+   139	            const { error } = await supabase
+   140	                .from("purchases")
+   141	                .delete()
+   142	                .eq("id", id);
+   143	
+   144	            if (error) throw error;
+   145	        },
+   146	        onSuccess: () => {
+   147	            queryClient.invalidateQueries({ queryKey: ['purchases'] });
+   148	        },
+   149	        onError: (error) => {
+   150	            console.error("Error deleting purchase:", error);
+   151	            alert(`Gagal menghapus pembelian: ${error.message}`);
+   152	        },
+   153	    });
+   154	
+   155	    const handlePageChange = (newPage: number) => {
+   156	        setCurrentPage(newPage);
+   157	    };
+   158	
+   159	    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+   160	        setItemsPerPage(Number(e.target.value));
+   161	        setCurrentPage(1);
+   162	    };
+   163	
+   164	    const handleDelete = (purchase: Purchase) => {
+   165	        openConfirmDialog({
+   166	            title: "Konfirmasi Hapus",
+   167	            message: `Apakah Anda yakin ingin menghapus pembelian dengan nomor faktur "${purchase.invoice_number}"? Tindakan ini juga akan mengembalikan stok item yang terkait.`,
+   168	            variant: 'danger',
+   169	            confirmText: 'Hapus',
+   170	            onConfirm: () => {
+   171	                deletePurchaseMutation.mutate(purchase.id);
+   172	            }
+   173	        });
+   174	    };
+   175	
+   176	    const getStatusBadgeVariant = (status: string) => {
+   177	        switch (status) {
+   178	            case 'paid':
+   179	                return 'success';
+   180	            case 'partial':
+   181	                return 'warning';
+   182	            case 'unpaid':
+   183	                return 'danger';
+   184	            default:
+   185	                return 'secondary';
+   186	        }
+   187	    };
+   188	
+   189	    const getStatusLabel = (status: string) => {
+   190	        switch (status) {
+   191	            case 'paid':
+   192	                return 'Lunas';
+   193	            case 'partial':
+   194	                return 'Sebagian';
+   195	            case 'unpaid':
+   196	                return 'Belum Bayar';
+   197	            default:
+   198	                return status;
+   199	        }
+   200	    };
+   201	
+   202	    const getPaymentMethodLabel = (method: string) => {
+   203	        switch (method) {
+   204	            case 'cash':
+   205	                return 'Tunai';
+   206	            case 'transfer':
+   207	                return 'Transfer';
+   208	            case 'credit':
+   209	                return 'Kredit';
+   210	            default:
+   211	                return method;
+   212	        }
+   213	    };
+   214	
+   215	    const totalPages = Math.ceil(totalItems / itemsPerPage);
+   216	
+   217	    return (
+   218	        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+   219	            <div className="flex justify-between items-center mb-6">
+   220	                <h1 className="text-2xl font-bold text-gray-800">Daftar Pembelian</h1>
+   221	
+   222	                <div className="flex space-x-2">
+   223	                    <Link to="/purchases/upload-invoice">
+   224	                        <Button variant="secondary">
+   225	                            <FaFileUpload className="mr-2" />
+   226	                            Upload Faktur
+   227	                        </Button>
+   228	                    </Link>
+   229	                    
+   230	                    <Link to="/purchases/create">
+   231	                        <Button variant="primary">
+   232	                            <FaPlus className="mr-2" />
+   233	                            Tambah Pembelian Baru
+   234	                        </Button>
+   235	                    </Link>
+   236	                </div>
+   237	            </div>
+   238	
+   239	            <div className="mb-4 relative">
+   240	                <input
+   241	                    type="text"
+   242	                    placeholder="Cari nomor faktur atau supplier..."
+   243	                    className="w-full p-3 border rounded-md pl-10"
+   244	                    value={search}
+   245	                    onChange={(e) => setSearch(e.target.value)}
+   246	                />
+   247	                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+   248	            </div>
+   249	
+   250	            {isLoading ? (
+   251	                <Loading message="Memuat data pembelian..." />
+   252	            ) : (
+   253	                <> 
+   254	                    <Table>
+   255	                        <TableHead>
+   256	                            <TableRow>
+   257	                                <TableHeader>No. Faktur</TableHeader>
+   258	                                <TableHeader>Tanggal</TableHeader>
+   259	                                <TableHeader>Supplier</TableHeader>
+   260	                                <TableHeader className="text-right">Total</TableHeader>
+   261	                                <TableHeader className="text-center">Status Pembayaran</TableHeader>
+   262	                                <TableHeader className="text-center">Metode Pembayaran</TableHeader>
+   263	                                <TableHeader className="text-center">Aksi</TableHeader>
+   264	                            </TableRow>
+   265	                        </TableHead>
+   266	                        <TableBody>
+   267	                            {purchases.length === 0 ? (
+   268	                                <TableRow>
+   269	                                    <TableCell
+   270	                                        colSpan={7}
+   271	                                        className="text-center text-gray-600"
+   272	                                    >
+   273	                                        {debouncedSearch ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"` : "Tidak ada data pembelian yang ditemukan"}
+   274	                                    </TableCell>
+   275	                                </TableRow>
+   276	                            ) : (
+   277	                                purchases.map((purchase) => (
+   278	                                    <TableRow key={purchase.id}>
+   279	                                        <TableCell>{purchase.invoice_number}</TableCell>
+   280	                                        <TableCell>
+   281	                                            {new Date(purchase.date).toLocaleDateString('id-ID', {
+   282	                                                day: '2-digit',
+   283	                                                month: 'short',
+   284	                                                year: 'numeric'
+   285	                                            })}
+   286	                                        </TableCell>
+   287	                                        <TableCell>{purchase.supplier?.name || 'Tidak ada supplier'}</TableCell>
+   288	                                        <TableCell className="text-right">
+   289	                                            {purchase.total.toLocaleString('id-ID', {
+   290	                                                style: 'currency',
+   291	                                                currency: 'IDR'
+   292	                                            })}
+   293	                                        </TableCell>
+   294	                                        <TableCell className="text-center">
+   295	                                            <Badge variant={getStatusBadgeVariant(purchase.payment_status)}>
+   296	                                                {getStatusLabel(purchase.payment_status)}
+   297	                                            </Badge>
+   298	                                        </TableCell>
+   299	                                        <TableCell className="text-center">
+   300	                                            {getPaymentMethodLabel(purchase.payment_method)}
+   301	                                        </TableCell>
+   302	                                        <TableCell className="text-center">
+   303	                                            <div className="flex justify-center space-x-2">
+   304	                                                <Link to={`/purchases/view/${purchase.id}`}>
+   305	                                                    <Button variant="primary" size="sm">
+   306	                                                        <FaEye />
+   307	                                                    </Button>
+   308	                                                </Link>
+   309	                                                <Link to={`/purchases/edit/${purchase.id}`}>
+   310	                                                    <Button variant="secondary" size="sm">
+   311	                                                        <FaEdit />
+   312	                                                    </Button>
+   313	                                                </Link>
+   314	                                                <Button
+   315	                                                    variant="danger"
+   316	                                                    size="sm"
+   317	                                                    onClick={() => handleDelete(purchase)}
+   318	                                                    disabled={deletePurchaseMutation.isPending && deletePurchaseMutation.variables === purchase.id}
+   319	                                                >
+   320	                                                    {deletePurchaseMutation.isPending && deletePurchaseMutation.variables === purchase.id ?
+   321	                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span> : <FaTrash /> }
+   322	                                                </Button>
+   323	                                            </div>
+   324	                                        </TableCell>
+   325	                                    </TableRow>
+   326	                                ))
+   327	                            )}
+   328	                        </TableBody>
+   329	                    </Table>
+   330	
+   331	                    <Pagination
+   332	                        currentPage={currentPage}
+   333	                        totalPages={totalPages}
+   334	                        totalItems={totalItems}
+   335	                        itemsPerPage={itemsPerPage}
+   336	                        itemsCount={purchases.length}
+   337	                        onPageChange={handlePageChange}
+   338	                        onItemsPerPageChange={handleItemsPerPageChange}
+   339	                    />
+   340	                </>
+   341	            )}
+   342	        </Card>
+   343	    );
+   344	};
+   345	
+   346	export default PurchaseList;
 
 
 ===============================================
