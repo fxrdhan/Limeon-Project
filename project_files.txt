@@ -4134,123 +4134,122 @@
     12	}
     13	
     14	export interface UseUnitConversionReturn {
-    15	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    16	    conversions: any;
-    17	    baseUnit: string;
-    18	    setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
-    19	    basePrice: number;
-    20	    setBasePrice: React.Dispatch<React.SetStateAction<number>>;
-    21	    unitConversions: UnitConversion[];
-    22	    addUnitConversion: (unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => void;
-    23	    removeUnitConversion: (id: string) => void;
-    24	    unitConversionFormData: {
-    25	        unit: string;
-    26	        conversion: number;
-    27	    };
-    28	    setUnitConversionFormData: React.Dispatch<React.SetStateAction<{
-    29	        unit: string;
-    30	        conversion: number;
-    31	    }>>;
-    32	    recalculateBasePrices: () => void;
-    33	    skipNextRecalculation: () => void;
-    34	    availableUnits: UnitData[];
-    35	    resetConversions: () => void;
-    36	}
-    37	
-    38	export interface UnitData {
-    39	    id: string;
-    40	    name: string;
-    41	}
-    42	
-    43	export const useUnitConversion = (): UseUnitConversionReturn => {
-    44	    const [baseUnit, setBaseUnit] = useState<string>("");
-    45	    const [basePrice, setBasePrice] = useState<number>(0);
-    46	    const [unitConversions, setUnitConversions] = useState<UnitConversion[]>([]);
-    47	    const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
-    48	    const [skipRecalculation, setSkipRecalculation] = useState<boolean>(false);
-    49	
-    50	    const [unitConversionFormData, setUnitConversionFormData] = useState({
-    51	        unit: "",
-    52	        conversion: 0,
-    53	    });
-    54	
-    55	    // Fetch available units from database
-    56	    useEffect(() => {
-    57	        const fetchUnits = async () => {
-    58	            const { data } = await supabase
-    59	                .from("item_units")
-    60	                .select("id, name")
-    61	                .order("name");
-    62	            
-    63	            if (data) {
-    64	                setAvailableUnits(data);
-    65	            }
-    66	        };
-    67	
-    68	        fetchUnits();
-    69	    }, []);
-    70	
-    71	    // Fungsi untuk menambah konversi satuan
-    72	    const addUnitConversion = useCallback((unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => {
-    73	        const calculatedBasePrice = unitConversion.basePrice !== undefined 
-    74	            ? unitConversion.basePrice 
-    75	            : basePrice / unitConversion.conversion;
-    76	        
-    77	        const newUnitConversion: UnitConversion = {
-    78	            ...unitConversion,
-    79	            id: Date.now().toString(),
-    80	            basePrice: calculatedBasePrice,
-    81	        };
-    82	        setUnitConversions(prevConversions => [...prevConversions, newUnitConversion]);
-    83	    }, [basePrice]);
-    84	
-    85	    // Fungsi untuk menghapus konversi satuan
-    86	    const removeUnitConversion = useCallback((id: string) => {
-    87	        setUnitConversions(prevConversions => prevConversions.filter(uc => uc.id !== id));
-    88	    }, []);
-    89	
-    90	    // Menghitung ulang harga pokok untuk semua konversi berdasarkan harga pokok dasar
-    91	    const recalculateBasePrices = useCallback(() => {
-    92	        if (skipRecalculation) {
-    93	            setSkipRecalculation(false);
-    94	            return;
-    95	        }
-    96	        
-    97	        if (basePrice <= 0 || unitConversions.length === 0) return;
-    98	        
-    99	        setUnitConversions(prevConversions => 
-   100	            prevConversions.map(uc => ({
-   101	                ...uc,
-   102	                basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0
-   103	            }))
-   104	        );
-   105	    }, [basePrice, skipRecalculation, unitConversions.length]);
-   106	
-   107	    const skipNextRecalculation = useCallback(() => {
-   108	        setSkipRecalculation(true);
-   109	    }, []);
-   110	
-   111	    const resetConversions = useCallback(() => {
-   112	        setUnitConversions([]);
-   113	    }, []);
-   114	
-   115	    return {
-   116	        baseUnit,
-   117	        setBaseUnit,
-   118	        basePrice,
-   119	        setBasePrice,
-   120	        conversions: unitConversions,
-   121	        unitConversions,
-   122	        addUnitConversion,
-   123	        removeUnitConversion,
-   124	        unitConversionFormData,
-   125	        setUnitConversionFormData,
-   126	        recalculateBasePrices,
-   127	        skipNextRecalculation,
-   128	        availableUnits,
-   129	        resetConversions
-   130	    };
-   131	};
+    15	    conversions: UnitConversion[];
+    16	    baseUnit: string;
+    17	    setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
+    18	    basePrice: number;
+    19	    setBasePrice: React.Dispatch<React.SetStateAction<number>>;
+    20	    unitConversions: UnitConversion[];
+    21	    addUnitConversion: (unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => void;
+    22	    removeUnitConversion: (id: string) => void;
+    23	    unitConversionFormData: {
+    24	        unit: string;
+    25	        conversion: number;
+    26	    };
+    27	    setUnitConversionFormData: React.Dispatch<React.SetStateAction<{
+    28	        unit: string;
+    29	        conversion: number;
+    30	    }>>;
+    31	    recalculateBasePrices: () => void;
+    32	    skipNextRecalculation: () => void;
+    33	    availableUnits: UnitData[];
+    34	    resetConversions: () => void;
+    35	}
+    36	
+    37	export interface UnitData {
+    38	    id: string;
+    39	    name: string;
+    40	}
+    41	
+    42	export const useUnitConversion = (): UseUnitConversionReturn => {
+    43	    const [baseUnit, setBaseUnit] = useState<string>("");
+    44	    const [basePrice, setBasePrice] = useState<number>(0);
+    45	    const [unitConversions, setUnitConversions] = useState<UnitConversion[]>([]);
+    46	    const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
+    47	    const [skipRecalculation, setSkipRecalculation] = useState<boolean>(false);
+    48	
+    49	    const [unitConversionFormData, setUnitConversionFormData] = useState({
+    50	        unit: "",
+    51	        conversion: 0,
+    52	    });
+    53	
+    54	    // Fetch available units from database
+    55	    useEffect(() => {
+    56	        const fetchUnits = async () => {
+    57	            const { data } = await supabase
+    58	                .from("item_units")
+    59	                .select("id, name")
+    60	                .order("name");
+    61	            
+    62	            if (data) {
+    63	                setAvailableUnits(data);
+    64	            }
+    65	        };
+    66	
+    67	        fetchUnits();
+    68	    }, []);
+    69	
+    70	    // Fungsi untuk menambah konversi satuan
+    71	    const addUnitConversion = useCallback((unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => {
+    72	        const calculatedBasePrice = unitConversion.basePrice !== undefined 
+    73	            ? unitConversion.basePrice 
+    74	            : basePrice / unitConversion.conversion;
+    75	        
+    76	        const newUnitConversion: UnitConversion = {
+    77	            ...unitConversion,
+    78	            id: Date.now().toString(),
+    79	            basePrice: calculatedBasePrice,
+    80	        };
+    81	        setUnitConversions(prevConversions => [...prevConversions, newUnitConversion]);
+    82	    }, [basePrice]);
+    83	
+    84	    // Fungsi untuk menghapus konversi satuan
+    85	    const removeUnitConversion = useCallback((id: string) => {
+    86	        setUnitConversions(prevConversions => prevConversions.filter(uc => uc.id !== id));
+    87	    }, []);
+    88	
+    89	    // Menghitung ulang harga pokok untuk semua konversi berdasarkan harga pokok dasar
+    90	    const recalculateBasePrices = useCallback(() => {
+    91	        if (skipRecalculation) {
+    92	            setSkipRecalculation(false);
+    93	            return;
+    94	        }
+    95	        
+    96	        if (basePrice <= 0 || unitConversions.length === 0) return;
+    97	        
+    98	        setUnitConversions(prevConversions => 
+    99	            prevConversions.map(uc => ({
+   100	                ...uc,
+   101	                basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0
+   102	            }))
+   103	        );
+   104	    }, [basePrice, skipRecalculation, unitConversions.length]);
+   105	
+   106	    const skipNextRecalculation = useCallback(() => {
+   107	        setSkipRecalculation(true);
+   108	    }, []);
+   109	
+   110	    const resetConversions = useCallback(() => {
+   111	        setUnitConversions([]);
+   112	    }, []);
+   113	
+   114	    return {
+   115	        baseUnit,
+   116	        setBaseUnit,
+   117	        basePrice,
+   118	        setBasePrice,
+   119	        conversions: unitConversions,
+   120	        unitConversions,
+   121	        addUnitConversion,
+   122	        removeUnitConversion,
+   123	        unitConversionFormData,
+   124	        setUnitConversionFormData,
+   125	        recalculateBasePrices,
+   126	        skipNextRecalculation,
+   127	        availableUnits,
+   128	        resetConversions
+   129	    };
+   130	};
 
 
 ===============================================
