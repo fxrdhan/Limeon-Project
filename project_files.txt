@@ -3644,18 +3644,18 @@
 
      1	import { useState, useEffect } from 'react';
      2	import { supabase } from '../lib/supabase';
-     3	
-     4	export interface Item {
-     5	    id: string;
-     6	    name: string;
-     7	    code?: string;
-     8	    base_price: number;
-     9	    sell_price: number; // Add sell_price
-    10	    stock: number;
-    11	    unit_id: string;
-    12	    base_unit: string;
-    13	    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    14	    unit_conversions: any[];
+     3	import { UnitConversion } from './useUnitConversion'; // Import the specific type
+     4	
+     5	export interface Item {
+     6	    id: string;
+     7	    name: string;
+     8	    code?: string;
+     9	    base_price: number;
+    10	    sell_price: number;
+    11	    stock: number;
+    12	    unit_id: string;
+    13	    base_unit: string;
+    14	    unit_conversions: UnitConversion[]; // Use the specific UnitConversion type
     15	}
     16	
     17	export const useItemSelection = () => {

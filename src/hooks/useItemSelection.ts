@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { UnitConversion } from './useUnitConversion'; // Import the specific type
 
 export interface Item {
     id: string;
     name: string;
     code?: string;
     base_price: number;
-    sell_price: number; // Add sell_price
+    sell_price: number;
     stock: number;
     unit_id: string;
     base_unit: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    unit_conversions: any[];
+    unit_conversions: UnitConversion[]; // Use the specific UnitConversion type
 }
 
 export const useItemSelection = () => {
