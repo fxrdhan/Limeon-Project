@@ -121,9 +121,8 @@ const PurchaseList = () => {
                     let quantityInBaseUnit = item.quantity;
 
                     if (item.unit !== itemData.base_unit) {
-                        const unitConversion = itemData.unit_conversions.find(
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            (uc: { unit_name: any; }) => uc.unit_name === item.unit
+                        const unitConversion = itemData.unit_conversions?.find(
+                            (uc: { unit_name: string; conversion_rate: number }) => uc.unit_name === item.unit
                         );
 
                         if (unitConversion) {
