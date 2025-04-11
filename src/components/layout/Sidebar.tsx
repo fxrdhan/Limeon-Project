@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react"; // Add useRef
 import { useLocation } from "react-router-dom";
 import {
     FaDatabase,
     FaBoxes,
     FaShoppingCart,
     FaHome,
-    FaArrowLeft,
     FaAngleDown,
     FaChartBar,
     FaHospital,
@@ -45,6 +44,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
 
     const [savedOpenMenus, setSavedOpenMenus] = useState<Record<string, boolean>>({});
     const [hoverMenu, setHoverMenu] = useState<string | null>(null);
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Timer reference for hover delay
 
     // Define menu structure
     const menuItems: MenuItem[] = [
@@ -182,8 +182,43 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
         setHoverMenu(null);
     }, []);
 
+    // Handle hover enter on the entire sidebar area
+    const handleMouseEnterSidebar = useCallback(() => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+        if (collapsed) {
+            hoverTimeoutRef.current = setTimeout(() => {
+                toggleSidebar(); // Expand the sidebar
+            }, 100);
+        }
+    }, [collapsed, toggleSidebar]);
+
+    // Handle hover leave from the entire sidebar area
+    const handleMouseLeaveSidebar = useCallback(() => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+        if (!collapsed) {
+            toggleSidebar(); // Collapse the sidebar
+        }
+    }, [collapsed, toggleSidebar]);
+
+    // Clear timeout on component unmount
+    useEffect(() => {
+        return () => {
+            if (hoverTimeoutRef.current) {
+                clearTimeout(hoverTimeoutRef.current);
+            }
+        };
+    }, []);
+
     return (
         <aside
+            onMouseEnter={handleMouseEnterSidebar} // Add mouse enter handler
+            onMouseLeave={handleMouseLeaveSidebar} // Add mouse leave handler
             className={`bg-gradient-to-b from-blue-600 to-blue-800 text-white 
                         transition-all duration-500 ease-in-out h-screen 
                         ${collapsed ? 'w-16' : 'w-64'} relative group z-10`}
@@ -199,12 +234,10 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                             </div>
                             <h2 className="ml-2 text-lg font-bold transition-opacity duration-200">PharmaSys</h2>
                         </div>
-                        <button onClick={toggleSidebar} className="p-1.5 rounded-full bg-blue-500/20 hover:bg-blue-500/40 transition-all duration-300">
-                            <FaArrowLeft size={14} />
-                        </button>
+                        {/* Remove toggle button, hover will handle collapse */}
                         </>
                     ) : (
-                        <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center mx-auto cursor-pointer" onClick={toggleSidebar}>
+                        <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center mx-auto cursor-pointer"> {/* Remove onClick */}
                             <span className="text-blue-600 text-xl font-bold">P</span>
                         </div>
                     )}
