@@ -12,11 +12,11 @@ interface FieldConfig {
 
 interface DetailEditModalProps {
     title: string;
-    data: Record<string, string | number | boolean | null>; // Use a more specific type than any
+    data: Record<string, string | number | boolean | null>;
     fields: FieldConfig[];
     isOpen: boolean;
     onClose: () => void;
-    onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>; // Use a more specific type than any
+    onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>; 
     imageUrl?: string;
     imagePlaceholder?: string;
 }
@@ -32,13 +32,13 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     imagePlaceholder
 }) => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
-    const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({}); // Use a more specific type than any
+    const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({});
     const [loading, setLoading] = useState<Record<string, boolean>>({});
 
     // Inisialisasi nilai editan dengan data saat ini
     React.useEffect(() => {
         if (isOpen && data) {
-            const initialValues: Record<string, string | number | boolean | null> = {}; // Use a more specific type than any
+            const initialValues: Record<string, string | number | boolean | null> = {}; 
             fields.forEach(field => {
                 initialValues[field.key] = data[field.key]; // Assign directly, handle null/undefined later if needed
             });
