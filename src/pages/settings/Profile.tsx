@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react'; // Import useEffect
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { supabase } from '../../lib/supabase';
@@ -17,6 +16,8 @@ interface CompanyProfile {
     pharmacist_name: string | null;
     pharmacist_license: string | null;
 }
+
+type ProfileKey = keyof CompanyProfile;
 
 const Profile = () => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
@@ -47,8 +48,8 @@ const Profile = () => {
     useEffect(() => {
         if (profile) {
             const initialValues: Record<string, string | null> = {};
-            Object.keys(profile).forEach((key) => {
-                initialValues[key] = (profile as any)[key] ?? '';
+            (Object.keys(profile) as Array<ProfileKey>).forEach((key: ProfileKey) => {
+                initialValues[key] = profile[key] ?? '';
             });
             setEditValues(initialValues);
         }
@@ -76,10 +77,10 @@ const Profile = () => {
         }
     });
 
-    const toggleEdit = (field: string) => {
+    const toggleEdit = (field: ProfileKey) => {
         setEditMode(prev => ({ ...prev, [field]: !prev[field] }));
         if (editMode[field] && profile) {
-            setEditValues(prev => ({ ...prev, [field]: (profile as any)[field] ?? '' }));
+            setEditValues(prev => ({ ...prev, [field]: profile[field] ?? '' }));
         }
     };
 
@@ -87,9 +88,9 @@ const Profile = () => {
         updateProfileMutation.mutate({ field, value: editValues[field] });
     };
 
-    const handleCancel = (field: string) => {
+    const handleCancel = (field: ProfileKey) => {
         if (profile) {
-            setEditValues(prev => ({ ...prev, [field]: (profile as any)[field] ?? '' }));
+            setEditValues(prev => ({ ...prev, [field]: profile[field] ?? '' }));
         }
         setEditMode(prev => ({ ...prev, [field]: false }));
     };
@@ -101,7 +102,7 @@ const Profile = () => {
         }));
     };
 
-    const ProfileField = ({ label, field }: { label: string; field: string; }) => {
+    const ProfileField = ({ label, field }: { label: string; field: ProfileKey; }) => {
         return (
             <div className="mb-4">
                 <div className="flex justify-between items-center mb-1">
@@ -128,7 +129,7 @@ const Profile = () => {
                     />
                 ) : (
                     <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
-                        {(profile && (profile as any)[field]) || <span className="text-gray-400 italic">Tidak ada data</span>}
+                        {(profile && profile[field]) || <span className="text-gray-400 italic">Tidak ada data</span>}
                     </div>
                 )}
             </div>
@@ -194,9 +195,9 @@ const Profile = () => {
 
             if (data) {
                 queryClient.invalidateQueries({ queryKey: ['companyProfile'] });
-                const initialValues: Record<string, string> = {};
-                Object.keys(data).forEach((key) => {
-                    initialValues[key] = (data as any)[key] ?? '';
+                const initialValues: Record<string, string | null> = {};
+                (Object.keys(data) as Array<ProfileKey>).forEach((key: ProfileKey) => {
+                    initialValues[key] = data[key] ?? '';
                 });
                 setEditValues(initialValues);
                 alert('Profil berhasil dibuat. Silakan lengkapi data.');
