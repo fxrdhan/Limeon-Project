@@ -28,7 +28,7 @@ interface CustomerInformation {
     customer_id?: string; // Jika ada
 }
 
-interface ProductListItem {
+export interface ProductListItem {
     sku?: string;
     product_name?: string;
     quantity?: number;
@@ -51,7 +51,7 @@ interface AdditionalInformation {
 }
 
 // Interface utama untuk data hasil ekstraksi
-interface ExtractedInvoiceData {
+export interface ExtractedInvoiceData {
     company_details?: CompanyDetails;
     invoice_information?: InvoiceInformation;
     customer_information?: CustomerInformation;

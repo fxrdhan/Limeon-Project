@@ -7469,298 +7469,297 @@
 = File: ./src/pages/purchases/UploadInvoice.tsx 
 ===============================================
 
-     1	/* eslint-disable @typescript-eslint/no-explicit-any */
-     2	// src/pages/purchases/UploadInvoice.tsx
-     3	import { useState } from 'react';
-     4	import { useNavigate } from 'react-router-dom';
-     5	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
-     6	import { Button } from '../../components/ui/Button';
-     7	import { FaUpload, FaArrowLeft, FaCheck } from 'react-icons/fa';
-     8	import { uploadAndExtractInvoice } from '../../services/invoiceService';
-     9	
-    10	const UploadInvoice = () => {
-    11	    const navigate = useNavigate();
-    12	    const [file, setFile] = useState<File | null>(null);
-    13	    const [error, setError] = useState<string | null>(null);
-    14	    const [loading, setLoading] = useState(false);
-    15	    const [responseData, setResponseData] = useState<any>(null);
-    16	    const [uploadStep, setUploadStep] = useState<'upload' | 'confirm'>('upload');
-    17	
-    18	    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    19	        const selectedFile = e.target.files?.[0];
-    20	        setError(null);
-    21	        
-    22	        if (!selectedFile) {
-    23	            return;
-    24	        }
-    25	        
-    26	        // Validasi tipe file
-    27	        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-    28	        if (!validTypes.includes(selectedFile.type)) {
-    29	            setError('Tipe file tidak valid. Harap unggah file PNG atau JPG.');
-    30	            setFile(null);
-    31	            return;
-    32	        }
-    33	        
-    34	        // Validasi ukuran file (5MB = 5 * 1024 * 1024 bytes)
-    35	        const maxSize = 5 * 1024 * 1024;
-    36	        if (selectedFile.size > maxSize) {
-    37	            setError('Ukuran file terlalu besar. Maksimum 5MB.');
-    38	            setFile(null);
-    39	            return;
-    40	        }
-    41	        
-    42	        setFile(selectedFile);
-    43	    };
-    44	
-    45	    const handleUpload = async () => {
-    46	        if (!file) {
-    47	            setError('Silakan pilih file gambar faktur terlebih dahulu.');
-    48	            return;
-    49	        }
-    50	        
-    51	        try {
-    52	            setLoading(true);
-    53	            const data = await uploadAndExtractInvoice(file);
-    54	            setResponseData(data);
-    55	            setUploadStep('confirm');
-    56	        } catch (err: any) {
-    57	            setError(`Gagal mengunggah dan mengekstrak faktur: ${err.message || 'Terjadi kesalahan'}`);
-    58	        } finally {
-    59	            setLoading(false);
-    60	        }
-    61	    };
-    62	    
-    63	    const handleConfirm = async () => {
-    64	        if (!responseData) return;
-    65	        
-    66	        try {
-    67	            setLoading(true);
-    68	            // const result = await saveInvoiceToDatabase(responseData);
-    69	            alert('Faktur berhasil disimpan!');
-    70	            navigate('/purchases');
-    71	        } catch (err: any) {
-    72	            setError(err.message || 'Gagal menyimpan data faktur');
-    73	        } finally {
-    74	            setLoading(false);
-    75	        }
-    76	    };
-    77	    
-    78	    const handleCancel = () => {
-    79	        if (uploadStep === 'confirm') {
-    80	            setUploadStep('upload');
-    81	            setResponseData(null);
-    82	        } else {
-    83	            navigate('/purchases');
-    84	        }
-    85	    };
-    86	
-    87	    return (
-    88	        <Card>
-    89	            <CardHeader>
-    90	                <CardTitle>
-    91	                    {uploadStep === 'upload' ? 'Unggah Faktur Pembelian' : 'Konfirmasi Data Faktur'}
-    92	                </CardTitle>
-    93	            </CardHeader>
-    94	            
-    95	            <CardContent>
-    96	                {error && (
-    97	                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-    98	                        {error}
-    99	                    </div>
-   100	                )}
-   101	                
-   102	                {uploadStep === 'upload' ? (
-   103	                    <div className="space-y-6">
-   104	                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-   105	                            <div className="mb-4">
-   106	                                <FaUpload className="mx-auto h-12 w-12 text-gray-400" />
-   107	                                <p className="mt-2 text-sm text-gray-600">
-   108	                                    Klik atau seret untuk mengunggah gambar faktur
-   109	                                </p>
-   110	                                <p className="text-xs text-gray-500">
-   111	                                    PNG, JPG (Maks. 5MB)
-   112	                                </p>
-   113	                            </div>
-   114	                            
-   115	                            <input
-   116	                                type="file"
-   117	                                accept="image/png,image/jpeg,image/jpg"
-   118	                                onChange={handleFileChange}
-   119	                                className="w-full"
-   120	                            />
-   121	                            
-   122	                            {file && (
-   123	                                <div className="mt-4 text-left p-3 bg-gray-50 rounded-md">
-   124	                                    <p className="text-sm font-medium text-gray-700">File dipilih:</p>
-   125	                                    <p className="text-sm text-gray-600">{file.name}</p>
-   126	                                    <p className="text-xs text-gray-500">
-   127	                                        {(file.size / (1024 * 1024)).toFixed(2)} MB
-   128	                                    </p>
-   129	                                </div>
-   130	                            )}
-   131	                        </div>
-   132	                        
-   133	                        <div className="flex justify-end space-x-2">
-   134	                            <Button 
-   135	                                type="button" 
-   136	                                variant="outline" 
-   137	                                onClick={handleCancel}
-   138	                            >
-   139	                                <span className="flex items-center">
-   140	                                    <FaArrowLeft className="mr-2" />
-   141	                                    <span>Kembali</span>
-   142	                                </span>
-   143	                            </Button>
-   144	                            
-   145	                            <Button 
-   146	                                type="button" 
-   147	                                onClick={handleUpload} 
-   148	                                disabled={!file || loading}
-   149	                                isLoading={loading}
-   150	                            >
-   151	                                <FaUpload className="mr-2" /> Unggah & Ekstrak
-   152	                            </Button>
-   153	                        </div>
-   154	                    </div>
-   155	                ) : (
-   156	                    <div className="space-y-6">
-   157	                        {responseData && (
-   158	                            <div>
-   159	                                <h3 className="text-lg font-medium mb-4">Data yang Diekstraksi:</h3>
-   160	                                
-   161	                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-   162	                                    <div className="border rounded-md p-4">
-   163	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Perusahaan</h4>
-   164	                                        <div className="space-y-1 text-sm">
-   165	                                            <p><span className="font-medium">Nama:</span> {responseData.company_details?.name || '-'}</p>
-   166	                                            <p><span className="font-medium">Alamat:</span> {responseData.company_details?.address || '-'}</p>
-   167	                                            <p><span className="font-medium">No. Lisensi PBF:</span> {responseData.company_details?.license_pbf || '-'}</p>
-   168	                                            <p><span className="font-medium">No. Lisensi DAK:</span> {responseData.company_details?.license_dak || '-'}</p>
-   169	                                            <p><span className="font-medium">No. Sertifikat CDOB:</span> {responseData.company_details?.certificate_cdob || '-'}</p>
-   170	                                        </div>
-   171	                                    </div>
-   172	                                    
-   173	                                    <div className="border rounded-md p-4">
-   174	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Faktur</h4>
-   175	                                        <div className="space-y-1 text-sm">
-   176	                                            <p><span className="font-medium">No. Faktur:</span> {responseData.invoice_information?.invoice_number || '-'}</p>
-   177	                                            <p><span className="font-medium">Tanggal:</span> {responseData.invoice_information?.invoice_date || '-'}</p>
-   178	                                            <p><span className="font-medium">No. SO:</span> {responseData.invoice_information?.so_number || '-'}</p>
-   179	                                            <p><span className="font-medium">Jatuh Tempo:</span> {responseData.invoice_information?.due_date || '-'}</p>
-   180	                                        </div>
-   181	                                    </div>
-   182	                                </div>
-   183	                                
-   184	                                <div className="border rounded-md p-4 mb-6">
-   185	                                    <h4 className="font-medium text-gray-700 mb-2">Informasi Pelanggan</h4>
-   186	                                    <div className="space-y-1 text-sm">
-   187	                                        <p><span className="font-medium">Nama:</span> {responseData.customer_information?.customer_name || '-'}</p>
-   188	                                        <p><span className="font-medium">Alamat:</span> {responseData.customer_information?.customer_address || '-'}</p>
-   189	                                        {responseData.customer_information?.customer_id && (
-   190	                                            <p><span className="font-medium">ID:</span> {responseData.customer_information.customer_id}</p>
-   191	                                        )}
-   192	                                    </div>
-   193	                                </div>
-   194	                                
-   195	                                <div className="mb-6">
-   196	                                    <h4 className="font-medium text-gray-700 mb-2">Daftar Produk</h4>
-   197	                                    <div className="overflow-x-auto">
-   198	                                        <table className="min-w-full bg-white border">
-   199	                                            <thead className="bg-gray-100">
-   200	                                                <tr>
-   201	                                                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-   202	                                                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Produk</th>
-   203	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-   204	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Satuan</th>
-   205	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">No. Batch</th>
-   206	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Exp</th>
-   207	                                                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
-   208	                                                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-   209	                                                </tr>
-   210	                                            </thead>
-   211	                                            <tbody className="divide-y divide-gray-200">
-   212	                                                {responseData.product_list?.map((product: any, index: number) => (
-   213	                                                    <tr key={index} className="text-sm">
-   214	                                                        <td className="py-2 px-3">{product.sku || '-'}</td>
-   215	                                                        <td className="py-2 px-3">{product.product_name || '-'}</td>
-   216	                                                        <td className="py-2 px-3 text-center">{product.quantity || '-'}</td>
-   217	                                                        <td className="py-2 px-3 text-center">{product.unit || '-'}</td>
-   218	                                                        <td className="py-2 px-3 text-center">{product.batch_number || '-'}</td>
-   219	                                                        <td className="py-2 px-3 text-center">{product.expiry_date || '-'}</td>
-   220	                                                        <td className="py-2 px-3 text-right">
-   221	                                                            {typeof product.unit_price === 'number' 
-   222	                                                                ? product.unit_price.toLocaleString('id-ID') 
-   223	                                                                : '-'}
-   224	                                                        </td>
-   225	                                                        <td className="py-2 px-3 text-right">
-   226	                                                            {typeof product.total_price === 'number' 
-   227	                                                                ? product.total_price.toLocaleString('id-ID') 
-   228	                                                                : '-'}
-   229	                                                        </td>
-   230	                                                    </tr>
-   231	                                                ))}
-   232	                                            </tbody>
-   233	                                        </table>
-   234	                                    </div>
-   235	                                </div>
-   236	                                
-   237	                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-   238	                                    <div className="border rounded-md p-4">
-   239	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Tambahan</h4>
-   240	                                        <div className="space-y-1 text-sm">
-   241	                                            <p><span className="font-medium">Diperiksa oleh:</span> {responseData.additional_information?.checked_by || '-'}</p>
-   242	                                        </div>
-   243	                                    </div>
-   244	                                    
-   245	                                    <div className="border rounded-md p-4">
-   246	                                        <h4 className="font-medium text-gray-700 mb-2">Ringkasan Pembayaran</h4>
-   247	                                        <div className="space-y-1 text-sm">
-   248	                                            <p><span className="font-medium">Total Harga:</span> {responseData.payment_summary?.total_price?.toLocaleString('id-ID') || '-'}</p>
-   249	                                            <p><span className="font-medium">PPN:</span> {responseData.payment_summary?.vat?.toLocaleString('id-ID') || '-'}</p>
-   250	                                            <p className="font-medium">Total Faktur: 
-   251	                                                <span className="text-blue-600 ml-2">
-   252	                                                    {responseData.payment_summary?.invoice_total?.toLocaleString('id-ID') || '-'}
-   253	                                                </span>
-   254	                                            </p>
-   255	                                        </div>
-   256	                                    </div>
-   257	                                </div>
-   258	                            </div>
-   259	                        )}
-   260	                    </div>
-   261	                )}
-   262	            </CardContent>
-   263	            
-   264	            {uploadStep === 'confirm' && (
-   265	                <CardFooter className="flex justify-end space-x-2">
-   266	                    <Button 
-   267	                        type="button" 
-   268	                        variant="outline" 
-   269	                        onClick={handleCancel}
-   270	                    >
-   271	                        <span className="flex items-center">
-   272	                            <FaArrowLeft className="mr-2" />
-   273	                            <span>Kembali</span>
-   274	                        </span>
-   275	                    </Button>
-   276	                    
-   277	                    <Button 
-   278	                        type="button" 
-   279	                        onClick={handleConfirm} 
-   280	                        disabled={loading}
-   281	                        isLoading={loading}
-   282	                    >
-   283	                        <FaCheck className="mr-2" />
-   284	                        Konfirmasi & Simpan
-   285	                    </Button>
-   286	                </CardFooter>
-   287	            )}
-   288	        </Card>
-   289	    );
-   290	};
-   291	
-   292	export default UploadInvoice;
+     1	// src/pages/purchases/UploadInvoice.tsx
+     2	import { useState } from 'react';
+     3	import { useNavigate } from 'react-router-dom';
+     4	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
+     5	import { Button } from '../../components/ui/Button';
+     6	import { FaUpload, FaArrowLeft, FaCheck } from 'react-icons/fa';
+     7	import { uploadAndExtractInvoice, ExtractedInvoiceData, ProductListItem } from '../../services/invoiceService';
+     8	
+     9	const UploadInvoice = () => {
+    10	    const navigate = useNavigate();
+    11	    const [file, setFile] = useState<File | null>(null);
+    12	    const [error, setError] = useState<string | null>(null);
+    13	    const [loading, setLoading] = useState(false);
+    14	    const [responseData, setResponseData] = useState<ExtractedInvoiceData | null>(null);
+    15	    const [uploadStep, setUploadStep] = useState<'upload' | 'confirm'>('upload');
+    16	
+    17	    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    18	        const selectedFile = e.target.files?.[0];
+    19	        setError(null);
+    20	        
+    21	        if (!selectedFile) {
+    22	            return;
+    23	        }
+    24	        
+    25	        // Validasi tipe file
+    26	        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    27	        if (!validTypes.includes(selectedFile.type)) {
+    28	            setError('Tipe file tidak valid. Harap unggah file PNG atau JPG.');
+    29	            setFile(null);
+    30	            return;
+    31	        }
+    32	        
+    33	        // Validasi ukuran file (5MB = 5 * 1024 * 1024 bytes)
+    34	        const maxSize = 5 * 1024 * 1024;
+    35	        if (selectedFile.size > maxSize) {
+    36	            setError('Ukuran file terlalu besar. Maksimum 5MB.');
+    37	            setFile(null);
+    38	            return;
+    39	        }
+    40	        
+    41	        setFile(selectedFile);
+    42	    };
+    43	
+    44	    const handleUpload = async () => {
+    45	        if (!file) {
+    46	            setError('Silakan pilih file gambar faktur terlebih dahulu.');
+    47	            return;
+    48	        }
+    49	        
+    50	        try {
+    51	            setLoading(true);
+    52	            const data = await uploadAndExtractInvoice(file);
+    53	            setResponseData(data);
+    54	            setUploadStep('confirm');
+    55	        } catch (err: unknown) {
+    56	            setError(`Gagal mengunggah dan mengekstrak faktur: ${err instanceof Error ? err.message : 'Terjadi kesalahan'}`);
+    57	        } finally {
+    58	            setLoading(false);
+    59	        }
+    60	    };
+    61	    
+    62	    const handleConfirm = async () => {
+    63	        if (!responseData) return;
+    64	        
+    65	        try {
+    66	            setLoading(true);
+    67	            // Placeholder for actual save logic
+    68	            alert('Faktur berhasil disimpan!');
+    69	            navigate('/purchases');
+    70	        } catch (err: unknown) {
+    71	            setError(err instanceof Error ? err.message : 'Gagal menyimpan data faktur');
+    72	        } finally {
+    73	            setLoading(false);
+    74	        }
+    75	    };
+    76	    
+    77	    const handleCancel = () => {
+    78	        if (uploadStep === 'confirm') {
+    79	            setUploadStep('upload');
+    80	            setResponseData(null);
+    81	        } else {
+    82	            navigate('/purchases');
+    83	        }
+    84	    };
+    85	
+    86	    return (
+    87	        <Card>
+    88	            <CardHeader>
+    89	                <CardTitle>
+    90	                    {uploadStep === 'upload' ? 'Unggah Faktur Pembelian' : 'Konfirmasi Data Faktur'}
+    91	                </CardTitle>
+    92	            </CardHeader>
+    93	            
+    94	            <CardContent>
+    95	                {error && (
+    96	                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    97	                        {error}
+    98	                    </div>
+    99	                )}
+   100	                
+   101	                {uploadStep === 'upload' ? (
+   102	                    <div className="space-y-6">
+   103	                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+   104	                            <div className="mb-4">
+   105	                                <FaUpload className="mx-auto h-12 w-12 text-gray-400" />
+   106	                                <p className="mt-2 text-sm text-gray-600">
+   107	                                    Klik atau seret untuk mengunggah gambar faktur
+   108	                                </p>
+   109	                                <p className="text-xs text-gray-500">
+   110	                                    PNG, JPG (Maks. 5MB)
+   111	                                </p>
+   112	                            </div>
+   113	                            
+   114	                            <input
+   115	                                type="file"
+   116	                                accept="image/png,image/jpeg,image/jpg"
+   117	                                onChange={handleFileChange}
+   118	                                className="w-full"
+   119	                            />
+   120	                            
+   121	                            {file && (
+   122	                                <div className="mt-4 text-left p-3 bg-gray-50 rounded-md">
+   123	                                    <p className="text-sm font-medium text-gray-700">File dipilih:</p>
+   124	                                    <p className="text-sm text-gray-600">{file.name}</p>
+   125	                                    <p className="text-xs text-gray-500">
+   126	                                        {(file.size / (1024 * 1024)).toFixed(2)} MB
+   127	                                    </p>
+   128	                                </div>
+   129	                            )}
+   130	                        </div>
+   131	                        
+   132	                        <div className="flex justify-end space-x-2">
+   133	                            <Button 
+   134	                                type="button" 
+   135	                                variant="outline" 
+   136	                                onClick={handleCancel}
+   137	                            >
+   138	                                <span className="flex items-center">
+   139	                                    <FaArrowLeft className="mr-2" />
+   140	                                    <span>Kembali</span>
+   141	                                </span>
+   142	                            </Button>
+   143	                            
+   144	                            <Button 
+   145	                                type="button" 
+   146	                                onClick={handleUpload} 
+   147	                                disabled={!file || loading}
+   148	                                isLoading={loading}
+   149	                            >
+   150	                                <FaUpload className="mr-2" /> Unggah & Ekstrak
+   151	                            </Button>
+   152	                        </div>
+   153	                    </div>
+   154	                ) : (
+   155	                    <div className="space-y-6">
+   156	                        {responseData && (
+   157	                            <div>
+   158	                                <h3 className="text-lg font-medium mb-4">Data yang Diekstraksi:</h3>
+   159	                                
+   160	                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+   161	                                    <div className="border rounded-md p-4">
+   162	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Perusahaan</h4>
+   163	                                        <div className="space-y-1 text-sm">
+   164	                                            <p><span className="font-medium">Nama:</span> {responseData.company_details?.name || '-'}</p>
+   165	                                            <p><span className="font-medium">Alamat:</span> {responseData.company_details?.address || '-'}</p>
+   166	                                            <p><span className="font-medium">No. Lisensi PBF:</span> {responseData.company_details?.license_pbf || '-'}</p>
+   167	                                            <p><span className="font-medium">No. Lisensi DAK:</span> {responseData.company_details?.license_dak || '-'}</p>
+   168	                                            <p><span className="font-medium">No. Sertifikat CDOB:</span> {responseData.company_details?.certificate_cdob || '-'}</p>
+   169	                                        </div>
+   170	                                    </div>
+   171	                                    
+   172	                                    <div className="border rounded-md p-4">
+   173	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Faktur</h4>
+   174	                                        <div className="space-y-1 text-sm">
+   175	                                            <p><span className="font-medium">No. Faktur:</span> {responseData.invoice_information?.invoice_number || '-'}</p>
+   176	                                            <p><span className="font-medium">Tanggal:</span> {responseData.invoice_information?.invoice_date || '-'}</p>
+   177	                                            <p><span className="font-medium">No. SO:</span> {responseData.invoice_information?.so_number || '-'}</p>
+   178	                                            <p><span className="font-medium">Jatuh Tempo:</span> {responseData.invoice_information?.due_date || '-'}</p>
+   179	                                        </div>
+   180	                                    </div>
+   181	                                </div>
+   182	                                
+   183	                                <div className="border rounded-md p-4 mb-6">
+   184	                                    <h4 className="font-medium text-gray-700 mb-2">Informasi Pelanggan</h4>
+   185	                                    <div className="space-y-1 text-sm">
+   186	                                        <p><span className="font-medium">Nama:</span> {responseData.customer_information?.customer_name || '-'}</p>
+   187	                                        <p><span className="font-medium">Alamat:</span> {responseData.customer_information?.customer_address || '-'}</p>
+   188	                                        {responseData.customer_information?.customer_id && (
+   189	                                            <p><span className="font-medium">ID:</span> {responseData.customer_information.customer_id}</p>
+   190	                                        )}
+   191	                                    </div>
+   192	                                </div>
+   193	                                
+   194	                                <div className="mb-6">
+   195	                                    <h4 className="font-medium text-gray-700 mb-2">Daftar Produk</h4>
+   196	                                    <div className="overflow-x-auto">
+   197	                                        <table className="min-w-full bg-white border">
+   198	                                            <thead className="bg-gray-100">
+   199	                                                <tr>
+   200	                                                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+   201	                                                    <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Produk</th>
+   202	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+   203	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Satuan</th>
+   204	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">No. Batch</th>
+   205	                                                    <th className="py-2 px-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Exp</th>
+   206	                                                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
+   207	                                                    <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+   208	                                                </tr>
+   209	                                            </thead>
+   210	                                            <tbody className="divide-y divide-gray-200">
+   211	                                                {(responseData.product_list ?? []).map((product: ProductListItem, index: number) => (
+   212	                                                    <tr key={index} className="text-sm">
+   213	                                                        <td className="py-2 px-3">{product.sku || '-'}</td>
+   214	                                                        <td className="py-2 px-3">{product.product_name || '-'}</td>
+   215	                                                        <td className="py-2 px-3 text-center">{product.quantity || '-'}</td>
+   216	                                                        <td className="py-2 px-3 text-center">{product.unit || '-'}</td>
+   217	                                                        <td className="py-2 px-3 text-center">{product.batch_number || '-'}</td>
+   218	                                                        <td className="py-2 px-3 text-center">{product.expiry_date || '-'}</td>
+   219	                                                        <td className="py-2 px-3 text-right">
+   220	                                                            {typeof product.unit_price === 'number' 
+   221	                                                                ? product.unit_price.toLocaleString('id-ID') 
+   222	                                                                : '-'}
+   223	                                                        </td>
+   224	                                                        <td className="py-2 px-3 text-right">
+   225	                                                            {typeof product.total_price === 'number' 
+   226	                                                                ? product.total_price.toLocaleString('id-ID') 
+   227	                                                                : '-'}
+   228	                                                        </td>
+   229	                                                    </tr>
+   230	                                                ))}
+   231	                                            </tbody>
+   232	                                        </table>
+   233	                                    </div>
+   234	                                </div>
+   235	                                
+   236	                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+   237	                                    <div className="border rounded-md p-4">
+   238	                                        <h4 className="font-medium text-gray-700 mb-2">Informasi Tambahan</h4>
+   239	                                        <div className="space-y-1 text-sm">
+   240	                                            <p><span className="font-medium">Diperiksa oleh:</span> {responseData.additional_information?.checked_by || '-'}</p>
+   241	                                        </div>
+   242	                                    </div>
+   243	                                    
+   244	                                    <div className="border rounded-md p-4">
+   245	                                        <h4 className="font-medium text-gray-700 mb-2">Ringkasan Pembayaran</h4>
+   246	                                        <div className="space-y-1 text-sm">
+   247	                                            <p><span className="font-medium">Total Harga:</span> {responseData.payment_summary?.total_price?.toLocaleString('id-ID') || '-'}</p>
+   248	                                            <p><span className="font-medium">PPN:</span> {responseData.payment_summary?.vat?.toLocaleString('id-ID') || '-'}</p>
+   249	                                            <p className="font-medium">Total Faktur: 
+   250	                                                <span className="text-blue-600 ml-2">
+   251	                                                    {responseData.payment_summary?.invoice_total?.toLocaleString('id-ID') || '-'}
+   252	                                                </span>
+   253	                                            </p>
+   254	                                        </div>
+   255	                                    </div>
+   256	                                </div>
+   257	                            </div>
+   258	                        )}
+   259	                    </div>
+   260	                )}
+   261	            </CardContent>
+   262	            
+   263	            {uploadStep === 'confirm' && (
+   264	                <CardFooter className="flex justify-end space-x-2">
+   265	                    <Button 
+   266	                        type="button" 
+   267	                        variant="outline" 
+   268	                        onClick={handleCancel}
+   269	                    >
+   270	                        <span className="flex items-center">
+   271	                            <FaArrowLeft className="mr-2" />
+   272	                            <span>Kembali</span>
+   273	                        </span>
+   274	                    </Button>
+   275	                    
+   276	                    <Button 
+   277	                        type="button" 
+   278	                        onClick={handleConfirm} 
+   279	                        disabled={loading}
+   280	                        isLoading={loading}
+   281	                    >
+   282	                        <FaCheck className="mr-2" />
+   283	                        Konfirmasi & Simpan
+   284	                    </Button>
+   285	                </CardFooter>
+   286	            )}
+   287	        </Card>
+   288	    );
+   289	};
+   290	
+   291	export default UploadInvoice;
 
 
 ===============================================
@@ -8837,7 +8836,7 @@
     28	    customer_id?: string; // Jika ada
     29	}
     30	
-    31	interface ProductListItem {
+    31	export interface ProductListItem {
     32	    sku?: string;
     33	    product_name?: string;
     34	    quantity?: number;
@@ -8860,7 +8859,7 @@
     51	}
     52	
     53	// Interface utama untuk data hasil ekstraksi
-    54	interface ExtractedInvoiceData {
+    54	export interface ExtractedInvoiceData {
     55	    company_details?: CompanyDetails;
     56	    invoice_information?: InvoiceInformation;
     57	    customer_information?: CustomerInformation;
