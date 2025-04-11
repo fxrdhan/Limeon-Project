@@ -1,11 +1,19 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from 'zustand';
-import { Session } from '@supabase/supabase-js';
+import { Session} from '@supabase/supabase-js'; // Import AuthError
 import { supabase } from '../lib/supabase';
+
+// Define a more specific type for the user object from your database
+interface UserDetails {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  // Add other relevant fields from your 'users' table if needed
+}
 
 interface AuthState {
     session: Session | null;
-    user: any | null;
+    user: UserDetails | null; // Use UserDetails instead of any
     loading: boolean;
     error: string | null;
     login: (email: string, password: string) => Promise<void>;
@@ -66,9 +74,9 @@ export const useAuthStore = create<AuthState>((set) => ({
                 user: userData,
                 loading: false
             });
-        } catch (error: any) {
+        } catch (error: unknown) { // Use AuthError type
             console.error('Login error:', error);
-            set({ error: error.message, loading: false });
+            set({ error: error instanceof Error ? error.message : 'An unknown error occurred', loading: false });
         }
     },
 
@@ -77,9 +85,9 @@ export const useAuthStore = create<AuthState>((set) => ({
             set({ loading: true });
             await supabase.auth.signOut();
             set({ session: null, user: null, loading: false });
-        } catch (error: any) {
+        } catch (error: unknown) { // Use AuthError type
             console.error('Logout error:', error);
-            set({ error: error.message, loading: false });
+            set({ error: error instanceof Error ? error.message : 'An unknown error occurred', loading: false });
         }
     }
 }));

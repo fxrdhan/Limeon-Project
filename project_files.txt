@@ -9139,91 +9139,99 @@
 = File: ./src/store/authStore.ts 
 ===============================================
 
-     1	/* eslint-disable @typescript-eslint/no-explicit-any */
-     2	import { create } from 'zustand';
-     3	import { Session } from '@supabase/supabase-js';
-     4	import { supabase } from '../lib/supabase';
-     5	
-     6	interface AuthState {
-     7	    session: Session | null;
-     8	    user: any | null;
-     9	    loading: boolean;
-    10	    error: string | null;
-    11	    login: (email: string, password: string) => Promise<void>;
-    12	    logout: () => Promise<void>;
-    13	    initialize: () => Promise<void>;
-    14	}
-    15	
-    16	export const useAuthStore = create<AuthState>((set) => ({
-    17	    session: null,
-    18	    user: null,
-    19	    loading: true,
-    20	    error: null,
-    21	
-    22	    initialize: async () => {
-    23	        try {
-    24	            const { data } = await supabase.auth.getSession();
-    25	
-    26	            if (data.session) {
-    27	                const { data: userData } = await supabase
-    28	                    .from('users')
-    29	                    .select('*')
-    30	                    .eq('id', data.session.user.id)
-    31	                    .single();
-    32	
-    33	                set({
-    34	                    session: data.session,
-    35	                    user: userData,
-    36	                    loading: false
-    37	                });
-    38	            } else {
-    39	                set({ loading: false });
-    40	            }
-    41	        } catch (error) {
-    42	            console.error('Error initializing auth:', error);
-    43	            set({ loading: false });
-    44	        }
-    45	    },
-    46	
-    47	    login: async (email, password) => {
-    48	        try {
-    49	            set({ loading: true, error: null });
-    50	
-    51	            const { data, error } = await supabase.auth.signInWithPassword({
-    52	                email,
-    53	                password
-    54	            });
-    55	
-    56	            if (error) throw error;
-    57	
-    58	            const { data: userData } = await supabase
-    59	                .from('users')
-    60	                .select('*')
-    61	                .eq('id', data.user?.id)
-    62	                .single();
+     1	import { create } from 'zustand';
+     2	import { Session} from '@supabase/supabase-js'; // Import AuthError
+     3	import { supabase } from '../lib/supabase';
+     4	
+     5	// Define a more specific type for the user object from your database
+     6	interface UserDetails {
+     7	  id: string;
+     8	  name: string;
+     9	  email: string;
+    10	  role: string;
+    11	  // Add other relevant fields from your 'users' table if needed
+    12	}
+    13	
+    14	interface AuthState {
+    15	    session: Session | null;
+    16	    user: UserDetails | null; // Use UserDetails instead of any
+    17	    loading: boolean;
+    18	    error: string | null;
+    19	    login: (email: string, password: string) => Promise<void>;
+    20	    logout: () => Promise<void>;
+    21	    initialize: () => Promise<void>;
+    22	}
+    23	
+    24	export const useAuthStore = create<AuthState>((set) => ({
+    25	    session: null,
+    26	    user: null,
+    27	    loading: true,
+    28	    error: null,
+    29	
+    30	    initialize: async () => {
+    31	        try {
+    32	            const { data } = await supabase.auth.getSession();
+    33	
+    34	            if (data.session) {
+    35	                const { data: userData } = await supabase
+    36	                    .from('users')
+    37	                    .select('*')
+    38	                    .eq('id', data.session.user.id)
+    39	                    .single();
+    40	
+    41	                set({
+    42	                    session: data.session,
+    43	                    user: userData,
+    44	                    loading: false
+    45	                });
+    46	            } else {
+    47	                set({ loading: false });
+    48	            }
+    49	        } catch (error) {
+    50	            console.error('Error initializing auth:', error);
+    51	            set({ loading: false });
+    52	        }
+    53	    },
+    54	
+    55	    login: async (email, password) => {
+    56	        try {
+    57	            set({ loading: true, error: null });
+    58	
+    59	            const { data, error } = await supabase.auth.signInWithPassword({
+    60	                email,
+    61	                password
+    62	            });
     63	
-    64	            set({
-    65	                session: data.session,
-    66	                user: userData,
-    67	                loading: false
-    68	            });
-    69	        } catch (error: any) {
-    70	            console.error('Login error:', error);
-    71	            set({ error: error.message, loading: false });
-    72	        }
-    73	    },
-    74	
-    75	    logout: async () => {
-    76	        try {
-    77	            set({ loading: true });
-    78	            await supabase.auth.signOut();
-    79	            set({ session: null, user: null, loading: false });
-    80	        } catch (error: any) {
-    81	            console.error('Logout error:', error);
-    82	            set({ error: error.message, loading: false });
-    83	        }
-    84	    }
-    85	}));
+    64	            if (error) throw error;
+    65	
+    66	            const { data: userData } = await supabase
+    67	                .from('users')
+    68	                .select('*')
+    69	                .eq('id', data.user?.id)
+    70	                .single();
+    71	
+    72	            set({
+    73	                session: data.session,
+    74	                user: userData,
+    75	                loading: false
+    76	            });
+    77	        } catch (error: unknown) { // Use AuthError type
+    78	            console.error('Login error:', error);
+    79	            set({ error: error instanceof Error ? error.message : 'An unknown error occurred', loading: false });
+    80	        }
+    81	    },
+    82	
+    83	    logout: async () => {
+    84	        try {
+    85	            set({ loading: true });
+    86	            await supabase.auth.signOut();
+    87	            set({ session: null, user: null, loading: false });
+    88	        } catch (error: unknown) { // Use AuthError type
+    89	            console.error('Logout error:', error);
+    90	            set({ error: error instanceof Error ? error.message : 'An unknown error occurred', loading: false });
+    91	        }
+    92	    }
+    93	}));
 
 
 ===============================================
