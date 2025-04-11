@@ -1,18 +1,17 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/pages/purchases/UploadInvoice.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { FaUpload, FaArrowLeft, FaCheck } from 'react-icons/fa';
-import { uploadAndExtractInvoice } from '../../services/invoiceService';
+import { uploadAndExtractInvoice, ExtractedInvoiceData, ProductListItem } from '../../services/invoiceService';
 
 const UploadInvoice = () => {
     const navigate = useNavigate();
     const [file, setFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [responseData, setResponseData] = useState<any>(null);
+    const [responseData, setResponseData] = useState<ExtractedInvoiceData | null>(null);
     const [uploadStep, setUploadStep] = useState<'upload' | 'confirm'>('upload');
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,8 +52,8 @@ const UploadInvoice = () => {
             const data = await uploadAndExtractInvoice(file);
             setResponseData(data);
             setUploadStep('confirm');
-        } catch (err: any) {
-            setError(`Gagal mengunggah dan mengekstrak faktur: ${err.message || 'Terjadi kesalahan'}`);
+        } catch (err: unknown) {
+            setError(`Gagal mengunggah dan mengekstrak faktur: ${err instanceof Error ? err.message : 'Terjadi kesalahan'}`);
         } finally {
             setLoading(false);
         }
@@ -65,11 +64,11 @@ const UploadInvoice = () => {
         
         try {
             setLoading(true);
-            // const result = await saveInvoiceToDatabase(responseData);
+            // Placeholder for actual save logic
             alert('Faktur berhasil disimpan!');
             navigate('/purchases');
-        } catch (err: any) {
-            setError(err.message || 'Gagal menyimpan data faktur');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Gagal menyimpan data faktur');
         } finally {
             setLoading(false);
         }
@@ -209,7 +208,7 @@ const UploadInvoice = () => {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
-                                                {responseData.product_list?.map((product: any, index: number) => (
+                                                {(responseData.product_list ?? []).map((product: ProductListItem, index: number) => (
                                                     <tr key={index} className="text-sm">
                                                         <td className="py-2 px-3">{product.sku || '-'}</td>
                                                         <td className="py-2 px-3">{product.product_name || '-'}</td>
