@@ -229,8 +229,30 @@ const Dashboard = () => {
     );
 };
 
-// Komponen untuk dashboard regular (asli)
-const RegularDashboard = ({ stats, salesData, topMedicines }) => {
+// Define Props interface for RegularDashboard
+interface RegularDashboardProps {
+    stats: {
+        totalSales: number;
+        totalPurchases: number;
+        totalMedicines: number;
+        lowStockCount: number;
+    };
+    salesData: {
+        labels: string[];
+        datasets: {
+            label: string;
+            data: number[];
+            borderColor: string;
+            backgroundColor: string;
+        }[];
+    };
+    topMedicines: {
+        labels: string[];
+        datasets: { label: string; data: number[]; backgroundColor: string[]; borderColor: string[]; borderWidth: number; }[];
+    };
+}
+
+const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, topMedicines }) => {
     return (
         <div>
             {/* <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1> */}
