@@ -5043,416 +5043,438 @@
    229	    );
    230	};
    231	
-   232	// Komponen untuk dashboard regular (asli)
-   233	const RegularDashboard = ({ stats, salesData, topMedicines }) => {
-   234	    return (
-   235	        <div>
-   236	            {/* <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1> */}
-   237	
-   238	            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-   239	                <div className="bg-white p-6 rounded-lg shadow">
-   240	                    <div className="flex items-center">
-   241	                        <div className="p-3 rounded-full bg-blue-100 mr-4">
-   242	                            <FaShoppingBag className="text-blue-500 text-xl" />
-   243	                        </div>
-   244	                        <div>
-   245	                            <h2 className="text-sm text-gray-500">Total Penjualan</h2>
-   246	                            <p className="text-xl font-semibold">
-   247	                                {stats.totalSales.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   248	                            </p>
-   249	                        </div>
-   250	                    </div>
-   251	                </div>
-   252	
-   253	                <div className="bg-white p-6 rounded-lg shadow">
-   254	                    <div className="flex items-center">
-   255	                        <div className="p-3 rounded-full bg-green-100 mr-4">
-   256	                            <FaShoppingCart className="text-green-500 text-xl" />
-   257	                        </div>
-   258	                        <div>
-   259	                            <h2 className="text-sm text-gray-500">Total Pembelian</h2>
-   260	                            <p className="text-xl font-semibold">
-   261	                                {stats.totalPurchases.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
-   262	                            </p>
-   263	                        </div>
-   264	                    </div>
-   265	                </div>
-   266	
-   267	                <div className="bg-white p-6 rounded-lg shadow">
-   268	                    <div className="flex items-center">
-   269	                        <div className="p-3 rounded-full bg-purple-100 mr-4">
-   270	                            <FaBoxes className="text-purple-500 text-xl" />
+   232	// Define Props interface for RegularDashboard
+   233	interface RegularDashboardProps {
+   234	    stats: {
+   235	        totalSales: number;
+   236	        totalPurchases: number;
+   237	        totalMedicines: number;
+   238	        lowStockCount: number;
+   239	    };
+   240	    salesData: {
+   241	        labels: string[];
+   242	        datasets: {
+   243	            label: string;
+   244	            data: number[];
+   245	            borderColor: string;
+   246	            backgroundColor: string;
+   247	        }[];
+   248	    };
+   249	    topMedicines: {
+   250	        labels: string[];
+   251	        datasets: { label: string; data: number[]; backgroundColor: string[]; borderColor: string[]; borderWidth: number; }[];
+   252	    };
+   253	}
+   254	
+   255	const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, topMedicines }) => {
+   256	    return (
+   257	        <div>
+   258	            {/* <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1> */}
+   259	
+   260	            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+   261	                <div className="bg-white p-6 rounded-lg shadow">
+   262	                    <div className="flex items-center">
+   263	                        <div className="p-3 rounded-full bg-blue-100 mr-4">
+   264	                            <FaShoppingBag className="text-blue-500 text-xl" />
+   265	                        </div>
+   266	                        <div>
+   267	                            <h2 className="text-sm text-gray-500">Total Penjualan</h2>
+   268	                            <p className="text-xl font-semibold">
+   269	                                {stats.totalSales.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   270	                            </p>
    271	                        </div>
-   272	                        <div>
-   273	                            <h2 className="text-sm text-gray-500">Total Obat</h2>
-   274	                            <p className="text-xl font-semibold">{stats.totalMedicines}</p>
-   275	                        </div>
-   276	                    </div>
-   277	                </div>
-   278	
-   279	                <div className="bg-white p-6 rounded-lg shadow">
-   280	                    <div className="flex items-center">
-   281	                        <div className="p-3 rounded-full bg-red-100 mr-4">
-   282	                            <FaExclamationTriangle className="text-red-500 text-xl" />
-   283	                        </div>
-   284	                        <div>
-   285	                            <h2 className="text-sm text-gray-500">Stok Menipis</h2>
-   286	                            <p className="text-xl font-semibold">{stats.lowStockCount}</p>
-   287	                        </div>
-   288	                    </div>
-   289	                </div>
-   290	            </div>
-   291	
-   292	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-   293	                <div className="bg-white p-6 rounded-lg shadow">
-   294	                    <h2 className="text-lg font-semibold mb-4">Penjualan 7 Hari Terakhir</h2>
-   295	                    <div className="h-64">
-   296	                        <Line
-   297	                            data={salesData}
-   298	                            options={{
-   299	                                responsive: true,
-   300	                                maintainAspectRatio: false,
-   301	                                scales: {
-   302	                                    y: {
-   303	                                        beginAtZero: true
-   304	                                    }
-   305	                                }
-   306	                            }}
-   307	                        />
-   308	                    </div>
-   309	                </div>
-   310	
-   311	                <div className="bg-white p-6 rounded-lg shadow">
-   312	                    <h2 className="text-lg font-semibold mb-4">Obat Terlaris</h2>
-   313	                    <div className="h-64">
-   314	                        <Pie
-   315	                            data={topMedicines}
-   316	                            options={{
-   317	                                responsive: true,
-   318	                                maintainAspectRatio: false
-   319	                            }}
-   320	                        />
-   321	                    </div>
-   322	                </div>
-   323	            </div>
-   324	        </div>
-   325	    );
-   326	};
-   327	
-   328	// Komponen untuk dashboard modern (mode demo)
-   329	const ModernDashboard = () => {
-   330	    // Data dummy untuk mode demo
-   331	    const demoData = {
-   332	        totalCustomer: 120,
-   333	        totalSales: 234,
-   334	        totalProfit: 456,
-   335	        outOfStock: 56,
-   336	        
-   337	        expiringMedicines: [
-   338	            { name: 'Doxycycline', expiryDate: '24 Dec 2021', quantity: 40 },
-   339	            { name: 'Abetis', expiryDate: '24 Dec 2021', quantity: 40 },
-   340	            { name: 'Disulfit 10ml', expiryDate: '24 Dec 2021', quantity: 40 },
-   341	            { name: 'Cerox CV', expiryDate: '24 Dec 2021', quantity: 40 },
-   342	            { name: 'Fluciox', expiryDate: '24 Dec 2021', quantity: 40 },
-   343	        ],
-   344	        
-   345	        recentOrders: [
-   346	            { medicine: 'Paricol 15mg', batchNo: '78367834', quantity: 40, status: 'Delivered', price: 23.00 },
-   347	            { medicine: 'Abetis 20mg', batchNo: '88832433', quantity: 40, status: 'Pending', price: 23.00 },
-   348	            { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
-   349	            { medicine: 'Abetis 20mg', batchNo: '45578866', quantity: 40, status: 'Delivered', price: 23.00 },
-   350	            { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
-   351	        ],
-   352	        
-   353	        monthlyData: [
-   354	            { month: 'Jan', value: 40 },
-   355	            { month: 'Feb', value: 35 },
-   356	            { month: 'Mar', value: 35 },
-   357	            { month: 'Apr', value: 45 },
-   358	            { month: 'May', value: 40 },
-   359	            { month: 'Jun', value: 50 },
-   360	            { month: 'Jul', value: 60 },
-   361	            { month: 'Aug', value: 40 },
-   362	            { month: 'Sep', value: 45 },
-   363	            { month: 'Oct', value: 40 },
-   364	            { month: 'Nov', value: 35 },
-   365	            { month: 'Dec', value: 30 },
-   366	        ],
-   367	        
-   368	        todayReport: {
-   369	            totalEarning: 5098.00,
-   370	            purchasePercentage: 65,
-   371	            cashReceivedPercentage: 75,
-   372	            bankReceivePercentage: 45,
-   373	            servicePercentage: 85
-   374	        }
-   375	    };
-   376	    
-   377	    // Data untuk Monthly Progress chart
-   378	    const monthlyProgressData = {
-   379	        labels: demoData.monthlyData.map(item => item.month),
-   380	        datasets: [
-   381	            {
-   382	                label: 'Penjualan Bulanan',
-   383	                data: demoData.monthlyData.map(item => item.value),
-   384	                backgroundColor: demoData.monthlyData.map(item => 
-   385	                    item.month === 'Jul' ? '#1a73e8' : '#4ade80'
-   386	                ),
-   387	                borderRadius: 6,
-   388	                borderSkipped: false,
-   389	            }
-   390	        ]
-   391	    };
-   392	    
-   393	    // Data untuk Today's Report chart (doughnut chart)
-   394	    const todayReportData = {
-   395	        labels: ['Pembelian', 'Penerimaan Tunai', 'Penerimaan Bank', 'Layanan'],
-   396	        datasets: [
-   397	            {
-   398	                data: [
-   399	                    demoData.todayReport.purchasePercentage,
-   400	                    demoData.todayReport.cashReceivedPercentage,
-   401	                    demoData.todayReport.bankReceivePercentage,
-   402	                    demoData.todayReport.servicePercentage
-   403	                ],
-   404	                backgroundColor: [
-   405	                    '#3b82f6',
-   406	                    '#f43f5e',
-   407	                    '#f97316',
-   408	                    '#4ade80'
-   409	                ],
-   410	                borderWidth: 0,
-   411	                cutout: '55%'
-   412	            }
-   413	        ]
-   414	    };
-   415	
-   416	    return (
-   417	        <div className="bg-gray-50 p-6 rounded-xl">
-   418	            {/* Cards Row */}
-   419	            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-   420	                {/* Total Customer Card */}
-   421	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
-   422	                    <div>
-   423	                        <p className="text-sm text-gray-500 mb-1">Total Customer</p>
-   424	                        <p className="text-2xl font-bold">{demoData.totalCustomer}</p>
-   425	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
-   426	                    </div>
-   427	                    <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-   428	                        <span className="text-indigo-500">👥</span>
-   429	                    </div>
-   430	                </div>
-   431	                
-   432	                {/* Total Sale Card */}
-   433	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
-   434	                    <div>
-   435	                        <p className="text-sm text-gray-500 mb-1">Total Sale</p>
-   436	                        <p className="text-2xl font-bold">{demoData.totalSales}</p>
-   437	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
-   438	                    </div>
-   439	                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-   440	                        <span className="text-green-500">🛒</span>
-   441	                    </div>
-   442	                </div>
-   443	                
-   444	                {/* Total Profit Card */}
-   445	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
-   446	                    <div>
-   447	                        <p className="text-sm text-gray-500 mb-1">Total Profit</p>
-   448	                        <p className="text-2xl font-bold">${demoData.totalProfit}</p>
-   449	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
-   450	                    </div>
-   451	                    <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
-   452	                        <span className="text-yellow-500">💰</span>
-   453	                    </div>
-   454	                </div>
-   455	                
-   456	                {/* Out of Stock Card */}
-   457	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
-   458	                    <div>
-   459	                        <p className="text-sm text-gray-500 mb-1">Out of Stock</p>
-   460	                        <p className="text-2xl font-bold">{demoData.outOfStock}</p>
-   461	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
-   462	                    </div>
-   463	                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-   464	                        <span className="text-red-500">⚠️</span>
-   465	                    </div>
-   466	                </div>
-   467	            </div>
-   468	            
-   469	            {/* Tables and Charts */}
-   470	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-   471	                {/* Expiring List */}
-   472	                <div className="bg-white p-4 rounded-xl shadow-sm">
-   473	                    <div className="flex justify-between items-center mb-4">
-   474	                        <h2 className="text-lg font-semibold">Expiring List</h2>
-   475	                        <button className="text-xs text-primary">Lihat Semua</button>
-   476	                    </div>
-   477	                    
-   478	                    <div className="overflow-x-auto">
-   479	                        <table className="w-full">
-   480	                            <thead>
-   481	                                <tr className="text-left text-xs text-gray-500">
-   482	                                    <th className="pb-2">Medicine name</th>
-   483	                                    <th className="pb-2">Expiry Date</th>
-   484	                                    <th className="pb-2">Quantity</th>
-   485	                                    <th className="pb-2">Chart</th>
-   486	                                    <th className="pb-2">Return</th>
-   487	                                </tr>
-   488	                            </thead>
-   489	                            <tbody className="divide-y divide-gray-100">
-   490	                                {demoData.expiringMedicines.map((medicine, index) => (
-   491	                                    <tr key={index} className="text-sm">
-   492	                                        <td className="py-3">{medicine.name}</td>
-   493	                                        <td className="py-3">{medicine.expiryDate}</td>
-   494	                                        <td className="py-3">{medicine.quantity}</td>
-   495	                                        <td className="py-3">
-   496	                                            <div className="h-6 w-10 text-green-500">📈</div>
-   497	                                        </td>
-   498	                                        <td className="py-3">
-   499	                                            <button className="text-gray-400">↩️</button>
-   500	                                        </td>
-   501	                                    </tr>
-   502	                                ))}
-   503	                            </tbody>
-   504	                        </table>
-   505	                    </div>
-   506	                </div>
-   507	                
-   508	                {/* Recent Orders */}
-   509	                <div className="bg-white p-4 rounded-xl shadow-sm">
-   510	                    <div className="flex justify-between items-center mb-4">
-   511	                        <h2 className="text-lg font-semibold">Recent Order's</h2>
-   512	                        <button className="text-xs text-primary">Lihat Semua</button>
-   513	                    </div>
-   514	                    
-   515	                    <div className="overflow-x-auto">
-   516	                        <table className="w-full">
-   517	                            <thead>
-   518	                                <tr className="text-left text-xs text-gray-500">
-   519	                                    <th className="pb-2">Medicine name</th>
-   520	                                    <th className="pb-2">Batch No.</th>
-   521	                                    <th className="pb-2">Quantity</th>
-   522	                                    <th className="pb-2">Status</th>
-   523	                                    <th className="pb-2 text-right">Price</th>
-   524	                                </tr>
-   525	                            </thead>
-   526	                            <tbody className="divide-y divide-gray-100">
-   527	                                {demoData.recentOrders.map((order, index) => (
-   528	                                    <tr key={index} className="text-sm">
-   529	                                        <td className="py-3">{order.medicine}</td>
-   530	                                        <td className="py-3">{order.batchNo}</td>
-   531	                                        <td className="py-3">{order.quantity}</td>
-   532	                                        <td className="py-3">
-   533	                                            <span className={`px-2 py-1 rounded-full text-xs 
-   534	                                                ${order.status === 'Delivered' ? 'bg-blue-100 text-blue-600' : 
-   535	                                                  order.status === 'Pending' ? 'bg-yellow-100 text-yellow-600' : 
-   536	                                                  'bg-red-100 text-red-600'}`}>
-   537	                                                {order.status}
-   538	                                            </span>
-   539	                                        </td>
-   540	                                        <td className="py-3 text-right">${order.price.toFixed(2)}</td>
-   541	                                    </tr>
-   542	                                ))}
-   543	                            </tbody>
-   544	                        </table>
-   545	                    </div>
-   546	                </div>
-   547	            </div>
-   548	            
-   549	            {/* Charts Row */}
-   550	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-   551	                {/* Monthly Progress */}
-   552	                <div className="bg-white p-4 rounded-xl shadow-sm">
-   553	                    <div className="flex justify-between items-center mb-4">
-   554	                        <h2 className="text-lg font-semibold">Monthly Progress</h2>
-   555	                        <select className="text-sm border rounded px-2 py-1">
-   556	                            <option>Monthly</option>
-   557	                            <option>Weekly</option>
-   558	                            <option>Daily</option>
-   559	                        </select>
-   560	                    </div>
-   561	                    
-   562	                    <div className="h-64">
-   563	                        <Bar 
-   564	                            data={monthlyProgressData} 
-   565	                            options={{
-   566	                                responsive: true,
-   567	                                maintainAspectRatio: false,
-   568	                                plugins: {
-   569	                                    legend: {
-   570	                                        display: false
-   571	                                    },
-   572	                                    tooltip: {
-   573	                                        callbacks: {
-   574	                                            title: (context) => {
-   575	                                                const label = context[0].label;
-   576	                                                if (label === 'Sep') {
-   577	                                                    return 'September';
-   578	                                                }
-   579	                                                return label;
-   580	                                            },
-   581	                                            label: (context) => {
-   582	                                                return `Sales: ${context.parsed.y}`;
-   583	                                            }
-   584	                                        }
-   585	                                    }
-   586	                                },
-   587	                                scales: {
-   588	                                    y: {
-   589	                                        beginAtZero: true,
-   590	                                        grid: {
-   591	                                            display: false
-   592	                                        }
+   272	                    </div>
+   273	                </div>
+   274	
+   275	                <div className="bg-white p-6 rounded-lg shadow">
+   276	                    <div className="flex items-center">
+   277	                        <div className="p-3 rounded-full bg-green-100 mr-4">
+   278	                            <FaShoppingCart className="text-green-500 text-xl" />
+   279	                        </div>
+   280	                        <div>
+   281	                            <h2 className="text-sm text-gray-500">Total Pembelian</h2>
+   282	                            <p className="text-xl font-semibold">
+   283	                                {stats.totalPurchases.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+   284	                            </p>
+   285	                        </div>
+   286	                    </div>
+   287	                </div>
+   288	
+   289	                <div className="bg-white p-6 rounded-lg shadow">
+   290	                    <div className="flex items-center">
+   291	                        <div className="p-3 rounded-full bg-purple-100 mr-4">
+   292	                            <FaBoxes className="text-purple-500 text-xl" />
+   293	                        </div>
+   294	                        <div>
+   295	                            <h2 className="text-sm text-gray-500">Total Obat</h2>
+   296	                            <p className="text-xl font-semibold">{stats.totalMedicines}</p>
+   297	                        </div>
+   298	                    </div>
+   299	                </div>
+   300	
+   301	                <div className="bg-white p-6 rounded-lg shadow">
+   302	                    <div className="flex items-center">
+   303	                        <div className="p-3 rounded-full bg-red-100 mr-4">
+   304	                            <FaExclamationTriangle className="text-red-500 text-xl" />
+   305	                        </div>
+   306	                        <div>
+   307	                            <h2 className="text-sm text-gray-500">Stok Menipis</h2>
+   308	                            <p className="text-xl font-semibold">{stats.lowStockCount}</p>
+   309	                        </div>
+   310	                    </div>
+   311	                </div>
+   312	            </div>
+   313	
+   314	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   315	                <div className="bg-white p-6 rounded-lg shadow">
+   316	                    <h2 className="text-lg font-semibold mb-4">Penjualan 7 Hari Terakhir</h2>
+   317	                    <div className="h-64">
+   318	                        <Line
+   319	                            data={salesData}
+   320	                            options={{
+   321	                                responsive: true,
+   322	                                maintainAspectRatio: false,
+   323	                                scales: {
+   324	                                    y: {
+   325	                                        beginAtZero: true
+   326	                                    }
+   327	                                }
+   328	                            }}
+   329	                        />
+   330	                    </div>
+   331	                </div>
+   332	
+   333	                <div className="bg-white p-6 rounded-lg shadow">
+   334	                    <h2 className="text-lg font-semibold mb-4">Obat Terlaris</h2>
+   335	                    <div className="h-64">
+   336	                        <Pie
+   337	                            data={topMedicines}
+   338	                            options={{
+   339	                                responsive: true,
+   340	                                maintainAspectRatio: false
+   341	                            }}
+   342	                        />
+   343	                    </div>
+   344	                </div>
+   345	            </div>
+   346	        </div>
+   347	    );
+   348	};
+   349	
+   350	// Komponen untuk dashboard modern (mode demo)
+   351	const ModernDashboard = () => {
+   352	    // Data dummy untuk mode demo
+   353	    const demoData = {
+   354	        totalCustomer: 120,
+   355	        totalSales: 234,
+   356	        totalProfit: 456,
+   357	        outOfStock: 56,
+   358	        
+   359	        expiringMedicines: [
+   360	            { name: 'Doxycycline', expiryDate: '24 Dec 2021', quantity: 40 },
+   361	            { name: 'Abetis', expiryDate: '24 Dec 2021', quantity: 40 },
+   362	            { name: 'Disulfit 10ml', expiryDate: '24 Dec 2021', quantity: 40 },
+   363	            { name: 'Cerox CV', expiryDate: '24 Dec 2021', quantity: 40 },
+   364	            { name: 'Fluciox', expiryDate: '24 Dec 2021', quantity: 40 },
+   365	        ],
+   366	        
+   367	        recentOrders: [
+   368	            { medicine: 'Paricol 15mg', batchNo: '78367834', quantity: 40, status: 'Delivered', price: 23.00 },
+   369	            { medicine: 'Abetis 20mg', batchNo: '88832433', quantity: 40, status: 'Pending', price: 23.00 },
+   370	            { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
+   371	            { medicine: 'Abetis 20mg', batchNo: '45578866', quantity: 40, status: 'Delivered', price: 23.00 },
+   372	            { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
+   373	        ],
+   374	        
+   375	        monthlyData: [
+   376	            { month: 'Jan', value: 40 },
+   377	            { month: 'Feb', value: 35 },
+   378	            { month: 'Mar', value: 35 },
+   379	            { month: 'Apr', value: 45 },
+   380	            { month: 'May', value: 40 },
+   381	            { month: 'Jun', value: 50 },
+   382	            { month: 'Jul', value: 60 },
+   383	            { month: 'Aug', value: 40 },
+   384	            { month: 'Sep', value: 45 },
+   385	            { month: 'Oct', value: 40 },
+   386	            { month: 'Nov', value: 35 },
+   387	            { month: 'Dec', value: 30 },
+   388	        ],
+   389	        
+   390	        todayReport: {
+   391	            totalEarning: 5098.00,
+   392	            purchasePercentage: 65,
+   393	            cashReceivedPercentage: 75,
+   394	            bankReceivePercentage: 45,
+   395	            servicePercentage: 85
+   396	        }
+   397	    };
+   398	    
+   399	    // Data untuk Monthly Progress chart
+   400	    const monthlyProgressData = {
+   401	        labels: demoData.monthlyData.map(item => item.month),
+   402	        datasets: [
+   403	            {
+   404	                label: 'Penjualan Bulanan',
+   405	                data: demoData.monthlyData.map(item => item.value),
+   406	                backgroundColor: demoData.monthlyData.map(item => 
+   407	                    item.month === 'Jul' ? '#1a73e8' : '#4ade80'
+   408	                ),
+   409	                borderRadius: 6,
+   410	                borderSkipped: false,
+   411	            }
+   412	        ]
+   413	    };
+   414	    
+   415	    // Data untuk Today's Report chart (doughnut chart)
+   416	    const todayReportData = {
+   417	        labels: ['Pembelian', 'Penerimaan Tunai', 'Penerimaan Bank', 'Layanan'],
+   418	        datasets: [
+   419	            {
+   420	                data: [
+   421	                    demoData.todayReport.purchasePercentage,
+   422	                    demoData.todayReport.cashReceivedPercentage,
+   423	                    demoData.todayReport.bankReceivePercentage,
+   424	                    demoData.todayReport.servicePercentage
+   425	                ],
+   426	                backgroundColor: [
+   427	                    '#3b82f6',
+   428	                    '#f43f5e',
+   429	                    '#f97316',
+   430	                    '#4ade80'
+   431	                ],
+   432	                borderWidth: 0,
+   433	                cutout: '55%'
+   434	            }
+   435	        ]
+   436	    };
+   437	
+   438	    return (
+   439	        <div className="bg-gray-50 p-6 rounded-xl">
+   440	            {/* Cards Row */}
+   441	            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+   442	                {/* Total Customer Card */}
+   443	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+   444	                    <div>
+   445	                        <p className="text-sm text-gray-500 mb-1">Total Customer</p>
+   446	                        <p className="text-2xl font-bold">{demoData.totalCustomer}</p>
+   447	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+   448	                    </div>
+   449	                    <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+   450	                        <span className="text-indigo-500">👥</span>
+   451	                    </div>
+   452	                </div>
+   453	                
+   454	                {/* Total Sale Card */}
+   455	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+   456	                    <div>
+   457	                        <p className="text-sm text-gray-500 mb-1">Total Sale</p>
+   458	                        <p className="text-2xl font-bold">{demoData.totalSales}</p>
+   459	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+   460	                    </div>
+   461	                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+   462	                        <span className="text-green-500">🛒</span>
+   463	                    </div>
+   464	                </div>
+   465	                
+   466	                {/* Total Profit Card */}
+   467	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+   468	                    <div>
+   469	                        <p className="text-sm text-gray-500 mb-1">Total Profit</p>
+   470	                        <p className="text-2xl font-bold">${demoData.totalProfit}</p>
+   471	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+   472	                    </div>
+   473	                    <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+   474	                        <span className="text-yellow-500">💰</span>
+   475	                    </div>
+   476	                </div>
+   477	                
+   478	                {/* Out of Stock Card */}
+   479	                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+   480	                    <div>
+   481	                        <p className="text-sm text-gray-500 mb-1">Out of Stock</p>
+   482	                        <p className="text-2xl font-bold">{demoData.outOfStock}</p>
+   483	                        <button className="text-xs text-primary mt-2">Lihat Detail</button>
+   484	                    </div>
+   485	                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+   486	                        <span className="text-red-500">⚠️</span>
+   487	                    </div>
+   488	                </div>
+   489	            </div>
+   490	            
+   491	            {/* Tables and Charts */}
+   492	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+   493	                {/* Expiring List */}
+   494	                <div className="bg-white p-4 rounded-xl shadow-sm">
+   495	                    <div className="flex justify-between items-center mb-4">
+   496	                        <h2 className="text-lg font-semibold">Expiring List</h2>
+   497	                        <button className="text-xs text-primary">Lihat Semua</button>
+   498	                    </div>
+   499	                    
+   500	                    <div className="overflow-x-auto">
+   501	                        <table className="w-full">
+   502	                            <thead>
+   503	                                <tr className="text-left text-xs text-gray-500">
+   504	                                    <th className="pb-2">Medicine name</th>
+   505	                                    <th className="pb-2">Expiry Date</th>
+   506	                                    <th className="pb-2">Quantity</th>
+   507	                                    <th className="pb-2">Chart</th>
+   508	                                    <th className="pb-2">Return</th>
+   509	                                </tr>
+   510	                            </thead>
+   511	                            <tbody className="divide-y divide-gray-100">
+   512	                                {demoData.expiringMedicines.map((medicine, index) => (
+   513	                                    <tr key={index} className="text-sm">
+   514	                                        <td className="py-3">{medicine.name}</td>
+   515	                                        <td className="py-3">{medicine.expiryDate}</td>
+   516	                                        <td className="py-3">{medicine.quantity}</td>
+   517	                                        <td className="py-3">
+   518	                                            <div className="h-6 w-10 text-green-500">📈</div>
+   519	                                        </td>
+   520	                                        <td className="py-3">
+   521	                                            <button className="text-gray-400">↩️</button>
+   522	                                        </td>
+   523	                                    </tr>
+   524	                                ))}
+   525	                            </tbody>
+   526	                        </table>
+   527	                    </div>
+   528	                </div>
+   529	                
+   530	                {/* Recent Orders */}
+   531	                <div className="bg-white p-4 rounded-xl shadow-sm">
+   532	                    <div className="flex justify-between items-center mb-4">
+   533	                        <h2 className="text-lg font-semibold">Recent Order's</h2>
+   534	                        <button className="text-xs text-primary">Lihat Semua</button>
+   535	                    </div>
+   536	                    
+   537	                    <div className="overflow-x-auto">
+   538	                        <table className="w-full">
+   539	                            <thead>
+   540	                                <tr className="text-left text-xs text-gray-500">
+   541	                                    <th className="pb-2">Medicine name</th>
+   542	                                    <th className="pb-2">Batch No.</th>
+   543	                                    <th className="pb-2">Quantity</th>
+   544	                                    <th className="pb-2">Status</th>
+   545	                                    <th className="pb-2 text-right">Price</th>
+   546	                                </tr>
+   547	                            </thead>
+   548	                            <tbody className="divide-y divide-gray-100">
+   549	                                {demoData.recentOrders.map((order, index) => (
+   550	                                    <tr key={index} className="text-sm">
+   551	                                        <td className="py-3">{order.medicine}</td>
+   552	                                        <td className="py-3">{order.batchNo}</td>
+   553	                                        <td className="py-3">{order.quantity}</td>
+   554	                                        <td className="py-3">
+   555	                                            <span className={`px-2 py-1 rounded-full text-xs 
+   556	                                                ${order.status === 'Delivered' ? 'bg-blue-100 text-blue-600' : 
+   557	                                                  order.status === 'Pending' ? 'bg-yellow-100 text-yellow-600' : 
+   558	                                                  'bg-red-100 text-red-600'}`}>
+   559	                                                {order.status}
+   560	                                            </span>
+   561	                                        </td>
+   562	                                        <td className="py-3 text-right">${order.price.toFixed(2)}</td>
+   563	                                    </tr>
+   564	                                ))}
+   565	                            </tbody>
+   566	                        </table>
+   567	                    </div>
+   568	                </div>
+   569	            </div>
+   570	            
+   571	            {/* Charts Row */}
+   572	            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+   573	                {/* Monthly Progress */}
+   574	                <div className="bg-white p-4 rounded-xl shadow-sm">
+   575	                    <div className="flex justify-between items-center mb-4">
+   576	                        <h2 className="text-lg font-semibold">Monthly Progress</h2>
+   577	                        <select className="text-sm border rounded px-2 py-1">
+   578	                            <option>Monthly</option>
+   579	                            <option>Weekly</option>
+   580	                            <option>Daily</option>
+   581	                        </select>
+   582	                    </div>
+   583	                    
+   584	                    <div className="h-64">
+   585	                        <Bar 
+   586	                            data={monthlyProgressData} 
+   587	                            options={{
+   588	                                responsive: true,
+   589	                                maintainAspectRatio: false,
+   590	                                plugins: {
+   591	                                    legend: {
+   592	                                        display: false
    593	                                    },
-   594	                                    x: {
-   595	                                        grid: {
-   596	                                            display: false
-   597	                                        }
-   598	                                    }
-   599	                                }
-   600	                            }}
-   601	                        />
-   602	                    </div>
-   603	                </div>
-   604	                
-   605	                {/* Today's Report */}
-   606	                <div className="bg-white p-4 rounded-xl shadow-sm">
-   607	                    <h2 className="text-lg font-semibold mb-4">Today's Report</h2>
-   608	                    
-   609	                    <div className="flex items-center justify-center">
-   610	                        <div className="h-64 w-64 relative flex items-center justify-center">
-   611	                            <Doughnut 
-   612	                                data={todayReportData}
-   613	                                options={{
-   614	                                    responsive: true,
-   615	                                    maintainAspectRatio: false,
-   616	                                    plugins: {
-   617	                                        legend: {
+   594	                                    tooltip: {
+   595	                                        callbacks: {
+   596	                                            title: (context) => {
+   597	                                                const label = context[0].label;
+   598	                                                if (label === 'Sep') {
+   599	                                                    return 'September';
+   600	                                                }
+   601	                                                return label;
+   602	                                            },
+   603	                                            label: (context) => {
+   604	                                                return `Sales: ${context.parsed.y}`;
+   605	                                            }
+   606	                                        }
+   607	                                    }
+   608	                                },
+   609	                                scales: {
+   610	                                    y: {
+   611	                                        beginAtZero: true,
+   612	                                        grid: {
+   613	                                            display: false
+   614	                                        }
+   615	                                    },
+   616	                                    x: {
+   617	                                        grid: {
    618	                                            display: false
    619	                                        }
    620	                                    }
-   621	                                }}
-   622	                            />
-   623	                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-   624	                                <p className="text-sm text-gray-500">Total Earning</p>
-   625	                                <p className="text-xl font-bold">${demoData.todayReport.totalEarning.toFixed(2)}</p>
-   626	                            </div>
-   627	                        </div>
-   628	                        <div className="ml-4">
-   629	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span> Total Purchase</div>
-   630	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-red-500 mr-2"></span> Cash Received</div>
-   631	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-orange-500 mr-2"></span> Bank Receive</div>
-   632	                            <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span> Total Service</div>
-   633	                        </div>
-   634	                    </div>
-   635	                </div>
-   636	            </div>
-   637	        </div>
-   638	    );
-   639	};
-   640	
-   641	export default Dashboard;
+   621	                                }
+   622	                            }}
+   623	                        />
+   624	                    </div>
+   625	                </div>
+   626	                
+   627	                {/* Today's Report */}
+   628	                <div className="bg-white p-4 rounded-xl shadow-sm">
+   629	                    <h2 className="text-lg font-semibold mb-4">Today's Report</h2>
+   630	                    
+   631	                    <div className="flex items-center justify-center">
+   632	                        <div className="h-64 w-64 relative flex items-center justify-center">
+   633	                            <Doughnut 
+   634	                                data={todayReportData}
+   635	                                options={{
+   636	                                    responsive: true,
+   637	                                    maintainAspectRatio: false,
+   638	                                    plugins: {
+   639	                                        legend: {
+   640	                                            display: false
+   641	                                        }
+   642	                                    }
+   643	                                }}
+   644	                            />
+   645	                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+   646	                                <p className="text-sm text-gray-500">Total Earning</p>
+   647	                                <p className="text-xl font-bold">${demoData.todayReport.totalEarning.toFixed(2)}</p>
+   648	                            </div>
+   649	                        </div>
+   650	                        <div className="ml-4">
+   651	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span> Total Purchase</div>
+   652	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-red-500 mr-2"></span> Cash Received</div>
+   653	                            <div className="flex items-center mb-2"><span className="w-3 h-3 rounded-full bg-orange-500 mr-2"></span> Bank Receive</div>
+   654	                            <div className="flex items-center"><span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span> Total Service</div>
+   655	                        </div>
+   656	                    </div>
+   657	                </div>
+   658	            </div>
+   659	        </div>
+   660	    );
+   661	};
+   662	
+   663	export default Dashboard;
 
 
 ===============================================
