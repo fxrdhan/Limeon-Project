@@ -6352,56 +6352,68 @@
     89	        { key: 'contact_person', label: 'Kontak Person', type: 'text', editable: true }
     90	    ];
     91	
-    92	    return (
-    93	        <Card className="bg-transparent shadow-none border-none">
-    94	            <CardHeader className="mb-6 px-0">
-    95	                <CardTitle>Daftar Supplier</CardTitle>
-    96	            </CardHeader>
-    97	
-    98	            {isLoading && <Loading message="Memuat supplier..." />}
-    99	            {isError && <div className="text-center text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>}
-   100	
-   101	            {!isLoading && !isError && (
-   102	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
-   103	                    {(suppliers || []).map((supplier) => (
-   104	                        <ImageCard
-   105	                            key={supplier.id}
-   106	                            id={supplier.id}
-   107	                            title={supplier.name}
-   108	                            subtitle={supplier.address || 'Alamat tidak tersedia'}
-   109	                            imageUrl={supplier.image_url ?? undefined}
-   110	                            fallbackImage={`https://picsum.photos/seed/${supplier.id}/400/300`}
-   111	                            onClick={() => openSupplierDetail(supplier)}
-   112	                        />
-   113	                    ))}
-   114	                    <AddItemCard label="Tambah Supplier Baru" to="/master-data/suppliers/add" />
-   115	                </div>
-   116	            )}
-   117	            {!isLoading && suppliers && suppliers.length === 0 && !isError && (
-   118	                <div className="text-center text-gray-500 mt-8">
-   119	                    Belum ada data supplier.
-   120	                </div>
-   121	            )}
-   122	
-   123	            {isModalOpen && selectedSupplier && (
-   124	                <DetailEditModal
-   125	                    title={`Detail Supplier: ${selectedSupplier.name}`}
-   126	                    data={selectedSupplier}
-   127	                    fields={supplierFields}
-   128	                    isOpen={isModalOpen}
-   129	                    onClose={closeModal}
-   130	                    onSave={async (updatedData) => {
-   131	                        await updateSupplierMutation.mutateAsync(updatedData);
-   132	                    }}
-   133	                    imageUrl={selectedSupplier.image_url || undefined}
-   134	                    imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
-   135	                />
-   136	            )}
-   137	        </Card>
-   138	    );
-   139	};
-   140	
-   141	export default SupplierList;
+    92	    // Transform supplier data for the modal to match the expected Record type
+    93	    const transformSupplierForModal = (supplier: Supplier | null): Record<string, string | number | boolean | null> => {
+    94	        if (!supplier) return {};
+    95	        return {
+    96	            name: supplier.name, // name is required (string)
+    97	            address: supplier.address ?? '', // address is string | null, provide empty string if null
+    98	            phone: supplier.phone ?? '', // phone is string | null | undefined, provide empty string if null/undefined
+    99	            email: supplier.email ?? '', // email is string | null | undefined, provide empty string if null/undefined
+   100	            contact_person: supplier.contact_person ?? '', // contact_person is string | null | undefined, provide empty string if null/undefined
+   101	        };
+   102	    };
+   103	
+   104	    return (
+   105	        <Card className="bg-transparent shadow-none border-none">
+   106	            <CardHeader className="mb-6 px-0">
+   107	                <CardTitle>Daftar Supplier</CardTitle>
+   108	            </CardHeader>
+   109	
+   110	            {isLoading && <Loading message="Memuat supplier..." />}
+   111	            {isError && <div className="text-center text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>}
+   112	
+   113	            {!isLoading && !isError && (
+   114	                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
+   115	                    {(suppliers || []).map((supplier) => (
+   116	                        <ImageCard
+   117	                            key={supplier.id}
+   118	                            id={supplier.id}
+   119	                            title={supplier.name}
+   120	                            subtitle={supplier.address || 'Alamat tidak tersedia'}
+   121	                            imageUrl={supplier.image_url ?? undefined}
+   122	                            fallbackImage={`https://picsum.photos/seed/${supplier.id}/400/300`}
+   123	                            onClick={() => openSupplierDetail(supplier)}
+   124	                        />
+   125	                    ))}
+   126	                    <AddItemCard label="Tambah Supplier Baru" to="/master-data/suppliers/add" />
+   127	                </div>
+   128	            )}
+   129	            {!isLoading && suppliers && suppliers.length === 0 && !isError && (
+   130	                <div className="text-center text-gray-500 mt-8">
+   131	                    Belum ada data supplier.
+   132	                </div>
+   133	            )}
+   134	
+   135	            {isModalOpen && selectedSupplier && (
+   136	                <DetailEditModal
+   137	                    title={`Detail Supplier: ${selectedSupplier.name}`}
+   138	                    data={transformSupplierForModal(selectedSupplier)} // Pass transformed data
+   139	                    fields={supplierFields}
+   140	                    isOpen={isModalOpen}
+   141	                    onClose={closeModal}
+   142	                    onSave={async (updatedData: Record<string, string | number | boolean | null>) => {
+   143	                        await updateSupplierMutation.mutateAsync(updatedData);
+   144	                    }}
+   145	                    imageUrl={selectedSupplier.image_url || undefined}
+   146	                    imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
+   147	                />
+   148	            )}
+   149	        </Card>
+   150	    );
+   151	};
+   152	
+   153	export default SupplierList;
 
 
 ===============================================

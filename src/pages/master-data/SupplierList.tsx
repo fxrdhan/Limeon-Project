@@ -89,6 +89,18 @@ const SupplierList = () => {
         { key: 'contact_person', label: 'Kontak Person', type: 'text', editable: true }
     ];
 
+    // Transform supplier data for the modal to match the expected Record type
+    const transformSupplierForModal = (supplier: Supplier | null): Record<string, string | number | boolean | null> => {
+        if (!supplier) return {};
+        return {
+            name: supplier.name, // name is required (string)
+            address: supplier.address ?? '', // address is string | null, provide empty string if null
+            phone: supplier.phone ?? '', // phone is string | null | undefined, provide empty string if null/undefined
+            email: supplier.email ?? '', // email is string | null | undefined, provide empty string if null/undefined
+            contact_person: supplier.contact_person ?? '', // contact_person is string | null | undefined, provide empty string if null/undefined
+        };
+    };
+
     return (
         <Card className="bg-transparent shadow-none border-none">
             <CardHeader className="mb-6 px-0">
@@ -123,11 +135,11 @@ const SupplierList = () => {
             {isModalOpen && selectedSupplier && (
                 <DetailEditModal
                     title={`Detail Supplier: ${selectedSupplier.name}`}
-                    data={selectedSupplier}
+                    data={transformSupplierForModal(selectedSupplier)} // Pass transformed data
                     fields={supplierFields}
                     isOpen={isModalOpen}
                     onClose={closeModal}
-                    onSave={async (updatedData) => {
+                    onSave={async (updatedData: Record<string, string | number | boolean | null>) => {
                         await updateSupplierMutation.mutateAsync(updatedData);
                     }}
                     imageUrl={selectedSupplier.image_url || undefined}
