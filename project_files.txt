@@ -3176,377 +3176,377 @@
      2	import { useNavigate } from "react-router-dom";
      3	import { supabase } from "../lib/supabase";
      4	import { useUnitConversion } from "./useUnitConversion";
-     5	import { formatRupiah, extractNumericValue } from "../lib/formatters";
-     6	
-     7	interface Category {
-     8	    id: string;
-     9	    name: string;
-    10	}
-    11	
-    12	interface MedicineType {
-    13	    id: string;
-    14	    name: string;
-    15	}
-    16	
-    17	interface Unit {
-    18	    id: string;
-    19	    name: string;
-    20	}
-    21	
-    22	interface FormData {
-    23	    code: string;
-    24	    name: string;
-    25	    type_id: string;
-    26	    category_id: string;
-    27	    unit_id: string;
-    28	    rack: string;
-    29	    description: string;
-    30	    base_price: number;
-    31	    sell_price: number;
-    32	    min_stock: number;
-    33	    is_active: boolean;
-    34	    is_medicine: boolean;
-    35	    has_expiry_date: boolean;
-    36	}
-    37	
-    38	export const useAddItemForm = (itemId?: string) => {
-    39	    const navigate = useNavigate();
-    40	    const [loading, setLoading] = useState(false);
-    41	    const [saving, setSaving] = useState(false);
-    42	    const [isEditMode, setIsEditMode] = useState(false);
-    43	    const [categories, setCategories] = useState<Category[]>([]);
-    44	    const [types, setTypes] = useState<MedicineType[]>([]);
-    45	    const [units, setUnits] = useState<Unit[]>([]);
-    46	    const [displayBasePrice, setDisplayBasePrice] = useState('');
-    47	    const [displaySellPrice, setDisplaySellPrice] = useState('');
-    48	
-    49	    const unitConversionHook = useUnitConversion();
-    50	
-    51	    const [formData, setFormData] = useState<FormData>({
-    52	        code: "",
-    53	        name: "",
-    54	        type_id: "",
-    55	        category_id: "",
-    56	        unit_id: "",
-    57	        rack: "",
-    58	        description: "",
-    59	        base_price: 0,
-    60	        sell_price: 0,
-    61	        min_stock: 10,
-    62	        is_active: true,
-    63	        is_medicine: true,
-    64	        has_expiry_date: false,
-    65	    });
-    66	
-    67	    const updateFormData = (newData: Partial<FormData>) => {
-    68	        setFormData(prev => ({
-    69	            ...prev,
-    70	            ...newData
-    71	        }));
-    72	    };
-    73	
-    74	    const generateTypeCode = (typeId: string): string => {
-    75	        const selectedType = types.find(type => type.id === typeId);
-    76	        if (!selectedType) return "X";
-    77	
-    78	        const typeName = selectedType.name.toLowerCase();
-    79	        if (typeName.includes("bebas") && !typeName.includes("terbatas")) return "B";
-    80	        if (typeName.includes("bebas terbatas")) return "T";
-    81	        if (typeName.includes("keras")) return "K";
-    82	        if (typeName.includes("narkotika")) return "N";
-    83	        if (typeName.includes("fitofarmaka")) return "F";
-    84	        if (typeName.includes("herbal")) return "H";
-    85	
-    86	        return selectedType.name.charAt(0).toUpperCase();
-    87	    };
-    88	
-    89	    const generateUnitCode = (unitId: string): string => {
-    90	        const selectedUnit = units.find(unit => unit.id === unitId);
-    91	        if (!selectedUnit) return "X";
-    92	
-    93	        return selectedUnit.name.charAt(0).toUpperCase();
-    94	    };
-    95	
-    96	    const generateCategoryCode = (categoryId: string): string => {
-    97	        const selectedCategory = categories.find(category => category.id === categoryId);
-    98	        if (!selectedCategory) return "XX";
-    99	
-   100	        const name = selectedCategory.name;
-   101	
-   102	        if (name.toLowerCase().startsWith("anti")) {
-   103	            const baseName = name.slice(4);
-   104	            if (baseName.length > 0) {
-   105	                return "A" + baseName.charAt(0).toUpperCase();
-   106	            }
-   107	            return "A";
-   108	        } else {
-   109	            if (name.length >= 2) {
-   110	                return name.substring(0, 2).toUpperCase();
-   111	            } else if (name.length === 1) {
-   112	                return name.toUpperCase() + "X";
-   113	            } else {
-   114	                return "XX";
-   115	            }
-   116	        }
-   117	    };
-   118	
-   119	    useEffect(() => {
-   120	        fetchMasterData();
-   121	        if (itemId) {
-   122	            fetchItemData(itemId);
-   123	            setIsEditMode(true);
-   124	        }
-   125	    // eslint-disable-next-line react-hooks/exhaustive-deps
-   126	    }, [itemId]);
-   127	
-   128	    useEffect(() => {
-   129	        const generateItemCode = async () => {
-   130	            if (!formData.type_id || !formData.category_id || !formData.unit_id)
-   131	                return;
-   132	
-   133	            const typeCode = generateTypeCode(formData.type_id);
-   134	            const unitCode = generateUnitCode(formData.unit_id);
-   135	            const categoryCode = generateCategoryCode(formData.category_id);
-   136	
-   137	            const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
-   138	
-   139	            try {
-   140	                const { data } = await supabase
-   141	                    .from("items")
-   142	                    .select("code")
-   143	                    .ilike("code", `${codePrefix}%`)
-   144	                    .order("code", { ascending: false });
-   145	
-   146	                let sequence = 1;
-   147	
-   148	                if (data && data.length > 0) {
-   149	                    const lastSequenceStr = data[0].code.substring(codePrefix.length);
-   150	                    const lastSequence = parseInt(lastSequenceStr);
-   151	
-   152	                    if (!isNaN(lastSequence)) {
-   153	                        sequence = lastSequence + 1;
-   154	                    }
-   155	                }
-   156	
-   157	                const sequenceStr = sequence.toString().padStart(2, "0");
-   158	                const generatedCode = `${codePrefix}${sequenceStr}`;
-   159	
-   160	                setFormData(prevFormData => ({
-   161	                    ...prevFormData,
-   162	                    code: generatedCode,
-   163	                }));
-   164	            } catch (error) {
-   165	                console.error("Error generating item code:", error);
-   166	            }
-   167	        };
-   168	
-   169	        if (formData.type_id && formData.category_id && formData.unit_id &&
-   170	            categories.length > 0 && types.length > 0 && units.length > 0) {
-   171	            generateItemCode();
-   172	        }
-   173	    // eslint-disable-next-line react-hooks/exhaustive-deps
-   174	    }, [formData.type_id, formData.category_id, formData.unit_id, categories, types, units]);
-   175	
-   176	    const fetchMasterData = async () => {
-   177	        setLoading(true);
-   178	        try {
-   179	            const { data: categoriesData } = await supabase
-   180	                .from("item_categories")
-   181	                .select("id, name")
-   182	                .order("name");
-   183	
-   184	            const { data: typesData } = await supabase
-   185	                .from("item_types")
-   186	                .select("id, name")
-   187	                .order("name");
-   188	
-   189	            const { data: unitsData } = await supabase
-   190	                .from("item_units")
-   191	                .select("id, name")
-   192	                .order("name");
-   193	
-   194	            if (categoriesData) setCategories(categoriesData);
-   195	            if (typesData) setTypes(typesData);
-   196	            if (unitsData) setUnits(unitsData);
-   197	        } catch (error) {
-   198	            console.error("Error fetching master data:", error);
-   199	        } finally {
-   200	            setLoading(false);
-   201	        }
-   202	    };
-   203	
-   204	    const fetchItemData = async (id: string) => {
-   205	        try {
-   206	            setLoading(true);
-   207	            const { data, error } = await supabase
-   208	                .from("items")
-   209	                .select(`
-   210	                    *,
-   211	                    unit_conversions
-   212	                `)
-   213	                .eq("id", id)
-   214	                .single();
-   215	
-   216	            if (error) throw error;
-   217	            if (!data) throw new Error("Item tidak ditemukan");
-   218	
-   219	            setFormData({
-   220	                code: data.code || "",
-   221	                name: data.name || "",
-   222	                type_id: data.type_id || "",
-   223	                category_id: data.category_id || "",
-   224	                unit_id: data.unit_id || "",
-   225	                rack: data.rack || "",
-   226	                description: data.description || "",
-   227	                base_price: data.base_price || 0,
-   228	                sell_price: data.sell_price || 0,
-   229	                min_stock: data.min_stock || 10,
-   230	                is_active: data.is_active !== undefined ? data.is_active : true,
-   231	                is_medicine: data.is_medicine !== undefined ? data.is_medicine : true,
-   232	                has_expiry_date: data.has_expiry_date !== undefined ? data.has_expiry_date : false,
-   233	            });
-   234	
-   235	            setDisplayBasePrice(formatRupiah(data.base_price || 0));
-   236	            setDisplaySellPrice(formatRupiah(data.sell_price || 0));
-   237	
-   238	            unitConversionHook.setBaseUnit(data.base_unit || "");
-   239	            unitConversionHook.setBasePrice(data.base_price || 0);
-   240	            unitConversionHook.skipNextRecalculation();
-   241	
-   242	            const currentConversions = [...unitConversionHook.conversions];
-   243	            for (const conv of currentConversions) {
-   244	                unitConversionHook.removeUnitConversion(conv.id);
-   245	            }
-   246	
-   247	            let conversions = [];
-   248	            if (data.unit_conversions) {
-   249	                try {
-   250	                    conversions = typeof data.unit_conversions === 'string'
-   251	                        ? JSON.parse(data.unit_conversions)
-   252	                        : data.unit_conversions;
-   253	                } catch (e) {
-   254	                    console.error("Error parsing unit_conversions:", e);
-   255	                    conversions = [];
-   256	                }
-   257	            }
-   258	
-   259	            if (Array.isArray(conversions)) {
-   260	                for (const conv of conversions) {
-   261	                    const unit = await getUnitById(conv.unit_name);
-   262	                    if (unit) {
-   263	                        unitConversionHook.addUnitConversion({
-   264	                            unit: unit,
-   265	                            conversion: conv.conversion_rate || 0,
-   266	                            basePrice: conv.base_price,
-   267	                        });
-   268	                    }
-   269	                }
-   270	            }
-   271	        } catch (error) {
-   272	            console.error("Error fetching item data:", error);
-   273	            alert("Gagal memuat data item. Silakan coba lagi.");
-   274	        } finally {
-   275	            setLoading(false);
-   276	        }
-   277	    };
-   278	
-   279	    const getUnitById = async (unitName: string) => {
-   280	        try {
-   281	            const { data } = await supabase
-   282	                .from("item_units")
-   283	                .select("id, name")
-   284	                .eq("name", unitName)
-   285	                .single();
-   286	            return data;
-   287	        } catch (error) {
-   288	            console.error("Error fetching unit:", error);
-   289	            return null;
-   290	        }
-   291	    };
-   292	
-   293	    const handleChange = (
-   294	        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-   295	        const { name, value, type } = e.target as HTMLInputElement;
-   296	
-   297	        if (name === "base_price" || name === "sell_price") {
-   298	            const numericInt = extractNumericValue(value);
-   299	
-   300	            setFormData({
-   301	                ...formData,
-   302	                [name]: numericInt
-   303	            });
-   304	
-   305	            const formattedValue = formatRupiah(numericInt);
-   306	            if (name === "base_price") {
-   307	                setDisplayBasePrice(formattedValue);
-   308	            } else if (name === "sell_price") {
-   309	                setDisplaySellPrice(formattedValue);
-   310	            }
-   311	        } else if (type === "checkbox") {
-   312	            const { checked } = e.target as HTMLInputElement;
-   313	            setFormData({
-   314	                ...formData,
-   315	                [name]: checked,
-   316	            });
-   317	        } else if (type === "number") {
-   318	            setFormData({
-   319	                ...formData,
-   320	                [name]: parseFloat(value) || 0,
-   321	            });
-   322	        } else {
-   323	            setFormData({
-   324	                ...formData,
-   325	                [name]: value,
-   326	            });
-   327	        }
-   328	    };
-   329	
-   330	    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-   331	        const { name, value } = e.target;
-   332	        setFormData(prevFormData => ({
-   333	            ...prevFormData,
-   334	            [name]: value,
-   335	        }));
-   336	    };
-   337	
-   338	    const handleSubmit = async (e: React.FormEvent) => {
-   339	        e.preventDefault();
-   340	        setSaving(true);
-   341	
-   342	        try {
-   343	            if (isEditMode) {
-   344	                const itemUpdateData = {
-   345	                    name: formData.name,
-   346	                    category_id: formData.category_id,
-   347	                    type_id: formData.type_id,
-   348	                    unit_id: formData.unit_id,
-   349	                    base_price: formData.base_price, 
-   350	                    sell_price: formData.sell_price,
-   351	                    min_stock: formData.min_stock,
-   352	                    description: formData.description || null,
-   353	                    is_active: formData.is_active,
-   354	                    rack: formData.rack || null,
-   355	                    code: formData.code,
-   356	                    is_medicine: formData.is_medicine,
-   357	                    base_unit: unitConversionHook.baseUnit,
-   358	                    has_expiry_date: formData.has_expiry_date,
-   359	                };
-   360	
-   361	                const { error: updateError } = await supabase
-   362	                    .from("items")
-   363	                    .update(itemUpdateData)
-   364	                    .eq("id", itemId);
-   365	
-   366	                if (updateError) throw updateError;
-   367	
-   368	                await supabase
-   369	                    .from("unit_conversions")
-   370	                    .delete()
-   371	                    .eq("item_id", itemId);
-   372	
-   373	                if (unitConversionHook.conversions.length > 0) {
-   374	                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   375	                    const conversionRecords = unitConversionHook.conversions.map((uc: any) => ({
+     5	import type { UnitConversion } from "./useUnitConversion";
+     6	import { formatRupiah, extractNumericValue } from "../lib/formatters";
+     7	
+     8	interface Category {
+     9	    id: string;
+    10	    name: string;
+    11	}
+    12	
+    13	interface MedicineType {
+    14	    id: string;
+    15	    name: string;
+    16	}
+    17	
+    18	interface Unit {
+    19	    id: string;
+    20	    name: string;
+    21	}
+    22	
+    23	interface FormData {
+    24	    code: string;
+    25	    name: string;
+    26	    type_id: string;
+    27	    category_id: string;
+    28	    unit_id: string;
+    29	    rack: string;
+    30	    description: string;
+    31	    base_price: number;
+    32	    sell_price: number;
+    33	    min_stock: number;
+    34	    is_active: boolean;
+    35	    is_medicine: boolean;
+    36	    has_expiry_date: boolean;
+    37	}
+    38	
+    39	export const useAddItemForm = (itemId?: string) => {
+    40	    const navigate = useNavigate();
+    41	    const [loading, setLoading] = useState(false);
+    42	    const [saving, setSaving] = useState(false);
+    43	    const [isEditMode, setIsEditMode] = useState(false);
+    44	    const [categories, setCategories] = useState<Category[]>([]);
+    45	    const [types, setTypes] = useState<MedicineType[]>([]);
+    46	    const [units, setUnits] = useState<Unit[]>([]);
+    47	    const [displayBasePrice, setDisplayBasePrice] = useState('');
+    48	    const [displaySellPrice, setDisplaySellPrice] = useState('');
+    49	
+    50	    const unitConversionHook = useUnitConversion();
+    51	
+    52	    const [formData, setFormData] = useState<FormData>({
+    53	        code: "",
+    54	        name: "",
+    55	        type_id: "",
+    56	        category_id: "",
+    57	        unit_id: "",
+    58	        rack: "",
+    59	        description: "",
+    60	        base_price: 0,
+    61	        sell_price: 0,
+    62	        min_stock: 10,
+    63	        is_active: true,
+    64	        is_medicine: true,
+    65	        has_expiry_date: false,
+    66	    });
+    67	
+    68	    const updateFormData = (newData: Partial<FormData>) => {
+    69	        setFormData(prev => ({
+    70	            ...prev,
+    71	            ...newData
+    72	        }));
+    73	    };
+    74	
+    75	    const generateTypeCode = (typeId: string): string => {
+    76	        const selectedType = types.find(type => type.id === typeId);
+    77	        if (!selectedType) return "X";
+    78	
+    79	        const typeName = selectedType.name.toLowerCase();
+    80	        if (typeName.includes("bebas") && !typeName.includes("terbatas")) return "B";
+    81	        if (typeName.includes("bebas terbatas")) return "T";
+    82	        if (typeName.includes("keras")) return "K";
+    83	        if (typeName.includes("narkotika")) return "N";
+    84	        if (typeName.includes("fitofarmaka")) return "F";
+    85	        if (typeName.includes("herbal")) return "H";
+    86	
+    87	        return selectedType.name.charAt(0).toUpperCase();
+    88	    };
+    89	
+    90	    const generateUnitCode = (unitId: string): string => {
+    91	        const selectedUnit = units.find(unit => unit.id === unitId);
+    92	        if (!selectedUnit) return "X";
+    93	
+    94	        return selectedUnit.name.charAt(0).toUpperCase();
+    95	    };
+    96	
+    97	    const generateCategoryCode = (categoryId: string): string => {
+    98	        const selectedCategory = categories.find(category => category.id === categoryId);
+    99	        if (!selectedCategory) return "XX";
+   100	
+   101	        const name = selectedCategory.name;
+   102	
+   103	        if (name.toLowerCase().startsWith("anti")) {
+   104	            const baseName = name.slice(4);
+   105	            if (baseName.length > 0) {
+   106	                return "A" + baseName.charAt(0).toUpperCase();
+   107	            }
+   108	            return "A";
+   109	        } else {
+   110	            if (name.length >= 2) {
+   111	                return name.substring(0, 2).toUpperCase();
+   112	            } else if (name.length === 1) {
+   113	                return name.toUpperCase() + "X";
+   114	            } else {
+   115	                return "XX";
+   116	            }
+   117	        }
+   118	    };
+   119	
+   120	    useEffect(() => {
+   121	        fetchMasterData();
+   122	        if (itemId) {
+   123	            fetchItemData(itemId);
+   124	            setIsEditMode(true);
+   125	        }
+   126	    // eslint-disable-next-line react-hooks/exhaustive-deps
+   127	    }, [itemId]);
+   128	
+   129	    useEffect(() => {
+   130	        const generateItemCode = async () => {
+   131	            if (!formData.type_id || !formData.category_id || !formData.unit_id)
+   132	                return;
+   133	
+   134	            const typeCode = generateTypeCode(formData.type_id);
+   135	            const unitCode = generateUnitCode(formData.unit_id);
+   136	            const categoryCode = generateCategoryCode(formData.category_id);
+   137	
+   138	            const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
+   139	
+   140	            try {
+   141	                const { data } = await supabase
+   142	                    .from("items")
+   143	                    .select("code")
+   144	                    .ilike("code", `${codePrefix}%`)
+   145	                    .order("code", { ascending: false });
+   146	
+   147	                let sequence = 1;
+   148	
+   149	                if (data && data.length > 0) {
+   150	                    const lastSequenceStr = data[0].code.substring(codePrefix.length);
+   151	                    const lastSequence = parseInt(lastSequenceStr);
+   152	
+   153	                    if (!isNaN(lastSequence)) {
+   154	                        sequence = lastSequence + 1;
+   155	                    }
+   156	                }
+   157	
+   158	                const sequenceStr = sequence.toString().padStart(2, "0");
+   159	                const generatedCode = `${codePrefix}${sequenceStr}`;
+   160	
+   161	                setFormData(prevFormData => ({
+   162	                    ...prevFormData,
+   163	                    code: generatedCode,
+   164	                }));
+   165	            } catch (error) {
+   166	                console.error("Error generating item code:", error);
+   167	            }
+   168	        };
+   169	
+   170	        if (formData.type_id && formData.category_id && formData.unit_id &&
+   171	            categories.length > 0 && types.length > 0 && units.length > 0) {
+   172	            generateItemCode();
+   173	        }
+   174	    // eslint-disable-next-line react-hooks/exhaustive-deps
+   175	    }, [formData.type_id, formData.category_id, formData.unit_id, categories, types, units]);
+   176	
+   177	    const fetchMasterData = async () => {
+   178	        setLoading(true);
+   179	        try {
+   180	            const { data: categoriesData } = await supabase
+   181	                .from("item_categories")
+   182	                .select("id, name")
+   183	                .order("name");
+   184	
+   185	            const { data: typesData } = await supabase
+   186	                .from("item_types")
+   187	                .select("id, name")
+   188	                .order("name");
+   189	
+   190	            const { data: unitsData } = await supabase
+   191	                .from("item_units")
+   192	                .select("id, name")
+   193	                .order("name");
+   194	
+   195	            if (categoriesData) setCategories(categoriesData);
+   196	            if (typesData) setTypes(typesData);
+   197	            if (unitsData) setUnits(unitsData);
+   198	        } catch (error) {
+   199	            console.error("Error fetching master data:", error);
+   200	        } finally {
+   201	            setLoading(false);
+   202	        }
+   203	    };
+   204	
+   205	    const fetchItemData = async (id: string) => {
+   206	        try {
+   207	            setLoading(true);
+   208	            const { data, error } = await supabase
+   209	                .from("items")
+   210	                .select(`
+   211	                    *,
+   212	                    unit_conversions
+   213	                `)
+   214	                .eq("id", id)
+   215	                .single();
+   216	
+   217	            if (error) throw error;
+   218	            if (!data) throw new Error("Item tidak ditemukan");
+   219	
+   220	            setFormData({
+   221	                code: data.code || "",
+   222	                name: data.name || "",
+   223	                type_id: data.type_id || "",
+   224	                category_id: data.category_id || "",
+   225	                unit_id: data.unit_id || "",
+   226	                rack: data.rack || "",
+   227	                description: data.description || "",
+   228	                base_price: data.base_price || 0,
+   229	                sell_price: data.sell_price || 0,
+   230	                min_stock: data.min_stock || 10,
+   231	                is_active: data.is_active !== undefined ? data.is_active : true,
+   232	                is_medicine: data.is_medicine !== undefined ? data.is_medicine : true,
+   233	                has_expiry_date: data.has_expiry_date !== undefined ? data.has_expiry_date : false,
+   234	            });
+   235	
+   236	            setDisplayBasePrice(formatRupiah(data.base_price || 0));
+   237	            setDisplaySellPrice(formatRupiah(data.sell_price || 0));
+   238	
+   239	            unitConversionHook.setBaseUnit(data.base_unit || "");
+   240	            unitConversionHook.setBasePrice(data.base_price || 0);
+   241	            unitConversionHook.skipNextRecalculation();
+   242	
+   243	            const currentConversions = [...unitConversionHook.conversions];
+   244	            for (const conv of currentConversions) {
+   245	                unitConversionHook.removeUnitConversion(conv.id);
+   246	            }
+   247	
+   248	            let conversions = [];
+   249	            if (data.unit_conversions) {
+   250	                try {
+   251	                    conversions = typeof data.unit_conversions === 'string'
+   252	                        ? JSON.parse(data.unit_conversions)
+   253	                        : data.unit_conversions;
+   254	                } catch (e) {
+   255	                    console.error("Error parsing unit_conversions:", e);
+   256	                    conversions = [];
+   257	                }
+   258	            }
+   259	
+   260	            if (Array.isArray(conversions)) {
+   261	                for (const conv of conversions) {
+   262	                    const unit = await getUnitById(conv.unit_name);
+   263	                    if (unit) {
+   264	                        unitConversionHook.addUnitConversion({
+   265	                            unit: unit,
+   266	                            conversion: conv.conversion_rate || 0,
+   267	                            basePrice: conv.base_price,
+   268	                        });
+   269	                    }
+   270	                }
+   271	            }
+   272	        } catch (error) {
+   273	            console.error("Error fetching item data:", error);
+   274	            alert("Gagal memuat data item. Silakan coba lagi.");
+   275	        } finally {
+   276	            setLoading(false);
+   277	        }
+   278	    };
+   279	
+   280	    const getUnitById = async (unitName: string) => {
+   281	        try {
+   282	            const { data } = await supabase
+   283	                .from("item_units")
+   284	                .select("id, name")
+   285	                .eq("name", unitName)
+   286	                .single();
+   287	            return data;
+   288	        } catch (error) {
+   289	            console.error("Error fetching unit:", error);
+   290	            return null;
+   291	        }
+   292	    };
+   293	
+   294	    const handleChange = (
+   295	        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+   296	        const { name, value, type } = e.target as HTMLInputElement;
+   297	
+   298	        if (name === "base_price" || name === "sell_price") {
+   299	            const numericInt = extractNumericValue(value);
+   300	
+   301	            setFormData({
+   302	                ...formData,
+   303	                [name]: numericInt
+   304	            });
+   305	
+   306	            const formattedValue = formatRupiah(numericInt);
+   307	            if (name === "base_price") {
+   308	                setDisplayBasePrice(formattedValue);
+   309	            } else if (name === "sell_price") {
+   310	                setDisplaySellPrice(formattedValue);
+   311	            }
+   312	        } else if (type === "checkbox") {
+   313	            const { checked } = e.target as HTMLInputElement;
+   314	            setFormData({
+   315	                ...formData,
+   316	                [name]: checked,
+   317	            });
+   318	        } else if (type === "number") {
+   319	            setFormData({
+   320	                ...formData,
+   321	                [name]: parseFloat(value) || 0,
+   322	            });
+   323	        } else {
+   324	            setFormData({
+   325	                ...formData,
+   326	                [name]: value,
+   327	            });
+   328	        }
+   329	    };
+   330	
+   331	    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+   332	        const { name, value } = e.target;
+   333	        setFormData(prevFormData => ({
+   334	            ...prevFormData,
+   335	            [name]: value,
+   336	        }));
+   337	    };
+   338	
+   339	    const handleSubmit = async (e: React.FormEvent) => {
+   340	        e.preventDefault();
+   341	        setSaving(true);
+   342	
+   343	        try {
+   344	            if (isEditMode) {
+   345	                const itemUpdateData = {
+   346	                    name: formData.name,
+   347	                    category_id: formData.category_id,
+   348	                    type_id: formData.type_id,
+   349	                    unit_id: formData.unit_id,
+   350	                    base_price: formData.base_price, 
+   351	                    sell_price: formData.sell_price,
+   352	                    min_stock: formData.min_stock,
+   353	                    description: formData.description || null,
+   354	                    is_active: formData.is_active,
+   355	                    rack: formData.rack || null,
+   356	                    code: formData.code,
+   357	                    is_medicine: formData.is_medicine,
+   358	                    base_unit: unitConversionHook.baseUnit,
+   359	                    has_expiry_date: formData.has_expiry_date,
+   360	                };
+   361	
+   362	                const { error: updateError } = await supabase
+   363	                    .from("items")
+   364	                    .update(itemUpdateData)
+   365	                    .eq("id", itemId);
+   366	
+   367	                if (updateError) throw updateError;
+   368	
+   369	                await supabase
+   370	                    .from("unit_conversions")
+   371	                    .delete()
+   372	                    .eq("item_id", itemId);
+   373	
+   374	                if (unitConversionHook.conversions.length > 0) {
+   375	                    const conversionRecords = unitConversionHook.conversions.map((uc: UnitConversion) => ({
    376	                        item_id: itemId,
    377	                        unit_name: uc.unit.name,
    378	                        conversion_rate: uc.conversion,
@@ -3591,51 +3591,50 @@
    417	                if (mainError) throw mainError;
    418	
    419	                if (unitConversionHook.conversions.length > 0 && newItem) {
-   420	                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-   421	                    const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
-   422	                        item_id: newItem.id,
-   423	                        unit_name: uc.unit.name,
-   424	                        conversion_rate: uc.conversion,
-   425	                        base_price: uc.basePrice,
-   426	                        created_at: new Date()
-   427	                    }));
-   428	
-   429	                    const { error: conversionError } = await supabase
-   430	                        .from("unit_conversions")
-   431	                        .insert(conversionRecords);
-   432	
-   433	                    if (conversionError) {
-   434	                        console.error("Error saving unit conversions:", conversionError);
-   435	                    }
-   436	                }
-   437	            }
-   438	
-   439	            navigate("/master-data/items");
-   440	        } catch (error) {
-   441	            console.error("Error saving item:", error);
-   442	            alert("Gagal menyimpan data item. Silakan coba lagi.");
-   443	        } finally {
-   444	            setSaving(false);
-   445	        }
-   446	    };
-   447	
-   448	    return {
-   449	        formData,
-   450	        displayBasePrice,
-   451	        displaySellPrice,
-   452	        categories,
-   453	        types,
-   454	        units,
-   455	        loading,
-   456	        saving,
-   457	        isEditMode,
-   458	        handleChange,
-   459	        handleSelectChange,
-   460	        handleSubmit,
-   461	        unitConversionHook,
-   462	        updateFormData
-   463	    };
-   464	};
+   420	                    const conversionRecords = unitConversionHook.conversions.map((uc: UnitConversion) => ({
+   421	                        item_id: newItem.id,
+   422	                        unit_name: uc.unit.name,
+   423	                        conversion_rate: uc.conversion,
+   424	                        base_price: uc.basePrice,
+   425	                        created_at: new Date()
+   426	                    }));
+   427	
+   428	                    const { error: conversionError } = await supabase
+   429	                        .from("unit_conversions")
+   430	                        .insert(conversionRecords);
+   431	
+   432	                    if (conversionError) {
+   433	                        console.error("Error saving unit conversions:", conversionError);
+   434	                    }
+   435	                }
+   436	            }
+   437	
+   438	            navigate("/master-data/items");
+   439	        } catch (error) {
+   440	            console.error("Error saving item:", error);
+   441	            alert("Gagal menyimpan data item. Silakan coba lagi.");
+   442	        } finally {
+   443	            setSaving(false);
+   444	        }
+   445	    };
+   446	
+   447	    return {
+   448	        formData,
+   449	        displayBasePrice,
+   450	        displaySellPrice,
+   451	        categories,
+   452	        types,
+   453	        units,
+   454	        loading,
+   455	        saving,
+   456	        isEditMode,
+   457	        handleChange,
+   458	        handleSelectChange,
+   459	        handleSubmit,
+   460	        unitConversionHook,
+   461	        updateFormData
+   462	    };
+   463	};
 
 
 ===============================================

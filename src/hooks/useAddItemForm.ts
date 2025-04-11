@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useUnitConversion } from "./useUnitConversion";
+import type { UnitConversion } from "./useUnitConversion";
 import { formatRupiah, extractNumericValue } from "../lib/formatters";
 
 interface Category {
@@ -371,8 +372,7 @@ export const useAddItemForm = (itemId?: string) => {
                     .eq("item_id", itemId);
 
                 if (unitConversionHook.conversions.length > 0) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const conversionRecords = unitConversionHook.conversions.map((uc: any) => ({
+                    const conversionRecords = unitConversionHook.conversions.map((uc: UnitConversion) => ({
                         item_id: itemId,
                         unit_name: uc.unit.name,
                         conversion_rate: uc.conversion,
@@ -417,8 +417,7 @@ export const useAddItemForm = (itemId?: string) => {
                 if (mainError) throw mainError;
 
                 if (unitConversionHook.conversions.length > 0 && newItem) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const conversionRecords = unitConversionHook.conversions.map((uc: { unit: { id: any; name: any; }; conversion: any; basePrice: any; }) => ({
+                    const conversionRecords = unitConversionHook.conversions.map((uc: UnitConversion) => ({
                         item_id: newItem.id,
                         unit_name: uc.unit.name,
                         conversion_rate: uc.conversion,
