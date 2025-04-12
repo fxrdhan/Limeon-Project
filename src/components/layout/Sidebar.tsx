@@ -154,7 +154,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
         if (collapsed) {
             hoverTimeoutRef.current = setTimeout(() => {
                 toggleSidebar();
-            }, 100);
+            }, 250);
         }
     }, [collapsed, toggleSidebar]);
 
