@@ -32,7 +32,6 @@ ChartJS.register(
 const Dashboard = () => {
     const [demoMode, setDemoMode] = useState(false);
 
-    // Gunakan hook prefetch untuk mengambil semua data ke cache
     usePrefetchQueries();
 
     const [stats, setStats] = useState({
@@ -78,7 +77,6 @@ const Dashboard = () => {
     }, []);
 
     const fetchStats = async () => {
-        // Get total sales
         const { data: salesData } = await supabase
             .from('sales')
             .select('total');
@@ -87,7 +85,6 @@ const Dashboard = () => {
             ? salesData.reduce((sum, sale) => sum + sale.total, 0)
             : 0;
 
-        // Get total purchases
         const { data: purchasesData } = await supabase
             .from('purchases')
             .select('total');
@@ -96,12 +93,10 @@ const Dashboard = () => {
             ? purchasesData.reduce((sum, purchase) => sum + purchase.total, 0)
             : 0;
 
-        // Get total medicines
         const { count: totalMedicines } = await supabase
             .from('medicines')
             .select('*', { count: 'exact' });
 
-        // Get low stock count
         const { count: lowStockCount } = await supabase
             .from('medicines')
             .select('*', { count: 'exact' })
@@ -116,7 +111,6 @@ const Dashboard = () => {
     };
 
     const fetchSalesData = async () => {
-        // Get sales data for the last 7 days
         const now = new Date();
         const sevenDaysAgo = new Date(now.setDate(now.getDate() - 6));
         sevenDaysAgo.setHours(0, 0, 0, 0);
@@ -129,7 +123,6 @@ const Dashboard = () => {
 
         if (!data) return;
 
-        // Group by date
         const salesByDate = data.reduce<Record<string, number>>((acc, sale) => {
             const date = new Date(sale.date).toLocaleDateString();
             if (!acc[date]) acc[date] = 0;
@@ -137,7 +130,6 @@ const Dashboard = () => {
             return acc;
         }, {});
 
-        // Generate data for the last 7 days
         const labels = [];
         const values = [];
 
@@ -163,7 +155,6 @@ const Dashboard = () => {
     };
 
     const fetchTopMedicines = async () => {
-        // Get top 5 selling medicines
         const { data } = await supabase
             .rpc('get_top_selling_medicines', { limit_count: 5 });
 
@@ -208,7 +199,7 @@ const Dashboard = () => {
         <div className="min-h-screen">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-                <button 
+                <button
                     onClick={toggleDemoMode}
                     className={`px-4 py-2 rounded-md font-medium shadow-md border ${demoMode ? 'bg-red-500 text-white border-red-600' : 'bg-blue-500 text-white border-blue-600 hover:bg-blue-700'}`}
                 >
@@ -219,17 +210,16 @@ const Dashboard = () => {
             {demoMode ? (
                 <ModernDashboard />
             ) : (
-                <RegularDashboard 
-                    stats={stats} 
-                    salesData={salesData} 
-                    topMedicines={topMedicines} 
+                <RegularDashboard
+                    stats={stats}
+                    salesData={salesData}
+                    topMedicines={topMedicines}
                 />
             )}
         </div>
     );
 };
 
-// Define Props interface for RegularDashboard
 interface RegularDashboardProps {
     stats: {
         totalSales: number;
@@ -255,8 +245,6 @@ interface RegularDashboardProps {
 const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, topMedicines }) => {
     return (
         <div>
-            {/* <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1> */}
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <div className="bg-white p-6 rounded-lg shadow">
                     <div className="flex items-center">
@@ -347,15 +335,13 @@ const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, t
     );
 };
 
-// Komponen untuk dashboard modern (mode demo)
 const ModernDashboard = () => {
-    // Data dummy untuk mode demo
     const demoData = {
         totalCustomer: 120,
         totalSales: 234,
         totalProfit: 456,
         outOfStock: 56,
-        
+
         expiringMedicines: [
             { name: 'Doxycycline', expiryDate: '24 Dec 2021', quantity: 40 },
             { name: 'Abetis', expiryDate: '24 Dec 2021', quantity: 40 },
@@ -363,7 +349,7 @@ const ModernDashboard = () => {
             { name: 'Cerox CV', expiryDate: '24 Dec 2021', quantity: 40 },
             { name: 'Fluciox', expiryDate: '24 Dec 2021', quantity: 40 },
         ],
-        
+
         recentOrders: [
             { medicine: 'Paricol 15mg', batchNo: '78367834', quantity: 40, status: 'Delivered', price: 23.00 },
             { medicine: 'Abetis 20mg', batchNo: '88832433', quantity: 40, status: 'Pending', price: 23.00 },
@@ -371,7 +357,7 @@ const ModernDashboard = () => {
             { medicine: 'Abetis 20mg', batchNo: '45578866', quantity: 40, status: 'Delivered', price: 23.00 },
             { medicine: 'Cerox CV', batchNo: '76767634', quantity: 40, status: 'Cancelled', price: 23.00 },
         ],
-        
+
         monthlyData: [
             { month: 'Jan', value: 40 },
             { month: 'Feb', value: 35 },
@@ -386,7 +372,7 @@ const ModernDashboard = () => {
             { month: 'Nov', value: 35 },
             { month: 'Dec', value: 30 },
         ],
-        
+
         todayReport: {
             totalEarning: 5098.00,
             purchasePercentage: 65,
@@ -395,15 +381,14 @@ const ModernDashboard = () => {
             servicePercentage: 85
         }
     };
-    
-    // Data untuk Monthly Progress chart
+
     const monthlyProgressData = {
         labels: demoData.monthlyData.map(item => item.month),
         datasets: [
             {
                 label: 'Penjualan Bulanan',
                 data: demoData.monthlyData.map(item => item.value),
-                backgroundColor: demoData.monthlyData.map(item => 
+                backgroundColor: demoData.monthlyData.map(item =>
                     item.month === 'Jul' ? '#1a73e8' : '#4ade80'
                 ),
                 borderRadius: 6,
@@ -411,8 +396,7 @@ const ModernDashboard = () => {
             }
         ]
     };
-    
-    // Data untuk Today's Report chart (doughnut chart)
+
     const todayReportData = {
         labels: ['Pembelian', 'Penerimaan Tunai', 'Penerimaan Bank', 'Layanan'],
         datasets: [
@@ -437,9 +421,7 @@ const ModernDashboard = () => {
 
     return (
         <div className="bg-gray-50 p-6 rounded-xl">
-            {/* Cards Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                {/* Total Customer Card */}
                 <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
                     <div>
                         <p className="text-sm text-gray-500 mb-1">Total Customer</p>
@@ -450,8 +432,7 @@ const ModernDashboard = () => {
                         <span className="text-indigo-500">👥</span>
                     </div>
                 </div>
-                
-                {/* Total Sale Card */}
+
                 <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
                     <div>
                         <p className="text-sm text-gray-500 mb-1">Total Sale</p>
@@ -462,8 +443,7 @@ const ModernDashboard = () => {
                         <span className="text-green-500">🛒</span>
                     </div>
                 </div>
-                
-                {/* Total Profit Card */}
+
                 <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
                     <div>
                         <p className="text-sm text-gray-500 mb-1">Total Profit</p>
@@ -474,8 +454,7 @@ const ModernDashboard = () => {
                         <span className="text-yellow-500">💰</span>
                     </div>
                 </div>
-                
-                {/* Out of Stock Card */}
+
                 <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
                     <div>
                         <p className="text-sm text-gray-500 mb-1">Out of Stock</p>
@@ -487,16 +466,14 @@ const ModernDashboard = () => {
                     </div>
                 </div>
             </div>
-            
-            {/* Tables and Charts */}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Expiring List */}
                 <div className="bg-white p-4 rounded-xl shadow-sm">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-semibold">Expiring List</h2>
                         <button className="text-xs text-primary">Lihat Semua</button>
                     </div>
-                    
+
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
@@ -526,14 +503,13 @@ const ModernDashboard = () => {
                         </table>
                     </div>
                 </div>
-                
-                {/* Recent Orders */}
+
                 <div className="bg-white p-4 rounded-xl shadow-sm">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-semibold">Recent Order's</h2>
                         <button className="text-xs text-primary">Lihat Semua</button>
                     </div>
-                    
+
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
@@ -553,9 +529,9 @@ const ModernDashboard = () => {
                                         <td className="py-3">{order.quantity}</td>
                                         <td className="py-3">
                                             <span className={`px-2 py-1 rounded-full text-xs 
-                                                ${order.status === 'Delivered' ? 'bg-blue-100 text-blue-600' : 
-                                                  order.status === 'Pending' ? 'bg-yellow-100 text-yellow-600' : 
-                                                  'bg-red-100 text-red-600'}`}>
+                                                ${order.status === 'Delivered' ? 'bg-blue-100 text-blue-600' :
+                                                    order.status === 'Pending' ? 'bg-yellow-100 text-yellow-600' :
+                                                        'bg-red-100 text-red-600'}`}>
                                                 {order.status}
                                             </span>
                                         </td>
@@ -567,10 +543,8 @@ const ModernDashboard = () => {
                     </div>
                 </div>
             </div>
-            
-            {/* Charts Row */}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Monthly Progress */}
                 <div className="bg-white p-4 rounded-xl shadow-sm">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-semibold">Monthly Progress</h2>
@@ -580,10 +554,10 @@ const ModernDashboard = () => {
                             <option>Daily</option>
                         </select>
                     </div>
-                    
+
                     <div className="h-64">
-                        <Bar 
-                            data={monthlyProgressData} 
+                        <Bar
+                            data={monthlyProgressData}
                             options={{
                                 responsive: true,
                                 maintainAspectRatio: false,
@@ -623,14 +597,13 @@ const ModernDashboard = () => {
                         />
                     </div>
                 </div>
-                
-                {/* Today's Report */}
+
                 <div className="bg-white p-4 rounded-xl shadow-sm">
                     <h2 className="text-lg font-semibold mb-4">Today's Report</h2>
-                    
+
                     <div className="flex items-center justify-center">
                         <div className="h-64 w-64 relative flex items-center justify-center">
-                            <Doughnut 
+                            <Doughnut
                                 data={todayReportData}
                                 options={{
                                     responsive: true,
