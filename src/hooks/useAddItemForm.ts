@@ -39,6 +39,7 @@ interface FormData {
 
 export const useAddItemForm = (itemId?: string) => {
     const navigate = useNavigate();
+    const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -67,10 +68,44 @@ export const useAddItemForm = (itemId?: string) => {
     });
 
     const updateFormData = (newData: Partial<FormData>) => {
-        setFormData(prev => ({
-            ...prev,
-            ...newData
-        }));
+        if (!initialFormData && !loading && (itemId || !isEditMode)) {
+            setInitialFormData(prev => {
+                const merged = { ...(prev ?? formData), ...newData };
+                return {
+                    code: merged.code ?? "",
+                    name: merged.name ?? "",
+                    type_id: merged.type_id ?? "",
+                    category_id: merged.category_id ?? "",
+                    unit_id: merged.unit_id ?? "",
+                    rack: merged.rack ?? "",
+                    description: merged.description ?? "",
+                    base_price: merged.base_price ?? 0,
+                    sell_price: merged.sell_price ?? 0,
+                    min_stock: merged.min_stock ?? 10,
+                    is_active: merged.is_active ?? true,
+                    is_medicine: merged.is_medicine ?? true,
+                    has_expiry_date: merged.has_expiry_date ?? false,
+                };
+            });
+        }
+        setFormData(prev => {
+            const merged = { ...prev, ...newData };
+            return {
+                code: merged.code ?? "",
+                name: merged.name ?? "",
+                type_id: merged.type_id ?? "",
+                category_id: merged.category_id ?? "",
+                unit_id: merged.unit_id ?? "",
+                rack: merged.rack ?? "",
+                description: merged.description ?? "",
+                base_price: merged.base_price ?? 0,
+                sell_price: merged.sell_price ?? 0,
+                min_stock: merged.min_stock ?? 10,
+                is_active: merged.is_active ?? true,
+                is_medicine: merged.is_medicine ?? true,
+                has_expiry_date: merged.has_expiry_date ?? false,
+            };
+        });
     };
 
     const generateTypeCode = (typeId: string): string => {
@@ -123,6 +158,9 @@ export const useAddItemForm = (itemId?: string) => {
         if (itemId) {
             fetchItemData(itemId);
             setIsEditMode(true);
+        }
+        if (!itemId) {
+            setInitialFormData(formData);
         }
     }, [itemId]);
 
@@ -231,6 +269,8 @@ export const useAddItemForm = (itemId?: string) => {
                 is_medicine: data.is_medicine !== undefined ? data.is_medicine : true,
                 has_expiry_date: data.has_expiry_date !== undefined ? data.has_expiry_date : false,
             });
+
+            setInitialFormData(data);
 
             setDisplayBasePrice(formatRupiah(data.base_price || 0));
             setDisplaySellPrice(formatRupiah(data.sell_price || 0));
@@ -445,6 +485,11 @@ export const useAddItemForm = (itemId?: string) => {
         }
     };
 
+    const isDirty = () => {
+        if (!initialFormData) return false;
+        return JSON.stringify(formData) !== JSON.stringify(initialFormData);
+    };
+
     return {
         formData,
         displayBasePrice,
@@ -459,6 +504,7 @@ export const useAddItemForm = (itemId?: string) => {
         handleSelectChange,
         handleSubmit,
         unitConversionHook,
-        updateFormData
+        updateFormData,
+        isDirty
     };
 };
