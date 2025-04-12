@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { FaArrowRight, FaArrowLeft, FaSave, FaTrash } from 'react-icons/fa';
+import { FaArrowLeft, FaSave, FaTrash } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
@@ -293,17 +293,6 @@ const AddItem = () => {
                                     />
                                 </FormField>
                                 
-                                <div className="text-center md:mt-6">
-                                    {calculateProfitPercentage() !== null ? (
-                                        <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {calculateProfitPercentage()!.toFixed(1)}%
-                                            <FaArrowRight className="inline ml-2" />
-                                        </span>
-                                    ) : (
-                                        <span className="text-sm text-gray-500">-</span>
-                                    )}
-                                </div>
-
                                 <FormField label="Harga Jual">
                                     <Input
                                         type="text"
@@ -316,6 +305,16 @@ const AddItem = () => {
                                         required
                                     />
                                 </FormField>
+                                
+                                <div className="text-left md:mt-6 md:col-span-2">
+                                    {calculateProfitPercentage() !== null ? (
+                                        <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            {calculateProfitPercentage()!.toFixed(1)}%
+                                        </span>
+                                    ) : (
+                                        <span className="text-sm text-gray-500">-</span>
+                                    )}
+                                </div>
                             </div>
                         </FormSection>
 
