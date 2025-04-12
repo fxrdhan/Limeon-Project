@@ -9,14 +9,12 @@ import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from ".
 import { Pagination } from "../../components/ui/Pagination";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 
-// Define the expected structure for an item within this component scope for clarity
 interface Item {
     id: string;
     name: string;
     code: string;
     sell_price: number;
     unit_conversions?: { unit_name: string }[];
-    // Add other fields if needed by other parts of the component
 }
 
 function ItemList() {
@@ -27,9 +25,7 @@ function ItemList() {
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
 
-    // Update this effect to use a more precise invalidation
     useEffect(() => {
-        // Invalidate all item queries regardless of page, search, or itemsPerPage parameters
         queryClient.invalidateQueries({
             queryKey: ['items'],
             refetchType: 'all'
@@ -86,7 +82,7 @@ function ItemList() {
             base_price: item.base_price,
             sell_price: item.sell_price,
             stock: item.stock,
-            unit_conversions: typeof item.unit_conversions === 'string' ? JSON.parse(item.unit_conversions || '[]') : (item.unit_conversions || []), // Parse JSON if needed
+            unit_conversions: typeof item.unit_conversions === 'string' ? JSON.parse(item.unit_conversions || '[]') : (item.unit_conversions || []),
             category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
             type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
             unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
@@ -108,8 +104,8 @@ function ItemList() {
         queryKey: ['items', currentPage, debouncedSearch, itemsPerPage],
         queryFn: () => fetchItems(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
-        staleTime: 30 * 1000, // Reduced from 5 minutes to 30 seconds
-        refetchOnMount: true, // Ensure refetch when component mounts
+        staleTime: 30 * 1000,
+        refetchOnMount: true,
     });
 
     const deleteItemMutation = useMutation({
@@ -118,7 +114,6 @@ function ItemList() {
             if (error) throw error;
         },
         onSuccess: () => {
-            // Update the invalidation strategy to match the useEffect approach
             queryClient.invalidateQueries({
                 queryKey: ['items'],
                 refetchType: 'all'
@@ -193,7 +188,7 @@ function ItemList() {
                             {items.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={10} // Update colspan
+                                        colSpan={10}
                                         className="text-center text-gray-600"
                                     >
                                         {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
@@ -207,7 +202,6 @@ function ItemList() {
                                         <TableCell>{item.category.name}</TableCell>
                                         <TableCell>{item.type.name}</TableCell>
                                         <TableCell>{item.unit.name}</TableCell>
-                                        {/* Display derived units */}
                                         <TableCell>
                                             {item.unit_conversions && item.unit_conversions.length > 0
                                                 ? item.unit_conversions.map((uc: { unit_name: string }) => uc.unit_name).join(', ')
@@ -277,7 +271,6 @@ function ItemList() {
             variant: "danger",
             confirmText: "Hapus",
             onConfirm: () => {
-                // Use item.id for the mutation
                 deleteItemMutation.mutate(item.id);
             }
         });
