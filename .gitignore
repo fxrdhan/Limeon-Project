@@ -12,6 +12,7 @@ src/output.css
 
 # Dependency directories
 node_modules
+supabase_data
 project_files.txt
 get-all
 get-database
