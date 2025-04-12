@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'; // Import useEffect
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { supabase } from '../../lib/supabase';
 import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
@@ -21,7 +21,7 @@ type ProfileKey = keyof CompanyProfile;
 
 const Profile = () => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
-    const [editValues, setEditValues] = useState<Record<string, string | null>>({}); // Allow null values
+    const [editValues, setEditValues] = useState<Record<string, string | null>>({});
     const queryClient = useQueryClient();
 
     const fetchProfile = async () => {
@@ -44,7 +44,6 @@ const Profile = () => {
         refetchOnWindowFocus: false
     });
 
-    // Set initial values when profile data is fetched
     useEffect(() => {
         if (profile) {
             const initialValues: Record<string, string | null> = {};
@@ -57,7 +56,6 @@ const Profile = () => {
 
     const updateProfileMutation = useMutation({
         mutationFn: async ({ field, value }: { field: string, value: string | null }) => {
-            // Add null check for profile before accessing id
             if (!profile?.id) throw new Error("Profil ID tidak ditemukan untuk diperbarui.");
 
             const { error } = await supabase
@@ -96,7 +94,7 @@ const Profile = () => {
     };
 
     const handleChange = (field: string, value: string) => {
-        setEditValues((prev: Record<string, string | null>) => ({ // Explicitly type prev
+        setEditValues((prev: Record<string, string | null>) => ({
             ...prev,
             [field]: value,
         }));
