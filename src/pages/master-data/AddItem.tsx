@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { FaArrowRight, FaTimes, FaSave, FaTrash } from 'react-icons/fa';
+import { FaArrowRight, FaArrowLeft, FaSave, FaTrash } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
@@ -102,16 +102,17 @@ const AddItem = () => {
         <div>
             <Card>
                 <CardHeader className="flex justify-between items-center">
-                    <CardTitle className="text-center flex-grow">{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
                     <Button
                         variant="text"
                         size="sm"
                         onClick={() => navigate("/master-data/items")}
-                        className="text-gray-500 hover:text-primary"
+                        className="text-gray-500 p-2 rounded-full transition-transform duration-200 ease-in-out hover:scale-110 active:scale-95 flex items-center"
                         title="Kembali ke Daftar Item"
                     >
-                        <FaTimes size={20} />
+                        <FaArrowLeft size={18} />
+                        <span className="ml-2">Back</span>
                     </Button>
+                    <CardTitle className="text-center flex-grow">{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
                 </CardHeader>
 
                 <form onSubmit={handleSubmit}>
