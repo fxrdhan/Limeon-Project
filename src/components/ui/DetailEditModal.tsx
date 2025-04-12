@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
-import { Button } from '../ui/Button';
+import { Button } from './Button';
 
 interface FieldConfig {
     key: string;
@@ -16,6 +16,8 @@ interface DetailEditModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
+    onDeleteRequest?: (data: Record<string, unknown>) => void;
+    deleteButtonLabel?: string;
     imageUrl?: string;
     imagePlaceholder?: string;
 }
@@ -28,7 +30,9 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     onClose,
     onSave,
     imageUrl,
-    imagePlaceholder
+    imagePlaceholder,
+    onDeleteRequest,
+    deleteButtonLabel = 'Hapus'
 }) => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
     const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({});
@@ -183,7 +187,12 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                     </div>
                 </div>
 
-                <div className="p-4 border-t flex justify-end">
+                <div className="p-4 border-t flex justify-between items-center">
+                    {onDeleteRequest && (
+                        <Button variant="danger" onClick={() => onDeleteRequest(data)}>
+                            {deleteButtonLabel}
+                        </Button>
+                    )}
                     <Button variant="outline" onClick={onClose}>
                         Tutup
                     </Button>
