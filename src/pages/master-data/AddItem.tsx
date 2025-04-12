@@ -1,14 +1,14 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { FormActions } from "../../components/ui/FormActions";
 import { Input } from "../../components/ui/Input";
-import { FaArrowRight } from 'react-icons/fa'; // Import ikon panah
+import { FaArrowRight } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
 
-// Style constants
 const inputClassName = "w-full";
 const selectClassName = "bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
 const addButtonClassName = "ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600";
@@ -25,12 +25,9 @@ const AddItem = () => {
         unitConversionHook
     } = useAddItemForm(id);
 
-    // Modified handleSelectChange to update baseUnit automatically
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target;
         originalHandleSelectChange(e);
-        
-        // Set baseUnit automatically when unit_id changes
         if (name === 'unit_id' && value) {
             const selectedUnit = units.find(unit => unit.id === value);
             if (selectedUnit) {
@@ -39,22 +36,18 @@ const AddItem = () => {
         }
     };
 
-    // Efek untuk memperbarui basePrice pada unitConversionHook saat harga pokok berubah
     useEffect(() => {
-        // Perbarui nilai basePrice di unitConversionHook ketika formData.base_price berubah
         if (formData.base_price > 0) {
             unitConversionHook.setBasePrice(formData.base_price);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.base_price]);
 
-    // Fungsi untuk menghitung persentase keuntungan
     const calculateProfitPercentage = () => {
         const { base_price, sell_price } = formData;
         if (base_price > 0 && sell_price >= 0) {
             return ((sell_price - base_price) / base_price) * 100;
         }
-        return null; // Kembalikan null jika harga pokok 0 atau negatif
+        return null;
     };
 
     if (loading) {
@@ -259,10 +252,9 @@ const AddItem = () => {
                                     />
                                 </FormField>
                                 
-                                {/* Elemen untuk menampilkan persentase keuntungan */}
                                 <div className="text-center md:mt-6">
                                     {calculateProfitPercentage() !== null ? (
-                                        <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}> {/* Changed text-sm to text-lg */}
+                                        <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                             <FaArrowRight className="inline mr-2" />
                                             {calculateProfitPercentage()!.toFixed(1)}%
                                         </span>
@@ -271,7 +263,6 @@ const AddItem = () => {
                                     )}
                                 </div>
 
-                                {/* Field Harga Jual */}
                                 <FormField label="Harga Jual">
                                     <Input
                                         type="text"
@@ -299,7 +290,6 @@ const AddItem = () => {
                                                 name="is_active"
                                                 checked={formData.is_active}
                                                 onChange={() => updateFormData({ is_active: true })}
-                                                className="form-radio h-5 w-5 text-primary"
                                             />
                                             <span className="ml-2">Masih dijual</span>
                                         </label>
@@ -309,7 +299,6 @@ const AddItem = () => {
                                                 name="is_active"
                                                 checked={!formData.is_active}
                                                 onChange={() => updateFormData({ is_active: false })}
-                                                className="form-radio h-5 w-5 text-primary"
                                             />
                                             <span className="ml-2">Tidak Dijual</span>
                                         </label>
@@ -336,7 +325,6 @@ const AddItem = () => {
                                         checked={formData.has_expiry_date}
                                         disabled={!formData.is_medicine}
                                         onChange={handleChange}
-                                        className="form-checkbox h-5 w-5 text-primary"
                                     />
                                     <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
                                 </label>
