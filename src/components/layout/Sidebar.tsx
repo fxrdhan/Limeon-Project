@@ -240,15 +240,15 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
 
                                     {/* Submenu Rendering */}
                                     {item.children && !collapsed && openMenus[item.name.toLowerCase().replace(' ', '')] && (
-                                        <div className="pl-10 pr-2 py-1 bg-black/10"> {/* Indent submenu */}
+                                        <div className="pl-10 pr-2 py-1 bg-black/10 transition-opacity duration-300 ease-in-out"> {/* Added container transition */}
                                             {item.children.map((child) => (
                                                 <Link
                                                     key={child.name}
                                                     to={child.path}
-                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition-colors duration-150 ${isActive(child.path)
-                                                            ? 'bg-white/20 text-white font-medium'
-                                                            : 'text-blue-100 hover:bg-white/10 hover:text-white'
-                                                        }`}
+                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition-colors transition-opacity duration-300 ease-in-out ${isActive(child.path) // Added opacity transition to link
+                                                        ? 'bg-white/20 text-white font-medium'
+                                                        : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                                                    } whitespace-nowrap overflow-hidden text-ellipsis`} // Ensure text stays on one line and add ellipsis if needed
                                                 >
                                                     {child.name}
                                                 </Link>
