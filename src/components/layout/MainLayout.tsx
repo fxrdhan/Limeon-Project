@@ -15,7 +15,7 @@ const MainLayout = () => {
             <Sidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
 
             <div className="flex flex-col flex-1 overflow-hidden">
-                <Navbar />
+                <Navbar sidebarCollapsed={sidebarCollapsed} />
 
                 <main className="flex-1 overflow-y-auto p-4 text-gray-800">
                     <Outlet />

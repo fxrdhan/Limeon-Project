@@ -754,7 +754,7 @@
     15	            <Sidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
     16	
     17	            <div className="flex flex-col flex-1 overflow-hidden">
-    18	                <Navbar />
+    18	                <Navbar sidebarCollapsed={sidebarCollapsed} />
     19	
     20	                <main className="flex-1 overflow-y-auto p-4 text-gray-800">
     21	                    <Outlet />
@@ -776,56 +776,66 @@
      3	import { useAuthStore } from '../../store/authStore';
      4	import { Button } from '../ui/Button';
      5	
-     6	const Navbar = () => {
-     7	    const { user, logout } = useAuthStore();
-     8	    const [dropdownOpen, setDropdownOpen] = useState(false);
-     9	
-    10	    const toggleDropdown = () => {
-    11	        setDropdownOpen(!dropdownOpen);
-    12	    };
-    13	
-    14	    const handleLogout = async () => {
-    15	        await logout();
-    16	    };
-    17	
-    18	    return (
-    19	        <nav className="bg-white border-b px-6 py-3">
-    20	            <div className="flex justify-between items-center">
-    21	                <div>
-    22	                    <h1 className="text-xl font-semibold text-gray-800">PharmaSys</h1>
-    23	                </div>
-    24	
-    25	                <div className="relative">
-    26	                    <button
-    27	                        className="flex items-center space-x-2"
-    28	                        onClick={toggleDropdown}
-    29	                    >
-    30	                        <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
-    31	                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-    32	                        </div>
-    33	                        <span className="font-medium">{user?.name || 'User'}</span>
-    34	                    </button>
-    35	
-    36	                    {dropdownOpen && (
-    37	                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
-    38	                            <div className="py-1">
-    39	                                <Button
-    40	                                    variant="outline"
-    41	                                    className="w-full justify-start rounded-none"
-    42	                                    onClick={handleLogout}
-    43	                                >
-    44	                                    Logout
-    45	                                </Button>
-    46	                            </div>
-    47	                        </div>
-    48	                    )}
-    49	                </div>
-    50	            </div>
-    51	        </nav>
-    52	    );
-    53	};
-    54	
-    55	export default Navbar;
+     6	// Define props interface
+     7	interface NavbarProps {
+     8	    sidebarCollapsed: boolean;
+     9	}
+    10	
+    11	const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
+    12	    const { user, logout } = useAuthStore();
+    13	    const [dropdownOpen, setDropdownOpen] = useState(false);
+    14	
+    15	    const toggleDropdown = () => {
+    16	        setDropdownOpen(!dropdownOpen);
+    17	    };
+    18	
+    19	    const handleLogout = async () => {
+    20	        await logout();
+    21	    };
+    22	
+    23	    return (
+    24	        <nav className="bg-white border-b px-6 py-3">
+    25	            <div className="flex justify-between items-center">
+    26	                {/* Conditionally render Navbar title based on sidebar state */}
+    27	                <div className="flex items-center h-8">
+    28	                    {sidebarCollapsed ? (
+    29	                        <h1 className="text-xl font-semibold text-gray-800 transition-opacity duration-300 ease-in-out">PharmaSys</h1>
+    30	                    ) : (
+    31	                        <h1 className="text-xl font-semibold text-gray-800 transition-opacity duration-300 ease-in-out">Pharmacy System App</h1>
+    32	                    )}
+    33	                </div>
+    34	
+    35	                <div className="relative">
+    36	                    <button
+    37	                        className="flex items-center space-x-2"
+    38	                        onClick={toggleDropdown}
+    39	                    >
+    40	                        <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
+    41	                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+    42	                        </div>
+    43	                        <span className="font-medium">{user?.name || 'User'}</span>
+    44	                    </button>
+    45	
+    46	                    {dropdownOpen && (
+    47	                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+    48	                            <div className="py-1">
+    49	                                <Button
+    50	                                    variant="outline"
+    51	                                    className="w-full justify-start rounded-none"
+    52	                                    onClick={handleLogout}
+    53	                                >
+    54	                                    Logout
+    55	                                </Button>
+    56	                            </div>
+    57	                        </div>
+    58	                    )}
+    59	                </div>
+    60	            </div>
+    61	        </nav>
+    62	    );
+    63	};
+    64	
+    65	export default Navbar;
 
 
 ===============================================
