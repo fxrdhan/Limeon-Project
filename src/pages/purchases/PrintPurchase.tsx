@@ -1,4 +1,3 @@
-// src/pages/purchases/PrintPurchase.tsx
 import { useEffect, useState } from "react";
 
 interface PurchaseData {
@@ -55,7 +54,6 @@ const PrintPurchase = () => {
     const [subtotals, setSubtotals] = useState<Subtotals | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Fungsi format currency dengan 2 digit desimal
     const formatCurrency = (value: number | bigint, prefix = '') => {
         const formatter = new Intl.NumberFormat('id-ID', {
             minimumFractionDigits: 0,
@@ -65,7 +63,6 @@ const PrintPurchase = () => {
     };
 
     useEffect(() => {
-        // Ambil data dari sessionStorage yang disimpan oleh ViewPurchase
         const storedData = sessionStorage.getItem('purchaseData');
         if (storedData) {
             const data = JSON.parse(storedData);
@@ -75,7 +72,6 @@ const PrintPurchase = () => {
         }
         setLoading(false);
 
-        // Auto print saat halaman selesai dimuat
         const timer = setTimeout(() => {
             window.print();
         }, 1000);
@@ -103,7 +99,6 @@ const PrintPurchase = () => {
 
                 <div className="flex justify-between gap-4">
                     <div className="w-1/2">
-                        {/* Supplier Info */}
                         <div className="text-left mb-4">
                             <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Supplier'}</h2>
                             <div className="text-sm text-gray-600">
@@ -111,7 +106,6 @@ const PrintPurchase = () => {
                             </div>
                         </div>
                         
-                        {/* Customer Info */}
                         <div className="text-left">
                             <h2 className="text-sm text-gray-600">Customer:</h2>
                             <div className="text-sm">
@@ -122,7 +116,6 @@ const PrintPurchase = () => {
                     </div>
                     
                     <div className="w-1/2">
-                        {/* Faktur Info */}
                         <div className="bg-gray-50 p-3 rounded text-sm">
                             <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
                                 <span className="text-left font-bold">No. Faktur</span>
