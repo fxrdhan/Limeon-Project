@@ -32,7 +32,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         if (basePrice > 0 && unitConversions.length > 0) {
             recalculateBasePrices();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [basePrice, recalculateBasePrices]);
 
     // const handleBaseUnitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -66,15 +66,17 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
             alert("Satuan tersebut sudah ada dalam daftar!");
             return;
         }
-        
+
         const selectedUnit = availableUnits.find(u => u.name === unitConversionFormData.unit);
-            if (!selectedUnit) {
-                alert("Satuan tidak valid!");
+        if (!selectedUnit) {
+            alert("Satuan tidak valid!");
             return;
         }
 
         addUnitConversion({
             unit: selectedUnit,
+            unit_name: selectedUnit.name,
+            to_unit_id: selectedUnit.id,
             conversion: unitConversionFormData.conversion,
             basePrice: 0
         });
@@ -95,7 +97,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <FormField label="Satuan Konversi">
+                    <FormField label="Satuan Turunan">
                         <select
                             name="unit"
                             value={unitConversionFormData.unit}
@@ -107,32 +109,29 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                 .filter(unit => unit.name !== baseUnit)
                                 .filter(unit => !unitConversions.some(uc => uc.unit.name === unit.name))
                                 .map(unit => (
-                                <option key={unit.id} value={unit.name}>
-                                    {unit.name}
-                                </option>
-                            ))}
+                                    <option key={unit.id} value={unit.name}>
+                                        {unit.name}
+                                    </option>
+                                ))}
                         </select>
                     </FormField>
 
-                    <FormField label={`1 ${baseUnit || 'satuan dasar'} = ? ${unitConversionFormData.unit || 'satuan'}`}>
-                        <div className="flex space-x-2">
-                            <Input
-                                name="conversion"
-                                value={unitConversionFormData.conversion || ""}
-                                onChange={handleConversionFormChange}
-                                type="number"
-                                min="1"
-                                placeholder="Jumlah satuan dasar"
-                                className="w-full"
-                            />
-                            <Button
-                                type="button"
-                                onClick={handleAddConversion}
-                                className="whitespace-nowrap"
-                            >
-                                Tambah Satuan
-                            </Button>
-                        </div>
+                    <FormField label={`1 ${baseUnit || 'Satuan Dasar'} = ? ${unitConversionFormData.unit || 'Satuan'}`}>
+                        <Input
+                            name="conversion"
+                            value={unitConversionFormData.conversion || ""}
+                            onChange={handleConversionFormChange}
+                            type="number"
+                            min="1"
+                            placeholder="Jumlah Satuan Dasar"
+                            className="w-full"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault(); // Mencegah submit form jika ada
+                                    handleAddConversion();
+                                }
+                            }}
+                        />
                     </FormField>
                 </div>
 
@@ -155,7 +154,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                 </TableRow>
                             ) : (
                                 // Filter untuk menghilangkan duplikat berdasarkan unit.name
-                                unitConversions.filter((uc, index, self) => 
+                                unitConversions.filter((uc, index, self) =>
                                     index === self.findIndex(u => u.unit.name === uc.unit.name)
                                 ).map((uc) => (
                                     <TableRow key={uc.id}>
