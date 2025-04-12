@@ -1,13 +1,16 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
-import { FormActions } from "../../components/ui/FormActions";
+import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { FaArrowRight } from 'react-icons/fa';
+import { FaArrowRight, FaTimes, FaSave, FaTrash } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
+import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { supabase } from "../../lib/supabase";
 
 const inputClassName = "w-full";
 const selectClassName = "bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
@@ -18,12 +21,33 @@ const textareaClassName = "w-full p-2 border border-gray-300 rounded-md focus:ou
 const AddItem = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
+    const { openConfirmDialog } = useConfirmDialog();
+    const queryClient = useQueryClient();
 
     const {
         formData, displayBasePrice, displaySellPrice, categories, types, units,
         saving, loading, isEditMode, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
         unitConversionHook
-    } = useAddItemForm(id);
+    } = useAddItemForm(id || undefined);
+
+    const deleteItemMutation = useMutation({
+        mutationFn: async (itemId: string) => {
+            const { error } = await supabase.from("items").delete().eq("id", itemId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['items'],
+                refetchType: 'all'
+            });
+            console.log("Item berhasil dihapus.");
+            navigate("/master-data/items"); // Redirect after successful delete
+        },
+        onError: (error) => {
+            console.error("Error deleting item:", error);
+            alert("Gagal menghapus item. Silakan coba lagi.");
+        },
+    });
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -50,6 +74,19 @@ const AddItem = () => {
         return null;
     };
 
+    const handleDelete = () => {
+        if (!id) return; // Should not happen if isEditMode is true
+        openConfirmDialog({
+            title: "Konfirmasi Hapus",
+            message: `Apakah Anda yakin ingin menghapus item "${formData.name}"? Stok terkait akan terpengaruh.`,
+            variant: 'danger',
+            confirmText: "Hapus",
+            onConfirm: () => {
+                deleteItemMutation.mutate(id);
+            }
+        });
+    };
+
     if (loading) {
         return (
             <Card>
@@ -64,8 +101,17 @@ const AddItem = () => {
     return (
         <div>
             <Card>
-                <CardHeader>
+                <CardHeader className="flex justify-between items-center">
                     <CardTitle>{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
+                    <Button
+                        variant="text"
+                        size="sm"
+                        onClick={() => navigate("/master-data/items")}
+                        className="text-gray-500 hover:text-primary"
+                        title="Kembali ke Daftar Item"
+                    >
+                        <FaTimes size={20} />
+                    </Button>
                 </CardHeader>
 
                 <form onSubmit={handleSubmit}>
@@ -337,12 +383,22 @@ const AddItem = () => {
                     </CardContent>
 
                     <CardFooter className="flex justify-between">
-                        <FormActions
-                            onCancel={() => navigate("/master-data/items")}
-                            isDisabled={false}
-                            isSaving={saving}
-                            saveText={isEditMode ? 'Update' : 'Simpan'}
-                        />
+                        {isEditMode ? (
+                            <Button
+                                type="button"
+                                variant="danger"
+                                onClick={handleDelete}
+                                disabled={deleteItemMutation.isPending}
+                                isLoading={deleteItemMutation.isPending}
+                            >
+                                <FaTrash className="mr-2" /> Hapus
+                            </Button>
+                        ) : (
+                            <Button type="button" variant="outline" onClick={() => navigate("/master-data/items")}> Batal </Button>
+                        )}
+                        <Button type="submit" disabled={saving} isLoading={saving}>
+                            <FaSave className="mr-2" /> {isEditMode ? 'Update' : 'Simpan'}
+                        </Button>
                     </CardFooter>
                 </form>
             </Card>

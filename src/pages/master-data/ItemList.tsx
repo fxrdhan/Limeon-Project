@@ -1,28 +1,21 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useQuery, useQueryClient, useMutation, keepPreviousData } from '@tanstack/react-query';
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from "../../lib/supabase";
-import { FaPlus, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
+import { FaPlus, FaSearch } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Pagination } from "../../components/ui/Pagination";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 
-interface Item {
-    id: string;
-    name: string;
-    code: string;
-    sell_price: number;
-    unit_conversions?: { unit_name: string }[];
-}
-
 function ItemList() {
+    const navigate = useNavigate();
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const { openConfirmDialog } = useConfirmDialog();
+    useConfirmDialog();
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -108,24 +101,6 @@ function ItemList() {
         refetchOnMount: true,
     });
 
-    const deleteItemMutation = useMutation({
-        mutationFn: async (itemId: string) => {
-            const { error } = await supabase.from("items").delete().eq("id", itemId);
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ['items'],
-                refetchType: 'all'
-            });
-            console.log("Item berhasil dihapus dan data di-refetch untuk semua ukuran halaman.");
-        },
-        onError: (error) => {
-            console.error("Error deleting item:", error);
-            alert("Gagal menghapus item. Silakan coba lagi.");
-        },
-    });
-
     const items = data?.items || [];
     const totalItems = data?.totalItems || 0;
 
@@ -181,14 +156,13 @@ function ItemList() {
                                 <TableHeader className="text-right">Harga Pokok</TableHeader>
                                 <TableHeader className="text-right">Harga Jual</TableHeader>
                                 <TableHeader className="text-right">Stok</TableHeader>
-                                <TableHeader className="text-center">Aksi</TableHeader>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {items.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={10}
+                                        colSpan={9}
                                         className="text-center text-gray-600"
                                     >
                                         {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
@@ -196,7 +170,11 @@ function ItemList() {
                                 </TableRow>
                             ) : (
                                 items.map((item) => (
-                                    <TableRow key={item.id}>
+                                    <TableRow
+                                        key={item.id}
+                                        onClick={() => navigate(`/master-data/items/edit/${item.id}`)}
+                                        className="cursor-pointer hover:bg-blue-50"
+                                    >
                                         <TableCell>{item.name}</TableCell>
                                         <TableCell>{item.code}</TableCell>
                                         <TableCell>{item.category.name}</TableCell>
@@ -222,29 +200,6 @@ function ItemList() {
                                             })}
                                         </TableCell>
                                         <TableCell className="text-right">{item.stock}</TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex justify-center space-x-2">
-                                                <Link
-                                                    to={`/master-data/items/edit/${item.id}`}
-                                                >
-                                                    <Button variant="secondary" size="sm">
-                                                        <FaEdit />
-                                                    </Button>
-                                                </Link>
-                                                <Button
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(item)}
-                                                    disabled={deleteItemMutation.isPending && deleteItemMutation.variables === item.id}
-                                                >
-                                                    {deleteItemMutation.isPending && deleteItemMutation.variables === item.id ? (
-                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
-                                                    ) : (
-                                                        <FaTrash />
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </TableCell>
                                     </TableRow>
                                 ))
                             )}
@@ -263,18 +218,6 @@ function ItemList() {
             )}
         </Card>
     );
-
-    async function handleDelete(item: Item) {
-        openConfirmDialog({
-            title: "Konfirmasi Hapus",
-            message: `Apakah Anda yakin ingin menghapus item "${item.name}"?`,
-            variant: "danger",
-            confirmText: "Hapus",
-            onConfirm: () => {
-                deleteItemMutation.mutate(item.id);
-            }
-        });
-    }
 }
 
 export default ItemList;
