@@ -182,7 +182,7 @@ function ItemList() {
                                 <TableHeader>Kategori</TableHeader>
                                 <TableHeader>Jenis</TableHeader>
                                 <TableHeader>Satuan</TableHeader>
-                                <TableHeader>Satuan Turunan</TableHeader> {/* Add new header */}
+                                <TableHeader>Satuan Turunan</TableHeader>
                                 <TableHeader className="text-right">Harga Pokok</TableHeader>
                                 <TableHeader className="text-right">Harga Jual</TableHeader>
                                 <TableHeader className="text-right">Stok</TableHeader>
