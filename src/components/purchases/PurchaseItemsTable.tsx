@@ -2,9 +2,10 @@ import React from 'react';
 import { FaTrash } from 'react-icons/fa';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../ui/Table';
 import { Button } from '../ui/Button';
-import { Item } from '../../hooks/useItemSelection'; // Import Item type
+import { Item } from '../../hooks/useItemSelection';
 import { formatRupiah, extractNumericValue } from '../../lib/formatters';
 import { PurchaseItem } from '../../hooks/usePurchaseForm';
+
 
 interface PurchaseItemsTableProps {
     purchaseItems: PurchaseItem[];
@@ -16,8 +17,8 @@ interface PurchaseItemsTableProps {
     onUpdateItemExpiry: (id: string, expiryDate: string) => void;
     onUpdateItemBatchNo: (id: string, batchNo: string) => void;
     onUnitChange: (id: string, unitName: string) => void;
-    getItemByID: (itemId: string) => Item | undefined; // Use specific Item type or undefined if not found
-    isEmptyMessage?: string | null; // add this line
+    getItemByID: (itemId: string) => Item | undefined;
+    isEmptyMessage?: string | null;
 }
 
 const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
@@ -31,7 +32,7 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
     onUpdateItemExpiry,
     onUpdateItemBatchNo,
     getItemByID,
-    isEmptyMessage // add this line
+    isEmptyMessage
 }) => {
     return (
         <>
@@ -93,20 +94,17 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                         onChange={(e) => {
                                             const inputValue = e.target.value;
                                             
-                                            // Izinkan input kosong untuk sementara agar user bisa mengetik ulang
                                             if (inputValue === '') {
-                                                onUpdateItem(item.id, 'quantity', 0); // Gunakan 0 sementara
+                                                onUpdateItem(item.id, 'quantity', 0);
                                                 return;
                                             }
                                             
-                                            // Untuk input tidak kosong, parse dan update
                                             const newValue = parseInt(inputValue, 10);
                                             if (!isNaN(newValue) && newValue >= 0) {
                                                 onUpdateItem(item.id, 'quantity', newValue);
                                             }
                                         }}
                                         onBlur={() => {
-                                            // Pastikan nilai minimum 1 ketika input kehilangan fokus
                                             const numericValue = parseInt(item.quantity.toString(), 10);
                                             onUpdateItem(item.id, 'quantity', numericValue < 1 ? 1 : numericValue);
                                         }}
@@ -122,9 +120,17 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                         <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
                                             {getItemByID(item.item_id)?.base_unit || 'Unit'}
                                         </option>
-                                        {getItemByID(item.item_id)?.unit_conversions?.map((uc: { id: string; unit_name: string }) => (
-                                            <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
-                                        ))}
+                                        {(() => {
+                                            const conversions = getItemByID(item.item_id)?.unit_conversions;
+                                            if (!conversions) return null;
+                                            if (conversions.length === 0) return <span className="text-xs">No units defined</span>;
+
+                                            const uniqueUnits = Array.from(new Map(conversions.map(uc => [uc.to_unit_id, { id: uc.to_unit_id, unit_name: uc.unit_name }])).values());
+
+                                            return uniqueUnits.map((uc) => (
+                                                <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
+                                            ));
+                                        })()}
                                     </select>
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -144,24 +150,20 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                         type="text"
                                         value={item.discount === 0 ? '' : `${item.discount}%`}
                                         onChange={(e) => {
-                                            // Hapus tanda % jika ada
                                             let inputValue = e.target.value;
                                             if (inputValue.endsWith('%')) {
                                                 inputValue = inputValue.slice(0, -1);
                                             }
                                             
-                                            // Ambil nilai numerik saja tanpa %
                                             const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
                                             onUpdateItem(item.id, 'discount', Math.min(numericValue, 100));
                                         }}
                                         className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
                                         placeholder="0%"
                                         onKeyDown={(e) => {
-                                            // Tangani backspace saat kursor berada di akhir input
                                             if (e.key === 'Backspace' && 
                                                 item.discount > 0 && 
                                                 e.currentTarget.selectionStart === e.currentTarget.value.length) {
-                                                // Cegah perilaku default dan update nilai secara manual
                                                 e.preventDefault();
                                                 const newValue = Math.floor(item.discount / 10);
                                                 onUpdateItem(item.id, 'discount', newValue);
@@ -175,24 +177,20 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                                             type="text"
                                             value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
                                             onChange={(e) => {
-                                                // Hapus tanda % jika ada
                                                 let inputValue = e.target.value;
                                                 if (inputValue.endsWith('%')) {
                                                     inputValue = inputValue.slice(0, -1);
                                                 }
                                                 
-                                                // Ambil nilai numerik saja tanpa %
                                                 const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
                                                 onUpdateItemVat(item.id, Math.min(numericValue, 100));
                                             }}
                                             className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
                                             placeholder="0%"
                                             onKeyDown={(e) => {
-                                                // Tangani backspace saat kursor berada di akhir input
                                                 if (e.key === 'Backspace' && 
                                                     item.vat_percentage > 0 && 
                                                     e.currentTarget.selectionStart === e.currentTarget.value.length) {
-                                                    // Cegah perilaku default dan update nilai secara manual
                                                     e.preventDefault();
                                                     const newValue = Math.floor(item.vat_percentage / 10);
                                                     onUpdateItemVat(item.id, newValue);
@@ -220,7 +218,6 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
                 </TableBody>
             </Table>
             
-            {/* Total display outside the table */}
             <div className="flex justify-end items-center mt-4 font-semibold text-lg">
                 <div className="mr-4">Total:</div>
                 <div className="w-40 text-right">
