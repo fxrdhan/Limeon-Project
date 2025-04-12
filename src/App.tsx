@@ -1,4 +1,3 @@
-// src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import MainLayout from './components/layout/MainLayout';
@@ -8,7 +7,6 @@ import { useAuthStore } from './store/authStore';
 import { ConfirmDialogProvider } from './components/ui/ConfirmDialog';
 import OfflineAlert from './components/ui/OfflineAlert';
 
-// Lazy load pages
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const ItemList = lazy(() => import('./pages/master-data/ItemList'));
 const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
@@ -22,9 +20,7 @@ const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
 const Profile = lazy(() => import('./pages/settings/Profile'));
 const PrintPurchase = lazy(() => import('./pages/purchases/PrintPurchase'));
 const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
-// Tambahkan halaman lain sesuai kebutuhan
 
-// Komponen placeholder untuk halaman yang belum diimplementasi
 const ComingSoon = ({ title }: { title: string }) => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
@@ -42,7 +38,6 @@ const ComingSoon = ({ title }: { title: string }) => {
 function App() {
   const { session, initialize } = useAuthStore();
 
-  // Inisialisasi auth state saat aplikasi dimuat
   useEffect(() => {
     initialize();
   }, [initialize]);
@@ -55,7 +50,6 @@ function App() {
         <Routes>
           <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
 
-          {/* Route khusus untuk tampilan cetak - tanpa layout */}
           <Route path="/purchases/print-view" element={
             <Suspense fallback={<div>Loading...</div>}>
               <PrintPurchase />
@@ -65,12 +59,12 @@ function App() {
             <Route
               index
               element={
-              <div className="text-gray-800">
-                <Suspense fallback={<div>Loading...</div>}>
-                  <Dashboard />
-                </Suspense>
-              </div>
-            } />
+                <div className="text-gray-800">
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <Dashboard />
+                  </Suspense>
+                </div>
+              } />
 
             <Route path="master-data">
               <Route path="items" element={
@@ -103,12 +97,11 @@ function App() {
                   <UnitList />
                 </Suspense>
               } />
-               <Route path="suppliers" element={
+              <Route path="suppliers" element={
                 <Suspense fallback={<div>Loading...</div>}>
                   <SupplierList />
                 </Suspense>
-               } />
-              {/* Tambahkan route lain sesuai kebutuhan (e.g., /add, /edit/:id for suppliers) */}
+              } />
             </Route>
 
             <Route path="purchases">
@@ -213,7 +206,6 @@ function App() {
               <Route path="users" element={<ComingSoon title="Pengguna" />} />
               <Route path="app" element={<ComingSoon title="Pengaturan Aplikasi" />} />
             </Route>
-            {/* Tambahkan route untuk modul lain */}
           </Route>
         </Routes>
       </Router>
