@@ -1,4 +1,3 @@
-// src/components/master-data/DetailEditModal.tsx
 import React, { useState } from 'react';
 import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 import { Button } from '../ui/Button';
@@ -16,7 +15,7 @@ interface DetailEditModalProps {
     fields: FieldConfig[];
     isOpen: boolean;
     onClose: () => void;
-    onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>; 
+    onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
     imageUrl?: string;
     imagePlaceholder?: string;
 }
@@ -35,12 +34,11 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({});
     const [loading, setLoading] = useState<Record<string, boolean>>({});
 
-    // Inisialisasi nilai editan dengan data saat ini
     React.useEffect(() => {
         if (isOpen && data) {
-            const initialValues: Record<string, string | number | boolean | null> = {}; 
+            const initialValues: Record<string, string | number | boolean | null> = {};
             fields.forEach(field => {
-                initialValues[field.key] = data[field.key]; // Assign directly, handle null/undefined later if needed
+                initialValues[field.key] = data[field.key];
             });
             setEditValues(initialValues);
         }
@@ -55,7 +53,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         }));
     };
 
-    const handleChange = (key: string, value: string) => { // Assume value from input/textarea is string
+    const handleChange = (key: string, value: string) => {
         setEditValues(prev => ({
             ...prev,
             [key]: value
@@ -66,11 +64,9 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         try {
             setLoading(prev => ({ ...prev, [key]: true }));
 
-            // Buat object dengan hanya field yang diubah
             const updatedData = { [key]: editValues[key] };
             await onSave(updatedData);
 
-            // Toggle off edit mode setelah berhasil
             toggleEdit(key);
         } catch (error) {
             console.error(`Error saving ${key}:`, error);
@@ -82,7 +78,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     const handleCancel = (key: string) => {
         setEditValues(prev => ({
             ...prev,
-            [key]: data[key] // Reset to original value (could be null)
+            [key]: data[key]
         }));
         toggleEdit(key);
     };
@@ -102,7 +98,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                 </div>
 
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-                    {/* Gambar Header (jika ada) */}
                     {(imageUrl || imagePlaceholder) && (
                         <div className="flex justify-center mb-6">
                             <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200">
@@ -115,7 +110,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                         </div>
                     )}
 
-                    {/* Fields */}
                     <div className="space-y-4">
                         {fields.map(field => (
                             <div key={field.key} className="bg-white rounded-md">
@@ -164,7 +158,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                 {editMode[field.key] ? (
                                     field.type === 'textarea' ? (
                                         <textarea
-                                            value={String(editValues[field.key] ?? '')} // Ensure value is string
+                                            value={String(editValues[field.key] ?? '')}
                                             onChange={(e) => handleChange(field.key, e.target.value)}
                                             className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                                             rows={3}
@@ -172,14 +166,14 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                     ) : (
                                         <input
                                             type={field.type || 'text'}
-                                            value={String(editValues[field.key] ?? '')} // Ensure value is string
+                                            value={String(editValues[field.key] ?? '')}
                                             onChange={(e) => handleChange(field.key, e.target.value)}
                                             className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     )
                                 ) : (
                                     <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
-                                        {String(data[field.key] ?? '') || ( // Display original data, convert to string
+                                        {String(data[field.key] ?? '') || (
                                             <span className="text-gray-400 italic">Tidak ada data</span>
                                         )}
                                     </div>
