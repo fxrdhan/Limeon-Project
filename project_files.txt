@@ -841,289 +841,296 @@
      7	    FaShoppingCart,
      8	    FaHome,
      9	    FaChartBar,
-    10	    FaHospital,
-    11	    FaShoppingBag,
-    12	    FaCog
-    13	} from "react-icons/fa";
-    14	import { JSX } from "react/jsx-runtime";
-    15	
-    16	interface SidebarProps {
-    17	    collapsed: boolean;
-    18	    toggleSidebar: () => void;
-    19	}
-    20	
-    21	interface MenuItem {
-    22	    name: string;
-    23	    path: string;
-    24	    icon: JSX.Element;
-    25	    children?: {
-    26	        name: string;
-    27	        path: string;
-    28	    }[];
-    29	}
-    30	
-    31	const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
-    32	    const location = useLocation();
-    33	    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-    34	        masterData: false,
-    35	        inventory: false,
-    36	        purchasing: false,
-    37	        sales: false,
-    38	        clinic: false,
-    39	        finance: false,
-    40	        reports: false,
-    41	        settings: false,
-    42	    });
-    43	
-    44	    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Timer reference for hover delay
-    45	
-    46	    // Define menu structure
-    47	    const menuItems: MenuItem[] = [
-    48	        {
-    49	            name: "Dashboard",
-    50	            path: "/",
-    51	            icon: <FaHome className="text-lg" />,
-    52	        },
-    53	        {
-    54	            name: "Master Data",
-    55	            path: "/master-data",
-    56	            icon: <FaDatabase className="text-lg" />,
-    57	            children: [
-    58	                { name: "Daftar Item", path: "/master-data/items" },
-    59	                { name: "Kategori Item", path: "/master-data/categories" },
-    60	                { name: "Jenis Item", path: "/master-data/types" },
-    61	                { name: "Satuan", path: "/master-data/units" },
-    62	                { name: "Supplier", path: "/master-data/suppliers" },
-    63	                { name: "Pasien", path: "/master-data/patients" },
-    64	                { name: "Dokter", path: "/master-data/doctors" },
-    65	            ],
-    66	        },
-    67	        {
-    68	            name: "Persediaan",
-    69	            path: "/inventory",
-    70	            icon: <FaBoxes className="text-lg" />,
-    71	            children: [
-    72	                { name: "Stok Obat", path: "/inventory/stock" },
-    73	                { name: "Stok Opname", path: "/inventory/stock-opname" },
-    74	                { name: "Obat Kadaluarsa", path: "/inventory/expired" },
-    75	            ],
-    76	        },
-    77	        {
-    78	            name: "Pembelian",
-    79	            path: "/purchases",
-    80	            icon: <FaShoppingCart className="text-lg" />,
-    81	            children: [
-    82	                { name: "Daftar Pesanan Beli", path: "/purchases/orders" },
-    83	                { name: "Daftar Pembelian", path: "/purchases" },
-    84	                { name: "Riwayat Harga Beli", path: "/purchases/price-history" },
-    85	            ],
-    86	        },
-    87	        {
-    88	            name: "Penjualan",
-    89	            path: "/sales",
-    90	            icon: <FaShoppingBag className="text-lg" />,
-    91	            children: [
-    92	                { name: "Daftar Penjualan", path: "/sales" },
-    93	                { name: "Tambah Penjualan", path: "/sales/create" },
-    94	            ],
-    95	        },
-    96	        {
-    97	            name: "Klinik",
-    98	            path: "/clinic",
-    99	            icon: <FaHospital className="text-lg" />,
-   100	            children: [
-   101	                { name: "Daftar Pasien", path: "/clinic/patients" },
-   102	                { name: "Antrian", path: "/clinic/queue" },
-   103	                { name: "Rekam Medis", path: "/clinic/medical-records" },
-   104	            ],
-   105	        },
-   106	        {
-   107	            name: "Laporan",
-   108	            path: "/reports",
-   109	            icon: <FaChartBar className="text-lg" />,
-   110	            children: [
-   111	                { name: "Penjualan", path: "/reports/sales" },
-   112	                { name: "Pembelian", path: "/reports/purchases" },
-   113	                { name: "Stok", path: "/reports/stock" },
-   114	            ],
-   115	        },
-   116	        {
-   117	            name: "Pengaturan",
-   118	            path: "/settings",
-   119	            icon: <FaCog className="text-lg" />,
-   120	            children: [
-   121	                { name: "Profil", path: "/settings/profile" },
-   122	                { name: "Pengguna", path: "/settings/users" },
-   123	                { name: "Aplikasi", path: "/settings/app" },
-   124	            ],
-   125	        },
-   126	    ];
-   127	
-   128	    // Check if path is active
-   129	    const isActive = useCallback((path: string) => {
-   130	        if (path === '/') {
-   131	            return location.pathname === '/';
-   132	        }
-   133	        return location.pathname.startsWith(path);
-   134	    }, [location]);
-   135	
-   136	    // Check if submenu is active
-   137	    const hasActiveChild = useCallback((children?: { path: string }[]) => {
-   138	        if (!children) return false;
-   139	        return children.some(child => isActive(child.path));
-   140	    }, [isActive]);
-   141	
-   142	    // Toggle menu open/closed
-   143	    const toggleMenu = useCallback((menu: string) => {
-   144	        if (!collapsed) {
-   145	            setOpenMenus((prev) => ({
-   146	                ...prev,
-   147	                [menu]: !prev[menu],
-   148	            }));
-   149	        }
-   150	    }, [collapsed]);
-   151	
-   152	    // Handle hover enter on the entire sidebar area
-   153	    const handleMouseEnterSidebar = useCallback(() => {
-   154	        if (hoverTimeoutRef.current) {
-   155	            clearTimeout(hoverTimeoutRef.current);
-   156	            hoverTimeoutRef.current = null;
-   157	        }
-   158	        if (collapsed) {
-   159	            hoverTimeoutRef.current = setTimeout(() => {
-   160	                toggleSidebar(); // Expand the sidebar
-   161	            }, 100);
-   162	        }
-   163	    }, [collapsed, toggleSidebar]);
-   164	
-   165	    // Handle hover leave from the entire sidebar area
-   166	    const handleMouseLeaveSidebar = useCallback(() => {
-   167	        if (hoverTimeoutRef.current) {
-   168	            clearTimeout(hoverTimeoutRef.current);
-   169	            hoverTimeoutRef.current = null;
-   170	        }
-   171	        if (!collapsed) {
-   172	            toggleSidebar(); // Collapse the sidebar
-   173	        }
-   174	    }, [collapsed, toggleSidebar]);
-   175	
-   176	    // Clear timeout on component unmount
-   177	    useEffect(() => {
-   178	        return () => {
-   179	            if (hoverTimeoutRef.current) {
-   180	                clearTimeout(hoverTimeoutRef.current);
-   181	            }
-   182	        };
-   183	    }, []);
-   184	
-   185	    return (
-   186	        <aside
-   187	            onMouseEnter={handleMouseEnterSidebar} // Add mouse enter handler
-   188	            onMouseLeave={handleMouseLeaveSidebar} // Add mouse leave handler
-   189	            className={`bg-gradient-to-b from-blue-600 to-blue-800 text-white 
-   190	                        transition-all duration-500 ease-in-out h-screen 
-   191	                        ${collapsed ? 'w-16' : 'w-64'} relative group z-10`}
-   192	        >
-   193	            {/* Ensure flex-col and h-full */}
-   194	            <div className="flex flex-col h-full">
-   195	                {/* Logo Area */}
-   196	                {/* Remove justify-between to keep logo left aligned when collapsed */}
-   197	                <div className="p-4 border-b border-blue-500/30 flex items-center"> {/* Removed conditional justify-center */}
-   198	                    {/* Simplified logo rendering */}
-   199	                    <div className="flex items-center">
-   200	                        {/* Logo P */}
-   201	                        <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center flex-shrink-0"> {/* Added flex-shrink-0 */}
-   202	                            <span className="text-blue-600 text-xl font-bold">P</span>
-   203	                        </div>
-   204	                        <h2 className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'}`}> {/* Animate text visibility */}
-   205	                            PharmaSys
-   206	                        </h2>
-   207	                    </div>
-   208	                </div>
-   209	
-   210	                {/* Menu Items with hidden scrollbar */}
-   211	                <nav className="flex-grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"> {/* Added hidden scrollbar styles */}
-   212	                    {menuItems.map((item) => (
-   213	                        <div key={item.name} className="mb-1">
-   214	                            {item.children ? (
-   215	                                <> {/* Use Fragment to group button and submenu */}
-   216	                                    <button // Button for expandable menus
-   217	                                        onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
-   218	                                        className={`w-full text-left flex items-center px-4 py-3 h-12 justify-between {/* Use px-4 for consistent padding, fixed height, add justify-between */}
-   219	                                                  ${isActive(item.path) || hasActiveChild(item.children)
-   220	                                                ? 'bg-white/20 font-medium border-l-4 border-white'
-   221	                                                : 'border-l-4 border-transparent hover:bg-white/5'}
-   222	                                                  transition-all duration-150 group relative`}
-   223	                                    >
-   224	                                        {/* Icon and Text Wrapper */}
-   225	                                        <div className="flex items-center overflow-hidden"> {/* Added overflow-hidden */}
-   226	                                            {/* Icon Container: Fixed width, centered */}
-   227	                                            <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
-   228	                                                {item.icon}
-   229	                                            </div>
-   230	                                            {/* Text Span: Animate opacity and max-width for smooth transition */}
-   231	                                            <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
-   232	                                        </div>
-   233	                                        {/* Arrow Icon Removed */}
-   234	                                        {/*
-   235	                                        {!collapsed && (
-   236	                                            <FaAngleDown className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""}`} />
-   237	                                        )}
-   238	                                        */}
-   239	                                    </button>
-   240	
-   241	                                    {/* Submenu Rendering */}
-   242	                                    {item.children && !collapsed && openMenus[item.name.toLowerCase().replace(' ', '')] && (
-   243	                                        <div className="pl-10 pr-2 py-1 bg-black/10 transition-opacity duration-300 ease-in-out"> {/* Added container transition */}
-   244	                                            {item.children.map((child) => (
-   245	                                                <Link
-   246	                                                    key={child.name}
-   247	                                                    to={child.path}
-   248	                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition-colors transition-opacity duration-300 ease-in-out ${isActive(child.path) // Added opacity transition to link
-   249	                                                        ? 'bg-white/20 text-white font-medium'
-   250	                                                        : 'text-blue-100 hover:bg-white/10 hover:text-white'
-   251	                                                    } whitespace-nowrap overflow-hidden text-ellipsis`} // Ensure text stays on one line and add ellipsis if needed
-   252	                                                >
-   253	                                                    {child.name}
-   254	                                                </Link>
-   255	                                            ))}
-   256	                                        </div>
-   257	                                    )}
-   258	                                </>
-   259	                            ) : (
-   260	                                <Link // Link for non-expandable menus
-   261	                                    to={item.path}
-   262	                                    className={`w-full text-left flex items-center px-4 py-3 h-12 {/* Use px-4 for consistent padding, fixed height */}
-   263	                                                  ${isActive(item.path)
-   264	                                            ? 'bg-white/20 font-medium border-l-4 border-white'
-   265	                                            : 'border-l-4 border-transparent hover:bg-white/5'}
-   266	                                                  transition-all duration-150 group relative`}
-   267	                                >
-   268	                                    {/* Icon and Text Wrapper */}
-   269	                                    <div className="flex items-center overflow-hidden"> {/* Added overflow-hidden */}
-   270	                                        {/* Icon Container: Fixed width, centered */}
-   271	                                        <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
-   272	                                            {item.icon}
-   273	                                        </div>
-   274	                                        {/* Text Span: Animate opacity and max-width */}
-   275	                                        <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
-   276	                                    </div>
-   277	                                </Link>
-   278	                            )}
-   279	                        </div>
-   280	                    ))}
-   281	                </nav>
-   282	
-   283	                {/* Bottom version info */}
-   284	                <div className={`p-4 text-xs text-blue-200/70 border-t border-blue-500/30 ${collapsed ? 'text-center' : ''}`}>
-   285	                    {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
-   286	                </div>
-   287	            </div>
-   288	        </aside>
-   289	    );
-   290	};
-   291	
-   292	export default Sidebar;
+    10	    FaAngleDown, // Import FaAngleDown
+    11	    FaHospital,
+    12	    FaShoppingBag,
+    13	    FaCog
+    14	} from "react-icons/fa";
+    15	import { JSX } from "react/jsx-runtime";
+    16	
+    17	interface SidebarProps {
+    18	    collapsed: boolean;
+    19	    toggleSidebar: () => void;
+    20	}
+    21	
+    22	interface MenuItem {
+    23	    name: string;
+    24	    path: string;
+    25	    icon: JSX.Element;
+    26	    children?: {
+    27	        name: string;
+    28	        path: string;
+    29	    }[];
+    30	}
+    31	
+    32	const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
+    33	    const location = useLocation();
+    34	    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    35	        masterData: false,
+    36	        inventory: false,
+    37	        purchasing: false,
+    38	        sales: false,
+    39	        clinic: false,
+    40	        finance: false,
+    41	        reports: false,
+    42	        settings: false,
+    43	    });
+    44	
+    45	    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Timer reference for hover delay
+    46	
+    47	    // Define menu structure
+    48	    const menuItems: MenuItem[] = [
+    49	        {
+    50	            name: "Dashboard",
+    51	            path: "/",
+    52	            icon: <FaHome className="text-lg" />,
+    53	        },
+    54	        {
+    55	            name: "Master Data",
+    56	            path: "/master-data",
+    57	            icon: <FaDatabase className="text-lg" />,
+    58	            children: [
+    59	                { name: "Daftar Item", path: "/master-data/items" },
+    60	                { name: "Kategori Item", path: "/master-data/categories" },
+    61	                { name: "Jenis Item", path: "/master-data/types" },
+    62	                { name: "Satuan", path: "/master-data/units" },
+    63	                { name: "Supplier", path: "/master-data/suppliers" },
+    64	                { name: "Pasien", path: "/master-data/patients" },
+    65	                { name: "Dokter", path: "/master-data/doctors" },
+    66	            ],
+    67	        },
+    68	        {
+    69	            name: "Persediaan",
+    70	            path: "/inventory",
+    71	            icon: <FaBoxes className="text-lg" />,
+    72	            children: [
+    73	                { name: "Stok Obat", path: "/inventory/stock" },
+    74	                { name: "Stok Opname", path: "/inventory/stock-opname" },
+    75	                { name: "Obat Kadaluarsa", path: "/inventory/expired" },
+    76	            ],
+    77	        },
+    78	        {
+    79	            name: "Pembelian",
+    80	            path: "/purchases",
+    81	            icon: <FaShoppingCart className="text-lg" />,
+    82	            children: [
+    83	                { name: "Daftar Pesanan Beli", path: "/purchases/orders" },
+    84	                { name: "Daftar Pembelian", path: "/purchases" },
+    85	                { name: "Riwayat Harga Beli", path: "/purchases/price-history" },
+    86	            ],
+    87	        },
+    88	        {
+    89	            name: "Penjualan",
+    90	            path: "/sales",
+    91	            icon: <FaShoppingBag className="text-lg" />,
+    92	            children: [
+    93	                { name: "Daftar Penjualan", path: "/sales" },
+    94	                { name: "Tambah Penjualan", path: "/sales/create" },
+    95	            ],
+    96	        },
+    97	        {
+    98	            name: "Klinik",
+    99	            path: "/clinic",
+   100	            icon: <FaHospital className="text-lg" />,
+   101	            children: [
+   102	                { name: "Daftar Pasien", path: "/clinic/patients" },
+   103	                { name: "Antrian", path: "/clinic/queue" },
+   104	                { name: "Rekam Medis", path: "/clinic/medical-records" },
+   105	            ],
+   106	        },
+   107	        {
+   108	            name: "Laporan",
+   109	            path: "/reports",
+   110	            icon: <FaChartBar className="text-lg" />,
+   111	            children: [
+   112	                { name: "Penjualan", path: "/reports/sales" },
+   113	                { name: "Pembelian", path: "/reports/purchases" },
+   114	                { name: "Stok", path: "/reports/stock" },
+   115	            ],
+   116	        },
+   117	        {
+   118	            name: "Pengaturan",
+   119	            path: "/settings",
+   120	            icon: <FaCog className="text-lg" />,
+   121	            children: [
+   122	                { name: "Profil", path: "/settings/profile" },
+   123	                { name: "Pengguna", path: "/settings/users" },
+   124	                { name: "Aplikasi", path: "/settings/app" },
+   125	            ],
+   126	        },
+   127	    ];
+   128	
+   129	    // Check if path is active
+   130	    const isActive = useCallback((path: string) => {
+   131	        if (path === '/') {
+   132	            return location.pathname === '/';
+   133	        }
+   134	        return location.pathname.startsWith(path);
+   135	    }, [location]);
+   136	
+   137	    // Check if submenu is active
+   138	    const hasActiveChild = useCallback((children?: { path: string }[]) => {
+   139	        if (!children) return false;
+   140	        return children.some(child => isActive(child.path));
+   141	    }, [isActive]);
+   142	
+   143	    // Toggle menu open/closed
+   144	    const toggleMenu = useCallback((menu: string) => {
+   145	        if (!collapsed) {
+   146	            setOpenMenus((prev) => ({
+   147	                ...prev,
+   148	                [menu]: !prev[menu],
+   149	            }));
+   150	        }
+   151	    }, [collapsed]);
+   152	
+   153	    // Handle hover enter on the entire sidebar area
+   154	    const handleMouseEnterSidebar = useCallback(() => {
+   155	        if (hoverTimeoutRef.current) {
+   156	            clearTimeout(hoverTimeoutRef.current);
+   157	            hoverTimeoutRef.current = null;
+   158	        }
+   159	        if (collapsed) {
+   160	            hoverTimeoutRef.current = setTimeout(() => {
+   161	                toggleSidebar(); // Expand the sidebar
+   162	            }, 100);
+   163	        }
+   164	    }, [collapsed, toggleSidebar]);
+   165	
+   166	    // Handle hover leave from the entire sidebar area
+   167	    const handleMouseLeaveSidebar = useCallback(() => {
+   168	        if (hoverTimeoutRef.current) {
+   169	            clearTimeout(hoverTimeoutRef.current);
+   170	            hoverTimeoutRef.current = null;
+   171	        }
+   172	        if (!collapsed) {
+   173	            toggleSidebar(); // Collapse the sidebar
+   174	        }
+   175	    }, [collapsed, toggleSidebar]);
+   176	
+   177	    // Clear timeout on component unmount
+   178	    useEffect(() => {
+   179	        return () => {
+   180	            if (hoverTimeoutRef.current) {
+   181	                clearTimeout(hoverTimeoutRef.current);
+   182	            }
+   183	        };
+   184	    }, []);
+   185	
+   186	    return (
+   187	        <aside
+   188	            onMouseEnter={handleMouseEnterSidebar} // Add mouse enter handler
+   189	            onMouseLeave={handleMouseLeaveSidebar} // Add mouse leave handler
+   190	            className={`bg-gradient-to-b from-blue-600 to-blue-800 text-white 
+   191	                        transition-all duration-500 ease-in-out h-screen 
+   192	                        ${collapsed ? 'w-16' : 'w-64'} relative group z-10`}
+   193	        >
+   194	            {/* Ensure flex-col and h-full */}
+   195	            <div className="flex flex-col h-full">
+   196	                {/* Logo Area */}
+   197	                {/* Remove justify-between to keep logo left aligned when collapsed */}
+   198	                <div className="p-4 border-b border-blue-500/30 flex items-center"> {/* Removed conditional justify-center */}
+   199	                    {/* Simplified logo rendering */}
+   200	                    <div className="flex items-center">
+   201	                        {/* Logo P */}
+   202	                        <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center flex-shrink-0"> {/* Added flex-shrink-0 */}
+   203	                            <span className="text-blue-600 text-xl font-bold">P</span>
+   204	                        </div>
+   205	                        <h2 className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'}`}> {/* Animate text visibility */}
+   206	                            PharmaSys
+   207	                        </h2>
+   208	                    </div>
+   209	                </div>
+   210	
+   211	                {/* Menu Items with hidden scrollbar */}
+   212	                <nav className="flex-grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"> {/* Added hidden scrollbar styles */}
+   213	                    {menuItems.map((item) => (
+   214	                        <div key={item.name} className="mb-1">
+   215	                            {item.children ? (
+   216	                                <> {/* Use Fragment to group button and submenu */}
+   217	                                    <button // Button for expandable menus
+   218	                                        onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
+   219	                                        className={`w-full text-left flex items-center px-4 py-3 h-12 justify-between {/* Use px-4 for consistent padding, fixed height, add justify-between */}
+   220	                                                  ${isActive(item.path) || hasActiveChild(item.children)
+   221	                                                ? 'bg-white/20 font-medium border-l-4 border-white'
+   222	                                                : 'border-l-4 border-transparent hover:bg-white/5'}
+   223	                                                  transition-all duration-150 group relative`}
+   224	                                    >
+   225	                                        {/* Icon and Text Wrapper */}
+   226	                                        <div className="flex items-center overflow-hidden"> {/* Added overflow-hidden */}
+   227	                                            {/* Icon Container: Fixed width, centered */}
+   228	                                            <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
+   229	                                                {item.icon}
+   230	                                            </div>
+   231	                                            {/* Text Span: Animate opacity and max-width for smooth transition */}
+   232	                                            <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
+   233	                                        </div>
+   234	                                        {/* Arrow Icon for dropdown */}
+   235	                                        {!collapsed && item.children && (
+   236	                                            <FaAngleDown
+   237	                                                className={`text-sm text-blue-100/80 transition-transform duration-300 ease-in-out ${
+   238	                                                    openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : "rotate-0"
+   239	                                                }`}
+   240	                                            />
+   241	                                        )}
+   242	                                    </button>
+   243	
+   244	                                    {/* Submenu container - Animate max-height and opacity */}
+   245	                                    <div
+   246	                                        className={`overflow-hidden transition-all duration-500 ease-in-out ${
+   247	                                            openMenus[item.name.toLowerCase().replace(' ', '')] ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+   248	                                        }`}
+   249	                                    >
+   250	                                        <div className="pl-10 pr-2 py-1 bg-black/10"> {/* Padding moved inside */}
+   251	                                            {item.children.map((child) => (
+   252	                                                <Link
+   253	                                                    key={child.name}
+   254	                                                    to={child.path}
+   255	                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition-colors transition-opacity duration-300 ease-in-out ${isActive(child.path) // Added opacity transition to link
+   256	                                                        ? 'bg-white/20 text-white font-medium'
+   257	                                                        : 'text-blue-100 hover:bg-white/10 hover:text-white'
+   258	                                                    } whitespace-nowrap overflow-hidden text-ellipsis`} // Ensure text stays on one line and add ellipsis if needed
+   259	                                                >
+   260	                                                    {child.name}
+   261	                                                </Link>
+   262	                                            ))}
+   263	                                        </div>
+   264	                                    </div>
+   265	                                </>
+   266	                            ) : (
+   267	                                <Link // Link for non-expandable menus
+   268	                                    to={item.path}
+   269	                                    className={`w-full text-left flex items-center px-4 py-3 h-12 {/* Use px-4 for consistent padding, fixed height */}
+   270	                                                  ${isActive(item.path)
+   271	                                            ? 'bg-white/20 font-medium border-l-4 border-white'
+   272	                                            : 'border-l-4 border-transparent hover:bg-white/5'}
+   273	                                                  transition-all duration-150 group relative`}
+   274	                                >
+   275	                                    {/* Icon and Text Wrapper */}
+   276	                                    <div className="flex items-center overflow-hidden"> {/* Added overflow-hidden */}
+   277	                                        {/* Icon Container: Fixed width, centered */}
+   278	                                        <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
+   279	                                            {item.icon}
+   280	                                        </div>
+   281	                                        {/* Text Span: Animate opacity and max-width */}
+   282	                                        <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
+   283	                                    </div>
+   284	                                </Link>
+   285	                            )}
+   286	                        </div>
+   287	                    ))}
+   288	                </nav>
+   289	
+   290	                {/* Bottom version info */}
+   291	                <div className={`p-4 text-xs text-blue-200/70 border-t border-blue-500/30 ${collapsed ? 'text-center' : ''}`}>
+   292	                    {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
+   293	                </div>
+   294	            </div>
+   295	        </aside>
+   296	    );
+   297	};
+   298	
+   299	export default Sidebar;
 
 
 ===============================================
