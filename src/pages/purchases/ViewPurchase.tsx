@@ -1,4 +1,3 @@
-// src/pages/purchases/ViewPurchase.tsx
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
@@ -55,7 +54,7 @@ const ViewPurchase = () => {
     const [purchase, setPurchase] = useState<PurchaseData | null>(null);
     const [items, setItems] = useState<PurchaseItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [scale, setScale] = useState(1); // Add state for scaling the preview
+    const [scale, setScale] = useState(1);
 
     useEffect(() => {
         if (id) {
@@ -67,7 +66,6 @@ const ViewPurchase = () => {
         try {
             setLoading(true);
 
-            // Fetch purchase data with supplier information
             const { data: purchaseData, error: purchaseError } = await supabase
                 .from("purchases")
                 .select(`
@@ -83,7 +81,6 @@ const ViewPurchase = () => {
 
             if (purchaseError) throw purchaseError;
 
-            // Fetch purchase items with item information
             const { data: itemsData, error: itemsError } = await supabase
                 .from("purchase_items")
                 .select(`
@@ -107,24 +104,19 @@ const ViewPurchase = () => {
         }
     };
 
-    // Calculate subtotals
     const calculateSubtotals = () => {
-        // Base prices total (before discounts and VAT)
         const baseTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-        // Total discounts
         const discountTotal = items.reduce((sum, item) => {
             const itemTotal = item.price * item.quantity;
             const discountAmount = (itemTotal * item.discount) / 100;
             return sum + discountAmount;
         }, 0);
 
-        // Total after discounts
         const afterDiscountTotal = baseTotal - discountTotal;
 
-        // Total VAT
         const vatTotal = purchase?.is_vat_included
-            ? 0 // If VAT included, it's already in the item prices
+            ? 0
             : items.reduce((sum, item) => {
                 const itemTotal = item.price * item.quantity;
                 const afterDiscount = itemTotal - (itemTotal * item.discount / 100);
@@ -132,9 +124,8 @@ const ViewPurchase = () => {
                 return sum + vatAmount;
             }, 0);
 
-        // Grand total
         const grandTotal = purchase?.is_vat_included
-            ? afterDiscountTotal // If VAT included, no need to add VAT
+            ? afterDiscountTotal
             : afterDiscountTotal + vatTotal;
 
         return {
@@ -147,14 +138,12 @@ const ViewPurchase = () => {
     };
 
     const openPrintableVersion = () => {
-        // Simpan data faktur di sessionStorage untuk digunakan oleh halaman cetak
         sessionStorage.setItem('purchaseData', JSON.stringify({
             purchase: purchase,
             items: items,
             subtotals: calculateSubtotals()
         }));
         
-        // Buka tab baru dengan halaman cetak
         const printWindow = window.open('/purchases/print-view', '_blank');
         if (printWindow)
             printWindow.focus();
@@ -243,7 +232,6 @@ const ViewPurchase = () => {
 
                         <div className="flex justify-between gap-4">
                             <div className="w-1/2">
-                                {/* Supplier Info */}
                                 <div className="text-left mb-4">
                                     <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Supplier'}</h2>
                                     <div className="text-sm text-gray-600">
@@ -251,7 +239,6 @@ const ViewPurchase = () => {
                                     </div>
                                 </div>
                                 
-                                {/* Customer Info */}
                                 <div className="text-left">
                                     <h2 className="text-sm text-gray-600">Customer:</h2>
                                     <div className="text-sm ">
@@ -262,7 +249,6 @@ const ViewPurchase = () => {
                             </div>
                             
                             <div className="w-1/2">
-                                {/* Faktur Info */}
                                 <div className="bg-gray-50 p-3 rounded text-sm">
                                     <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
                                         <span className="text-left font-bold">No. Faktur</span>
