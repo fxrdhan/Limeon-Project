@@ -1,4 +1,3 @@
-// src/components/ui/Pagination.tsx
 import { classNames } from "../../lib/classNames";
 import { Button } from "./Button";
 
@@ -16,17 +15,11 @@ export interface PaginationProps {
 export const Pagination = ({
     currentPage,
     totalPages,
-    // totalItems,
     itemsPerPage,
-    // itemsCount,
     onPageChange,
     onItemsPerPageChange,
     className,
 }: PaginationProps) => {
-    // const pageNumbers = [];
-    // Sudah tidak memerlukan pageNumbers untuk tampilan semua halaman
-
-    // Fungsi untuk menangani perubahan jumlah item per halaman
     const handleItemsPerPageClick = (value: number) => {
         const event = {
             target: { value: value.toString() }
@@ -36,7 +29,6 @@ export const Pagination = ({
 
     return (
         <div className={classNames("flex justify-between items-center mt-4 gap-4", className)}>
-            {/* Items per page selection - left side */}
             <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden">
                 <button 
                     className={classNames(
@@ -67,7 +59,6 @@ export const Pagination = ({
                 </button>
             </div>
 
-            {/* Page navigation - right side */}
             <div className="flex items-center rounded-full bg-primary p-1 shadow-md text-white overflow-hidden">
                 <Button
                     variant="text"
