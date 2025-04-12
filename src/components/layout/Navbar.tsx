@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { Button } from '../ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavbarProps {
@@ -91,16 +90,21 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     {dropdownOpen && (
                         <div
                             ref={dropdownRef}
-                            className="absolute right-0 mt-10 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200"
+                            className="absolute right-0 mt-10 w-56 bg-white rounded-md shadow-lg z-10 border border-gray-200 overflow-hidden"
                         >
-                            <div className="py-1">
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-start rounded-none"
+                            <div className="p-4">
+                                <p className="text-sm text-gray-700 font-medium truncate" title={user?.email || ''}>
+                                    {user?.email || 'Email tidak tersedia'}
+                                </p>
+                            </div>
+                            <div className="border-t border-gray-100"></div>
+                            <div>
+                                <button
                                     onClick={handleLogout}
+                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
                                 >
                                     Logout
-                                </Button>
+                                </button>
                             </div>
                         </div>
                     )}
