@@ -7,6 +7,7 @@ import {
     FaShoppingCart,
     FaHome,
     FaChartBar,
+    FaAngleDown, // Import FaAngleDown
     FaHospital,
     FaShoppingBag,
     FaCog
@@ -230,17 +231,23 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                             {/* Text Span: Animate opacity and max-width for smooth transition */}
                                             <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
                                         </div>
-                                        {/* Arrow Icon Removed */}
-                                        {/*
-                                        {!collapsed && (
-                                            <FaAngleDown className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""}`} />
+                                        {/* Arrow Icon for dropdown */}
+                                        {!collapsed && item.children && (
+                                            <FaAngleDown
+                                                className={`text-sm text-blue-100/80 transition-transform duration-300 ease-in-out ${
+                                                    openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : "rotate-0"
+                                                }`}
+                                            />
                                         )}
-                                        */}
                                     </button>
 
-                                    {/* Submenu Rendering */}
-                                    {item.children && !collapsed && openMenus[item.name.toLowerCase().replace(' ', '')] && (
-                                        <div className="pl-10 pr-2 py-1 bg-black/10 transition-opacity duration-300 ease-in-out"> {/* Added container transition */}
+                                    {/* Submenu container - Animate max-height and opacity */}
+                                    <div
+                                        className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                                            openMenus[item.name.toLowerCase().replace(' ', '')] ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                                        }`}
+                                    >
+                                        <div className="pl-10 pr-2 py-1 bg-black/10"> {/* Padding moved inside */}
                                             {item.children.map((child) => (
                                                 <Link
                                                     key={child.name}
@@ -254,7 +261,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                                 </Link>
                                             ))}
                                         </div>
-                                    )}
+                                    </div>
                                 </>
                             ) : (
                                 <Link // Link for non-expandable menus
