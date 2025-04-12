@@ -193,20 +193,26 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
         >
             <div className="flex flex-col h-full">
                 {/* Logo Area */}
-                <div className={`p-4 border-b border-blue-500/30 flex items-center justify-between group`}>
+                {/* Remove justify-between to keep logo left aligned when collapsed */}
+                <div className={`p-4 border-b border-blue-500/30 flex items-center group`}>
                     {!collapsed ? (
                         <>
-                        <div className="flex items-center">
-                            <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center">
-                                <span className="text-blue-600 text-xl font-bold">P</span>
+                            <div className="flex items-center">
+                                {/* Logo P when expanded */}
+                                {/* Added min-w to prevent shrinking during transition */}
+                                <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center">
+                                    <span className="text-blue-600 text-xl font-bold">P</span>
+                                </div>
+                                <h2 className="ml-2 text-lg font-bold transition-opacity duration-200">PharmaSys</h2>
                             </div>
-                            <h2 className="ml-2 text-lg font-bold transition-opacity duration-200">PharmaSys</h2>
-                        </div>
-                        {/* Remove toggle button, hover will handle collapse */}
                         </>
                     ) : (
-                        <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center mx-auto cursor-pointer"> {/* Remove onClick */}
-                            <span className="text-blue-600 text-xl font-bold">P</span>
+                        /* Logo P when collapsed - ensure it stays left */
+                        <div className="flex items-center justify-start w-full"> {/* Wrap in flex, justify-start */}
+                            {/* Remove mx-auto, added min-w */}
+                            <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center">
+                                <span className="text-blue-600 text-xl font-bold">P</span>
+                            </div>
                         </div>
                     )}
                 </div>

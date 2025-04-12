@@ -1027,115 +1027,121 @@
    193	        >
    194	            <div className="flex flex-col h-full">
    195	                {/* Logo Area */}
-   196	                <div className={`p-4 border-b border-blue-500/30 flex items-center justify-between group`}>
-   197	                    {!collapsed ? (
-   198	                        <>
-   199	                        <div className="flex items-center">
-   200	                            <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center">
-   201	                                <span className="text-blue-600 text-xl font-bold">P</span>
-   202	                            </div>
-   203	                            <h2 className="ml-2 text-lg font-bold transition-opacity duration-200">PharmaSys</h2>
-   204	                        </div>
-   205	                        {/* Remove toggle button, hover will handle collapse */}
-   206	                        </>
-   207	                    ) : (
-   208	                        <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center mx-auto cursor-pointer"> {/* Remove onClick */}
-   209	                            <span className="text-blue-600 text-xl font-bold">P</span>
-   210	                        </div>
-   211	                    )}
-   212	                </div>
-   213	
-   214	                {/* Menu Items */}
-   215	                <nav className="flex-grow overflow-y-auto py-2 scrollbar-hidden">
-   216	                    {menuItems.map((item) => (
-   217	                        <div key={item.name} className="mb-1">
-   218	                            {/* Menu Item Button */}
-   219	                            {item.children ? (
-   220	                                <button
-   221	                                    onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
-   222	                                    className={`w-full text-left flex items-center justify-between px-2 py-3
-   223	                                              ${isActive(item.path) || hasActiveChild(item.children)
-   224	                                            ? 'bg-white/20 font-medium border-l-4 border-white'
-   225	                                            : collapsed ? '' : 'border-l-4 border-transparent'} 
-   226	                                                : 'hover:bg-white/5'} 
-   227	                                              transition-all duration-150 group relative`}
-   228	                                >
-   229	                                    <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
-   230	                                        <div className={`${isActive(item.path) || hasActiveChild(item.children)
-   231	                                            ? 'text-white'
-   232	                                            : 'text-blue-100'} 
-   233	                                                      transition-colors duration-200`}>
-   234	                                            {item.icon}
-   235	                                        </div>
-   236	                                        {!collapsed && <span className="ml-3 truncate text-white">{item.name}</span>}
-   237	                                    </div>
-   238	                                    {!collapsed && <FaAngleDown
-   239	                                        className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""
-   240	                                            }`}
-   241	                                    />}
-   242	                                </button>
-   243	                            ) : (
-   244	                                <Link to={item.path}
-   245	                                className={`w-full text-left flex items-center justify-between px-2 py-3
-   246	                                          ${isActive(item.path) || hasActiveChild(item.children)
-   247	                                        ? 'bg-white/20 font-medium border-l-4 border-white'
-   248	                                        : collapsed ? '' : 'border-l-4 border-transparent'} 
-   249	                                            : 'hover:bg-white/5'} 
-   250	                                          transition-all duration-150 group relative`}
-   251	                                >
-   252	                                    <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
-   253	                                        <div className={`${isActive(item.path) || hasActiveChild(item.children)
-   254	                                        ? 'text-white'
-   255	                                        : 'text-blue-100'} 
-   256	                                                  transition-colors duration-200`}>
-   257	                                            {item.icon}
-   258	                                        </div>
-   259	                                    {!collapsed && (
-   260	                                        <span className="ml-3 truncate text-white">{item.name}</span>
-   261	                                    )}
-   262	                                </div>
-   263	                            </Link>
-   264	                            )}
-   265	
-   266	                            {/* Submenu Items */}
-   267	                            {item.children && !collapsed && (
-   268	                                <div 
-   269	                                    className={`overflow-hidden transition-all duration-300 ease-in-out transform ${
-   270	                                        openMenus[item.name.toLowerCase().replace(' ', '')] 
-   271	                                            ? 'max-h-96 opacity-100 scale-y-100 origin-top' 
-   272	                                            : 'max-h-0 opacity-0 scale-y-95 origin-top'
-   273	                                    }`}
-   274	                                >
-   275	                                    <div className="pl-12 pr-4 py-1 space-y-1 bg-blue-700/20">
-   276	                                        {item.children.map((child) => (
-   277	                                            <Link
-   278	                                                key={child.path}
-   279	                                                to={child.path}
-   280	                                                className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
-   281	                                                           ${isActive(child.path)
-   282	                                                    ? 'bg-white/20 text-white font-medium'
-   283	                                                    : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
-   284	                                            >
-   285	                                                {child.name}
-   286	                                            </Link>
-   287	                                        ))}
-   288	                                    </div>
-   289	                                </div>
-   290	                            )}
-   291	                        </div>
-   292	                    ))}
-   293	                </nav>
-   294	
-   295	                {/* Bottom version info */}
-   296	                <div className={`p-4 text-xs text-blue-200/70 border-t border-blue-500/30 ${collapsed ? 'text-center' : ''}`}>
-   297	                    {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
-   298	                </div>
-   299	            </div>
-   300	        </aside>
-   301	    );
-   302	};
-   303	
-   304	export default Sidebar;
+   196	                {/* Remove justify-between to keep logo left aligned when collapsed */}
+   197	                <div className={`p-4 border-b border-blue-500/30 flex items-center group`}>
+   198	                    {!collapsed ? (
+   199	                        <>
+   200	                            <div className="flex items-center">
+   201	                                {/* Logo P when expanded */}
+   202	                                {/* Added min-w to prevent shrinking during transition */}
+   203	                                <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center">
+   204	                                    <span className="text-blue-600 text-xl font-bold">P</span>
+   205	                                </div>
+   206	                                <h2 className="ml-2 text-lg font-bold transition-opacity duration-200">PharmaSys</h2>
+   207	                            </div>
+   208	                        </>
+   209	                    ) : (
+   210	                        /* Logo P when collapsed - ensure it stays left */
+   211	                        <div className="flex items-center justify-start w-full"> {/* Wrap in flex, justify-start */}
+   212	                            {/* Remove mx-auto, added min-w */}
+   213	                            <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center">
+   214	                                <span className="text-blue-600 text-xl font-bold">P</span>
+   215	                            </div>
+   216	                        </div>
+   217	                    )}
+   218	                </div>
+   219	
+   220	                {/* Menu Items */}
+   221	                <nav className="flex-grow overflow-y-auto py-2 scrollbar-hidden">
+   222	                    {menuItems.map((item) => (
+   223	                        <div key={item.name} className="mb-1">
+   224	                            {/* Menu Item Button */}
+   225	                            {item.children ? (
+   226	                                <button
+   227	                                    onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
+   228	                                    className={`w-full text-left flex items-center justify-between px-2 py-3
+   229	                                              ${isActive(item.path) || hasActiveChild(item.children)
+   230	                                            ? 'bg-white/20 font-medium border-l-4 border-white'
+   231	                                            : collapsed ? '' : 'border-l-4 border-transparent'} 
+   232	                                                : 'hover:bg-white/5'} 
+   233	                                              transition-all duration-150 group relative`}
+   234	                                >
+   235	                                    <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
+   236	                                        <div className={`${isActive(item.path) || hasActiveChild(item.children)
+   237	                                            ? 'text-white'
+   238	                                            : 'text-blue-100'} 
+   239	                                                      transition-colors duration-200`}>
+   240	                                            {item.icon}
+   241	                                        </div>
+   242	                                        {!collapsed && <span className="ml-3 truncate text-white">{item.name}</span>}
+   243	                                    </div>
+   244	                                    {!collapsed && <FaAngleDown
+   245	                                        className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""
+   246	                                            }`}
+   247	                                    />}
+   248	                                </button>
+   249	                            ) : (
+   250	                                <Link to={item.path}
+   251	                                className={`w-full text-left flex items-center justify-between px-2 py-3
+   252	                                          ${isActive(item.path) || hasActiveChild(item.children)
+   253	                                        ? 'bg-white/20 font-medium border-l-4 border-white'
+   254	                                        : collapsed ? '' : 'border-l-4 border-transparent'} 
+   255	                                            : 'hover:bg-white/5'} 
+   256	                                          transition-all duration-150 group relative`}
+   257	                                >
+   258	                                    <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
+   259	                                        <div className={`${isActive(item.path) || hasActiveChild(item.children)
+   260	                                        ? 'text-white'
+   261	                                        : 'text-blue-100'} 
+   262	                                                  transition-colors duration-200`}>
+   263	                                            {item.icon}
+   264	                                        </div>
+   265	                                    {!collapsed && (
+   266	                                        <span className="ml-3 truncate text-white">{item.name}</span>
+   267	                                    )}
+   268	                                </div>
+   269	                            </Link>
+   270	                            )}
+   271	
+   272	                            {/* Submenu Items */}
+   273	                            {item.children && !collapsed && (
+   274	                                <div 
+   275	                                    className={`overflow-hidden transition-all duration-300 ease-in-out transform ${
+   276	                                        openMenus[item.name.toLowerCase().replace(' ', '')] 
+   277	                                            ? 'max-h-96 opacity-100 scale-y-100 origin-top' 
+   278	                                            : 'max-h-0 opacity-0 scale-y-95 origin-top'
+   279	                                    }`}
+   280	                                >
+   281	                                    <div className="pl-12 pr-4 py-1 space-y-1 bg-blue-700/20">
+   282	                                        {item.children.map((child) => (
+   283	                                            <Link
+   284	                                                key={child.path}
+   285	                                                to={child.path}
+   286	                                                className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
+   287	                                                           ${isActive(child.path)
+   288	                                                    ? 'bg-white/20 text-white font-medium'
+   289	                                                    : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
+   290	                                            >
+   291	                                                {child.name}
+   292	                                            </Link>
+   293	                                        ))}
+   294	                                    </div>
+   295	                                </div>
+   296	                            )}
+   297	                        </div>
+   298	                    ))}
+   299	                </nav>
+   300	
+   301	                {/* Bottom version info */}
+   302	                <div className={`p-4 text-xs text-blue-200/70 border-t border-blue-500/30 ${collapsed ? 'text-center' : ''}`}>
+   303	                    {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
+   304	                </div>
+   305	            </div>
+   306	        </aside>
+   307	    );
+   308	};
+   309	
+   310	export default Sidebar;
 
 
 ===============================================
