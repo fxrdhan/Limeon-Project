@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 
 interface NavbarProps {
     sidebarCollapsed: boolean;
@@ -11,6 +13,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     const toggleDropdown = () => {
         setDropdownOpen(!dropdownOpen);
@@ -55,7 +58,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     }, [dropdownOpen]);
 
     return (
-        <nav className="bg-white border-b px-6 py-3">
+        <nav className="bg-white border-b px-6 py-3 sticky top-0 z-20">
             <div className="grid grid-cols-[1fr,auto,1fr] items-center">
                 <div className="flex items-center h-8">
                     <AnimatePresence mode="wait">
@@ -71,10 +74,32 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                         </motion.h1>
                     </AnimatePresence>
                 </div>
-                <div className="text-center">
+                <div className="flex items-center justify-center space-x-3">
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => navigate(-1)}
+                        className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        aria-label="Go Back"
+                        title="Go Back"
+                    >
+                        <FaArrowLeft className="text-gray-600" />
+                    </motion.button>
+
                     <span className="text-md font-mono text-blue-700 tracking-tight">
                         {currentTime || 'Memuat...'}
                     </span>
+
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => navigate(1)}
+                        className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        aria-label="Go Forward"
+                        title="Go Forward"
+                    >
+                        <FaArrowRight className="text-gray-600" />
+                    </motion.button>
                 </div>
                 <div className="relative flex justify-end">
                     <button
