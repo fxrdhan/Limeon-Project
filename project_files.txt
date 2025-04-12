@@ -1087,51 +1087,52 @@
    253	                                                <Link
    254	                                                    key={child.name}
    255	                                                    to={child.path}
-   256	                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition-colors transition-opacity duration-300 ease-in-out ${isActive(child.path) // Added opacity transition to link
-   257	                                                        ? 'bg-white/20 text-white font-medium'
-   258	                                                        : 'text-blue-100 hover:bg-white/10 hover:text-white'
-   259	                                                    } whitespace-nowrap overflow-hidden text-ellipsis`} // Ensure text stays on one line and add ellipsis if needed
-   260	                                                >
-   261	                                                    {child.name}
-   262	                                                </Link>
-   263	                                            ))}
-   264	                                        </div>
-   265	                                    </div>
-   266	                                </>
-   267	                            ) : (
-   268	                                <Link // Link for non-expandable menus
-   269	                                    to={item.path}
-   270	                                    className={`w-full text-left flex items-center px-4 py-3 h-12 {/* Use px-4 for consistent padding, fixed height */}
-   271	                                                  ${isActive(item.path)
-   272	                                            ? 'bg-white/20 font-medium border-l-4 border-white'
-   273	                                            : 'border-l-4 border-transparent hover:bg-white/5'}
-   274	                                                  transition-all duration-150 group relative`}
-   275	                                >
-   276	                                    {/* Icon and Text Wrapper */}
-   277	                                    <div className="flex items-center overflow-hidden"> {/* Added overflow-hidden */}
-   278	                                        {/* Icon Container: Fixed width, centered */}
-   279	                                        <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
-   280	                                            {item.icon}
-   281	                                        </div>
-   282	                                        {/* Text Span: Animate opacity and max-width */}
-   283	                                        <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
-   284	                                    </div>
-   285	                                </Link>
-   286	                            )}
-   287	                        </div>
-   288	                    ))}
-   289	                </nav>
-   290	
-   291	                {/* Bottom version info */}
-   292	                <div className={`p-4 text-xs text-blue-200/70 border-t border-blue-500/30 ${collapsed ? 'text-center' : ''}`}>
-   293	                    {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
-   294	                </div>
-   295	            </div>
-   296	        </aside>
-   297	    );
-   298	};
-   299	
-   300	export default Sidebar;
+   256	                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition-colors transition-opacity duration-300 ease-in-out ${
+   257	                                                        isActive(child.path)
+   258	                                                        ? 'bg-white/20 text-white font-medium hover:bg-white/20 hover:text-white'
+   259	                                                        : 'text-blue-100 hover:bg-white/10 hover:text-white'
+   260	                                                    } whitespace-nowrap overflow-hidden text-ellipsis`} // Ensure text stays on one line and add ellipsis if needed
+   261	                                                >
+   262	                                                    {child.name}
+   263	                                                </Link>
+   264	                                            ))}
+   265	                                        </div>
+   266	                                    </div>
+   267	                                </>
+   268	                            ) : (
+   269	                                <Link // Link for non-expandable menus
+   270	                                    to={item.path}
+   271	                                    className={`w-full text-left flex items-center px-4 py-3 h-12 {/* Use px-4 for consistent padding, fixed height */}
+   272	                                                  ${isActive(item.path)
+   273	                                            ? 'bg-white/20 font-medium border-l-4 border-white'
+   274	                                            : 'border-l-4 border-transparent hover:bg-white/5'}
+   275	                                                  transition-all duration-150 group relative`}
+   276	                                >
+   277	                                    {/* Icon and Text Wrapper */}
+   278	                                    <div className="flex items-center overflow-hidden"> {/* Added overflow-hidden */}
+   279	                                        {/* Icon Container: Fixed width, centered */}
+   280	                                        <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
+   281	                                            {item.icon}
+   282	                                        </div>
+   283	                                        {/* Text Span: Animate opacity and max-width */}
+   284	                                        <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
+   285	                                    </div>
+   286	                                </Link>
+   287	                            )}
+   288	                        </div>
+   289	                    ))}
+   290	                </nav>
+   291	
+   292	                {/* Bottom version info */}
+   293	                <div className={`p-4 text-xs text-blue-200/70 border-t border-blue-500/30 ${collapsed ? 'text-center' : ''}`}>
+   294	                    {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
+   295	                </div>
+   296	            </div>
+   297	        </aside>
+   298	    );
+   299	};
+   300	
+   301	export default Sidebar;
 
 
 ===============================================
