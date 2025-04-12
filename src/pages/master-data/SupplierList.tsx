@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle } from '../../components/ui/Card';
 import DetailEditModal from '../../components/ui/DetailEditModal';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
 import { Button } from '../../components/ui/Button';
-import { FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { useConfirmDialog } from '../../components/ui/ConfirmDialog';
 
@@ -153,7 +153,6 @@ const SupplierList = () => {
                             <TableHeader>Alamat</TableHeader>
                             <TableHeader>Telepon</TableHeader>
                             <TableHeader>Kontak Person</TableHeader>
-                            <TableHeader className="text-center">Aksi</TableHeader>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -170,18 +169,11 @@ const SupplierList = () => {
                                     <TableCell>{supplier.address || '-'}</TableCell>
                                     <TableCell>{supplier.phone || '-'}</TableCell>
                                     <TableCell>{supplier.contact_person || '-'}</TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="flex justify-center space-x-1">
-                                            <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(supplier); }} disabled={deleteSupplierMutation.isPending && deleteSupplierMutation.variables === supplier.id}>
-                                                {deleteSupplierMutation.isPending && deleteSupplierMutation.variables === supplier.id ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> : <FaTrash />}
-                                            </Button>
-                                        </div>
-                                    </TableCell>
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center text-gray-500">
+                                <TableCell colSpan={4} className="text-center text-gray-500">
                                     Belum ada data supplier.
                                 </TableCell>
                             </TableRow>
@@ -200,6 +192,10 @@ const SupplierList = () => {
                     onSave={async (updatedData: Record<string, string | number | boolean | null>) => {
                         await updateSupplierMutation.mutateAsync(updatedData);
                     }}
+                    onDeleteRequest={() => {
+                        if (selectedSupplier) handleDelete(selectedSupplier);
+                    }}
+                    deleteButtonLabel="Hapus Supplier"
                     imageUrl={selectedSupplier.image_url || undefined}
                     imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
                 />
