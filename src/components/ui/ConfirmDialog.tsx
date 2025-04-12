@@ -1,10 +1,8 @@
-// src/components/ui/ConfirmDialog.tsx
 import React, { createContext, useState, useContext, useCallback, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './Button';
 import { Transition, TransitionChild } from '@headlessui/react';
 
-// Context untuk mengelola state dialog
 interface ConfirmDialogContextType {
     isOpen: boolean;
     title: string;
@@ -43,11 +41,9 @@ const initialState: ConfirmDialogContextType = {
 
 const ConfirmDialogContext = createContext<ConfirmDialogContextType>(initialState);
 
-// Provider untuk modal
 export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [dialogState, setDialogState] = useState<Omit<ConfirmDialogContextType, 'openConfirmDialog' | 'closeConfirmDialog'>>(initialState);
 
-    // Fungsi untuk membuka dialog
     const openConfirmDialog = useCallback((options: ConfirmDialogOptions) => {
         setDialogState({
             isOpen: true,
@@ -61,7 +57,6 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
         });
     }, []);
 
-    // Fungsi untuk menutup dialog
     const closeConfirmDialog = useCallback(() => {
         setDialogState(state => ({
             ...state,
@@ -83,8 +78,6 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 };
 
-// Hook untuk menggunakan confirm dialog
-// eslint-disable-next-line react-refresh/only-export-components
 export const useConfirmDialog = () => {
     const context = useContext(ConfirmDialogContext);
     if (!context) {
@@ -93,7 +86,6 @@ export const useConfirmDialog = () => {
     return context;
 };
 
-// Komponen dialog
 const ConfirmDialogComponent: React.FC = () => {
     const {
         isOpen,
@@ -123,20 +115,17 @@ const ConfirmDialogComponent: React.FC = () => {
         }
     };
 
-    // Gunakan portal untuk merender dialog di luar hierarki komponen
     return createPortal(
         <Transition show={isOpen} as={Fragment}>
             <div
                 className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
-                onClick={handleBackdropClick} // Backdrop click handler remains here
+                onClick={handleBackdropClick}
             >
-                {/* Backdrop transition */}
                 <div
                     className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
                     aria-hidden="true"
                 />
 
-                {/* Dialog panel transition */}
                 <TransitionChild
                     as={Fragment}
                     enter="transition-all duration-300 ease-out"
