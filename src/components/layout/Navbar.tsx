@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 
 interface NavbarProps {
     sidebarCollapsed: boolean;
@@ -79,11 +78,11 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => navigate(-1)}
-                        className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        className="p-2 pb-3 w-10 rounded-full hover:bg-gray-100 transition-colors"
                         aria-label="Go Back"
                         title="Go Back"
                     >
-                        <FaArrowLeft className="text-gray-600" />
+                        <span className="text-gray-600 font-bold text-lg">&lt;</span>
                     </motion.button>
 
                     <span className="text-md font-mono text-blue-700 tracking-tight">
@@ -94,11 +93,11 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => navigate(1)}
-                        className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        className="p-2 pb-3 w-10 rounded-full hover:bg-gray-100 transition-colors"
                         aria-label="Go Forward"
                         title="Go Forward"
                     >
-                        <FaArrowRight className="text-gray-600" />
+                        <span className="text-gray-600 font-bold text-lg">&gt;</span>
                     </motion.button>
                 </div>
                 <div className="relative flex justify-end">
