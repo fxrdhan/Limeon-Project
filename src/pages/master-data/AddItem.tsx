@@ -119,28 +119,25 @@ const AddItem = () => {
                     <CardContent className="space-y-6">
                         <FormSection title="Data Umum">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField label="Nama Item">
+                                    <Input
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        className={inputClassName}
+                                        required
+                                    />
+                                </FormField>
+                                
                                 <FormField label="Kode Item">
                                     <Input
                                         name="code"
                                         value={formData.code}
-                                        disabled={isEditMode}
+                                        readOnly={true}
                                         className={inputClassName}
-                                        style={formData.code === "" ? {
-                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
-                                        } : {}}
                                     />
                                 </FormField>
                             </div>
-
-                            <FormField label="Nama Item">
-                                <Input
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    className={inputClassName}
-                                    required
-                                />
-                            </FormField>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField label="Jenis">
@@ -278,11 +275,8 @@ const AddItem = () => {
                                     <Input
                                         type="text"
                                         value={unitConversionHook.baseUnit}
-                                        readOnly
+                                        readOnly={true}
                                         className={inputClassName}
-                                        style={unitConversionHook.baseUnit === "" ? {
-                                            background: 'repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #e0e0e0 10px, #e0e0e0 20px)'
-                                        } : {}}
                                     />
                                 </FormField>
                                 
