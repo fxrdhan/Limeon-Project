@@ -118,7 +118,7 @@ function ItemList() {
     return (
         <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Daftar Item</h1>
+                <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Item</h1>
 
                 <Link
                     to="/master-data/items/add">
