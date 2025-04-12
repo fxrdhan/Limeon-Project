@@ -1028,7 +1028,7 @@
    194	            <div className="flex flex-col h-full">
    195	                {/* Logo Area */}
    196	                {/* Remove justify-between to keep logo left aligned when collapsed */}
-   197	                <div className={`p-4 border-b border-blue-500/30 flex items-center ${collapsed ? 'justify-center' : ''}`}>
+   197	                <div className="p-4 border-b border-blue-500/30 flex items-center"> {/* Removed conditional justify-center */}
    198	                    {/* Simplified logo rendering */}
    199	                    <div className="flex items-center">
    200	                        {/* Logo P */}
