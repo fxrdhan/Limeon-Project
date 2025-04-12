@@ -7,11 +7,10 @@ import {
   UseMutationOptions,
   MutationFunction,
 } from '@tanstack/react-query';
-import { RealtimePostgresChangesPayload } from '@supabase/supabase-js'; // Import Supabase specific type
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from './supabase';
-import React from 'react'; // Import React for useEffect
+import React from 'react';
 
-// Fungsi untuk mengambil data dengan cache
 export function useSupabaseQuery<TQueryFnData = unknown, TError = Error, TData = TQueryFnData>(
   key: QueryKey,
   fetcher: () => Promise<TQueryFnData>,
@@ -24,9 +23,8 @@ export function useSupabaseQuery<TQueryFnData = unknown, TError = Error, TData =
   });
 }
 
-// Fungsi untuk mutasi data dengan invalidasi cache otomatis
 export function useSupabaseMutation<TData = unknown, TError = Error, TVariables = void, TContext = unknown>(
-  key: QueryKey | string, // Allow string or array key
+  key: QueryKey | string,
   mutationFn: MutationFunction<TData, TVariables>,
   options: Omit<UseMutationOptions<TData, TError, TVariables, TContext>, 'mutationFn'> = {},
 ) {
@@ -35,16 +33,14 @@ export function useSupabaseMutation<TData = unknown, TError = Error, TVariables 
   return useMutation({
     mutationFn,
     onSuccess: (data: TData, variables: TVariables, context: TContext | undefined) => {
-      // Invalidasi cache setelah mutasi berhasil
       if (Array.isArray(key)) {
         queryClient.invalidateQueries({ queryKey: key });
       } else {
         queryClient.invalidateQueries({ queryKey: [key] });
       }
 
-      // Call original onSuccess if provided
       if (options?.onSuccess) {
-        if (context !== undefined) { // Check if context is not undefined before calling
+        if (context !== undefined) {
           options.onSuccess(data, variables, context);
         }
       }
@@ -53,8 +49,7 @@ export function useSupabaseMutation<TData = unknown, TError = Error, TVariables 
   });
 }
 
-// Fungsi untuk mendengarkan perubahan data di Supabase
-export function useSupabaseSubscription<T extends Record<string, unknown> = Record<string, unknown>>( // Use Record<string, unknown> instead of any
+export function useSupabaseSubscription<T extends Record<string, unknown> = Record<string, unknown>>(
   tableName: string,
   onDataChange: (payload: RealtimePostgresChangesPayload<T>) => void,
 ) {
@@ -66,12 +61,10 @@ export function useSupabaseSubscription<T extends Record<string, unknown> = Reco
       .on('postgres_changes',
           { event: '*', schema: 'public', table: tableName },
           (payload: RealtimePostgresChangesPayload<T>) => {
-            // Eksekusi callback yang diberikan
             if (onDataChange) {
               onDataChange(payload);
             }
 
-            // Invalidasi query terkait
             queryClient.invalidateQueries({ queryKey: [tableName] });
           })
       .subscribe();
