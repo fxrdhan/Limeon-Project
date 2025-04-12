@@ -306,21 +306,22 @@
      7	pnpm-debug.log*
      8	lerna-debug.log*
      9	
-    10	node_modules
-    11	dist
-    12	dist-ssr
-    13	*.local
-    14	
-    15	# Editor directories and files
-    16	.vscode/*
-    17	!.vscode/extensions.json
-    18	.idea
-    19	.DS_Store
-    20	*.suo
-    21	*.ntvs*
-    22	*.njsproj
-    23	*.sln
-    24	*.sw?
+    10	./project_files.txt
+    11	node_modules
+    12	dist
+    13	dist-ssr
+    14	*.local
+    15	
+    16	# Editor directories and files
+    17	.vscode/*
+    18	!.vscode/extensions.json
+    19	.idea
+    20	.DS_Store
+    21	*.suo
+    22	*.ntvs*
+    23	*.njsproj
+    24	*.sln
+    25	*.sw?
 
 
 ===============================================
