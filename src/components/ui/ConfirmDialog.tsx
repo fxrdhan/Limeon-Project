@@ -78,6 +78,7 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useConfirmDialog = () => {
     const context = useContext(ConfirmDialogContext);
     if (!context) {
