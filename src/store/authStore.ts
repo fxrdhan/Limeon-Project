@@ -1,19 +1,17 @@
 import { create } from 'zustand';
-import { Session} from '@supabase/supabase-js'; // Import AuthError
+import { Session} from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
-// Define a more specific type for the user object from your database
 interface UserDetails {
   id: string;
   name: string;
   email: string;
   role: string;
-  // Add other relevant fields from your 'users' table if needed
 }
 
 interface AuthState {
     session: Session | null;
-    user: UserDetails | null; // Use UserDetails instead of any
+    user: UserDetails | null;
     loading: boolean;
     error: string | null;
     login: (email: string, password: string) => Promise<void>;
@@ -74,7 +72,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                 user: userData,
                 loading: false
             });
-        } catch (error: unknown) { // Use AuthError type
+        } catch (error: unknown) {
             console.error('Login error:', error);
             set({ error: error instanceof Error ? error.message : 'An unknown error occurred', loading: false });
         }
@@ -85,7 +83,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             set({ loading: true });
             await supabase.auth.signOut();
             set({ session: null, user: null, loading: false });
-        } catch (error: unknown) { // Use AuthError type
+        } catch (error: unknown) {
             console.error('Logout error:', error);
             set({ error: error instanceof Error ? error.message : 'An unknown error occurred', loading: false });
         }
