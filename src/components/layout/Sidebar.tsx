@@ -207,8 +207,8 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                     </div>
                 </div>
 
-                {/* Menu Items */}
-                <nav className="flex-grow overflow-y-auto py-2"> {/* Removed scrollbar-hidden if needed */}
+                {/* Menu Items with hidden scrollbar */}
+                <nav className="flex-grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"> {/* Added hidden scrollbar styles */}
                     {menuItems.map((item) => (
                         <div key={item.name} className="mb-1">
                             {item.children ? (

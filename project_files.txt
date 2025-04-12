@@ -1041,8 +1041,8 @@
    207	                    </div>
    208	                </div>
    209	
-   210	                {/* Menu Items */}
-   211	                <nav className="flex-grow overflow-y-auto py-2"> {/* Removed scrollbar-hidden if needed */}
+   210	                {/* Menu Items with hidden scrollbar */}
+   211	                <nav className="flex-grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"> {/* Added hidden scrollbar styles */}
    212	                    {menuItems.map((item) => (
    213	                        <div key={item.name} className="mb-1">
    214	                            {item.children ? (
