@@ -391,13 +391,17 @@ const AddItem = () => {
                                 disabled={deleteItemMutation.isPending}
                                 isLoading={deleteItemMutation.isPending}
                             >
-                                <FaTrash className="mr-2" /> Hapus
+                                <span className="flex items-center">
+                                    <FaTrash className="mr-2" /> Hapus
+                                </span>
                             </Button>
                         ) : (
                             <Button type="button" variant="outline" onClick={() => navigate("/master-data/items")}> Batal </Button>
                         )}
                         <Button type="submit" disabled={saving} isLoading={saving}>
-                            <FaSave className="mr-2" /> {isEditMode ? 'Update' : 'Simpan'}
+                            <span className="flex items-center">
+                                <FaSave className="mr-2" /> {isEditMode ? 'Update' : 'Simpan'}
+                            </span>
                         </Button>
                     </CardFooter>
                 </form>
