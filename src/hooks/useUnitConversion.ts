@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
 export interface UnitConversion {
+    unit_name: any;
+    to_unit_id: any;
+    to_unit_id: any;
     id: string;
     unit: {
         id: string;
