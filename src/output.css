@@ -912,6 +912,14 @@ video {
   width: 100%;
 }
 
+.w-0 {
+  width: 0px;
+}
+
+.w-auto {
+  width: auto;
+}
+
 .min-w-40 {
   min-width: 10rem;
 }

@@ -42,8 +42,6 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
         settings: false,
     });
 
-    const [savedOpenMenus, setSavedOpenMenus] = useState<Record<string, boolean>>({});
-    const [hoverMenu, setHoverMenu] = useState<string | null>(null);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Timer reference for hover delay
 
     // Define menu structure
@@ -128,25 +126,6 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
         },
     ];
 
-    useEffect(() => {
-        if (collapsed) {
-            setSavedOpenMenus({ ...openMenus });
-            setOpenMenus({
-                masterData: false,
-                inventory: false,
-                purchasing: false,
-                sales: false,
-                clinic: false,
-                finance: false,
-                reports: false,
-                settings: false,
-            });
-        } else {
-            setOpenMenus(savedOpenMenus);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [collapsed]);
-
     // Check if path is active
     const isActive = useCallback((path: string) => {
         if (path === '/') {
@@ -170,17 +149,6 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
             }));
         }
     }, [collapsed]);
-
-    // Handle hover for collapsed sidebar
-    const handleMouseEnter = useCallback((menu: string) => {
-        if (collapsed) {
-            setHoverMenu(menu);
-        }
-    }, [collapsed]);
-
-    const handleMouseLeave = useCallback(() => {
-        setHoverMenu(null);
-    }, []);
 
     // Handle hover enter on the entire sidebar area
     const handleMouseEnterSidebar = useCallback(() => {
@@ -246,7 +214,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                 {/* Menu Items */}
                 <nav className="flex-grow overflow-y-auto py-2 scrollbar-hidden">
                     {menuItems.map((item) => (
-                        <div key={item.name} className="mb-1" onMouseEnter={() => handleMouseEnter(item.name)} onMouseLeave={handleMouseLeave}>
+                        <div key={item.name} className="mb-1">
                             {/* Menu Item Button */}
                             {item.children ? (
                                 <button
@@ -318,27 +286,6 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                             </Link>
                                         ))}
                                     </div>
-                                </div>
-                            )}
-
-                            {/* Submenu dropdown for collapsed sidebar on hover */}
-                            {collapsed && item.children && hoverMenu === item.name && (
-                                <div
-                                    className="absolute left-full ml-2 top-0 bg-blue-800 rounded-md py-2 px-3 
-                                            min-w-40 z-20 shadow-xl"
-                                >
-                                    {item.children.map((child) => (
-                                        <Link
-                                            key={child.path}
-                                            to={child.path}
-                                            className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
-                                                      ${isActive(child.path)
-                                                    ? 'bg-white/10 text-white'
-                                                    : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
-                                        >
-                                            {child.name}
-                                        </Link>
-                                    ))}
                                 </div>
                             )}
                         </div>
