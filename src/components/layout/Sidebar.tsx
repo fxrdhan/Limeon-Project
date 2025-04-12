@@ -6,7 +6,6 @@ import {
     FaBoxes,
     FaShoppingCart,
     FaHome,
-    FaAngleDown,
     FaChartBar,
     FaHospital,
     FaShoppingBag,
@@ -191,108 +190,91 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                         transition-all duration-500 ease-in-out h-screen 
                         ${collapsed ? 'w-16' : 'w-64'} relative group z-10`}
         >
+            {/* Ensure flex-col and h-full */}
             <div className="flex flex-col h-full">
                 {/* Logo Area */}
                 {/* Remove justify-between to keep logo left aligned when collapsed */}
-                <div className={`p-4 border-b border-blue-500/30 flex items-center group`}>
-                    {!collapsed ? (
-                        <>
-                            <div className="flex items-center">
-                                {/* Logo P when expanded */}
-                                {/* Added min-w to prevent shrinking during transition */}
-                                <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center">
-                                    <span className="text-blue-600 text-xl font-bold">P</span>
-                                </div>
-                                <h2 className="ml-2 text-lg font-bold transition-opacity duration-200">PharmaSys</h2>
-                            </div>
-                        </>
-                    ) : (
-                        /* Logo P when collapsed - ensure it stays left */
-                        <div className="flex items-center justify-start w-full"> {/* Wrap in flex, justify-start */}
-                            {/* Remove mx-auto, added min-w */}
-                            <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center">
-                                <span className="text-blue-600 text-xl font-bold">P</span>
-                            </div>
+                <div className={`p-4 border-b border-blue-500/30 flex items-center ${collapsed ? 'justify-center' : ''}`}>
+                    {/* Simplified logo rendering */}
+                    <div className="flex items-center">
+                        {/* Logo P */}
+                        <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center flex-shrink-0"> {/* Added flex-shrink-0 */}
+                            <span className="text-blue-600 text-xl font-bold">P</span>
                         </div>
-                    )}
+                        <h2 className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'}`}> {/* Animate text visibility */}
+                            PharmaSys
+                        </h2>
+                    </div>
                 </div>
 
                 {/* Menu Items */}
-                <nav className="flex-grow overflow-y-auto py-2 scrollbar-hidden">
+                <nav className="flex-grow overflow-y-auto py-2"> {/* Removed scrollbar-hidden if needed */}
                     {menuItems.map((item) => (
                         <div key={item.name} className="mb-1">
-                            {/* Menu Item Button */}
                             {item.children ? (
-                                <button
-                                    onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
-                                    className={`w-full text-left flex items-center justify-between px-2 py-3
-                                              ${isActive(item.path) || hasActiveChild(item.children)
-                                            ? 'bg-white/20 font-medium border-l-4 border-white'
-                                            : collapsed ? '' : 'border-l-4 border-transparent'} 
-                                                : 'hover:bg-white/5'} 
-                                              transition-all duration-150 group relative`}
-                                >
-                                    <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
-                                        <div className={`${isActive(item.path) || hasActiveChild(item.children)
-                                            ? 'text-white'
-                                            : 'text-blue-100'} 
-                                                      transition-colors duration-200`}>
-                                            {item.icon}
+                                <> {/* Use Fragment to group button and submenu */}
+                                    <button // Button for expandable menus
+                                        onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
+                                        className={`w-full text-left flex items-center px-4 py-3 h-12 justify-between {/* Use px-4 for consistent padding, fixed height, add justify-between */}
+                                                  ${isActive(item.path) || hasActiveChild(item.children)
+                                                ? 'bg-white/20 font-medium border-l-4 border-white'
+                                                : 'border-l-4 border-transparent hover:bg-white/5'}
+                                                  transition-all duration-150 group relative`}
+                                    >
+                                        {/* Icon and Text Wrapper */}
+                                        <div className="flex items-center overflow-hidden"> {/* Added overflow-hidden */}
+                                            {/* Icon Container: Fixed width, centered */}
+                                            <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
+                                                {item.icon}
+                                            </div>
+                                            {/* Text Span: Animate opacity and max-width for smooth transition */}
+                                            <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
                                         </div>
-                                        {!collapsed && <span className="ml-3 truncate text-white">{item.name}</span>}
-                                    </div>
-                                    {!collapsed && <FaAngleDown
-                                        className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""
-                                            }`}
-                                    />}
-                                </button>
-                            ) : (
-                                <Link to={item.path}
-                                className={`w-full text-left flex items-center justify-between px-2 py-3
-                                          ${isActive(item.path) || hasActiveChild(item.children)
-                                        ? 'bg-white/20 font-medium border-l-4 border-white'
-                                        : collapsed ? '' : 'border-l-4 border-transparent'} 
-                                            : 'hover:bg-white/5'} 
-                                          transition-all duration-150 group relative`}
-                                >
-                                    <div className={`flex items-center ${collapsed ? 'justify-start pl-3 w-full' : ''}`}>
-                                        <div className={`${isActive(item.path) || hasActiveChild(item.children)
-                                        ? 'text-white'
-                                        : 'text-blue-100'} 
-                                                  transition-colors duration-200`}>
-                                            {item.icon}
-                                        </div>
-                                    {!collapsed && (
-                                        <span className="ml-3 truncate text-white">{item.name}</span>
-                                    )}
-                                </div>
-                            </Link>
-                            )}
+                                        {/* Arrow Icon Removed */}
+                                        {/*
+                                        {!collapsed && (
+                                            <FaAngleDown className={`text-sm transition-transform duration-300 ${openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : ""}`} />
+                                        )}
+                                        */}
+                                    </button>
 
-                            {/* Submenu Items */}
-                            {item.children && !collapsed && (
-                                <div 
-                                    className={`overflow-hidden transition-all duration-300 ease-in-out transform ${
-                                        openMenus[item.name.toLowerCase().replace(' ', '')] 
-                                            ? 'max-h-96 opacity-100 scale-y-100 origin-top' 
-                                            : 'max-h-0 opacity-0 scale-y-95 origin-top'
-                                    }`}
+                                    {/* Submenu Rendering */}
+                                    {item.children && !collapsed && openMenus[item.name.toLowerCase().replace(' ', '')] && (
+                                        <div className="pl-10 pr-2 py-1 bg-black/10"> {/* Indent submenu */}
+                                            {item.children.map((child) => (
+                                                <Link
+                                                    key={child.name}
+                                                    to={child.path}
+                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition-colors duration-150 ${isActive(child.path)
+                                                            ? 'bg-white/20 text-white font-medium'
+                                                            : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                                                        }`}
+                                                >
+                                                    {child.name}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <Link // Link for non-expandable menus
+                                    to={item.path}
+                                    className={`w-full text-left flex items-center px-4 py-3 h-12 {/* Use px-4 for consistent padding, fixed height */}
+                                                  ${isActive(item.path)
+                                            ? 'bg-white/20 font-medium border-l-4 border-white'
+                                            : 'border-l-4 border-transparent hover:bg-white/5'}
+                                                  transition-all duration-150 group relative`}
                                 >
-                                    <div className="pl-12 pr-4 py-1 space-y-1 bg-blue-700/20">
-                                        {item.children.map((child) => (
-                                            <Link
-                                                key={child.path}
-                                                to={child.path}
-                                                className={`block py-2 px-2 text-sm rounded-md transition-all duration-150 text-blue-100 hover:text-white visited:text-blue-100 
-                                                           ${isActive(child.path)
-                                                    ? 'bg-white/20 text-white font-medium'
-                                                    : 'text-blue-100 hover:bg-white/5 hover:text-white'}`}
-                                            >
-                                                {child.name}
-                                            </Link>
-                                        ))}
+                                    {/* Icon and Text Wrapper */}
+                                    <div className="flex items-center overflow-hidden"> {/* Added overflow-hidden */}
+                                        {/* Icon Container: Fixed width, centered */}
+                                        <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
+                                            {item.icon}
+                                        </div>
+                                        {/* Text Span: Animate opacity and max-width */}
+                                        <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
                                     </div>
-                                </div>
+                                </Link>
                             )}
                         </div>
                     ))}
