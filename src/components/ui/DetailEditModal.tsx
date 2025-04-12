@@ -87,8 +87,14 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         toggleEdit(key);
     };
 
+    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
+
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" onClick={handleBackdropClick}>
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-xl font-semibold">{title}</h2>
