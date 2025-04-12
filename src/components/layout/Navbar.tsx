@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../ui/Button';
+// Import motion and AnimatePresence from framer-motion
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Define props interface
 interface NavbarProps {
@@ -23,13 +25,20 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     return (
         <nav className="bg-white border-b px-6 py-3">
             <div className="flex justify-between items-center">
-                {/* Conditionally render Navbar title based on sidebar state */}
+                {/* Conditionally render Navbar title with animation */}
                 <div className="flex items-center h-8">
-                    {sidebarCollapsed ? (
-                        <h1 className="text-xl font-semibold text-gray-800 transition-opacity duration-300 ease-in-out">PharmaSys</h1>
-                    ) : (
-                        <h1 className="text-xl font-semibold text-gray-800 transition-opacity duration-300 ease-in-out">Pharmacy System App</h1>
-                    )}
+                    <AnimatePresence mode="wait">
+                        <motion.h1
+                            key={sidebarCollapsed ? 'PharmaSys' : 'Pharmacy System App'}
+                            initial={{ opacity: 0, x: -10 }} // Start state: invisible and slightly to the left
+                            animate={{ opacity: 1, x: 0 }} // Animate to: fully visible and original horizontal position
+                            exit={{ opacity: 0, x: 10 }} // Exit state: invisible and slightly to the right
+                            transition={{ duration: 0.2 }} // Animation duration
+                            className="text-xl font-semibold text-gray-800 transition-opacity duration-300 ease-in-out"
+                        >
+                            {sidebarCollapsed ? 'PharmaSys' : 'Pharmacy System App'}
+                        </motion.h1>
+                    </AnimatePresence>
                 </div>
 
                 <div className="relative">
