@@ -7,10 +7,15 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Build artifacts (Tailwind CSS output)
+src/output.css
+
+# Dependency directories
+node_modules
 project_files.txt
 get-all
 get-database
-node_modules
+
 dist
 dist-ssr
 *.local
