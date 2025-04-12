@@ -1,4 +1,3 @@
-// src/pages/purchases/UploadInvoice.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
@@ -22,7 +21,6 @@ const UploadInvoice = () => {
             return;
         }
         
-        // Validasi tipe file
         const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
         if (!validTypes.includes(selectedFile.type)) {
             setError('Tipe file tidak valid. Harap unggah file PNG atau JPG.');
@@ -30,7 +28,6 @@ const UploadInvoice = () => {
             return;
         }
         
-        // Validasi ukuran file (5MB = 5 * 1024 * 1024 bytes)
         const maxSize = 5 * 1024 * 1024;
         if (selectedFile.size > maxSize) {
             setError('Ukuran file terlalu besar. Maksimum 5MB.');
@@ -64,7 +61,6 @@ const UploadInvoice = () => {
         
         try {
             setLoading(true);
-            // Placeholder for actual save logic
             alert('Faktur berhasil disimpan!');
             navigate('/purchases');
         } catch (err: unknown) {
