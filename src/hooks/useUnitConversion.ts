@@ -2,9 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
 export interface UnitConversion {
-    unit_name: any;
-    to_unit_id: any;
-    to_unit_id: any;
+    unit_name: string;
+    to_unit_id: string;
     id: string;
     unit: {
         id: string;
@@ -54,7 +53,6 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         conversion: 0,
     });
 
-    // Fetch available units from database
     useEffect(() => {
         const fetchUnits = async () => {
             const { data } = await supabase
@@ -70,7 +68,6 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         fetchUnits();
     }, []);
 
-    // Fungsi untuk menambah konversi satuan
     const addUnitConversion = useCallback((unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => {
         const calculatedBasePrice = unitConversion.basePrice !== undefined 
             ? unitConversion.basePrice 
@@ -84,12 +81,10 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         setUnitConversions(prevConversions => [...prevConversions, newUnitConversion]);
     }, [basePrice]);
 
-    // Fungsi untuk menghapus konversi satuan
     const removeUnitConversion = useCallback((id: string) => {
         setUnitConversions(prevConversions => prevConversions.filter(uc => uc.id !== id));
     }, []);
 
-    // Menghitung ulang harga pokok untuk semua konversi berdasarkan harga pokok dasar
     const recalculateBasePrices = useCallback(() => {
         if (skipRecalculation) {
             setSkipRecalculation(false);
