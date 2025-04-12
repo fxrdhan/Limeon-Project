@@ -3,7 +3,12 @@ import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../ui/Button';
 
-const Navbar = () => {
+// Define props interface
+interface NavbarProps {
+    sidebarCollapsed: boolean;
+}
+
+const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     const { user, logout } = useAuthStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -18,8 +23,13 @@ const Navbar = () => {
     return (
         <nav className="bg-white border-b px-6 py-3">
             <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-xl font-semibold text-gray-800">PharmaSys</h1>
+                {/* Conditionally render Navbar title based on sidebar state */}
+                <div className="flex items-center h-8">
+                    {sidebarCollapsed ? (
+                        <h1 className="text-xl font-semibold text-gray-800 transition-opacity duration-300 ease-in-out">PharmaSys</h1>
+                    ) : (
+                        <h1 className="text-xl font-semibold text-gray-800 transition-opacity duration-300 ease-in-out">Pharmacy System App</h1>
+                    )}
                 </div>
 
                 <div className="relative">
