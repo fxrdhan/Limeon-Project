@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { UnitConversion } from './useUnitConversion'; // Import the specific type
+import { UnitConversion } from './useUnitConversion';
 
 export interface Item {
     id: string;
@@ -11,7 +11,7 @@ export interface Item {
     stock: number;
     unit_id: string;
     base_unit: string;
-    unit_conversions: UnitConversion[]; // Use the specific UnitConversion type
+    unit_conversions: UnitConversion[];
 }
 
 export const useItemSelection = () => {
@@ -28,7 +28,7 @@ export const useItemSelection = () => {
         try {
             const { data, error } = await supabase
                 .from('items')
-                .select('id, name, code, base_price, sell_price, stock, unit_id, base_unit, unit_conversions') // Select sell_price
+                .select('id, name, code, base_price, sell_price, stock, unit_id, base_unit, unit_conversions')
                 .order('name');
                 
             if (error) throw error;
@@ -41,7 +41,6 @@ export const useItemSelection = () => {
     const getItemByID = (itemId: string): Item | undefined => {
         const item = items.find(item => item.id === itemId);
         if (item) {
-            // Parse unit_conversions if it's a string
             if (typeof item.unit_conversions === 'string') {
                 try {
                     item.unit_conversions = JSON.parse(item.unit_conversions || '[]');
@@ -50,13 +49,11 @@ export const useItemSelection = () => {
                     item.unit_conversions = [];
                 }
             }
-            // Ensure unit_conversions is always an array
             item.unit_conversions = item.unit_conversions || [];
         }
         return item;
     };
 
-    // Filter items based on search input
     const filteredItems = items.filter(item =>
         item.name.toLowerCase().includes(searchItem.toLowerCase()) || 
         (item.code && item.code.toLowerCase().includes(searchItem.toLowerCase()))
