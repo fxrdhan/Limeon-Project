@@ -71,7 +71,7 @@ const TypeList = () => {
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Daftar Jenis Item</h1>
+                <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Jenis Item</h1>
                 <Link to="/master-data/types/add">
                     <Button variant="primary">
                         <FaPlus className="mr-2" />
