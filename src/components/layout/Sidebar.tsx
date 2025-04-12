@@ -194,7 +194,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
             <div className="flex flex-col h-full">
                 {/* Logo Area */}
                 {/* Remove justify-between to keep logo left aligned when collapsed */}
-                <div className={`p-4 border-b border-blue-500/30 flex items-center ${collapsed ? 'justify-center' : ''}`}>
+                <div className="p-4 border-b border-blue-500/30 flex items-center"> {/* Removed conditional justify-center */}
                     {/* Simplified logo rendering */}
                     <div className="flex items-center">
                         {/* Logo P */}
