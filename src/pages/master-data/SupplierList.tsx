@@ -159,14 +159,13 @@ const SupplierList = () => {
                     <TableBody>
                         {suppliers && suppliers.length > 0 ? (
                             suppliers.map((supplier) => (
-                                <TableRow key={supplier.id}>
+                                <TableRow
+                                    key={supplier.id}
+                                    onClick={() => openSupplierDetail(supplier)}
+                                    className="cursor-pointer hover:bg-blue-50"
+                                >
                                     <TableCell>
-                                        <div
-                                            onClick={() => openSupplierDetail(supplier)}
-                                            className="cursor-pointer hover:text-primary hover:underline"
-                                        >
-                                            {supplier.name}
-                                        </div>
+                                        {supplier.name}
                                     </TableCell>
                                     <TableCell>{supplier.address || '-'}</TableCell>
                                     <TableCell>{supplier.phone || '-'}</TableCell>

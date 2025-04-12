@@ -6,10 +6,15 @@ interface TableProps {
     className?: string;
 }
 
-interface TableCellProps extends TableProps {
+interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
     colSpan?: number;
     rowSpan?: number;
     align?: 'left' | 'center' | 'right';
+}
+
+interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+    children: React.ReactNode;
+    className?: string;
 }
 
 export const Table = ({ children, className }: TableProps) => {
@@ -38,9 +43,9 @@ export const TableBody = ({ children, className }: TableProps) => {
     );
 };
 
-export const TableRow = ({ children, className }: TableProps) => {
+export const TableRow = ({ children, className, ...props }: TableRowProps) => {
     return (
-        <tr className={classNames('transition-colors duration-150 hover:bg-gray-100 even:bg-gray-50/30', className)}>
+        <tr className={classNames('transition-colors duration-150 hover:bg-gray-100 even:bg-gray-50/30', className)} {...props}>
             {children}
         </tr>
     );
