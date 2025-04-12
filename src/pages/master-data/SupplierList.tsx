@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Loading } from '../../components/ui/Loading';
-import { Card, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Card, CardHeader } from '../../components/ui/Card';
 import DetailEditModal from '../../components/ui/DetailEditModal';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
 import { Button } from '../../components/ui/Button';
@@ -132,7 +132,7 @@ const SupplierList = () => {
         <Card>
             <CardHeader className="mb-6 px-0">
                 <div className="flex justify-between items-center">
-                    <CardTitle className="text-center flex-grow">Daftar Supplier</CardTitle>
+                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Supplier</h1>
                     <Link to="/master-data/suppliers/add">
                         <Button variant="primary" className="flex items-center">
                             <FaPlus className="mr-2" />
