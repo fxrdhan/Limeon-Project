@@ -373,6 +373,8 @@ const AddItem = () => {
                                         value={formData.min_stock}
                                         onChange={handleChange}
                                         className={inputClassName}
+                                        onFocus={(e) => e.target.select()}
+                                        onClick={(e) => (e.target as HTMLInputElement).select()}
                                         required
                                     />
                                 </FormField>
