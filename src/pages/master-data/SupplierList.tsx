@@ -132,7 +132,7 @@ const SupplierList = () => {
         <Card>
             <CardHeader className="mb-6 px-0">
                 <div className="flex justify-between items-center">
-                    <CardTitle>Daftar Supplier</CardTitle>
+                    <CardTitle className="text-center flex-grow">Daftar Supplier</CardTitle>
                     <Link to="/master-data/suppliers/add">
                         <Button variant="primary" className="flex items-center">
                             <FaPlus className="mr-2" />
