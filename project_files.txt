@@ -307,21 +307,23 @@
      8	lerna-debug.log*
      9	
     10	./project_files.txt
-    11	node_modules
-    12	dist
-    13	dist-ssr
-    14	*.local
-    15	
-    16	# Editor directories and files
-    17	.vscode/*
-    18	!.vscode/extensions.json
-    19	.idea
-    20	.DS_Store
-    21	*.suo
-    22	*.ntvs*
-    23	*.njsproj
-    24	*.sln
-    25	*.sw?
+    11	./get-all
+    12	./get-database
+    13	node_modules
+    14	dist
+    15	dist-ssr
+    16	*.local
+    17	
+    18	# Editor directories and files
+    19	.vscode/*
+    20	!.vscode/extensions.json
+    21	.idea
+    22	.DS_Store
+    23	*.suo
+    24	*.ntvs*
+    25	*.njsproj
+    26	*.sln
+    27	*.sw?
 
 
 ===============================================
