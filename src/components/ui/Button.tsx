@@ -42,15 +42,17 @@ export const Button = ({
         lg: "px-6 py-3 text-lg",
     };
 
-    const baseClasses = "font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
-    const focusClasses = variant === 'text' ? "" : "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary";
+    const baseClasses = "font-medium rounded-md transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden";
     
     return (
         <button
             className={classNames(
-                baseClasses, focusClasses,
+                baseClasses,
                 variants[variant],
                 sizes[size],
+                'hover:text-white',
+                'hover:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)]',
+                'focus:outline-none active:scale-95',
                 fullWidth ? "w-full" : "",
                 className
             )}
