@@ -296,8 +296,8 @@ const AddItem = () => {
                                 <div className="text-center md:mt-6">
                                     {calculateProfitPercentage() !== null ? (
                                         <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            <FaArrowRight className="inline mr-2" />
                                             {calculateProfitPercentage()!.toFixed(1)}%
+                                            <FaArrowRight className="inline ml-2" />
                                         </span>
                                     ) : (
                                         <span className="text-sm text-gray-500">-</span>
