@@ -16,6 +16,8 @@ supabase_data
 project_files.txt
 get-all
 get-database
+.env
+test.js
 
 dist
 dist-ssr
