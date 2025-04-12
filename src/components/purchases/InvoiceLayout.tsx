@@ -1,7 +1,5 @@
-// src/components/invoice/InvoiceLayout.tsx
 import React from 'react';
 
-// Definisikan tipe data props yang dibutuhkan
 interface PurchaseData {
     id: string;
     invoice_number: string;
@@ -54,8 +52,8 @@ interface InvoiceLayoutProps {
     purchase: PurchaseData;
     items: PurchaseItem[];
     subtotals: Subtotals;
-    printRef?: React.RefObject<HTMLDivElement>; // Ref opsional untuk html2canvas
-    title?: string; // Judul opsional
+    printRef?: React.RefObject<HTMLDivElement>;
+    title?: string;
 }
 
 export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
@@ -63,20 +61,16 @@ export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
     items,
     subtotals,
     printRef,
-    title = "FAKTUR PEMBELIAN" // Default title
+    title = "FAKTUR PEMBELIAN"
 }) => {
     return (
-        // Gunakan div ini untuk referensi cetak/pdf jika printRef disediakan
         <div ref={printRef} className="faktur-a4 bg-white p-6 shadow print:shadow-none">
-            {/* Header Faktur */}
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-center mb-2">{title}</h1>
                 <div className="border-b-2 border-gray-400 mb-4"></div>
 
                 <div className="flex justify-between gap-4">
-                    {/* Info Kiri: Supplier & Customer */}
                     <div className="w-1/2">
-                        {/* Supplier Info */}
                         <div className="text-left mb-4">
                             <h2 className="font-bold text-lg text-gray-800">{purchase.supplier?.name || 'Supplier'}</h2>
                             <div className="text-sm text-gray-600">
@@ -84,7 +78,6 @@ export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                             </div>
                         </div>
 
-                        {/* Customer Info */}
                         <div className="text-left">
                             <h2 className="text-sm text-gray-600">Customer:</h2>
                             <div className="text-sm ">
@@ -94,7 +87,6 @@ export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                         </div>
                     </div>
 
-                    {/* Info Kanan: Detail Faktur */}
                     <div className="w-1/2">
                         <div className="bg-gray-50 p-3 rounded text-sm">
                             <div className="grid grid-cols-[auto,auto,1fr] mb-1">
@@ -124,7 +116,6 @@ export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                 </div>
             </div>
 
-            {/* Tabel Item */}
             <div className="mb-8">
                 <table className="w-full border-collapse">
                     <thead>
@@ -176,9 +167,7 @@ export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                 </table>
             </div>
 
-            {/* Footer: Catatan & Total */}
             <div className="flex justify-between mt-8">
-                {/* Info Tambahan */}
                 <div className="max-w-md">
                     <div className="grid grid-cols-[auto,auto,1fr] mb-1 text-sm">
                         <span className="text-left w-[120px]">Diperiksa oleh</span>
@@ -217,7 +206,6 @@ export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                     )}
                 </div>
 
-                {/* Rincian Total */}
                 <div className="border p-4 min-w-[250px] text-sm">
                     <div className="grid grid-cols-[1fr,auto,auto] mb-1">
                         <span className="text-left">Subtotal</span>
