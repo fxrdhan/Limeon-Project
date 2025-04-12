@@ -1,12 +1,14 @@
-// src/pages/master-data/SupplierList.tsx
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Loading } from '../../components/ui/Loading';
 import { Card, CardHeader, CardTitle } from '../../components/ui/Card';
 import DetailEditModal from '../../components/ui/DetailEditModal';
-import ImageCard from '../../components/ui/ImageCard';
-import AddItemCard from '../../components/ui/AddItemCard';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
+import { Button } from '../../components/ui/Button';
+import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import { useConfirmDialog } from '../../components/ui/ConfirmDialog';
 
 interface Supplier {
     id: string;
@@ -29,6 +31,7 @@ const SupplierList = () => {
     const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const queryClient = useQueryClient();
+    const { openConfirmDialog } = useConfirmDialog();
 
     const fetchSuppliers = async () => {
         const { data, error } = await supabase
@@ -71,6 +74,21 @@ const SupplierList = () => {
         },
     });
 
+    const deleteSupplierMutation = useMutation({
+        mutationFn: async (supplierId: string) => {
+            const { error } = await supabase.from('suppliers').delete().eq('id', supplierId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+            console.log("Supplier berhasil dihapus, cache diinvalidasi.");
+        },
+        onError: (error) => {
+            console.error("Error deleting supplier:", error);
+            alert(`Gagal menghapus supplier: ${error.message}`);
+        },
+    });
+
     const openSupplierDetail = (supplier: Supplier) => {
         setSelectedSupplier(supplier);
         setIsModalOpen(true);
@@ -81,6 +99,16 @@ const SupplierList = () => {
         setSelectedSupplier(null);
     };
 
+    const handleDelete = (supplier: Supplier) => {
+        openConfirmDialog({
+            title: "Konfirmasi Hapus",
+            message: `Apakah Anda yakin ingin menghapus supplier "${supplier.name}"? Tindakan ini tidak dapat diurungkan.`,
+            variant: 'danger',
+            confirmText: "Hapus",
+            onConfirm: () => deleteSupplierMutation.mutate(supplier.id)
+        });
+    };
+
     const supplierFields: FieldConfig[] = [
         { key: 'name', label: 'Nama Supplier', type: 'text', editable: true },
         { key: 'address', label: 'Alamat', type: 'textarea', editable: true },
@@ -89,53 +117,80 @@ const SupplierList = () => {
         { key: 'contact_person', label: 'Kontak Person', type: 'text', editable: true }
     ];
 
-    // Transform supplier data for the modal to match the expected Record type
     const transformSupplierForModal = (supplier: Supplier | null): Record<string, string | number | boolean | null> => {
         if (!supplier) return {};
         return {
-            name: supplier.name, // name is required (string)
-            address: supplier.address ?? '', // address is string | null, provide empty string if null
-            phone: supplier.phone ?? '', // phone is string | null | undefined, provide empty string if null/undefined
-            email: supplier.email ?? '', // email is string | null | undefined, provide empty string if null/undefined
-            contact_person: supplier.contact_person ?? '', // contact_person is string | null | undefined, provide empty string if null/undefined
+            name: supplier.name,
+            address: supplier.address ?? '',
+            phone: supplier.phone ?? '',
+            email: supplier.email ?? '',
+            contact_person: supplier.contact_person ?? '',
         };
     };
 
     return (
-        <Card className="bg-transparent shadow-none border-none">
+        <Card>
             <CardHeader className="mb-6 px-0">
-                <CardTitle>Daftar Supplier</CardTitle>
+                <div className="flex justify-between items-center">
+                    <CardTitle>Daftar Supplier</CardTitle>
+                    <Link to="/master-data/suppliers/add">
+                        <Button variant="primary" className="flex items-center">
+                            <FaPlus className="mr-2" />
+                            Tambah Supplier Baru
+                        </Button>
+                    </Link>
+                </div>
             </CardHeader>
 
             {isLoading && <Loading message="Memuat supplier..." />}
             {isError && <div className="text-center text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>}
 
             {!isLoading && !isError && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-24">
-                    {(suppliers || []).map((supplier) => (
-                        <ImageCard
-                            key={supplier.id}
-                            id={supplier.id}
-                            title={supplier.name}
-                            subtitle={supplier.address || 'Alamat tidak tersedia'}
-                            imageUrl={supplier.image_url ?? undefined}
-                            fallbackImage={`https://picsum.photos/seed/${supplier.id}/400/300`}
-                            onClick={() => openSupplierDetail(supplier)}
-                        />
-                    ))}
-                    <AddItemCard label="Tambah Supplier Baru" to="/master-data/suppliers/add" />
-                </div>
-            )}
-            {!isLoading && suppliers && suppliers.length === 0 && !isError && (
-                <div className="text-center text-gray-500 mt-8">
-                    Belum ada data supplier.
-                </div>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableHeader>Nama Supplier</TableHeader>
+                            <TableHeader>Alamat</TableHeader>
+                            <TableHeader>Telepon</TableHeader>
+                            <TableHeader>Kontak Person</TableHeader>
+                            <TableHeader className="text-center">Aksi</TableHeader>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {suppliers && suppliers.length > 0 ? (
+                            suppliers.map((supplier) => (
+                                <TableRow key={supplier.id}>
+                                    <TableCell>{supplier.name}</TableCell>
+                                    <TableCell>{supplier.address || '-'}</TableCell>
+                                    <TableCell>{supplier.phone || '-'}</TableCell>
+                                    <TableCell>{supplier.contact_person || '-'}</TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="flex justify-center space-x-1">
+                                            <Button variant="secondary" size="sm" onClick={() => openSupplierDetail(supplier)}>
+                                                <FaEdit />
+                                            </Button>
+                                            <Button variant="danger" size="sm" onClick={() => handleDelete(supplier)} disabled={deleteSupplierMutation.isPending && deleteSupplierMutation.variables === supplier.id}>
+                                                {deleteSupplierMutation.isPending && deleteSupplierMutation.variables === supplier.id ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> : <FaTrash />}
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center text-gray-500">
+                                    Belum ada data supplier.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             )}
 
             {isModalOpen && selectedSupplier && (
                 <DetailEditModal
                     title={`Detail Supplier: ${selectedSupplier.name}`}
-                    data={transformSupplierForModal(selectedSupplier)} // Pass transformed data
+                    data={transformSupplierForModal(selectedSupplier)}
                     fields={supplierFields}
                     isOpen={isModalOpen}
                     onClose={closeModal}
