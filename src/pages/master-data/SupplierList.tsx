@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle } from '../../components/ui/Card';
 import DetailEditModal from '../../components/ui/DetailEditModal';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
 import { Button } from '../../components/ui/Button';
-import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaTrash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { useConfirmDialog } from '../../components/ui/ConfirmDialog';
 
@@ -160,16 +160,20 @@ const SupplierList = () => {
                         {suppliers && suppliers.length > 0 ? (
                             suppliers.map((supplier) => (
                                 <TableRow key={supplier.id}>
-                                    <TableCell>{supplier.name}</TableCell>
+                                    <TableCell>
+                                        <div
+                                            onClick={() => openSupplierDetail(supplier)}
+                                            className="cursor-pointer hover:text-primary hover:underline"
+                                        >
+                                            {supplier.name}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>{supplier.address || '-'}</TableCell>
                                     <TableCell>{supplier.phone || '-'}</TableCell>
                                     <TableCell>{supplier.contact_person || '-'}</TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex justify-center space-x-1">
-                                            <Button variant="secondary" size="sm" onClick={() => openSupplierDetail(supplier)}>
-                                                <FaEdit />
-                                            </Button>
-                                            <Button variant="danger" size="sm" onClick={() => handleDelete(supplier)} disabled={deleteSupplierMutation.isPending && deleteSupplierMutation.variables === supplier.id}>
+                                            <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(supplier); }} disabled={deleteSupplierMutation.isPending && deleteSupplierMutation.variables === supplier.id}>
                                                 {deleteSupplierMutation.isPending && deleteSupplierMutation.variables === supplier.id ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> : <FaTrash />}
                                             </Button>
                                         </div>
