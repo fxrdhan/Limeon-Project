@@ -56,7 +56,7 @@ const CategoryList = () => {
     return (
         <Card>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Daftar Kategori Item</h1>
+                <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Kategori Item</h1>
                 <Link to="/master-data/categories/add">
                     <Button variant="primary" className="flex items-center">
                         <FaPlus className="mr-2" />
