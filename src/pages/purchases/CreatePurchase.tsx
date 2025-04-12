@@ -50,7 +50,7 @@ const CreatePurchase: React.FC = () => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Tambah Pembelian Baru</CardTitle>
+                <CardTitle className="text-center flex-grow">Tambah Pembelian Baru</CardTitle>
             </CardHeader>
             
             <form onSubmit={onHandleSubmit}>
