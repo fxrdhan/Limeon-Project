@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import { Session} from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
 interface UserDetails {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
+    id: string;
+    name: string;
+    email: string;
+    role: string;
 }
 
 interface AuthState {
@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             if (data.session) {
                 const { data: userData } = await supabase
                     .from('users')
-                    .select('*')
+                    .select('id, name, email, role')
                     .eq('id', data.session.user.id)
                     .single();
 
@@ -63,7 +63,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
             const { data: userData } = await supabase
                 .from('users')
-                .select('*')
+                .select('id, name, email, role')
                 .eq('id', data.user?.id)
                 .single();
 
