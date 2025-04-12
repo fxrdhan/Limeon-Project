@@ -1,5 +1,4 @@
-// src/components/layout/Navbar.tsx
-import { useState, useEffect, useRef } from 'react'; // Added useRef
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Button } from '../ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +11,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     const { user, logout } = useAuthStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
-    const dropdownRef = useRef<HTMLDivElement>(null); // Ref for the dropdown container
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const toggleDropdown = () => {
         setDropdownOpen(!dropdownOpen);
@@ -23,21 +22,18 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     };
 
     useEffect(() => {
-        // Function to handle clicks outside the dropdown
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setDropdownOpen(false);
             }
         };
 
-        // Add event listener when dropdown is open
         if (dropdownOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         } else {
             document.removeEventListener('mousedown', handleClickOutside);
         }
 
-        // Clock update logic
         const timerId = setInterval(() => {
             const now = new Date();
             const optionsDate: Intl.DateTimeFormatOptions = {
@@ -53,12 +49,11 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             setCurrentTime(formattedTime);
         }, 1000);
 
-        // Cleanup interval and event listener on component unmount or when dropdown closes
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             clearInterval(timerId);
         };
-    }, [dropdownOpen]); // Re-run effect when dropdownOpen changes
+    }, [dropdownOpen]);
 
     return (
         <nav className="bg-white border-b px-6 py-3">
