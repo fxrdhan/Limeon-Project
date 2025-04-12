@@ -102,7 +102,7 @@ const AddItem = () => {
         <div>
             <Card>
                 <CardHeader className="flex justify-between items-center">
-                    <CardTitle>{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
+                    <CardTitle className="text-center flex-grow">{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
                     <Button
                         variant="text"
                         size="sm"
