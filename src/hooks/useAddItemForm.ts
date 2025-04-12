@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
@@ -123,7 +124,6 @@ export const useAddItemForm = (itemId?: string) => {
             fetchItemData(itemId);
             setIsEditMode(true);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemId]);
 
     useEffect(() => {
@@ -171,7 +171,6 @@ export const useAddItemForm = (itemId?: string) => {
             categories.length > 0 && types.length > 0 && units.length > 0) {
             generateItemCode();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.type_id, formData.category_id, formData.unit_id, categories, types, units]);
 
     const fetchMasterData = async () => {
@@ -262,6 +261,8 @@ export const useAddItemForm = (itemId?: string) => {
                     const unit = await getUnitById(conv.unit_name);
                     if (unit) {
                         unitConversionHook.addUnitConversion({
+                            to_unit_id: unit.id,
+                            unit_name: unit.name,
                             unit: unit,
                             conversion: conv.conversion_rate || 0,
                             basePrice: conv.base_price,
