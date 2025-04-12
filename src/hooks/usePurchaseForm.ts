@@ -8,7 +8,6 @@ interface Supplier {
     name: string;
 }
 
-// Define CompanyProfile based on src/pages/settings/Profile.tsx
 interface CompanyProfile {
     id: string;
     name: string;
@@ -55,7 +54,6 @@ export const usePurchaseForm = () => {
     const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
     const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
     
-    // Form data
     const [formData, setFormData] = useState<PurchaseFormData>({
         supplier_id: '',
         invoice_number: '',
@@ -68,7 +66,6 @@ export const usePurchaseForm = () => {
         notes: ''
     });
     
-    // Calculate total
     const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
     
     useEffect(() => {
@@ -138,14 +135,12 @@ export const usePurchaseForm = () => {
                 const price = field === 'price' ? value : item.price;
                 const discount = field === 'discount' ? value : item.discount;
                 
-                // Hitung subtotal dengan diskon
                 let subtotal = quantity * price;
                 if (discount > 0) {
                     const discountAmount = subtotal * (discount / 100);
                     subtotal -= discountAmount;
                 }
                 
-                // Tambahkan VAT jika tidak termasuk
                 if (item.vat_percentage > 0 && !formData.is_vat_included) {
                     const vatAmount = subtotal * (item.vat_percentage / 100);
                     subtotal += vatAmount;
@@ -162,18 +157,15 @@ export const usePurchaseForm = () => {
         setPurchaseItems(updatedItems);
     };
     
-    // Fungsi untuk memperbarui VAT per item
     const updateItemVat = (id: string, vatPercentage: number) => {
         const updatedItems = purchaseItems.map(item => {
             if (item.id === id) {
-                // Hitung subtotal dengan diskon dan VAT baru
                 let subtotal = item.quantity * item.price;
                 if (item.discount > 0) {
                     const discountAmount = subtotal * (item.discount / 100);
                     subtotal -= discountAmount;
                 }
                 
-                // Tambahkan VAT jika tidak termasuk
                 if (vatPercentage > 0 && !formData.is_vat_included) {
                     const vatAmount = subtotal * (vatPercentage / 100);
                     subtotal += vatAmount;
@@ -191,21 +183,18 @@ export const usePurchaseForm = () => {
         setPurchaseItems(updatedItems);
     };
 
-    // Fungsi untuk memperbarui tanggal kadaluarsa
     const updateItemExpiry = (id: string, expiryDate: string) => {
         setPurchaseItems(purchaseItems.map(item => 
             item.id === id ? {...item, expiry_date: expiryDate} : item
         ));
     };
 
-    // Fungsi untuk memperbarui nomor batch
     const updateItemBatchNo = (id: string, batchNo: string) => {
         setPurchaseItems(purchaseItems.map(item => 
             item.id === id ? {...item, batch_no: batchNo} : item
         ));
     };
 
-    // Fungsi untuk menghitung ulang semua subtotal
     const recalculateSubtotal = (items = purchaseItems) => {
         return items.map(item => {
             let subtotal = item.quantity * item.price;
@@ -235,14 +224,12 @@ export const usePurchaseForm = () => {
                 let price = itemData.base_price;
                 let conversionRate = 1;
 
-                // Jika bukan satuan dasar, cari harga berdasarkan konversi
                 if (unitName !== itemData.base_unit) {
-                    // Corrected: Access unit name via uc.unit.name and check if unit_conversions is an array
                     const unitConversionsArray = Array.isArray(itemData.unit_conversions) ? itemData.unit_conversions : [];
                     const unitConversion = unitConversionsArray.find(uc => uc.unit.name === unitName);
                     if (unitConversion) {
-                        price = unitConversion.basePrice || itemData.base_price / unitConversion.conversion; // Corrected: basePrice, conversion
-                        conversionRate = unitConversion.conversion; // Corrected: conversion
+                        price = unitConversion.basePrice || itemData.base_price / unitConversion.conversion;
+                        conversionRate = unitConversion.conversion;
                     }
                 }
 
@@ -266,7 +253,6 @@ export const usePurchaseForm = () => {
         setPurchaseItems(purchaseItems.filter(item => item.id !== id));
     };
     
-    // Calculate total VAT amount
     const calculateTotalVat = () => {
         return purchaseItems.reduce((total, item) => {
             if (item.vat_percentage > 0) {
@@ -289,7 +275,6 @@ export const usePurchaseForm = () => {
         try {
             setLoading(true);
             
-            // Insert purchase record
             const { data: purchaseData, error: purchaseError } = await supabase
                 .from('purchases')
                 .insert({
@@ -312,7 +297,6 @@ export const usePurchaseForm = () => {
                 
             if (purchaseError) throw purchaseError; 
             
-            // Insert purchase items
             const purchaseItemsData = purchaseItems.map(item => ({
                 purchase_id: purchaseData.id,
                 item_id: item.item_id,
@@ -332,9 +316,7 @@ export const usePurchaseForm = () => {
                 
             if (itemsError) throw itemsError;
             
-            // Update item stocks
             for (const item of purchaseItems) {
-                // Ambil data item untuk mendapatkan satuan dasar, stok saat ini, dan konversi
                 const { data: itemData } = await supabase
                     .from('items')
                     .select('stock, base_unit, unit_conversions')
@@ -344,19 +326,16 @@ export const usePurchaseForm = () => {
                 if (itemData) {
                     let quantityInBaseUnit = item.quantity;
                     
-                    // Jika satuan pembelian berbeda dengan satuan dasar, konversikan
                     if (item.unit !== itemData.base_unit) {
                         const unitConversion = itemData.unit_conversions.find(
                             (uc: { unit_name: string; }) => uc.unit_name === item.unit
                         );
                         
                         if (unitConversion) {
-                            // Konversikan ke satuan dasar
                             quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
                         }
                     }
                     
-                    // Hitung stok baru dan update
                     const newStock = (itemData.stock || 0) + quantityInBaseUnit;
                     await supabase
                         .from('items').update({ stock: newStock }).eq('id', item.item_id);
