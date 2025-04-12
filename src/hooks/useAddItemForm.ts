@@ -40,6 +40,7 @@ interface FormData {
 export const useAddItemForm = (itemId?: string) => {
     const navigate = useNavigate();
     const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
+    const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null); // Store initial conversions
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -272,6 +273,14 @@ export const useAddItemForm = (itemId?: string) => {
 
             setInitialFormData(data);
 
+            // Store initial unit conversions after fetching
+            const initialConversions = data.unit_conversions ? (typeof data.unit_conversions === 'string' ? JSON.parse(data.unit_conversions) : data.unit_conversions) : [];
+            if (Array.isArray(initialConversions)) {
+                setInitialUnitConversions(initialConversions); // Store the raw initial conversion data
+            } else {
+                setInitialUnitConversions([]);
+            }
+
             setDisplayBasePrice(formatRupiah(data.base_price || 0));
             setDisplaySellPrice(formatRupiah(data.sell_price || 0));
 
@@ -487,7 +496,13 @@ export const useAddItemForm = (itemId?: string) => {
 
     const isDirty = () => {
         if (!initialFormData) return false;
-        return JSON.stringify(formData) !== JSON.stringify(initialFormData);
+        const formDataChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+
+        // Compare current conversions with initial conversions
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const currentConversionsForCompare = unitConversionHook.conversions.map(({ id, unit, ...rest }) => ({ ...rest, to_unit_id: unit.id })); // Prepare for comparison
+        const conversionsChanged = JSON.stringify(currentConversionsForCompare.sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id))) !== JSON.stringify(initialUnitConversions?.sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id)) ?? []);
+        return formDataChanged || conversionsChanged;
     };
 
     return {
