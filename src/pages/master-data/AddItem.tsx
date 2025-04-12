@@ -23,6 +23,7 @@ const AddItem = () => {
     const { id } = useParams<{ id: string }>();
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
+    const confirmDialog = useConfirmDialog();
 
     const {
         formData, displayBasePrice, displaySellPrice, categories, types, units,
@@ -48,6 +49,26 @@ const AddItem = () => {
             alert("Gagal menghapus item. Silakan coba lagi.");
         },
     });
+
+    const isDirty = () => {
+        // Simple implementation - you might want to compare with initial values in a real implementation
+        return formData.name !== '' || formData.base_price > 0 || formData.sell_price > 0;
+    };
+
+    const handleCancel = () => {
+        if (isDirty()) {
+            confirmDialog.openConfirmDialog({
+                title: "Konfirmasi",
+                message: "Apakah Anda yakin membuang perubahan yang sudah ada?",
+                confirmText: "Iya",
+                cancelText: "Tidak",
+                onConfirm: () => navigate("/master-data/items"),
+                variant: 'danger' // or 'primary' depending on desired style
+            });
+        } else {
+            navigate("/master-data/items");
+        }
+    };
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -105,7 +126,7 @@ const AddItem = () => {
                     <Button
                         variant="text"
                         size="sm"
-                        onClick={() => navigate("/master-data/items")}
+                        onClick={handleCancel}
                         className="text-gray-500 p-2 rounded-full transition-transform duration-200 ease-in-out hover:scale-110 active:scale-95 flex items-center"
                         title="Kembali ke Daftar Item"
                     >
@@ -390,7 +411,7 @@ const AddItem = () => {
                                 </span>
                             </Button>
                         ) : (
-                            <Button type="button" variant="outline" onClick={() => navigate("/master-data/items")}> Batal </Button>
+                            <Button type="button" variant="outline" onClick={handleCancel}> Batal </Button>
                         )}
                         <Button type="submit" disabled={saving} isLoading={saving}>
                             <span className="flex items-center">
