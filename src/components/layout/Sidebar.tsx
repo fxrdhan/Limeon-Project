@@ -244,7 +244,8 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                     {/* Submenu container - Animate max-height and opacity */}
                                     <div
                                         className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                                            openMenus[item.name.toLowerCase().replace(' ', '')] ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                                            !collapsed && openMenus[item.name.toLowerCase().replace(' ', '')] ? // Only show if NOT collapsed AND open
+                                                'max-h-96 opacity-100' : 'max-h-0 opacity-0' // Hide if collapsed OR closed
                                         }`}
                                     >
                                         <div className="pl-10 pr-2 py-1 bg-black/10"> {/* Padding moved inside */}
