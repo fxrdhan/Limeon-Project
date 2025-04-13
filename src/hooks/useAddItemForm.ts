@@ -223,6 +223,16 @@ export const useAddItemForm = (itemId?: string) => {
         }
     }, [formData.type_id, formData.category_id, formData.unit_id, categories, types, units]);
 
+    useEffect(() => {
+        if (unitConversionHook.basePrice > 0 && unitConversionHook.conversions.length > 0) {
+            unitConversionHook.recalculateBasePrices();
+        }
+    }, [unitConversionHook.basePrice, unitConversionHook.recalculateBasePrices, unitConversionHook.conversions.length]);
+
+    useEffect(() => {
+        unitConversionHook.setSellPrice(formData.sell_price || 0);
+    }, [formData.sell_price, unitConversionHook]);
+
     const fetchMasterData = async () => {
         setLoading(true);
         try {
@@ -298,6 +308,7 @@ export const useAddItemForm = (itemId?: string) => {
 
             unitConversionHook.setBaseUnit(data.base_unit || "");
             unitConversionHook.setBasePrice(data.base_price || 0);
+            unitConversionHook.setSellPrice(data.sell_price || 0);
             unitConversionHook.skipNextRecalculation();
 
             const currentConversions = [...unitConversionHook.conversions];
@@ -327,6 +338,7 @@ export const useAddItemForm = (itemId?: string) => {
                             unit: unit,
                             conversion: conv.conversion_rate || 0,
                             basePrice: conv.base_price,
+                            sellPrice: conv.sell_price, // Add sellPrice to conversion
                         });
                     }
                 }
@@ -371,6 +383,7 @@ export const useAddItemForm = (itemId?: string) => {
                 unitConversionHook.setBasePrice(numericInt);
             } else if (name === "sell_price") {
                 setDisplaySellPrice(formattedValue);
+                unitConversionHook.setSellPrice(numericInt);
             }
         } else if (type === "checkbox") {
             const { checked } = e.target as HTMLInputElement;
@@ -440,6 +453,7 @@ export const useAddItemForm = (itemId?: string) => {
                         unit_name: uc.unit.name,
                         conversion_rate: uc.conversion,
                         base_price: uc.basePrice,
+                        sell_price: uc.sellPrice,  // Add sell_price to the record
                         created_at: new Date()
                     }));
 
@@ -485,6 +499,7 @@ export const useAddItemForm = (itemId?: string) => {
                         unit_name: uc.unit.name,
                         conversion_rate: uc.conversion,
                         base_price: uc.basePrice,
+                        sell_price: uc.sellPrice,  // Add sell_price to the record
                         created_at: new Date()
                     }));
 
