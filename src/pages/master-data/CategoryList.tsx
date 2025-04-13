@@ -7,7 +7,7 @@ import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Loading } from "../../components/ui/Loading";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
-import { AddCategoryModal } from "../../components/ui/AddCategoryModal";
+import { AddCategoryModal } from "../../components/ui/AddEditModal";
 
 interface Category {
     id: string;
