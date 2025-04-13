@@ -151,8 +151,8 @@ const AddItem = () => {
                         <div className="flex flex-col md:flex-row gap-6">
                             <div className="w-full md:w-3/4">
                                 <FormSection title="Data Umum">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <FormField label="Kode Item">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                        <FormField label="Kode Item" className="md:col-span-1">
                                             <Input
                                                 name="code"
                                                 value={formData.code}
@@ -161,7 +161,7 @@ const AddItem = () => {
                                             />
                                         </FormField>
                                         
-                                        <FormField label="Nama Item">
+                                        <FormField label="Nama Item" className="md:col-span-3">
                                             <Input
                                                 name="name"
                                                 value={formData.name}
@@ -169,32 +169,6 @@ const AddItem = () => {
                                                 className="w-full"
                                                 required
                                             />
-                                        </FormField>
-
-                                        <FormField label="Satuan">
-                                            <div className="flex">
-                                                <select
-                                                    name="unit_id"
-                                                    value={formData.unit_id}
-                                                    onChange={handleSelectChange}
-                                                    className={selectClassName}
-                                                    required
-                                                >
-                                                    <option value="">-- Pilih Satuan --</option>
-                                                    {units.map((unit) => (
-                                                        <option key={unit.id} value={unit.id}>
-                                                            {unit.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    type="button"
-                                                    className={addButtonClassName}
-                                                    onClick={() => navigate("/master-data/units/add")}
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
                                         </FormField>
                                     </div>
 
@@ -253,6 +227,59 @@ const AddItem = () => {
                                                 </button>
                                             </div>
                                         </FormField>
+                                        
+                                        <FormField label="Satuan">
+                                            <div className="flex">
+                                                <select
+                                                    name="unit_id"
+                                                    value={formData.unit_id}
+                                                    onChange={handleSelectChange}
+                                                    className={selectClassName}
+                                                    required
+                                                >
+                                                    <option value="">-- Pilih Satuan --</option>
+                                                    {units.map((unit) => (
+                                                        <option key={unit.id} value={unit.id}>
+                                                            {unit.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    type="button"
+                                                    className={addButtonClassName}
+                                                    onClick={() => navigate("/master-data/units/add")}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </FormField>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <FormField label="Jenis Produk">
+                                            <div className="space-x-6 mt-6">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        name="is_medicine"
+                                                        checked={formData.is_medicine}
+                                                        onChange={() => updateFormData({ is_medicine: true })}
+                                                        className="form-radio h-5 w-5 text-primary"
+                                                    />
+                                                    <span className="ml-2">Obat</span>
+                                                </label>
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        name="is_medicine"
+                                                        checked={!formData.is_medicine}
+                                                        onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
+                                                        className="form-radio h-5 w-5 text-primary"
+                                                    />
+                                                    <span className="ml-2">Non-Obat</span>
+                                                </label>
+                                            </div>
+                                        </FormField>
 
                                         <FormField label="Rak">
                                             <Input
@@ -262,42 +289,18 @@ const AddItem = () => {
                                                 className="w-full"
                                             />
                                         </FormField>
+                                        
+                                        <FormField label="Keterangan">
+                                            <textarea
+                                                name="description"
+                                                value={formData.description}
+                                                onChange={handleChange}
+                                                className={textareaClassName}
+                                                rows={1}
+                                                style={{ height: "49px", minHeight: "49px", resize: "vertical" }}
+                                            />
+                                        </FormField>
                                     </div>
-
-                                    <FormField label="Jenis Produk">
-                                        <div className="space-x-6">
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="radio"
-                                                    name="is_medicine"
-                                                    checked={formData.is_medicine}
-                                                    onChange={() => updateFormData({ is_medicine: true })}
-                                                    className="form-radio h-5 w-5 text-primary"
-                                                />
-                                                <span className="ml-2">Obat</span>
-                                            </label>
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="radio"
-                                                    name="is_medicine"
-                                                    checked={!formData.is_medicine}
-                                                    onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
-                                                    className="form-radio h-5 w-5 text-primary"
-                                                />
-                                                <span className="ml-2">Non-Obat</span>
-                                            </label>
-                                        </div>
-                                    </FormField>
-
-                                    <FormField label="Keterangan">
-                                        <textarea
-                                            name="description"
-                                            value={formData.description}
-                                            onChange={handleChange}
-                                            className={textareaClassName}
-                                            rows={3}
-                                        />
-                                    </FormField>
                                 </FormSection>
                             </div>
 
@@ -313,31 +316,33 @@ const AddItem = () => {
                                             />
                                         </FormField>
                                         
-                                        <FormField label="Harga Pokok">
-                                            <Input
-                                                type="text"
-                                                name="base_price"
-                                                value={displayBasePrice}
-                                                placeholder="Rp 0"
-                                                onChange={handleChange}
-                                                min="0"
-                                                className="w-full"
-                                                required
-                                            />
-                                        </FormField>
-                                        
-                                        <FormField label="Harga Jual">
-                                            <Input
-                                                type="text"
-                                                name="sell_price"
-                                                value={displaySellPrice}
-                                                placeholder="Rp 0"
-                                                onChange={handleChange}
-                                                min="0"
-                                                className="w-full"
-                                                required
-                                            />
-                                        </FormField>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField label="Harga Pokok">
+                                                <Input
+                                                    type="text"
+                                                    name="base_price"
+                                                    value={displayBasePrice}
+                                                    placeholder="Rp 0"
+                                                    onChange={handleChange}
+                                                    min="0"
+                                                    className="w-full"
+                                                    required
+                                                />
+                                            </FormField>
+                                            
+                                            <FormField label="Harga Jual">
+                                                <Input
+                                                    type="text"
+                                                    name="sell_price"
+                                                    value={displaySellPrice}
+                                                    placeholder="Rp 0"
+                                                    onChange={handleChange}
+                                                    min="0"
+                                                    className="w-full"
+                                                    required
+                                                />
+                                            </FormField>
+                                        </div>
                                         
                                         <div className="text-left">
                                             {calculateProfitPercentage() !== null ? (
