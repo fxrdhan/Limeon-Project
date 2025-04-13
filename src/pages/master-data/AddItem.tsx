@@ -205,7 +205,7 @@ const AddItem = () => {
                 </CardHeader>
 
                 <form onSubmit={handleSubmit}>
-                    <CardContent className="space-y-6">
+                    <CardContent>
                         <div className="flex flex-col md:flex-row gap-6">
                             <div className="w-full md:w-3/4">
                                 <FormSection title="Data Umum">
