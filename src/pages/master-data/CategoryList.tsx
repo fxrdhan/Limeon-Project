@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { FaPlus, FaEdit } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
@@ -135,28 +135,26 @@ const CategoryList = () => {
                             <TableRow>
                                 <TableHeader>Nama Kategori</TableHeader>
                                 <TableHeader>Deskripsi</TableHeader>
-                                <TableHeader className="text-center">Aksi</TableHeader>
+                                {/* Removed the "Aksi" column */}
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {categories.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-gray-500">
+                                    <TableCell colSpan={2} className="text-center text-gray-500">
                                         Tidak ada data kategori yang ditemukan
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 categories.map((category) => (
-                                    <TableRow key={category.id}>
+                                    <TableRow
+                                        key={category.id}
+                                        onClick={() => handleEdit(category)}
+                                        className="cursor-pointer"
+                                    >
                                         <TableCell>{category.name}</TableCell>
                                         <TableCell>{category.description}</TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex justify-center space-x-2">
-                                                <Button variant="secondary" size="sm" onClick={() => handleEdit(category)}>
-                                                    <FaEdit />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
+                                        {/* Removed the "Aksi" cell */}
                                     </TableRow>
                                 ))
                             )}
