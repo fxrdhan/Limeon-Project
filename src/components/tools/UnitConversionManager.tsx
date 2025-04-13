@@ -74,7 +74,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
 
     return (
         <FormSection title="Satuan dan Konversi">
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 md:w-1/3 lg:w-1/4">
                     <h3 className="text-lg font-medium mb-3">Tambah Konversi Satuan</h3>
                     <p className="text-sm text-gray-600 mb-3">
