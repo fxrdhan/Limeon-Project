@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -90,12 +89,6 @@ const AddItem = () => {
             }
         }
     };
-
-    useEffect(() => {
-        if (formData.base_price > 0) {
-            unitConversionHook.setBasePrice(formData.base_price);
-        }
-    }, [formData.base_price]);
 
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
