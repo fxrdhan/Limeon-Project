@@ -368,6 +368,7 @@ export const useAddItemForm = (itemId?: string) => {
             const formattedValue = formatRupiah(numericInt);
             if (name === "base_price") {
                 setDisplayBasePrice(formattedValue);
+                unitConversionHook.setBasePrice(numericInt);
             } else if (name === "sell_price") {
                 setDisplaySellPrice(formattedValue);
             }
