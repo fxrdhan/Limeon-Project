@@ -35,6 +35,7 @@ function ItemList() {
                 id,
                 name,
                 code,
+                barcode,
                 base_price,
                 sell_price,
                 stock,
@@ -72,6 +73,7 @@ function ItemList() {
             id: item.id,
             name: item.name,
             code: item.code,
+            barcode: item.barcode,
             base_price: item.base_price,
             sell_price: item.sell_price,
             stock: item.stock,
@@ -149,6 +151,7 @@ function ItemList() {
                             <TableRow>
                                 <TableHeader>Nama Item</TableHeader>
                                 <TableHeader>Kode</TableHeader>
+                                <TableHeader>Barcode</TableHeader>
                                 <TableHeader>Kategori</TableHeader>
                                 <TableHeader>Jenis</TableHeader>
                                 <TableHeader>Satuan</TableHeader>
@@ -162,7 +165,7 @@ function ItemList() {
                             {items.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={9}
+                                        colSpan={10}
                                         className="text-center text-gray-600"
                                     >
                                         {debouncedSearch ? `Tidak ada item dengan nama "${debouncedSearch}"` : "Tidak ada data item yang ditemukan"}
@@ -177,6 +180,7 @@ function ItemList() {
                                     >
                                         <TableCell>{item.name}</TableCell>
                                         <TableCell>{item.code}</TableCell>
+                                        <TableCell>{item.barcode || '-'}</TableCell>
                                         <TableCell>{item.category.name}</TableCell>
                                         <TableCell>{item.type.name}</TableCell>
                                         <TableCell>{item.unit.name}</TableCell>
