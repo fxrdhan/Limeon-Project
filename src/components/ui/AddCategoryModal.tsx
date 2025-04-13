@@ -72,7 +72,6 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
         <Transition show={isOpen} as={Fragment}>
             <div
                 className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
-                onClick={handleBackdropClick}
             >
                 <TransitionChild
                     as={Fragment}
@@ -83,7 +82,11 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
+                    <div 
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
+                        aria-hidden="true" 
+                        onClick={handleBackdropClick}
+                    />
                 </TransitionChild>
 
                 <TransitionChild
