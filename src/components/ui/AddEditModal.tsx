@@ -14,6 +14,7 @@ interface AddCategoryModalProps {
     onDelete?: (categoryId: string) => void;
     isLoading?: boolean;
     isDeleting?: boolean;
+    entityName?: string; // New prop for entity name
 }
 
 interface Category {
@@ -29,7 +30,8 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     initialData = null,
     onDelete,
     isLoading = false,
-    isDeleting = false
+    isDeleting = false,
+    entityName = "Kategori" // Default is "Kategori" for backward compatibility
 }) => {
     useConfirmDialog();
     const [name, setName] = useState('');
@@ -50,7 +52,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 
     const handleSave = async () => {
         if (!name.trim()) {
-            alert("Nama kategori tidak boleh kosong.");
+            alert(`Nama ${entityName.toLowerCase()} tidak boleh kosong.`);
             return;
         }
         await onSubmit({ id: initialData?.id, name, description });
@@ -100,13 +102,13 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                 >
                     <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
                         <div className="flex justify-between items-center p-4 border-b">
-                            <h2 className="text-xl font-semibold">{isEditMode ? 'Edit Kategori' : 'Tambah Kategori Baru'}</h2>
+                            <h2 className="text-xl font-semibold">{isEditMode ? `Edit ${entityName}` : `Tambah ${entityName} Baru`}</h2>
                             <Button variant="text" onClick={onClose} className="text-gray-500 hover:text-gray-700 p-1">
                                 <FaTimes size={20} />
                             </Button>
                         </div>
                         <div className="p-6 space-y-4">
-                            <Input label="Nama Kategori" value={name} onChange={(e) => setName(e.target.value)} placeholder="Masukkan nama kategori" required readOnly={isLoading || isDeleting} />
+                            <Input label={`Nama ${entityName}`} value={name} onChange={(e) => setName(e.target.value)} placeholder={`Masukkan nama ${entityName.toLowerCase()}`} required readOnly={isLoading || isDeleting} />
                             <Input label="Deskripsi (Opsional)" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Masukkan deskripsi singkat" readOnly={isLoading || isDeleting} />
                         </div>
                         <div className="flex justify-between p-4 border-t">
