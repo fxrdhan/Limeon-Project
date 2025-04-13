@@ -29,8 +29,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         if (basePrice > 0 && conversions.length > 0) {
             recalculateBasePrices();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [basePrice, recalculateBasePrices]);
+    }, [basePrice, recalculateBasePrices, conversions.length]);
 
     const handleConversionFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -75,7 +74,6 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
     return (
         <FormSection title="Satuan dan Konversi">
             <div className="flex flex-col md:flex-row gap-6">
-                {/* Bagian Kiri: Input Form */}
                 <div className="flex-1">
                     <h3 className="text-lg font-medium mb-3">Tambah Konversi Satuan</h3>
                     <p className="text-sm text-gray-600 mb-3">
@@ -91,8 +89,8 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             >
                                 <option value="">-- Pilih Satuan --</option>
                                 {availableUnits
-                                    .filter(unit => unit.name !== baseUnit) // Filter satuan dasar
-                                    .filter(unit => !conversions.some(uc => uc.unit.name === unit.name)) // Filter satuan yang sudah ada
+                                    .filter(unit => unit.name !== baseUnit)
+                                    .filter(unit => !conversions.some(uc => uc.unit.name === unit.name))
                                     .map(unit => (
                                         <option key={unit.id} value={unit.name}>
                                             {unit.name}
@@ -117,14 +115,11 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                 }}
                             />
                         </FormField>
-                        {/* Tombol Add tidak eksplisit, penambahan via Enter di input konversi */}
                     </div>
                 </div>
-
-                {/* Bagian Kanan: Tabel Satuan Turunan */}
                 <div className="md:w-1/2 lg:w-2/5 flex flex-col h-full">
-                    <h3 className="text-lg font-medium mb-3 md:hidden">Daftar Satuan Turunan</h3> {/* Judul hanya untuk mobile */}
-                    <p className="text-sm text-gray-600 mb-3 md:hidden">Satuan yang sudah ditambahkan.</p> {/* Deskripsi hanya untuk mobile */}
+                    <h3 className="text-lg font-medium mb-3 md:hidden">Daftar Satuan Turunan</h3>
+                    <p className="text-sm text-gray-600 mb-3 md:hidden">Satuan yang sudah ditambahkan.</p>
                     <div className="border rounded-lg overflow-hidden flex-grow h-full">
                         <Table>
                             <TableHead>
