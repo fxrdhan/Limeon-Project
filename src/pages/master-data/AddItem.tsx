@@ -149,7 +149,16 @@ const AddItem = () => {
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-6">
                         <FormSection title="Data Umum">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <FormField label="Kode Item">
+                                    <Input
+                                        name="code"
+                                        value={formData.code}
+                                        readOnly={true}
+                                        className="w-full"
+                                    />
+                                </FormField>
+                                
                                 <FormField label="Nama Item">
                                     <Input
                                         name="name"
@@ -159,47 +168,35 @@ const AddItem = () => {
                                         required
                                     />
                                 </FormField>
-                                
-                                <FormField label="Kode Item">
-                                    <Input
-                                        name="code"
-                                        value={formData.code}
-                                        readOnly={true}
-                                        className="w-full"
-                                    />
-                                </FormField>
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Jenis">
+                                <FormField label="Satuan">
                                     <div className="flex">
-                                        {categories.length === 0 && (
-                                            <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
-                                        )}
                                         <select
-                                            name="type_id" 
-                                            value={formData.type_id}
+                                            name="unit_id"
+                                            value={formData.unit_id}
                                             onChange={handleSelectChange}
                                             className={selectClassName}
                                             required
                                         >
-                                            <option value="">-- Pilih Jenis --</option>
-                                            {types.map((type) => (
-                                                <option key={type.id} value={type.id}>
-                                                    {type.name}
+                                            <option value="">-- Pilih Satuan --</option>
+                                            {units.map((unit) => (
+                                                <option key={unit.id} value={unit.id}>
+                                                    {unit.name}
                                                 </option>
                                             ))}
                                         </select>
                                         <button
                                             type="button"
                                             className={addButtonClassName}
-                                            onClick={() => navigate("/master-data/types/add")}
+                                            onClick={() => navigate("/master-data/units/add")}
                                         >
                                             +
                                         </button>
                                     </div>
                                 </FormField>
+                            </div>
 
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <FormField label="Kategori">
                                     <div className="flex">
                                         <select
@@ -225,29 +222,30 @@ const AddItem = () => {
                                         </button>
                                     </div>
                                 </FormField>
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Satuan">
+                                <FormField label="Jenis">
                                     <div className="flex">
+                                        {categories.length === 0 && (
+                                            <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
+                                        )}
                                         <select
-                                            name="unit_id"
-                                            value={formData.unit_id}
+                                            name="type_id" 
+                                            value={formData.type_id}
                                             onChange={handleSelectChange}
                                             className={selectClassName}
                                             required
                                         >
-                                            <option value="">-- Pilih Satuan --</option>
-                                            {units.map((unit) => (
-                                                <option key={unit.id} value={unit.id}>
-                                                    {unit.name}
+                                            <option value="">-- Pilih Jenis --</option>
+                                            {types.map((type) => (
+                                                <option key={type.id} value={type.id}>
+                                                    {type.name}
                                                 </option>
                                             ))}
                                         </select>
                                         <button
                                             type="button"
                                             className={addButtonClassName}
-                                            onClick={() => navigate("/master-data/units/add")}
+                                            onClick={() => navigate("/master-data/types/add")}
                                         >
                                             +
                                         </button>
