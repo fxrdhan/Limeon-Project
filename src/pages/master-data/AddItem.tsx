@@ -148,10 +148,8 @@ const AddItem = () => {
 
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-6">
-                        {/* Horizontal layout for Data Umum and Harga */}
                         <div className="flex flex-col md:flex-row gap-6">
-                            {/* Data Umum section - takes 2/3 of the width on desktop */}
-                            <div className="w-full md:w-2/3">
+                            <div className="w-full md:w-3/4">
                                 <FormSection title="Data Umum">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <FormField label="Kode Item">
@@ -303,8 +301,7 @@ const AddItem = () => {
                                 </FormSection>
                             </div>
 
-                            {/* Harga section - takes 1/3 of the width on desktop */}
-                            <div className="w-full md:w-1/3">
+                            <div className="w-full md:w-1/4">
                                 <FormSection title="Harga Pokok & Jual">
                                     <div className="flex flex-col space-y-4">
                                         <FormField label="Satuan Dasar">
