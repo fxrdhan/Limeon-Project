@@ -6,6 +6,7 @@ interface UserDetails {
     id: string;
     name: string;
     email: string;
+    profilephoto: string | null;
     role: string;
 }
 
@@ -16,10 +17,11 @@ interface AuthState {
     error: string | null;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    updateProfilePhoto: (photoBase64: string) => Promise<void>;
     initialize: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
     session: null,
     user: null,
     loading: true,
@@ -32,7 +34,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             if (data.session) {
                 const { data: userData } = await supabase
                     .from('users')
-                    .select('id, name, email, role')
+                    .select('id, name, email, role, profilephoto')
                     .eq('id', data.session.user.id)
                     .single();
 
@@ -63,7 +65,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
             const { data: userData } = await supabase
                 .from('users')
-                .select('id, name, email, role')
+                .select('id, name, email, role, profilephoto')
                 .eq('id', data.user?.id)
                 .single();
 
@@ -86,6 +88,25 @@ export const useAuthStore = create<AuthState>((set) => ({
         } catch (error: unknown) {
             console.error('Logout error:', error);
             set({ error: error instanceof Error ? error.message : 'An unknown error occurred', loading: false });
+        }
+    },
+
+    updateProfilePhoto: async (photoBase64) => {
+        const { user, session } = get();
+        if (!session || !user) {
+            set({ error: 'User not authenticated', loading: false });
+            return;
+        }
+        set({ loading: true, error: null });
+        try {
+            const { error: updateError } = await supabase
+                .from('users')
+                .update({ profilephoto: photoBase64, updated_at: new Date().toISOString() })
+                .eq('id', user.id);
+            if (updateError) throw updateError;
+            set((state) => ({ user: state.user ? { ...state.user, profilephoto: photoBase64 } : null, loading: false }));
+        } catch (error: unknown) {
+            set({ error: error instanceof Error ? error.message : 'Failed to update profile photo', loading: false });
         }
     }
 }));
