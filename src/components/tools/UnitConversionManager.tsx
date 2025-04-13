@@ -15,10 +15,8 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
 }) => {
     const {
         baseUnit,
-        // setBaseUnit,
         basePrice,
-        // setBasePrice,
-        unitConversions,
+        conversions,
         addUnitConversion,
         removeUnitConversion,
         unitConversionFormData,
@@ -27,24 +25,13 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         availableUnits
     } = unitConversionHook;
 
-    // Recalculate base prices when base price changes
     useEffect(() => {
-        if (basePrice > 0 && unitConversions.length > 0) {
+        if (basePrice > 0 && conversions.length > 0) {
             recalculateBasePrices();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [basePrice, recalculateBasePrices]);
 
-    // const handleBaseUnitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    //     const { name, value } = e.target;
-    //     if (name === "baseUnit") {
-    //         setBaseUnit(value);
-    //     } else if (name === "basePrice") {
-    //         setBasePrice(parseFloat(value) || 0);
-    //     }
-    // };
-
-    // Handler untuk form konversi satuan
     const handleConversionFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setUnitConversionFormData({
@@ -53,15 +40,13 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         });
     };
 
-    // Tambahkan konversi baru
     const handleAddConversion = () => {
         if (!unitConversionFormData.unit || unitConversionFormData.conversion <= 0) {
             alert("Satuan dan konversi harus diisi dengan benar!");
             return;
         }
 
-        // Cek apakah satuan sudah ada
-        const existingUnit = unitConversions.find(uc => uc.unit.name === unitConversionFormData.unit);
+        const existingUnit = conversions.find(uc => uc.unit.name === unitConversionFormData.unit);
         if (existingUnit) {
             alert("Satuan tersebut sudah ada dalam daftar!");
             return;
@@ -81,7 +66,6 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
             basePrice: 0
         });
 
-        // Reset form
         setUnitConversionFormData({
             unit: "",
             conversion: 0,
@@ -107,7 +91,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             <option value="">-- Pilih Satuan --</option>
                             {availableUnits
                                 .filter(unit => unit.name !== baseUnit)
-                                .filter(unit => !unitConversions.some(uc => uc.unit.name === unit.name))
+                                .filter(unit => !conversions.some(uc => uc.unit.name === unit.name))
                                 .map(unit => (
                                     <option key={unit.id} value={unit.name}>
                                         {unit.name}
@@ -127,7 +111,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             className="w-full"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                    e.preventDefault(); // Mencegah submit form jika ada
+                                    e.preventDefault();
                                     handleAddConversion();
                                 }
                             }}
@@ -146,16 +130,15 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {unitConversions.length === 0 ? (
+                            {conversions.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center text-gray-500">
                                         Belum ada data konversi
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                // Filter untuk menghilangkan duplikat berdasarkan unit.name
-                                unitConversions.filter((uc, index, self) =>
-                                    index === self.findIndex(u => u.unit.name === uc.unit.name)
+                                conversions.filter((uc, index, self) =>
+                                    index === self.findIndex(u => u.unit.name === uc.unit.name) && uc.unit
                                 ).map((uc) => (
                                     <TableRow key={uc.id}>
                                         <TableCell>{uc.unit.name}</TableCell>
