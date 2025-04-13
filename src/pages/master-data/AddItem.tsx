@@ -440,64 +440,70 @@ const AddItem = () => {
                             </div>
                         </div>
 
-                        <UnitConversionManager unitConversionHook={unitConversionHook} />
+                        <div className="flex flex-col md:flex-row gap-6">
+                            <div className="w-full md:w-3/4">
+                                <UnitConversionManager unitConversionHook={unitConversionHook} />
+                            </div>
+                            
+                            <div className="w-full md:w-1/4">
+                                <FormSection title="Pengaturan Tambahan">
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <FormField label="Status Jual">
+                                            <div className="space-x-6">
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        name="is_active"
+                                                        checked={formData.is_active}
+                                                        onChange={() => updateFormData({ is_active: true })}
+                                                    />
+                                                    <span className="ml-2">Masih dijual</span>
+                                                </label>
+                                                <label className="inline-flex items-center">
+                                                    <input
+                                                        type="radio"
+                                                        name="is_active"
+                                                        checked={!formData.is_active}
+                                                        onChange={() => updateFormData({ is_active: false })}
+                                                    />
+                                                    <span className="ml-2">Tidak Dijual</span>
+                                                </label>
+                                            </div>
+                                        </FormField>
 
-                        <FormSection title="Pengaturan Tambahan">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Status Jual">
-                                    <div className="space-x-6">
-                                        <label className="inline-flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="is_active"
-                                                checked={formData.is_active}
-                                                onChange={() => updateFormData({ is_active: true })}
+                                        <FormField label="Stok Minimal">
+                                            <Input
+                                                type="number"
+                                                name="min_stock"
+                                                value={formData.min_stock}
+                                                onChange={handleChange}
+                                                className="w-full"
+                                                onFocus={(e) => e.target.select()}
+                                                onClick={(e) => (e.target as HTMLInputElement).select()}
+                                                required
                                             />
-                                            <span className="ml-2">Masih dijual</span>
-                                        </label>
-                                        <label className="inline-flex items-center">
-                                            <input
-                                                type="radio"
-                                                name="is_active"
-                                                checked={!formData.is_active}
-                                                onChange={() => updateFormData({ is_active: false })}
-                                            />
-                                            <span className="ml-2">Tidak Dijual</span>
-                                        </label>
+                                        </FormField>
+                                    
+                                        <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
+                                            <label className="inline-flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    name="has_expiry_date"
+                                                    checked={formData.has_expiry_date}
+                                                    disabled={!formData.is_medicine}
+                                                    onChange={handleChange}
+                                                />
+                                                <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
+                                            </label>
+                                            <div className="mt-1 text-sm text-gray-500">
+                                                Jika dicentang, obat ini akan menggunakan metode FEFO
+                                                (First Expired First Out)
+                                            </div>
+                                        </div>
                                     </div>
-                                </FormField>
-
-                                <FormField label="Stok Minimal">
-                                    <Input
-                                        type="number"
-                                        name="min_stock"
-                                        value={formData.min_stock}
-                                        onChange={handleChange}
-                                        className="w-full"
-                                        onFocus={(e) => e.target.select()}
-                                        onClick={(e) => (e.target as HTMLInputElement).select()}
-                                        required
-                                    />
-                                </FormField>
+                                </FormSection>
                             </div>
-
-                            <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
-                                <label className="inline-flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        name="has_expiry_date"
-                                        checked={formData.has_expiry_date}
-                                        disabled={!formData.is_medicine}
-                                        onChange={handleChange}
-                                    />
-                                    <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
-                                </label>
-                                <div className="mt-1 text-sm text-gray-500">
-                                    Jika dicentang, obat ini akan menggunakan metode FEFO
-                                    (First Expired First Out)
-                                </div>
-                            </div>
-                        </FormSection>
+                        </div>
                     </CardContent>
 
                     <CardFooter className="flex justify-between">
