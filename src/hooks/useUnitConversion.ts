@@ -19,7 +19,6 @@ export interface UseUnitConversionReturn {
     setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
     basePrice: number;
     setBasePrice: React.Dispatch<React.SetStateAction<number>>;
-    unitConversions: UnitConversion[];
     addUnitConversion: (unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => void;
     removeUnitConversion: (id: string) => void;
     unitConversionFormData: {
@@ -115,7 +114,6 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         basePrice,
         setBasePrice,
         conversions: unitConversions,
-        unitConversions,
         addUnitConversion,
         removeUnitConversion,
         unitConversionFormData,
