@@ -39,12 +39,13 @@ const AddItem = () => {
     const [editingMargin, setEditingMargin] = useState(false);
     const [marginPercentage, setMarginPercentage] = useState<string>('0');
     const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+    const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
     const marginInputRef = useRef<HTMLInputElement>(null);
 
     const {
         formData, displayBasePrice, displaySellPrice, categories, types, units,
         saving, loading, isEditMode, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
-        unitConversionHook, isDirty, addCategoryMutation, setCategories
+        unitConversionHook, isDirty, addCategoryMutation, setCategories, setTypes
     } = useAddItemForm(id || undefined);
 
     const deleteItemMutation = useMutation({
@@ -63,6 +64,24 @@ const AddItem = () => {
         onError: (error) => {
             console.error("Error deleting item:", error);
             alert("Gagal menghapus item. Silakan coba lagi.");
+        },
+    });
+
+    const addTypeMutation = useMutation({
+        mutationFn: async (newType: { name: string; description: string }) => {
+            const { data, error } = await supabase
+                .from("item_types")
+                .insert(newType)
+                .select('id, name, description')
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['types'] });
+        },
+        onError: (error) => {
+            console.error("Error adding type:", error);
         },
     });
 
@@ -213,6 +232,28 @@ const AddItem = () => {
         }
     };
 
+    const handleSaveType = async (typeData: { name: string; description: string }) => {
+        try {
+            const newType = await addTypeMutation.mutateAsync(typeData);
+            const { data: updatedTypes } = await supabase
+                .from("item_types")
+                .select("id, name")
+                .order("name");
+
+            if (updatedTypes) {
+                setTypes(updatedTypes);
+            }
+
+            if (newType?.id) {
+                updateFormData({ type_id: newType.id });
+            }
+            setIsAddTypeModalOpen(false);
+        } catch (error) {
+            console.error("Failed to save type:", error);
+            alert("Gagal menyimpan jenis item baru.");
+        }
+    };
+
     if (loading) {
         return (
             <Card>
@@ -323,7 +364,7 @@ const AddItem = () => {
                                                 <button
                                                     type="button"
                                                     className={addButtonClassName}
-                                                    onClick={() => navigate("/master-data/types/add")}
+                                                    onClick={() => setIsAddTypeModalOpen(true)}
                                                 >
                                                     +
                                                 </button>
@@ -583,6 +624,14 @@ const AddItem = () => {
                     onClose={() => setIsAddCategoryModalOpen(false)}
                     onSubmit={handleSaveCategory}
                     isLoading={addCategoryMutation.isPending}
+                />
+
+                <AddCategoryModal
+                    isOpen={isAddTypeModalOpen}
+                    onClose={() => setIsAddTypeModalOpen(false)}
+                    onSubmit={handleSaveType}
+                    isLoading={addTypeMutation.isPending}
+                    entityName="Jenis Item"
                 />
             </Card>
         </div>
