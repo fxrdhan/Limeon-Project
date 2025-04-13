@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { useUnitConversion } from "./useUnitConversion";
 import type { UnitConversion } from "./useUnitConversion";
 import { formatRupiah, extractNumericValue } from "../lib/formatters";
+import { generateTypeCode, generateUnitCode, generateCategoryCode, getUnitById } from "./addItemFormHelpers";
 
 interface Category {
     id: string;
@@ -120,51 +121,6 @@ export const useAddItemForm = (itemId?: string) => {
         });
     };
 
-    const generateTypeCode = (typeId: string): string => {
-        const selectedType = types.find(type => type.id === typeId);
-        if (!selectedType) return "X";
-
-        const typeName = selectedType.name.toLowerCase();
-        if (typeName.includes("bebas") && !typeName.includes("terbatas")) return "B";
-        if (typeName.includes("bebas terbatas")) return "T";
-        if (typeName.includes("keras")) return "K";
-        if (typeName.includes("narkotika")) return "N";
-        if (typeName.includes("fitofarmaka")) return "F";
-        if (typeName.includes("herbal")) return "H";
-
-        return selectedType.name.charAt(0).toUpperCase();
-    };
-
-    const generateUnitCode = (unitId: string): string => {
-        const selectedUnit = units.find(unit => unit.id === unitId);
-        if (!selectedUnit) return "X";
-
-        return selectedUnit.name.charAt(0).toUpperCase();
-    };
-
-    const generateCategoryCode = (categoryId: string): string => {
-        const selectedCategory = categories.find(category => category.id === categoryId);
-        if (!selectedCategory) return "XX";
-
-        const name = selectedCategory.name;
-
-        if (name.toLowerCase().startsWith("anti")) {
-            const baseName = name.slice(4);
-            if (baseName.length > 0) {
-                return "A" + baseName.charAt(0).toUpperCase();
-            }
-            return "A";
-        } else {
-            if (name.length >= 2) {
-                return name.substring(0, 2).toUpperCase();
-            } else if (name.length === 1) {
-                return name.toUpperCase() + "X";
-            } else {
-                return "XX";
-            }
-        }
-    };
-
     useEffect(() => {
         fetchMasterData();
         if (itemId) {
@@ -181,9 +137,9 @@ export const useAddItemForm = (itemId?: string) => {
             if (!formData.type_id || !formData.category_id || !formData.unit_id)
                 return;
 
-            const typeCode = generateTypeCode(formData.type_id);
-            const unitCode = generateUnitCode(formData.unit_id);
-            const categoryCode = generateCategoryCode(formData.category_id);
+            const typeCode = generateTypeCode(formData.type_id, types);
+            const unitCode = generateUnitCode(formData.unit_id, units);
+            const categoryCode = generateCategoryCode(formData.category_id, categories);
 
             const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
 
@@ -347,20 +303,6 @@ export const useAddItemForm = (itemId?: string) => {
             alert("Gagal memuat data item. Silakan coba lagi.");
         } finally {
             setLoading(false);
-        }
-    };
-
-    const getUnitById = async (unitName: string) => {
-        try {
-            const { data } = await supabase
-                .from("item_units")
-                .select("id, name")
-                .eq("name", unitName)
-                .single();
-            return data;
-        } catch (error) {
-            console.error("Error fetching unit:", error);
-            return null;
         }
     };
 
