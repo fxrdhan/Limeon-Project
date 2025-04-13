@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { AddCategoryModal } from "../../components/ui/AddCategoryModal";
+import { AddCategoryModal } from "../../components/ui/AddEditModal";
 import { Input } from "../../components/ui/Input";
 import { FaArrowLeft, FaSave, FaTrash, FaHistory } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
