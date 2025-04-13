@@ -42,7 +42,7 @@ const AddItem = () => {
                 refetchType: 'all'
             });
             console.log("Item berhasil dihapus.");
-            navigate("/master-data/items"); // Redirect after successful delete
+            navigate("/master-data/items");
         },
         onError: (error) => {
             console.error("Error deleting item:", error);
@@ -50,24 +50,15 @@ const AddItem = () => {
         },
     });
 
-    const isDirty = () => {
-        // Simple implementation - you might want to compare with initial values in a real implementation
-        return formData.name !== '' || formData.base_price > 0 || formData.sell_price > 0;
-    };
-
     const handleCancel = () => {
-        if (isDirty()) {
-            confirmDialog.openConfirmDialog({
-                title: "Konfirmasi",
-                message: "Apakah Anda yakin membuang perubahan yang sudah ada?",
-                confirmText: "Iya",
-                cancelText: "Tidak",
-                onConfirm: () => navigate("/master-data/items"),
-                variant: 'danger' // or 'primary' depending on desired style
-            });
-        } else {
-            navigate("/master-data/items");
-        }
+        confirmDialog.openConfirmDialog({
+            title: "Konfirmasi Keluar",
+            message: "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
+            confirmText: "Tinggalkan",
+            cancelText: "Batal",
+            onConfirm: () => navigate("/master-data/items"),
+            variant: 'danger'
+        });
     };
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
