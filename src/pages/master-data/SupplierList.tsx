@@ -65,8 +65,13 @@ const SupplierList = () => {
 
     const updateSupplierMutation = useMutation<void, Error, Partial<Supplier>>({
         mutationFn: updateSupplier,
-        onSuccess: () => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+            
+            // Update the selectedSupplier state with the new data
+            if (selectedSupplier) {
+                setSelectedSupplier(prev => prev ? { ...prev, ...variables } : null);
+            }
         },
         onError: (error) => {
             console.error("Error updating supplier:", error);
@@ -215,6 +220,7 @@ const SupplierList = () => {
                     onClose={closeModal}
                     onSave={async (updatedData: Record<string, string | number | boolean | null>) => {
                         await updateSupplierMutation.mutateAsync(updatedData);
+                        return Promise.resolve();
                     }}
                     onImageSave={handleSupplierImageSave}
                     onDeleteRequest={() => {

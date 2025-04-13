@@ -41,6 +41,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
     const [loading, setLoading] = useState<Record<string, boolean>>({});
     const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [localData, setLocalData] = useState<Record<string, string | number | boolean | null>>(data);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
@@ -50,6 +51,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                 initialValues[field.key] = data[field.key];
             });
             setEditValues(initialValues);
+            setLocalData(data);
             setCurrentImageUrl(imageUrl);
         }
     }, [isOpen, data, fields, imageUrl]);
@@ -77,6 +79,12 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
             const updatedData = { [key]: editValues[key] };
             await onSave(updatedData);
 
+            // Update the local data immediately after successful save
+            setLocalData(prev => ({
+                ...prev,
+                [key]: editValues[key]
+            }));
+
             toggleEdit(key);
         } catch (error) {
             console.error(`Error saving ${key}:`, error);
@@ -88,7 +96,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     const handleCancel = (key: string) => {
         setEditValues(prev => ({
             ...prev,
-            [key]: data[key]
+            [key]: localData[key]
         }));
         toggleEdit(key);
     };
@@ -253,7 +261,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                     )
                                 ) : (
                                     <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
-                                        {String(data[field.key] ?? '') || (
+                                        {String(localData[field.key] ?? '') || (
                                             <span className="text-gray-400 italic">Tidak ada data</span>
                                         )}
                                     </div>
