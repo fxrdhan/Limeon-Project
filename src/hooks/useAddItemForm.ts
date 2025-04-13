@@ -71,6 +71,13 @@ export const useAddItemForm = (itemId?: string) => {
     });
 
     const updateFormData = (newData: Partial<FormData>) => {
+        if (newData.sell_price !== undefined) {
+            setDisplaySellPrice(formatRupiah(newData.sell_price));
+        }
+        if (newData.base_price !== undefined) {
+            setDisplayBasePrice(formatRupiah(newData.base_price));
+        }
+
         if (!initialFormData && !loading && (itemId || !isEditMode)) {
             setInitialFormData(prev => {
                 const merged = { ...(prev ?? formData), ...newData };
@@ -503,7 +510,6 @@ export const useAddItemForm = (itemId?: string) => {
         if (!initialFormData) return false;
         const formDataChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
 
-        // Compare current conversions with initial conversions
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const currentConversionsForCompare = unitConversionHook.conversions.map(({ id, unit, ...rest }) => ({ ...rest, to_unit_id: unit.id })); // Prepare for comparison
         const conversionsChanged = JSON.stringify(currentConversionsForCompare.sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id))) !== JSON.stringify(initialUnitConversions?.sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id)) ?? []);
