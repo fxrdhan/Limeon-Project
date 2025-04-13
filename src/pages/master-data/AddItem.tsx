@@ -40,12 +40,13 @@ const AddItem = () => {
     const [marginPercentage, setMarginPercentage] = useState<string>('0');
     const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
     const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
+    const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false); // State for Unit modal
     const marginInputRef = useRef<HTMLInputElement>(null);
 
     const {
         formData, displayBasePrice, displaySellPrice, categories, types, units,
         saving, loading, isEditMode, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
-        unitConversionHook, isDirty, addCategoryMutation, setCategories, setTypes
+        unitConversionHook, isDirty, addCategoryMutation, setCategories, setTypes, addUnitMutation, setUnits
     } = useAddItemForm(id || undefined);
 
     const deleteItemMutation = useMutation({
@@ -254,6 +255,26 @@ const AddItem = () => {
         }
     };
 
+    const handleSaveUnit = async (unitData: { name: string; description: string }) => {
+        try {
+            const newUnit = await addUnitMutation.mutateAsync(unitData);
+
+            // Fetch updated units list after adding a new unit
+            const { data: updatedUnits } = await supabase
+                .from("item_units")
+                .select("id, name")
+                .order("name");
+
+            if (updatedUnits) setUnits(updatedUnits); // Update local state
+            if (newUnit?.id) updateFormData({ unit_id: newUnit.id }); // Select the new unit
+
+            setIsAddUnitModalOpen(false);
+        } catch (error) {
+            console.error("Failed to save unit:", error);
+            alert("Gagal menyimpan satuan baru.");
+        }
+    };
+
     if (loading) {
         return (
             <Card>
@@ -390,7 +411,7 @@ const AddItem = () => {
                                                 <button
                                                     type="button"
                                                     className={addButtonClassName}
-                                                    onClick={() => navigate("/master-data/units/add")}
+                                                    onClick={() => setIsAddUnitModalOpen(true)}
                                                 >
                                                     +
                                                 </button>
@@ -642,6 +663,14 @@ const AddItem = () => {
                     onSubmit={handleSaveType}
                     isLoading={addTypeMutation.isPending}
                     entityName="Jenis Item"
+                />
+
+                <AddCategoryModal
+                    isOpen={isAddUnitModalOpen}
+                    onClose={() => setIsAddUnitModalOpen(false)}
+                    onSubmit={handleSaveUnit}
+                    isLoading={addUnitMutation.isPending}
+                    entityName="Satuan"
                 />
             </Card>
         </div>
