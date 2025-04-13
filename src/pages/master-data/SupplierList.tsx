@@ -89,6 +89,23 @@ const SupplierList = () => {
         },
     });
 
+    const updateSupplierImageMutation = useMutation({
+        mutationFn: async ({ supplierId, imageBase64 }: { supplierId: string, imageBase64: string }) => {
+            const { error } = await supabase
+                .from('suppliers')
+                .update({ image_url: imageBase64, updated_at: new Date().toISOString() })
+                .eq('id', supplierId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+        },
+        onError: (error) => {
+            console.error("Error updating supplier image:", error);
+            alert(`Gagal memperbarui foto supplier: ${error.message}`);
+        },
+    });
+
     const openSupplierDetail = (supplier: Supplier) => {
         setSelectedSupplier(supplier);
         setIsModalOpen(true);
@@ -107,6 +124,11 @@ const SupplierList = () => {
             confirmText: "Hapus",
             onConfirm: () => deleteSupplierMutation.mutate(supplier.id)
         });
+    };
+
+    const handleSupplierImageSave = async (imageBase64: string) => {
+        if (!selectedSupplier) return;
+        await updateSupplierImageMutation.mutateAsync({ supplierId: selectedSupplier.id, imageBase64 });
     };
 
     const supplierFields: FieldConfig[] = [
@@ -184,7 +206,7 @@ const SupplierList = () => {
 
             {isModalOpen && selectedSupplier && (
                 <DetailEditModal
-                    title={`Detail Supplier: ${selectedSupplier.name}`}
+                    title={`${selectedSupplier.name}`}
                     data={transformSupplierForModal(selectedSupplier)}
                     fields={supplierFields}
                     isOpen={isModalOpen}
@@ -192,6 +214,7 @@ const SupplierList = () => {
                     onSave={async (updatedData: Record<string, string | number | boolean | null>) => {
                         await updateSupplierMutation.mutateAsync(updatedData);
                     }}
+                    onImageSave={handleSupplierImageSave}
                     onDeleteRequest={() => {
                         if (selectedSupplier) handleDelete(selectedSupplier);
                     }}

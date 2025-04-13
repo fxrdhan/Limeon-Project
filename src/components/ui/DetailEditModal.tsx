@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+import React, { useState, useRef } from 'react';
+import { FaEdit, FaCheck, FaTimes, FaPencilAlt, FaSpinner } from 'react-icons/fa';
 import { Button } from './Button';
 
 interface FieldConfig {
@@ -16,6 +16,7 @@ interface DetailEditModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
+    onImageSave?: (imageBase64: string) => Promise<void>;
     onDeleteRequest?: (data: Record<string, unknown>) => void;
     deleteButtonLabel?: string;
     imageUrl?: string;
@@ -29,6 +30,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     isOpen,
     onClose,
     onSave,
+    onImageSave,
     imageUrl,
     imagePlaceholder,
     onDeleteRequest,
@@ -37,6 +39,8 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
     const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({});
     const [loading, setLoading] = useState<Record<string, boolean>>({});
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
         if (isOpen && data) {
@@ -93,6 +97,49 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         }
     };
 
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !onImageSave) return;
+
+        const maxSize = 1 * 1024 * 1024;
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+
+        if (!validTypes.includes(file.type)) {
+            alert('Tipe file tidak valid. Harap unggah file PNG atau JPG.');
+            return;
+        }
+        if (file.size > maxSize) {
+            alert('Ukuran file terlalu besar. Maksimum 1MB.');
+            return;
+        }
+
+        setIsUploadingImage(true);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onloadend = async () => {
+            if (typeof reader.result === 'string') {
+                try {
+                    await onImageSave(reader.result);
+                } catch (uploadError) {
+                    console.error("Error during image save callback:", uploadError);
+                    alert("Gagal menyimpan gambar supplier.");
+                } finally {
+                    setIsUploadingImage(false);
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                }
+            } else {
+                setIsUploadingImage(false);
+            }
+        };
+        reader.onerror = (error) => {
+            console.error("Error reading file:", error);
+            alert("Gagal membaca file gambar.");
+            setIsUploadingImage(false);
+        };
+    };
+
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" onClick={handleBackdropClick}>
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
@@ -107,16 +154,29 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                     </Button>
                 </div>
 
-                <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                     {(imageUrl || imagePlaceholder) && (
                         <div className="flex justify-center mb-6">
-                            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200">
+                            <div className="relative group w-48">
                                 <img
                                     src={imageUrl || imagePlaceholder}
                                     alt={String(data.name ?? 'Detail')}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-auto aspect-video object-cover rounded-md border border-gray-200"
                                 />
+                                {onImageSave && (
+                                    <label
+                                        htmlFor="supplier-image-upload"
+                                        className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                    >
+                                        {isUploadingImage ? (
+                                            <FaSpinner className="text-white text-xl animate-spin" />
+                                        ) : (
+                                            <FaPencilAlt className="text-white text-xl" />
+                                        )}
+                                    </label>
+                                )}
                             </div>
+                            <input type="file" id="supplier-image-upload" className="hidden" accept="image/png,image/jpeg,image/jpg" onChange={handleImageUpload} disabled={isUploadingImage} ref={fileInputRef} />
                         </div>
                     )}
 
