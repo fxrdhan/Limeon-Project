@@ -133,11 +133,28 @@ const AddItem = () => {
         }
     };
 
+    const handleSellPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleChange(e); // Update the form data with the new selling price
+        
+        // Calculate and update the margin percentage
+        setTimeout(() => {
+            const profit = calculateProfitPercentage();
+            if (profit !== null) {
+                setMarginPercentage(profit.toFixed(1));
+            }
+        }, 0);
+    };
+
     const startEditingMargin = () => {
         const currentMargin = calculateProfitPercentage();
         setMarginPercentage(currentMargin !== null ? currentMargin.toFixed(1) : '0');
         setEditingMargin(true);
-        setTimeout(() => marginInputRef.current?.focus(), 10);
+        setTimeout(() => {
+            if (marginInputRef.current) {
+                marginInputRef.current.focus();
+                marginInputRef.current.select();
+            }
+        }, 10);
     };
 
     const stopEditingMargin = () => {
@@ -363,89 +380,6 @@ const AddItem = () => {
                             </div>
 
                             <div className="w-full md:w-1/4">
-                                <FormSection title="Harga Pokok & Jual">
-                                    <div className="flex flex-col space-y-4">
-                                        <FormField label="Satuan Dasar">
-                                            <Input
-                                                type="text"
-                                                value={unitConversionHook.baseUnit}
-                                                readOnly={true}
-                                                className="w-full"
-                                            />
-                                        </FormField>
-                                        
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <FormField label="Harga Pokok">
-                                                <Input
-                                                    type="text"
-                                                    name="base_price"
-                                                    value={displayBasePrice}
-                                                    placeholder="Rp 0"
-                                                    onChange={(e) => {
-                                                        handleChange(e);
-                                                        setTimeout(() => {
-                                                            const profit = calculateProfitPercentage();
-                                                            if (profit !== null) {
-                                                                setMarginPercentage(profit.toFixed(1));
-                                                            }
-                                                        }, 0);
-                                                    }}
-                                                    min="0"
-                                                    className="w-full"
-                                                    required
-                                                />
-                                            </FormField>
-                                            
-                                            <FormField label="Harga Jual">
-                                                <Input
-                                                    type="text"
-                                                    name="sell_price"
-                                                    value={displaySellPrice}
-                                                    placeholder="Rp 0"
-                                                    min="0"
-                                                    className="w-full"
-                                                    required
-                                                />
-                                            </FormField>
-                                        </div>
-                                        
-                                        <div className="text-left">
-                                            {editingMargin ? (
-                                                <div className="flex items-center">
-                                                    <span className="text-lg font-medium mr-1">Margin:</span>
-                                                    <input
-                                                        ref={marginInputRef}
-                                                        type="number"
-                                                        value={marginPercentage}
-                                                        onChange={handleMarginChange}
-                                                        onBlur={stopEditingMargin}
-                                                        onKeyDown={handleMarginKeyDown}
-                                                        className="w-16 p-1 text-lg font-medium border-b-2 border-primary focus:outline-none"
-                                                        step="0.1"
-                                                    />
-                                                    <span className="text-lg font-medium ml-1">%</span>
-                                                </div>
-                                            ) : (
-                                                <span 
-                                                    className={`text-lg font-medium cursor-pointer hover:underline ${calculateProfitPercentage() !== null ? calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600' : 'text-gray-500'}`}
-                                                    onClick={startEditingMargin}
-                                                    title="Klik untuk mengubah margin"
-                                                >
-                                                    Margin: {calculateProfitPercentage() !== null ? `${calculateProfitPercentage()!.toFixed(1)}%` : '-'}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </FormSection>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col md:flex-row gap-6">
-                            <div className="w-full md:w-3/4">
-                                <UnitConversionManager unitConversionHook={unitConversionHook} />
-                            </div>
-                            
-                            <div className="w-full md:w-1/4">
                                 <FormSection title="Pengaturan Tambahan">
                                     <div className="grid grid-cols-1 gap-6">
                                         <FormField label="Status Jual">
@@ -502,6 +436,93 @@ const AddItem = () => {
                                         </div>
                                     </div>
                                 </FormSection>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col md:flex-row gap-6">
+                            <div className="w-full md:w-1/4">
+                                <FormSection title="Harga Pokok & Jual">
+                                    <div className="flex flex-col space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField label="Satuan Dasar">
+                                                <Input
+                                                    type="text"
+                                                    value={unitConversionHook.baseUnit}
+                                                    readOnly={true}
+                                                    className="w-full"
+                                                />
+                                            </FormField>
+                                            
+                                            <FormField label="Harga Pokok">
+                                                <Input
+                                                    type="text"
+                                                    name="base_price"
+                                                    value={displayBasePrice}
+                                                    placeholder="Rp 0"
+                                                    onChange={(e) => {
+                                                        handleChange(e);
+                                                        setTimeout(() => {
+                                                            const profit = calculateProfitPercentage();
+                                                            if (profit !== null) {
+                                                                setMarginPercentage(profit.toFixed(1));
+                                                            }
+                                                        }, 0);
+                                                    }}
+                                                    min="0"
+                                                    className="w-full"
+                                                    required
+                                                />
+                                            </FormField>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <FormField label="Margin">
+                                                <div className="flex items-center">
+                                                    {editingMargin ? (
+                                                        <div className="flex items-center w-full">
+                                                            <input
+                                                                ref={marginInputRef}
+                                                                type="number"
+                                                                value={marginPercentage}
+                                                                onChange={handleMarginChange}
+                                                                onBlur={stopEditingMargin}
+                                                                onKeyDown={handleMarginKeyDown}
+                                                                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                                step="0.1"
+                                                            />
+                                                            <span className="ml-1 text-lg font-medium">%</span>
+                                                        </div>
+                                                    ) : (
+                                                        <span 
+                                                            className={`w-full p-2 border border-gray-300 rounded-md cursor-pointer ${calculateProfitPercentage() !== null ? calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600' : 'text-gray-500'}`}
+                                                            onClick={startEditingMargin}
+                                                            title="Klik untuk mengubah margin"
+                                                        >
+                                                            {calculateProfitPercentage() !== null ? `${calculateProfitPercentage()!.toFixed(1)}%` : '-'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </FormField>
+                                            
+                                            <FormField label="Harga Jual">
+                                                <Input
+                                                    type="text"
+                                                    name="sell_price"
+                                                    value={displaySellPrice}
+                                                    placeholder="Rp 0"
+                                                    onChange={handleSellPriceChange}
+                                                    min="0"
+                                                    className="w-full"
+                                                    required
+                                                />
+                                            </FormField>
+                                        </div>
+                                    </div>
+                                </FormSection>
+                            </div>
+                            
+                            <div className="w-full md:w-3/4">
+                                <UnitConversionManager unitConversionHook={unitConversionHook} />
                             </div>
                         </div>
                     </CardContent>
