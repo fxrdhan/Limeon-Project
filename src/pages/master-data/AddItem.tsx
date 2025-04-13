@@ -581,7 +581,7 @@ const AddItem = () => {
                 <AddCategoryModal
                     isOpen={isAddCategoryModalOpen}
                     onClose={() => setIsAddCategoryModalOpen(false)}
-                    onSave={handleSaveCategory}
+                    onSubmit={handleSaveCategory}
                     isLoading={addCategoryMutation.isPending}
                 />
             </Card>

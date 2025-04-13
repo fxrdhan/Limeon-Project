@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './Button';
+import { useConfirmDialog } from './ConfirmDialog';
 import { Input } from './Input';
 import { Transition, TransitionChild } from '@headlessui/react';
 import { FaTimes } from 'react-icons/fa';
@@ -8,32 +9,57 @@ import { FaTimes } from 'react-icons/fa';
 interface AddCategoryModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (category: { name: string; description: string }) => Promise<void>;
+    onSubmit: (category: { id?: string; name: string; description: string }) => Promise<void>;
+    initialData?: Category | null;
+    onDelete?: (categoryId: string) => void;
     isLoading?: boolean;
+    isDeleting?: boolean;
+}
+
+interface Category {
+    id: string;
+    name: string;
+    description: string;
 }
 
 export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     isOpen,
     onClose,
-    onSave,
-    isLoading = false
+    onSubmit,
+    initialData = null,
+    onDelete,
+    isLoading = false,
+    isDeleting = false
 }) => {
+    useConfirmDialog();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const isEditMode = Boolean(initialData);
 
     useEffect(() => {
         if (isOpen) {
-            setName('');
-            setDescription('');
+            if (initialData) {
+                setName(initialData.name);
+                setDescription(initialData.description || '');
+            } else {
+                setName('');
+                setDescription('');
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, initialData]);
 
     const handleSave = async () => {
         if (!name.trim()) {
             alert("Nama kategori tidak boleh kosong.");
             return;
         }
-        await onSave({ name, description });
+        await onSubmit({ id: initialData?.id, name, description });
+    };
+
+    const handleDelete = () => {
+        if (initialData && onDelete) {
+            onDelete(initialData.id);
+        }
     };
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -71,20 +97,26 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                 >
                     <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
                         <div className="flex justify-between items-center p-4 border-b">
-                            <h2 className="text-xl font-semibold">Tambah Kategori Baru</h2>
+                            <h2 className="text-xl font-semibold">{isEditMode ? 'Edit Kategori' : 'Tambah Kategori Baru'}</h2>
                             <Button variant="text" onClick={onClose} className="text-gray-500 hover:text-gray-700 p-1">
                                 <FaTimes size={20} />
                             </Button>
                         </div>
                         <div className="p-6 space-y-4">
-                            <Input label="Nama Kategori" value={name} onChange={(e) => setName(e.target.value)} placeholder="Masukkan nama kategori" required />
-                            <Input label="Deskripsi (Opsional)" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Masukkan deskripsi singkat" />
+                            <Input label="Nama Kategori" value={name} onChange={(e) => setName(e.target.value)} placeholder="Masukkan nama kategori" required readOnly={isLoading || isDeleting} />
+                            <Input label="Deskripsi (Opsional)" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Masukkan deskripsi singkat" readOnly={isLoading || isDeleting} />
                         </div>
                         <div className="flex justify-between p-4 border-t">
                             <div>
-                                <Button type="button" variant="outline" onClick={onClose}>
-                                    Batal
-                                </Button>
+                                {isEditMode && onDelete ? (
+                                    <Button type="button" variant="danger" onClick={handleDelete} isLoading={isDeleting} disabled={isLoading || isDeleting}>
+                                        Hapus
+                                    </Button>
+                                ) : (
+                                    <Button type="button" variant="outline" onClick={onClose}>
+                                        Batal
+                                    </Button>
+                                )}
                             </div>
                             <div>
                                 <Button type="button" variant="primary" onClick={handleSave} isLoading={isLoading} disabled={isLoading || !name.trim()}>

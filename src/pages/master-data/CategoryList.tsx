@@ -1,8 +1,7 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from "../../lib/supabase";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { supabase } from '../../lib/supabase';
+import { FaPlus, FaEdit } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
@@ -20,6 +19,8 @@ const CategoryList = () => {
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
     const fetchCategories = async () => {
         const { data, error } = await supabase
@@ -71,6 +72,40 @@ const CategoryList = () => {
         },
     });
 
+    const updateCategoryMutation = useMutation({
+        mutationFn: async (updatedCategory: { id: string; name: string; description: string }) => {
+            const { id, ...updateData } = updatedCategory;
+            const { error } = await supabase
+                .from("item_categories")
+                .update(updateData)
+                .eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            setIsEditModalOpen(false);
+            setEditingCategory(null);
+            console.log("Kategori berhasil diperbarui.");
+        },
+        onError: (error) => {
+            console.error("Error updating category:", error);
+            alert(`Gagal memperbarui kategori: ${error.message}`);
+        },
+    });
+
+    const handleEdit = (category: Category) => {
+        setEditingCategory(category);
+        setIsEditModalOpen(true);
+    };
+
+    const handleModalSubmit = async (categoryData: { id?: string; name: string; description: string }) => {
+        if (categoryData.id) {
+            await updateCategoryMutation.mutateAsync(categoryData as { id: string; name: string; description: string });
+        } else {
+            await addCategoryMutation.mutateAsync(categoryData);
+        }
+    };
+
     return (
         <>
             <Card>
@@ -113,18 +148,8 @@ const CategoryList = () => {
                                         <TableCell>{category.description}</TableCell>
                                         <TableCell className="text-center">
                                             <div className="flex justify-center space-x-2">
-                                                <Link to={`/master-data/categories/edit/${category.id}`}>
-                                                    <Button variant="secondary" size="sm">
-                                                        <FaEdit />
-                                                    </Button>
-                                                </Link>
-                                                <Button
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(category)}
-                                                    disabled={deleteCategoryMutation.isPending && deleteCategoryMutation.variables === category.id}
-                                                >
-                                                    <FaTrash />
+                                                <Button variant="secondary" size="sm" onClick={() => handleEdit(category)}>
+                                                    <FaEdit />
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -139,25 +164,37 @@ const CategoryList = () => {
             <AddCategoryModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
-                onSave={async (categoryData) => {
-                    await addCategoryMutation.mutateAsync(categoryData);
-                }}
+                onSubmit={handleModalSubmit}
                 isLoading={addCategoryMutation.isPending}
             />
+
+            {editingCategory && (
+                <AddCategoryModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => { setIsEditModalOpen(false); setEditingCategory(null); }}
+                    onSubmit={handleModalSubmit}
+                    initialData={editingCategory}
+                    onDelete={(categoryId) => {
+                        openConfirmDialog({
+                            title: "Konfirmasi Hapus",
+                            message: `Apakah Anda yakin ingin menghapus kategori item "${editingCategory.name}"?`,
+                            variant: "danger",
+                            confirmText: "Hapus",
+                            onConfirm: () => {
+                                deleteCategoryMutation.mutate(categoryId);
+                                setIsEditModalOpen(false);
+                                setEditingCategory(null);
+                            }
+                        });
+                    }}
+                    isLoading={updateCategoryMutation.isPending}
+                    isDeleting={deleteCategoryMutation.isPending}
+                />
+            )}
         </>
     );
 
-    async function handleDelete(category: Category) {
-        openConfirmDialog({
-            title: "Konfirmasi Hapus",
-            message: `Apakah Anda yakin ingin menghapus kategori item "${category.name}"?`,
-            variant: "danger",
-            confirmText: "Hapus",
-            onConfirm: () => {
-                deleteCategoryMutation.mutate(category.id);
-            }
-        });
-    };
+;
 };
 
 export default CategoryList;
