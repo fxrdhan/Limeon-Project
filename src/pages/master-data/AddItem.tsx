@@ -148,204 +148,213 @@ const AddItem = () => {
 
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-6">
-                        <FormSection title="Data Umum">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <FormField label="Kode Item">
-                                    <Input
-                                        name="code"
-                                        value={formData.code}
-                                        readOnly={true}
-                                        className="w-full"
-                                    />
-                                </FormField>
-                                
-                                <FormField label="Nama Item">
-                                    <Input
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        className="w-full"
-                                        required
-                                    />
-                                </FormField>
+                        {/* Horizontal layout for Data Umum and Harga */}
+                        <div className="flex flex-col md:flex-row gap-6">
+                            {/* Data Umum section - takes 2/3 of the width on desktop */}
+                            <div className="w-full md:w-2/3">
+                                <FormSection title="Data Umum">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <FormField label="Kode Item">
+                                            <Input
+                                                name="code"
+                                                value={formData.code}
+                                                readOnly={true}
+                                                className="w-full"
+                                            />
+                                        </FormField>
+                                        
+                                        <FormField label="Nama Item">
+                                            <Input
+                                                name="name"
+                                                value={formData.name}
+                                                onChange={handleChange}
+                                                className="w-full"
+                                                required
+                                            />
+                                        </FormField>
 
-                                <FormField label="Satuan">
-                                    <div className="flex">
-                                        <select
-                                            name="unit_id"
-                                            value={formData.unit_id}
-                                            onChange={handleSelectChange}
-                                            className={selectClassName}
-                                            required
-                                        >
-                                            <option value="">-- Pilih Satuan --</option>
-                                            {units.map((unit) => (
-                                                <option key={unit.id} value={unit.id}>
-                                                    {unit.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <button
-                                            type="button"
-                                            className={addButtonClassName}
-                                            onClick={() => navigate("/master-data/units/add")}
-                                        >
-                                            +
-                                        </button>
+                                        <FormField label="Satuan">
+                                            <div className="flex">
+                                                <select
+                                                    name="unit_id"
+                                                    value={formData.unit_id}
+                                                    onChange={handleSelectChange}
+                                                    className={selectClassName}
+                                                    required
+                                                >
+                                                    <option value="">-- Pilih Satuan --</option>
+                                                    {units.map((unit) => (
+                                                        <option key={unit.id} value={unit.id}>
+                                                            {unit.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    type="button"
+                                                    className={addButtonClassName}
+                                                    onClick={() => navigate("/master-data/units/add")}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </FormField>
                                     </div>
-                                </FormField>
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <FormField label="Kategori">
-                                    <div className="flex">
-                                        <select
-                                            name="category_id"
-                                            value={formData.category_id}
-                                            onChange={handleSelectChange}
-                                            className={selectClassName}
-                                            required
-                                        >
-                                            <option value="">-- Pilih Kategori --</option>
-                                            {categories.map((category) => (
-                                                <option key={category.id} value={category.id}>
-                                                    {category.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <button
-                                            type="button"
-                                            className={addButtonClassName}
-                                            onClick={() => navigate("/master-data/categories/add")}
-                                        >
-                                            +
-                                        </button>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <FormField label="Kategori">
+                                            <div className="flex">
+                                                <select
+                                                    name="category_id"
+                                                    value={formData.category_id}
+                                                    onChange={handleSelectChange}
+                                                    className={selectClassName}
+                                                    required
+                                                >
+                                                    <option value="">-- Pilih Kategori --</option>
+                                                    {categories.map((category) => (
+                                                        <option key={category.id} value={category.id}>
+                                                            {category.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    type="button"
+                                                    className={addButtonClassName}
+                                                    onClick={() => navigate("/master-data/categories/add")}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </FormField>
+
+                                        <FormField label="Jenis">
+                                            <div className="flex">
+                                                {categories.length === 0 && (
+                                                    <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
+                                                )}
+                                                <select
+                                                    name="type_id" 
+                                                    value={formData.type_id}
+                                                    onChange={handleSelectChange}
+                                                    className={selectClassName}
+                                                    required
+                                                >
+                                                    <option value="">-- Pilih Jenis --</option>
+                                                    {types.map((type) => (
+                                                        <option key={type.id} value={type.id}>
+                                                            {type.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    type="button"
+                                                    className={addButtonClassName}
+                                                    onClick={() => navigate("/master-data/types/add")}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </FormField>
+
+                                        <FormField label="Rak">
+                                            <Input
+                                                name="rack"
+                                                value={formData.rack}
+                                                onChange={handleChange}
+                                                className="w-full"
+                                            />
+                                        </FormField>
                                     </div>
-                                </FormField>
 
-                                <FormField label="Jenis">
-                                    <div className="flex">
-                                        {categories.length === 0 && (
-                                            <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
-                                        )}
-                                        <select
-                                            name="type_id" 
-                                            value={formData.type_id}
-                                            onChange={handleSelectChange}
-                                            className={selectClassName}
-                                            required
-                                        >
-                                            <option value="">-- Pilih Jenis --</option>
-                                            {types.map((type) => (
-                                                <option key={type.id} value={type.id}>
-                                                    {type.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <button
-                                            type="button"
-                                            className={addButtonClassName}
-                                            onClick={() => navigate("/master-data/types/add")}
-                                        >
-                                            +
-                                        </button>
-                                    </div>
-                                </FormField>
+                                    <FormField label="Jenis Produk">
+                                        <div className="space-x-6">
+                                            <label className="inline-flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="is_medicine"
+                                                    checked={formData.is_medicine}
+                                                    onChange={() => updateFormData({ is_medicine: true })}
+                                                    className="form-radio h-5 w-5 text-primary"
+                                                />
+                                                <span className="ml-2">Obat</span>
+                                            </label>
+                                            <label className="inline-flex items-center">
+                                                <input
+                                                    type="radio"
+                                                    name="is_medicine"
+                                                    checked={!formData.is_medicine}
+                                                    onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
+                                                    className="form-radio h-5 w-5 text-primary"
+                                                />
+                                                <span className="ml-2">Non-Obat</span>
+                                            </label>
+                                        </div>
+                                    </FormField>
 
-                                <FormField label="Rak">
-                                    <Input
-                                        name="rack"
-                                        value={formData.rack}
-                                        onChange={handleChange}
-                                        className="w-full"
-                                    />
-                                </FormField>
-                            </div>
-
-                            <FormField label="Jenis Produk">
-                                <div className="space-x-6">
-                                    <label className="inline-flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="is_medicine"
-                                            checked={formData.is_medicine}
-                                            onChange={() => updateFormData({ is_medicine: true })}
-                                            className="form-radio h-5 w-5 text-primary"
+                                    <FormField label="Keterangan">
+                                        <textarea
+                                            name="description"
+                                            value={formData.description}
+                                            onChange={handleChange}
+                                            className={textareaClassName}
+                                            rows={3}
                                         />
-                                        <span className="ml-2">Obat</span>
-                                    </label>
-                                    <label className="inline-flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="is_medicine"
-                                            checked={!formData.is_medicine}
-                                            onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
-                                            className="form-radio h-5 w-5 text-primary"
-                                        />
-                                        <span className="ml-2">Non-Obat</span>
-                                    </label>
-                                </div>
-                            </FormField>
-
-                            <FormField label="Keterangan">
-                                <textarea
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    className={textareaClassName}
-                                    rows={3}
-                                />
-                            </FormField>
-                        </FormSection>
-
-                        <FormSection title="Harga Pokok & Jual">
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                                <FormField label="Satuan Dasar">
-                                    <Input
-                                        type="text"
-                                        value={unitConversionHook.baseUnit}
-                                        readOnly={true}
-                                        className="w-full"
-                                    />
-                                </FormField>
-                                
-                                <FormField label="Harga Pokok">
-                                    <Input
-                                        type="text"
-                                        name="base_price"
-                                        value={displayBasePrice}
-                                        placeholder="Rp 0"
-                                        onChange={handleChange}
-                                        min="0"
-                                        className="w-full"
-                                        required
-                                    />
-                                </FormField>
-                                
-                                <FormField label="Harga Jual">
-                                    <Input
-                                        type="text"
-                                        name="sell_price"
-                                        value={displaySellPrice}
-                                        placeholder="Rp 0"
-                                        onChange={handleChange}
-                                        min="0"
-                                        className="w-full"
-                                        required
-                                    />
-                                </FormField>
-                                
-                                <div className="text-left md:mt-6 md:col-span-2">
-                                    {calculateProfitPercentage() !== null ? (
-                                        <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {calculateProfitPercentage()!.toFixed(1)}%
-                                        </span>
-                                    ) : (
-                                        <span className="text-sm text-gray-500">-</span>
-                                    )}
-                                </div>
+                                    </FormField>
+                                </FormSection>
                             </div>
-                        </FormSection>
+
+                            {/* Harga section - takes 1/3 of the width on desktop */}
+                            <div className="w-full md:w-1/3">
+                                <FormSection title="Harga Pokok & Jual">
+                                    <div className="flex flex-col space-y-4">
+                                        <FormField label="Satuan Dasar">
+                                            <Input
+                                                type="text"
+                                                value={unitConversionHook.baseUnit}
+                                                readOnly={true}
+                                                className="w-full"
+                                            />
+                                        </FormField>
+                                        
+                                        <FormField label="Harga Pokok">
+                                            <Input
+                                                type="text"
+                                                name="base_price"
+                                                value={displayBasePrice}
+                                                placeholder="Rp 0"
+                                                onChange={handleChange}
+                                                min="0"
+                                                className="w-full"
+                                                required
+                                            />
+                                        </FormField>
+                                        
+                                        <FormField label="Harga Jual">
+                                            <Input
+                                                type="text"
+                                                name="sell_price"
+                                                value={displaySellPrice}
+                                                placeholder="Rp 0"
+                                                onChange={handleChange}
+                                                min="0"
+                                                className="w-full"
+                                                required
+                                            />
+                                        </FormField>
+                                        
+                                        <div className="text-left">
+                                            {calculateProfitPercentage() !== null ? (
+                                                <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    Margin: {calculateProfitPercentage()!.toFixed(1)}%
+                                                </span>
+                                            ) : (
+                                                <span className="text-sm text-gray-500">-</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </FormSection>
+                            </div>
+                        </div>
 
                         <UnitConversionManager unitConversionHook={unitConversionHook} />
 
