@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
@@ -36,11 +36,14 @@ const AddItem = () => {
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
     const confirmDialog = useConfirmDialog();
+    const [editingMargin, setEditingMargin] = useState(false);
+    const [marginPercentage, setMarginPercentage] = useState<string>('0');
+    const marginInputRef = useRef<HTMLInputElement>(null);
 
     const {
         formData, displayBasePrice, displaySellPrice, categories, types, units,
         saving, loading, isEditMode, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
-        unitConversionHook
+        unitConversionHook, isDirty
     } = useAddItemForm(id || undefined);
 
     const deleteItemMutation = useMutation({
@@ -63,14 +66,18 @@ const AddItem = () => {
     });
 
     const handleCancel = () => {
-        confirmDialog.openConfirmDialog({
-            title: "Konfirmasi Keluar",
-            message: "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
-            confirmText: "Tinggalkan",
-            cancelText: "Batal",
-            onConfirm: () => navigate("/master-data/items"),
-            variant: 'danger'
-        });
+        if (isDirty()) {
+            confirmDialog.openConfirmDialog({
+                title: "Konfirmasi Keluar",
+                message: "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
+                confirmText: "Tinggalkan",
+                cancelText: "Batal",
+                onConfirm: () => navigate("/master-data/items"),
+                variant: 'danger'
+            });
+        } else {
+            navigate("/master-data/items");
+        }
     };
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -90,12 +97,70 @@ const AddItem = () => {
         }
     }, [formData.base_price]);
 
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isDirty()) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [isDirty]);
+
     const calculateProfitPercentage = () => {
         const { base_price, sell_price } = formData;
         if (base_price > 0 && sell_price >= 0) {
             return ((sell_price - base_price) / base_price) * 100;
         }
         return null;
+    };
+
+    const calculateSellPriceFromMargin = (margin: number) => {
+        if (formData.base_price > 0) {
+            const sellPrice = formData.base_price * (1 + margin / 100);
+            return Math.round(sellPrice);
+        }
+        return 0;
+    };
+
+    const handleMarginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setMarginPercentage(value);
+        
+        const margin = parseFloat(value);
+        if (!isNaN(margin) && formData.base_price > 0) {
+            const newSellPrice = calculateSellPriceFromMargin(margin);
+            updateFormData({ sell_price: newSellPrice });
+        }
+    };
+
+    const startEditingMargin = () => {
+        const currentMargin = calculateProfitPercentage();
+        setMarginPercentage(currentMargin !== null ? currentMargin.toFixed(1) : '0');
+        setEditingMargin(true);
+        setTimeout(() => marginInputRef.current?.focus(), 10);
+    };
+
+    const stopEditingMargin = () => {
+        setEditingMargin(false);
+        
+        const margin = parseFloat(marginPercentage);
+        if (!isNaN(margin) && formData.base_price > 0) {
+            const newSellPrice = calculateSellPriceFromMargin(margin);
+            updateFormData({ sell_price: newSellPrice });
+        }
+    };
+
+    const handleMarginKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === 'Escape') {
+            stopEditingMargin();
+        }
     };
 
     const handleDelete = () => {
@@ -323,7 +388,15 @@ const AddItem = () => {
                                                     name="base_price"
                                                     value={displayBasePrice}
                                                     placeholder="Rp 0"
-                                                    onChange={handleChange}
+                                                    onChange={(e) => {
+                                                        handleChange(e);
+                                                        setTimeout(() => {
+                                                            const profit = calculateProfitPercentage();
+                                                            if (profit !== null) {
+                                                                setMarginPercentage(profit.toFixed(1));
+                                                            }
+                                                        }, 0);
+                                                    }}
                                                     min="0"
                                                     className="w-full"
                                                     required
@@ -336,7 +409,6 @@ const AddItem = () => {
                                                     name="sell_price"
                                                     value={displaySellPrice}
                                                     placeholder="Rp 0"
-                                                    onChange={handleChange}
                                                     min="0"
                                                     className="w-full"
                                                     required
@@ -345,12 +417,29 @@ const AddItem = () => {
                                         </div>
                                         
                                         <div className="text-left">
-                                            {calculateProfitPercentage() !== null ? (
-                                                <span className={`text-lg font-medium ${calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    Margin: {calculateProfitPercentage()!.toFixed(1)}%
-                                                </span>
+                                            {editingMargin ? (
+                                                <div className="flex items-center">
+                                                    <span className="text-lg font-medium mr-1">Margin:</span>
+                                                    <input
+                                                        ref={marginInputRef}
+                                                        type="number"
+                                                        value={marginPercentage}
+                                                        onChange={handleMarginChange}
+                                                        onBlur={stopEditingMargin}
+                                                        onKeyDown={handleMarginKeyDown}
+                                                        className="w-16 p-1 text-lg font-medium border-b-2 border-primary focus:outline-none"
+                                                        step="0.1"
+                                                    />
+                                                    <span className="text-lg font-medium ml-1">%</span>
+                                                </div>
                                             ) : (
-                                                <span className="text-sm text-gray-500">-</span>
+                                                <span 
+                                                    className={`text-lg font-medium cursor-pointer hover:underline ${calculateProfitPercentage() !== null ? calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600' : 'text-gray-500'}`}
+                                                    onClick={startEditingMargin}
+                                                    title="Klik untuk mengubah margin"
+                                                >
+                                                    Margin: {calculateProfitPercentage() !== null ? `${calculateProfitPercentage()!.toFixed(1)}%` : '-'}
+                                                </span>
                                             )}
                                         </div>
                                     </div>
