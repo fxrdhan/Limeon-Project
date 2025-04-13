@@ -121,7 +121,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                     <h3 className="text-lg font-medium mb-3 md:hidden">Daftar Satuan Turunan</h3>
                     <p className="text-sm text-gray-600 mb-3 md:hidden">Satuan yang sudah ditambahkan.</p>
                     <div className="border rounded-lg overflow-hidden flex-grow h-full">
-                        <Table>
+                        <Table className="h-full">
                             <TableHead>
                                 <TableRow>
                                     <TableHeader>Satuan Turunan</TableHeader>
@@ -130,10 +130,10 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                     <TableHeader className="text-center">Aksi</TableHeader>
                                 </TableRow>
                             </TableHead>
-                            <TableBody>
+                            <TableBody className="h-[100px]">
                                 {conversions.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-gray-500 py-4">
+                                    <TableRow className="h-full">
+                                        <TableCell colSpan={4} className="text-center text-gray-500 py-4 align-middle">
                                             Belum ada data konversi
                                         </TableCell>
                                     </TableRow>
