@@ -379,6 +379,25 @@ export const useAddItemForm = (itemId?: string) => {
         },
     });
 
+    // Mutation for adding a new unit
+    const addUnitMutation = useMutation({
+        mutationFn: async (newUnit: { name: string; description: string }) => {
+            const { data, error } = await supabase
+                .from("item_units")
+                .insert(newUnit)
+                .select('id, name, description') // Select newly created data
+                .single();
+            if (error) throw error;
+            return data; // Return new unit data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['units'] }); // Invalidate cache units
+        },
+        onError: (error) => {
+            console.error("Error adding unit:", error);
+        },
+    });
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -572,6 +591,8 @@ export const useAddItemForm = (itemId?: string) => {
         isDirty,
         addCategoryMutation,
         setCategories,
+        addUnitMutation, // Expose unit mutation
+        setUnits,        // Expose setUnits to refresh after add
         setTypes,
     };
 };
