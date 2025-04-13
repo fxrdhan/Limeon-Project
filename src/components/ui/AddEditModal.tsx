@@ -103,7 +103,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 
                 <TransitionChild
                     as={Fragment}
-                    enter="transition-all duration-300 ease-out"
+                    enter="transition-all duration-200 ease-out"
                     enterFrom="opacity-0 scale-95"
                     enterTo="opacity-100 scale-100"
                     leave="transition-all duration-200 ease-in"
