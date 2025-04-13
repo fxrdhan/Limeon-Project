@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useUnitConversion } from "./useUnitConversion";
 import type { UnitConversion } from "./useUnitConversion";
@@ -41,6 +42,7 @@ interface FormData {
 
 export const useAddItemForm = (itemId?: string) => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
     const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null); 
     const [loading, setLoading] = useState(false);
@@ -353,6 +355,25 @@ export const useAddItemForm = (itemId?: string) => {
         }));
     };
 
+    // Mutation for adding a new category
+    const addCategoryMutation = useMutation({
+        mutationFn: async (newCategory: { name: string; description: string }) => {
+            const { data, error } = await supabase
+                .from("item_categories")
+                .insert(newCategory)
+                .select('id, name, description') // Select newly created data
+                .single();
+            if (error) throw error;
+            return data; // Return new category data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['categories'] }); // Invalidate cache categories
+        },
+        onError: (error) => {
+            console.error("Error adding category:", error);
+        },
+    });
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -541,6 +562,8 @@ export const useAddItemForm = (itemId?: string) => {
         handleSubmit,
         unitConversionHook,
         updateFormData,
-        isDirty
+        isDirty,
+        addCategoryMutation,
+        setCategories
     };
 };
