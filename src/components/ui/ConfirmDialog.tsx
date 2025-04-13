@@ -142,21 +142,25 @@ const ConfirmDialogComponent: React.FC = () => {
                         <div className="text-lg font-semibold mb-2">{title}</div>
                         <div className="text-gray-600 mb-6">{message}</div>
 
-                        <div className="flex justify-end space-x-3">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleCancel}
-                            >
-                                {cancelText}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant={variant}
-                                onClick={handleConfirm}
-                            >
-                                {confirmText}
-                            </Button>
+                        <div className="flex justify-between">
+                            <div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleCancel}
+                                >
+                                    {cancelText}
+                                </Button>
+                            </div>
+                            <div>
+                                <Button
+                                    type="button"
+                                    variant={variant}
+                                    onClick={handleConfirm}
+                                >
+                                    {confirmText}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </TransitionChild>
