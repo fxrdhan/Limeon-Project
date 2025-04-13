@@ -80,13 +80,17 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                             <Input label="Nama Kategori" value={name} onChange={(e) => setName(e.target.value)} placeholder="Masukkan nama kategori" required />
                             <Input label="Deskripsi (Opsional)" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Masukkan deskripsi singkat" />
                         </div>
-                        <div className="flex justify-end space-x-3 p-4 border-t">
-                            <Button type="button" variant="outline" onClick={onClose}>
-                                Batal
-                            </Button>
-                            <Button type="button" variant="primary" onClick={handleSave} isLoading={isLoading} disabled={isLoading || !name.trim()}>
-                                Simpan
-                            </Button>
+                        <div className="flex justify-between p-4 border-t">
+                            <div>
+                                <Button type="button" variant="outline" onClick={onClose}>
+                                    Batal
+                                </Button>
+                            </div>
+                            <div>
+                                <Button type="button" variant="primary" onClick={handleSave} isLoading={isLoading} disabled={isLoading || !name.trim()}>
+                                    Simpan
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </TransitionChild>
