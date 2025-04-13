@@ -441,13 +441,30 @@ export const useAddItemForm = (itemId?: string) => {
 
                 if (updateError) throw updateError;
 
-                await supabase
+                // Explicitly wait for the delete operation to complete
+                const { error: deleteError } = await supabase
                     .from("unit_conversions")
                     .delete()
                     .eq("item_id", itemId);
 
+                if (deleteError) {
+                    console.error("Error deleting unit conversions:", deleteError);
+                    throw deleteError;
+                }
+
                 if (unitConversionHook.conversions.length > 0) {
-                    const conversionRecords = unitConversionHook.conversions.map((uc: UnitConversion) => ({
+                    // Check for and filter out any potential duplicate unit names
+                    const uniqueConversions = unitConversionHook.conversions.reduce((acc, current) => {
+                        const isDuplicate = acc.find(item => item.unit.name === current.unit.name);
+                        if (!isDuplicate && current.unit && current.unit.name) {
+                            acc.push(current);
+                        } else if (isDuplicate) {
+                            console.warn(`Duplicate unit conversion found for ${current.unit.name}, skipping...`);
+                        }
+                        return acc;
+                    }, [] as UnitConversion[]);
+
+                    const conversionRecords = uniqueConversions.map((uc: UnitConversion) => ({
                         item_id: itemId,
                         unit_name: uc.unit.name,
                         conversion_rate: uc.conversion,
@@ -456,12 +473,15 @@ export const useAddItemForm = (itemId?: string) => {
                         created_at: new Date()
                     }));
 
-                    const { error: conversionError } = await supabase
-                        .from("unit_conversions")
-                        .insert(conversionRecords);
+                    if (conversionRecords.length > 0) {
+                        const { error: conversionError } = await supabase
+                            .from("unit_conversions")
+                            .insert(conversionRecords);
 
-                    if (conversionError) {
-                        console.error("Error saving unit conversions:", conversionError);
+                        if (conversionError) {
+                            console.error("Error saving unit conversions:", conversionError);
+                            throw conversionError;
+                        }
                     }
                 }
             } else {
