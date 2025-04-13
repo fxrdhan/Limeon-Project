@@ -155,7 +155,7 @@ function ItemList() {
                                 <TableHeader>Satuan Turunan</TableHeader>
                                 <TableHeader className="text-right">Harga Pokok</TableHeader>
                                 <TableHeader className="text-right">Harga Jual</TableHeader>
-                                <TableHeader className="text-right">Stok</TableHeader>
+                                <TableHeader className="text-center">Stok</TableHeader>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -199,7 +199,7 @@ function ItemList() {
                                                 maximumFractionDigits: 0,
                                             })}
                                         </TableCell>
-                                        <TableCell className="text-right">{item.stock}</TableCell>
+                                        <TableCell className="text-center">{item.stock}</TableCell>
                                     </TableRow>
                                 ))
                             )}
