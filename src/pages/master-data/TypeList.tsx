@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from "../../lib/supabase";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
@@ -103,18 +103,6 @@ const TypeList = () => {
         },
     });
 
-    const handleDelete = async (type: ItemType) => {
-        openConfirmDialog({
-            title: "Konfirmasi Hapus",
-            message: `Apakah Anda yakin ingin menghapus jenis item "${type.name}"? Data yang terhubung mungkin akan terpengaruh.`,
-            variant: 'danger',
-            confirmText: "Hapus",
-            onConfirm: () => {
-                deleteTypeMutation.mutate(type.id);
-            }
-        });
-    };
-
     const handleEdit = (type: ItemType) => {
         setEditingType(type);
         setIsEditModalOpen(true);
@@ -153,40 +141,24 @@ const TypeList = () => {
                             <TableRow>
                                 <TableHeader>Nama Jenis</TableHeader>
                                 <TableHeader>Deskripsi</TableHeader>
-                                <TableHeader className="text-center">Aksi</TableHeader>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {types.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-gray-500">
+                                    <TableCell colSpan={2} className="text-center text-gray-500">
                                         Tidak ada data jenis item yang ditemukan
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 types.map((type) => (
-                                    <TableRow key={type.id}>
+                                    <TableRow 
+                                        key={type.id}
+                                        onClick={() => handleEdit(type)}
+                                        className="cursor-pointer"
+                                    >
                                         <TableCell>{type.name}</TableCell>
                                         <TableCell>{type.description}</TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex justify-center space-x-2">
-                                                <Button 
-                                                    variant="secondary" 
-                                                    size="sm"
-                                                    onClick={() => handleEdit(type)}
-                                                >
-                                                    <FaEdit />
-                                                </Button>
-                                                <Button 
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(type)}
-                                                    disabled={deleteTypeMutation.isPending && deleteTypeMutation.variables === type.id}
-                                                >
-                                                    <FaTrash />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
                                     </TableRow>
                                 ))
                             )}
