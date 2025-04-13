@@ -564,6 +564,7 @@ export const useAddItemForm = (itemId?: string) => {
         updateFormData,
         isDirty,
         addCategoryMutation,
-        setCategories
+        setCategories,
+        setTypes,
     };
 };
