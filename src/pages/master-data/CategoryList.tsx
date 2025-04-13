@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { FaPlus, FaEdit } from "react-icons/fa";
@@ -21,6 +21,16 @@ const CategoryList = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (!isEditModalOpen && editingCategory) {
+            timer = setTimeout(() => {
+                setEditingCategory(null);
+            }, 300);
+        }
+        return () => clearTimeout(timer);
+    }, [editingCategory, isEditModalOpen]);
 
     const fetchCategories = async () => {
         const { data, error } = await supabase
@@ -48,10 +58,8 @@ const CategoryList = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['categories'] });
-            console.log("Kategori berhasil dihapus, cache diinvalidasi.");
         },
         onError: (error) => {
-            console.error("Error deleting category:", error);
             alert(`Gagal menghapus kategori: ${error.message}`);
         },
     });
@@ -64,10 +72,8 @@ const CategoryList = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['categories'] });
             setIsAddModalOpen(false);
-            console.log("Kategori baru berhasil ditambahkan.");
         },
         onError: (error) => {
-            console.error("Error adding category:", error);
             alert(`Gagal menambahkan kategori: ${error.message}`);
         },
     });
@@ -85,10 +91,8 @@ const CategoryList = () => {
             queryClient.invalidateQueries({ queryKey: ['categories'] });
             setIsEditModalOpen(false);
             setEditingCategory(null);
-            console.log("Kategori berhasil diperbarui.");
         },
         onError: (error) => {
-            console.error("Error updating category:", error);
             alert(`Gagal memperbarui kategori: ${error.message}`);
         },
     });
@@ -168,33 +172,28 @@ const CategoryList = () => {
                 isLoading={addCategoryMutation.isPending}
             />
 
-            {editingCategory && (
-                <AddCategoryModal
-                    isOpen={isEditModalOpen}
-                    onClose={() => { setIsEditModalOpen(false); setEditingCategory(null); }}
-                    onSubmit={handleModalSubmit}
-                    initialData={editingCategory}
-                    onDelete={(categoryId) => {
-                        openConfirmDialog({
-                            title: "Konfirmasi Hapus",
-                            message: `Apakah Anda yakin ingin menghapus kategori item "${editingCategory.name}"?`,
-                            variant: "danger",
-                            confirmText: "Hapus",
-                            onConfirm: () => {
-                                deleteCategoryMutation.mutate(categoryId);
-                                setIsEditModalOpen(false);
-                                setEditingCategory(null);
-                            }
-                        });
-                    }}
-                    isLoading={updateCategoryMutation.isPending}
-                    isDeleting={deleteCategoryMutation.isPending}
-                />
-            )}
+            <AddCategoryModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)} 
+                onSubmit={handleModalSubmit}
+                initialData={editingCategory || undefined}
+                onDelete={editingCategory ? (categoryId) => {
+                    openConfirmDialog({
+                        title: "Konfirmasi Hapus",
+                        message: `Apakah Anda yakin ingin menghapus kategori item "${editingCategory.name}"?`,
+                        variant: "danger",
+                        confirmText: "Hapus",
+                        onConfirm: () => {
+                            deleteCategoryMutation.mutate(categoryId);
+                            setIsEditModalOpen(false);
+                        }
+                    });
+                } : undefined}
+                isLoading={updateCategoryMutation.isPending}
+                isDeleting={deleteCategoryMutation.isPending}
+            />
         </>
     );
-
-;
 };
 
 export default CategoryList;
