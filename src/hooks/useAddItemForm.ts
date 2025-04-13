@@ -35,13 +35,13 @@ interface FormData {
     is_active: boolean;
     is_medicine: boolean;
     has_expiry_date: boolean;
-    updated_at?: string | null; // Added updated_at field
+    updated_at?: string | null;
 }
 
 export const useAddItemForm = (itemId?: string) => {
     const navigate = useNavigate();
     const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
-    const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null); // Store initial conversions
+    const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null); 
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -67,7 +67,7 @@ export const useAddItemForm = (itemId?: string) => {
         is_active: true,
         is_medicine: true,
         has_expiry_date: false,
-        updated_at: null, // Initialize updated_at
+        updated_at: null,
     });
 
     const updateFormData = (newData: Partial<FormData>) => {
@@ -95,7 +95,7 @@ export const useAddItemForm = (itemId?: string) => {
                     is_active: merged.is_active ?? true,
                     is_medicine: merged.is_medicine ?? true,
                     has_expiry_date: merged.has_expiry_date ?? false,
-                    updated_at: merged.updated_at ?? null, // Include updated_at
+                    updated_at: merged.updated_at ?? null,
                 };
             });
         }
@@ -115,7 +115,7 @@ export const useAddItemForm = (itemId?: string) => {
                 is_active: merged.is_active ?? true,
                 is_medicine: merged.is_medicine ?? true,
                 has_expiry_date: merged.has_expiry_date ?? false,
-                updated_at: merged.updated_at ?? null, // Include updated_at
+                updated_at: merged.updated_at ?? null,
             };
         });
     };
@@ -290,15 +290,14 @@ export const useAddItemForm = (itemId?: string) => {
                 is_active: data.is_active !== undefined ? data.is_active : true,
                 is_medicine: data.is_medicine !== undefined ? data.is_medicine : true,
                 has_expiry_date: data.has_expiry_date !== undefined ? data.has_expiry_date : false,
-                updated_at: data.updated_at, // Store updated_at from fetched data
+                updated_at: data.updated_at,
             });
 
             setInitialFormData(data);
 
-            // Store initial unit conversions after fetching
             const initialConversions = data.unit_conversions ? (typeof data.unit_conversions === 'string' ? JSON.parse(data.unit_conversions) : data.unit_conversions) : [];
             if (Array.isArray(initialConversions)) {
-                setInitialUnitConversions(initialConversions); // Store the raw initial conversion data
+                setInitialUnitConversions(initialConversions);
             } else {
                 setInitialUnitConversions([]);
             }
@@ -338,7 +337,7 @@ export const useAddItemForm = (itemId?: string) => {
                             unit: unit,
                             conversion: conv.conversion_rate || 0,
                             basePrice: conv.base_price,
-                            sellPrice: conv.sell_price, // Add sellPrice to conversion
+                            sellPrice: conv.sell_price,
                         });
                     }
                 }
@@ -453,7 +452,7 @@ export const useAddItemForm = (itemId?: string) => {
                         unit_name: uc.unit.name,
                         conversion_rate: uc.conversion,
                         base_price: uc.basePrice,
-                        sell_price: uc.sellPrice,  // Add sell_price to the record
+                        sell_price: uc.sellPrice,
                         created_at: new Date()
                     }));
 
@@ -499,7 +498,7 @@ export const useAddItemForm = (itemId?: string) => {
                         unit_name: uc.unit.name,
                         conversion_rate: uc.conversion,
                         base_price: uc.basePrice,
-                        sell_price: uc.sellPrice,  // Add sell_price to the record
+                        sell_price: uc.sellPrice,
                         created_at: new Date()
                     }));
 
@@ -526,10 +525,43 @@ export const useAddItemForm = (itemId?: string) => {
         if (!initialFormData) return false;
         const formDataChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const currentConversionsForCompare = unitConversionHook.conversions.map(({ id, unit, ...rest }) => ({ ...rest, to_unit_id: unit.id })); // Prepare for comparison
-        const conversionsChanged = JSON.stringify(currentConversionsForCompare.sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id))) !== JSON.stringify(initialUnitConversions?.sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id)) ?? []);
-        return formDataChanged || conversionsChanged;
+        try {
+            type ConversionForCompare = {
+                to_unit_id?: string;
+                [key: string]: unknown;
+            };
+            
+            const currentConversionsForCompare = unitConversionHook.conversions
+                .filter(item => item && item.unit)
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                .map(({ id, unit, ...rest }) => ({ ...rest, to_unit_id: unit.id }));
+            
+            const initialConversionsForCompare = Array.isArray(initialUnitConversions) 
+                ? initialUnitConversions
+                    .filter(item => item && typeof item === 'object')
+                    .map(item => ({ 
+                        ...item,
+                        to_unit_id: item.to_unit_id || item.unit?.id
+                    }))
+                : [];
+                
+            const safeSortByUnitId = (arr: ConversionForCompare[]) => {
+                return [...arr].sort((a, b) => {
+                    const idA = a?.to_unit_id || '';
+                    const idB = b?.to_unit_id || '';
+                    return idA.localeCompare(idB);
+                });
+            };
+            
+            const sortedCurrent = safeSortByUnitId(currentConversionsForCompare);
+            const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
+            
+            const conversionsChanged = JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
+            return formDataChanged || conversionsChanged;
+        } catch (err) {
+            console.error('Error in isDirty comparison:', err);
+            return true;
+        }
     };
 
     return {
