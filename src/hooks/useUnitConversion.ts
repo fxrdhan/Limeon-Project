@@ -11,6 +11,7 @@ export interface UnitConversion {
     };
     conversion: number;
     basePrice: number;
+    sellPrice: number;
 }
 
 export interface UseUnitConversionReturn {
@@ -19,7 +20,9 @@ export interface UseUnitConversionReturn {
     setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
     basePrice: number;
     setBasePrice: React.Dispatch<React.SetStateAction<number>>;
-    addUnitConversion: (unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => void;
+    sellPrice: number;
+    setSellPrice: React.Dispatch<React.SetStateAction<number>>;
+    addUnitConversion: (unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number, sellPrice?: number }) => void;
     removeUnitConversion: (id: string) => void;
     unitConversionFormData: {
         unit: string;
@@ -43,6 +46,7 @@ export interface UnitData {
 export const useUnitConversion = (): UseUnitConversionReturn => {
     const [baseUnit, setBaseUnit] = useState<string>("");
     const [basePrice, setBasePrice] = useState<number>(0);
+    const [sellPrice, setSellPrice] = useState<number>(0);
     const [unitConversions, setUnitConversions] = useState<UnitConversion[]>([]);
     const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
     const [skipRecalculation, setSkipRecalculation] = useState<boolean>(false);
@@ -67,18 +71,23 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         fetchUnits();
     }, []);
 
-    const addUnitConversion = useCallback((unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number }) => {
+    const addUnitConversion = useCallback((unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number, sellPrice?: number }) => {
         const calculatedBasePrice = unitConversion.basePrice !== undefined 
             ? unitConversion.basePrice 
             : basePrice / unitConversion.conversion;
+        
+        const calculatedSellPrice = unitConversion.sellPrice !== undefined
+            ? unitConversion.sellPrice
+            : sellPrice / unitConversion.conversion;
         
         const newUnitConversion: UnitConversion = {
             ...unitConversion,
             id: Date.now().toString(),
             basePrice: calculatedBasePrice,
+            sellPrice: calculatedSellPrice,
         };
         setUnitConversions(prevConversions => [...prevConversions, newUnitConversion]);
-    }, [basePrice]);
+    }, [basePrice, sellPrice]);
 
     const removeUnitConversion = useCallback((id: string) => {
         setUnitConversions(prevConversions => prevConversions.filter(uc => uc.id !== id));
@@ -90,15 +99,16 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
             return;
         }
         
-        if (basePrice <= 0 || unitConversions.length === 0) return;
+        if ((basePrice <= 0 && sellPrice <= 0) || unitConversions.length === 0) return;
         
         setUnitConversions(prevConversions => 
             prevConversions.map(uc => ({
                 ...uc,
-                basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0
+                basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0,
+                sellPrice: sellPrice > 0 ? (sellPrice / uc.conversion) : 0
             }))
         );
-    }, [basePrice, skipRecalculation, unitConversions.length]);
+    }, [basePrice, sellPrice, skipRecalculation, unitConversions.length]);
 
     const skipNextRecalculation = useCallback(() => {
         setSkipRecalculation(true);
@@ -113,6 +123,8 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         setBaseUnit,
         basePrice,
         setBasePrice,
+        sellPrice,
+        setSellPrice,
         conversions: unitConversions,
         addUnitConversion,
         removeUnitConversion,
