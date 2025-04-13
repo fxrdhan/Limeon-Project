@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FaUserCircle, FaPencilAlt } from 'react-icons/fa';
+import { ImageUploader } from '../ui/ImageUploader'; // Import komponen baru
 
 interface NavbarProps {
     sidebarCollapsed: boolean;
@@ -11,6 +12,7 @@ interface NavbarProps {
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     const { user, logout } = useAuthStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [isUploading, setIsUploading] = useState(false); // State untuk loading upload
     const [currentTime, setCurrentTime] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -21,35 +23,6 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
     const handleLogout = async () => {
         await logout();
-    };
-
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        const maxSize = 1 * 1024 * 1024; // 1MB limit
-        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-
-        if (!validTypes.includes(file.type)) {
-            alert('Tipe file tidak valid. Harap unggah file PNG atau JPG.');
-            return;
-        }
-        if (file.size > maxSize) {
-            alert('Ukuran file terlalu besar. Maksimum 1MB.');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-                useAuthStore.getState().updateProfilePhoto(reader.result);
-            }
-        };
-        reader.onerror = (error) => {
-            console.error("Error reading file:", error);
-            alert("Gagal membaca file gambar.");
-        };
     };
 
     useEffect(() => {
@@ -154,7 +127,21 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                         >
                             <div className="p-4">
                                 <div className="flex justify-center mb-3">
-                                    <div className="relative group">
+                                    <ImageUploader
+                                        id="profile-upload"
+                                        className="w-16 h-16"
+                                        shape="full" // Match the rounded-full styling of profile images
+                                        onImageUpload={async (base64) => {
+                                            setIsUploading(true);
+                                            try {
+                                                await useAuthStore.getState().updateProfilePhoto(base64);
+                                            } finally {
+                                                setIsUploading(false);
+                                            }
+                                        }}
+                                        disabled={isUploading}
+                                        defaultIcon={<FaPencilAlt className="text-white text-lg" />}
+                                    >
                                         {user?.profilephoto ? (
                                             <img src={user.profilephoto} alt="Profile" className="w-16 h-16 rounded-full object-cover border-2 border-gray-200" />
                                         ) : (
@@ -162,17 +149,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                                 {user?.name ? user.name.charAt(0).toUpperCase() : <FaUserCircle />}
                                             </div>
                                         )}
-                                        <label htmlFor="profile-upload" className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                            <FaPencilAlt className="text-white text-lg" />
-                                        </label>
-                                        <input
-                                            id="profile-upload"
-                                            type="file"
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={handleImageUpload}
-                                        />
-                                    </div>
+                                    </ImageUploader>
                                 </div>
                                 <p className="text-center text-sm text-gray-700 font-medium truncate" title={user?.email || ''}>
                                     {user?.email || 'Email tidak tersedia'}

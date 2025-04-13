@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaEdit, FaCheck, FaTimes, FaPencilAlt, FaSpinner } from 'react-icons/fa';
 import { Button } from './Button';
+import { ImageUploader } from './ImageUploader';
 
 interface FieldConfig {
     key: string;
@@ -39,12 +40,11 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
     const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({});
     const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
-    const [loading, setLoading] = useState<Record<string, boolean>>({});
     const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [loading, setLoading] = useState<Record<string, boolean>>({});
     const [localData, setLocalData] = useState<Record<string, string | number | boolean | null>>(data);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (isOpen && data) {
             const initialValues: Record<string, string | number | boolean | null> = {};
             fields.forEach(field => {
@@ -79,7 +79,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
             const updatedData = { [key]: editValues[key] };
             await onSave(updatedData);
 
-            // Update the local data immediately after successful save
             setLocalData(prev => ({
                 ...prev,
                 [key]: editValues[key]
@@ -107,57 +106,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         }
     };
 
-    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !onImageSave) return;
-
-        const supplierId = data?.id as string;
-        if (!supplierId) {
-            console.error("Supplier ID not found in modal data.");
-            alert("Tidak dapat mengunggah gambar: ID supplier tidak ditemukan.");
-            return;
-        }
-
-        const maxSize = 1 * 1024 * 1024;
-        const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-
-        if (!validTypes.includes(file.type)) {
-            alert('Tipe file tidak valid. Harap unggah file PNG atau JPG.');
-            return;
-        }
-        if (file.size > maxSize) {
-            alert('Ukuran file terlalu besar. Maksimum 1MB.');
-            return;
-        }
-
-        setIsUploadingImage(true);
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onloadend = async () => {
-            if (typeof reader.result === 'string') {
-                try {
-                    await onImageSave({ supplierId, imageBase64: reader.result as string });
-                    setCurrentImageUrl(reader.result as string);
-                } catch (uploadError) {
-                    console.error("Error during image save callback:", uploadError);
-                    alert("Gagal menyimpan gambar supplier.");
-                } finally {
-                    setIsUploadingImage(false);
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                    }
-                }
-            } else {
-                setIsUploadingImage(false);
-            }
-        };
-        reader.onerror = (error) => {
-            console.error("Error reading file:", error);
-            alert("Gagal membaca file gambar.");
-            setIsUploadingImage(false);
-        };
-    };
-
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" onClick={handleBackdropClick}>
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
@@ -176,25 +124,35 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                     {(imageUrl || imagePlaceholder) && (
                         <div className="flex justify-center mb-6">
                             <div className="relative group w-48">
-                                <img
-                                    src={currentImageUrl || imagePlaceholder}
-                                    alt={String(data.name ?? 'Detail')}
-                                    className="w-full h-auto aspect-video object-cover rounded-md border border-gray-200"
-                                />
-                                {onImageSave && (
-                                    <label
-                                        htmlFor="supplier-image-upload"
-                                        className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                    >
-                                        {isUploadingImage ? (
-                                            <FaSpinner className="text-white text-xl animate-spin" />
-                                        ) : (
-                                            <FaPencilAlt className="text-white text-xl" />
-                                        )}
-                                    </label>
-                                )}
+                                <ImageUploader
+                                    id="supplier-image-upload"
+                                    className="w-full"
+                                    shape="rounded" // Match the rounded-md of the image
+                                    onImageUpload={async (base64) => {
+                                        if (onImageSave && data?.id) {
+                                            setIsUploadingImage(true);
+                                            try {
+                                                await onImageSave({ supplierId: data.id as string, imageBase64: base64 });
+                                                setCurrentImageUrl(base64);
+                                            } finally {
+                                                setIsUploadingImage(false);
+                                            }
+                                        } else {
+                                            console.error("onImageSave prop or supplier ID is missing.");
+                                            alert("Gagal mengunggah gambar: Konfigurasi tidak lengkap.");
+                                        }
+                                    }}
+                                    disabled={isUploadingImage || !onImageSave}
+                                    loadingIcon={<FaSpinner className="text-white text-xl animate-spin" />}
+                                    defaultIcon={<FaPencilAlt className="text-white text-xl" />}
+                                >
+                                    <img
+                                        src={currentImageUrl || imagePlaceholder}
+                                        alt={String(data.name ?? 'Detail')}
+                                        className="w-full h-auto aspect-video object-cover rounded-md border border-gray-200"
+                                    />
+                                </ImageUploader>
                             </div>
-                            <input type="file" id="supplier-image-upload" className="hidden" accept="image/png,image/jpeg,image/jpg" onChange={handleImageUpload} disabled={isUploadingImage} ref={fileInputRef} />
                         </div>
                     )}
 
