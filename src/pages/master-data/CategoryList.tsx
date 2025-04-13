@@ -168,6 +168,7 @@ const CategoryList = () => {
                 onClose={() => setIsAddModalOpen(false)}
                 onSubmit={handleModalSubmit}
                 isLoading={addCategoryMutation.isPending}
+                entityName="Kategori"
             />
 
             <AddCategoryModal
@@ -189,6 +190,7 @@ const CategoryList = () => {
                 } : undefined}
                 isLoading={updateCategoryMutation.isPending}
                 isDeleting={deleteCategoryMutation.isPending}
+                entityName="Kategori"
             />
         </>
     );
