@@ -398,7 +398,7 @@ const AddItem = () => {
                                         </FormField>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                         <FormField label="Jenis Produk">
                                             <div className="space-x-6 mt-6">
                                                 <label className="inline-flex items-center">
@@ -423,7 +423,17 @@ const AddItem = () => {
                                                 </label>
                                             </div>
                                         </FormField>
-
+                                        
+                                        <FormField label="Barcode">
+                                            <Input
+                                                name="barcode"
+                                                value={formData.barcode}
+                                                onChange={handleChange}
+                                                className="w-full"
+                                                placeholder="Masukkan barcode item"
+                                            />
+                                        </FormField>
+                                        
                                         <FormField label="Rak">
                                             <Input
                                                 name="rack"

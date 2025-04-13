@@ -30,6 +30,7 @@ interface FormData {
     category_id: string;
     unit_id: string;
     rack: string;
+    barcode: string;
     description: string;
     base_price: number;
     sell_price: number;
@@ -63,6 +64,7 @@ export const useAddItemForm = (itemId?: string) => {
         category_id: "",
         unit_id: "",
         rack: "",
+        barcode: "",
         description: "",
         base_price: 0,
         sell_price: 0,
@@ -91,6 +93,7 @@ export const useAddItemForm = (itemId?: string) => {
                     category_id: merged.category_id ?? "",
                     unit_id: merged.unit_id ?? "",
                     rack: merged.rack ?? "",
+                    barcode: merged.barcode ?? "",
                     description: merged.description ?? "",
                     base_price: merged.base_price ?? 0,
                     sell_price: merged.sell_price ?? 0,
@@ -111,6 +114,7 @@ export const useAddItemForm = (itemId?: string) => {
                 category_id: merged.category_id ?? "",
                 unit_id: merged.unit_id ?? "",
                 rack: merged.rack ?? "",
+                barcode: merged.barcode ?? "",
                 description: merged.description ?? "",
                 base_price: merged.base_price ?? 0,
                 sell_price: merged.sell_price ?? 0,
@@ -241,6 +245,7 @@ export const useAddItemForm = (itemId?: string) => {
                 category_id: data.category_id || "",
                 unit_id: data.unit_id || "",
                 rack: data.rack || "",
+                barcode: data.barcode || "",
                 description: data.description || "",
                 base_price: data.base_price || 0,
                 sell_price: data.sell_price || 0,
@@ -391,6 +396,7 @@ export const useAddItemForm = (itemId?: string) => {
                     description: formData.description || null,
                     is_active: formData.is_active,
                     rack: formData.rack || null,
+                    barcode: formData.barcode || null,
                     code: formData.code,
                     is_medicine: formData.is_medicine,
                     base_unit: unitConversionHook.baseUnit,
@@ -460,6 +466,7 @@ export const useAddItemForm = (itemId?: string) => {
                     description: formData.description || null,
                     is_active: formData.is_active,
                     rack: formData.rack || null,
+                    barcode: formData.barcode || null,
                     code: formData.code,
                     is_medicine: formData.is_medicine,
                     base_unit: unitConversionHook.baseUnit,
