@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
-import { FaArrowLeft, FaSave, FaTrash } from 'react-icons/fa';
+import { FaArrowLeft, FaSave, FaTrash, FaHistory } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
@@ -17,6 +17,20 @@ const selectClassName = "bg-white w-full p-2 border border-gray-300 rounded-md f
 const addButtonClassName = "ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600";
 const radioGroupClassName = "space-x-6";
 const textareaClassName = "w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
+
+const formatDateTime = (isoString: string | null | undefined): string => {
+    if (!isoString) return "-";
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleString('id-ID', {
+            day: '2-digit', month: 'long', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
+        return "Invalid Date";
+    }
+};
 
 const AddItem = () => {
     const navigate = useNavigate();
@@ -87,7 +101,7 @@ const AddItem = () => {
     };
 
     const handleDelete = () => {
-        if (!id) return; // Should not happen if isEditMode is true
+        if (!id) return;
         openConfirmDialog({
             title: "Konfirmasi Hapus",
             message: `Apakah Anda yakin ingin menghapus item "${formData.name}"? Stok terkait akan terpengaruh.`,
@@ -113,7 +127,7 @@ const AddItem = () => {
     return (
         <div>
             <Card>
-                <CardHeader className="flex justify-between items-center">
+                <CardHeader className="flex items-center">
                     <Button
                         variant="text"
                         size="sm"
@@ -124,7 +138,14 @@ const AddItem = () => {
                         <FaArrowLeft size={18} />
                         <span className="ml-2">Back</span>
                     </Button>
-                    <CardTitle className="text-center flex-grow">{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
+                    
+                    <CardTitle className="flex-grow text-center">{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
+                    
+                    {isEditMode && formData.updated_at && (
+                        <span className="text-md text-gray-500 italic whitespace-nowrap flex items-center flex-shrink-0 ml-4">
+                            <FaHistory className="mr-1" size={14} /> {formatDateTime(formData.updated_at)}
+                        </span>
+                    )}
                 </CardHeader>
 
                 <form onSubmit={handleSubmit}>

@@ -35,6 +35,7 @@ interface FormData {
     is_active: boolean;
     is_medicine: boolean;
     has_expiry_date: boolean;
+    updated_at?: string | null; // Added updated_at field
 }
 
 export const useAddItemForm = (itemId?: string) => {
@@ -66,6 +67,7 @@ export const useAddItemForm = (itemId?: string) => {
         is_active: true,
         is_medicine: true,
         has_expiry_date: false,
+        updated_at: null, // Initialize updated_at
     });
 
     const updateFormData = (newData: Partial<FormData>) => {
@@ -86,6 +88,7 @@ export const useAddItemForm = (itemId?: string) => {
                     is_active: merged.is_active ?? true,
                     is_medicine: merged.is_medicine ?? true,
                     has_expiry_date: merged.has_expiry_date ?? false,
+                    updated_at: merged.updated_at ?? null, // Include updated_at
                 };
             });
         }
@@ -105,6 +108,7 @@ export const useAddItemForm = (itemId?: string) => {
                 is_active: merged.is_active ?? true,
                 is_medicine: merged.is_medicine ?? true,
                 has_expiry_date: merged.has_expiry_date ?? false,
+                updated_at: merged.updated_at ?? null, // Include updated_at
             };
         });
     };
@@ -246,7 +250,7 @@ export const useAddItemForm = (itemId?: string) => {
             const { data, error } = await supabase
                 .from("items")
                 .select(`
-                    *,
+                    *, updated_at,
                     unit_conversions
                 `)
                 .eq("id", id)
@@ -269,6 +273,7 @@ export const useAddItemForm = (itemId?: string) => {
                 is_active: data.is_active !== undefined ? data.is_active : true,
                 is_medicine: data.is_medicine !== undefined ? data.is_medicine : true,
                 has_expiry_date: data.has_expiry_date !== undefined ? data.has_expiry_date : false,
+                updated_at: data.updated_at, // Store updated_at from fetched data
             });
 
             setInitialFormData(data);
