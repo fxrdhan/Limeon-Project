@@ -16,8 +16,8 @@ interface DetailEditModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
-    onImageSave?: (imageBase64: string) => Promise<void>;
-    onDeleteRequest?: (data: Record<string, unknown>) => void;
+    onImageSave?: (data: { supplierId: string; imageBase64: string }) => Promise<void>;
+    onDeleteRequest?: (data: Record<string, string | number | boolean | null>) => void;
     deleteButtonLabel?: string;
     imageUrl?: string;
     imagePlaceholder?: string;
@@ -38,6 +38,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
 }) => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
     const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({});
+    const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
     const [loading, setLoading] = useState<Record<string, boolean>>({});
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,8 +50,9 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                 initialValues[field.key] = data[field.key];
             });
             setEditValues(initialValues);
+            setCurrentImageUrl(imageUrl);
         }
-    }, [isOpen, data, fields]);
+    }, [isOpen, data, fields, imageUrl]);
 
     if (!isOpen) return null;
 
@@ -101,6 +103,13 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         const file = event.target.files?.[0];
         if (!file || !onImageSave) return;
 
+        const supplierId = data?.id as string;
+        if (!supplierId) {
+            console.error("Supplier ID not found in modal data.");
+            alert("Tidak dapat mengunggah gambar: ID supplier tidak ditemukan.");
+            return;
+        }
+
         const maxSize = 1 * 1024 * 1024;
         const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
 
@@ -119,7 +128,8 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         reader.onloadend = async () => {
             if (typeof reader.result === 'string') {
                 try {
-                    await onImageSave(reader.result);
+                    await onImageSave({ supplierId, imageBase64: reader.result as string });
+                    setCurrentImageUrl(reader.result as string);
                 } catch (uploadError) {
                     console.error("Error during image save callback:", uploadError);
                     alert("Gagal menyimpan gambar supplier.");
@@ -159,7 +169,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                         <div className="flex justify-center mb-6">
                             <div className="relative group w-48">
                                 <img
-                                    src={imageUrl || imagePlaceholder}
+                                    src={currentImageUrl || imagePlaceholder}
                                     alt={String(data.name ?? 'Detail')}
                                     className="w-full h-auto aspect-video object-cover rounded-md border border-gray-200"
                                 />

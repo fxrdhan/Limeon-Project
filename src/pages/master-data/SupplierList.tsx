@@ -63,7 +63,7 @@ const SupplierList = () => {
         if (error) throw error;
     };
 
-    const updateSupplierMutation = useMutation({
+    const updateSupplierMutation = useMutation<void, Error, Partial<Supplier>>({
         mutationFn: updateSupplier,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['suppliers'] });
@@ -89,7 +89,7 @@ const SupplierList = () => {
         },
     });
 
-    const updateSupplierImageMutation = useMutation({
+    const updateSupplierImageMutation = useMutation<void, Error, { supplierId: string; imageBase64: string }>({
         mutationFn: async ({ supplierId, imageBase64 }: { supplierId: string, imageBase64: string }) => {
             const { error } = await supabase
                 .from('suppliers')
@@ -97,8 +97,9 @@ const SupplierList = () => {
                 .eq('id', supplierId);
             if (error) throw error;
         },
-        onSuccess: () => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+            setSelectedSupplier(prev => prev ? { ...prev, image_url: variables.imageBase64 } : null);
         },
         onError: (error) => {
             console.error("Error updating supplier image:", error);
@@ -126,9 +127,9 @@ const SupplierList = () => {
         });
     };
 
-    const handleSupplierImageSave = async (imageBase64: string) => {
+    const handleSupplierImageSave = async ({ supplierId, imageBase64 }: { supplierId: string; imageBase64: string }) => {
         if (!selectedSupplier) return;
-        await updateSupplierImageMutation.mutateAsync({ supplierId: selectedSupplier.id, imageBase64 });
+        await updateSupplierImageMutation.mutateAsync({ supplierId, imageBase64 });
     };
 
     const supplierFields: FieldConfig[] = [
@@ -142,6 +143,7 @@ const SupplierList = () => {
     const transformSupplierForModal = (supplier: Supplier | null): Record<string, string | number | boolean | null> => {
         if (!supplier) return {};
         return {
+            id: supplier.id,
             name: supplier.name,
             address: supplier.address ?? '',
             phone: supplier.phone ?? '',
