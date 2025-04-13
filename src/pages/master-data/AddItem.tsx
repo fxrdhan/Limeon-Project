@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { AddCategoryModal } from "../../components/ui/AddCategoryModal";
 import { Input } from "../../components/ui/Input";
 import { FaArrowLeft, FaSave, FaTrash, FaHistory } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
@@ -37,12 +38,13 @@ const AddItem = () => {
     const confirmDialog = useConfirmDialog();
     const [editingMargin, setEditingMargin] = useState(false);
     const [marginPercentage, setMarginPercentage] = useState<string>('0');
+    const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
     const marginInputRef = useRef<HTMLInputElement>(null);
 
     const {
         formData, displayBasePrice, displaySellPrice, categories, types, units,
         saving, loading, isEditMode, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
-        unitConversionHook, isDirty
+        unitConversionHook, isDirty, addCategoryMutation, setCategories
     } = useAddItemForm(id || undefined);
 
     const deleteItemMutation = useMutation({
@@ -186,6 +188,31 @@ const AddItem = () => {
         });
     };
 
+    const handleSaveCategory = async (categoryData: { name: string; description: string }) => {
+        try {
+            const newCategory = await addCategoryMutation.mutateAsync(categoryData);
+            
+            // Fetch updated categories list after adding a new category
+            const { data: updatedCategories } = await supabase
+                .from("item_categories")
+                .select("id, name")
+                .order("name");
+                
+            if (updatedCategories) {
+                // Update the categories state with the new data
+                setCategories(updatedCategories);
+            }
+            
+            if (newCategory?.id) {
+                updateFormData({ category_id: newCategory.id });
+            }
+            setIsAddCategoryModalOpen(false);
+        } catch (error) {
+            console.error("Failed to save category:", error);
+            alert("Gagal menyimpan kategori baru.");
+        }
+    };
+
     if (loading) {
         return (
             <Card>
@@ -267,7 +294,7 @@ const AddItem = () => {
                                                 <button
                                                     type="button"
                                                     className={addButtonClassName}
-                                                    onClick={() => navigate("/master-data/categories/add")}
+                                                    onClick={() => setIsAddCategoryModalOpen(true)}
                                                 >
                                                     +
                                                 </button>
@@ -550,6 +577,13 @@ const AddItem = () => {
                         </Button>
                     </CardFooter>
                 </form>
+                
+                <AddCategoryModal
+                    isOpen={isAddCategoryModalOpen}
+                    onClose={() => setIsAddCategoryModalOpen(false)}
+                    onSave={handleSaveCategory}
+                    isLoading={addCategoryMutation.isPending}
+                />
             </Card>
         </div>
     );
