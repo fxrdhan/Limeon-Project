@@ -12,10 +12,8 @@ import UnitConversionManager from "../../components/tools/UnitConversionManager"
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { supabase } from "../../lib/supabase";
 
-const inputClassName = "w-full";
 const selectClassName = "bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
 const addButtonClassName = "ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600";
-const radioGroupClassName = "space-x-6";
 const textareaClassName = "w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
 
 const formatDateTime = (isoString: string | null | undefined): string => {
@@ -157,7 +155,7 @@ const AddItem = () => {
                                         name="name"
                                         value={formData.name}
                                         onChange={handleChange}
-                                        className={inputClassName}
+                                        className="w-full"
                                         required
                                     />
                                 </FormField>
@@ -167,7 +165,7 @@ const AddItem = () => {
                                         name="code"
                                         value={formData.code}
                                         readOnly={true}
-                                        className={inputClassName}
+                                        className="w-full"
                                     />
                                 </FormField>
                             </div>
@@ -261,13 +259,13 @@ const AddItem = () => {
                                         name="rack"
                                         value={formData.rack}
                                         onChange={handleChange}
-                                        className={inputClassName}
+                                        className="w-full"
                                     />
                                 </FormField>
                             </div>
 
                             <FormField label="Jenis Produk">
-                                <div className={radioGroupClassName}>
+                                <div className="space-x-6">
                                     <label className="inline-flex items-center">
                                         <input
                                             type="radio"
@@ -309,7 +307,7 @@ const AddItem = () => {
                                         type="text"
                                         value={unitConversionHook.baseUnit}
                                         readOnly={true}
-                                        className={inputClassName}
+                                        className="w-full"
                                     />
                                 </FormField>
                                 
@@ -321,7 +319,7 @@ const AddItem = () => {
                                         placeholder="Rp 0"
                                         onChange={handleChange}
                                         min="0"
-                                        className={inputClassName}
+                                        className="w-full"
                                         required
                                     />
                                 </FormField>
@@ -334,7 +332,7 @@ const AddItem = () => {
                                         placeholder="Rp 0"
                                         onChange={handleChange}
                                         min="0"
-                                        className={inputClassName}
+                                        className="w-full"
                                         required
                                     />
                                 </FormField>
@@ -356,7 +354,7 @@ const AddItem = () => {
                         <FormSection title="Pengaturan Tambahan">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField label="Status Jual">
-                                    <div className={radioGroupClassName}>
+                                    <div className="space-x-6">
                                         <label className="inline-flex items-center">
                                             <input
                                                 type="radio"
@@ -384,7 +382,7 @@ const AddItem = () => {
                                         name="min_stock"
                                         value={formData.min_stock}
                                         onChange={handleChange}
-                                        className={inputClassName}
+                                        className="w-full"
                                         onFocus={(e) => e.target.select()}
                                         onClick={(e) => (e.target as HTMLInputElement).select()}
                                         required
