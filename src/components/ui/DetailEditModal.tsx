@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FaEdit, FaCheck, FaTimes, FaPencilAlt, FaSpinner } from 'react-icons/fa';
 import { Button } from './Button';
@@ -39,6 +39,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     onDeleteRequest,
     deleteButtonLabel = 'Hapus'
 }) => {
+    const modalRef = useRef<HTMLDivElement>(null);
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
     const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({});
     const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
@@ -108,7 +109,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     };
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (e.target === e.currentTarget) {
+        if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
             onClose();
         }
     };
@@ -149,16 +150,13 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                     leaveFrom="opacity-100 scale-100"
                     leaveTo="opacity-0 scale-95"
                 >
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden relative mx-4">
+                    <div 
+                        ref={modalRef}
+                        className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden relative mx-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="flex justify-between items-center p-4 border-b">
                             <h2 className="text-xl font-semibold">{title}</h2>
-                            <Button
-                                variant="text"
-                                onClick={onClose}
-                                className="text-gray-500 hover:text-gray-700 p-1"
-                            >
-                                <FaTimes size={20} />
-                            </Button>
                         </div>
 
                         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
