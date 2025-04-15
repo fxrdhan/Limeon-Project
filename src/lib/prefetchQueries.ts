@@ -49,6 +49,8 @@ const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
       base_price,
       sell_price,
       stock,
+      barcode,
+      unit_conversions,
       category_id,
       type_id,
       unit_id
@@ -84,6 +86,8 @@ const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
         code: item.code,
         base_price: item.base_price,
         sell_price: item.sell_price,
+        barcode: item.barcode,
+        unit_conversions: typeof item.unit_conversions === 'string' ? JSON.parse(item.unit_conversions || '[]') : (item.unit_conversions || []),
         stock: item.stock,
         category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
         type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
