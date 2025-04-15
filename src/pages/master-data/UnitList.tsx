@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from "../../lib/supabase";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
@@ -8,6 +8,7 @@ import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from ".
 import { Loading } from "../../components/ui/Loading";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { AddCategoryModal } from "../../components/ui/AddEditModal";
+import { Pagination } from "../../components/ui/Pagination";
 
 interface Unit {
     id: string;
@@ -21,6 +22,8 @@ const UnitList = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -32,22 +35,30 @@ const UnitList = () => {
         return () => clearTimeout(timer);
     }, [editingUnit, isEditModalOpen]);
 
-    const fetchUnits = async () => {
-        const { data, error } = await supabase
+    const fetchUnits = async (page: number, limit: number) => {
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        const { data, error, count } = await supabase
             .from("item_units")
-            .select("id, name, description")
-            .order("name");
+            .select("id, name, description", { count: 'exact' })
+            .order("name")
+            .range(from, to);
 
         if (error) throw error;
-        return data || [];
+        return { units: data || [], totalItems: count || 0 };
     };
 
-    const { data: units = [], isLoading, isError, error } = useQuery<Unit[]>({
-        queryKey: ['units'],
-        queryFn: fetchUnits,
+    const { data, isLoading, isError, error, isFetching } = useQuery({
+        queryKey: ['units', currentPage, itemsPerPage],
+        queryFn: () => fetchUnits(currentPage, itemsPerPage),
+        placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
         refetchOnMount: true,
     });
+
+    const units = data?.units || [];
+    const totalItems = data?.totalItems || 0;
 
     const queryError = error instanceof Error ? error : null;
 
@@ -123,9 +134,20 @@ const UnitList = () => {
         }
     };
 
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
+
+    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1);
+    };
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
     return (
         <>
-            <Card>
+            <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Satuan Item</h1>
                     <Button
@@ -143,34 +165,45 @@ const UnitList = () => {
                 ) : isError ? (
                     <div className="text-center p-6 text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>
                 ) : (
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeader>Nama Satuan</TableHeader>
-                                <TableHeader>Deskripsi</TableHeader>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {units.length === 0 ? (
+                    <>
+                        <Table>
+                            <TableHead>
                                 <TableRow>
-                                    <TableCell colSpan={2} className="text-center text-gray-500">
-                                        Tidak ada data satuan yang ditemukan
-                                    </TableCell>
+                                    <TableHeader>Nama Satuan</TableHeader>
+                                    <TableHeader>Deskripsi</TableHeader>
                                 </TableRow>
-                            ) : (
-                                units.map((unit) => (
-                                    <TableRow
-                                        key={unit.id}
-                                        onClick={() => handleEdit(unit)}
-                                        className="cursor-pointer"
-                                    >
-                                        <TableCell>{unit.name}</TableCell>
-                                        <TableCell>{unit.description || '-'}</TableCell>
+                            </TableHead>
+                            <TableBody>
+                                {units.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={2} className="text-center text-gray-500">
+                                            Tidak ada data satuan yang ditemukan
+                                        </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                                ) : (
+                                    units.map((unit) => (
+                                        <TableRow
+                                            key={unit.id}
+                                            onClick={() => handleEdit(unit)}
+                                            className="cursor-pointer hover:bg-blue-50"
+                                        >
+                                            <TableCell>{unit.name}</TableCell>
+                                            <TableCell>{unit.description || '-'}</TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            itemsPerPage={itemsPerPage}
+                            itemsCount={units.length}
+                            onPageChange={handlePageChange}
+                            onItemsPerPageChange={handleItemsPerPageChange}
+                        />
+                    </>
                 )}
             </Card>
 
