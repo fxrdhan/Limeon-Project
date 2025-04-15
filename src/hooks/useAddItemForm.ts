@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -136,6 +135,7 @@ export const useAddItemForm = (itemId?: string) => {
         if (!itemId) {
             setInitialFormData(formData);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemId]);
 
     useEffect(() => {
@@ -189,7 +189,7 @@ export const useAddItemForm = (itemId?: string) => {
         if (unitConversionHook.basePrice > 0 && unitConversionHook.conversions.length > 0) {
             unitConversionHook.recalculateBasePrices();
         }
-    }, [unitConversionHook.basePrice, unitConversionHook.recalculateBasePrices, unitConversionHook.conversions.length]);
+    }, [unitConversionHook.basePrice, unitConversionHook.recalculateBasePrices, unitConversionHook.conversions.length, unitConversionHook]);
 
     useEffect(() => {
         unitConversionHook.setSellPrice(formData.sell_price || 0);
@@ -300,7 +300,7 @@ export const useAddItemForm = (itemId?: string) => {
                             unit: unit,
                             conversion: conv.conversion_rate || 0,
                             basePrice: conv.base_price,
-                            sellPrice: conv.sell_price,
+                            sellPrice: conv.sellPrice,
                         });
                     }
                 }
@@ -360,38 +360,36 @@ export const useAddItemForm = (itemId?: string) => {
         }));
     };
 
-    // Mutation for adding a new category
     const addCategoryMutation = useMutation({
         mutationFn: async (newCategory: { name: string; description: string }) => {
             const { data, error } = await supabase
                 .from("item_categories")
                 .insert(newCategory)
-                .select('id, name, description') // Select newly created data
+                .select('id, name, description')
                 .single();
             if (error) throw error;
-            return data; // Return new category data
+            return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['categories'] }); // Invalidate cache categories
+            queryClient.invalidateQueries({ queryKey: ['categories'] });
         },
         onError: (error) => {
             console.error("Error adding category:", error);
         },
     });
 
-    // Mutation for adding a new unit
     const addUnitMutation = useMutation({
         mutationFn: async (newUnit: { name: string; description: string }) => {
             const { data, error } = await supabase
                 .from("item_units")
                 .insert(newUnit)
-                .select('id, name, description') // Select newly created data
+                .select('id, name, description')
                 .single();
             if (error) throw error;
-            return data; // Return new unit data
+            return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['units'] }); // Invalidate cache units
+            queryClient.invalidateQueries({ queryKey: ['units'] });
         },
         onError: (error) => {
             console.error("Error adding unit:", error);
@@ -429,7 +427,6 @@ export const useAddItemForm = (itemId?: string) => {
 
                 if (updateError) throw updateError;
 
-                // Explicitly wait for the delete operation to complete
                 const { error: deleteError } = await supabase
                     .from("unit_conversions")
                     .delete()
@@ -441,7 +438,6 @@ export const useAddItemForm = (itemId?: string) => {
                 }
 
                 if (unitConversionHook.conversions.length > 0) {
-                    // Check for and filter out any potential duplicate unit names
                     const uniqueConversions = unitConversionHook.conversions.reduce((acc, current) => {
                         const isDuplicate = acc.find(item => item.unit.name === current.unit.name);
                         if (!isDuplicate && current.unit && current.unit.name) {
@@ -542,8 +538,7 @@ export const useAddItemForm = (itemId?: string) => {
             
             const currentConversionsForCompare = unitConversionHook.conversions
                 .filter(item => item && item.unit)
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                .map(({ id, unit, ...rest }) => ({ ...rest, to_unit_id: unit.id }));
+                .map(({ unit, ...rest }) => ({ ...rest, to_unit_id: unit.id }));
             
             const initialConversionsForCompare = Array.isArray(initialUnitConversions) 
                 ? initialUnitConversions
@@ -591,8 +586,8 @@ export const useAddItemForm = (itemId?: string) => {
         isDirty,
         addCategoryMutation,
         setCategories,
-        addUnitMutation, // Expose unit mutation
-        setUnits,        // Expose setUnits to refresh after add
+        addUnitMutation,
+        setUnits,
         setTypes,
     };
 };
