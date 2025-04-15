@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaSearch } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Loading } from "../../components/ui/Loading";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { AddCategoryModal } from "../../components/ui/AddEditModal";
+import { Pagination } from "../../components/ui/Pagination";
 
 interface Category {
     id: string;
@@ -21,6 +22,12 @@ const CategoryList = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+    
+    // New state for pagination and search
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -32,23 +39,57 @@ const CategoryList = () => {
         return () => clearTimeout(timer);
     }, [editingCategory, isEditModalOpen]);
 
-    const fetchCategories = async () => {
-        const { data, error } = await supabase
-            .from("item_categories")
-            .select("*")
-            .order("name");
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1);
+        }, 500);
 
-        if (error) throw error;
-        return data || [];
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const fetchCategories = async (page: number, searchTerm: string, limit: number) => {
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        let categoriesQuery = supabase
+            .from("item_categories")
+            .select("*");
+
+        let countQuery = supabase
+            .from("item_categories")
+            .select('id', { count: 'exact' });
+
+        if (searchTerm) {
+            categoriesQuery = categoriesQuery.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+            countQuery = countQuery.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+        }
+
+        const [categoriesResult, countResult] = await Promise.all([
+            categoriesQuery.order('name').range(from, to),
+            countQuery
+        ]);
+
+        if (categoriesResult.error) throw categoriesResult.error;
+        if (countResult.error) throw countResult.error;
+
+        return { 
+            categories: categoriesResult.data || [], 
+            totalCategories: countResult.count || 0 
+        };
     };
 
-    const { data: categories = [], isLoading, isError, error } = useQuery<Category[]>({
-        queryKey: ['categories'],
-        queryFn: fetchCategories,
+    const { data, isLoading, isError, error, isFetching } = useQuery({
+        queryKey: ['categories', currentPage, debouncedSearch, itemsPerPage],
+        queryFn: () => fetchCategories(currentPage, debouncedSearch, itemsPerPage),
+        placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
         refetchOnMount: true,
     });
 
+    const categories = data?.categories || [];
+    const totalCategories = data?.totalCategories || 0;
     const queryError = error instanceof Error ? error : null;
 
     const deleteCategoryMutation = useMutation({
@@ -110,9 +151,20 @@ const CategoryList = () => {
         }
     };
 
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
+
+    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1);
+    };
+
+    const totalPages = Math.ceil(totalCategories / itemsPerPage);
+
     return (
         <>
-            <Card>
+            <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Kategori Item</h1>
                     <Button
@@ -125,41 +177,60 @@ const CategoryList = () => {
                     </Button>
                 </div>
 
+                <div className="mb-4 relative">
+                    <input
+                        type="text"
+                        placeholder="Cari kategori..."
+                        className="w-full p-3 border rounded-md pl-10"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)} />
+                    <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
+                </div>
+
                 {isLoading ? (
                     <Loading />
                 ) : isError ? (
                     <div className="text-center p-6 text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>
                 ) : (
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeader>Nama Kategori</TableHeader>
-                                <TableHeader>Deskripsi</TableHeader>
-                                {/* Removed the "Aksi" column */}
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {categories.length === 0 ? (
+                    <>
+                        <Table>
+                            <TableHead>
                                 <TableRow>
-                                    <TableCell colSpan={2} className="text-center text-gray-500">
-                                        Tidak ada data kategori yang ditemukan
-                                    </TableCell>
+                                    <TableHeader>Nama Kategori</TableHeader>
+                                    <TableHeader>Deskripsi</TableHeader>
                                 </TableRow>
-                            ) : (
-                                categories.map((category) => (
-                                    <TableRow
-                                        key={category.id}
-                                        onClick={() => handleEdit(category)}
-                                        className="cursor-pointer"
-                                    >
-                                        <TableCell>{category.name}</TableCell>
-                                        <TableCell>{category.description}</TableCell>
-                                        {/* Removed the "Aksi" cell */}
+                            </TableHead>
+                            <TableBody>
+                                {categories.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={2} className="text-center text-gray-500">
+                                            {debouncedSearch ? `Tidak ada kategori dengan nama "${debouncedSearch}"` : "Tidak ada data kategori yang ditemukan"}
+                                        </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                                ) : (
+                                    categories.map((category) => (
+                                        <TableRow
+                                            key={category.id}
+                                            onClick={() => handleEdit(category)}
+                                            className="cursor-pointer hover:bg-blue-50"
+                                        >
+                                            <TableCell>{category.name}</TableCell>
+                                            <TableCell>{category.description}</TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalCategories}
+                            itemsPerPage={itemsPerPage}
+                            itemsCount={categories.length}
+                            onPageChange={handlePageChange}
+                            onItemsPerPageChange={handleItemsPerPageChange}
+                        />
+                    </>
                 )}
             </Card>
 
