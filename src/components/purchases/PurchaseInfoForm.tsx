@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FormSection, FormField } from '../ui/FormComponents';
 import { Input } from '../ui/Input';
 import { PurchaseFormData } from '../../hooks/usePurchaseForm';
+import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
 
 interface PurchaseInformationFormProps {
     formData: PurchaseFormData;
@@ -14,6 +15,16 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
     suppliers,
     handleChange
 }) => {
+    const [purchaseDateValue, setPurchaseDateValue] = useState<DateValueType>({
+        startDate: formData.date ? new Date(formData.date) : null,
+        endDate: formData.date ? new Date(formData.date) : null
+    });
+
+    const [dueDateValue, setDueDateValue] = useState<DateValueType>({
+        startDate: formData.due_date ? new Date(formData.due_date) : null,
+        endDate: formData.due_date ? new Date(formData.due_date) : null
+    });
+
     return (
         <FormSection title="Informasi Pembelian">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -43,23 +54,33 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
                 </FormField>
                 
                 <FormField label="Tanggal Pembelian">
-                    <Input
-                        type="date"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleChange}
+                    <Datepicker
+                        useRange={false} 
+                        asSingle={true} 
+                        value={purchaseDateValue}
+                        onChange={(newValue) => {
+                            setPurchaseDateValue(newValue);
+                            const fakeEvent = { target: { name: 'date', value: newValue?.startDate ? new Date(newValue.startDate).toISOString().split('T')[0] : '' } } as React.ChangeEvent<HTMLInputElement>;
+                            handleChange(fakeEvent);
+                        }} 
+                        inputClassName="w-full p-3 border rounded-md"
                     />
                 </FormField>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <FormField label="Tanggal Jatuh Tempo">
-                    <Input
-                        type="date"
-                        name="due_date"
-                        value={formData.due_date}
-                        onChange={handleChange}
-                        min={formData.date}
+                    <Datepicker
+                        useRange={false} 
+                        asSingle={true} 
+                        value={dueDateValue}
+                        onChange={(newValue) => {
+                            setDueDateValue(newValue);
+                            const fakeEvent = { target: { name: 'due_date', value: newValue?.startDate ? new Date(newValue.startDate).toISOString().split('T')[0] : '' } } as React.ChangeEvent<HTMLInputElement>;
+                            handleChange(fakeEvent);
+                        }} 
+                        inputClassName="w-full p-3 border rounded-md"
+                        minDate={formData.date ? new Date(formData.date) : undefined}
                     />
                 </FormField>
 
