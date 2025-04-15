@@ -55,17 +55,17 @@ const PurchaseList = () => {
                     supplier_id,
                     supplier:suppliers(name)
                 `);
-
-            if (searchTerm) {
-                query = query.or(`invoice_number.ilike.%${searchTerm}%,suppliers.name.ilike.%${searchTerm}%`);
-            }
-
-            const countQuery = supabase
+                
+            let countQuery = supabase
                 .from("purchases")
                 .select('id', { count: 'exact' });
 
             if (searchTerm) {
-                countQuery.or(`invoice_number.ilike.%${searchTerm}%,suppliers.name.ilike.%${searchTerm}%`);
+                // Only search by invoice number
+                query = query.ilike('invoice_number', `%${searchTerm}%`);
+
+                // Also apply to count query
+                countQuery = countQuery.ilike('invoice_number', `%${searchTerm}%`);
             }
 
             const { count, error: countError } = await countQuery;
@@ -240,7 +240,7 @@ const PurchaseList = () => {
             <SearchBar
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nomor faktur atau supplier..."
+                placeholder="Cari nomor faktur..."
             />
 
             {isLoading ? (
