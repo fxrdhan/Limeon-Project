@@ -33,13 +33,25 @@ const fetchCategories = async (page = 1, searchTerm = '', limit = 10) => {
     };
 };
 
-const fetchTypes = async () => {
-    const { data, error } = await supabase
+const fetchTypes = async (page = 1, searchTerm = '', limit = 10) => {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    
+    let query = supabase
         .from("item_types")
-        .select("id, name, description")
-        .order("name");
+        .select("id, name, description", { count: 'exact' });
+        
+    if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+    }
+    
+    const { data, error, count } = await query
+        .order("name")
+        .range(from, to);
+        
     if (error) throw error;
-    return data || [];
+    
+    return { types: data || [], totalTypes: count || 0 };
 };
 
 const fetchUnits = async (page = 1, limit = 10) => {
@@ -204,10 +216,10 @@ export const usePrefetchQueries = () => {
                 staleTime: 30 * 1000,
             });
 
-            // Prefetch types
+            // Prefetch types - updated to match TypeList implementation
             queryClient.prefetchQuery({
-                queryKey: ['types'],
-                queryFn: fetchTypes,
+                queryKey: ['types', 1, '', 10],
+                queryFn: () => fetchTypes(1, '', 10),
                 staleTime: 30 * 1000,
             });
 
