@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from "../../lib/supabase";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
@@ -8,6 +8,8 @@ import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from ".
 import { Loading } from "../../components/ui/Loading";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { AddCategoryModal } from "../../components/ui/AddEditModal";
+import { SearchBar } from "../../components/ui/TableSearchBar";
+import { Pagination } from "../../components/ui/Pagination";
 
 interface ItemType {
     id: string;
@@ -21,6 +23,11 @@ const TypeList = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingType, setEditingType] = useState<ItemType | null>(null);
+    
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -31,28 +38,53 @@ const TypeList = () => {
         }
         return () => clearTimeout(timer);
     }, [editingType, isEditModalOpen]);
+    
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1);
+        }, 500);
 
-    const fetchTypes = async () => {
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const fetchTypes = async (page: number, searchTerm: string, limit: number) => {
         try {
-            const { data, error } = await supabase
+            const from = (page - 1) * limit;
+            const to = from + limit - 1;
+            
+            let query = supabase
                 .from("item_types")
-                .select("id, name, description")
-                .order("name");
+                .select("id, name, description", { count: 'exact' });
+                
+            if (searchTerm) {
+                query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+            }
+            
+            const { data, error, count } = await query
+                .order("name")
+                .range(from, to);
+                
             if (error) throw error;
-            return data || [];
+            
+            return { types: data || [], totalTypes: count || 0 };
         } catch (error) {
             console.error("Error fetching item types:", error);
             throw error;
         }
     };
 
-    const { data: types = [], isLoading, isError, error } = useQuery<ItemType[]>({
-        queryKey: ['types'],
-        queryFn: fetchTypes,
+    const { data, isLoading, isError, error, isFetching } = useQuery({
+        queryKey: ['types', currentPage, debouncedSearch, itemsPerPage],
+        queryFn: () => fetchTypes(currentPage, debouncedSearch, itemsPerPage),
+        placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
         refetchOnMount: true,
     });
 
+    const types = data?.types || [];
+    const totalTypes = data?.totalTypes || 0;
+    const totalPages = Math.ceil(totalTypes / itemsPerPage);
     const queryError = error instanceof Error ? error : null;
 
     const deleteTypeMutation = useMutation({
@@ -115,10 +147,19 @@ const TypeList = () => {
             await addTypeMutation.mutateAsync(typeData);
         }
     };
+    
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
+
+    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1);
+    };
 
     return (
         <>
-            <Card>
+            <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Jenis Item</h1>
                     <Button 
@@ -131,39 +172,56 @@ const TypeList = () => {
                     </Button>
                 </div>
                 
+                <SearchBar
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Cari nama atau deskripsi jenis item..."
+                />
+                
                 {isLoading ? (
                     <Loading />
                 ) : isError ? (
                     <div className="text-center p-6 text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>
                 ) : (
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeader>Nama Jenis</TableHeader>
-                                <TableHeader>Deskripsi</TableHeader>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {types.length === 0 ? (
+                    <>
+                        <Table>
+                            <TableHead>
                                 <TableRow>
-                                    <TableCell colSpan={2} className="text-center text-gray-500">
-                                        Tidak ada data jenis item yang ditemukan
-                                    </TableCell>
+                                    <TableHeader>Nama Jenis</TableHeader>
+                                    <TableHeader>Deskripsi</TableHeader>
                                 </TableRow>
-                            ) : (
-                                types.map((type) => (
-                                    <TableRow 
-                                        key={type.id}
-                                        onClick={() => handleEdit(type)}
-                                        className="cursor-pointer"
-                                    >
-                                        <TableCell>{type.name}</TableCell>
-                                        <TableCell>{type.description}</TableCell>
+                            </TableHead>
+                            <TableBody>
+                                {types.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={2} className="text-center text-gray-500">
+                                            {debouncedSearch ? `Tidak ada jenis item dengan nama "${debouncedSearch}"` : "Tidak ada data jenis item yang ditemukan"}
+                                        </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                                ) : (
+                                    types.map((type) => (
+                                        <TableRow 
+                                            key={type.id}
+                                            onClick={() => handleEdit(type)}
+                                            className="cursor-pointer hover:bg-blue-50"
+                                        >
+                                            <TableCell>{type.name}</TableCell>
+                                            <TableCell>{type.description}</TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalTypes}
+                            itemsPerPage={itemsPerPage}
+                            itemsCount={types.length}
+                            onPageChange={handlePageChange}
+                            onItemsPerPageChange={handleItemsPerPageChange}
+                        />
+                    </>
                 )}
             </Card>
 
