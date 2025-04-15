@@ -47,7 +47,7 @@ const UnitList = () => {
         return () => clearTimeout(timer);
     }, [search]);
 
-    const fetchUnits = async (page: number, limit: number, searchTerm: string) => {
+    const fetchUnits = async (page: number, searchTerm: string, limit: number) => {
         const from = (page - 1) * limit;
         const to = from + limit - 1;
 
@@ -64,19 +64,19 @@ const UnitList = () => {
             .range(from, to);
 
         if (error) throw error;
-        return { units: data || [], totalItems: count || 0 };
+        return { units: data || [], totalUnits: count || 0 };
     };
 
     const { data, isLoading, isError, error, isFetching } = useQuery({
-        queryKey: ['units', currentPage, itemsPerPage, debouncedSearch],
-        queryFn: () => fetchUnits(currentPage, itemsPerPage, debouncedSearch),
+        queryKey: ['units', currentPage, debouncedSearch, itemsPerPage],
+        queryFn: () => fetchUnits(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
         refetchOnMount: true,
     });
 
     const units = data?.units || [];
-    const totalItems = data?.totalItems || 0;
+    const totalItems = data?.totalUnits || 0;
 
     const queryError = error instanceof Error ? error : null;
 
