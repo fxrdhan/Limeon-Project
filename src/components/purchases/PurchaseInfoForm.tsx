@@ -55,6 +55,7 @@ const PurchaseInformationForm: React.FC<PurchaseInformationFormProps> = ({
                 
                 <FormField label="Tanggal Pembelian">
                     <Datepicker
+                        primaryColor={"blue"}
                         useRange={false} 
                         asSingle={true} 
                         value={purchaseDateValue}
