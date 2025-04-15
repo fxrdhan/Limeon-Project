@@ -9,6 +9,7 @@ import { Loading } from "../../components/ui/Loading";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { AddCategoryModal } from "../../components/ui/AddEditModal";
 import { Pagination } from "../../components/ui/Pagination";
+import { SearchBar } from "../../components/ui/TableSearchBar";
 
 interface Unit {
     id: string;
@@ -24,6 +25,8 @@ const UnitList = () => {
     const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -35,13 +38,28 @@ const UnitList = () => {
         return () => clearTimeout(timer);
     }, [editingUnit, isEditModalOpen]);
 
-    const fetchUnits = async (page: number, limit: number) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const fetchUnits = async (page: number, limit: number, searchTerm: string) => {
         const from = (page - 1) * limit;
         const to = from + limit - 1;
 
-        const { data, error, count } = await supabase
+        let query = supabase
             .from("item_units")
-            .select("id, name, description", { count: 'exact' })
+            .select("id, name, description", { count: 'exact' });
+            
+        if (searchTerm) {
+            query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+        }
+
+        const { data, error, count } = await query
             .order("name")
             .range(from, to);
 
@@ -50,8 +68,8 @@ const UnitList = () => {
     };
 
     const { data, isLoading, isError, error, isFetching } = useQuery({
-        queryKey: ['units', currentPage, itemsPerPage],
-        queryFn: () => fetchUnits(currentPage, itemsPerPage),
+        queryKey: ['units', currentPage, itemsPerPage, debouncedSearch],
+        queryFn: () => fetchUnits(currentPage, itemsPerPage, debouncedSearch),
         placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
         refetchOnMount: true,
@@ -161,6 +179,12 @@ const UnitList = () => {
                     </Button>
                 </div>
 
+                <SearchBar
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Cari nama atau deskripsi satuan..."
+                />
+
                 {isLoading ? (
                     <Loading message="Memuat satuan..." />
                 ) : isError ? (
@@ -178,7 +202,7 @@ const UnitList = () => {
                                 {units.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={2} className="text-center text-gray-500">
-                                            Tidak ada data satuan yang ditemukan
+                                            {debouncedSearch ? `Tidak ada satuan dengan nama "${debouncedSearch}"` : "Tidak ada data satuan yang ditemukan"}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
