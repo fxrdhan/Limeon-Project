@@ -45,6 +45,13 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [loading, setLoading] = useState<Record<string, boolean>>({});
     const [localData, setLocalData] = useState<Record<string, string | number | boolean | null>>(data);
+    const [, setIsAnimationComplete] = useState(!isOpen);
+
+    useEffect(() => {
+        if (isOpen) {
+            setIsAnimationComplete(false);
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen && data) {
@@ -107,7 +114,13 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     };
 
     return createPortal(
-        <Transition show={isOpen} as={Fragment}>
+        <Transition
+            show={isOpen}
+            as={Fragment}
+            afterLeave={() => {
+                setIsAnimationComplete(true);
+            }}
+        >
             <div
                 className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
                 onClick={handleBackdropClick}
@@ -149,7 +162,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                         </div>
 
                         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                            {(imageUrl || imagePlaceholder) && (
+                            {(currentImageUrl || imagePlaceholder) && (
                                 <div className="flex justify-center mb-6">
                                     <div className="relative group w-48">
                                         <ImageUploader
