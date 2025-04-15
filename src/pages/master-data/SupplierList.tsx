@@ -119,7 +119,6 @@ const SupplierList = () => {
 
     const closeModal = () => {
         setIsModalOpen(false);
-        setSelectedSupplier(null);
     };
 
     const handleDelete = (supplier: Supplier) => {
