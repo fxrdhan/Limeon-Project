@@ -209,52 +209,65 @@ export const usePrefetchQueries = () => {
         const prefetchAll = async () => {
             console.log('Memulai prefetching semua data...');
 
-            // Prefetch categories - page 1, empty search
-            queryClient.prefetchQuery({
-                queryKey: ['categories', 1, '', 10],
-                queryFn: () => fetchCategories(1, '', 10),
-                staleTime: 30 * 1000,
-            });
+            // Define page sizes to prefetch
+            const pageSizes = [10, 20, 40];
 
-            // Prefetch types - updated to match TypeList implementation
-            queryClient.prefetchQuery({
-                queryKey: ['types', 1, '', 10],
-                queryFn: () => fetchTypes(1, '', 10),
-                staleTime: 30 * 1000,
-            });
+            // Prefetch categories for different page sizes
+            for (const pageSize of pageSizes) {
+                queryClient.prefetchQuery({
+                    queryKey: ['categories', 1, '', pageSize],
+                    queryFn: () => fetchCategories(1, '', pageSize),
+                    staleTime: 30 * 1000,
+                });
+            }
 
-            // Prefetch units - page 1
-            queryClient.prefetchQuery({
-                queryKey: ['units', 1, 10],
-                queryFn: () => fetchUnits(1, 10),
-                staleTime: 30 * 1000,
-            });
+            // Prefetch types for different page sizes
+            for (const pageSize of pageSizes) {
+                queryClient.prefetchQuery({
+                    queryKey: ['types', 1, '', pageSize],
+                    queryFn: () => fetchTypes(1, '', pageSize),
+                    staleTime: 30 * 1000,
+                });
+            }
 
-            // Prefetch items - page 1, empty search
-            queryClient.prefetchQuery({
-                queryKey: ['items', 1, '', 10],
-                queryFn: () => fetchItems(1, '', 10),
-                staleTime: 30 * 1000,
-            });
+            // Prefetch units for different page sizes
+            for (const pageSize of pageSizes) {
+                queryClient.prefetchQuery({
+                    queryKey: ['units', 1, pageSize],
+                    queryFn: () => fetchUnits(1, pageSize),
+                    staleTime: 30 * 1000,
+                });
+            }
 
-            // Prefetch suppliers
+            // Prefetch items for different page sizes
+            for (const pageSize of pageSizes) {
+                queryClient.prefetchQuery({
+                    queryKey: ['items', 1, '', pageSize],
+                    queryFn: () => fetchItems(1, '', pageSize),
+                    staleTime: 30 * 1000,
+                });
+            }
+
+            // Prefetch purchases for different page sizes
+            for (const pageSize of pageSizes) {
+                queryClient.prefetchQuery({
+                    queryKey: ['purchases', 1, '', pageSize],
+                    queryFn: () => fetchPurchases(1, '', pageSize),
+                    staleTime: 30 * 1000,
+                });
+            }
+
+            // Prefetch suppliers (not paginated)
             queryClient.prefetchQuery({
                 queryKey: ['suppliers'],
                 queryFn: fetchSuppliers,
                 staleTime: 30 * 1000,
             });
 
-            // Prefetch company profile
+            // Prefetch company profile (not paginated)
             queryClient.prefetchQuery({
                 queryKey: ['companyProfile'],
                 queryFn: fetchProfile,
-                staleTime: 30 * 1000,
-            });
-
-            // Prefetch purchases - page 1, empty search
-            queryClient.prefetchQuery({
-                queryKey: ['purchases', 1, '', 10],
-                queryFn: () => fetchPurchases(1, '', 10),
                 staleTime: 30 * 1000,
             });
 
