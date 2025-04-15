@@ -2,15 +2,35 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from './supabase';
 
-// Fungsi-fungsi fetcher yang akan di-prefetch
-const fetchCategories = async () => {
-    const { data, error } = await supabase
-        .from("item_categories")
-        .select("*")
-        .order("name");
+const fetchCategories = async (page = 1, searchTerm = '', limit = 10) => {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
-    if (error) throw error;
-    return data || [];
+    let categoriesQuery = supabase
+        .from("item_categories")
+        .select("*");
+
+    let countQuery = supabase
+        .from("item_categories")
+        .select('id', { count: 'exact' });
+
+    if (searchTerm) {
+        categoriesQuery = categoriesQuery.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+        countQuery = countQuery.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+    }
+
+    const [categoriesResult, countResult] = await Promise.all([
+        categoriesQuery.order('name').range(from, to),
+        countQuery
+    ]);
+
+    if (categoriesResult.error) throw categoriesResult.error;
+    if (countResult.error) throw countResult.error;
+
+    return { 
+        categories: categoriesResult.data || [], 
+        totalCategories: countResult.count || 0 
+    };
 };
 
 const fetchTypes = async () => {
@@ -43,17 +63,17 @@ const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
     let itemsQuery = supabase
         .from("items")
         .select(`
-      id,
-      name,
-      code,
-      base_price,
-      sell_price,
-      stock,
-      barcode,
-      unit_conversions,
-      category_id,
-      type_id,
-      unit_id
+        id,
+        name,
+        code,
+        base_price,
+        sell_price,
+        stock,
+        barcode,
+        unit_conversions,
+        category_id,
+        type_id,
+        unit_id
     `);
 
     let countQuery = supabase
@@ -177,10 +197,10 @@ export const usePrefetchQueries = () => {
         const prefetchAll = async () => {
             console.log('Memulai prefetching semua data...');
 
-            // Prefetch categories
+            // Prefetch categories - page 1, empty search
             queryClient.prefetchQuery({
-                queryKey: ['categories'],
-                queryFn: fetchCategories,
+                queryKey: ['categories', 1, '', 10],
+                queryFn: () => fetchCategories(1, '', 10),
                 staleTime: 30 * 1000,
             });
 
