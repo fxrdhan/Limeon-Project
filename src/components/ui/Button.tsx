@@ -27,12 +27,12 @@ export const Button = ({
     ...props
 }: ButtonProps) => {
     const variants = {
-        primary: "rounded-md shadow-md bg-blue-500 flex items-center hover:bg-blue-600 text-white hover:text-white hover:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)]",
-        secondary: "rounded-md bg-blue-600 bg-secondary flex items-center hover:bg-blue-700 text-white hover:text-white",
-        accent: "bg-accent hover:bg-red-600 text-white",
+        primary: "rounded-md ring-0 outline-hidden shadow-md bg-blue-500 flex items-center hover:bg-blue-600 text-white hover:text-white hover:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)]",
+        secondary: "rounded-md bg-blue-600 bg-secondary focus:ring-0 focus:outline-none flex items-center hover:bg-blue-700 text-white hover:text-white",
+        accent: "bg-accent hover:bg-red-600 text-white focus:outline-none focus:ring-0",
         outline: "border border-primary text-primary hover:bg-blue-50",
-        text: "bg-transparent hover:bg-opacity-10 focus:outline-none focus:ring-0 focus:shadow-none",
-        danger: "bg-red-600 hover:bg-red-700 text-white hover:shadow-[0_0_5px_theme(colors.accent),0_0_15px_theme(colors.accent),0_0_30px_theme(colors.accent)]",
+        text: "bg-transparent hover:bg-opacity-10 focus:outline-none focus:ring-0 active:ring-0 active:outline-none focus:shadow-none",
+        danger: "bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-0 text-white hover:shadow-[0_0_5px_theme(colors.accent),0_0_15px_theme(colors.accent),0_0_30px_theme(colors.accent)]",
     };
 
     const sizes = {
