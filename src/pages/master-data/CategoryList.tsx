@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { FaPlus, FaSearch } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
@@ -9,6 +9,7 @@ import { Loading } from "../../components/ui/Loading";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { AddCategoryModal } from "../../components/ui/AddEditModal";
 import { Pagination } from "../../components/ui/Pagination";
+import { SearchBar } from "../../components/ui/TableSearchBar";
 
 interface Category {
     id: string;
@@ -177,15 +178,11 @@ const CategoryList = () => {
                     </Button>
                 </div>
 
-                <div className="mb-4 relative">
-                    <input
-                        type="text"
-                        placeholder="Cari kategori..."
-                        className="w-full p-3 border rounded-md pl-10"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)} />
-                    <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-                </div>
+                <SearchBar
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Cari kategori..."
+                />
 
                 {isLoading ? (
                     <Loading />

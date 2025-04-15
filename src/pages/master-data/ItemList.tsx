@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from "../../lib/supabase";
-import { FaPlus, FaSearch } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { SearchBar } from "../../components/ui/TableSearchBar";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Pagination } from "../../components/ui/Pagination";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
@@ -131,15 +132,11 @@ function ItemList() {
                 </Link>
             </div>
 
-            <div className="mb-4 relative">
-                <input
-                    type="text"
-                    placeholder="Cari item..."
-                    className="w-full p-3 border rounded-md pl-10"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)} />
-                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-            </div>
+            <SearchBar
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama atau kode item..."
+            />
 
             {isLoading && <div className="text-center p-6">Memuat data awal...</div>}
             {isError && <div className="text-center p-6 text-red-500">Error: {error instanceof Error ? error.message : 'Gagal memuat data'}</div>}

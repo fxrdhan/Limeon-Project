@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from "../../lib/supabase";
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaEye, FaFileUpload } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
@@ -10,6 +10,7 @@ import { Pagination } from "../../components/ui/Pagination";
 import { Loading } from "../../components/ui/Loading";
 import { Badge } from "../../components/ui/Badge";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { SearchBar } from "../../components/ui/TableSearchBar";
 
 interface Purchase {
     id: string;
@@ -236,16 +237,11 @@ const PurchaseList = () => {
                 </div>
             </div>
 
-            <div className="mb-4 relative">
-                <input
-                    type="text"
-                    placeholder="Cari nomor faktur atau supplier..."
-                    className="w-full p-3 border rounded-md pl-10"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                />
-                <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
-            </div>
+            <SearchBar
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nomor faktur atau supplier..."
+            />
 
             {isLoading ? (
                 <Loading message="Memuat data pembelian..." />
