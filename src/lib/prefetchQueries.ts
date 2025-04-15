@@ -54,18 +54,24 @@ const fetchTypes = async (page = 1, searchTerm = '', limit = 10) => {
     return { types: data || [], totalTypes: count || 0 };
 };
 
-const fetchUnits = async (page = 1, limit = 10) => {
+const fetchUnits = async (page = 1, searchTerm = '', limit = 10) => {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    const { data, error, count } = await supabase
+    let query = supabase
         .from("item_units")
-        .select("id, name, description", { count: 'exact' })
+        .select("id, name, description", { count: 'exact' });
+        
+    if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+    }
+
+    const { data, error, count } = await query
         .order("name")
         .range(from, to);
 
     if (error) throw error;
-    return { units: data || [], totalItems: count || 0 };
+    return { units: data || [], totalUnits: count || 0 };
 };
 
 const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
@@ -233,8 +239,8 @@ export const usePrefetchQueries = () => {
             // Prefetch units for different page sizes
             for (const pageSize of pageSizes) {
                 queryClient.prefetchQuery({
-                    queryKey: ['units', 1, pageSize],
-                    queryFn: () => fetchUnits(1, pageSize),
+                    queryKey: ['units', 1, '', pageSize],
+                    queryFn: () => fetchUnits(1, '', pageSize),
                     staleTime: 30 * 1000,
                 });
             }
