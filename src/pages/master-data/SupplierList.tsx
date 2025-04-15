@@ -211,26 +211,26 @@ const SupplierList = () => {
                 </Table>
             )}
 
-            {isModalOpen && selectedSupplier && (
-                <DetailEditModal
-                    title={`${selectedSupplier.name}`}
-                    data={transformSupplierForModal(selectedSupplier)}
-                    fields={supplierFields}
-                    isOpen={isModalOpen}
-                    onClose={closeModal}
-                    onSave={async (updatedData: Record<string, string | number | boolean | null>) => {
+            <DetailEditModal
+                title={selectedSupplier?.name || ''}
+                data={transformSupplierForModal(selectedSupplier)}
+                fields={supplierFields}
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                onSave={async (updatedData: Record<string, string | number | boolean | null>) => {
+                    if (selectedSupplier) {
                         await updateSupplierMutation.mutateAsync(updatedData);
-                        return Promise.resolve();
-                    }}
-                    onImageSave={handleSupplierImageSave}
-                    onDeleteRequest={() => {
-                        if (selectedSupplier) handleDelete(selectedSupplier);
-                    }}
-                    deleteButtonLabel="Hapus Supplier"
-                    imageUrl={selectedSupplier.image_url || undefined}
-                    imagePlaceholder={`https://picsum.photos/seed/${selectedSupplier.id}/400/300`}
-                />
-            )}
+                    }
+                    return Promise.resolve();
+                }}
+                onImageSave={handleSupplierImageSave}
+                onDeleteRequest={() => {
+                    if (selectedSupplier) handleDelete(selectedSupplier);
+                }}
+                deleteButtonLabel="Hapus Supplier"
+                imageUrl={selectedSupplier?.image_url || undefined}
+                imagePlaceholder={selectedSupplier ? `https://picsum.photos/seed/${selectedSupplier.id}/400/300` : undefined}
+            />
         </Card>
     );
 };
