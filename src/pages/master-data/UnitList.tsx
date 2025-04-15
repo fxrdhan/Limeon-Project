@@ -117,6 +117,7 @@ const UnitList = () => {
             confirmText: "Hapus",
             onConfirm: () => {
                 deleteUnitMutation.mutate(unit.id);
+                setIsEditModalOpen(false);
             }
         });
     };
