@@ -46,10 +46,12 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [loading, setLoading] = useState<Record<string, boolean>>({});
     const [localData, setLocalData] = useState<Record<string, string | number | boolean | null>>(data);
+    const [, setIsClosing] = useState(false);
     const [, setIsAnimationComplete] = useState(!isOpen);
 
     useEffect(() => {
         if (isOpen) {
+            setIsClosing(false);
             setIsAnimationComplete(false);
         }
     }, [isOpen]);
@@ -110,8 +112,13 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-            onClose();
+            handleCloseModal();
         }
+    };
+
+    const handleCloseModal = () => {
+        setIsClosing(true);
+        onClose();
     };
 
     return createPortal(
@@ -120,6 +127,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
             as={Fragment}
             afterLeave={() => {
                 setIsAnimationComplete(true);
+                setIsClosing(false);
             }}
         >
             <div
@@ -274,7 +282,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                     {deleteButtonLabel}
                                 </Button>
                             )}
-                            <Button variant="outline" onClick={onClose}>
+                            <Button variant="outline" onClick={handleCloseModal}>
                                 Tutup
                             </Button>
                         </div>
