@@ -194,8 +194,8 @@ const UnitList = () => {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableHeader>Nama Satuan</TableHeader>
-                                    <TableHeader>Deskripsi</TableHeader>
+                                    <TableHeader className="w-[15%]">Nama Satuan</TableHeader>
+                                    <TableHeader className="w-[85%]">Deskripsi</TableHeader>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
