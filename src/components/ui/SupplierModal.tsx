@@ -54,14 +54,26 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
 
     // In add mode, all fields are editable by default
     useEffect(() => {
-        if (mode === 'add') {
+        if (isOpen) {
+            // Reset edit mode when modal opens
             const initialEditMode: Record<string, boolean> = {};
-            fields.forEach(field => {
-                initialEditMode[field.key] = true;
-            });
+            if (mode === 'add') {
+                // In add mode, make all fields editable
+                fields.forEach(field => {
+                    initialEditMode[field.key] = true;
+                });
+            } else {
+                // In edit mode, reset all fields to non-editable
+                fields.forEach(field => {
+                    initialEditMode[field.key] = false;
+                });
+            }
             setEditMode(initialEditMode);
+        } else {
+            // Clear edit mode when modal closes
+            setEditMode({});
         }
-    }, [mode, fields]);
+    }, [isOpen, mode, fields]);
 
     useEffect(() => {
         if (isOpen) {
