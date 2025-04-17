@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Fragment, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { FaEdit, FaCheck, FaTimes, FaPencilAlt, FaSpinner } from 'react-icons/fa';
+import { FaPencilAlt, FaSpinner, FaSave, FaBan } from 'react-icons/fa';
 import { Button } from './Button';
 import { ImageUploader } from './ImageUploader';
 import { Transition, TransitionChild } from '@headlessui/react';
@@ -238,7 +238,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                         <div className="flex justify-between items-center mb-1">
                                             <label className="text-sm font-medium text-gray-600">{field.label}</label>
                                             {field.editable !== false && mode === 'edit' && (
-                                                <div className="flex space-x-2">
+                                                <div className="flex">
                                                     {editMode[field.key] ? (
                                                         <>
                                                             <Button
@@ -246,8 +246,9 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                                 size="sm"
                                                                 onClick={() => handleCancel(field.key)}
                                                                 className="text-gray-500 hover:text-gray-700 p-1"
+                                                                title="Batal"
                                                             >
-                                                                <FaTimes className="text-red-500" />
+                                                                <FaBan className="text-red-500 text-sm" />
                                                             </Button>
                                                             <Button
                                                                 variant="text"
@@ -255,11 +256,12 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                                 onClick={() => handleSaveField(field.key)}
                                                                 className="text-gray-500 hover:text-gray-700 p-1"
                                                                 disabled={loading[field.key]}
+                                                                title="Simpan"
                                                             >
                                                                 {loading[field.key] ? (
-                                                                    <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin inline-block"></span>
+                                                                    <span className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin inline-block"></span>
                                                                 ) : (
-                                                                    <FaCheck className="text-green-500" />
+                                                                    <FaSave className="text-green-500 text-sm" />
                                                                 )}
                                                             </Button>
                                                         </>
@@ -269,8 +271,9 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                             size="sm"
                                                             onClick={() => toggleEdit(field.key)}
                                                             className="text-gray-500 hover:text-gray-700 p-1"
+                                                            title="Edit"
                                                         >
-                                                            <FaEdit />
+                                                            <FaPencilAlt className="text-blue-500 text-sm" />
                                                         </Button>
                                                     )}
                                                 </div>
