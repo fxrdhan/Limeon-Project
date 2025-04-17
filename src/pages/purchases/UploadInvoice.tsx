@@ -202,9 +202,9 @@ const UploadInvoice = () => {
                         />
                         <button
                             onClick={closeFullscreen}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 focus:outline-none"
+                            className="absolute top-2 right-2 text-red-500 p-2 hover:text-red-700 focus:outline-none"
                         >
-                            <FaTimes className="h-5 w-5" />
+                            <FaTimes className="h-6 w-6" />
                         </button>
                     </div>
                 </div>
@@ -268,9 +268,9 @@ const UploadInvoice = () => {
                                             e.stopPropagation();
                                             handleRemoveFile();
                                         }}
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none"
+                                        className="absolute -top-2 -right-2 text-red-500 p-1 hover:text-red-700 focus:outline-none"
                                     >
-                                        <FaTrash className="h-3 w-3" />
+                                        <FaTrash className="h-4 w-4" />
                                     </button>
                                 </div>
                             ) : (
