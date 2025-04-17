@@ -45,18 +45,30 @@ export const TableBody = ({ children, className }: TableProps) => {
 
 export const TableRow = ({ children, className, ...props }: TableRowProps) => {
     return (
-        <tr className={classNames('transition-colors duration-150 hover:bg-gray-100 even:bg-gray-50/30', className)} {...props}>
+        <tr 
+            className={classNames(
+                'transition-colors duration-150 hover:bg-gray-100 even:bg-gray-50/30 group', 
+                className
+            )} 
+            {...props}
+        >
             {children}
         </tr>
     );
 };
 
-export const TableCell = ({ children, className, colSpan }: TableCellProps) => {
+export const TableCell = ({ children, className, colSpan, ...props }: TableCellProps) => {
     return (
         <td
             colSpan={colSpan}
-            className={classNames('py-3 px-3 text-gray-700 align-middle overflow-hidden whitespace-nowrap text-ellipsis', className)}
+            className={classNames(
+                'py-3 px-3 text-gray-700 align-middle overflow-hidden whitespace-nowrap text-ellipsis',
+                'group-hover:whitespace-normal group-hover:text-ellipsis-none group-hover:overflow-visible',
+                'transition-all duration-200 max-h-[40px] group-hover:max-h-[300px]',
+                className
+            )}
             title={typeof children === 'string' ? children : undefined}
+            {...props}
         >
             {children}
         </td>
