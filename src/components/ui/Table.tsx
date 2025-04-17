@@ -53,7 +53,11 @@ export const TableRow = ({ children, className, ...props }: TableRowProps) => {
 
 export const TableCell = ({ children, className, colSpan }: TableCellProps) => {
     return (
-        <td colSpan={colSpan} className={classNames('py-3 px-3 text-gray-700 align-middle overflow-hidden whitespace-nowrap text-ellipsis', className)}>
+        <td
+            colSpan={colSpan}
+            className={classNames('py-3 px-3 text-gray-700 align-middle overflow-hidden whitespace-nowrap text-ellipsis', className)}
+            title={typeof children === 'string' ? children : undefined}
+        >
             {children}
         </td>
     );
