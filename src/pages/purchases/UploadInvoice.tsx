@@ -180,15 +180,27 @@ const UploadInvoice = () => {
     return (
         <Card className="shadow-lg max-w-5xl mx-auto">
             {/* Fullscreen Image Viewer */}
-            {isFullscreen && previewUrl && (
-                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4" onClick={closeFullscreen}>
-                    <div className="relative max-w-full max-h-full overflow-auto">
-                        <img 
-                            src={previewUrl} 
-                            alt="Fullscreen Preview" 
+            {previewUrl && (
+                <div
+                    onClick={closeFullscreen}
+                    className={`fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4
+                        transition-opacity duration-300
+                        ${isFullscreen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
+                    `}
+                >
+                    <div
+                        className={`relative max-w-full max-h-full overflow-auto
+                            transform transition-transform duration-300
+                            ${isFullscreen ? 'scale-100' : 'scale-90'}
+                        `}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <img
+                            src={previewUrl}
+                            alt="Fullscreen Preview"
                             className="max-w-full max-h-[90vh] object-contain"
                         />
-                        <button 
+                        <button
                             onClick={closeFullscreen}
                             className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 focus:outline-none"
                         >
