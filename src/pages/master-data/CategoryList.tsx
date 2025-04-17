@@ -193,8 +193,8 @@ const CategoryList = () => {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableHeader>Nama Kategori</TableHeader>
-                                    <TableHeader>Deskripsi</TableHeader>
+                                    <TableHeader className="w-[15%]">Nama Kategori</TableHeader>
+                                    <TableHeader className="w-[85%]">Deskripsi</TableHeader>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
