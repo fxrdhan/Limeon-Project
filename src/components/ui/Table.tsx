@@ -20,7 +20,7 @@ interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
 export const Table = ({ children, className }: TableProps) => {
     return (
         <div className={classNames('overflow-x-auto rounded-lg shadow', className)}>
-            <table className="min-w-full bg-white rounded-lg overflow-hidden">
+            <table className="min-w-full w-full table-fixed bg-white rounded-lg overflow-hidden">
                 {children}
             </table>
         </div>
@@ -53,7 +53,7 @@ export const TableRow = ({ children, className, ...props }: TableRowProps) => {
 
 export const TableCell = ({ children, className, colSpan }: TableCellProps) => {
     return (
-        <td colSpan={colSpan} className={classNames('py-3 px-3 text-gray-700 align-middle', className)}>
+        <td colSpan={colSpan} className={classNames('py-3 px-3 text-gray-700 align-middle overflow-hidden whitespace-nowrap text-ellipsis', className)}>
             {children}
         </td>
     );
