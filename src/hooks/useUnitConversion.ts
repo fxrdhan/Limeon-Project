@@ -101,14 +101,24 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         
         if ((basePrice <= 0 && sellPrice <= 0) || unitConversions.length === 0) return;
         
-        setUnitConversions(prevConversions => 
-            prevConversions.map(uc => ({
-                ...uc,
-                basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0,
-                sellPrice: sellPrice > 0 ? (sellPrice / uc.conversion) : 0
-            }))
-        );
-    }, [basePrice, sellPrice, skipRecalculation, unitConversions.length]);
+        // Check if any values actually need to be updated to avoid unnecessary state updates
+        const needsUpdate = unitConversions.some(uc => {
+            const newBasePrice = basePrice > 0 ? (basePrice / uc.conversion) : 0;
+            const newSellPrice = sellPrice > 0 ? (sellPrice / uc.conversion) : 0;
+            return Math.abs(uc.basePrice - newBasePrice) > 0.001 || 
+                   Math.abs(uc.sellPrice - newSellPrice) > 0.001;
+        });
+        
+        if (needsUpdate) {
+            setUnitConversions(prevConversions => 
+                prevConversions.map(uc => ({
+                    ...uc,
+                    basePrice: basePrice > 0 ? (basePrice / uc.conversion) : 0,
+                    sellPrice: sellPrice > 0 ? (sellPrice / uc.conversion) : 0
+                }))
+            );
+        }
+    }, [basePrice, sellPrice, skipRecalculation, unitConversions]);
 
     const skipNextRecalculation = useCallback(() => {
         setSkipRecalculation(true);
