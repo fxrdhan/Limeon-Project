@@ -229,8 +229,8 @@ const SupplierList = () => {
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableHeader className="w-[25%]">Nama Supplier</TableHeader>
-                            <TableHeader className="w-[55%]">Alamat</TableHeader>
+                            <TableHeader className="w-[20%]">Nama Supplier</TableHeader>
+                            <TableHeader className="w-[60%]">Alamat</TableHeader>
                             <TableHeader className="w-[10%]">Telepon</TableHeader>
                             <TableHeader className="w-[10%]">Kontak Person</TableHeader>
                         </TableRow>
