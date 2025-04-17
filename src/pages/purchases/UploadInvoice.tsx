@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { FaUpload, FaArrowLeft, FaCheck, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaUpload, FaArrowLeft, FaCheck, FaEdit, FaTrash, FaTimes } from 'react-icons/fa';
 import { uploadAndExtractInvoice, ExtractedInvoiceData, ProductListItem } from '../../services/invoiceService';
 
 const UploadInvoice = () => {
@@ -16,6 +16,7 @@ const UploadInvoice = () => {
     const [isDragging, setIsDragging] = useState(false);
     const [editableData, setEditableData] = useState<ExtractedInvoiceData | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     useEffect(() => {
         if (!file) {
@@ -164,8 +165,36 @@ const UploadInvoice = () => {
         setIsEditing(!isEditing);
     };
 
+    const handleImageClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsFullscreen(true);
+    };
+
+    const closeFullscreen = () => {
+        setIsFullscreen(false);
+    };
+
     return (
         <Card className="shadow-lg max-w-5xl mx-auto">
+            {/* Fullscreen Image Viewer */}
+            {isFullscreen && previewUrl && (
+                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4" onClick={closeFullscreen}>
+                    <div className="relative max-w-full max-h-full overflow-auto">
+                        <img 
+                            src={previewUrl} 
+                            alt="Fullscreen Preview" 
+                            className="max-w-full max-h-[90vh] object-contain"
+                        />
+                        <button 
+                            onClick={closeFullscreen}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 focus:outline-none"
+                        >
+                            <FaTimes className="h-5 w-5" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <CardHeader className="border-b">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-xl font-bold">
@@ -202,18 +231,19 @@ const UploadInvoice = () => {
                     <div className="space-y-6">
                         <div 
                             className={`border-2 ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-dashed border-gray-300'} 
-                            rounded-lg p-6 text-center transition-all cursor-pointer hover:bg-gray-50`}
+                            rounded-lg p-6 text-center transition-all ${!previewUrl ? 'cursor-pointer hover:bg-gray-50' : ''}`}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            onClick={() => document.getElementById('fileInput')?.click()}
+                            onClick={() => !previewUrl && document.getElementById('fileInput')?.click()}
                         >
                             {previewUrl ? (
                                 <div className="mb-4 relative">
                                     <img 
                                         src={previewUrl} 
                                         alt="Preview" 
-                                        className="max-h-64 mx-auto rounded-md shadow-md" 
+                                        className="max-h-64 mx-auto rounded-md shadow-md cursor-pointer" 
+                                        onClick={handleImageClick}
                                     />
                                     <button 
                                         onClick={(e) => { 
@@ -505,7 +535,8 @@ const UploadInvoice = () => {
                                             <img 
                                                 src={previewUrl} 
                                                 alt="Preview Faktur" 
-                                                className="max-h-96 object-contain rounded-md shadow-md" 
+                                                className="max-h-96 object-contain rounded-md shadow-md cursor-pointer" 
+                                                onClick={handleImageClick}
                                             />
                                         </div>
                                     </div>
