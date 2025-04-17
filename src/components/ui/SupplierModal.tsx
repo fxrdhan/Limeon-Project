@@ -24,6 +24,7 @@ interface DetailEditModalProps {
     deleteButtonLabel?: string;
     imageUrl?: string;
     imagePlaceholder?: string;
+    mode?: 'edit' | 'add'; // Added mode prop
 }
 
 const DetailEditModal: React.FC<DetailEditModalProps> = ({
@@ -37,7 +38,8 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     imageUrl,
     imagePlaceholder,
     onDeleteRequest,
-    deleteButtonLabel = 'Hapus'
+    deleteButtonLabel = 'Hapus',
+    mode = 'edit' // Default to edit mode
 }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
@@ -46,8 +48,20 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [loading, setLoading] = useState<Record<string, boolean>>({});
     const [localData, setLocalData] = useState<Record<string, string | number | boolean | null>>(data);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [, setIsClosing] = useState(false);
     const [, setIsAnimationComplete] = useState(!isOpen);
+
+    // In add mode, all fields are editable by default
+    useEffect(() => {
+        if (mode === 'add') {
+            const initialEditMode: Record<string, boolean> = {};
+            fields.forEach(field => {
+                initialEditMode[field.key] = true;
+            });
+            setEditMode(initialEditMode);
+        }
+    }, [mode, fields]);
 
     useEffect(() => {
         if (isOpen) {
@@ -99,6 +113,18 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
             console.error(`Error saving ${key}:`, error);
         } finally {
             setLoading(prev => ({ ...prev, [key]: false }));
+        }
+    };
+
+    const handleSaveAll = async () => {
+        try {
+            setIsSubmitting(true);
+            await onSave(editValues);
+            handleCloseModal();
+        } catch (error) {
+            console.error("Error saving supplier:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -176,7 +202,10 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                             className="w-full"
                                             shape="rounded"
                                             onImageUpload={async (base64) => {
-                                                if (onImageSave && data?.id) {
+                                                if (mode === 'add') {
+                                                    // In add mode, just show the image preview
+                                                    setCurrentImageUrl(base64);
+                                                } else if (onImageSave && data?.id) {
                                                     setIsUploadingImage(true);
                                                     try {
                                                         await onImageSave({ supplierId: data.id as string, imageBase64: base64 });
@@ -189,7 +218,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                     alert("Gagal mengunggah gambar: Konfigurasi tidak lengkap.");
                                                 }
                                             }}
-                                            disabled={isUploadingImage || !onImageSave}
+                                            disabled={isUploadingImage || (!onImageSave && mode !== 'add')}
                                             loadingIcon={<FaSpinner className="text-white text-xl animate-spin" />}
                                             defaultIcon={<FaPencilAlt className="text-white text-xl" />}
                                         >
@@ -208,7 +237,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                     <div key={field.key} className="bg-white rounded-md">
                                         <div className="flex justify-between items-center mb-1">
                                             <label className="text-sm font-medium text-gray-600">{field.label}</label>
-                                            {field.editable !== false && (
+                                            {field.editable !== false && mode === 'edit' && (
                                                 <div className="flex space-x-2">
                                                     {editMode[field.key] ? (
                                                         <>
@@ -248,7 +277,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                             )}
                                         </div>
 
-                                        {editMode[field.key] ? (
+                                        {(editMode[field.key] || mode === 'add') ? (
                                             field.type === 'textarea' ? (
                                                 <textarea
                                                     value={String(editValues[field.key] ?? '')}
@@ -277,14 +306,38 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                         </div>
 
                         <div className="p-4 border-t flex justify-between items-center">
-                            {onDeleteRequest && (
-                                <Button variant="danger" onClick={() => onDeleteRequest(data)}>
-                                    {deleteButtonLabel}
-                                </Button>
+                            {mode === 'edit' ? (
+                                <>
+                                    {onDeleteRequest && (
+                                        <Button variant="danger" onClick={() => onDeleteRequest(data)}>
+                                            {deleteButtonLabel}
+                                        </Button>
+                                    )}
+                                    <Button variant="outline" onClick={handleCloseModal}>
+                                        Tutup
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Button variant="outline" onClick={handleCloseModal}>
+                                        Batal
+                                    </Button>
+                                    <Button 
+                                        variant="primary" 
+                                        onClick={handleSaveAll}
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? (
+                                            <span className="flex items-center">
+                                                <FaSpinner className="animate-spin mr-2" />
+                                                Menyimpan...
+                                            </span>
+                                        ) : (
+                                            'Simpan'
+                                        )}
+                                    </Button>
+                                </>
                             )}
-                            <Button variant="outline" onClick={handleCloseModal}>
-                                Tutup
-                            </Button>
                         </div>
                     </div>
                 </TransitionChild>
