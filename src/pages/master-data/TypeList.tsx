@@ -187,8 +187,8 @@ const TypeList = () => {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableHeader>Nama Jenis</TableHeader>
-                                    <TableHeader>Deskripsi</TableHeader>
+                                    <TableHeader className="w-[15%]">Nama Jenis</TableHeader>
+                                    <TableHeader className="w-[85%]">Deskripsi</TableHeader>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
