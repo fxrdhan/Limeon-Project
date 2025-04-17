@@ -7,7 +7,6 @@ import DetailEditModal from '../../components/ui/SupplierModal';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
 import { Button } from '../../components/ui/Button';
 import { FaPlus } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
 import { useConfirmDialog } from '../../components/ui/ConfirmDialog';
 
 interface Supplier {
@@ -29,7 +28,9 @@ interface FieldConfig {
 
 const SupplierList = () => {
     const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [newSupplierImage, setNewSupplierImage] = useState<string | null>(null);
     const queryClient = useQueryClient();
     const { openConfirmDialog } = useConfirmDialog();
 
@@ -63,6 +64,21 @@ const SupplierList = () => {
         if (error) throw error;
     };
 
+    const createSupplier = async (newSupplier: Partial<Supplier>) => {
+        const dataToInsert = {
+            ...newSupplier,
+            image_url: newSupplierImage
+        };
+        
+        const { data, error } = await supabase
+            .from('suppliers')
+            .insert([dataToInsert])
+            .select();
+
+        if (error) throw error;
+        return data[0];
+    };
+
     const updateSupplierMutation = useMutation<void, Error, Partial<Supplier>>({
         mutationFn: updateSupplier,
         onSuccess: (_data, variables) => {
@@ -76,6 +92,19 @@ const SupplierList = () => {
         onError: (error) => {
             console.error("Error updating supplier:", error);
             alert(`Gagal memperbarui supplier: ${error.message}`);
+        },
+    });
+
+    const createSupplierMutation = useMutation<Supplier, Error, Partial<Supplier>>({
+        mutationFn: createSupplier,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+            setIsAddModalOpen(false);
+            setNewSupplierImage(null);
+        },
+        onError: (error) => {
+            console.error("Error creating supplier:", error);
+            alert(`Gagal membuat supplier baru: ${error.message}`);
         },
     });
 
@@ -114,11 +143,20 @@ const SupplierList = () => {
 
     const openSupplierDetail = (supplier: Supplier) => {
         setSelectedSupplier(supplier);
-        setIsModalOpen(true);
+        setIsEditModalOpen(true);
     };
 
-    const closeModal = () => {
-        setIsModalOpen(false);
+    const openAddSupplierModal = () => {
+        setIsAddModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setIsEditModalOpen(false);
+    };
+
+    const closeAddModal = () => {
+        setIsAddModalOpen(false);
+        setNewSupplierImage(null);
     };
 
     const handleDelete = (supplier: Supplier) => {
@@ -134,6 +172,10 @@ const SupplierList = () => {
     const handleSupplierImageSave = async ({ supplierId, imageBase64 }: { supplierId: string; imageBase64: string }) => {
         if (!selectedSupplier) return;
         await updateSupplierImageMutation.mutateAsync({ supplierId, imageBase64 });
+    };
+
+    const handleNewSupplierImageUpload = (imageBase64: string) => {
+        setNewSupplierImage(imageBase64);
     };
 
     const supplierFields: FieldConfig[] = [
@@ -156,17 +198,27 @@ const SupplierList = () => {
         };
     };
 
+    const emptySupplierData = {
+        name: '',
+        address: '',
+        phone: '',
+        email: '',
+        contact_person: ''
+    };
+
     return (
         <Card>
             <CardHeader className="mb-6 px-0">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Supplier</h1>
-                    <Link to="/master-data/suppliers/add">
-                        <Button variant="primary" className="flex items-center">
-                            <FaPlus className="mr-2" />
-                            Tambah Supplier Baru
-                        </Button>
-                    </Link>
+                    <Button 
+                        variant="primary" 
+                        className="flex items-center"
+                        onClick={openAddSupplierModal}
+                    >
+                        <FaPlus className="mr-2" />
+                        Tambah Supplier Baru
+                    </Button>
                 </div>
             </CardHeader>
 
@@ -210,12 +262,13 @@ const SupplierList = () => {
                 </Table>
             )}
 
+            {/* Edit Supplier Modal */}
             <DetailEditModal
                 title={selectedSupplier?.name || ''}
                 data={transformSupplierForModal(selectedSupplier)}
                 fields={supplierFields}
-                isOpen={isModalOpen}
-                onClose={closeModal}
+                isOpen={isEditModalOpen}
+                onClose={closeEditModal}
                 onSave={async (updatedData: Record<string, string | number | boolean | null>) => {
                     if (selectedSupplier) {
                         await updateSupplierMutation.mutateAsync(updatedData);
@@ -229,6 +282,26 @@ const SupplierList = () => {
                 deleteButtonLabel="Hapus Supplier"
                 imageUrl={selectedSupplier?.image_url || undefined}
                 imagePlaceholder={selectedSupplier ? `https://picsum.photos/seed/${selectedSupplier.id}/400/300` : undefined}
+                mode="edit"
+            />
+
+            {/* Add Supplier Modal */}
+            <DetailEditModal
+                title="Tambah Supplier Baru"
+                data={emptySupplierData}
+                fields={supplierFields}
+                isOpen={isAddModalOpen}
+                onClose={closeAddModal}
+                onSave={async (newSupplierData) => {
+                    await createSupplierMutation.mutateAsync(newSupplierData);
+                    return Promise.resolve();
+                }}
+                onImageSave={({ imageBase64 }) => {
+                    handleNewSupplierImageUpload(imageBase64);
+                    return Promise.resolve();
+                }}
+                imagePlaceholder="https://via.placeholder.com/400x300?text=Foto+Supplier"
+                mode="add"
             />
         </Card>
     );
