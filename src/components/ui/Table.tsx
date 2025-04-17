@@ -67,7 +67,6 @@ export const TableCell = ({ children, className, colSpan, ...props }: TableCellP
                 'transition-all duration-200 max-h-[40px] group-hover:max-h-[300px]',
                 className
             )}
-            title={typeof children === 'string' ? children : undefined}
             {...props}
         >
             {children}
