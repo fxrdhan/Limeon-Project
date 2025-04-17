@@ -17,6 +17,7 @@ const UploadInvoice = () => {
     const [editableData, setEditableData] = useState<ExtractedInvoiceData | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [fileInputKey, setFileInputKey] = useState<number>(0);
 
     useEffect(() => {
         if (!file) {
@@ -140,6 +141,8 @@ const UploadInvoice = () => {
     const handleRemoveFile = () => {
         setFile(null);
         setPreviewUrl(null);
+        setFileInputKey(prev => prev + 1);
+        setError(null);
     };
 
     const handleFieldEdit = (
@@ -231,11 +234,11 @@ const UploadInvoice = () => {
                     <div className="space-y-6">
                         <div 
                             className={`border-2 ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-dashed border-gray-300'} 
-                            rounded-lg p-6 text-center transition-all ${!previewUrl ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                            rounded-lg p-6 text-center transition-all cursor-pointer hover:bg-gray-50`}
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
-                            onClick={() => !previewUrl && document.getElementById('fileInput')?.click()}
+                            onClick={() => document.getElementById('fileInput')?.click()}
                         >
                             {previewUrl ? (
                                 <div className="mb-4 relative">
@@ -243,7 +246,10 @@ const UploadInvoice = () => {
                                         src={previewUrl} 
                                         alt="Preview" 
                                         className="max-h-64 mx-auto rounded-md shadow-md cursor-pointer" 
-                                        onClick={handleImageClick}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleImageClick(e);
+                                        }}
                                     />
                                     <button 
                                         onClick={(e) => { 
@@ -272,6 +278,7 @@ const UploadInvoice = () => {
                             <input
                                 id="fileInput"
                                 type="file"
+                                key={fileInputKey}
                                 accept="image/png,image/jpeg,image/jpg"
                                 onChange={handleFileChange}
                                 className="hidden"
