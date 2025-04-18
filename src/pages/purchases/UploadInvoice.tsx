@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { FaUpload, FaArrowLeft, FaTimes, FaImage } from 'react-icons/fa';
+import { FaUpload, FaArrowLeft, FaTimes, FaImage, FaSearchPlus, FaSearchMinus } from 'react-icons/fa';
 import { uploadAndExtractInvoice } from '../../services/invoiceService';
 
 const UploadInvoice = () => {
@@ -15,6 +15,9 @@ const UploadInvoice = () => {
     const [isDragging, setIsDragging] = useState(false);
     const [fileInputKey, setFileInputKey] = useState<number>(0);
     const [showFullPreview, setShowFullPreview] = useState(false);
+    const [zoomLevel, setZoomLevel] = useState(1);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const imageContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!file) {
@@ -105,6 +108,32 @@ const UploadInvoice = () => {
     const toggleFullPreview = (e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
         setShowFullPreview(prev => !prev);
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!imageContainerRef.current) return;
+        
+        const rect = imageContainerRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        setPosition({ x, y });
+    };
+
+    const handleZoom = (e: React.WheelEvent) => {
+        e.preventDefault();
+        
+        const zoomIncrement = 0.1;
+        const direction = e.deltaY > 0 ? 1 : -1;
+        
+        setZoomLevel(currentZoom => {
+            const newZoom = currentZoom + (direction * zoomIncrement);
+            return Math.min(Math.max(newZoom, 1), 3);
+        });
+    };
+
+    const resetZoom = () => {
+        setZoomLevel(1);
+        setPosition({ x: 0, y: 0 });
     };
 
     return (
@@ -232,14 +261,38 @@ const UploadInvoice = () => {
             {showFullPreview && previewUrl && createPortal(
                 <div
                     className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
-                    onClick={toggleFullPreview}
+                    onClick={() => {
+                        toggleFullPreview();
+                        resetZoom();
+                    }}
                 >
-                    <div className="max-w-3xl max-h-[80vh] w-full p-4">
+                    <div 
+                        ref={imageContainerRef}
+                        className="p-4 relative overflow-hidden"
+                        style={{
+                            maxHeight: '100vh',
+                            maxWidth: '100vw',
+                            width: 'auto'
+                        }}
+                        onWheel={handleZoom}
+                        onMouseMove={handleMouseMove}
+                    >
                         <img
                             src={previewUrl}
                             alt="Preview"
-                            className="w-full h-auto object-contain max-h-[80vh] rounded-md shadow-xl"
+                            className="h-auto w-auto object-contain transition-transform duration-100"
+                            style={{
+                                maxHeight: '90vh',
+                                maxWidth: '120%',
+                                transformOrigin: `${position.x}px ${position.y}px`,
+                                transform: `scale(${zoomLevel})`
+                            }}
                         />
+                        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-full flex items-center space-x-2">
+                            <FaSearchMinus className="text-gray-200" />
+                            <div className="text-sm font-medium">{Math.round(zoomLevel * 100)}%</div>
+                            <FaSearchPlus className="text-gray-200" />
+                        </div>
                     </div>
                 </div>,
                 document.body
