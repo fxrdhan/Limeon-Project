@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { FaUpload, FaArrowLeft, FaTimes } from 'react-icons/fa';
+import { FaUpload, FaArrowLeft, FaTimes, FaImage } from 'react-icons/fa';
 import { uploadAndExtractInvoice } from '../../services/invoiceService';
 
 const UploadInvoice = () => {
@@ -13,6 +14,7 @@ const UploadInvoice = () => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [fileInputKey, setFileInputKey] = useState<number>(0);
+    const [showFullPreview, setShowFullPreview] = useState(false);
 
     useEffect(() => {
         if (!file) {
@@ -91,120 +93,158 @@ const UploadInvoice = () => {
         }
     };
 
-    const handleRemoveFile = () => {
+    const handleRemoveFile = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
         setFile(null);
         setPreviewUrl(null);
         setFileInputKey(prev => prev + 1);
         setError(null);
+        setShowFullPreview(false);
+    };
+
+    const toggleFullPreview = (e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        setShowFullPreview(prev => !prev);
     };
 
     return (
-        <Card className="shadow-lg max-w-2xl mx-auto">
-            <CardHeader className="border-b">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl font-bold">
-                        Unggah Faktur Pembelian
-                    </CardTitle>
-                    <div className="flex items-center space-x-2">
-                        <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+        <>
+            <Card className="shadow-lg max-w-2xl mx-auto">
+                <CardHeader className="border-b">
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-xl font-bold">
+                            Unggah Faktur Pembelian
+                        </CardTitle>
+                        <div className="flex items-center space-x-2">
+                            <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                        </div>
                     </div>
-                </div>
-                <p className="text-muted-foreground text-sm mt-1">
-                    Silakan unggah gambar faktur atau invoice pembelian Anda
-                </p>
-            </CardHeader>
-            <CardContent className="pt-6">
-                {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
-                        <svg className="h-5 w-5 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                        {error}
-                    </div>
-                )}
-                <div className="space-y-6">
-                    <div
-                        className={`border-2 ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-dashed border-gray-300'} 
-                             rounded-lg p-10 text-center transition-all cursor-pointer hover:bg-gray-50`}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        onClick={() => document.getElementById('fileInput')?.click()}
-                    >
-                        {previewUrl ? (
-                            <div className="mb-4 relative group">
-                                <img
-                                    src={previewUrl}
-                                    alt="Preview"
-                                    className="max-h-60 mx-auto rounded-md shadow-md"
-                                />
-                                <button 
-                                    onClick={(e) => { 
-                                        e.stopPropagation();
-                                        handleRemoveFile();
-                                    }}
-                                    className="absolute -top-2 -right-2 text-red-500 p-1 hover:text-red-700 focus:outline-none"
-                                    aria-label="Hapus file"
-                                >
-                                    <FaTimes className="h-5 w-5" />
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center">
-                                <div className="rounded-full bg-blue-100 p-4 inline-flex mb-3">
-                                    <FaUpload className="mx-auto h-8 w-8 text-blue-500" />
+                    <p className="text-muted-foreground text-sm mt-1">
+                        Silakan unggah gambar faktur atau invoice pembelian Anda
+                    </p>
+                </CardHeader>
+                <CardContent className="pt-6">
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                            <svg className="h-5 w-5 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                            {error}
+                        </div>
+                    )}
+                    <div className="space-y-6">
+                        <div
+                            className={`border-2 ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-dashed border-gray-300'} 
+                                    rounded-lg p-10 text-center transition-all cursor-pointer hover:bg-gray-50`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            onClick={() => document.getElementById('fileInput')?.click()}
+                        >
+                            {file ? (
+                                <div className="mb-4">
+                                    <div 
+                                        className="flex items-center p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleFullPreview();
+                                        }}
+                                    >
+                                        {previewUrl ? (
+                                            <div className="h-16 w-16 mr-3 overflow-hidden rounded-md border border-gray-200 flex-shrink-0">
+                                                <img 
+                                                    src={previewUrl} 
+                                                    alt="Thumbnail" 
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="h-16 w-16 mr-3 rounded-md bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                                <FaImage className="h-8 w-8 text-gray-400" />
+                                            </div>
+                                        )}
+                                        <div className="text-left flex-grow">
+                                            <p className="text-sm font-medium text-gray-700 truncate">
+                                                {file.name}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                {(file.size / (1024 * 1024)).toFixed(2)} MB • Klik untuk pratinjau
+                                            </p>
+                                        </div>
+                                        <button 
+                                            onClick={(e) => handleRemoveFile(e)}
+                                            className="p-1.5 ml-2 text-red-500 hover:text-red-700 focus:outline-none"
+                                            aria-label="Hapus file"
+                                        >
+                                            <FaTimes className="h-4 w-4" />
+                                        </button>
+                                    </div>
                                 </div>
-                                <p className="text-sm font-medium text-gray-700">
-                                    Klik atau seret untuk mengunggah gambar faktur
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    PNG, JPG (Maks. 5MB)
-                                </p>
-                            </div>
-                        )}
-                        <input
-                            id="fileInput"
-                            type="file"
-                            key={fileInputKey}
-                            accept="image/png,image/jpeg,image/jpg"
-                            onChange={handleFileChange}
-                            className="hidden"
+                            ) : (
+                                <div className="flex flex-col items-center">
+                                    <div className="rounded-full bg-blue-100 p-4 inline-flex mb-3">
+                                        <FaUpload className="mx-auto h-8 w-8 text-blue-500" />
+                                    </div>
+                                    <p className="text-sm font-medium text-gray-700">
+                                        Klik atau seret untuk mengunggah gambar faktur
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        PNG, JPG (Maks. 5MB)
+                                    </p>
+                                </div>
+                            )}
+                            <input
+                                id="fileInput"
+                                type="file"
+                                key={fileInputKey}
+                                accept="image/png,image/jpeg,image/jpg"
+                                onChange={handleFileChange}
+                                className="hidden"
+                            />
+                        </div>
+                        
+                        <div className="flex justify-between mt-6">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => navigate('/purchases')}
+                            >
+                                <span className="flex items-center">
+                                    <FaArrowLeft className="mr-2" />
+                                    <span>Kembali</span>
+                                </span>
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={handleUpload}
+                                disabled={!file || loading}
+                                isLoading={loading}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                aria-live="polite"
+                            >
+                                <FaUpload className="mr-2" /> Unggah & Lanjutkan
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {showFullPreview && previewUrl && createPortal(
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+                    onClick={toggleFullPreview}
+                >
+                    <div className="max-w-3xl max-h-[80vh] w-full p-4">
+                        <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="w-full h-auto object-contain max-h-[80vh] rounded-md shadow-xl"
                         />
-                        {file && !previewUrl && (
-                            <div className="mt-4 text-left p-3 bg-gray-50 rounded-md">
-                                <p className="text-sm font-medium text-gray-700">File dipilih:</p>
-                                <p className="text-sm text-gray-600">{file.name}</p>
-                                <p className="text-xs text-gray-500">
-                                    {(file.size / (1024 * 1024)).toFixed(2)} MB
-                                </p> 
-                            </div> 
-                        )}
                     </div>
-                    <div className="flex justify-between mt-6">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => navigate('/purchases')}
-                        >
-                            <span className="flex items-center">
-                                <FaArrowLeft className="mr-2" />
-                                <span>Kembali</span>
-                            </span>
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={handleUpload}
-                            disabled={!file || loading}
-                            isLoading={loading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                            aria-live="polite"
-                        >
-                            <FaUpload className="mr-2" /> Unggah & Lanjutkan
-                        </Button>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+                </div>,
+                document.body
+            )}
+        </>
     );
 };
 
