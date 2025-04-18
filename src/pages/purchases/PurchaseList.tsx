@@ -222,7 +222,7 @@ const PurchaseList = () => {
 
                 <div className="flex space-x-2">
                     <Link to="/purchases/upload-invoice">
-                        <Button variant="secondary">
+                        <Button variant="primary">
                             <FaFileUpload className="mr-2" />
                             Upload Faktur
                         </Button>
