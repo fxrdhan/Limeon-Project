@@ -59,10 +59,11 @@ const ConfirmInvoicePage = () => {
     };
 
     const renderProductField = (
-        value: string | number | undefined | null
+        value: string | number | undefined | null,
+        isDiscount = false
     ) => {
         const displayValue = value ?? '-';
-        return displayValue.toLocaleString();
+        return isDiscount && displayValue !== '-' ? `${displayValue}%` : displayValue.toLocaleString();
     };
 
     return (
@@ -146,29 +147,29 @@ const ConfirmInvoicePage = () => {
                             <Table>
                                 <TableHead>
                                     <TableRow>
-                                        <TableHeader className="text-xs">SKU</TableHeader>
-                                        <TableHeader className="text-xs">Nama Produk</TableHeader>
-                                        <TableHeader className="text-xs text-center">Qty</TableHeader>
-                                        <TableHeader className="text-xs text-center">Satuan</TableHeader>
-                                        <TableHeader className="text-xs text-center">No. Batch</TableHeader>
-                                        <TableHeader className="text-xs text-center">Exp</TableHeader>
-                                        <TableHeader className="text-xs text-right">Harga</TableHeader>
-                                        <TableHeader className="text-xs text-right">Disk (%)</TableHeader>
-                                        <TableHeader className="text-xs text-right">Total</TableHeader>
+                                        <TableHeader className="text-xs w-[12%]">SKU</TableHeader>
+                                        <TableHeader className="text-xs w-[30%]">Nama Produk</TableHeader>
+                                        <TableHeader className="text-xs text-center w-9%]">Qty</TableHeader>
+                                        <TableHeader className="text-xs text-center w-[8%]">Satuan</TableHeader>
+                                        <TableHeader className="text-xs text-center w-[10%]">No. Batch</TableHeader>
+                                        <TableHeader className="text-xs text-center w-[10%]">Exp</TableHeader>
+                                        <TableHeader className="text-xs text-right w-[8%]">Harga</TableHeader>
+                                        <TableHeader className="text-xs text-right w-[7%]">Disk</TableHeader>
+                                        <TableHeader className="text-xs text-right w-[10%]">Total</TableHeader>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {(invoiceData.product_list ?? []).map((product: ProductListItem, index: number) => (
                                         <TableRow key={index}>
-                                            <TableCell className="text-sm">{renderProductField(product.sku)}</TableCell>
-                                            <TableCell className="text-sm">{renderProductField(product.product_name)}</TableCell>
-                                            <TableCell align="center" className="text-sm">{renderProductField(product.quantity)}</TableCell>
-                                            <TableCell align="center" className="text-sm">{renderProductField(product.unit)}</TableCell>
-                                            <TableCell align="center" className="text-sm">{renderProductField(product.batch_number)}</TableCell>
-                                            <TableCell align="center" className="text-sm">{renderProductField(product.expiry_date)}</TableCell>
-                                            <TableCell className="text-sm text-right">{renderProductField(product.unit_price)}</TableCell>
-                                            <TableCell className="text-sm text-right">{renderProductField(product.discount)}</TableCell>
-                                            <TableCell className="text-sm text-right">{renderProductField(product.total_price)}</TableCell>
+                                            <TableCell className="text-sm w-[10%]">{renderProductField(product.sku)}</TableCell>
+                                            <TableCell className="text-sm w-[30%] font-medium">{renderProductField(product.product_name)}</TableCell>
+                                            <TableCell align="center" className="text-sm w-[7%]">{renderProductField(product.quantity)}</TableCell>
+                                            <TableCell align="center" className="text-sm w-[8%]">{renderProductField(product.unit)}</TableCell>
+                                            <TableCell align="center" className="text-sm w-[10%]">{renderProductField(product.batch_number)}</TableCell>
+                                            <TableCell align="center" className="text-sm w-[10%]">{renderProductField(product.expiry_date)}</TableCell>
+                                            <TableCell className="text-sm text-right w-[8%]">{renderProductField(product.unit_price)}</TableCell>
+                                            <TableCell className="text-sm text-right w-[7%]">{renderProductField(product.discount, true)}</TableCell>
+                                            <TableCell className="text-sm text-right w-[10%]">{renderProductField(product.total_price)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
