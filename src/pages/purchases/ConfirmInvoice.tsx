@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { FaArrowLeft, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaArrowLeft, FaCheck } from 'react-icons/fa';
 import { ExtractedInvoiceData, ProductListItem, saveInvoiceToDatabase } from '../../services/invoiceService';
 import { Loading } from '../../components/ui/Loading';
 
@@ -10,8 +10,6 @@ const ConfirmInvoicePage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [editableData, setEditableData] = useState<ExtractedInvoiceData | null>(null);
-    const [filePreview, setFilePreview] = useState<string | null>(null);
-    const [isFullscreen, setIsFullscreen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -22,19 +20,7 @@ const ConfirmInvoicePage = () => {
             console.warn("Tidak ada data faktur yang diterima. Kembali ke halaman upload.");
             navigate('/purchases/upload-invoice');
         }
-        if (location.state?.filePreview) {
-            setFilePreview(location.state.filePreview);
-        }
     }, [location.state, navigate]);
-
-    const handleImageClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setIsFullscreen(true);
-    };
-
-    const closeFullscreen = () => {
-        setIsFullscreen(false);
-    };
 
     const handleConfirm = async () => {
         if (!editableData) return;
@@ -76,36 +62,6 @@ const ConfirmInvoicePage = () => {
 
     return (
         <Card className="shadow-lg max-w-5xl mx-auto">
-            {filePreview && (
-                <div
-                    onClick={closeFullscreen}
-                    className={`fixed inset-0 bg-black bg-opacity-80 z-50 flex justify-center items-center p-4
-                        transition-opacity duration-300
-                        ${isFullscreen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
-                    `}
-                >
-                    <div
-                        className={`relative max-w-full max-h-full overflow-auto
-                         transform transition-transform duration-300
-                            ${isFullscreen ? 'scale-100' : 'scale-90'}
-                        `}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <img
-                            src={filePreview}
-                            alt="Fullscreen Preview"
-                            className="max-w-full max-h-[90vh] object-contain"
-                        />
-                        <button
-                            onClick={closeFullscreen}
-                            className="absolute top-2 right-2 text-red-500 p-2 hover:text-red-700 focus:outline-none"
-                            aria-label="Tutup pratinjau fullscreen"
-                        >
-                            <FaTimes className="h-6 w-6" />
-                        </button>
-                    </div>
-                </div>
-            )}
             <CardHeader className="border-b">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-xl font-bold">
@@ -235,19 +191,6 @@ const ConfirmInvoicePage = () => {
                                 </div>
                             </div>
                         </div>
-                        {filePreview && (
-                            <div className="mt-6 border rounded-md p-4">
-                                <h4 className="font-medium text-gray-700 mb-2">Gambar Faktur</h4>
-                                <div className="flex justify-center">
-                                    <img
-                                        src={filePreview}
-                                        alt="Preview Faktur"
-                                        className="max-h-96 object-contain rounded-md shadow-md cursor-pointer"
-                                        onClick={handleImageClick}
-                                    />
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
             </CardContent>
