@@ -146,6 +146,8 @@ const UploadInvoice = () => {
                         </CardTitle>
                         <div className="flex items-center space-x-2">
                             <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                            <div className="h-[2px] w-12 bg-gray-300"></div>
+                            <div className="h-2 w-2 rounded-full bg-gray-300"></div>
                         </div>
                     </div>
                     <p className="text-muted-foreground text-sm mt-1">
