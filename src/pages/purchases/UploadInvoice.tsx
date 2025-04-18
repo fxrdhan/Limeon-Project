@@ -156,60 +156,21 @@ const UploadInvoice = () => {
                     {error && (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
                             <svg className="h-5 w-5 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 001.414-1.414L11.414 10l1.293-1.293a1 1 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                             </svg>
                             {error}
                         </div>
                     )}
                     <div className="space-y-6">
-                        <div
-                            className={`border-2 ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-dashed border-gray-300'} 
-                                    rounded-lg p-10 text-center transition-all cursor-pointer hover:bg-gray-50`}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            onClick={() => document.getElementById('fileInput')?.click()}
-                        >
-                            {file ? (
-                                <div className="mb-4">
-                                    <div 
-                                        className="flex items-center p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            toggleFullPreview();
-                                        }}
-                                    >
-                                        {previewUrl ? (
-                                            <div className="h-16 w-16 mr-3 overflow-hidden rounded-md border border-gray-200 flex-shrink-0">
-                                                <img 
-                                                    src={previewUrl} 
-                                                    alt="Thumbnail" 
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="h-16 w-16 mr-3 rounded-md bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                                <FaImage className="h-8 w-8 text-gray-400" />
-                                            </div>
-                                        )}
-                                        <div className="text-left flex-grow">
-                                            <p className="text-sm font-medium text-gray-700 truncate">
-                                                {file.name}
-                                            </p>
-                                            <p className="text-xs text-gray-500">
-                                                {(file.size / (1024 * 1024)).toFixed(2)} MB • Klik untuk pratinjau
-                                            </p>
-                                        </div>
-                                        <button 
-                                            onClick={(e) => handleRemoveFile(e)}
-                                            className="p-1.5 ml-2 text-red-500 hover:text-red-700 focus:outline-none"
-                                            aria-label="Hapus file"
-                                        >
-                                            <FaTimes className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
+                        {!file ? (
+                            <div
+                                className={`border-2 ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-dashed border-gray-300'} 
+                                        rounded-lg p-10 text-center transition-all cursor-pointer hover:bg-gray-50`}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                onClick={() => document.getElementById('fileInput')?.click()}
+                            >
                                 <div className="flex flex-col items-center">
                                     <div className="rounded-full bg-blue-100 p-4 inline-flex mb-3">
                                         <FaUpload className="mx-auto h-8 w-8 text-blue-500" />
@@ -221,17 +182,63 @@ const UploadInvoice = () => {
                                         PNG, JPG (Maks. 5MB)
                                     </p>
                                 </div>
-                            )}
-                            <input
-                                id="fileInput"
-                                type="file"
-                                key={fileInputKey}
-                                accept="image/png,image/jpeg,image/jpg"
-                                onChange={handleFileChange}
-                                className="hidden"
-                            />
-                        </div>
-                        
+                                <input
+                                    id="fileInput"
+                                    type="file"
+                                    key={fileInputKey}
+                                    accept="image/png,image/jpeg,image/jpg"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
+                            </div>
+                        ) : (
+                            <div className="mb-4">
+                                <div 
+                                    className="flex items-center p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleFullPreview();
+                                    }}
+                                >
+                                    {previewUrl ? (
+                                        <div className="h-16 w-16 mr-3 overflow-hidden rounded-md border border-gray-200 flex-shrink-0">
+                                            <img 
+                                                src={previewUrl} 
+                                                alt="Thumbnail" 
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="h-16 w-16 mr-3 rounded-md bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                            <FaImage className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                    )}
+                                    <div className="text-left flex-grow">
+                                        <p className="text-sm font-medium text-gray-700 truncate">
+                                            {file.name}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            {(file.size / (1024 * 1024)).toFixed(2)} MB • Klik untuk pratinjau
+                                        </p>
+                                    </div>
+                                    <button 
+                                        onClick={(e) => handleRemoveFile(e)}
+                                        className="p-1.5 ml-2 text-red-500 hover:text-red-700 focus:outline-none"
+                                        aria-label="Hapus file"
+                                    >
+                                        <FaTimes className="h-4 w-4" />
+                                    </button>
+                                </div>
+                                <input
+                                    id="fileInput"
+                                    type="file"
+                                    key={fileInputKey}
+                                    accept="image/png,image/jpeg,image/jpg"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
+                            </div>
+                        )}
                         <div className="flex justify-between mt-6">
                             <Button
                                 type="button"
