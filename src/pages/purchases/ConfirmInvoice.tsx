@@ -66,6 +66,13 @@ const ConfirmInvoicePage = () => {
         return isDiscount && displayValue !== '-' ? `${displayValue}%` : displayValue.toLocaleString();
     };
 
+    const SectionTitle = ({ number, title }: { number: string; title: string }) => (
+        <h4 className="font-medium text-gray-700 mb-2 flex items-center">
+            <span className="inline-block w-6 h-6 text-xs flex items-center justify-center bg-blue-100 text-blue-800 rounded-full mr-2">{number}</span>
+            {title}
+        </h4>
+    );
+
     return (
         <Card className="shadow-lg max-w-5xl mx-auto">
             <CardHeader className="border-b">
@@ -104,46 +111,40 @@ const ConfirmInvoicePage = () => {
                             )}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
-                                <h4 className="font-medium text-gray-700 mb-2 flex items-center">
-                                    <span className="inline-block w-6 h-6 text-xs flex items-center justify-center bg-blue-100 text-blue-800 rounded-full mr-2">1</span>
-                                    Informasi Perusahaan
-                                </h4>
-                                <div className="space-y-1 text-sm">
-                                    {renderField("Nama", invoiceData.company_details?.name)}
-                                    {renderField("Alamat", invoiceData.company_details?.address)}
-                                    {renderField("No. Lisensi PBF", invoiceData.company_details?.license_pbf)}
+                            <div>
+                                <SectionTitle number="1" title="Informasi Perusahaan" />
+                                <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
+                                    <div className="space-y-1 text-sm">
+                                        {renderField("Nama", invoiceData.company_details?.name)}
+                                        {renderField("Alamat", invoiceData.company_details?.address)}
+                                        {renderField("No. Lisensi PBF", invoiceData.company_details?.license_pbf)}
+                                    </div>
                                 </div>
                             </div>
-                            <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
-                                <h4 className="font-medium text-gray-700 mb-2 flex items-center">
-                                    <span className="inline-block w-6 h-6 text-xs flex items-center justify-center bg-blue-100 text-blue-800 rounded-full mr-2">2</span>
-                                    Informasi Faktur
-                                </h4>
-                                <div className="space-y-1 text-sm">
-                                    {renderField("No. Faktur", invoiceData.invoice_information?.invoice_number)}
-                                    {renderField("Tanggal", invoiceData.invoice_information?.invoice_date)}
-                                    {renderField("No. SO", invoiceData.invoice_information?.so_number)}
-                                    {renderField("Jatuh Tempo", invoiceData.invoice_information?.due_date)}
+                            <div>
+                                <SectionTitle number="2" title="Informasi Faktur" />
+                                <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
+                                    <div className="space-y-1 text-sm">
+                                        {renderField("No. Faktur", invoiceData.invoice_information?.invoice_number)}
+                                        {renderField("Tanggal", invoiceData.invoice_information?.invoice_date)}
+                                        {renderField("No. SO", invoiceData.invoice_information?.so_number)}
+                                        {renderField("Jatuh Tempo", invoiceData.invoice_information?.due_date)}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div className="border rounded-md p-4 mb-6 hover:shadow-md transition-shadow">
-                            <h4 className="font-medium text-gray-700 mb-2 flex items-center">
-                                <span className="inline-block w-6 h-6 text-xs flex items-center justify-center bg-blue-100 text-blue-800 rounded-full mr-2">3</span>
-                                Informasi Pelanggan
-                            </h4>
-                            <div className="space-y-1 text-sm">
-                                {renderField("Nama", invoiceData.customer_information?.customer_name)}
-                                {renderField("Alamat", invoiceData.customer_information?.customer_address)}
-                                {renderField("ID Pelanggan", invoiceData.customer_information?.customer_id)}
                             </div>
                         </div>
                         <div className="mb-6">
-                            <h4 className="font-medium text-gray-700 mb-2 flex items-center">
-                                <span className="inline-block w-6 h-6 text-xs flex items-center justify-center bg-blue-100 text-blue-800 rounded-full mr-2">4</span>
-                                Daftar Produk
-                            </h4>
+                            <SectionTitle number="3" title="Informasi Pelanggan" />
+                            <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
+                                <div className="space-y-1 text-sm">
+                                    {renderField("Nama", invoiceData.customer_information?.customer_name)}
+                                    {renderField("Alamat", invoiceData.customer_information?.customer_address)}
+                                    {renderField("ID Pelanggan", invoiceData.customer_information?.customer_id)}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mb-6">
+                            <SectionTitle number="4" title="Daftar Produk" />
                             <Table>
                                 <TableHead>
                                     <TableRow>
@@ -176,28 +177,26 @@ const ConfirmInvoicePage = () => {
                             </Table>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
-                                <h4 className="font-medium text-gray-700 mb-2 flex items-center">
-                                    <span className="inline-block w-6 h-6 text-xs flex items-center justify-center bg-blue-100 text-blue-800 rounded-full mr-2">5</span>
-                                    Informasi Tambahan
-                                </h4>
-                                <div className="space-y-1 text-sm">
-                                    {renderField("Diperiksa oleh", invoiceData.additional_information?.checked_by)}
+                            <div>
+                                <SectionTitle number="5" title="Informasi Tambahan" />
+                                <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
+                                    <div className="space-y-1 text-sm">
+                                        {renderField("Diperiksa oleh", invoiceData.additional_information?.checked_by)}
+                                    </div>
                                 </div>
                             </div>
-                            <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
-                                <h4 className="font-medium text-gray-700 mb-2 flex items-center">
-                                    <span className="inline-block w-6 h-6 text-xs flex items-center justify-center bg-blue-100 text-blue-800 rounded-full mr-2">6</span>
-                                    Ringkasan Pembayaran
-                                </h4>
-                                <div className="space-y-1 text-sm">
-                                    {renderField("Total Harga", invoiceData.payment_summary?.total_price)}
-                                    {renderField("PPN", invoiceData.payment_summary?.vat)}
-                                    <p className="font-medium text-base">Total Faktur:
-                                        <span className="text-blue-600 ml-2">
-                                            Rp {invoiceData.payment_summary?.invoice_total?.toLocaleString('id-ID') || '-'}
-                                        </span>
-                                    </p>
+                            <div>
+                                <SectionTitle number="6" title="Ringkasan Pembayaran" />
+                                <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
+                                    <div className="space-y-1 text-sm">
+                                        {renderField("Total Harga", invoiceData.payment_summary?.total_price)}
+                                        {renderField("PPN", invoiceData.payment_summary?.vat)}
+                                        <p className="font-medium text-base">Total Faktur:
+                                            <span className="text-blue-600 ml-2">
+                                                Rp {invoiceData.payment_summary?.invoice_total?.toLocaleString('id-ID') || '-'}
+                                            </span>
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
