@@ -15,6 +15,7 @@ const TypeList = lazy(() => import('./pages/master-data/TypeList'));
 const AddItem = lazy(() => import('./pages/master-data/AddItem'));
 const SupplierList = lazy(() => import('./pages/master-data/SupplierList'));
 const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
+const ConfirmInvoicePage = lazy(() => import('./pages/purchases/ConfirmInvoice'));
 const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
 const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
 const Profile = lazy(() => import('./pages/settings/Profile'));
@@ -125,6 +126,14 @@ function App() {
               element={
                 <Suspense fallback={<div>Loading...</div>}>
                   <UploadInvoice />
+                </Suspense>
+              }
+            />
+            <Route
+              path="confirm-invoice"
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <ConfirmInvoicePage />
                 </Suspense>
               }
             />
