@@ -340,10 +340,12 @@ const UploadInvoice = () => {
                                         type="button"
                                         variant="outline"
                                         onClick={toggleEdit}
-                                        className="text-sm"
+                                        className={`text-sm ${isEditing ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
                                     >
-                                        <FaEdit className="mr-2" /> 
-                                        {isEditing ? 'Selesai Edit' : 'Edit Data'}
+                                        <span className="flex items-center">
+                                            {isEditing ? <FaCheck className="mr-2" /> : <FaEdit className="mr-2" />}
+                                            {isEditing ? 'Selesai Edit' : 'Edit Data'}
+                                        </span>
                                     </Button>
                                 </div>
                                 
@@ -584,7 +586,7 @@ const UploadInvoice = () => {
                         onClick={handleConfirm} 
                         disabled={loading}
                         isLoading={loading}
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
                         <FaCheck className="mr-2" />
                         Konfirmasi & Simpan
