@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { FaArrowLeft, FaCheck, FaEdit, FaTimes } from 'react-icons/fa';
+import { FaArrowLeft, FaCheck, FaTimes } from 'react-icons/fa';
 import { ExtractedInvoiceData, ProductListItem, saveInvoiceToDatabase } from '../../services/invoiceService';
 import { Loading } from '../../components/ui/Loading';
 
@@ -11,7 +11,6 @@ const ConfirmInvoicePage = () => {
     const location = useLocation();
     const [editableData, setEditableData] = useState<ExtractedInvoiceData | null>(null);
     const [filePreview, setFilePreview] = useState<string | null>(null);
-    const [isEditing, setIsEditing] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -27,56 +26,6 @@ const ConfirmInvoicePage = () => {
             setFilePreview(location.state.filePreview);
         }
     }, [location.state, navigate]);
-
-    const handleFieldEdit = (
-        section: keyof ExtractedInvoiceData,
-        field: string,
-        value: string | number
-    ) => {
-        if (!editableData) return;
-
-        setEditableData(prev => {
-            if (!prev) return prev;
-
-            const updated = { ...prev };
-            if (updated[section]) {
-                const sectionObj = updated[section] as Record<string, unknown>;
-                sectionObj[field] = value;
-            } else {
-                updated[section] = { [field]: value } as never;
-            }
-            return updated;
-        });
-    };
-
-    const handleProductListEdit = (
-        index: number,
-        field: keyof ProductListItem,
-        value: string | number
-    ) => {
-        if (!editableData || !editableData.product_list) return;
-
-        setEditableData(prev => {
-            if (!prev || !prev.product_list) return prev;
-
-            const updatedProductList = [...prev.product_list];
-            if (updatedProductList[index]) {
-                const updatedProduct = { ...updatedProductList[index] };
-                if (field === 'quantity' || field === 'unit_price' || field === 'discount' || field === 'total_price') {
-                    updatedProduct[field] = Number(value) || 0;
-                } else {
-                    updatedProduct[field] = String(value);
-                }
-                updatedProductList[index] = updatedProduct;
-            }
-
-            return { ...prev, product_list: updatedProductList };
-        });
-    };
-
-    const toggleEdit = () => {
-        setIsEditing(!isEditing);
-    };
 
     const handleImageClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -108,44 +57,21 @@ const ConfirmInvoicePage = () => {
         return <Loading message="Memuat data konfirmasi..." />;
     }
 
-    const renderField = (label: string, value: string | number | undefined | null, section: keyof ExtractedInvoiceData, field: string) => {
+    const renderField = (label: string, value: string | number | undefined | null) => {
         const displayValue = value ?? '-';
         return (
             <div className="mb-2">
                 <span className="font-medium text-gray-600">{label}:</span>{' '}
-                {isEditing ? (
-                    <input
-                        type={typeof value === 'number' ? 'number' : 'text'}
-                        value={value === null || value === undefined ? '' : value}
-                        onChange={(e) => handleFieldEdit(section, field, e.target.value)}
-                        className="ml-1 px-2 py-1 border rounded-md text-sm w-full"
-                    />
-                ) : (
-                    <span className="text-gray-800">{displayValue}</span>
-                )}
+                <span className="text-gray-800">{displayValue}</span>
             </div>
         );
     };
 
     const renderProductField = (
-        value: string | number | undefined | null,
-        index: number,
-        field: keyof ProductListItem
+        value: string | number | undefined | null
     ) => {
         const displayValue = value ?? '-';
-        const inputType = (field === 'quantity' || field === 'unit_price' || field === 'discount' || field === 'total_price') ? 'number' : 'text';
-
-        return isEditing ? (
-            <input
-                type={inputType}
-                value={value === null || value === undefined ? '' : value}
-                onChange={(e) => handleProductListEdit(index, field, e.target.value)}
-                className="w-full px-1 py-0.5 border rounded-md text-xs text-right"
-                step={inputType === 'number' ? "0.01" : undefined}
-            />
-        ) : (
-            displayValue.toLocaleString()
-        );
+        return displayValue.toLocaleString();
     };
 
     return (
@@ -192,7 +118,7 @@ const ConfirmInvoicePage = () => {
                     </div>
                 </div>
                 <p className="text-muted-foreground text-sm mt-1">
-                    Silakan periksa data yang terekstrak dari faktur Anda. Edit jika perlu.
+                    Silakan periksa data yang terekstrak dari faktur Anda.
                 </p>
             </CardHeader>
             <CardContent className="pt-6">
@@ -208,17 +134,6 @@ const ConfirmInvoicePage = () => {
                     <div>
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-medium">Data yang Diekstraksi:</h3>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={toggleEdit}
-                                className={`text-sm ${isEditing ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
-                            >
-                                <span className="flex items-center">
-                                    {isEditing ? <FaCheck className="mr-2" /> : <FaEdit className="mr-2" />}
-                                    {isEditing ? 'Selesai Edit' : 'Edit Data'}
-                                </span>
-                            </Button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
@@ -227,9 +142,9 @@ const ConfirmInvoicePage = () => {
                                     Informasi Perusahaan
                                 </h4>
                                 <div className="space-y-1 text-sm">
-                                    {renderField("Nama", editableData.company_details?.name, 'company_details', 'name')}
-                                    {renderField("Alamat", editableData.company_details?.address, 'company_details', 'address')}
-                                    {renderField("No. Lisensi PBF", editableData.company_details?.license_pbf, 'company_details', 'license_pbf')}
+                                    {renderField("Nama", editableData.company_details?.name)}
+                                    {renderField("Alamat", editableData.company_details?.address)}
+                                    {renderField("No. Lisensi PBF", editableData.company_details?.license_pbf)}
                                 </div>
                             </div>
                             <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
@@ -238,10 +153,10 @@ const ConfirmInvoicePage = () => {
                                     Informasi Faktur
                                 </h4>
                                 <div className="space-y-1 text-sm">
-                                    {renderField("No. Faktur", editableData.invoice_information?.invoice_number, 'invoice_information', 'invoice_number')}
-                                    {renderField("Tanggal", editableData.invoice_information?.invoice_date, 'invoice_information', 'invoice_date')}
-                                    {renderField("No. SO", editableData.invoice_information?.so_number, 'invoice_information', 'so_number')}
-                                    {renderField("Jatuh Tempo", editableData.invoice_information?.due_date, 'invoice_information', 'due_date')}
+                                    {renderField("No. Faktur", editableData.invoice_information?.invoice_number)}
+                                    {renderField("Tanggal", editableData.invoice_information?.invoice_date)}
+                                    {renderField("No. SO", editableData.invoice_information?.so_number)}
+                                    {renderField("Jatuh Tempo", editableData.invoice_information?.due_date)}
                                 </div>
                             </div>
                         </div>
@@ -251,9 +166,9 @@ const ConfirmInvoicePage = () => {
                                 Informasi Pelanggan
                             </h4>
                             <div className="space-y-1 text-sm">
-                                {renderField("Nama", editableData.customer_information?.customer_name, 'customer_information', 'customer_name')}
-                                {renderField("Alamat", editableData.customer_information?.customer_address, 'customer_information', 'customer_address')}
-                                {renderField("ID Pelanggan", editableData.customer_information?.customer_id, 'customer_information', 'customer_id')}
+                                {renderField("Nama", editableData.customer_information?.customer_name)}
+                                {renderField("Alamat", editableData.customer_information?.customer_address)}
+                                {renderField("ID Pelanggan", editableData.customer_information?.customer_id)}
                             </div>
                         </div>
                         <div className="mb-6">
@@ -279,15 +194,15 @@ const ConfirmInvoicePage = () => {
                                     <tbody className="divide-y divide-gray-200">
                                         {(editableData.product_list ?? []).map((product: ProductListItem, index: number) => (
                                             <tr key={index} className="text-sm hover:bg-gray-50">
-                                                <td className="py-1 px-3">{renderProductField(product.sku, index, 'sku')}</td>
-                                                <td className="py-1 px-3">{renderProductField(product.product_name, index, 'product_name')}</td>
-                                                <td className="py-1 px-3 text-center">{renderProductField(product.quantity, index, 'quantity')}</td>
-                                                <td className="py-1 px-3 text-center">{renderProductField(product.unit, index, 'unit')}</td>
-                                                <td className="py-1 px-3 text-center">{renderProductField(product.batch_number, index, 'batch_number')}</td>
-                                                <td className="py-1 px-3 text-center">{renderProductField(product.expiry_date, index, 'expiry_date')}</td>
-                                                <td className="py-1 px-3 text-right">{renderProductField(product.unit_price, index, 'unit_price')}</td>
-                                                <td className="py-1 px-3 text-right">{renderProductField(product.discount, index, 'discount')}</td>
-                                                <td className="py-1 px-3 text-right">{renderProductField(product.total_price, index, 'total_price')}</td>
+                                                <td className="py-1 px-3">{renderProductField(product.sku)}</td>
+                                                <td className="py-1 px-3">{renderProductField(product.product_name)}</td>
+                                                <td className="py-1 px-3 text-center">{renderProductField(product.quantity)}</td>
+                                                <td className="py-1 px-3 text-center">{renderProductField(product.unit)}</td>
+                                                <td className="py-1 px-3 text-center">{renderProductField(product.batch_number)}</td>
+                                                <td className="py-1 px-3 text-center">{renderProductField(product.expiry_date)}</td>
+                                                <td className="py-1 px-3 text-right">{renderProductField(product.unit_price)}</td>
+                                                <td className="py-1 px-3 text-right">{renderProductField(product.discount)}</td>
+                                                <td className="py-1 px-3 text-right">{renderProductField(product.total_price)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -301,7 +216,7 @@ const ConfirmInvoicePage = () => {
                                     Informasi Tambahan
                                 </h4>
                                 <div className="space-y-1 text-sm">
-                                    {renderField("Diperiksa oleh", editableData.additional_information?.checked_by, 'additional_information', 'checked_by')}
+                                    {renderField("Diperiksa oleh", editableData.additional_information?.checked_by)}
                                 </div>
                             </div>
                             <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
@@ -310,8 +225,8 @@ const ConfirmInvoicePage = () => {
                                     Ringkasan Pembayaran
                                 </h4>
                                 <div className="space-y-1 text-sm">
-                                    {renderField("Total Harga", editableData.payment_summary?.total_price, 'payment_summary', 'total_price')}
-                                    {renderField("PPN", editableData.payment_summary?.vat, 'payment_summary', 'vat')}
+                                    {renderField("Total Harga", editableData.payment_summary?.total_price)}
+                                    {renderField("PPN", editableData.payment_summary?.vat)}
                                     <p className="font-medium text-base">Total Faktur:
                                         <span className="text-blue-600 ml-2">
                                             Rp {editableData.payment_summary?.invoice_total?.toLocaleString('id-ID') || '-'}
