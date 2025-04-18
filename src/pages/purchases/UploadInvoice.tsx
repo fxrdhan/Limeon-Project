@@ -87,8 +87,16 @@ const UploadInvoice = () => {
         try {
             setLoading(true);
             setError(null);
+            const startTime = Date.now();
             const data = await uploadAndExtractInvoice(file);
-            navigate('/purchases/confirm-invoice', { state: { extractedData: data, filePreview: previewUrl } });
+            const processingTime = (Date.now() - startTime) / 1000;
+            navigate('/purchases/confirm-invoice', { 
+                state: { 
+                    extractedData: data, 
+                    filePreview: previewUrl,
+                    processingTime: processingTime.toFixed(1) 
+                } 
+            });
         } catch (err: unknown) {
             setError(`Gagal mengunggah dan mengekstrak faktur: ${err instanceof Error ? err.message : 'Terjadi kesalahan tidak dikenal'}`);
         } finally {
