@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { FaArrowLeft, FaCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaCheck, FaClock } from 'react-icons/fa';
 import { ExtractedInvoiceData, ProductListItem, saveInvoiceToDatabase } from '../../services/invoiceService';
 import { Loading } from '../../components/ui/Loading';
 
@@ -12,10 +12,14 @@ const ConfirmInvoicePage = () => {
     const [editableData, setEditableData] = useState<ExtractedInvoiceData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [processingTime, setProcessingTime] = useState<string | null>(null);
 
     useEffect(() => {
         if (location.state?.extractedData) {
             setEditableData(JSON.parse(JSON.stringify(location.state.extractedData)));
+            if (location.state.processingTime) {
+                setProcessingTime(location.state.processingTime);
+            }
         } else {
             console.warn("Tidak ada data faktur yang diterima. Kembali ke halaman upload.");
             navigate('/purchases/upload-invoice');
@@ -90,6 +94,12 @@ const ConfirmInvoicePage = () => {
                     <div>
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-medium">Data yang Diekstraksi:</h3>
+                            {processingTime && (
+                                <div className="inline-flex items-center px-2.5 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    <FaClock className="mr-1.5" />
+                                    Data selesai diekstraksi dalam {processingTime}s
+                                </div>
+                            )}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
