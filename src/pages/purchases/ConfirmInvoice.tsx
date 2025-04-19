@@ -27,6 +27,18 @@ const ConfirmInvoicePage = () => {
         }
     }, [location.state, navigate]);
 
+    const formatCurrency = (value: number | string | undefined | null, prefix = '') => {
+        if (value === null || value === undefined) return '-';
+        const numValue = typeof value === 'string' ? parseFloat(value) : value;
+        if (isNaN(numValue)) return '-';
+        
+        const formatter = new Intl.NumberFormat('id-ID', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+        return `${prefix}${formatter.format(numValue)}`;
+    };
+
     const handleConfirm = async () => {
         if (!invoiceData) return;
 
@@ -64,6 +76,15 @@ const ConfirmInvoicePage = () => {
     ) => {
         const displayValue = value ?? '-';
         return isDiscount && displayValue !== '-' ? `${displayValue}%` : displayValue.toLocaleString();
+    };
+
+    const renderCurrencyField = (label: string, value: number | string | undefined | null) => {
+        return (
+            <div className="mb-2">
+                <span className="font-medium text-gray-600">{label}:</span>{' '}
+                <span className="text-gray-800">Rp {formatCurrency(value)}</span>
+            </div>
+        );
     };
 
     const SectionTitle = ({ number, title }: { number: string; title: string }) => (
@@ -186,11 +207,11 @@ const ConfirmInvoicePage = () => {
                                 <SectionTitle number="6" title="Ringkasan Pembayaran" />
                                 <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
                                     <div className="space-y-1 text-sm">
-                                        {renderField("Total Harga", invoiceData.payment_summary?.total_price)}
-                                        {renderField("PPN", invoiceData.payment_summary?.vat)}
+                                        {renderCurrencyField("Total Harga", invoiceData.payment_summary?.total_price)}
+                                        {renderCurrencyField("PPN", invoiceData.payment_summary?.vat)}
                                         <p className="font-medium text-base">Total Faktur:
                                             <span className="text-blue-600 ml-2">
-                                                Rp {invoiceData.payment_summary?.invoice_total?.toLocaleString('id-ID') || '-'}
+                                                Rp {formatCurrency(invoiceData.payment_summary?.invoice_total)}
                                             </span>
                                         </p>
                                     </div>
