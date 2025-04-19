@@ -117,7 +117,6 @@ const ConfirmInvoicePage = () => {
                                     <div className="space-y-1 text-sm">
                                         {renderField("Nama", invoiceData.company_details?.name)}
                                         {renderField("Alamat", invoiceData.company_details?.address)}
-                                        {renderField("No. Lisensi PBF", invoiceData.company_details?.license_pbf)}
                                     </div>
                                 </div>
                             </div>
@@ -127,7 +126,6 @@ const ConfirmInvoicePage = () => {
                                     <div className="space-y-1 text-sm">
                                         {renderField("No. Faktur", invoiceData.invoice_information?.invoice_number)}
                                         {renderField("Tanggal", invoiceData.invoice_information?.invoice_date)}
-                                        {renderField("No. SO", invoiceData.invoice_information?.so_number)}
                                         {renderField("Jatuh Tempo", invoiceData.invoice_information?.due_date)}
                                     </div>
                                 </div>
@@ -139,7 +137,6 @@ const ConfirmInvoicePage = () => {
                                 <div className="space-y-1 text-sm">
                                     {renderField("Nama", invoiceData.customer_information?.customer_name)}
                                     {renderField("Alamat", invoiceData.customer_information?.customer_address)}
-                                    {renderField("ID Pelanggan", invoiceData.customer_information?.customer_id)}
                                 </div>
                             </div>
                         </div>

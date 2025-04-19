@@ -5,7 +5,6 @@ interface PurchaseData {
     invoice_number: string;
     date: string;
     due_date: string | null;
-    so_number: string | null;
     total: number;
     payment_status: string;
     payment_method: string;
@@ -104,13 +103,6 @@ export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                                 <span className="px-2">:</span>
                                 <span>{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</span>
                             </div>
-                            {purchase.so_number && (
-                                <div className="grid grid-cols-[auto,auto,1fr] mb-1">
-                                    <span className="text-left w-[100px]">No. SO</span>
-                                    <span className="px-2">:</span>
-                                    <span>{purchase.so_number}</span>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>

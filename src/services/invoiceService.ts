@@ -6,7 +6,6 @@ const API_URL = import.meta.env.VITE_INVOICE_EXTRACTOR_API_URL || 'http://localh
 interface CompanyDetails {
     name?: string;
     address?: string;
-    license_pbf?: string;
     license_dak?: string;
     certificate_cdob?: string;
 }
@@ -14,14 +13,12 @@ interface CompanyDetails {
 interface InvoiceInformation {
     invoice_number?: string;
     invoice_date?: string;
-    so_number?: string;
     due_date?: string;
 }
 
 interface CustomerInformation {
     customer_name?: string;
     customer_address?: string;
-    customer_id?: string;
 }
 
 export interface ProductListItem {
@@ -117,11 +114,9 @@ export async function saveInvoiceToDatabase(extractedData: ExtractedInvoiceData)
             .insert({
                 invoice_number: extractedData.invoice_information.invoice_number,
                 invoice_date: extractedData.invoice_information.invoice_date,
-                so_number: extractedData.invoice_information.so_number,
                 due_date: extractedData.invoice_information.due_date,
                 supplier_name: extractedData.company_details.name,
                 supplier_address: extractedData.company_details.address,
-                pbf_license_number: extractedData.company_details.license_pbf,
                 dak_license_number: extractedData.company_details.license_dak,
                 cdob_certificate_number: extractedData.company_details.certificate_cdob,
                 customer_name: extractedData.customer_information.customer_name,

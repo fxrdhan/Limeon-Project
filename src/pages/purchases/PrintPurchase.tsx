@@ -5,7 +5,6 @@ interface PurchaseData {
     invoice_number: string;
     date: string;
     due_date: string | null;
-    so_number: string | null;
     total: number;
     payment_status: string;
     payment_method: string;
@@ -132,13 +131,6 @@ const PrintPurchase = () => {
                                 <span className="px-2">:</span>
                                 <span>{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</span>
                             </div>
-                            {purchase.so_number && (
-                                <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
-                                    <span className="text-left">No. SO</span>
-                                    <span className="px-2">:</span>
-                                    <span>{purchase.so_number}</span>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
