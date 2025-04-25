@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FaSpinner, FaCamera } from 'react-icons/fa';
+import { compressImageIfNeeded } from '../../lib/imageUtils';
 
 interface ImageUploaderProps {
     id: string;
@@ -18,7 +19,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     id,
     onImageUpload,
     children,
-    maxSizeMB = 1,
     validTypes = ['image/png', 'image/jpeg', 'image/jpg'],
     className = '',
     disabled = false,
@@ -27,6 +27,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     shape = 'full'
 }) => {
     const [isUploading, setIsUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const getBorderRadiusClass = () => {
@@ -42,42 +43,47 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         const file = event.target.files?.[0];
         if (!file) return;
 
-        const maxSize = maxSizeMB * 1024 * 1024;
-
         if (!validTypes.includes(file.type)) {
             alert(`Tipe file tidak valid. Harap unggah file ${validTypes.join(', ')}.`);
-            return;
-        }
-        if (file.size > maxSize) {
-            alert(`Ukuran file terlalu besar. Maksimum ${maxSizeMB}MB.`);
+            if (fileInputRef.current) fileInputRef.current.value = '';
             return;
         }
 
         setIsUploading(true);
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onloadend = async () => {
-            if (typeof reader.result === 'string') {
-                try {
-                    await onImageUpload(reader.result);
-                } catch (uploadError) {
-                    console.error("Error during image upload callback:", uploadError);
-                    alert("Gagal memproses gambar.");
-                } finally {
-                    setIsUploading(false);
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
+        setError(null);
+
+        try {
+            const processedFile = await compressImageIfNeeded(file);
+
+            const reader = new FileReader();
+            reader.readAsDataURL(processedFile);
+            reader.onloadend = async () => {
+                if (typeof reader.result === 'string') {
+                    try {
+                        await onImageUpload(reader.result);
+                    } catch (uploadError) {
+                        console.error("Error during image upload callback:", uploadError);
+                        setError("Gagal memproses gambar.");
+                    } finally {
+                        setIsUploading(false);
+                        if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                        }
                     }
+                } else {
+                    setError("Gagal membaca file gambar.");
+                    setIsUploading(false);
                 }
-            } else {
-                alert("Gagal membaca file gambar.");
+            };
+            reader.onerror = () => {
+                setError("Gagal membaca file gambar.");
                 setIsUploading(false);
-            }
-        };
-        reader.onerror = () => {
-            alert("Gagal membaca file gambar.");
+            };
+        } catch (compressionError: unknown) {
+            setError(compressionError instanceof Error ? compressionError.message : "Gagal mengompres gambar.");
             setIsUploading(false);
-        };
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
     };
 
     return (
@@ -95,6 +101,9 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 onChange={handleFileChange}
                 disabled={isUploading || disabled}
             />
+            {error && (
+                <div className="mt-2 text-sm text-red-600">{error}</div>
+            )}
         </div>
     );
 };
