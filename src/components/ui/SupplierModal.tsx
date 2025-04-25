@@ -20,6 +20,7 @@ interface DetailEditModalProps {
     onClose: () => void;
     onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
     onImageSave?: (data: { supplierId: string; imageBase64: string }) => Promise<void>;
+    onImageDelete?: (supplierId: string) => Promise<void>;
     onDeleteRequest?: (data: Record<string, string | number | boolean | null>) => void;
     deleteButtonLabel?: string;
     imageUrl?: string;
@@ -35,6 +36,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     onClose,
     onSave,
     onImageSave,
+    onImageDelete,
     imageUrl,
     imagePlaceholder,
     onDeleteRequest,
@@ -159,6 +161,24 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         onClose();
     };
 
+    const handleImageDelete = async () => {
+        if (mode === 'add') {
+            // In add mode, just clear the image preview
+            setCurrentImageUrl(undefined);
+        } else if (onImageDelete && data?.id) {
+            setIsUploadingImage(true);
+            try {
+                await onImageDelete(data.id as string);
+                setCurrentImageUrl(undefined);
+            } catch (error) {
+                console.error("Error deleting image:", error);
+                alert("Gagal menghapus gambar.");
+            } finally {
+                setIsUploadingImage(false);
+            }
+        }
+    };
+
     return createPortal(
         <Transition
             show={isOpen}
@@ -230,6 +250,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                 alert("Gagal mengunggah gambar: Konfigurasi tidak lengkap.");
                                             }
                                         }}
+                                        onImageDelete={handleImageDelete}
                                         disabled={isUploadingImage || (!onImageSave && mode !== 'add')}
                                         loadingIcon={<FaSpinner className="text-white text-xl animate-spin" />}
                                         defaultIcon={<FaPencilAlt className="text-white text-xl" />}

@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { FaSpinner, FaCamera } from 'react-icons/fa';
+import { FaSpinner, FaPencilAlt, FaTrash, FaUpload } from 'react-icons/fa';
 import { compressImageIfNeeded } from '../../lib/imageUtils';
 
 interface ImageUploaderProps {
     id: string;
     onImageUpload: (imageBase64: string) => Promise<void> | void;
+    onImageDelete?: () => Promise<void> | void; // Added new prop for image deletion
     children: React.ReactNode;
     maxSizeMB?: number;
     validTypes?: string[];
@@ -18,17 +19,20 @@ interface ImageUploaderProps {
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
     id,
     onImageUpload,
+    onImageDelete, // Added new prop
     children,
     validTypes = ['image/png', 'image/jpeg', 'image/jpg'],
     className = '',
     disabled = false,
     loadingIcon = <FaSpinner className="text-white text-xl animate-spin" />,
-    defaultIcon = <FaCamera className="text-white text-xl" />,
     shape = 'full'
 }) => {
+    const [isHovering, setIsHovering] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false); // Added state for delete operation
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const hasImage = React.isValidElement(children) && children.type === 'img';
 
     const getBorderRadiusClass = () => {
         switch (shape) {
@@ -86,10 +90,52 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         }
     };
 
+    const handleDeleteImage = async (e: React.MouseEvent<SVGElement, MouseEvent>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (!onImageDelete || isDeleting || disabled) return;
+        
+        setIsDeleting(true);
+        setError(null);
+        
+        try {
+            await onImageDelete();
+        } catch (deleteError) {
+            console.error("Error during image deletion:", deleteError);
+            setError("Gagal menghapus gambar.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return (
-        <div className={`relative group ${className}`}>
-            <label htmlFor={id} className={`absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 ${getBorderRadiusClass()} opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer`}>
-                {isUploading ? loadingIcon : defaultIcon}
+        <div
+            className={`relative group ${className}`}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+        >
+            <label htmlFor={id} className={`absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 ${getBorderRadiusClass()} ${isHovering ? 'opacity-100' : 'opacity-0'} transition-opacity cursor-pointer`}>
+                {isUploading || isDeleting ? (
+                    loadingIcon
+                ) : isHovering ? (
+                    hasImage ? (
+                        <div className="flex space-x-3">
+                            <FaPencilAlt className="text-white text-lg" title="Edit"/>
+                            {onImageDelete && (
+                                <FaTrash 
+                                    className="text-white text-lg hover:text-red-400" 
+                                    title="Hapus" 
+                                    onClick={handleDeleteImage} 
+                                />
+                            )}
+                        </div>
+                    ) : (
+                        <FaUpload className="text-white text-xl" title="Unggah"/>
+                    )
+                ) : (
+                    null
+                )}
             </label>
             {children}
             <input
@@ -99,7 +145,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 className="hidden"
                 accept={validTypes.join(',')}
                 onChange={handleFileChange}
-                disabled={isUploading || disabled}
+                disabled={isUploading || isDeleting || disabled}
             />
             {error && (
                 <div className="mt-2 text-sm text-red-600">{error}</div>
