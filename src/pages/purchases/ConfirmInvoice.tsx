@@ -2,24 +2,29 @@ import { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Loading } from '../../components/ui/Loading';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaCheck, FaClock } from 'react-icons/fa';
+import { FaArrowLeft, FaCheck, FaClock, FaRedo } from 'react-icons/fa';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
-import { ExtractedInvoiceData, ProductListItem, saveInvoiceToDatabase } from '../../services/invoiceService';
+import { ExtractedInvoiceData, saveInvoiceToDatabase, regenerateInvoiceData } from '../../services/invoiceService';
 
 const ConfirmInvoicePage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [invoiceData, setInvoiceData] = useState<ExtractedInvoiceData | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isRegenerating, setIsRegenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [processingTime, setProcessingTime] = useState<string | null>(null);
+    const [imageIdentifier, setImageIdentifier] = useState<string | null>(null);
 
     useEffect(() => {
         if (location.state?.extractedData) {
             setInvoiceData(JSON.parse(JSON.stringify(location.state.extractedData)));
             if (location.state.processingTime) {
                 setProcessingTime(location.state.processingTime);
+            }
+            if (location.state.imageIdentifier) {
+                setImageIdentifier(location.state.imageIdentifier);
             }
         } else {
             console.warn("Tidak ada data faktur yang diterima. Kembali ke halaman upload.");
@@ -39,20 +44,40 @@ const ConfirmInvoicePage = () => {
         return `${prefix}${formatter.format(numValue)}`;
     };
 
-    const handleConfirm = async () => {
-        if (!invoiceData) return;
-
+    const handleRegenerate = async () => {
+        if (!imageIdentifier) {
+            setError("Tidak dapat memproses ulang: Identifier gambar tidak ditemukan.");
+            return;
+        }
+        setIsRegenerating(true);
+        setError(null);
         try {
-            setLoading(true);
+            const startTime = Date.now();
+            const regeneratedData = await regenerateInvoiceData(imageIdentifier);
+            const newProcessingTime = (Date.now() - startTime) / 1000;
+            setInvoiceData(regeneratedData);
+            setProcessingTime(newProcessingTime.toFixed(1));
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Gagal memproses ulang data faktur');
+            console.error("Error regenerating invoice:", err);
+        } finally {
+            setIsRegenerating(false);
+        }
+    };
+
+    const handleConfirm = async () => {
+        if (!invoiceData || !imageIdentifier) return;
+        try {
+            setIsSaving(true);
             setError(null);
-            await saveInvoiceToDatabase(invoiceData);
+            await saveInvoiceToDatabase(invoiceData, imageIdentifier);
             alert('Faktur berhasil disimpan!');
             navigate('/purchases');
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Gagal menyimpan data faktur');
             console.error("Error saving invoice:", err);
         } finally {
-            setLoading(false);
+            setIsSaving(false);
         }
     };
 
@@ -71,7 +96,7 @@ const ConfirmInvoicePage = () => {
     };
 
     const renderProductField = (
-        value: string | number | undefined | null,
+        value: string | number | undefined | null | boolean,
         isDiscount = false
     ) => {
         const displayValue = value ?? '-';
@@ -178,7 +203,7 @@ const ConfirmInvoicePage = () => {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {(invoiceData.product_list ?? []).map((product: ProductListItem, index: number) => (
+                                    {(invoiceData.product_list ?? []).map((product, index: number) => (
                                         <TableRow key={index}>
                                             <TableCell className="text-sm w-[10%]">{renderProductField(product.sku)}</TableCell>
                                             <TableCell className="text-sm w-[30%] font-medium">{renderProductField(product.product_name)}</TableCell>
@@ -234,9 +259,21 @@ const ConfirmInvoicePage = () => {
                 </Button>
                 <Button
                     type="button"
+                    variant="secondary"
+                    onClick={handleRegenerate}
+                    disabled={isRegenerating || isSaving || !imageIdentifier}
+                    isLoading={isRegenerating}
+                    className="mx-2"
+                    aria-live="polite"
+                >
+                    <FaRedo className="mr-2" />
+                    Generate Ulang
+                </Button>
+                <Button
+                    type="button"
                     onClick={handleConfirm}
-                    disabled={loading}
-                    isLoading={loading}
+                    disabled={isSaving}
+                    isLoading={isSaving}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                     aria-live="polite"
                 >
