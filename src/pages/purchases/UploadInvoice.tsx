@@ -89,13 +89,15 @@ const UploadInvoice = () => {
             setError(null);
             const startTime = Date.now();
             const data = await uploadAndExtractInvoice(file);
+            const imageIdentifier = data.imageIdentifier; // Ambil identifier dari respons
             const processingTime = (Date.now() - startTime) / 1000;
-            navigate('/purchases/confirm-invoice', { 
-                state: { 
-                    extractedData: data, 
+            navigate('/purchases/confirm-invoice', {
+                state: {
+                    extractedData: data, // Data JSON yang diekstrak
                     filePreview: previewUrl,
-                    processingTime: processingTime.toFixed(1) 
-                } 
+                    processingTime: processingTime.toFixed(1),
+                    imageIdentifier: imageIdentifier // Kirim identifier ke halaman konfirmasi
+                }
             });
         } catch (err: unknown) {
             setError(`Gagal mengunggah dan mengekstrak faktur: ${err instanceof Error ? err.message : 'Terjadi kesalahan tidak dikenal'}`);

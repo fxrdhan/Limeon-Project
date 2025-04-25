@@ -1,5 +1,4 @@
 import axios, { AxiosError } from 'axios';
-import { supabase } from '../lib/supabase';
 
 const API_URL = import.meta.env.VITE_INVOICE_EXTRACTOR_API_URL || 'http://localhost:3000/api/extract-invoice';
 
@@ -47,10 +46,11 @@ export interface ExtractedInvoiceData {
     company_details?: CompanyDetails;
     invoice_information?: InvoiceInformation;
     customer_information?: CustomerInformation;
-    product_list?: ProductListItem[];
+    product_list?: ProductListItem[] | null;
     payment_summary?: PaymentSummary;
     additional_information?: AdditionalInformation;
     rawText?: string;
+    imageIdentifier?: string;
 }
 
 export async function uploadAndExtractInvoice(file: File): Promise<ExtractedInvoiceData> {
@@ -94,11 +94,18 @@ export async function uploadAndExtractInvoice(file: File): Promise<ExtractedInvo
     }
 }
 
-export async function saveInvoiceToDatabase(extractedData: ExtractedInvoiceData): Promise<{ id: string; success: boolean }> {
+export async function regenerateInvoiceData(imageIdentifier: string): Promise<ExtractedInvoiceData> {
     try {
-        if (!extractedData.invoice_information?.invoice_number) {
-            throw new Error('Nomor faktur tidak ditemukan dalam data ekstraksi.');
-        }
+        const response = await axios.post<ExtractedInvoiceData>(`${API_URL.replace('/extract-invoice', '/regenerate-invoice')}`, { imageIdentifier });
+        return response.data;
+    } catch (error) {
+        console.error("Error regenerating invoice data:", error);
+        throw new Error('Gagal memproses ulang data faktur.');
+    }
+}
+
+export async function saveInvoiceToDatabase(extractedData: ExtractedInvoiceData, imageIdentifier: string): Promise<{ message: string; success: boolean }> {
+    try {
         if (!extractedData.invoice_information?.invoice_date) {
             throw new Error('Tanggal faktur tidak ditemukan dalam data ekstraksi.');
         }
@@ -109,63 +116,12 @@ export async function saveInvoiceToDatabase(extractedData: ExtractedInvoiceData)
             throw new Error('Nama pelanggan tidak ditemukan dalam data ekstraksi.');
         }
 
-        const { data: invoiceData, error: invoiceError } = await supabase
-            .from('e_invoices')
-            .insert({
-                invoice_number: extractedData.invoice_information.invoice_number,
-                invoice_date: extractedData.invoice_information.invoice_date,
-                due_date: extractedData.invoice_information.due_date,
-                supplier_name: extractedData.company_details.name,
-                supplier_address: extractedData.company_details.address,
-                dak_license_number: extractedData.company_details.license_dak,
-                cdob_certificate_number: extractedData.company_details.certificate_cdob,
-                customer_name: extractedData.customer_information.customer_name,
-                customer_address: extractedData.customer_information.customer_address,
-                total_price: extractedData.payment_summary?.total_price ?? 0,
-                ppn: extractedData.payment_summary?.vat ?? 0,
-                total_invoice: extractedData.payment_summary?.invoice_total ?? 0,
-                checked_by: extractedData.additional_information?.checked_by,
-                json_data: extractedData
-            })
-            .select('id')
-            .single();
+        const response = await axios.post(`${API_URL.replace('/extract-invoice', '/confirm-invoice')}`, {
+            invoiceData: extractedData,
+            imageIdentifier: imageIdentifier
+        });
 
-        if (invoiceError) {
-            console.error("Supabase invoice insert error:", invoiceError);
-            throw new Error(`Gagal menyimpan header faktur: ${invoiceError.message}`);
-        }
-        if (!invoiceData) {
-            throw new Error('Gagal mendapatkan ID header faktur setelah insert.');
-        }
-
-        const invoiceItems = (extractedData.product_list ?? []).map((product: ProductListItem) => ({
-            invoice_id: invoiceData.id,
-            sku: product.sku,
-            product_name: product.product_name ?? 'Produk Tidak Dikenal',
-            quantity: product.quantity ?? 0,
-            unit: product.unit,
-            batch_number: product.batch_number,
-            expiry_date: product.expiry_date,
-            unit_price: product.unit_price ?? 0,
-            discount: product.discount ?? 0,
-            total_price: product.total_price ?? 0
-        }));
-
-        if (invoiceItems.length > 0) {
-            const { error: itemsError } = await supabase
-                .from('e_invoice_items')
-                .insert(invoiceItems);
-
-            if (itemsError) {
-                console.error("Supabase items insert error:", itemsError);
-                throw new Error(`Gagal menyimpan item faktur: ${itemsError.message}`);
-            }
-        } else {
-            console.warn(`Invoice ${invoiceData.id} disimpan tanpa item produk.`);
-        }
-
-        return { id: invoiceData.id, success: true };
-
+       return { message: response.data.message || "Faktur berhasil dikonfirmasi", success: true };
     } catch (error: unknown) {
         console.error('Error menyimpan data faktur ke database:', error);
         if (error instanceof Error) {
