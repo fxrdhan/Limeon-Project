@@ -83,8 +83,6 @@ const SupplierList = () => {
         mutationFn: updateSupplier,
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-            
-            // Update the selectedSupplier state with the new data
             if (selectedSupplier) {
                 setSelectedSupplier(prev => prev ? { ...prev, ...variables } : null);
             }
@@ -141,6 +139,25 @@ const SupplierList = () => {
         },
     });
 
+    const deleteSupplierImageMutation = useMutation<void, Error, string>({
+        mutationFn: async (supplierId: string) => {
+            const { error } = await supabase
+                .from('suppliers')
+                .update({ image_url: null, updated_at: new Date().toISOString() })
+                .eq('id', supplierId);
+            if (error) throw error;
+        },
+        onSuccess: (_data, supplierId) => {
+            queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+            setSelectedSupplier(prev => prev ? { ...prev, image_url: null } : null);
+            console.log(`Image for supplier ${supplierId} deleted.`);
+        },
+        onError: (error) => {
+            console.error("Error deleting supplier image:", error);
+            alert(`Gagal menghapus gambar supplier: ${error.message}`);
+        },
+    });
+
     const openSupplierDetail = (supplier: Supplier) => {
         setSelectedSupplier(supplier);
         setIsEditModalOpen(true);
@@ -172,6 +189,10 @@ const SupplierList = () => {
     const handleSupplierImageSave = async ({ supplierId, imageBase64 }: { supplierId: string; imageBase64: string }) => {
         if (!selectedSupplier) return;
         await updateSupplierImageMutation.mutateAsync({ supplierId, imageBase64 });
+    };
+
+    const handleSupplierImageDelete = async (supplierId: string) => {
+        await deleteSupplierImageMutation.mutateAsync(supplierId);
     };
 
     const handleNewSupplierImageUpload = (imageBase64: string) => {
@@ -262,7 +283,6 @@ const SupplierList = () => {
                 </Table>
             )}
 
-            {/* Edit Supplier Modal */}
             <DetailEditModal
                 title={selectedSupplier?.name || ''}
                 data={transformSupplierForModal(selectedSupplier)}
@@ -276,6 +296,7 @@ const SupplierList = () => {
                     return Promise.resolve();
                 }}
                 onImageSave={handleSupplierImageSave}
+                onImageDelete={handleSupplierImageDelete}
                 onDeleteRequest={() => {
                     if (selectedSupplier) handleDelete(selectedSupplier);
                 }}
@@ -285,7 +306,6 @@ const SupplierList = () => {
                 mode="edit"
             />
 
-            {/* Add Supplier Modal */}
             <DetailEditModal
                 title="Tambah Supplier Baru"
                 data={emptySupplierData}
