@@ -76,7 +76,13 @@ export const TableCell = ({ children, className, colSpan, ...props }: TableCellP
 
 export const TableHeader = ({ children, className }: TableProps) => {
     return (
-        <th className={classNames('py-3 px-3 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm', className)}>
+        <th className={classNames(
+            'py-3 px-3 text-left bg-gray-200 text-gray-700 uppercase tracking-wider text-sm',
+            'overflow-hidden whitespace-nowrap text-ellipsis',
+            'group-hover:whitespace-normal group-hover:text-ellipsis-none group-hover:overflow-visible',
+            'transition-all duration-200 max-h-[40px] group-hover:max-h-[300px]',
+            className
+        )}>
             {children}
         </th>
     );
