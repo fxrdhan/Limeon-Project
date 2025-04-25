@@ -3,7 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FaUserCircle, FaPencilAlt } from 'react-icons/fa';
-import { ImageUploader } from '../ui/ImageUploader'; // Import komponen baru
+import { ImageUploader } from '../ui/ImageUploader';
 
 interface NavbarProps {
     sidebarCollapsed: boolean;
@@ -12,7 +12,7 @@ interface NavbarProps {
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     const { user, logout } = useAuthStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [isUploading, setIsUploading] = useState(false); // State untuk loading upload
+    const [isUploading, setIsUploading] = useState(false);
     const [currentTime, setCurrentTime] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -130,7 +130,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                     <ImageUploader
                                         id="profile-upload"
                                         className="w-16 h-16"
-                                        shape="full" // Match the rounded-full styling of profile images
+                                        shape="full"
                                         onImageUpload={async (base64) => {
                                             setIsUploading(true);
                                             try {
