@@ -5,7 +5,7 @@ import { compressImageIfNeeded } from '../../lib/imageUtils';
 interface ImageUploaderProps {
     id: string;
     onImageUpload: (imageBase64: string) => Promise<void> | void;
-    onImageDelete?: () => Promise<void> | void; // Added new prop for image deletion
+    onImageDelete?: () => Promise<void> | void;
     children: React.ReactNode;
     maxSizeMB?: number;
     validTypes?: string[];
@@ -19,7 +19,7 @@ interface ImageUploaderProps {
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
     id,
     onImageUpload,
-    onImageDelete, // Added new prop
+    onImageDelete,
     children,
     validTypes = ['image/png', 'image/jpeg', 'image/jpg'],
     className = '',
@@ -29,7 +29,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
     const [isHovering, setIsHovering] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false); // Added state for delete operation
+    const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const hasImage = React.isValidElement(children) && children.type === 'img';
@@ -93,12 +93,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     const handleDeleteImage = async (e: React.MouseEvent<SVGElement, MouseEvent>) => {
         e.preventDefault();
         e.stopPropagation();
-        
+
         if (!onImageDelete || isDeleting || disabled) return;
-        
+
         setIsDeleting(true);
         setError(null);
-        
+
         try {
             await onImageDelete();
         } catch (deleteError) {
@@ -111,33 +111,33 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     return (
         <div
-            className={`relative group ${className}`}
+            className={`relative group ${className} ${getBorderRadiusClass()} overflow-hidden`}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >
-            <label htmlFor={id} className={`absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 ${getBorderRadiusClass()} ${isHovering ? 'opacity-100' : 'opacity-0'} transition-opacity cursor-pointer`}>
+            {children}
+            <label htmlFor={id} className={`absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 ${getBorderRadiusClass()} ${(isHovering || isUploading || isDeleting) ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300 cursor-pointer`}>
                 {isUploading || isDeleting ? (
                     loadingIcon
-                ) : isHovering ? (
-                    hasImage ? (
-                        <div className="flex space-x-3">
-                            <FaPencilAlt className="text-white text-lg" title="Edit"/>
-                            {onImageDelete && (
-                                <FaTrash 
-                                    className="text-white text-lg hover:text-red-400" 
-                                    title="Hapus" 
-                                    onClick={handleDeleteImage} 
-                                />
-                            )}
-                        </div>
-                    ) : (
-                        <FaUpload className="text-white text-xl" title="Unggah"/>
-                    )
                 ) : (
-                    null
+                    hasImage ? (
+                        <FaPencilAlt className="text-white text-lg" title="Edit" />
+                    ) : (
+                        <FaUpload className="text-white text-xl" title="Unggah" />
+                    )
                 )}
             </label>
-            {children}
+            {hasImage && onImageDelete && !isUploading && !isDeleting && (
+                <button
+                    onClick={(e) => handleDeleteImage(e as unknown as React.MouseEvent<SVGElement, MouseEvent>)}
+                    className={`absolute top-1 right-1 p-1 rounded-full text-white hover:text-red-500 hover:bg-opacity-70 transition-all duration-200 ${isHovering ? 'opacity-100 scale-100' : 'opacity-0 scale-90'} z-10`}
+                    aria-label="Hapus gambar"
+                    title="Hapus"
+                    disabled={disabled || isDeleting}
+                >
+                    {isDeleting ? <FaSpinner className="animate-spin text-sm" /> : <FaTrash className="text-sm" />}
+                </button>
+            )}
             <input
                 id={id}
                 ref={fileInputRef}
