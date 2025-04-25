@@ -95,7 +95,7 @@ const ConfirmInvoicePage = () => {
     );
 
     return (
-        <Card className="shadow-lg max-w-5xl mx-auto">
+        <Card className="shadow-lg max-w-7xl mx-auto">
             <CardHeader className="border-b">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-xl font-bold">
