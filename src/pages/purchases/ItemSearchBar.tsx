@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaPlus } from 'react-icons/fa';
-import { Button } from '../ui/Button';
+import { Button } from '../../components/ui/Button';
 import { Item } from '../../hooks/useItemSelection';
 import { PurchaseItem } from '../../hooks/usePurchaseForm';
 
