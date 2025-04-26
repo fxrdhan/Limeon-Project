@@ -7,8 +7,11 @@ import { Input } from '../../components/ui/Input';
 import { usePurchaseForm } from '../../hooks/usePurchaseForm';
 import { useItemSelection } from '../../hooks/useItemSelection';
 import ItemSearchBar from './ItemSearchBar';
-import PurchaseItemsTable from './PurchaseItemsTable';
+import { FaTrash } from 'react-icons/fa';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
+import { Button } from '../../components/ui/Button';
 import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
+import { extractNumericValue, formatRupiah } from '../../lib/formatters';
 
 const CreatePurchase: React.FC = () => {
     const navigate = useNavigate();
@@ -202,19 +205,196 @@ const CreatePurchase: React.FC = () => {
                             onAddItem={addItem}
                         />
 
-                        <PurchaseItemsTable
-                            purchaseItems={purchaseItems}
-                            total={total}
-                            isVatIncluded={formData.is_vat_included}
-                            onUpdateItem={updateItem}
-                            onRemoveItem={removeItem}
-                            onUpdateItemVat={updateItemVat}
-                            onUpdateItemExpiry={updateItemExpiry}
-                            onUpdateItemBatchNo={updateItemBatchNo}
-                            onUnitChange={onHandleUnitChange}
-                            getItemByID={getItemByID}
-                            isEmptyMessage={(purchaseItems.length === 0) ? "Belum ada item ditambahkan" : null}
-                        />
+                        <>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableHeader className="w-[5%] text-center">No</TableHeader>
+                                        <TableHeader className="w-[8%]">Kode</TableHeader>
+                                        <TableHeader className="w-[25%]">Nama</TableHeader>
+                                        <TableHeader className="w-[9%] text-center">Batch No.</TableHeader>
+                                        <TableHeader className="w-[10%] text-center">Kadaluarsa</TableHeader>
+                                        <TableHeader className="w-[5%] text-center">Jml.</TableHeader>
+                                        <TableHeader className="w-[6%] text-center">Satuan</TableHeader>
+                                        <TableHeader className="w-[10%] text-right">Harga</TableHeader>
+                                        <TableHeader className="w-[5%] text-right">Disc</TableHeader>
+                                        {!formData.is_vat_included && <TableHeader className="w-[5%] text-right">VAT</TableHeader>}
+                                        <TableHeader className="w-[10%] text-right">Subtotal</TableHeader>
+                                        <TableHeader className="w-[5%] text-center">Aksi</TableHeader>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {purchaseItems.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={12} className="text-center text-gray-500">
+                                                {"Belum ada item ditambahkan"}
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        purchaseItems.map((item, index) => (
+                                            <TableRow key={item.id}>
+                                                <TableCell className="text-center">{index + 1}</TableCell>
+                                                <TableCell>{getItemByID(item.item_id)?.code || '-'}</TableCell>
+                                                <TableCell>{item.item_name}</TableCell>
+                                                <TableCell>
+                                                    <input
+                                                        type="text"
+                                                        value={item.batch_no || ''}
+                                                        onChange={(e) => updateItemBatchNo(item.id, e.target.value)}
+                                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+                                                        placeholder="No Batch"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <input
+                                                        type="date"
+                                                        value={item.expiry_date || ''}
+                                                        onChange={(e) => updateItemExpiry(item.id, e.target.value)}
+                                                        className="w-32 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+                                                        min={new Date().toISOString().split('T')[0]}
+                                                        title="Tanggal Kadaluarsa"
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <input
+                                                        type="number"
+                                                        onFocus={(e) => e.target.select()}
+                                                        onClick={(e) => (e.target as HTMLInputElement).select()}
+                                                        value={item.quantity}
+                                                        onChange={(e) => {
+                                                            const inputValue = e.target.value;
+                                                            
+                                                            if (inputValue === '') {
+                                                                updateItem(item.id, 'quantity', 0);
+                                                                return;
+                                                            }
+                                                            
+                                                            const newValue = parseInt(inputValue, 10);
+                                                            if (!isNaN(newValue) && newValue >= 0) {
+                                                                updateItem(item.id, 'quantity', newValue);
+                                                            }
+                                                        }}
+                                                        onBlur={() => {
+                                                            const numericValue = parseInt(item.quantity.toString(), 10);
+                                                            updateItem(item.id, 'quantity', numericValue < 1 ? 1 : numericValue);
+                                                        }}
+                                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <select
+                                                        value={item.unit}
+                                                        onChange={(e) => onHandleUnitChange(item.id, e.target.value)}
+                                                        className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center appearance-none cursor-pointer"
+                                                    >
+                                                        <option value={getItemByID(item.item_id)?.base_unit || 'Unit'}>
+                                                            {getItemByID(item.item_id)?.base_unit || 'Unit'}
+                                                        </option>
+                                                        {(() => {
+                                                            const conversions = getItemByID(item.item_id)?.unit_conversions;
+                                                            if (!conversions) return null;
+                                                            if (conversions.length === 0) return <span className="text-xs">No units defined</span>;
+
+                                                            const uniqueUnits = Array.from(new Map(conversions.map(uc => [uc.to_unit_id, { id: uc.to_unit_id, unit_name: uc.unit_name }])).values());
+
+                                                            return uniqueUnits.map((uc) => (
+                                                                <option key={uc.id} value={uc.unit_name}>{uc.unit_name}</option>
+                                                            ));
+                                                        })()}
+                                                    </select>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <input
+                                                        type="text"
+                                                        value={item.price === 0 ? '' : formatRupiah(item.price)}
+                                                        onChange={(e) => {
+                                                            const numericValue = extractNumericValue(e.target.value);
+                                                            updateItem(item.id, 'price', numericValue);
+                                                        }}
+                                                        className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+                                                        placeholder="Rp 0"
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <input
+                                                        type="text"
+                                                        value={item.discount === 0 ? '' : `${item.discount}%`}
+                                                        onChange={(e) => {
+                                                            let inputValue = e.target.value;
+                                                            if (inputValue.endsWith('%')) {
+                                                                inputValue = inputValue.slice(0, -1);
+                                                            }
+                                                            
+                                                            const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
+                                                            updateItem(item.id, 'discount', Math.min(numericValue, 100));
+                                                        }}
+                                                        className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+                                                        placeholder="0%"
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Backspace' && 
+                                                                item.discount > 0 && 
+                                                                e.currentTarget.selectionStart === e.currentTarget.value.length) {
+                                                                e.preventDefault();
+                                                                const newValue = Math.floor(item.discount / 10);
+                                                                updateItem(item.id, 'discount', newValue);
+                                                            }
+                                                        }}
+                                                    />
+                                                </TableCell>
+                                                {!formData.is_vat_included && (
+                                                    <TableCell className="text-right">
+                                                        <input
+                                                            type="text"
+                                                            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
+                                                            onChange={(e) => {
+                                                                let inputValue = e.target.value;
+                                                                if (inputValue.endsWith('%')) {
+                                                                    inputValue = inputValue.slice(0, -1);
+                                                                }
+                                                                
+                                                                const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
+                                                                updateItemVat(item.id, Math.min(numericValue, 100));
+                                                            }}
+                                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+                                                            placeholder="0%"
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Backspace' && 
+                                                                    item.vat_percentage > 0 && 
+                                                                    e.currentTarget.selectionStart === e.currentTarget.value.length) {
+                                                                    e.preventDefault();
+                                                                    const newValue = Math.floor(item.vat_percentage / 10);
+                                                                    updateItemVat(item.id, newValue);
+                                                                }
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                )}
+                                                <TableCell className="text-right">
+                                                    {item.subtotal.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Button
+                                                        type="button"
+                                                        variant="danger"
+                                                        size="sm"
+                                                        onClick={() => removeItem(item.id)}
+                                                    >
+                                                        <FaTrash />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+
+                            <div className="flex justify-end items-center mt-4 font-semibold text-lg">
+                                <div className="mr-4">Total:</div>
+                                <div className="w-40 text-right">
+                                    {total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                </div>
+                            </div>
+                        </>
                     </FormSection>
                 </CardContent>
 
