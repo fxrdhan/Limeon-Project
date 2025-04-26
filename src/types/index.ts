@@ -60,6 +60,22 @@ export interface Doctor {
     name: string;
 }
 
+// src/components/ui/Dropdown.tsx
+export interface DropdownOption {
+    id: string;
+    name: string;
+}
+
+export interface DropdownProps {
+    options: DropdownOption[];
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    name: string;
+    required?: boolean;
+    onAddNew?: () => void;
+}
+
 // src/components/layout/Navbar.tsx
 export interface NavbarProps {
     sidebarCollapsed: boolean;

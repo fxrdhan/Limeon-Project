@@ -1,20 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../lib/supabase";
 import { Input } from "../../components/ui/Input";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "../../components/ui/Button";
+import { Dropdown } from "../../components/ui/Dropdown";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
 import { AddCategoryModal } from "../../components/ui/AddEditModal";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { FaArrowLeft, FaSave, FaTrash, FaHistory } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 
-const selectClassName = "bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
-const addButtonClassName = "ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600";
 const textareaClassName = "w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
 
 const formatDateTime = (isoString: string | null | undefined): string => {
@@ -106,6 +105,15 @@ const AddItem = () => {
                 unitConversionHook.setBaseUnit(selectedUnit.name);
             }
         }
+    };
+
+    // Helper function to handle dropdown value changes
+    const handleDropdownChange = (name: string, value: string) => {
+        const syntheticEvent = {
+            target: { name, value },
+        } as React.ChangeEvent<HTMLSelectElement>;
+        
+        handleSelectChange(syntheticEvent);
     };
 
     useEffect(() => {
@@ -318,84 +326,42 @@ const AddItem = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <FormField label="Kategori">
-                                            <div className="flex">
-                                                <select
-                                                    name="category_id"
-                                                    value={formData.category_id}
-                                                    onChange={handleSelectChange}
-                                                    className={selectClassName}
-                                                    required
-                                                >
-                                                    <option value="">-- Pilih Kategori --</option>
-                                                    {categories.map((category) => (
-                                                        <option key={category.id} value={category.id}>
-                                                            {category.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    type="button"
-                                                    className={addButtonClassName}
-                                                    onClick={() => setIsAddCategoryModalOpen(true)}
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
+                                            <Dropdown
+                                                name="category_id"
+                                                value={formData.category_id}
+                                                onChange={(value) => handleDropdownChange("category_id", value)}
+                                                options={categories}
+                                                placeholder="-- Pilih Kategori --"
+                                                required
+                                                onAddNew={() => setIsAddCategoryModalOpen(true)}
+                                            />
                                         </FormField>
 
                                         <FormField label="Jenis">
-                                            <div className="flex">
-                                                {categories.length === 0 && (
-                                                    <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
-                                                )}
-                                                <select
-                                                    name="type_id" 
-                                                    value={formData.type_id}
-                                                    onChange={handleSelectChange}
-                                                    className={selectClassName}
-                                                    required
-                                                >
-                                                    <option value="">-- Pilih Jenis --</option>
-                                                    {types.map((type) => (
-                                                        <option key={type.id} value={type.id}>
-                                                            {type.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    type="button"
-                                                    className={addButtonClassName}
-                                                    onClick={() => setIsAddTypeModalOpen(true)}
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
+                                            {categories.length === 0 && (
+                                                <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
+                                            )}
+                                            <Dropdown
+                                                name="type_id"
+                                                value={formData.type_id}
+                                                onChange={(value) => handleDropdownChange("type_id", value)}
+                                                options={types}
+                                                placeholder="-- Pilih Jenis --"
+                                                required
+                                                onAddNew={() => setIsAddTypeModalOpen(true)}
+                                            />
                                         </FormField>
                                         
                                         <FormField label="Satuan">
-                                            <div className="flex">
-                                                <select
-                                                    name="unit_id"
-                                                    value={formData.unit_id}
-                                                    onChange={handleSelectChange}
-                                                    className={selectClassName}
-                                                    required
-                                                >
-                                                    <option value="">-- Pilih Satuan --</option>
-                                                    {units.map((unit) => (
-                                                        <option key={unit.id} value={unit.id}>
-                                                            {unit.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    type="button"
-                                                    className={addButtonClassName}
-                                                    onClick={() => setIsAddUnitModalOpen(true)}
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
+                                            <Dropdown
+                                                name="unit_id"
+                                                value={formData.unit_id}
+                                                onChange={(value) => handleDropdownChange("unit_id", value)}
+                                                options={units}
+                                                placeholder="-- Pilih Satuan --"
+                                                required
+                                                onAddNew={() => setIsAddUnitModalOpen(true)}
+                                            />
                                         </FormField>
                                     </div>
 
