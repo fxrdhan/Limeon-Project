@@ -84,7 +84,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
             <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 md:w-1/3 lg:w-1/4">
                     <h3 className="text-lg font-medium mb-3">Tambah Konversi Satuan</h3>
-                    <p className="text-sm text-gray-600 mb-3">
+                    <p className="text-sm text-gray-600 mb-2">
                         Berapa banyak satuan turunan yang setara dengan 1 {baseUnit || 'Satuan Dasar'}.
                     </p>
                     <div className="flex flex-row gap-4 mb-4">
@@ -121,10 +121,8 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                     </div>
                 </div>
                 <div className="md:w-2/3 lg:w-3/5 flex flex-col h-full">
-                    <h3 className="text-lg font-medium mb-3 md:hidden">Daftar Satuan Turunan</h3>
-                    <p className="text-sm text-gray-600 mb-3 md:hidden">Satuan yang sudah ditambahkan.</p>
                     <div className="border rounded-lg overflow-hidden flex-grow h-full">
-                        <Table className="h-full">
+                        <Table className="w-full h-full">
                             <TableHead>
                                 <TableRow>
                                     <TableHeader>Satuan Turunan</TableHeader>

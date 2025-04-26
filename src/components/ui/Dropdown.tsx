@@ -151,7 +151,7 @@ export const Dropdown = ({
                     <button
                         ref={buttonRef}
                         type="button"
-                        className="py-2 px-4 w-full inline-flex justify-between items-center text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        className="py-2.5 px-4 w-full inline-flex justify-between items-center text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                         aria-haspopup="menu"
                         aria-expanded={isOpen}
                         onClick={toggleDropdown}

@@ -417,7 +417,7 @@ const AddItem = () => {
                                                 onChange={handleChange}
                                                 className={textareaClassName}
                                                 rows={1}
-                                                style={{ height: "49px", minHeight: "49px", resize: "vertical" }}
+                                                style={{ height: "42px", minHeight: "42px", resize: "vertical" }}
                                             />
                                         </FormField>
                                     </div>
