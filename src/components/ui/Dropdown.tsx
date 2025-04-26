@@ -13,7 +13,10 @@ export const Dropdown = ({
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredOptions, setFilteredOptions] = useState(options);
+    const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const dropdownMenuRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -24,6 +27,16 @@ export const Dropdown = ({
             if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
             if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
         };
+    }, []);
+
+    const calculateDropdownPosition = useCallback(() => {
+        if (!buttonRef.current || !dropdownMenuRef.current) return;
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+        const dropdownHeight = dropdownMenuRef.current.offsetHeight;
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - buttonRect.bottom;
+        const shouldDropUp = spaceBelow < dropdownHeight + 10;
+        setDropDirection(shouldDropUp ? 'up' : 'down');
     }, []);
 
     const handleSelect = (optionId: string) => {
@@ -59,8 +72,17 @@ export const Dropdown = ({
     }, [searchTerm, options]);
 
     useEffect(() => {
-        focusSearchInput();
-    }, [isOpen, focusSearchInput]);
+        if (isOpen) {
+            calculateDropdownPosition();
+            focusSearchInput();
+            window.addEventListener('scroll', calculateDropdownPosition);
+            window.addEventListener('resize', calculateDropdownPosition);
+        }
+        return () => {
+            window.removeEventListener('scroll', calculateDropdownPosition);
+            window.removeEventListener('resize', calculateDropdownPosition);
+        };
+    }, [isOpen, focusSearchInput, calculateDropdownPosition]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -83,7 +105,10 @@ export const Dropdown = ({
         const newIsOpen = !isOpen;
         setIsOpen(newIsOpen);
         if (newIsOpen) {
-            setTimeout(() => focusSearchInput(), 5);
+            setTimeout(() => {
+                calculateDropdownPosition();
+                focusSearchInput();
+            }, 5);
         } else {
             setSearchTerm('');
         }
@@ -97,6 +122,7 @@ export const Dropdown = ({
 
         hoverTimeoutRef.current = setTimeout(() => {
             setIsOpen(true);
+            setTimeout(() => calculateDropdownPosition(), 5);
             focusSearchInput();
         }, 100);
     };
@@ -123,6 +149,7 @@ export const Dropdown = ({
             <div className="w-full flex">
                 <div className="hs-dropdown relative inline-flex w-full">
                     <button
+                        ref={buttonRef}
                         type="button"
                         className="py-2 px-4 w-full inline-flex justify-between items-center text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                         aria-haspopup="menu"
@@ -148,7 +175,12 @@ export const Dropdown = ({
 
                     {isOpen && (
                         <div
-                            className="absolute left-0 top-full mt-2 w-full z-20 bg-white shadow-md rounded-lg transition-opacity duration-300 opacity-100 border border-gray-200"
+                            ref={dropdownMenuRef}
+                            className={`absolute left-0 ${
+                                dropDirection === 'down' 
+                                    ? 'top-full mt-2 shadow-lg' 
+                                    : 'bottom-full mb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),0_-2px_4px_-1px_rgba(0,0,0,0.06)]'
+                            } w-full z-20 bg-white rounded-lg transition-opacity duration-300 opacity-100 border border-gray-200`}
                             role="menu"
                             onClick={(e) => e.stopPropagation()}
                         >
