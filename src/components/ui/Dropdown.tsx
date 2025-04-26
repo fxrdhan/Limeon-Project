@@ -150,10 +150,9 @@ export const Dropdown = ({
                         <div
                             className="absolute left-0 top-full mt-2 w-full z-20 bg-white shadow-md rounded-lg transition-opacity duration-300 opacity-100 border border-gray-200"
                             role="menu"
-                            style={{ maxHeight: '250px', overflowY: 'auto' }}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="p-2 border-b sticky top-0 bg-white">
+                            <div className="p-2 border-b sticky top-0 bg-white z-10">
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
