@@ -1,10 +1,5 @@
-// src/components/ui/Card.tsx
+import type { CardProps } from '../../types';
 import { classNames } from '../../lib/classNames';
-
-interface CardProps {
-    children: React.ReactNode;
-    className?: string;
-}
 
 export const Card = ({ children, className }: CardProps) => {
     return (

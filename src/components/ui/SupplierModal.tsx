@@ -1,32 +1,10 @@
-import React, { useState, useEffect, Fragment, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { Button } from './Button';
+import { createPortal } from 'react-dom';
 import { ImageUploader } from './ImageUploader';
 import { Transition, TransitionChild } from '@headlessui/react';
+import React, { useState, useEffect, Fragment, useRef } from 'react';
+import type { DetailEditModalProps } from '../../types';
 import { FaPencilAlt, FaSpinner, FaSave, FaBan } from 'react-icons/fa';
-
-interface FieldConfig {
-    key: string;
-    label: string;
-    type?: 'text' | 'email' | 'tel' | 'textarea';
-    editable?: boolean;
-}
-
-interface DetailEditModalProps {
-    title: string;
-    data: Record<string, string | number | boolean | null>;
-    fields: FieldConfig[];
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
-    onImageSave?: (data: { supplierId: string; imageBase64: string }) => Promise<void>;
-    onImageDelete?: (supplierId: string) => Promise<void>;
-    onDeleteRequest?: (data: Record<string, string | number | boolean | null>) => void;
-    deleteButtonLabel?: string;
-    imageUrl?: string;
-    imagePlaceholder?: string;
-    mode?: 'edit' | 'add';
-}
 
 const DetailEditModal: React.FC<DetailEditModalProps> = ({
     title,

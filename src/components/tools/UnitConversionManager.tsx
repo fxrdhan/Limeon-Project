@@ -1,14 +1,10 @@
 import { useEffect } from "react";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../ui/Table";
-import { FormSection, FormField } from "../ui/FormComponents";
-import { UseUnitConversionReturn } from "../../hooks/useUnitConversion";
 import { FaTrash } from "react-icons/fa";
-
-interface UnitConversionManagerProps {
-    unitConversionHook: UseUnitConversionReturn;
-}
+import { FormSection, FormField } from "../ui/FormComponents";
+import type { UnitConversionManagerProps } from '../../types';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../ui/Table";
 
 const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
     unitConversionHook

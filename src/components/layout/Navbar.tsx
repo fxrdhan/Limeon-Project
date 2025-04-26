@@ -1,13 +1,10 @@
+import { useNavigate } from 'react-router-dom';
+import type { NavbarProps } from '../../types';
 import { useState, useEffect, useRef } from 'react';
+import { ImageUploader } from '../ui/ImageUploader';
 import { useAuthStore } from '../../store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { FaUserCircle, FaPencilAlt } from 'react-icons/fa';
-import { ImageUploader } from '../ui/ImageUploader';
-
-interface NavbarProps {
-    sidebarCollapsed: boolean;
-}
 
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     const { user, logout } = useAuthStore();

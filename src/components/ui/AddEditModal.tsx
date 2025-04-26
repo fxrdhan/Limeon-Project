@@ -1,27 +1,11 @@
-import React, { useState, useEffect, Fragment, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { Button } from './Button';
-import { useConfirmDialog } from './ConfirmDialog';
 import { Input } from './Input';
-import { Transition, TransitionChild } from '@headlessui/react';
+import { Button } from './Button';
+import { createPortal } from 'react-dom';
 import { FaTimes } from 'react-icons/fa';
-
-interface AddCategoryModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSubmit: (category: { id?: string; name: string; description: string }) => Promise<void>;
-    initialData?: Category | null;
-    onDelete?: (categoryId: string) => void;
-    isLoading?: boolean;
-    isDeleting?: boolean;
-    entityName?: string; // New prop for entity name
-}
-
-interface Category {
-    id: string;
-    name: string;
-    description: string;
-}
+import { useConfirmDialog } from './ConfirmDialog';
+import type { AddCategoryModalProps } from '../../types';
+import { Transition, TransitionChild } from '@headlessui/react';
+import React, { useState, useEffect, Fragment, useRef } from 'react';
 
 export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     isOpen,
@@ -31,7 +15,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     onDelete,
     isLoading = false,
     isDeleting = false,
-    entityName = "Kategori" // Default is "Kategori" for backward compatibility
+    entityName = "Kategori"
 }) => {
     useConfirmDialog();
     const [name, setName] = useState('');
@@ -51,7 +35,6 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
         }
     }, [isOpen, initialData]);
 
-    // Auto resize textarea on content change
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {

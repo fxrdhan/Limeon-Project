@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
-import { Pagination } from "../../components/ui/Pagination";
-import { Loading } from "../../components/ui/Loading";
 import { Badge } from "../../components/ui/Badge";
-import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { Button } from "../../components/ui/Button";
+import { Loading } from "../../components/ui/Loading";
+import { Pagination } from "../../components/ui/Pagination";
 import { SearchBar } from "../../components/ui/TableSearchBar";
+import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 
 interface Purchase {
     id: string;
@@ -61,10 +61,7 @@ const PurchaseList = () => {
                 .select('id', { count: 'exact' });
 
             if (searchTerm) {
-                // Only search by invoice number
                 query = query.ilike('invoice_number', `%${searchTerm}%`);
-
-                // Also apply to count query
                 countQuery = countQuery.ilike('invoice_number', `%${searchTerm}%`);
             }
 
@@ -219,7 +216,6 @@ const PurchaseList = () => {
         <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Pembelian</h1>
-
                 <div className="flex space-x-2">
                     <Link to="/purchases/upload-invoice">
                         <Button variant="primary">
@@ -227,7 +223,6 @@ const PurchaseList = () => {
                             Upload Faktur
                         </Button>
                     </Link>
-                    
                     <Link to="/purchases/create">
                         <Button variant="primary">
                             <FaPlus className="mr-2" />
@@ -236,13 +231,11 @@ const PurchaseList = () => {
                     </Link>
                 </div>
             </div>
-
             <SearchBar
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari nomor faktur..."
             />
-
             {isLoading ? (
                 <Loading message="Memuat data pembelian..." />
             ) : (
@@ -323,7 +316,6 @@ const PurchaseList = () => {
                             )}
                         </TableBody>
                     </Table>
-
                     <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}

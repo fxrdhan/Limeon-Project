@@ -4,46 +4,8 @@ import { supabase } from "../../lib/supabase";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Loading } from "../../components/ui/Loading";
+import type { PurchaseData, PurchaseItem } from '../../types';
 import { FaArrowLeft, FaSearchPlus, FaSearchMinus, FaPrint } from "react-icons/fa";
-
-interface PurchaseData {
-    id: string;
-    invoice_number: string;
-    date: string;
-    due_date: string | null;
-    total: number;
-    payment_status: string;
-    payment_method: string;
-    vat_percentage: number;
-    is_vat_included: boolean;
-    vat_amount: number;
-    notes: string | null;
-    supplier: {
-        name: string;
-        address: string | null;
-        contact_person: string | null;
-    };
-    customer_name?: string;
-    customer_address?: string;
-    checked_by?: string;
-}
-
-interface PurchaseItem {
-    id: string;
-    item_id: string;
-    item: {
-        name: string;
-        code: string;
-    };
-    quantity: number;
-    price: number;
-    discount: number;
-    subtotal: number;
-    vat_percentage: number;
-    unit: string;
-    batch_no: string | null;
-    expiry_date: string | null;
-}
 
 const ViewPurchase = () => {
     const { id } = useParams<{ id: string }>();
@@ -68,12 +30,12 @@ const ViewPurchase = () => {
             const { data: purchaseData, error: purchaseError } = await supabase
                 .from("purchases")
                 .select(`
-          *,
-          supplier:suppliers(
-            name,
-            address,
-            contact_person
-          )
+                    *,
+                    supplier:suppliers(
+                    name,
+                    address,
+                    contact_person
+                    )
         `)
                 .eq("id", purchaseId)
                 .single();
@@ -83,11 +45,11 @@ const ViewPurchase = () => {
             const { data: itemsData, error: itemsError } = await supabase
                 .from("purchase_items")
                 .select(`
-          *,
-          item:items(
-            name,
-            code
-          )
+                    *,
+                    item:items(
+                        name,
+                        code
+                    )
         `)
                 .eq("purchase_id", purchaseId)
                 .order("id");
@@ -142,7 +104,7 @@ const ViewPurchase = () => {
             items: items,
             subtotals: calculateSubtotals()
         }));
-        
+
         const printWindow = window.open('/purchases/print-view', '_blank');
         if (printWindow)
             printWindow.focus();
@@ -190,9 +152,9 @@ const ViewPurchase = () => {
     return (
         <Card>
             <div className="flex justify-between items-center mb-4 print:hidden">
-                <Button 
+                <Button
                     type="button"
-                    variant="outline" 
+                    variant="outline"
                     onClick={() => navigate("/purchases")}
                 >
                     <div className="flex items-center">
@@ -217,9 +179,9 @@ const ViewPurchase = () => {
                 <div
                     ref={printRef}
                     className="bg-white p-6 shadow print:shadow-none transition-transform duration-200"
-                    style={{ 
-                        width: "215mm", 
-                        minHeight: "330mm", 
+                    style={{
+                        width: "215mm",
+                        minHeight: "330mm",
                         margin: "0 auto",
                         transform: `scale(${scale})`,
                         transformOrigin: "top center"
@@ -237,7 +199,7 @@ const ViewPurchase = () => {
                                         <p>{purchase.supplier?.address || ''}</p>
                                     </div>
                                 </div>
-                                
+
                                 <div className="text-left">
                                     <h2 className="text-sm text-gray-600">Customer:</h2>
                                     <div className="text-sm ">
@@ -246,7 +208,7 @@ const ViewPurchase = () => {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div className="w-1/2">
                                 <div className="bg-gray-50 p-3 rounded text-sm">
                                     <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
@@ -327,24 +289,24 @@ const ViewPurchase = () => {
                                 <span className="px-2">:</span>
                                 <span>{purchase.supplier?.contact_person || purchase.checked_by || '-'}</span>
                             </div>
-                            
+
                             <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
                                 <span className="text-left">Status Pembayaran</span>
                                 <span className="px-2">:</span>
                                 <span className={`${purchase.payment_status === 'paid' ? 'text-green-600' :
                                     purchase.payment_status === 'partial' ? 'text-orange-600' : 'text-red-600'
-                                }`}>
+                                    }`}>
                                     {purchase.payment_status === 'paid' ? 'Lunas' :
                                         purchase.payment_status === 'partial' ? 'Sebagian' : 'Belum Dibayar'}
                                 </span>
                             </div>
-                            
+
                             <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
                                 <span className="text-left">Metode Pembayaran</span>
                                 <span className="px-2">:</span>
                                 <span>{purchase.payment_method === 'cash' ? 'Tunai' : purchase.payment_method === 'transfer' ? 'Transfer' : purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method}</span>
                             </div>
-                            
+
                             <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
                                 <span className="text-left">Catatan</span>
                                 <span className="px-2">:</span>
@@ -358,7 +320,7 @@ const ViewPurchase = () => {
                                 </div>
                             )}
                         </div>
-                        
+
                         <div className="border p-4 min-w-[250px] text-sm">
                             <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
                                 <span className="text-left">Subtotal</span>

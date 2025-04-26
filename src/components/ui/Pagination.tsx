@@ -1,16 +1,6 @@
-import { classNames } from "../../lib/classNames";
 import { Button } from "./Button";
-
-export interface PaginationProps {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-    itemsCount: number;
-    onPageChange: (page: number) => void;
-    onItemsPerPageChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-    className?: string;
-}
+import { classNames } from "../../lib/classNames";
+import type { PaginationProps } from '../../types';
 
 export const Pagination = ({
     currentPage,

@@ -1,25 +1,6 @@
 import { create } from 'zustand';
-import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-
-interface UserDetails {
-    id: string;
-    name: string;
-    email: string;
-    profilephoto: string | null;
-    role: string;
-}
-
-interface AuthState {
-    session: Session | null;
-    user: UserDetails | null;
-    loading: boolean;
-    error: string | null;
-    login: (email: string, password: string) => Promise<void>;
-    logout: () => Promise<void>;
-    updateProfilePhoto: (photoBase64: string) => Promise<void>;
-    initialize: () => Promise<void>;
-}
+import type {AuthState } from '../types';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
     session: null,

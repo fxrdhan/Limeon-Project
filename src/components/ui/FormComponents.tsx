@@ -1,12 +1,5 @@
-// src/components/ui/FormComponents.tsx
 import { classNames } from "../../lib/classNames";
-
-// FormSection component
-interface FormSectionProps {
-    title: string;
-    children: React.ReactNode;
-    className?: string;
-}
+import type { FormSectionProps, FormFieldProps } from '../../types';
 
 export const FormSection: React.FC<FormSectionProps> = ({ title, children, className }) => {
     return (
@@ -20,13 +13,6 @@ export const FormSection: React.FC<FormSectionProps> = ({ title, children, class
         </div>
     );
 };
-
-// FormField component
-interface FormFieldProps {
-    label: string;
-    children: React.ReactNode;
-    className?: string;
-}
 
 export const FormField: React.FC<FormFieldProps> = ({ label, children, className }) => {
     return (

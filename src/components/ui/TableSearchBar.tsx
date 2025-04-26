@@ -1,12 +1,6 @@
 import React from 'react';
 import { FaSearch } from 'react-icons/fa';
-
-interface TableSearchProps {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    placeholder?: string;
-    className?: string;
-}
+import type { TableSearchProps } from '../../types';
 
 export const SearchBar: React.FC<TableSearchProps> = ({
     value,

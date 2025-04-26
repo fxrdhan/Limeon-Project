@@ -1,21 +1,16 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { supabase } from "../../lib/supabase";
 import { FaPlus } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Loading } from "../../components/ui/Loading";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import type { Unit } from '../../types';
 import { AddCategoryModal } from "../../components/ui/AddEditModal";
 import { Pagination } from "../../components/ui/Pagination";
 import { SearchBar } from "../../components/ui/TableSearchBar";
-
-interface Unit {
-    id: string;
-    name: string;
-    description: string;
-}
 
 const UnitList = () => {
     const { openConfirmDialog } = useConfirmDialog();

@@ -1,30 +1,8 @@
-import React, { createContext, useState, useContext, useCallback, Fragment } from 'react';
-import { createPortal } from 'react-dom';
 import { Button } from './Button';
+import { createPortal } from 'react-dom';
 import { Transition, TransitionChild } from '@headlessui/react';
-
-interface ConfirmDialogContextType {
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText: string;
-    cancelText: string;
-    onConfirm: () => void;
-    onCancel: () => void;
-    variant: 'danger' | 'primary';
-    openConfirmDialog: (options: ConfirmDialogOptions) => void;
-    closeConfirmDialog: () => void;
-}
-
-interface ConfirmDialogOptions {
-    title: string;
-    message: string;
-    confirmText?: string;
-    cancelText?: string;
-    onConfirm: () => void;
-    onCancel?: () => void;
-    variant?: 'danger' | 'primary';
-}
+import type { ConfirmDialogContextType, ConfirmDialogOptions } from '../../types';
+import React, { createContext, useState, useContext, useCallback, Fragment } from 'react';
 
 const initialState: ConfirmDialogContextType = {
     isOpen: false,

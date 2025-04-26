@@ -1,18 +1,18 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
-import { FormActions } from '../../components/ui/FormActions';
-import { FormSection, FormField } from '../../components/ui/FormComponents';
-import { Input } from '../../components/ui/Input';
-import { usePurchaseForm } from '../../hooks/usePurchaseForm';
-import { useItemSelection } from '../../hooks/useItemSelection';
 import ItemSearchBar from './ItemSearchBar';
-import { FaTrash, FaChevronDown } from 'react-icons/fa';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
+import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef } from 'react';
+import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
-import { extractNumericValue, formatRupiah } from '../../lib/formatters';
+import { FaTrash, FaChevronDown } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePurchaseForm } from '../../hooks/usePurchaseForm';
+import { FormActions } from '../../components/ui/FormActions';
+import { useItemSelection } from '../../hooks/useItemSelection';
+import { extractNumericValue, formatRupiah } from '../../lib/formatters';
+import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
+import { FormSection, FormField } from '../../components/ui/FormComponents';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
 
 const CreatePurchase: React.FC = () => {
     const navigate = useNavigate();
@@ -43,7 +43,6 @@ const CreatePurchase: React.FC = () => {
         endDate: formData.due_date ? new Date(formData.due_date) : null
     });
 
-    // New states for VAT percentage editing
     const [editingVatPercentage, setEditingVatPercentage] = useState(false);
     const [vatPercentageValue, setVatPercentageValue] = useState(formData.vat_percentage.toString());
     const vatPercentageInputRef = useRef<HTMLInputElement>(null);
@@ -67,7 +66,6 @@ const CreatePurchase: React.FC = () => {
         handleUnitChange(id, unitName, getItemByID);
     };
 
-    // New functions for VAT percentage editing
     const startEditingVatPercentage = () => {
         setVatPercentageValue(formData.vat_percentage.toString());
         setEditingVatPercentage(true);
@@ -104,7 +102,6 @@ const CreatePurchase: React.FC = () => {
         }
     };
 
-    // New state for notes visibility
     const [showNotes, setShowNotes] = useState(false);
     const notesRef = useRef<HTMLDivElement>(null);
 

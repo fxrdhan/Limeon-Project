@@ -1,23 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { supabase } from '../../lib/supabase';
-import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
 import { Button } from '../../components/ui/Button';
+import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
+import type { CompanyProfile, ProfileKey } from '../../types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-interface CompanyProfile {
-    id: string;
-    name: string;
-    address: string;
-    phone: string | null;
-    email: string | null;
-    website: string | null;
-    tax_id: string | null;
-    pharmacist_name: string | null;
-    pharmacist_license: string | null;
-}
-
-type ProfileKey = keyof CompanyProfile;
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 
 const Profile = () => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});

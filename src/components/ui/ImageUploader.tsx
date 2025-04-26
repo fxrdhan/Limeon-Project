@@ -1,20 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { FaSpinner, FaPencilAlt, FaTrash, FaUpload } from 'react-icons/fa';
+import type { ImageUploaderProps } from '../../types';
 import { compressImageIfNeeded } from '../../lib/imageUtils';
-
-interface ImageUploaderProps {
-    id: string;
-    onImageUpload: (imageBase64: string) => Promise<void> | void;
-    onImageDelete?: () => Promise<void> | void;
-    children: React.ReactNode;
-    maxSizeMB?: number;
-    validTypes?: string[];
-    className?: string;
-    disabled?: boolean;
-    loadingIcon?: React.ReactNode;
-    defaultIcon?: React.ReactNode;
-    shape?: 'rounded' | 'square' | 'full';
-}
+import { FaSpinner, FaPencilAlt, FaTrash, FaUpload } from 'react-icons/fa';
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
     id,

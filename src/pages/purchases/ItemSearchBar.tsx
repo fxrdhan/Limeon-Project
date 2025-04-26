@@ -1,19 +1,7 @@
 import React from 'react';
 import { FaPlus } from 'react-icons/fa';
 import { Button } from '../../components/ui/Button';
-import { Item } from '../../hooks/useItemSelection';
-import { PurchaseItem } from '../../hooks/usePurchaseForm';
-
-interface ItemSearchBarProps {
-    searchItem: string;
-    setSearchItem: (value: string) => void;
-    showItemDropdown: boolean;
-    setShowItemDropdown: (value: boolean) => void;
-    filteredItems: Item[];
-    selectedItem: Item | null;
-    setSelectedItem: (item: Item | null) => void;
-    onAddItem: (item: PurchaseItem) => void;
-}
+import type { PurchaseItem, ItemSearchBarProps } from '../../types';
 
 const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     searchItem,
@@ -40,7 +28,11 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
             unit_conversion_rate: 1,
             vat_percentage: 0,
             batch_no: null,
-            expiry_date: null
+            expiry_date: null,
+            item: {
+                name: '',
+                code: ''
+            }
         };
         
         onAddItem(newItem);

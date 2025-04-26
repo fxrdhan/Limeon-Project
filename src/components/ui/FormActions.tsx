@@ -1,14 +1,6 @@
-// src/components/ui/FormActions.tsx
-import { FaSave, FaTimes } from 'react-icons/fa';
 import { Button } from './Button';
-
-interface FormActionsProps {
-    onCancel: () => void;
-    isSaving: boolean;
-    isDisabled?: boolean;
-    cancelText?: string;
-    saveText?: string;
-}
+import { FaSave, FaTimes } from 'react-icons/fa';
+import type { FormActionsProps } from '../../types';
 
 export const FormActions: React.FC<FormActionsProps> = ({
     onCancel,

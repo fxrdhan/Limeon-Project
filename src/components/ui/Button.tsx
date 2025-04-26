@@ -1,21 +1,5 @@
 import { classNames } from "../../lib/classNames";
-
-export type ButtonVariant =
-    | "primary"
-    | "secondary"
-    | "accent"
-    | "outline"
-    | "text"
-    | "danger";
-export type ButtonSize = "sm" | "md" | "lg";
-
-export interface ButtonProps
-    extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: ButtonVariant;
-    size?: ButtonSize;
-    isLoading?: boolean;
-    fullWidth?: boolean;
-}
+import type { ButtonProps } from '../../types';
 
 export const Button = ({
     children,

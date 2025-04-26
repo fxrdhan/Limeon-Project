@@ -1,19 +1,5 @@
-// src/components/ui/Badge.tsx
 import { classNames } from "../../lib/classNames";
-
-export type BadgeVariant =
-    | "primary"
-    | "secondary"
-    | "accent"
-    | "success"
-    | "warning"
-    | "danger";
-
-interface BadgeProps {
-    children: React.ReactNode;
-    variant?: BadgeVariant;
-    className?: string;
-}
+import type { BadgeProps } from '../../types';
 
 export const Badge = ({
     children,
