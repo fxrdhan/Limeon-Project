@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { DropdownProps } from '../../types';
 
 export const Dropdown = ({
@@ -29,6 +29,14 @@ export const Dropdown = ({
             handleSelect(filteredOptions[0].id);
         }
     };
+    
+    const focusSearchInput = useCallback(() => {
+        if (isOpen && searchInputRef.current) {
+            setTimeout(() => {
+                searchInputRef.current?.focus();
+            }, 10);
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (searchTerm.trim() === '') {
@@ -42,18 +50,28 @@ export const Dropdown = ({
     }, [searchTerm, options]);
 
     useEffect(() => {
-        if (isOpen && searchInputRef.current) {
-            setTimeout(() => {
-                searchInputRef.current?.focus();
-            }, 100);
+        focusSearchInput();
+    }, [isOpen, focusSearchInput]);
+
+    const toggleDropdown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        const newIsOpen = !isOpen;
+        setIsOpen(newIsOpen);
+        if (newIsOpen) {
+            setTimeout(() => focusSearchInput(), 10);
+        } else {
+            setSearchTerm('');
         }
-    }, [isOpen]);
+    };
 
     return (
         <div 
             className="relative inline-flex w-full" 
             ref={dropdownRef}
-            onMouseEnter={() => setIsOpen(true)}
+            onMouseEnter={() => {
+                setIsOpen(true);
+                focusSearchInput();
+            }}
             onMouseLeave={() => {
                 setIsOpen(false);
                 setSearchTerm('');
@@ -66,6 +84,7 @@ export const Dropdown = ({
                         className="py-2 px-4 w-full inline-flex justify-between items-center text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                         aria-haspopup="menu"
                         aria-expanded={isOpen}
+                        onClick={toggleDropdown}
                     >
                         {selectedOption ? selectedOption.name : placeholder}
                         <svg
@@ -89,6 +108,7 @@ export const Dropdown = ({
                             className="absolute left-0 top-full mt-2 w-full z-20 bg-white shadow-md rounded-lg transition-opacity duration-300 opacity-100 border border-gray-200"
                             role="menu"
                             style={{ maxHeight: '250px', overflowY: 'auto' }}
+                            onClick={(e) => e.stopPropagation()}
                         >
                             <div className="p-2 border-b sticky top-0 bg-white">
                                 <div className="relative">
