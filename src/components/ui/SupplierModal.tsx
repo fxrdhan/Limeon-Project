@@ -1,9 +1,9 @@
 import React, { useState, useEffect, Fragment, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { FaPencilAlt, FaSpinner, FaSave, FaBan } from 'react-icons/fa';
 import { Button } from './Button';
 import { ImageUploader } from './ImageUploader';
 import { Transition, TransitionChild } from '@headlessui/react';
+import { FaPencilAlt, FaSpinner, FaSave, FaBan } from 'react-icons/fa';
 
 interface FieldConfig {
     key: string;
@@ -25,7 +25,7 @@ interface DetailEditModalProps {
     deleteButtonLabel?: string;
     imageUrl?: string;
     imagePlaceholder?: string;
-    mode?: 'edit' | 'add'; // Added mode prop
+    mode?: 'edit' | 'add';
 }
 
 const DetailEditModal: React.FC<DetailEditModalProps> = ({
@@ -41,7 +41,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     imagePlaceholder,
     onDeleteRequest,
     deleteButtonLabel = 'Hapus',
-    mode = 'edit' // Default to edit mode
+    mode = 'edit'
 }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
@@ -54,25 +54,20 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     const [, setIsClosing] = useState(false);
     const [, setIsAnimationComplete] = useState(!isOpen);
 
-    // In add mode, all fields are editable by default
     useEffect(() => {
         if (isOpen) {
-            // Reset edit mode when modal opens
             const initialEditMode: Record<string, boolean> = {};
             if (mode === 'add') {
-                // In add mode, make all fields editable
                 fields.forEach(field => {
                     initialEditMode[field.key] = true;
                 });
             } else {
-                // In edit mode, reset all fields to non-editable
                 fields.forEach(field => {
                     initialEditMode[field.key] = false;
                 });
             }
             setEditMode(initialEditMode);
         } else {
-            // Clear edit mode when modal closes
             setEditMode({});
         }
     }, [isOpen, mode, fields]);
@@ -163,7 +158,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
 
     const handleImageDelete = async () => {
         if (mode === 'add') {
-            // In add mode, just clear the image preview
             setCurrentImageUrl(undefined);
         } else if (onImageDelete && data?.id) {
             setIsUploadingImage(true);
@@ -218,7 +212,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                 >
                     <div 
                         ref={modalRef}
-                        className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden relative mx-4"
+                        className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden relative mx-4"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex justify-between items-center p-4 border-b">
@@ -226,7 +220,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                         </div>
 
                         <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                            {/* Always show the image section */}
                             <div className="flex justify-center mb-6">
                                 <div className="relative group w-48">
                                     <ImageUploader
@@ -235,7 +228,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                         shape="rounded"
                                         onImageUpload={async (base64) => {
                                             if (mode === 'add') {
-                                                // In add mode, just show the image preview
                                                 setCurrentImageUrl(base64);
                                             } else if (onImageSave && data?.id) {
                                                 setIsUploadingImage(true);
