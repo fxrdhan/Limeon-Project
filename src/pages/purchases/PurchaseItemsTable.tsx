@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaTrash } from 'react-icons/fa';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../ui/Table';
-import { Button } from '../ui/Button';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
+import { Button } from '../../components/ui/Button';
 import { Item } from '../../hooks/useItemSelection';
 import { formatRupiah, extractNumericValue } from '../../lib/formatters';
 import { PurchaseItem } from '../../hooks/usePurchaseForm';
@@ -39,18 +39,18 @@ const PurchaseItemsTable: React.FC<PurchaseItemsTableProps> = ({
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableHeader className="w-12 text-center">No</TableHeader>
-                        <TableHeader className="w-24">Kode</TableHeader>
-                        <TableHeader className="w-full">Nama</TableHeader>
-                        <TableHeader className="w-28 text-center">Batch No.</TableHeader>
-                        <TableHeader className="w-32 text-center">Kadaluarsa</TableHeader>
-                        <TableHeader className="w-20 text-center">Jumlah</TableHeader>
-                        <TableHeader className="w-24 text-center">Satuan</TableHeader>
-                        <TableHeader className="w-28 text-right">Harga</TableHeader>
-                        <TableHeader className="w-10 text-right">Disc</TableHeader>
-                        {!isVatIncluded && <TableHeader className="w-10 text-right">VAT</TableHeader>}
-                        <TableHeader className="w-28 text-right">Subtotal</TableHeader>
-                        <TableHeader className="w-16 text-center">Aksi</TableHeader>
+                        <TableHeader className="w-[5%] text-center">No</TableHeader>
+                        <TableHeader className="w-[8%]">Kode</TableHeader>
+                        <TableHeader className="w-[25%]">Nama</TableHeader>
+                        <TableHeader className="w-[9%] text-center">Batch No.</TableHeader>
+                        <TableHeader className="w-[10%] text-center">Kadaluarsa</TableHeader>
+                        <TableHeader className="w-[5%] text-center">Jml.</TableHeader>
+                        <TableHeader className="w-[6%] text-center">Satuan</TableHeader>
+                        <TableHeader className="w-[10%] text-right">Harga</TableHeader>
+                        <TableHeader className="w-[5%] text-right">Disc</TableHeader>
+                        {!isVatIncluded && <TableHeader className="w-[5%] text-right">VAT</TableHeader>}
+                        <TableHeader className="w-[10%] text-right">Subtotal</TableHeader>
+                        <TableHeader className="w-[5%] text-center">Aksi</TableHeader>
                     </TableRow>
                 </TableHead>
                 <TableBody>
