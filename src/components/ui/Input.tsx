@@ -17,7 +17,7 @@ export const Input = ({
             )}
             <input
                 className={classNames(
-                    'p-3 border rounded-md',
+                    'p-2 border rounded-md',
                     error ? 'border-red-500' : 'border-gray-300',
                     'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent', // Default focus
                     'disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70 read-only:bg-gray-100 read-only:cursor-default read-only:opacity-70', // Disabled and Read-only styles
