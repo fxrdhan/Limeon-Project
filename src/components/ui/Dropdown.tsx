@@ -184,7 +184,7 @@ export const Dropdown = ({
                             role="menu"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="p-2 border-b sticky top-0 bg-white z-10">
+                            <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
