@@ -1,47 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-
-export interface UnitConversion {
-    unit_name: string;
-    to_unit_id: string;
-    id: string;
-    unit: {
-        id: string;
-        name: string;
-    };
-    conversion: number;
-    basePrice: number;
-    sellPrice: number;
-}
-
-export interface UseUnitConversionReturn {
-    conversions: UnitConversion[];
-    baseUnit: string;
-    setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
-    basePrice: number;
-    setBasePrice: React.Dispatch<React.SetStateAction<number>>;
-    sellPrice: number;
-    setSellPrice: React.Dispatch<React.SetStateAction<number>>;
-    addUnitConversion: (unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number, sellPrice?: number }) => void;
-    removeUnitConversion: (id: string) => void;
-    unitConversionFormData: {
-        unit: string;
-        conversion: number;
-    };
-    setUnitConversionFormData: React.Dispatch<React.SetStateAction<{
-        unit: string;
-        conversion: number;
-    }>>;
-    recalculateBasePrices: () => void;
-    skipNextRecalculation: () => void;
-    availableUnits: UnitData[];
-    resetConversions: () => void;
-}
-
-export interface UnitData {
-    id: string;
-    name: string;
-}
+import { useState, useEffect, useCallback } from "react";
+import type { UnitConversion, UseUnitConversionReturn, UnitData } from '../types';
 
 export const useUnitConversion = (): UseUnitConversionReturn => {
     const [baseUnit, setBaseUnit] = useState<string>("");

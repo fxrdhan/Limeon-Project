@@ -1,57 +1,7 @@
 import axios, { AxiosError } from 'axios';
+import type { ExtractedInvoiceData } from '../types';
 
 const API_URL = import.meta.env.VITE_INVOICE_EXTRACTOR_API_URL || 'http://localhost:3000/api/extract-invoice';
-
-interface CompanyDetails {
-    name?: string;
-    address?: string;
-    license_dak?: string;
-    certificate_cdob?: string;
-}
-
-interface InvoiceInformation {
-    invoice_number?: string;
-    invoice_date?: string;
-    due_date?: string;
-}
-
-interface CustomerInformation {
-    customer_name?: string;
-    customer_address?: string;
-}
-
-export interface ProductListItem {
-    sku?: string;
-    product_name?: string;
-    quantity?: number;
-    unit?: string;
-    batch_number?: string;
-    expiry_date?: string;
-    unit_price?: number;
-    discount?: number;
-    total_price?: number;
-}
-
-interface PaymentSummary {
-    total_price?: number;
-    vat?: number;
-    invoice_total?: number;
-}
-
-interface AdditionalInformation {
-    checked_by?: string;
-}
-
-export interface ExtractedInvoiceData {
-    company_details?: CompanyDetails;
-    invoice_information?: InvoiceInformation;
-    customer_information?: CustomerInformation;
-    product_list?: ProductListItem[] | null;
-    payment_summary?: PaymentSummary;
-    additional_information?: AdditionalInformation;
-    rawText?: string;
-    imageIdentifier?: string;
-}
 
 export async function uploadAndExtractInvoice(file: File): Promise<ExtractedInvoiceData> {
     const formData = new FormData();
@@ -121,7 +71,7 @@ export async function saveInvoiceToDatabase(extractedData: ExtractedInvoiceData,
             imageIdentifier: imageIdentifier
         });
 
-       return { message: response.data.message || "Faktur berhasil dikonfirmasi", success: true };
+        return { message: response.data.message || "Faktur berhasil dikonfirmasi", success: true };
     } catch (error: unknown) {
         console.error('Error menyimpan data faktur ke database:', error);
         if (error instanceof Error) {

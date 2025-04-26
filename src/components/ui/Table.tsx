@@ -1,21 +1,6 @@
 // src/components/ui/Table.tsx
 import { classNames } from '../../lib/classNames';
-
-interface TableProps {
-    children: React.ReactNode;
-    className?: string;
-}
-
-interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
-    colSpan?: number;
-    rowSpan?: number;
-    align?: 'left' | 'center' | 'right';
-}
-
-interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
-    children: React.ReactNode;
-    className?: string;
-}
+import type { TableProps, TableCellProps, TableRowProps } from '../../types';
 
 export const Table = ({ children, className }: TableProps) => {
     return (

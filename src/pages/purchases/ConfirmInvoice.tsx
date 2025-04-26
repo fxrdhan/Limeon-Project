@@ -5,7 +5,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCheck, FaClock, FaRedo } from 'react-icons/fa';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
-import { ExtractedInvoiceData, saveInvoiceToDatabase, regenerateInvoiceData } from '../../services/invoiceService';
+import { saveInvoiceToDatabase, regenerateInvoiceData } from '../../services/invoiceService';
+import type { ExtractedInvoiceData } from '../../types';
 
 const ConfirmInvoicePage = () => {
     const navigate = useNavigate();
@@ -204,7 +205,7 @@ const ConfirmInvoicePage = () => {
                                 </TableHead>
                                 <TableBody>
                                     {(invoiceData.product_list ?? []).map((product, index: number) => (
-                                        <TableRow key={index}>
+                                        <TableRow key={product.sku ? `product-${product.sku}-${index}`: `product-unknown-${index}`}>
                                             <TableCell className="text-sm w-[10%]">{renderProductField(product.sku)}</TableCell>
                                             <TableCell className="text-sm w-[30%] font-medium">{renderProductField(product.product_name)}</TableCell>
                                             <TableCell align="center" className="text-sm w-[7%]">{renderProductField(product.quantity)}</TableCell>

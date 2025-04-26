@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
 import { FaPlus } from "react-icons/fa";
+import { useState, useEffect } from 'react';
+import type { Category } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
@@ -10,12 +11,6 @@ import { AddCategoryModal } from "../../components/ui/AddEditModal";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
-
-interface Category {
-    id: string;
-    name: string;
-    description: string;
-}
 
 const CategoryList = () => {
     const { openConfirmDialog } = useConfirmDialog();

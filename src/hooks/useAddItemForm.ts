@@ -1,44 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
+import { useNavigate } from "react-router-dom";
+import type { UnitConversion } from '../types';
 import { useUnitConversion } from "./useUnitConversion";
-import type { UnitConversion } from "./useUnitConversion";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatRupiah, extractNumericValue } from "../lib/formatters";
+import type { Category, MedicineType, Unit, FormData } from '../types';
 import { generateTypeCode, generateUnitCode, generateCategoryCode, getUnitById } from "./addItemFormHelpers";
-
-interface Category {
-    id: string;
-    name: string;
-}
-
-interface MedicineType {
-    id: string;
-    name: string;
-}
-
-interface Unit {
-    id: string;
-    name: string;
-}
-
-interface FormData {
-    code: string;
-    name: string;
-    type_id: string;
-    category_id: string;
-    unit_id: string;
-    rack: string;
-    barcode: string;
-    description: string;
-    base_price: number;
-    sell_price: number;
-    min_stock: number;
-    is_active: boolean;
-    is_medicine: boolean;
-    has_expiry_date: boolean;
-    updated_at?: string | null;
-}
 
 export const useAddItemForm = (itemId?: string) => {
     const navigate = useNavigate();
@@ -200,7 +168,7 @@ export const useAddItemForm = (itemId?: string) => {
         try {
             const { data: categoriesData } = await supabase
                 .from("item_categories")
-                .select("id, name")
+                .select("id, name, description")
                 .order("name");
 
             const { data: typesData } = await supabase
@@ -210,13 +178,13 @@ export const useAddItemForm = (itemId?: string) => {
 
             const { data: unitsData } = await supabase
                 .from("item_units")
-                .select("id, name")
+                .select("id, name, description")
                 .order("name");
 
             if (categoriesData) setCategories(categoriesData);
-            if (typesData) setTypes(typesData);
+            if (typesData) setTypes(typesData as MedicineType[]);
             if (unitsData) setUnits(unitsData);
-        } catch (error) {
+        } catch (error:unknown) {
             console.error("Error fetching master data:", error);
         } finally {
             setLoading(false);
@@ -438,8 +406,8 @@ export const useAddItemForm = (itemId?: string) => {
                 }
 
                 if (unitConversionHook.conversions.length > 0) {
-                    const uniqueConversions = unitConversionHook.conversions.reduce((acc, current) => {
-                        const isDuplicate = acc.find(item => item.unit.name === current.unit.name);
+                    const uniqueConversions = unitConversionHook.conversions.reduce((acc: UnitConversion[], current: UnitConversion) => {
+                        const isDuplicate = acc.find((item: UnitConversion) => item.unit.name === current.unit.name);
                         if (!isDuplicate && current.unit && current.unit.name) {
                             acc.push(current);
                         } else if (isDuplicate) {
@@ -452,8 +420,8 @@ export const useAddItemForm = (itemId?: string) => {
                         item_id: itemId,
                         unit_name: uc.unit.name,
                         conversion_rate: uc.conversion,
-                        base_price: uc.basePrice,
-                        sell_price: uc.sellPrice,
+                        basePrice: uc.basePrice,
+                        sellPrice: uc.sellPrice,
                         created_at: new Date()
                     }));
 
@@ -537,8 +505,8 @@ export const useAddItemForm = (itemId?: string) => {
             };
             
             const currentConversionsForCompare = unitConversionHook.conversions
-                .filter(item => item && item.unit)
-                .map(({ unit, ...rest }) => ({ ...rest, to_unit_id: unit.id }));
+                .filter((item: UnitConversion) => item && item.unit)
+                .map(({ unit, ...rest }: UnitConversion) => ({ ...rest, to_unit_id: unit.id }));
             
             const initialConversionsForCompare = Array.isArray(initialUnitConversions) 
                 ? initialUnitConversions

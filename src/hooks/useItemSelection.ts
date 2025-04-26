@@ -1,18 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { UnitConversion } from './useUnitConversion';
-
-export interface Item {
-    id: string;
-    name: string;
-    code?: string;
-    base_price: number;
-    sell_price: number;
-    stock: number;
-    unit_id: string;
-    base_unit: string;
-    unit_conversions: UnitConversion[];
-}
+import type { Item } from '../types';
 
 export const useItemSelection = () => {
     const [items, setItems] = useState<Item[]>([]);

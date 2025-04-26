@@ -1,11 +1,5 @@
-// src/components/ui/Input.tsx
+import type { InputProps } from '../../types';
 import { classNames } from '../../lib/classNames';
-
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
-    error?: string;
-    fullWidth?: boolean;
-}
 
 export const Input = ({
     label,

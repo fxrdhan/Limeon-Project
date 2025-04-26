@@ -12,22 +12,7 @@ import {
     FaShoppingBag,
     FaCog
 } from "react-icons/fa";
-import { JSX } from "react/jsx-runtime";
-
-interface SidebarProps {
-    collapsed: boolean;
-    toggleSidebar: () => void;
-}
-
-interface MenuItem {
-    name: string;
-    path: string;
-    icon: JSX.Element;
-    children?: {
-        name: string;
-        path: string;
-    }[];
-}
+import type { SidebarProps, MenuItem } from '../../types';
 
 const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
     const location = useLocation();

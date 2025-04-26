@@ -1,30 +1,14 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { FaPlus } from 'react-icons/fa';
 import { supabase } from '../../lib/supabase';
+import { Button } from '../../components/ui/Button';
 import { Loading } from '../../components/ui/Loading';
+import type { Supplier, FieldConfig } from '../../types';
 import { Card, CardHeader } from '../../components/ui/Card';
 import DetailEditModal from '../../components/ui/SupplierModal';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
-import { Button } from '../../components/ui/Button';
-import { FaPlus } from 'react-icons/fa';
 import { useConfirmDialog } from '../../components/ui/ConfirmDialog';
-
-interface Supplier {
-    id: string;
-    name: string;
-    address: string | null;
-    phone?: string | null;
-    email?: string | null;
-    contact_person?: string | null;
-    image_url?: string | null;
-}
-
-interface FieldConfig {
-    key: string;
-    label: string;
-    type?: 'text' | 'email' | 'tel' | 'textarea';
-    editable?: boolean;
-}
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
 
 const SupplierList = () => {
     const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);

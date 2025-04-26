@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { usePrefetchQueries } from '../../lib/prefetchQueries';
+import type { RegularDashboardProps, TopSellingMedicine } from '../../types';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -160,11 +161,6 @@ const Dashboard = () => {
 
         if (!data) return;
 
-        interface TopSellingMedicine {
-            name: string;
-            total_quantity: number;
-        }
-
         setTopMedicines({
             labels: data.map((item: TopSellingMedicine) => item.name),
             datasets: [
@@ -219,28 +215,6 @@ const Dashboard = () => {
         </div>
     );
 };
-
-interface RegularDashboardProps {
-    stats: {
-        totalSales: number;
-        totalPurchases: number;
-        totalMedicines: number;
-        lowStockCount: number;
-    };
-    salesData: {
-        labels: string[];
-        datasets: {
-            label: string;
-            data: number[];
-            borderColor: string;
-            backgroundColor: string;
-        }[];
-    };
-    topMedicines: {
-        labels: string[];
-        datasets: { label: string; data: number[]; backgroundColor: string[]; borderColor: string[]; borderWidth: number; }[];
-    };
-}
 
 const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, topMedicines }) => {
     return (

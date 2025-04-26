@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,7 +25,6 @@ const formatDateTime = (isoString: string | null | undefined): string => {
             day: '2-digit', month: 'long', year: 'numeric',
             hour: '2-digit', minute: '2-digit'
         });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
         return "Invalid Date";
     }
@@ -40,7 +40,7 @@ const AddItem = () => {
     const [marginPercentage, setMarginPercentage] = useState<string>('0');
     const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
     const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
-    const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false); // State for Unit modal
+    const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
     const marginInputRef = useRef<HTMLInputElement>(null);
 
     const {
@@ -59,11 +59,9 @@ const AddItem = () => {
                 queryKey: ['items'],
                 refetchType: 'all'
             });
-            console.log("Item berhasil dihapus.");
             navigate("/master-data/items");
         },
-        onError: (error) => {
-            console.error("Error deleting item:", error);
+        onError: (_error) => {
             alert("Gagal menghapus item. Silakan coba lagi.");
         },
     });
@@ -81,9 +79,7 @@ const AddItem = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['types'] });
         },
-        onError: (error) => {
-            console.error("Error adding type:", error);
-        },
+        onError: (_error) => {},
     });
 
     const handleCancel = () => {
@@ -156,9 +152,7 @@ const AddItem = () => {
     };
 
     const handleSellPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        handleChange(e); // Update the form data with the new selling price
-        
-        // Calculate and update the margin percentage
+        handleChange(e);
         setTimeout(() => {
             const profit = calculateProfitPercentage();
             if (profit !== null) {
@@ -211,24 +205,18 @@ const AddItem = () => {
     const handleSaveCategory = async (categoryData: { name: string; description: string }) => {
         try {
             const newCategory = await addCategoryMutation.mutateAsync(categoryData);
-            
-            // Fetch updated categories list after adding a new category
             const { data: updatedCategories } = await supabase
                 .from("item_categories")
                 .select("id, name")
                 .order("name");
-                
             if (updatedCategories) {
-                // Update the categories state with the new data
                 setCategories(updatedCategories);
             }
-            
             if (newCategory?.id) {
                 updateFormData({ category_id: newCategory.id });
             }
             setIsAddCategoryModalOpen(false);
         } catch (error) {
-            console.error("Failed to save category:", error);
             alert("Gagal menyimpan kategori baru.");
         }
     };
@@ -240,17 +228,14 @@ const AddItem = () => {
                 .from("item_types")
                 .select("id, name")
                 .order("name");
-
             if (updatedTypes) {
                 setTypes(updatedTypes);
             }
-
             if (newType?.id) {
                 updateFormData({ type_id: newType.id });
             }
             setIsAddTypeModalOpen(false);
         } catch (error) {
-            console.error("Failed to save type:", error);
             alert("Gagal menyimpan jenis item baru.");
         }
     };
@@ -258,19 +243,14 @@ const AddItem = () => {
     const handleSaveUnit = async (unitData: { name: string; description: string }) => {
         try {
             const newUnit = await addUnitMutation.mutateAsync(unitData);
-
-            // Fetch updated units list after adding a new unit
             const { data: updatedUnits } = await supabase
                 .from("item_units")
                 .select("id, name")
                 .order("name");
-
-            if (updatedUnits) setUnits(updatedUnits); // Update local state
-            if (newUnit?.id) updateFormData({ unit_id: newUnit.id }); // Select the new unit
-
+            if (updatedUnits) setUnits(updatedUnits);
+            if (newUnit?.id) updateFormData({ unit_id: newUnit.id });
             setIsAddUnitModalOpen(false);
         } catch (error) {
-            console.error("Failed to save unit:", error);
             alert("Gagal menyimpan satuan baru.");
         }
     };

@@ -1,51 +1,7 @@
+import { supabase } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { Item } from './useItemSelection';
-
-interface Supplier {
-    id: string;
-    name: string;
-}
-
-interface CompanyProfile {
-    id: string;
-    name: string;
-    address: string;
-    phone: string | null;
-    email: string | null;
-    website: string | null;
-    tax_id: string | null;
-    pharmacist_name: string | null;
-    pharmacist_license: string | null;
-}
-
-export interface PurchaseFormData {
-    supplier_id: string;
-    invoice_number: string;
-    date: string;
-    due_date: string;
-    payment_status: string;
-    payment_method: string;
-    notes: string;
-    vat_percentage: number;
-    is_vat_included: boolean;
-}
-
-export interface PurchaseItem {
-    id: string;
-    item_id: string;
-    item_name: string;
-    quantity: number;
-    price: number;
-    discount: number;
-    subtotal: number;
-    unit: string;
-    vat_percentage: number;
-    batch_no: string | null;
-    expiry_date: string | null;
-    unit_conversion_rate: number;
-}
+import type { Item, Supplier, CompanyProfile, PurchaseFormData, PurchaseItem, UnitConversion } from '../types';
 
 export const usePurchaseForm = () => {
     const navigate = useNavigate();
@@ -53,7 +9,7 @@ export const usePurchaseForm = () => {
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
     const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
-    
+
     const [formData, setFormData] = useState<PurchaseFormData>({
         supplier_id: '',
         invoice_number: '',
@@ -65,26 +21,26 @@ export const usePurchaseForm = () => {
         is_vat_included: true,
         notes: ''
     });
-    
+
     const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
-    
+
     useEffect(() => {
         fetchSuppliers();
         fetchCompanyProfile();
     }, []);
-    
+
     const fetchCompanyProfile = async () => {
         try {
             const { data, error } = await supabase
                 .from('company_profiles')
                 .select('*')
                 .single();
-                
+
             if (error) {
                 console.error('Error fetching company profile:', error);
                 return;
             }
-            
+
             if (data) {
                 setCompanyProfile(data);
             }
@@ -97,16 +53,16 @@ export const usePurchaseForm = () => {
         try {
             const { data, error } = await supabase
                 .from('suppliers')
-                .select('id, name')
+                .select('id, name, address')
                 .order('name');
-                
+
             if (error) throw error;
             setSuppliers(data || []);
         } catch (error) {
             console.error('Error fetching suppliers:', error);
         }
     };
-    
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type, checked } = e.target as HTMLInputElement;
         setFormData({
@@ -127,20 +83,20 @@ export const usePurchaseForm = () => {
         recalculateSubtotal(newItems);
         setPurchaseItems(newItems);
     };
-    
+
     const updateItem = (id: string, field: 'quantity' | 'price' | 'discount', value: number) => {
         const updatedItems = purchaseItems.map(item => {
             if (item.id === id) {
                 const quantity = field === 'quantity' ? value : item.quantity;
                 const price = field === 'price' ? value : item.price;
                 const discount = field === 'discount' ? value : item.discount;
-                
+
                 let subtotal = quantity * price;
                 if (discount > 0) {
                     const discountAmount = subtotal * (discount / 100);
                     subtotal -= discountAmount;
                 }
-                
+
                 if (item.vat_percentage > 0 && !formData.is_vat_included) {
                     const vatAmount = subtotal * (item.vat_percentage / 100);
                     subtotal += vatAmount;
@@ -153,10 +109,10 @@ export const usePurchaseForm = () => {
             }
             return item;
         });
-        
+
         setPurchaseItems(updatedItems);
     };
-    
+
     const updateItemVat = (id: string, vatPercentage: number) => {
         const updatedItems = purchaseItems.map(item => {
             if (item.id === id) {
@@ -165,12 +121,12 @@ export const usePurchaseForm = () => {
                     const discountAmount = subtotal * (item.discount / 100);
                     subtotal -= discountAmount;
                 }
-                
+
                 if (vatPercentage > 0 && !formData.is_vat_included) {
                     const vatAmount = subtotal * (vatPercentage / 100);
                     subtotal += vatAmount;
                 }
-                
+
                 return {
                     ...item,
                     vat_percentage: vatPercentage,
@@ -179,19 +135,19 @@ export const usePurchaseForm = () => {
             }
             return item;
         });
-        
+
         setPurchaseItems(updatedItems);
     };
 
     const updateItemExpiry = (id: string, expiryDate: string) => {
-        setPurchaseItems(purchaseItems.map(item => 
-            item.id === id ? {...item, expiry_date: expiryDate} : item
+        setPurchaseItems(purchaseItems.map(item =>
+            item.id === id ? { ...item, expiry_date: expiryDate } : item
         ));
     };
 
     const updateItemBatchNo = (id: string, batchNo: string) => {
-        setPurchaseItems(purchaseItems.map(item => 
-            item.id === id ? {...item, batch_no: batchNo} : item
+        setPurchaseItems(purchaseItems.map(item =>
+            item.id === id ? { ...item, batch_no: batchNo } : item
         ));
     };
 
@@ -202,19 +158,19 @@ export const usePurchaseForm = () => {
                 const discountAmount = subtotal * (item.discount / 100);
                 subtotal -= discountAmount;
             }
-            
+
             if (item.vat_percentage > 0 && !formData.is_vat_included) {
                 const vatAmount = subtotal * (item.vat_percentage / 100);
                 subtotal += vatAmount;
             }
-            
+
             return {
                 ...item,
                 subtotal: subtotal
             };
         });
     };
-    
+
     const handleUnitChange = (id: string, unitName: string, getItemByID: (itemId: string) => Item | undefined) => {
         const updatedItems = purchaseItems.map((item) => {
             if (item.id === id) {
@@ -226,7 +182,7 @@ export const usePurchaseForm = () => {
 
                 if (unitName !== itemData.base_unit) {
                     const unitConversionsArray = Array.isArray(itemData.unit_conversions) ? itemData.unit_conversions : [];
-                    const unitConversion = unitConversionsArray.find(uc => uc.unit.name === unitName);
+                    const unitConversion = unitConversionsArray.find((uc: UnitConversion) => uc.unit.name === unitName);
                     if (unitConversion) {
                         price = unitConversion.basePrice || itemData.base_price / unitConversion.conversion;
                         conversionRate = unitConversion.conversion;
@@ -248,11 +204,11 @@ export const usePurchaseForm = () => {
 
         setPurchaseItems(updatedItems);
     };
-    
+
     const removeItem = (id: string) => {
         setPurchaseItems(purchaseItems.filter(item => item.id !== id));
     };
-    
+
     const calculateTotalVat = () => {
         return purchaseItems.reduce((total, item) => {
             if (item.vat_percentage > 0) {
@@ -263,18 +219,18 @@ export const usePurchaseForm = () => {
             return total;
         }, 0);
     };
-    
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (purchaseItems.length === 0) {
             alert('Silakan tambahkan minimal satu item');
             return;
         }
-        
+
         try {
             setLoading(true);
-            
+
             const { data: purchaseData, error: purchaseError } = await supabase
                 .from('purchases')
                 .insert({
@@ -286,7 +242,7 @@ export const usePurchaseForm = () => {
                     due_date: formData.due_date || null,
                     total: total,
                     payment_status: formData.payment_status,
-                    payment_method: formData.payment_method, 
+                    payment_method: formData.payment_method,
                     vat_percentage: formData.vat_percentage,
                     is_vat_included: formData.is_vat_included,
                     vat_amount: calculateTotalVat(),
@@ -294,9 +250,9 @@ export const usePurchaseForm = () => {
                 })
                 .select('id')
                 .single();
-                
-            if (purchaseError) throw purchaseError; 
-            
+
+            if (purchaseError) throw purchaseError;
+
             const purchaseItemsData = purchaseItems.map(item => ({
                 purchase_id: purchaseData.id,
                 item_id: item.item_id,
@@ -309,39 +265,39 @@ export const usePurchaseForm = () => {
                 batch_no: item.batch_no,
                 expiry_date: item.expiry_date
             }));
-            
+
             const { error: itemsError } = await supabase
                 .from('purchase_items')
                 .insert(purchaseItemsData);
-                
+
             if (itemsError) throw itemsError;
-            
+
             for (const item of purchaseItems) {
                 const { data: itemData } = await supabase
                     .from('items')
                     .select('stock, base_unit, unit_conversions')
                     .eq('id', item.item_id)
                     .single();
-                
+
                 if (itemData) {
                     let quantityInBaseUnit = item.quantity;
-                    
+
                     if (item.unit !== itemData.base_unit) {
                         const unitConversion = itemData.unit_conversions.find(
                             (uc: { unit_name: string; }) => uc.unit_name === item.unit
                         );
-                        
+
                         if (unitConversion) {
                             quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
                         }
                     }
-                    
+
                     const newStock = (itemData.stock || 0) + quantityInBaseUnit;
                     await supabase
                         .from('items').update({ stock: newStock }).eq('id', item.item_id);
                 }
             }
-            
+
             navigate('/purchases');
         } catch (error) {
             console.error('Error creating purchase:', error);
