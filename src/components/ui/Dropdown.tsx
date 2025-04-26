@@ -15,7 +15,16 @@ export const Dropdown = ({
     const [filteredOptions, setFilteredOptions] = useState(options);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const selectedOption = options.find(option => option.id === value);
+
+    useEffect(() => {
+        return () => {
+            if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+            if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+        };
+    }, []);
 
     const handleSelect = (optionId: string) => {
         onChange(optionId);
@@ -34,7 +43,7 @@ export const Dropdown = ({
         if (isOpen && searchInputRef.current) {
             setTimeout(() => {
                 searchInputRef.current?.focus();
-            }, 10);
+            }, 5);
         }
     }, [isOpen]);
 
@@ -53,29 +62,63 @@ export const Dropdown = ({
         focusSearchInput();
     }, [isOpen, focusSearchInput]);
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (isOpen && 
+                dropdownRef.current && 
+                !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+                setSearchTerm('');
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen]);
+
     const toggleDropdown = (e: React.MouseEvent) => {
         e.preventDefault();
         const newIsOpen = !isOpen;
         setIsOpen(newIsOpen);
         if (newIsOpen) {
-            setTimeout(() => focusSearchInput(), 10);
+            setTimeout(() => focusSearchInput(), 5);
         } else {
             setSearchTerm('');
         }
+    };
+
+    const handleMouseEnter = () => {
+        if (leaveTimeoutRef.current) {
+            clearTimeout(leaveTimeoutRef.current);
+            leaveTimeoutRef.current = null;
+        }
+
+        hoverTimeoutRef.current = setTimeout(() => {
+            setIsOpen(true);
+            focusSearchInput();
+        }, 100);
+    };
+
+    const handleMouseLeave = () => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+
+        leaveTimeoutRef.current = setTimeout(() => {
+            setIsOpen(false);
+            setSearchTerm('');
+        }, 150);
     };
 
     return (
         <div 
             className="relative inline-flex w-full" 
             ref={dropdownRef}
-            onMouseEnter={() => {
-                setIsOpen(true);
-                focusSearchInput();
-            }}
-            onMouseLeave={() => {
-                setIsOpen(false);
-                setSearchTerm('');
-            }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
         >
             <div className="w-full flex">
                 <div className="hs-dropdown relative inline-flex w-full">
