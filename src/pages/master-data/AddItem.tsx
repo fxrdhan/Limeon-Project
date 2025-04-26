@@ -1,16 +1,16 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
-import { AddCategoryModal } from "../../components/ui/AddEditModal";
+import { supabase } from "../../lib/supabase";
 import { Input } from "../../components/ui/Input";
+import { Button } from "../../components/ui/Button";
+import { useAddItemForm } from "../../hooks/useAddItemForm";
+import { AddCategoryModal } from "../../components/ui/AddEditModal";
+import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { FaArrowLeft, FaSave, FaTrash, FaHistory } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
-import { useAddItemForm } from "../../hooks/useAddItemForm";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
-import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
-import { supabase } from "../../lib/supabase";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 
 const selectClassName = "bg-white w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
 const addButtonClassName = "ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600";
