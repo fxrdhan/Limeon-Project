@@ -49,28 +49,21 @@ export const Dropdown = ({
         }
     }, [isOpen]);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    return (
+        <div 
+            className="relative inline-flex w-full" 
+            ref={dropdownRef}
+            onMouseEnter={() => setIsOpen(true)}
+            onMouseLeave={() => {
                 setIsOpen(false);
                 setSearchTerm('');
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-    return (
-        <div className="relative inline-flex w-full" ref={dropdownRef}>
+            }}
+        >
             <div className="w-full flex">
                 <div className="hs-dropdown relative inline-flex w-full">
                     <button
                         type="button"
                         className="py-2 px-4 w-full inline-flex justify-between items-center text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        onClick={() => setIsOpen(!isOpen)}
                         aria-haspopup="menu"
                         aria-expanded={isOpen}
                     >
@@ -98,15 +91,24 @@ export const Dropdown = ({
                             style={{ maxHeight: '250px', overflowY: 'auto' }}
                         >
                             <div className="p-2 border-b sticky top-0 bg-white">
-                                <input
-                                    ref={searchInputRef}
-                                    type="text"
-                                    className="w-full py-1 px-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                                    placeholder="Cari..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={handleSearchKeyDown}
-                                />
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                        </svg>
+                                    </div>
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        className="w-full py-1 px-2 pl-8 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                                        placeholder="Cari..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onKeyDown={handleSearchKeyDown}
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                </div>
                             </div>
                             <div className="p-1 max-h-60 overflow-y-auto">
                                 {filteredOptions.length > 0 ? (
@@ -149,7 +151,10 @@ export const Dropdown = ({
                     <button
                         type="button"
                         className="ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
-                        onClick={onAddNew}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onAddNew();
+                        }}
                     >
                         +
                     </button>
