@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
+import { Dropdown } from "../ui/Dropdown";
 import { FaTrash } from "react-icons/fa";
 import { FormSection, FormField } from "../ui/FormComponents";
 import type { UnitConversionManagerProps } from '../../types';
@@ -33,6 +34,16 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
             ...unitConversionFormData,
             [name]: name === "conversion" ? parseFloat(value) || 0 : value,
         });
+    };
+
+    const handleUnitDropdownChange = (unitId: string) => {
+        const selectedUnit = availableUnits.find(u => u.id === unitId);
+        if (selectedUnit) {
+            setUnitConversionFormData({
+                ...unitConversionFormData,
+                unit: selectedUnit.name,
+            });
+        }
     };
 
     const handleAddConversion = () => {
@@ -78,22 +89,17 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                     </p>
                     <div className="flex flex-row gap-4 mb-4">
                         <FormField label="Satuan Turunan" className="flex-1">
-                            <select
+                            <Dropdown
                                 name="unit"
-                                value={unitConversionFormData.unit}
-                                onChange={handleConversionFormChange}
-                                className="w-full p-3 border rounded-md"
-                            >
-                                <option value="">-- Pilih Satuan --</option>
-                                {availableUnits
+                                value={availableUnits.find(u => u.name === unitConversionFormData.unit)?.id || ""}
+                                onChange={handleUnitDropdownChange}
+                                options={availableUnits
                                     .filter(unit => unit.name !== baseUnit)
                                     .filter(unit => !conversions.some(uc => uc.unit.name === unit.name))
-                                    .map(unit => (
-                                        <option key={unit.id} value={unit.name}>
-                                            {unit.name}
-                                        </option>
-                                    ))}
-                            </select>
+                                    .map(unit => ({ id: unit.id, name: unit.name }))
+                                }
+                                placeholder="-- Pilih Satuan --"
+                            />
                         </FormField>
                         <FormField label={`1 ${baseUnit || 'Satuan Dasar'} = ? ${unitConversionFormData.unit || 'Satuan Turunan'}`} className="flex-1">
                             <Input
