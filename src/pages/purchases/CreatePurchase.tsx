@@ -6,7 +6,7 @@ import { FormSection, FormField } from '../../components/ui/FormComponents';
 import { Input } from '../../components/ui/Input';
 import { usePurchaseForm } from '../../hooks/usePurchaseForm';
 import { useItemSelection } from '../../hooks/useItemSelection';
-import ItemSearchBar from '../../components/purchases/ItemSearchBar';
+import ItemSearchBar from './ItemSearchBar';
 import PurchaseItemsTable from './PurchaseItemsTable';
 import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
 
