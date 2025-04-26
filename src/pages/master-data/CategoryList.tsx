@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase';
 import { FaPlus } from "react-icons/fa";
+import { supabase } from '../../lib/supabase';
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Loading } from "../../components/ui/Loading";
-import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
-import { AddCategoryModal } from "../../components/ui/AddEditModal";
 import { Pagination } from "../../components/ui/Pagination";
 import { SearchBar } from "../../components/ui/TableSearchBar";
+import { AddCategoryModal } from "../../components/ui/AddEditModal";
+import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 
 interface Category {
     id: string;
@@ -24,7 +24,6 @@ const CategoryList = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     
-    // New state for pagination and search
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -40,7 +39,6 @@ const CategoryList = () => {
         return () => clearTimeout(timer);
     }, [editingCategory, isEditModalOpen]);
 
-    // Debounce search input
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(search);
