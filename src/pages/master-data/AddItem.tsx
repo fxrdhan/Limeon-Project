@@ -303,7 +303,7 @@ const AddItem = () => {
                         <div className="flex flex-col md:flex-row gap-6">
                             <div className="w-full md:w-3/4">
                                 <FormSection title="Data Umum">
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                                         <FormField label="Kode Item" className="md:col-span-1">
                                             <Input
                                                 name="code"
@@ -322,9 +322,19 @@ const AddItem = () => {
                                                 required
                                             />
                                         </FormField>
+
+                                        <FormField label="Barcode" className="md:col-span-1">
+                                            <Input
+                                                name="barcode"
+                                                value={formData.barcode}
+                                                onChange={handleChange}
+                                                className="w-full"
+                                                placeholder="Masukkan barcode item"
+                                            />
+                                        </FormField>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                         <FormField label="Kategori">
                                             <Dropdown
                                                 name="category_id"
@@ -363,9 +373,19 @@ const AddItem = () => {
                                                 onAddNew={() => setIsAddUnitModalOpen(true)}
                                             />
                                         </FormField>
+
+                                        <FormField label="Rak">
+                                            <Input
+                                                name="rack"
+                                                value={formData.rack}
+                                                onChange={handleChange}
+                                                className="w-full"
+                                            />
+                                        </FormField>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                    {/* Baris ketiga: Jenis Produk, Keterangan */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <FormField label="Jenis Produk">
                                             <div className="space-x-6 mt-6">
                                                 <label className="inline-flex items-center">
@@ -391,25 +411,6 @@ const AddItem = () => {
                                             </div>
                                         </FormField>
                                         
-                                        <FormField label="Barcode">
-                                            <Input
-                                                name="barcode"
-                                                value={formData.barcode}
-                                                onChange={handleChange}
-                                                className="w-full"
-                                                placeholder="Masukkan barcode item"
-                                            />
-                                        </FormField>
-                                        
-                                        <FormField label="Rak">
-                                            <Input
-                                                name="rack"
-                                                value={formData.rack}
-                                                onChange={handleChange}
-                                                className="w-full"
-                                            />
-                                        </FormField>
-                                        
                                         <FormField label="Keterangan">
                                             <textarea
                                                 name="description"
@@ -420,6 +421,8 @@ const AddItem = () => {
                                                 style={{ height: "42px", minHeight: "42px", resize: "vertical" }}
                                             />
                                         </FormField>
+                                        {/* Kosongkan kolom ketiga jika ingin tetap grid 3 kolom */}
+                                        <div className="hidden md:block"></div>
                                     </div>
                                 </FormSection>
                             </div>
