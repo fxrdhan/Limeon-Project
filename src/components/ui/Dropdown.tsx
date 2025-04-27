@@ -11,6 +11,7 @@ export const Dropdown = ({
     onAddNew
 }: DropdownProps) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredOptions, setFilteredOptions] = useState(options);
     const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
@@ -43,10 +44,18 @@ export const Dropdown = ({
         setDropDirection(shouldDropUp ? 'up' : 'down');
     }, []);
 
+    const closeDropdown = useCallback(() => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsOpen(false);
+            setIsClosing(false);
+            setSearchTerm('');
+        }, 300); // Match the duration in the CSS transition
+    }, []);
+
     const handleSelect = (optionId: string) => {
         onChange(optionId);
-        setIsOpen(false);
-        setSearchTerm('');
+        closeDropdown();
     };
 
     const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -88,36 +97,6 @@ export const Dropdown = ({
         };
     }, [isOpen, focusSearchInput, calculateDropdownPosition]);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (isOpen && 
-                dropdownRef.current && 
-                !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-                setSearchTerm('');
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
-
-    const toggleDropdown = (e: React.MouseEvent) => {
-        e.preventDefault();
-        const newIsOpen = !isOpen;
-        setIsOpen(newIsOpen);
-        if (newIsOpen) {
-            setTimeout(() => {
-                calculateDropdownPosition();
-                focusSearchInput();
-            }, 5);
-        } else {
-            setSearchTerm('');
-        }
-    };
-
     const handleMouseEnter = () => {
         if (leaveTimeoutRef.current) {
             clearTimeout(leaveTimeoutRef.current);
@@ -126,6 +105,7 @@ export const Dropdown = ({
 
         hoverTimeoutRef.current = setTimeout(() => {
             setIsOpen(true);
+            setIsClosing(false); // Cancel any closing animation
             setTimeout(() => calculateDropdownPosition(), 5);
             focusSearchInput();
         }, 100);
@@ -138,9 +118,36 @@ export const Dropdown = ({
         }
 
         leaveTimeoutRef.current = setTimeout(() => {
-            setIsOpen(false);
-            setSearchTerm('');
+            closeDropdown();
         }, 150);
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if ((isOpen || isClosing) && 
+                dropdownRef.current && 
+                !dropdownRef.current.contains(event.target as Node)) {
+                closeDropdown();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen, isClosing, closeDropdown]);
+
+    const toggleDropdown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (isOpen) {
+            closeDropdown();
+        } else {
+            setIsOpen(true);
+            setTimeout(() => {
+                calculateDropdownPosition();
+                focusSearchInput();
+            }, 5);
+        }
     };
 
     const checkScroll = useCallback(() => {
@@ -190,12 +197,12 @@ export const Dropdown = ({
                         type="button"
                         className="py-2.5 px-4 w-full inline-flex justify-between items-center text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                         aria-haspopup="menu"
-                        aria-expanded={isOpen}
+                        aria-expanded={isOpen || isClosing}
                         onClick={toggleDropdown}
                     >
                         {selectedOption ? selectedOption.name : placeholder}
                         <svg
-                            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} w-4 h-4 ml-2`}
+                            className={`transition-transform duration-200 ${(isOpen || isClosing) ? 'rotate-180' : ''} w-4 h-4 ml-2`}
                             xmlns="http://www.w3.org/2000/svg"
                             width="24"
                             height="24"
@@ -217,14 +224,16 @@ export const Dropdown = ({
                                 ? 'top-full mt-2 shadow-lg origin-top' 
                                 : 'bottom-full mb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),0_-2px_4px_-1px_rgba(0,0,0,0.06)] origin-bottom'
                         } w-full z-20 bg-white rounded-lg border border-gray-200 transition-all duration-300 ease-in-out transform ${
-                            isOpen 
+                            isOpen && !isClosing
                                 ? 'opacity-100 scale-y-100 translate-y-0' 
-                                : 'opacity-0 scale-y-0 translate-y-2 pointer-events-none'
+                                : isClosing
+                                    ? 'opacity-0 scale-y-95 translate-y-0'
+                                    : 'opacity-0 scale-y-0 translate-y-2 pointer-events-none'
                         }`}
                         role="menu"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {isOpen && (
+                        {(isOpen || isClosing) && (
                             <>
                                 <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
                                     <div className="relative flex items-center">
