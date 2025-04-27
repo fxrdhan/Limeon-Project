@@ -75,6 +75,7 @@ export interface DropdownProps {
     required?: boolean;
     onAddNew?: () => void;
     withRadio?: boolean;
+    searchList?: boolean;
 }
 
 // src/components/layout/Navbar.tsx

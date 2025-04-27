@@ -9,7 +9,8 @@ export const Dropdown = ({
     name,
     required = false,
     withRadio = false,
-    onAddNew
+    onAddNew,
+    searchList = true
 }: DropdownProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -75,7 +76,9 @@ export const Dropdown = ({
     }, [isOpen]);
 
     useEffect(() => {
-        if (searchTerm.trim() === '') {
+        if (!searchList) {
+            setFilteredOptions(options);
+        } else if (searchTerm.trim() === '') {
             setFilteredOptions(options);
         } else {
             const filtered = options.filter(option =>
@@ -83,7 +86,7 @@ export const Dropdown = ({
             );
             setFilteredOptions(filtered);
         }
-    }, [searchTerm, options]);
+    }, [searchTerm, options, searchList]);
 
     useEffect(() => {
         if (isOpen) {
@@ -106,7 +109,7 @@ export const Dropdown = ({
 
         hoverTimeoutRef.current = setTimeout(() => {
             setIsOpen(true);
-            setIsClosing(false); // Cancel any closing animation
+            setIsClosing(false); 
             setTimeout(() => calculateDropdownPosition(), 5);
             focusSearchInput();
         }, 100);
@@ -236,38 +239,40 @@ export const Dropdown = ({
                     >
                         {(isOpen || isClosing) && (
                             <>
-                                <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
-                                    <div className="relative flex items-center">
-                                        <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
-                                                <circle cx="11" cy="11" r="8"></circle>
-                                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                            </svg>
+                                {searchList && (
+                                    <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
+                                        <div className="relative flex items-center">
+                                            <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                                                    <circle cx="11" cy="11" r="8"></circle>
+                                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                                </svg>
+                                            </div>
+                                            <input
+                                                ref={searchInputRef}
+                                                type="text"
+                                                className="flex-grow py-1 px-2 pl-8 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                                                placeholder="Cari..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                onKeyDown={handleSearchKeyDown}
+                                                onClick={(e) => e.stopPropagation()}
+                                            />
+                                            {onAddNew && (
+                                                <button
+                                                    type="button"
+                                                    className="ml-2 bg-blue-500 text-white p-1.5 rounded-md hover:bg-blue-600 flex-shrink-0"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onAddNew();
+                                                    }}
+                                                >
+                                                    +
+                                                </button>
+                                            )}
                                         </div>
-                                        <input
-                                            ref={searchInputRef}
-                                            type="text"
-                                            className="flex-grow py-1 px-2 pl-8 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                                            placeholder="Cari..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            onKeyDown={handleSearchKeyDown}
-                                            onClick={(e) => e.stopPropagation()}
-                                        />
-                                        {onAddNew && (
-                                            <button
-                                                type="button"
-                                                className="ml-2 bg-blue-500 text-white p-1.5 rounded-md hover:bg-blue-600 flex-shrink-0"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onAddNew();
-                                                }}
-                                            >
-                                                +
-                                            </button>
-                                        )}
                                     </div>
-                                </div>
+                                )}
                                 <div className="relative">
                                     <div 
                                         ref={optionsContainerRef} 
