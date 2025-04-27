@@ -13,6 +13,8 @@ import { FaArrowLeft, FaSave, FaTrash, FaHistory } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaChevronDown } from "react-icons/fa";
 
 const textareaClassName = "w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
 
@@ -40,6 +42,9 @@ const AddItem = () => {
     const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
     const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
     const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
+    const [showDescription, setShowDescription] = useState(false);
+    const [isDescriptionHovered, setIsDescriptionHovered] = useState(false); // Tambahkan state baru
+    const descriptionRef = useRef<HTMLDivElement>(null);
     const marginInputRef = useRef<HTMLInputElement>(null);
 
     const {
@@ -404,20 +409,51 @@ const AddItem = () => {
                                         </FormField>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <FormField label="Keterangan">
-                                            <textarea
-                                                name="description"
-                                                value={formData.description}
-                                                onChange={handleChange}
-                                                className={textareaClassName}
-                                                rows={1}
-                                                style={{ height: "42px", minHeight: "42px", resize: "vertical" }}
-                                            />
-                                        </FormField>
-                                        <div className="hidden md:block"></div>
-                                        <div className="hidden md:block"></div>
+                                    {/* Expand/hide Keterangan */}
+                                    <div className="mt-2 pt-4">
+                                        <button
+                                            type="button"
+                                            onMouseEnter={() => setIsDescriptionHovered(true)}
+                                            onMouseLeave={() => setIsDescriptionHovered(false)}
+                                            className="flex items-center text-blue-500 transition-colors"
+                                        >
+                                            <span className="mr-2 text-md text-blue-500 hover:text-blue-600">Keterangan</span>
+                                            <motion.div
+                                                animate={{ rotate: (showDescription || isDescriptionHovered) ? 180 : 0 }}
+                                                transition={{ duration: 0.3 }}
+                                                className="transform"
+                                            >
+                                                <FaChevronDown size={12} />
+                                            </motion.div>
+                                        </button>
+                                        <AnimatePresence>
+                                            {(showDescription || isDescriptionHovered) && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: "auto", opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    className="overflow-hidden"
+                                                    onMouseEnter={() => setIsDescriptionHovered(true)}
+                                                    onMouseLeave={() => setIsDescriptionHovered(false)}
+                                                >
+                                                    <div className="mt-2" ref={descriptionRef}>
+                                                        <textarea
+                                                            name="description"
+                                                            value={formData.description}
+                                                            onChange={handleChange}
+                                                            className={textareaClassName}
+                                                            rows={3}
+                                                            onFocus={() => setShowDescription(true)}
+                                                            onBlur={() => setShowDescription(false)}
+                                                        />
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
+                                    {/* End expand/hide Keterangan */}
+
                                 </FormSection>
                             </div>
 
