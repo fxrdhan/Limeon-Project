@@ -52,7 +52,7 @@ export const Dropdown = ({
             setIsOpen(false);
             setIsClosing(false);
             setSearchTerm('');
-        }, 300); // Match the duration in the CSS transition
+        }, 100);
     }, []);
 
     const handleSelect = (optionId: string) => {
