@@ -222,7 +222,7 @@ export const Dropdown = ({
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
-                                <div className="relative">
+                                <div className="relative flex items-center">
                                     <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
                                             <circle cx="11" cy="11" r="8"></circle>
@@ -232,13 +232,25 @@ export const Dropdown = ({
                                     <input
                                         ref={searchInputRef}
                                         type="text"
-                                        className="w-full py-1 px-2 pl-8 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                                        className="flex-grow py-1 px-2 pl-8 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                                         placeholder="Cari..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         onKeyDown={handleSearchKeyDown}
                                         onClick={(e) => e.stopPropagation()}
                                     />
+                                    {onAddNew && (
+                                        <button
+                                            type="button"
+                                            className="ml-2 bg-blue-500 text-white p-1.5 rounded-md hover:bg-blue-600 flex-shrink-0"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onAddNew();
+                                            }}
+                                        >
+                                            +
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             <div className="relative">
@@ -288,19 +300,6 @@ export const Dropdown = ({
                         ))}
                     </select>
                 </div>
-
-                {onAddNew && (
-                    <button
-                        type="button"
-                        className="ml-2 bg-green-500 text-white p-2 rounded-md hover:bg-green-600"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onAddNew();
-                        }}
-                    >
-                        +
-                    </button>
-                )}
             </div>
         </div>
     );
