@@ -8,6 +8,7 @@ export const Dropdown = ({
     placeholder = "-- Pilih --",
     name,
     required = false,
+    withRadio = false,
     onAddNew
 }: DropdownProps) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -280,6 +281,15 @@ export const Dropdown = ({
                                                     className="flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
                                                     onClick={() => handleSelect(option.id)}
                                                 >
+                                                    {withRadio && (
+                                                        <div className="mr-2 flex items-center">
+                                                            <div className={`w-4 h-4 rounded-full border ${option.id === value ? 'border-blue-500' : 'border-gray-300'} flex items-center justify-center`}>
+                                                                {option.id === value && (
+                                                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                     {option.name}
                                                 </button>
                                             ))
