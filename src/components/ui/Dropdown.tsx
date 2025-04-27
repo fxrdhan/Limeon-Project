@@ -14,10 +14,14 @@ export const Dropdown = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredOptions, setFilteredOptions] = useState(options);
     const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
+    const [isScrollable, setIsScrollable] = useState(false);
+    const [reachedBottom, setReachedBottom] = useState(false);
+    const [scrolledFromTop, setScrolledFromTop] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownMenuRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const optionsContainerRef = useRef<HTMLDivElement>(null);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const selectedOption = options.find(option => option.id === value);
@@ -139,6 +143,39 @@ export const Dropdown = ({
         }, 150);
     };
 
+    const checkScroll = useCallback(() => {
+        if (!optionsContainerRef.current) return;
+        
+        const container = optionsContainerRef.current;
+        const isScrollable = container.scrollHeight > container.clientHeight;
+        setIsScrollable(isScrollable);
+        
+        const isBottom = Math.abs(
+            (container.scrollHeight - container.scrollTop) - container.clientHeight
+        ) < 2;
+        
+        const isScrolledFromTop = container.scrollTop > 2;
+        
+        setReachedBottom(isBottom);
+        setScrolledFromTop(isScrolledFromTop);
+    }, []);
+
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(checkScroll, 50);
+        }
+    }, [isOpen, filteredOptions, checkScroll]);
+
+    useEffect(() => {
+        const optionsContainer = optionsContainerRef.current;
+        if (optionsContainer && isOpen) {
+            optionsContainer.addEventListener('scroll', checkScroll);
+            return () => {
+                optionsContainer.removeEventListener('scroll', checkScroll);
+            };
+        }
+    }, [isOpen, checkScroll]);
+
     return (
         <div 
             className="relative inline-flex w-full" 
@@ -204,20 +241,31 @@ export const Dropdown = ({
                                     />
                                 </div>
                             </div>
-                            <div className="p-1 max-h-60 overflow-y-auto">
-                                {filteredOptions.length > 0 ? (
-                                    filteredOptions.map((option) => (
-                                        <button
-                                            key={option.id}
-                                            type="button"
-                                            className="flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                                            onClick={() => handleSelect(option.id)}
-                                        >
-                                            {option.name}
-                                        </button>
-                                    ))
-                                ) : (
-                                    <div className="py-2 px-3 text-sm text-gray-500">Tidak ada pilihan yang sesuai</div>
+                            <div className="relative">
+                                <div 
+                                    ref={optionsContainerRef} 
+                                    className="p-1 max-h-60 overflow-y-auto"
+                                >
+                                    {filteredOptions.length > 0 ? (
+                                        filteredOptions.map((option) => (
+                                            <button
+                                                key={option.id}
+                                                type="button"
+                                                className="flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                                                onClick={() => handleSelect(option.id)}
+                                            >
+                                                {option.name}
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div className="py-2 px-3 text-sm text-gray-500">Tidak ada pilihan yang sesuai</div>
+                                    )}
+                                </div>
+                                {isScrollable && scrolledFromTop && (
+                                    <div className="absolute top-0 left-0 w-full h-8 pointer-events-none bg-gradient-to-b from-black/20 to-transparent"></div>
+                                )}
+                                {isScrollable && !reachedBottom && (
+                                    <div className="absolute bottom-0 left-0 w-full h-8 pointer-events-none bg-gradient-to-t from-black/20 to-transparent rounded-b-lg"></div>
                                 )}
                             </div>
                         </div>
