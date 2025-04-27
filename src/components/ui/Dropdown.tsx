@@ -210,78 +210,84 @@ export const Dropdown = ({
                         </svg>
                     </button>
 
-                    {isOpen && (
-                        <div
-                            ref={dropdownMenuRef}
-                            className={`absolute left-0 ${
-                                dropDirection === 'down' 
-                                    ? 'top-full mt-2 shadow-lg' 
-                                    : 'bottom-full mb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),0_-2px_4px_-1px_rgba(0,0,0,0.06)]'
-                            } w-full z-20 bg-white rounded-lg transition-opacity duration-300 opacity-100 border border-gray-200`}
-                            role="menu"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
-                                <div className="relative flex items-center">
-                                    <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
-                                            <circle cx="11" cy="11" r="8"></circle>
-                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                        </svg>
-                                    </div>
-                                    <input
-                                        ref={searchInputRef}
-                                        type="text"
-                                        className="flex-grow py-1 px-2 pl-8 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                                        placeholder="Cari..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        onKeyDown={handleSearchKeyDown}
-                                        onClick={(e) => e.stopPropagation()}
-                                    />
-                                    {onAddNew && (
-                                        <button
-                                            type="button"
-                                            className="ml-2 bg-blue-500 text-white p-1.5 rounded-md hover:bg-blue-600 flex-shrink-0"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onAddNew();
-                                            }}
-                                        >
-                                            +
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="relative">
-                                <div 
-                                    ref={optionsContainerRef} 
-                                    className="p-1 max-h-60 overflow-y-auto"
-                                >
-                                    {filteredOptions.length > 0 ? (
-                                        filteredOptions.map((option) => (
+                    <div
+                        ref={dropdownMenuRef}
+                        className={`absolute left-0 ${
+                            dropDirection === 'down' 
+                                ? 'top-full mt-2 shadow-lg origin-top' 
+                                : 'bottom-full mb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),0_-2px_4px_-1px_rgba(0,0,0,0.06)] origin-bottom'
+                        } w-full z-20 bg-white rounded-lg border border-gray-200 transition-all duration-300 ease-in-out transform ${
+                            isOpen 
+                                ? 'opacity-100 scale-y-100 translate-y-0' 
+                                : 'opacity-0 scale-y-0 translate-y-2 pointer-events-none'
+                        }`}
+                        role="menu"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {isOpen && (
+                            <>
+                                <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
+                                    <div className="relative flex items-center">
+                                        <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                                                <circle cx="11" cy="11" r="8"></circle>
+                                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                            </svg>
+                                        </div>
+                                        <input
+                                            ref={searchInputRef}
+                                            type="text"
+                                            className="flex-grow py-1 px-2 pl-8 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                                            placeholder="Cari..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            onKeyDown={handleSearchKeyDown}
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                        {onAddNew && (
                                             <button
-                                                key={option.id}
                                                 type="button"
-                                                className="flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                                                onClick={() => handleSelect(option.id)}
+                                                className="ml-2 bg-blue-500 text-white p-1.5 rounded-md hover:bg-blue-600 flex-shrink-0"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onAddNew();
+                                                }}
                                             >
-                                                {option.name}
+                                                +
                                             </button>
-                                        ))
-                                    ) : (
-                                        <div className="py-2 px-3 text-sm text-gray-500">Tidak ada pilihan yang sesuai</div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="relative">
+                                    <div 
+                                        ref={optionsContainerRef} 
+                                        className="p-1 max-h-60 overflow-y-auto"
+                                    >
+                                        {filteredOptions.length > 0 ? (
+                                            filteredOptions.map((option) => (
+                                                <button
+                                                    key={option.id}
+                                                    type="button"
+                                                    className="flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                                                    onClick={() => handleSelect(option.id)}
+                                                >
+                                                    {option.name}
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="py-2 px-3 text-sm text-gray-500">Tidak ada pilihan yang sesuai</div>
+                                        )}
+                                    </div>
+                                    {isScrollable && scrolledFromTop && (
+                                        <div className="absolute top-0 left-0 w-full h-8 pointer-events-none bg-gradient-to-b from-black/20 to-transparent"></div>
+                                    )}
+                                    {isScrollable && !reachedBottom && (
+                                        <div className="absolute bottom-0 left-0 w-full h-8 pointer-events-none bg-gradient-to-t from-black/20 to-transparent rounded-b-lg"></div>
                                     )}
                                 </div>
-                                {isScrollable && scrolledFromTop && (
-                                    <div className="absolute top-0 left-0 w-full h-8 pointer-events-none bg-gradient-to-b from-black/20 to-transparent"></div>
-                                )}
-                                {isScrollable && !reachedBottom && (
-                                    <div className="absolute bottom-0 left-0 w-full h-8 pointer-events-none bg-gradient-to-t from-black/20 to-transparent rounded-b-lg"></div>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                            </>
+                        )}
+                    </div>
 
                     <select
                         name={name}
