@@ -9,7 +9,7 @@ import { useAddItemForm } from "../../hooks/useAddItemForm";
 import { AddCategoryModal } from "../../components/ui/AddEditModal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
-import { FaArrowLeft, FaSave, FaTrash, FaHistory } from 'react-icons/fa';
+import { FaArrowLeft, FaSave, FaTrash, FaHistory, FaPen } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
@@ -567,17 +567,25 @@ const AddItem = () => {
                                                             <span className="ml-1 text-lg font-medium">%</span>
                                                         </div>
                                                     ) : (
-                                                        <div
-                                                            className={`w-full py-2 cursor-pointer font-semibold ${calculateProfitPercentage() !== null ? calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600' : 'text-gray-500'}`}
-                                                            onClick={startEditingMargin}
-                                                            title="Klik untuk mengubah margin"
-                                                        >
-                                                            {calculateProfitPercentage() !== null ? `${calculateProfitPercentage()!.toFixed(1)}%` : '-'}
+                                                        <div className="flex items-center w-full">
+                                                            <div
+                                                                className={`w-full py-2 cursor-pointer font-semibold flex items-center ${calculateProfitPercentage() !== null ? calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600' : 'text-gray-500'}`}
+                                                                onClick={startEditingMargin}
+                                                                title="Klik untuk mengubah margin"
+                                                            >
+                                                                {calculateProfitPercentage() !== null ? `${calculateProfitPercentage()!.toFixed(1)}%` : '-'}
+                                                                <FaPen 
+                                                                    className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors" 
+                                                                    size={14} 
+                                                                    onClick={startEditingMargin}
+                                                                    title="Edit margin"
+                                                                />
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
                                             </FormField>
-
+                                            
                                             <FormField label="Harga Jual">
                                                 <Input
                                                     type="text"
