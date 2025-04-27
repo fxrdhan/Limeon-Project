@@ -125,11 +125,11 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                         <Table className="w-full h-full">
                             <TableHead>
                                 <TableRow>
-                                    <TableHeader>Satuan Turunan</TableHeader>
-                                    <TableHeader>Konversi</TableHeader>
-                                    <TableHeader>Harga Pokok</TableHeader>
-                                    <TableHeader>Harga Jual</TableHeader>
-                                    <TableHeader className="text-center">Aksi</TableHeader>
+                                    <TableHeader className="w-[20%]">Satuan Turunan</TableHeader>
+                                    <TableHeader className="w-[30%] text-left">Konversi</TableHeader>
+                                    <TableHeader className="w-[20%] text-right">Harga Pokok</TableHeader>
+                                    <TableHeader className="w-[20%] text-right">Harga Jual</TableHeader>
+                                    <TableHeader className="w-[10%] text-center">Aksi</TableHeader>
                                 </TableRow>
                             </TableHead>
                             <TableBody className="h-[100px]">
@@ -146,12 +146,12 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                         <TableRow key={uc.id}>
                                             <TableCell>{uc.unit.name}</TableCell>
                                             <TableCell>1 {baseUnit} = {uc.conversion} {uc.unit.name}</TableCell>
-                                            <TableCell>
+                                            <TableCell className="text-right">
                                                 {(uc.basePrice || 0).toLocaleString("id-ID", {
                                                     style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 2
                                                 })}
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="text-right">
                                                 {(uc.sellPrice || 0).toLocaleString("id-ID", {
                                                     style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 2
                                                 })}
