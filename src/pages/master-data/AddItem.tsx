@@ -301,7 +301,7 @@ const AddItem = () => {
                 <form onSubmit={handleSubmit}>
                     <CardContent>
                         <div className="flex flex-col md:flex-row gap-6">
-                            <div className="w-full md:w-3/4">
+                            <div className="w-full md:w-4/5">
                                 <FormSection title="Data Umum">
                                     <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                                         <FormField label="Kode Item" className="md:col-span-1">
@@ -313,7 +313,7 @@ const AddItem = () => {
                                             />
                                         </FormField>
                                         
-                                        <FormField label="Nama Item" className="md:col-span-3">
+                                        <FormField label="Nama Item" className="md:col-span-2">
                                             <Input
                                                 name="name"
                                                 value={formData.name}
@@ -330,6 +330,26 @@ const AddItem = () => {
                                                 onChange={handleChange}
                                                 className="w-full"
                                                 placeholder="Masukkan barcode item"
+                                            />
+                                        </FormField>
+
+                                        <FormField label="Jenis Produk" className="md:col-span-1">
+                                            <Dropdown
+                                                name="is_medicine"
+                                                value={formData.is_medicine ? "obat" : "non-obat"}
+                                                onChange={(value) => {
+                                                    if (value === "obat") {
+                                                        updateFormData({ is_medicine: true });
+                                                    } else {
+                                                        updateFormData({ is_medicine: false, has_expiry_date: false });
+                                                    }
+                                                }}
+                                                options={[
+                                                    { id: "obat", name: "Obat" },
+                                                    { id: "non-obat", name: "Non-Obat" }
+                                                ]}
+                                                withRadio
+                                                searchList={false}
                                             />
                                         </FormField>
                                     </div>
@@ -384,33 +404,7 @@ const AddItem = () => {
                                         </FormField>
                                     </div>
 
-                                    {/* Baris ketiga: Jenis Produk, Keterangan */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <FormField label="Jenis Produk">
-                                            <div className="space-x-6 mt-6">
-                                                <label className="inline-flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        name="is_medicine"
-                                                        checked={formData.is_medicine}
-                                                        onChange={() => updateFormData({ is_medicine: true })}
-                                                        className="form-radio h-5 w-5 text-primary"
-                                                    />
-                                                    <span className="ml-2">Obat</span>
-                                                </label>
-                                                <label className="inline-flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        name="is_medicine"
-                                                        checked={!formData.is_medicine}
-                                                        onChange={() => updateFormData({ is_medicine: false, has_expiry_date: false })}
-                                                        className="form-radio h-5 w-5 text-primary"
-                                                    />
-                                                    <span className="ml-2">Non-Obat</span>
-                                                </label>
-                                            </div>
-                                        </FormField>
-                                        
                                         <FormField label="Keterangan">
                                             <textarea
                                                 name="description"
@@ -421,7 +415,7 @@ const AddItem = () => {
                                                 style={{ height: "42px", minHeight: "42px", resize: "vertical" }}
                                             />
                                         </FormField>
-                                        {/* Kosongkan kolom ketiga jika ingin tetap grid 3 kolom */}
+                                        <div className="hidden md:block"></div>
                                         <div className="hidden md:block"></div>
                                     </div>
                                 </FormSection>
