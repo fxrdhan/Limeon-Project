@@ -16,8 +16,6 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../comp
 import { motion, AnimatePresence } from "framer-motion";
 import { FaChevronDown } from "react-icons/fa";
 
-const textareaClassName = "w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
-
 const formatDateTime = (isoString: string | null | undefined): string => {
     if (!isoString) return "-";
     try {
@@ -43,7 +41,7 @@ const AddItem = () => {
     const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
     const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
     const [showDescription, setShowDescription] = useState(false);
-    const [isDescriptionHovered, setIsDescriptionHovered] = useState(false); // Tambahkan state baru
+    const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
     const descriptionRef = useRef<HTMLDivElement>(null);
     const marginInputRef = useRef<HTMLInputElement>(null);
 
@@ -83,7 +81,7 @@ const AddItem = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['types'] });
         },
-        onError: (_error) => {},
+        onError: (_error) => { },
     });
 
     const handleCancel = () => {
@@ -112,12 +110,11 @@ const AddItem = () => {
         }
     };
 
-    // Helper function to handle dropdown value changes
     const handleDropdownChange = (name: string, value: string) => {
         const syntheticEvent = {
             target: { name, value },
         } as React.ChangeEvent<HTMLSelectElement>;
-        
+
         handleSelectChange(syntheticEvent);
     };
 
@@ -156,7 +153,7 @@ const AddItem = () => {
     const handleMarginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setMarginPercentage(value);
-        
+
         const margin = parseFloat(value);
         if (!isNaN(margin) && formData.base_price > 0) {
             const newSellPrice = calculateSellPriceFromMargin(margin);
@@ -188,7 +185,7 @@ const AddItem = () => {
 
     const stopEditingMargin = () => {
         setEditingMargin(false);
-        
+
         const margin = parseFloat(marginPercentage);
         if (!isNaN(margin) && formData.base_price > 0) {
             const newSellPrice = calculateSellPriceFromMargin(margin);
@@ -293,9 +290,9 @@ const AddItem = () => {
                         <FaArrowLeft size={18} />
                         <span className="ml-2">Back</span>
                     </Button>
-                    
+
                     <CardTitle className="flex-grow text-center">{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
-                    
+
                     {isEditMode && formData.updated_at && (
                         <span className="text-md text-gray-500 italic whitespace-nowrap flex items-center flex-shrink-0 ml-4">
                             <FaHistory className="mr-1" size={14} /> {formatDateTime(formData.updated_at)}
@@ -317,7 +314,7 @@ const AddItem = () => {
                                                 className="w-full"
                                             />
                                         </FormField>
-                                        
+
                                         <FormField label="Nama Item" className="md:col-span-2">
                                             <Input
                                                 name="name"
@@ -386,7 +383,7 @@ const AddItem = () => {
                                                 onAddNew={() => setIsAddTypeModalOpen(true)}
                                             />
                                         </FormField>
-                                        
+
                                         <FormField label="Satuan">
                                             <Dropdown
                                                 name="unit_id"
@@ -409,13 +406,13 @@ const AddItem = () => {
                                         </FormField>
                                     </div>
 
-                                    {/* Expand/hide Keterangan */}
                                     <div className="mt-2 pt-4">
                                         <button
                                             type="button"
                                             onMouseEnter={() => setIsDescriptionHovered(true)}
                                             onMouseLeave={() => setIsDescriptionHovered(false)}
                                             className="flex items-center text-blue-500 transition-colors"
+                                            onClick={() => setShowDescription(!showDescription)}
                                         >
                                             <span className="mr-2 text-md text-blue-500 hover:text-blue-600">Keterangan</span>
                                             <motion.div
@@ -437,12 +434,12 @@ const AddItem = () => {
                                                     onMouseEnter={() => setIsDescriptionHovered(true)}
                                                     onMouseLeave={() => setIsDescriptionHovered(false)}
                                                 >
-                                                    <div className="mt-2" ref={descriptionRef}>
+                                                    <div className="mt-2 min-h-[100px] max-h-[200px]" ref={descriptionRef}>
                                                         <textarea
                                                             name="description"
                                                             value={formData.description}
                                                             onChange={handleChange}
-                                                            className={textareaClassName}
+                                                            className="w-full h-full min-h-[100px] max-h-[200px] p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary focus:border-transparent"
                                                             rows={3}
                                                             onFocus={() => setShowDescription(true)}
                                                             onBlur={() => setShowDescription(false)}
@@ -452,7 +449,6 @@ const AddItem = () => {
                                             )}
                                         </AnimatePresence>
                                     </div>
-                                    {/* End expand/hide Keterangan */}
 
                                 </FormSection>
                             </div>
@@ -495,7 +491,7 @@ const AddItem = () => {
                                                 required
                                             />
                                         </FormField>
-                                    
+
                                         <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
                                             <label className="inline-flex items-center">
                                                 <input
@@ -530,7 +526,7 @@ const AddItem = () => {
                                                     className="w-full"
                                                 />
                                             </FormField>
-                                            
+
                                             <FormField label="Harga Pokok">
                                                 <Input
                                                     type="text"
@@ -571,17 +567,17 @@ const AddItem = () => {
                                                             <span className="ml-1 text-lg font-medium">%</span>
                                                         </div>
                                                     ) : (
-                                                        <span 
-                                                            className={`w-full p-2 border border-gray-300 rounded-md cursor-pointer ${calculateProfitPercentage() !== null ? calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600' : 'text-gray-500'}`}
+                                                        <div
+                                                            className={`w-full py-2 cursor-pointer font-semibold ${calculateProfitPercentage() !== null ? calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600' : 'text-gray-500'}`}
                                                             onClick={startEditingMargin}
                                                             title="Klik untuk mengubah margin"
                                                         >
                                                             {calculateProfitPercentage() !== null ? `${calculateProfitPercentage()!.toFixed(1)}%` : '-'}
-                                                        </span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </FormField>
-                                            
+
                                             <FormField label="Harga Jual">
                                                 <Input
                                                     type="text"
@@ -598,7 +594,7 @@ const AddItem = () => {
                                     </div>
                                 </FormSection>
                             </div>
-                            
+
                             <div className="w-full md:w-3/4">
                                 <UnitConversionManager unitConversionHook={unitConversionHook} />
                             </div>
@@ -628,7 +624,7 @@ const AddItem = () => {
                         </Button>
                     </CardFooter>
                 </form>
-                
+
                 <AddCategoryModal
                     isOpen={isAddCategoryModalOpen}
                     onClose={() => setIsAddCategoryModalOpen(false)}
