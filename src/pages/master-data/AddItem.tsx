@@ -11,7 +11,7 @@ import { useAddItemForm } from "../../hooks/useAddItemForm";
 import { AddCategoryModal } from "../../components/ui/AddEditModal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
-import { FormSection, FormField } from "../../components/ui/FormComponents";
+import { FormSection, FormField } from "../../components/ui/FormComponents"; // Pastikan FormField diimpor
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { FaArrowLeft, FaSave, FaTrash, FaHistory, FaPen, FaQuestionCircle } from 'react-icons/fa';
@@ -50,7 +50,7 @@ const AddItem = () => {
     const minStockInputRef = useRef<HTMLInputElement>(null);
 
     const {
-        formData, displayBasePrice, displaySellPrice, categories, types, units,
+        formData, displayBasePrice, displaySellPrice, categories, types, customerLevels, units,
         saving, loading, isEditMode, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
         unitConversionHook, isDirty, addCategoryMutation, setCategories, setTypes, addUnitMutation, setUnits
     } = useAddItemForm(id || undefined);
@@ -489,6 +489,28 @@ const AddItem = () => {
                             </div>
 
                             <div className="w-full md:w-1/4">
+                                <FormSection title="Diskon Level Pelanggan">
+                                    {customerLevels.length === 0 ? (
+                                        <p className="text-sm text-gray-500">Belum ada level pelanggan.</p>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {customerLevels.map((level) => (
+                                                <FormField key={level.id} label={`${level.level_name} (%)`}>
+                                                    <Input
+                                                        type="number"
+                                                        name={`discount_level_${level.id}`}
+                                                        value={formData.customer_level_discounts?.find(d => d.customer_level_id === level.id)?.discount_percentage ?? ''}
+                                                        onChange={handleChange}
+                                                        placeholder="0"
+                                                        min="0"
+                                                        max="100"
+                                                        step="0.1"
+                                                    />
+                                                </FormField>
+                                            ))}
+                                        </div>
+                                    )}
+                                </FormSection>
                                 <FormSection title="Pengaturan Tambahan">
                                     <div className="grid grid-cols-1 gap-6">
                                         <FormField label="Status">
@@ -686,7 +708,7 @@ const AddItem = () => {
                         ) : (
                             <Button type="button" variant="outline" onClick={handleCancel}> Batal </Button>
                         )}
-                        <Button type="submit" disabled={saving} isLoading={saving}>
+                        <Button type="submit" disabled={saving || !isDirty()} isLoading={saving}>
                             <span className="flex items-center">
                                 <FaSave className="mr-2" /> {isEditMode ? 'Update' : 'Simpan'}
                             </span>

@@ -3,9 +3,9 @@ import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
 import type { UnitConversion } from '../types';
 import { useUnitConversion } from "./useUnitConversion";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatRupiah, extractNumericValue } from "../lib/formatters";
-import type { Category, MedicineType, Unit, FormData } from '../types';
+import type { Category, MedicineType, Unit, FormData, CustomerLevel, CustomerLevelDiscount } from '../types';
 import { generateTypeCode, generateUnitCode, generateCategoryCode, getUnitById } from "./addItemFormHelpers";
 
 export const useAddItemForm = (itemId?: string) => {
@@ -13,6 +13,7 @@ export const useAddItemForm = (itemId?: string) => {
     const queryClient = useQueryClient();
     const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
     const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null); 
+    const [initialCustomerDiscounts, setInitialCustomerDiscounts] = useState<CustomerLevelDiscount[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -21,6 +22,7 @@ export const useAddItemForm = (itemId?: string) => {
     const [units, setUnits] = useState<Unit[]>([]);
     const [displayBasePrice, setDisplayBasePrice] = useState('');
     const [displaySellPrice, setDisplaySellPrice] = useState('');
+    const [customerLevels, setCustomerLevels] = useState<CustomerLevel[]>([]);
 
     const unitConversionHook = useUnitConversion();
 
@@ -40,6 +42,18 @@ export const useAddItemForm = (itemId?: string) => {
         is_medicine: true,
         has_expiry_date: false,
         updated_at: null,
+        customer_level_discounts: [],
+    });
+
+    // Fetch Customer Levels
+    const { data: fetchedCustomerLevels } = useQuery<CustomerLevel[]>({
+        queryKey: ['customerLevels'],
+        queryFn: async () => {
+            const { data, error } = await supabase.from('customer_levels').select('id, level_name, price_percentage');
+            if (error) throw error;
+            return data || [];
+        },
+        staleTime: 60 * 1000 * 5 // 5 minutes
     });
 
     const updateFormData = (newData: Partial<FormData>) => {
@@ -69,6 +83,7 @@ export const useAddItemForm = (itemId?: string) => {
                     is_medicine: merged.is_medicine ?? true,
                     has_expiry_date: merged.has_expiry_date ?? false,
                     updated_at: merged.updated_at ?? null,
+                    customer_level_discounts: merged.customer_level_discounts ?? [],
                 };
             });
         }
@@ -90,9 +105,16 @@ export const useAddItemForm = (itemId?: string) => {
                 is_medicine: merged.is_medicine ?? true,
                 has_expiry_date: merged.has_expiry_date ?? false,
                 updated_at: merged.updated_at ?? null,
+                customer_level_discounts: merged.customer_level_discounts ?? [],
             };
         });
     };
+
+    useEffect(() => {
+        if (fetchedCustomerLevels) {
+            setCustomerLevels(fetchedCustomerLevels);
+        }
+    }, [fetchedCustomerLevels]);
 
     useEffect(() => {
         fetchMasterData();
@@ -194,7 +216,7 @@ export const useAddItemForm = (itemId?: string) => {
     const fetchItemData = async (id: string) => {
         try {
             setLoading(true);
-            const { data, error } = await supabase
+            const { data: itemData, error: itemError } = await supabase
                 .from("items")
                 .select(`
                     *, updated_at,
@@ -202,43 +224,56 @@ export const useAddItemForm = (itemId?: string) => {
                 `)
                 .eq("id", id)
                 .single();
+            
+            if (itemError) throw itemError;
+            if (!itemData) throw new Error("Item tidak ditemukan");
 
-            if (error) throw error;
-            if (!data) throw new Error("Item tidak ditemukan");
+            const { data: discountData, error: discountError } = await supabase
+                .from('customer_level_discounts')
+                .select('customer_level_id, discount_percentage')
+                .eq('item_id', id);
 
+            if (discountError) {
+                console.error("Error fetching customer level discounts:", discountError);
+                // Lanjutkan meskipun diskon gagal diambil, atau handle sesuai kebutuhan
+            }
+
+            const customerDiscounts = discountData || [];
             setFormData({
-                code: data.code || "",
-                name: data.name || "",
-                type_id: data.type_id || "",
-                category_id: data.category_id || "",
-                unit_id: data.unit_id || "",
-                rack: data.rack || "",
-                barcode: data.barcode || "",
-                description: data.description || "",
-                base_price: data.base_price || 0,
-                sell_price: data.sell_price || 0,
-                min_stock: data.min_stock || 10,
-                is_active: data.is_active !== undefined ? data.is_active : true,
-                is_medicine: data.is_medicine !== undefined ? data.is_medicine : true,
-                has_expiry_date: data.has_expiry_date !== undefined ? data.has_expiry_date : false,
-                updated_at: data.updated_at,
+                code: itemData.code || "",
+                name: itemData.name || "",
+                type_id: itemData.type_id || "",
+                category_id: itemData.category_id || "",
+                unit_id: itemData.unit_id || "",
+                rack: itemData.rack || "",
+                barcode: itemData.barcode || "",
+                description: itemData.description || "",
+                base_price: itemData.base_price || 0,
+                sell_price: itemData.sell_price || 0,
+                min_stock: itemData.min_stock || 10,
+                is_active: itemData.is_active !== undefined ? itemData.is_active : true,
+                is_medicine: itemData.is_medicine !== undefined ? itemData.is_medicine : true,
+                has_expiry_date: itemData.has_expiry_date !== undefined ? itemData.has_expiry_date : false,
+                updated_at: itemData.updated_at,
+                customer_level_discounts: customerDiscounts,
             });
 
-            setInitialFormData(data);
+            setInitialFormData({...itemData, customer_level_discounts: customerDiscounts});
+            setInitialCustomerDiscounts(customerDiscounts); // Simpan data diskon awal
 
-            const initialConversions = data.unit_conversions ? (typeof data.unit_conversions === 'string' ? JSON.parse(data.unit_conversions) : data.unit_conversions) : [];
+            const initialConversions = itemData.unit_conversions ? (typeof itemData.unit_conversions === 'string' ? JSON.parse(itemData.unit_conversions) : itemData.unit_conversions) : [];
             if (Array.isArray(initialConversions)) {
                 setInitialUnitConversions(initialConversions);
             } else {
                 setInitialUnitConversions([]);
             }
 
-            setDisplayBasePrice(formatRupiah(data.base_price || 0));
-            setDisplaySellPrice(formatRupiah(data.sell_price || 0));
+            setDisplayBasePrice(formatRupiah(itemData.base_price || 0));
+            setDisplaySellPrice(formatRupiah(itemData.sell_price || 0));
 
-            unitConversionHook.setBaseUnit(data.base_unit || "");
-            unitConversionHook.setBasePrice(data.base_price || 0);
-            unitConversionHook.setSellPrice(data.sell_price || 0);
+            unitConversionHook.setBaseUnit(itemData.base_unit || "");
+            unitConversionHook.setBasePrice(itemData.base_price || 0);
+            unitConversionHook.setSellPrice(itemData.sell_price || 0);
             unitConversionHook.skipNextRecalculation();
 
             const currentConversions = [...unitConversionHook.conversions];
@@ -247,11 +282,11 @@ export const useAddItemForm = (itemId?: string) => {
             }
 
             let conversions = [];
-            if (data.unit_conversions) {
+            if (itemData.unit_conversions) {
                 try {
-                    conversions = typeof data.unit_conversions === 'string'
-                        ? JSON.parse(data.unit_conversions)
-                        : data.unit_conversions;
+                    conversions = typeof itemData.unit_conversions === 'string'
+                        ? JSON.parse(itemData.unit_conversions)
+                        : itemData.unit_conversions;
                 } catch (e) {
                     console.error("Error parsing unit_conversions:", e);
                     conversions = [];
@@ -312,6 +347,14 @@ export const useAddItemForm = (itemId?: string) => {
                 ...formData,
                 [name]: parseFloat(value) || 0,
             });
+        } else if (name.startsWith("discount_level_")) {
+            const levelId = name.split("_")[2];
+            const discountValue = parseFloat(value) || 0;
+            updateFormData({
+                customer_level_discounts: formData.customer_level_discounts?.map(d =>
+                    d.customer_level_id === levelId ? { ...d, discount_percentage: discountValue } : d
+                ) ?? [{ customer_level_id: levelId, discount_percentage: discountValue }]
+            });
         } else {
             setFormData({
                 ...formData,
@@ -321,6 +364,10 @@ export const useAddItemForm = (itemId?: string) => {
     };
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        // Inisialisasi customer_level_discounts jika belum ada saat form berubah
+        if (!formData.customer_level_discounts || formData.customer_level_discounts.length === 0) {
+             updateFormData({ customer_level_discounts: customerLevels.map(level => ({ customer_level_id: level.id, discount_percentage: 0 })) });
+        }
         const { name, value } = e.target;
         setFormData(prevFormData => ({
             ...prevFormData,
@@ -386,6 +433,7 @@ export const useAddItemForm = (itemId?: string) => {
                     is_medicine: formData.is_medicine,
                     base_unit: unitConversionHook.baseUnit,
                     has_expiry_date: formData.has_expiry_date,
+                    // Jangan update unit_conversions di sini, sudah ditangani trigger
                 };
 
                 const { error: updateError } = await supabase
@@ -394,16 +442,34 @@ export const useAddItemForm = (itemId?: string) => {
                     .eq("id", itemId);
 
                 if (updateError) throw updateError;
-
-                const { error: deleteError } = await supabase
-                    .from("unit_conversions")
+                
+                // 1. Hapus diskon lama untuk item ini
+                const { error: deleteDiscountError } = await supabase
+                    .from("customer_level_discounts")
                     .delete()
                     .eq("item_id", itemId);
 
-                if (deleteError) {
-                    console.error("Error deleting unit conversions:", deleteError);
-                    throw deleteError;
+                if (deleteDiscountError) {
+                     console.warn("Could not delete old discounts, proceeding...", deleteDiscountError);
+                     // Mungkin tidak perlu melempar error, tergantung kebutuhan
+                     // throw deleteDiscountError;
                 }
+                
+                // 2. Tambahkan diskon baru
+                if (formData.customer_level_discounts && formData.customer_level_discounts.length > 0) {
+                     const discountRecords = formData.customer_level_discounts
+                        .filter(d => d.discount_percentage > 0) // Hanya simpan jika ada diskon
+                        .map(d => ({
+                             item_id: itemId,
+                             customer_level_id: d.customer_level_id,
+                             discount_percentage: d.discount_percentage,
+                         }));
+
+                     if (discountRecords.length > 0) {
+                        const { error: insertDiscountError } = await supabase.from('customer_level_discounts').insert(discountRecords);
+                        if (insertDiscountError) throw insertDiscountError;
+                     }
+                 }
 
                 if (unitConversionHook.conversions.length > 0) {
                     const uniqueConversions = unitConversionHook.conversions.reduce((acc: UnitConversion[], current: UnitConversion) => {
@@ -465,22 +531,22 @@ export const useAddItemForm = (itemId?: string) => {
 
                 if (mainError) throw mainError;
 
-                if (unitConversionHook.conversions.length > 0 && newItem) {
-                    const conversionRecords = unitConversionHook.conversions.map((uc: UnitConversion) => ({
-                        item_id: newItem.id,
-                        unit_name: uc.unit.name,
-                        conversion_rate: uc.conversion,
-                        base_price: uc.basePrice,
-                        sell_price: uc.sellPrice,
-                        created_at: new Date()
-                    }));
+                // Simpan data diskon ke tabel customer_level_discounts
+                if (formData.customer_level_discounts && formData.customer_level_discounts.length > 0 && newItem?.id) {
+                    const discountRecords = formData.customer_level_discounts
+                        .filter(d => d.discount_percentage > 0)
+                        .map(d => ({
+                            item_id: newItem.id,
+                            customer_level_id: d.customer_level_id,
+                            discount_percentage: d.discount_percentage,
+                        }));
 
-                    const { error: conversionError } = await supabase
-                        .from("unit_conversions")
-                        .insert(conversionRecords);
-
-                    if (conversionError) {
-                        console.error("Error saving unit conversions:", conversionError);
+                    if (discountRecords.length > 0) {
+                        const { error: insertDiscountError } = await supabase.from('customer_level_discounts').insert(discountRecords);
+                        if (insertDiscountError) {
+                            console.error("Error saving customer level discounts:", insertDiscountError);
+                            // Mungkin perlu rollback atau notifikasi error
+                        }
                     }
                 }
             }
@@ -529,7 +595,11 @@ export const useAddItemForm = (itemId?: string) => {
             const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
             
             const conversionsChanged = JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
-            return formDataChanged || conversionsChanged;
+
+            const customerDiscountsChanged = JSON.stringify(formData.customer_level_discounts?.sort((a,b) => a.customer_level_id.localeCompare(b.customer_level_id)))
+                 !== JSON.stringify(initialCustomerDiscounts?.sort((a,b) => a.customer_level_id.localeCompare(b.customer_level_id)));
+
+            return formDataChanged || conversionsChanged || customerDiscountsChanged; // Tambahkan pengecekan diskon pelanggan
         } catch (err) {
             console.error('Error in isDirty comparison:', err);
             return true;
@@ -542,6 +612,7 @@ export const useAddItemForm = (itemId?: string) => {
         displaySellPrice,
         categories,
         types,
+        customerLevels, // Ekspor customerLevels
         units,
         loading,
         saving,
