@@ -14,6 +14,7 @@ export const Dropdown = ({
 }: DropdownProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
+    const [isAnimating, setIsAnimating] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredOptions, setFilteredOptions] = useState(options);
     const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
@@ -48,9 +49,11 @@ export const Dropdown = ({
 
     const closeDropdown = useCallback(() => {
         setIsClosing(true);
+        setIsAnimating(true);
         setTimeout(() => {
             setIsOpen(false);
             setIsClosing(false);
+            setIsAnimating(false);
             setSearchTerm('');
         }, 100);
     }, []);
@@ -147,10 +150,12 @@ export const Dropdown = ({
             closeDropdown();
         } else {
             setIsOpen(true);
+            setIsAnimating(true);
             setTimeout(() => {
                 calculateDropdownPosition();
                 focusSearchInput();
-            }, 5);
+                setIsAnimating(false);
+            }, 300); // Match this with the transition duration
         }
     };
 
@@ -227,18 +232,18 @@ export const Dropdown = ({
                             dropDirection === 'down' 
                                 ? 'top-full mt-2 shadow-lg origin-top' 
                                 : 'bottom-full mb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),0_-2px_4px_-1px_rgba(0,0,0,0.06)] origin-bottom'
-                        } w-full z-20 bg-white rounded-lg border border-gray-200 transition-all duration-300 ease-in-out transform ${
+                        } w-full z-20 bg-white rounded-lg border border-gray-200 transition-all duration-300 ease-out transform ${
                             isOpen && !isClosing
                                 ? 'opacity-100 scale-y-100 translate-y-0' 
                                 : isClosing
-                                    ? 'opacity-0 scale-y-95 translate-y-0'
+                                    ? 'opacity-0 scale-y-0 translate-y-0' 
                                     : 'opacity-0 scale-y-0 translate-y-2 pointer-events-none'
                         }`}
                         role="menu"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {(isOpen || isClosing) && (
-                            <>
+                            <div className={`${isAnimating ? 'blur-[10px] transition-all duration-300' : ''}`}>
                                 {searchList && (
                                     <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
                                         <div className="relative flex items-center">
@@ -309,7 +314,7 @@ export const Dropdown = ({
                                         <div className="absolute bottom-0 left-0 w-full h-8 pointer-events-none bg-gradient-to-t from-black/20 to-transparent rounded-b-lg"></div>
                                     )}
                                 </div>
-                            </>
+                            </div>
                         )}
                     </div>
 
