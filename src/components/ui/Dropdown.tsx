@@ -14,7 +14,7 @@ export const Dropdown = ({
 }: DropdownProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
-    const [isAnimating, setIsAnimating] = useState(false);
+    const [, setIsAnimating] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredOptions, setFilteredOptions] = useState(options);
     const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
@@ -56,7 +56,7 @@ export const Dropdown = ({
             setIsAnimating(false);
             setSearchTerm('');
         }, 100);
-    }, []);
+    }, [setIsAnimating]);
 
     const handleSelect = (optionId: string) => {
         onChange(optionId);
@@ -155,7 +155,7 @@ export const Dropdown = ({
                 calculateDropdownPosition();
                 focusSearchInput();
                 setIsAnimating(false);
-            }, 300); // Match this with the transition duration
+            }, 300);
         }
     };
 
@@ -243,7 +243,7 @@ export const Dropdown = ({
                         onClick={(e) => e.stopPropagation()}
                     >
                         {(isOpen || isClosing) && (
-                            <div className={`${isAnimating ? 'blur-[10px] transition-all duration-300' : ''}`}>
+                            <div>
                                 {searchList && (
                                     <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
                                         <div className="relative flex items-center">
