@@ -343,30 +343,26 @@ export const useAddItemForm = (itemId?: string) => {
             const levelId = name.split("_")[2];
             const discountValue = parseFloat(value) || 0;
 
-            // Perbaiki logika update diskon level pelanggan
-            setFormData(prevFormData => {
-                const existingDiscounts = prevFormData.customer_level_discounts ?? [];
-                const discountIndex = existingDiscounts.findIndex(d => d.customer_level_id === levelId);
+            // Calculate based on the *current* formData before this update
+            const existingDiscounts = formData.customer_level_discounts ?? [];
+            const discountIndex = existingDiscounts.findIndex(d => d.customer_level_id === levelId);
+            let updatedDiscounts;
 
-                let updatedDiscounts;
-                if (discountIndex > -1) {
-                    // Update diskon yang sudah ada
-                    updatedDiscounts = [
-                        ...existingDiscounts.slice(0, discountIndex),
-                        { ...existingDiscounts[discountIndex], discount_percentage: discountValue },
-                        ...existingDiscounts.slice(discountIndex + 1),
-                    ];
-                } else {
-                    // Tambah diskon baru jika belum ada
-                    updatedDiscounts = [...existingDiscounts, { customer_level_id: levelId, discount_percentage: discountValue }];
-                }
-
-                return {
-                    ...prevFormData,
-                    customer_level_discounts: updatedDiscounts,
-                };
+            if (discountIndex > -1) {
+                // Update diskon yang sudah ada
+                updatedDiscounts = [
+                    ...existingDiscounts.slice(0, discountIndex),
+                    { ...existingDiscounts[discountIndex], discount_percentage: discountValue },
+                    ...existingDiscounts.slice(discountIndex + 1),
+                ];
+            } else {
+                // Tambah diskon baru jika belum ada
+                updatedDiscounts = [...existingDiscounts, { customer_level_id: levelId, discount_percentage: discountValue }];
+            }
+            // Call the central update function
+            updateFormData({
+                customer_level_discounts: updatedDiscounts,
             });
-
         } else {
             // Langsung update state menggunakan updateFormData
             updateFormData({ [name]: value });
