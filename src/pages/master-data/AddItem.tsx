@@ -42,8 +42,11 @@ const AddItem = () => {
     const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
     const [showDescription, setShowDescription] = useState(false);
     const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
+    const [editingMinStock, setEditingMinStock] = useState(false);
+    const [minStockValue, setMinStockValue] = useState<string>('0');
     const descriptionRef = useRef<HTMLDivElement>(null);
     const marginInputRef = useRef<HTMLInputElement>(null);
+    const minStockInputRef = useRef<HTMLInputElement>(null);
 
     const {
         formData, displayBasePrice, displaySellPrice, categories, types, units,
@@ -198,6 +201,41 @@ const AddItem = () => {
             stopEditingMargin();
         }
     };
+
+    // --- Add handlers for Min Stock editing ---
+    const startEditingMinStock = () => {
+        setMinStockValue(String(formData.min_stock));
+        setEditingMinStock(true);
+        setTimeout(() => {
+            if (minStockInputRef.current) {
+                minStockInputRef.current.focus();
+                minStockInputRef.current.select();
+            }
+        }, 10);
+    };
+
+    const stopEditingMinStock = () => {
+        setEditingMinStock(false);
+        const stockValue = parseInt(minStockValue, 10);
+        if (!isNaN(stockValue) && stockValue >= 0) {
+            updateFormData({ min_stock: stockValue });
+        } else {
+            // Optionally reset to original value or handle invalid input
+            setMinStockValue(String(formData.min_stock));
+        }
+    };
+
+    const handleMinStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setMinStockValue(e.target.value);
+    };
+
+    const handleMinStockKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === 'Escape') {
+            stopEditingMinStock();
+        }
+    };
+    // --- End of Min Stock handlers ---
+
 
     const handleDelete = () => {
         if (!id) return;
@@ -479,17 +517,35 @@ const AddItem = () => {
                                             </div>
                                         </FormField>
 
-                                        <FormField label="Stok Minimal">
-                                            <Input
-                                                type="number"
-                                                name="min_stock"
-                                                value={formData.min_stock}
-                                                onChange={handleChange}
-                                                className="w-full"
-                                                onFocus={(e) => e.target.select()}
-                                                onClick={(e) => (e.target as HTMLInputElement).select()}
-                                                required
-                                            />
+                                        <FormField label="Stok Minimal:" className="flex items-center">
+                                            <div className="ml-4 flex-grow flex items-center">
+                                                {editingMinStock ? (
+                                                    <input
+                                                        ref={minStockInputRef}
+                                                        type="number"
+                                                        value={minStockValue}
+                                                        onChange={handleMinStockChange}
+                                                        onBlur={stopEditingMinStock}
+                                                        onKeyDown={handleMinStockKeyDown}
+                                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                                        min="0"
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        className="w-full pb-1 cursor-pointer flex items-center" // Removed justify-between
+                                                        onClick={startEditingMinStock}
+                                                        title="Klik untuk mengubah stok minimal"
+                                                    >
+                                                        <span>{formData.min_stock}</span>
+                                                        <FaPen
+                                                            className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors" // Kept ml-2 for spacing
+                                                            size={14}
+                                                            onClick={(e) => { e.stopPropagation(); startEditingMinStock(); }} // Prevent triggering div click
+                                                            title="Edit stok minimal"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </FormField>
 
                                         <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
@@ -564,7 +620,7 @@ const AddItem = () => {
                                                                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                                                 step="0.1"
                                                             />
-                                                            <span className="ml-1 text-lg font-medium">%</span>
+                                                            <span className="ml-4 text-lg font-medium">%</span>
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center w-full">
@@ -574,10 +630,10 @@ const AddItem = () => {
                                                                 title="Klik untuk mengubah margin"
                                                             >
                                                                 {calculateProfitPercentage() !== null ? `${calculateProfitPercentage()!.toFixed(1)}%` : '-'}
-                                                                <FaPen 
-                                                                    className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors" 
-                                                                    size={14} 
-                                                                    onClick={startEditingMargin}
+                                                                <FaPen
+                                                                    className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors"
+                                                                    size={14}
+                                                                    onClick={(e) => { e.stopPropagation(); startEditingMargin(); }} // Prevent triggering div click
                                                                     title="Edit margin"
                                                                 />
                                                             </div>
