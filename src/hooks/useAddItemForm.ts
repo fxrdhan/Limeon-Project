@@ -319,14 +319,10 @@ export const useAddItemForm = (itemId?: string) => {
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target as HTMLInputElement;
-
         if (name === "base_price" || name === "sell_price") {
             const numericInt = extractNumericValue(value);
-
-            setFormData({
-                ...formData,
-                [name]: numericInt
-            });
+            // Langsung update state menggunakan updateFormData
+            updateFormData({ [name]: numericInt });
 
             const formattedValue = formatRupiah(numericInt);
             if (name === "base_price") {
@@ -337,43 +333,84 @@ export const useAddItemForm = (itemId?: string) => {
                 unitConversionHook.setSellPrice(numericInt);
             }
         } else if (type === "checkbox") {
+            // Langsung update state menggunakan updateFormData
             const { checked } = e.target as HTMLInputElement;
-            setFormData({
-                ...formData,
-                [name]: checked,
-            });
+            updateFormData({ [name]: checked });
         } else if (type === "number") {
-            setFormData({
-                ...formData,
-                [name]: parseFloat(value) || 0,
-            });
+            // Langsung update state menggunakan updateFormData
+            updateFormData({ [name]: parseFloat(value) || 0 });
         } else if (name.startsWith("discount_level_")) {
             const levelId = name.split("_")[2];
             const discountValue = parseFloat(value) || 0;
-            updateFormData({
-                customer_level_discounts: formData.customer_level_discounts?.map(d =>
-                    d.customer_level_id === levelId ? { ...d, discount_percentage: discountValue } : d
-                ) ?? [{ customer_level_id: levelId, discount_percentage: discountValue }]
+
+            // Perbaiki logika update diskon level pelanggan
+            setFormData(prevFormData => {
+                const existingDiscounts = prevFormData.customer_level_discounts ?? [];
+                const discountIndex = existingDiscounts.findIndex(d => d.customer_level_id === levelId);
+
+                let updatedDiscounts;
+                if (discountIndex > -1) {
+                    // Update diskon yang sudah ada
+                    updatedDiscounts = [
+                        ...existingDiscounts.slice(0, discountIndex),
+                        { ...existingDiscounts[discountIndex], discount_percentage: discountValue },
+                        ...existingDiscounts.slice(discountIndex + 1),
+                    ];
+                } else {
+                    // Tambah diskon baru jika belum ada
+                    updatedDiscounts = [...existingDiscounts, { customer_level_id: levelId, discount_percentage: discountValue }];
+                }
+
+                return {
+                    ...prevFormData,
+                    customer_level_discounts: updatedDiscounts,
+                };
             });
+
         } else {
-            setFormData({
-                ...formData,
-                [name]: value,
-            });
+            // Langsung update state menggunakan updateFormData
+            updateFormData({ [name]: value });
         }
     };
 
+    // Hapus inisialisasi customer_level_discounts dari handleSelectChange
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        // Inisialisasi customer_level_discounts jika belum ada saat form berubah
-        if (!formData.customer_level_discounts || formData.customer_level_discounts.length === 0) {
-             updateFormData({ customer_level_discounts: customerLevels.map(level => ({ customer_level_id: level.id, discount_percentage: 0 })) });
-        }
         const { name, value } = e.target;
         setFormData(prevFormData => ({
             ...prevFormData,
             [name]: value,
         }));
     };
+
+    // Inisialisasi diskon saat customerLevels atau initialCustomerDiscounts berubah (untuk edit mode)
+    useEffect(() => {
+        if (customerLevels.length > 0) {
+            setFormData(prevFormData => {
+                const currentDiscountsMap = new Map(prevFormData.customer_level_discounts?.map(d => [d.customer_level_id, d.discount_percentage]));
+                const initialDiscountsMap = new Map(initialCustomerDiscounts?.map(d => [d.customer_level_id, d.discount_percentage]));
+
+                const mergedDiscounts = customerLevels.map(level => {
+                    const currentDiscount = currentDiscountsMap.get(level.id);
+                    const initialDiscount = initialDiscountsMap.get(level.id);
+                    // Prioritaskan nilai dari state saat ini jika ada, fallback ke initial, baru ke 0
+                    const discountPercentage = currentDiscount !== undefined ? currentDiscount : (initialDiscount !== undefined ? initialDiscount : 0);
+                    return {
+                        customer_level_id: level.id,
+                        discount_percentage: discountPercentage,
+                    };
+                });
+
+                // Hanya update jika ada perubahan signifikan
+                if (JSON.stringify(prevFormData.customer_level_discounts) !== JSON.stringify(mergedDiscounts)) {
+                    return {
+                        ...prevFormData,
+                        customer_level_discounts: mergedDiscounts,
+                    };
+                }
+                return prevFormData; // Tidak perlu update jika tidak ada perubahan
+            });
+        }
+    }, [customerLevels, initialCustomerDiscounts]); // Tambahkan initialCustomerDiscounts sebagai dependency
 
     const addCategoryMutation = useMutation({
         mutationFn: async (newCategory: { name: string; description: string }) => {
