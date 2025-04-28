@@ -50,7 +50,7 @@ const AddItem = () => {
     const minStockInputRef = useRef<HTMLInputElement>(null);
 
     const {
-        formData, displayBasePrice, displaySellPrice, categories, types, customerLevels, units,
+        formData, displayBasePrice, displaySellPrice, categories, types, units,
         saving, loading, isEditMode, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
         unitConversionHook, isDirty, addCategoryMutation, setCategories, setTypes, addUnitMutation, setUnits
     } = useAddItemForm(id || undefined);
@@ -667,31 +667,6 @@ const AddItem = () => {
                             <div className="w-full md:w-3/4">
                                 <UnitConversionManager unitConversionHook={unitConversionHook} />
                             </div>
-                        </div>
-
-                        <div className="mt-6 w-full md:w-1/2">
-                            <FormSection title="Diskon Level Pelanggan">
-                                {customerLevels.length === 0 ? (
-                                    <p className="text-sm text-gray-500">Belum ada level pelanggan.</p>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {customerLevels.map((level) => (
-                                            <FormField key={level.id} label={`${level.level_name} (%)`}>
-                                                <Input
-                                                    type="number"
-                                                    name={`discount_level_${level.id}`}
-                                                    value={formData.customer_level_discounts?.find(d => d.customer_level_id === level.id)?.discount_percentage ?? ''}
-                                                    onChange={handleChange}
-                                                    placeholder="0"
-                                                    min="0"
-                                                    max="100"
-                                                    step="0.1"
-                                                />
-                                            </FormField>
-                                        ))}
-                                    </div>
-                                )}
-                            </FormSection>
                         </div>
                     </CardContent>
 
