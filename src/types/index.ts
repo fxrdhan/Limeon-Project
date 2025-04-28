@@ -38,6 +38,12 @@ export interface CompanyProfile {
     pharmacist_license: string | null;
 }
 
+export interface CustomerLevel {
+    id: string;
+    level_name: string;
+    price_percentage: number;
+}
+
 export interface Item {
     id: string;
     name: string;
@@ -48,6 +54,12 @@ export interface Item {
     unit_id: string;
     base_unit: string;
     unit_conversions: UnitConversion[];
+    customer_level_discounts?: CustomerLevelDiscount[];
+}
+
+export interface CustomerLevelDiscount {
+    customer_level_id: string;
+    discount_percentage: number;
 }
 
 export interface Patient {
@@ -300,6 +312,7 @@ export interface FormData {
     is_medicine: boolean;
     has_expiry_date: boolean;
     updated_at?: string | null;
+    customer_level_discounts?: CustomerLevelDiscount[];
 }
 
 // src/hooks/usePurchaseForm.ts
