@@ -3,9 +3,9 @@ import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
 import type { UnitConversion } from '../types';
 import { useUnitConversion } from "./useUnitConversion";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatRupiah, extractNumericValue } from "../lib/formatters";
-import type { Category, MedicineType, Unit, FormData, CustomerLevel, CustomerLevelDiscount } from '../types';
+import type { Category, MedicineType, Unit, FormData } from '../types';
 import { generateTypeCode, generateUnitCode, generateCategoryCode, getUnitById } from "./addItemFormHelpers";
 
 export const useAddItemForm = (itemId?: string) => {
@@ -13,7 +13,6 @@ export const useAddItemForm = (itemId?: string) => {
     const queryClient = useQueryClient();
     const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
     const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null);
-    const [initialCustomerDiscounts, setInitialCustomerDiscounts] = useState<CustomerLevelDiscount[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -22,7 +21,6 @@ export const useAddItemForm = (itemId?: string) => {
     const [units, setUnits] = useState<Unit[]>([]);
     const [displayBasePrice, setDisplayBasePrice] = useState('');
     const [displaySellPrice, setDisplaySellPrice] = useState('');
-    const [customerLevels, setCustomerLevels] = useState<CustomerLevel[]>([]);
 
     const unitConversionHook = useUnitConversion();
 
@@ -42,16 +40,6 @@ export const useAddItemForm = (itemId?: string) => {
         is_medicine: true,
         has_expiry_date: false,
         updated_at: null,
-        customer_level_discounts: [],
-    });
-
-    const { data: fetchedCustomerLevels } = useQuery<CustomerLevel[]>({
-        queryKey: ['customerLevels'],
-        queryFn: async () => {
-            const { data, error } = await supabase.from('customer_levels').select('id, level_name, price_percentage');
-            if (error) throw error;
-            return data || [];
-        },
     });
 
     const updateFormData = (newData: Partial<FormData>) => {
@@ -81,7 +69,6 @@ export const useAddItemForm = (itemId?: string) => {
                     is_medicine: merged.is_medicine ?? true,
                     has_expiry_date: merged.has_expiry_date ?? false,
                     updated_at: merged.updated_at ?? null,
-                    customer_level_discounts: merged.customer_level_discounts ?? [],
                 };
             });
         }
@@ -103,16 +90,9 @@ export const useAddItemForm = (itemId?: string) => {
                 is_medicine: merged.is_medicine ?? true,
                 has_expiry_date: merged.has_expiry_date ?? false,
                 updated_at: merged.updated_at ?? null,
-                customer_level_discounts: merged.customer_level_discounts ?? [],
             };
         });
     };
-
-    useEffect(() => {
-        if (fetchedCustomerLevels) {
-            setCustomerLevels(fetchedCustomerLevels);
-        }
-    }, [fetchedCustomerLevels]);
 
     useEffect(() => {
         fetchMasterData();
@@ -226,16 +206,6 @@ export const useAddItemForm = (itemId?: string) => {
             if (itemError) throw itemError;
             if (!itemData) throw new Error("Item tidak ditemukan");
 
-            const { data: discountData, error: discountError } = await supabase
-                .from('customer_level_discounts')
-                .select('customer_level_id, discount_percentage')
-                .eq('item_id', id);
-
-            if (discountError) {
-                console.error("Error fetching customer level discounts:", discountError);
-            }
-
-            const customerDiscounts = discountData || [];
             setFormData({
                 code: itemData.code || "",
                 name: itemData.name || "",
@@ -252,11 +222,9 @@ export const useAddItemForm = (itemId?: string) => {
                 is_medicine: itemData.is_medicine !== undefined ? itemData.is_medicine : true,
                 has_expiry_date: itemData.has_expiry_date !== undefined ? itemData.has_expiry_date : false,
                 updated_at: itemData.updated_at,
-                customer_level_discounts: customerDiscounts,
             });
 
-            setInitialFormData({ ...itemData, customer_level_discounts: customerDiscounts });
-            setInitialCustomerDiscounts(customerDiscounts);
+            setInitialFormData({ ...itemData });
 
             const initialConversions = itemData.unit_conversions ? (typeof itemData.unit_conversions === 'string' ? JSON.parse(itemData.unit_conversions) : itemData.unit_conversions) : [];
             if (Array.isArray(initialConversions)) {
@@ -333,26 +301,6 @@ export const useAddItemForm = (itemId?: string) => {
             updateFormData({ [name]: checked });
         } else if (type === "number") {
             updateFormData({ [name]: parseFloat(value) || 0 });
-        } else if (name.startsWith("discount_level_")) {
-            const levelId = name.split("_")[2];
-            const discountValue = parseFloat(value) || 0;
-
-            const existingDiscounts = formData.customer_level_discounts ?? [];
-            const discountIndex = existingDiscounts.findIndex(d => d.customer_level_id === levelId);
-            let updatedDiscounts;
-
-            if (discountIndex > -1) {
-                updatedDiscounts = [
-                    ...existingDiscounts.slice(0, discountIndex),
-                    { ...existingDiscounts[discountIndex], discount_percentage: discountValue },
-                    ...existingDiscounts.slice(discountIndex + 1),
-                ];
-            } else {
-                updatedDiscounts = [...existingDiscounts, { customer_level_id: levelId, discount_percentage: discountValue }];
-            }
-            updateFormData({
-                customer_level_discounts: updatedDiscounts,
-            });
         } else {
             updateFormData({ [name]: value });
         }
@@ -365,33 +313,6 @@ export const useAddItemForm = (itemId?: string) => {
             [name]: value,
         }));
     };
-
-    useEffect(() => {
-        if (customerLevels.length > 0) {
-            setFormData(prevFormData => {
-                const currentDiscountsMap = new Map(prevFormData.customer_level_discounts?.map(d => [d.customer_level_id, d.discount_percentage]));
-                const initialDiscountsMap = new Map(initialCustomerDiscounts?.map(d => [d.customer_level_id, d.discount_percentage]));
-
-                const mergedDiscounts = customerLevels.map(level => {
-                    const currentDiscount = currentDiscountsMap.get(level.id);
-                    const initialDiscount = initialDiscountsMap.get(level.id);
-                    const discountPercentage = currentDiscount !== undefined ? currentDiscount : (initialDiscount !== undefined ? initialDiscount : 0);
-                    return {
-                        customer_level_id: level.id,
-                        discount_percentage: discountPercentage,
-                    };
-                });
-
-                if (JSON.stringify(prevFormData.customer_level_discounts) !== JSON.stringify(mergedDiscounts)) {
-                    return {
-                        ...prevFormData,
-                        customer_level_discounts: mergedDiscounts,
-                    };
-                }
-                return prevFormData;
-            });
-        }
-    }, [customerLevels, initialCustomerDiscounts]);
 
     const addCategoryMutation = useMutation({
         mutationFn: async (newCategory: { name: string; description: string }) => {
@@ -460,30 +381,6 @@ export const useAddItemForm = (itemId?: string) => {
 
                 if (updateError) throw updateError;
 
-                const { error: deleteDiscountError } = await supabase
-                    .from("customer_level_discounts")
-                    .delete()
-                    .eq("item_id", itemId);
-
-                if (deleteDiscountError) {
-                    console.warn("Could not delete old discounts, proceeding...", deleteDiscountError);
-                }
-
-                if (formData.customer_level_discounts && formData.customer_level_discounts.length > 0) {
-                    const discountRecords = formData.customer_level_discounts
-                        .filter(d => d.discount_percentage > 0)
-                        .map(d => ({
-                            item_id: itemId,
-                            customer_level_id: d.customer_level_id,
-                            discount_percentage: d.discount_percentage,
-                        }));
-
-                    if (discountRecords.length > 0) {
-                        const { error: insertDiscountError } = await supabase.from('customer_level_discounts').insert(discountRecords);
-                        if (insertDiscountError) throw insertDiscountError;
-                    }
-                }
-
                 if (unitConversionHook.conversions.length > 0) {
                     const uniqueConversions = unitConversionHook.conversions.reduce((acc: UnitConversion[], current: UnitConversion) => {
                         const isDuplicate = acc.find((item: UnitConversion) => item.unit.name === current.unit.name);
@@ -536,30 +433,13 @@ export const useAddItemForm = (itemId?: string) => {
                     has_expiry_date: formData.has_expiry_date,
                 };
 
-                const { data: newItem, error: mainError } = await supabase
+                const { error: mainError } = await supabase
                     .from("items")
                     .insert(mainItemData)
                     .select("id")
                     .single();
 
                 if (mainError) throw mainError;
-
-                if (formData.customer_level_discounts && formData.customer_level_discounts.length > 0 && newItem?.id) {
-                    const discountRecords = formData.customer_level_discounts
-                        .filter(d => d.discount_percentage > 0)
-                        .map(d => ({
-                            item_id: newItem.id,
-                            customer_level_id: d.customer_level_id,
-                            discount_percentage: d.discount_percentage,
-                        }));
-
-                    if (discountRecords.length > 0) {
-                        const { error: insertDiscountError } = await supabase.from('customer_level_discounts').insert(discountRecords);
-                        if (insertDiscountError) {
-                            console.error("Error saving customer level discounts:", insertDiscountError);
-                        }
-                    }
-                }
             }
 
             navigate("/master-data/items");
@@ -607,10 +487,7 @@ export const useAddItemForm = (itemId?: string) => {
 
             const conversionsChanged = JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
 
-            const customerDiscountsChanged = JSON.stringify(formData.customer_level_discounts?.sort((a, b) => a.customer_level_id.localeCompare(b.customer_level_id)))
-                !== JSON.stringify(initialCustomerDiscounts?.sort((a, b) => a.customer_level_id.localeCompare(b.customer_level_id)));
-
-            return formDataChanged || conversionsChanged || customerDiscountsChanged;
+            return formDataChanged || conversionsChanged;
         } catch (err) {
             console.error('Error in isDirty comparison:', err);
             return true;
@@ -623,7 +500,6 @@ export const useAddItemForm = (itemId?: string) => {
         displaySellPrice,
         categories,
         types,
-        customerLevels,
         units,
         loading,
         saving,
