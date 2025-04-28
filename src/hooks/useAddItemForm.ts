@@ -12,7 +12,7 @@ export const useAddItemForm = (itemId?: string) => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
-    const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null); 
+    const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null);
     const [initialCustomerDiscounts, setInitialCustomerDiscounts] = useState<CustomerLevelDiscount[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -45,7 +45,6 @@ export const useAddItemForm = (itemId?: string) => {
         customer_level_discounts: [],
     });
 
-    // Fetch Customer Levels
     const { data: fetchedCustomerLevels } = useQuery<CustomerLevel[]>({
         queryKey: ['customerLevels'],
         queryFn: async () => {
@@ -53,7 +52,6 @@ export const useAddItemForm = (itemId?: string) => {
             if (error) throw error;
             return data || [];
         },
-        staleTime: 60 * 1000 * 5 // 5 minutes
     });
 
     const updateFormData = (newData: Partial<FormData>) => {
@@ -125,7 +123,7 @@ export const useAddItemForm = (itemId?: string) => {
         if (!itemId) {
             setInitialFormData(formData);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemId]);
 
     useEffect(() => {
@@ -206,7 +204,7 @@ export const useAddItemForm = (itemId?: string) => {
             if (categoriesData) setCategories(categoriesData);
             if (typesData) setTypes(typesData as MedicineType[]);
             if (unitsData) setUnits(unitsData);
-        } catch (error:unknown) {
+        } catch (error: unknown) {
             console.error("Error fetching master data:", error);
         } finally {
             setLoading(false);
@@ -224,7 +222,7 @@ export const useAddItemForm = (itemId?: string) => {
                 `)
                 .eq("id", id)
                 .single();
-            
+
             if (itemError) throw itemError;
             if (!itemData) throw new Error("Item tidak ditemukan");
 
@@ -235,7 +233,6 @@ export const useAddItemForm = (itemId?: string) => {
 
             if (discountError) {
                 console.error("Error fetching customer level discounts:", discountError);
-                // Lanjutkan meskipun diskon gagal diambil, atau handle sesuai kebutuhan
             }
 
             const customerDiscounts = discountData || [];
@@ -258,8 +255,8 @@ export const useAddItemForm = (itemId?: string) => {
                 customer_level_discounts: customerDiscounts,
             });
 
-            setInitialFormData({...itemData, customer_level_discounts: customerDiscounts});
-            setInitialCustomerDiscounts(customerDiscounts); // Simpan data diskon awal
+            setInitialFormData({ ...itemData, customer_level_discounts: customerDiscounts });
+            setInitialCustomerDiscounts(customerDiscounts);
 
             const initialConversions = itemData.unit_conversions ? (typeof itemData.unit_conversions === 'string' ? JSON.parse(itemData.unit_conversions) : itemData.unit_conversions) : [];
             if (Array.isArray(initialConversions)) {
@@ -321,7 +318,6 @@ export const useAddItemForm = (itemId?: string) => {
         const { name, value, type } = e.target as HTMLInputElement;
         if (name === "base_price" || name === "sell_price") {
             const numericInt = extractNumericValue(value);
-            // Langsung update state menggunakan updateFormData
             updateFormData({ [name]: numericInt });
 
             const formattedValue = formatRupiah(numericInt);
@@ -333,43 +329,35 @@ export const useAddItemForm = (itemId?: string) => {
                 unitConversionHook.setSellPrice(numericInt);
             }
         } else if (type === "checkbox") {
-            // Langsung update state menggunakan updateFormData
             const { checked } = e.target as HTMLInputElement;
             updateFormData({ [name]: checked });
         } else if (type === "number") {
-            // Langsung update state menggunakan updateFormData
             updateFormData({ [name]: parseFloat(value) || 0 });
         } else if (name.startsWith("discount_level_")) {
             const levelId = name.split("_")[2];
             const discountValue = parseFloat(value) || 0;
 
-            // Calculate based on the *current* formData before this update
             const existingDiscounts = formData.customer_level_discounts ?? [];
             const discountIndex = existingDiscounts.findIndex(d => d.customer_level_id === levelId);
             let updatedDiscounts;
 
             if (discountIndex > -1) {
-                // Update diskon yang sudah ada
                 updatedDiscounts = [
                     ...existingDiscounts.slice(0, discountIndex),
                     { ...existingDiscounts[discountIndex], discount_percentage: discountValue },
                     ...existingDiscounts.slice(discountIndex + 1),
                 ];
             } else {
-                // Tambah diskon baru jika belum ada
                 updatedDiscounts = [...existingDiscounts, { customer_level_id: levelId, discount_percentage: discountValue }];
             }
-            // Call the central update function
             updateFormData({
                 customer_level_discounts: updatedDiscounts,
             });
         } else {
-            // Langsung update state menggunakan updateFormData
             updateFormData({ [name]: value });
         }
     };
 
-    // Hapus inisialisasi customer_level_discounts dari handleSelectChange
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prevFormData => ({
@@ -378,7 +366,6 @@ export const useAddItemForm = (itemId?: string) => {
         }));
     };
 
-    // Inisialisasi diskon saat customerLevels atau initialCustomerDiscounts berubah (untuk edit mode)
     useEffect(() => {
         if (customerLevels.length > 0) {
             setFormData(prevFormData => {
@@ -388,7 +375,6 @@ export const useAddItemForm = (itemId?: string) => {
                 const mergedDiscounts = customerLevels.map(level => {
                     const currentDiscount = currentDiscountsMap.get(level.id);
                     const initialDiscount = initialDiscountsMap.get(level.id);
-                    // Prioritaskan nilai dari state saat ini jika ada, fallback ke initial, baru ke 0
                     const discountPercentage = currentDiscount !== undefined ? currentDiscount : (initialDiscount !== undefined ? initialDiscount : 0);
                     return {
                         customer_level_id: level.id,
@@ -396,17 +382,16 @@ export const useAddItemForm = (itemId?: string) => {
                     };
                 });
 
-                // Hanya update jika ada perubahan signifikan
                 if (JSON.stringify(prevFormData.customer_level_discounts) !== JSON.stringify(mergedDiscounts)) {
                     return {
                         ...prevFormData,
                         customer_level_discounts: mergedDiscounts,
                     };
                 }
-                return prevFormData; // Tidak perlu update jika tidak ada perubahan
+                return prevFormData;
             });
         }
-    }, [customerLevels, initialCustomerDiscounts]); // Tambahkan initialCustomerDiscounts sebagai dependency
+    }, [customerLevels, initialCustomerDiscounts]);
 
     const addCategoryMutation = useMutation({
         mutationFn: async (newCategory: { name: string; description: string }) => {
@@ -455,7 +440,7 @@ export const useAddItemForm = (itemId?: string) => {
                     category_id: formData.category_id,
                     type_id: formData.type_id,
                     unit_id: formData.unit_id,
-                    base_price: formData.base_price, 
+                    base_price: formData.base_price,
                     sell_price: formData.sell_price,
                     min_stock: formData.min_stock,
                     description: formData.description || null,
@@ -466,7 +451,6 @@ export const useAddItemForm = (itemId?: string) => {
                     is_medicine: formData.is_medicine,
                     base_unit: unitConversionHook.baseUnit,
                     has_expiry_date: formData.has_expiry_date,
-                    // Jangan update unit_conversions di sini, sudah ditangani trigger
                 };
 
                 const { error: updateError } = await supabase
@@ -475,34 +459,30 @@ export const useAddItemForm = (itemId?: string) => {
                     .eq("id", itemId);
 
                 if (updateError) throw updateError;
-                
-                // 1. Hapus diskon lama untuk item ini
+
                 const { error: deleteDiscountError } = await supabase
                     .from("customer_level_discounts")
                     .delete()
                     .eq("item_id", itemId);
 
                 if (deleteDiscountError) {
-                     console.warn("Could not delete old discounts, proceeding...", deleteDiscountError);
-                     // Mungkin tidak perlu melempar error, tergantung kebutuhan
-                     // throw deleteDiscountError;
+                    console.warn("Could not delete old discounts, proceeding...", deleteDiscountError);
                 }
-                
-                // 2. Tambahkan diskon baru
-                if (formData.customer_level_discounts && formData.customer_level_discounts.length > 0) {
-                     const discountRecords = formData.customer_level_discounts
-                        .filter(d => d.discount_percentage > 0) // Hanya simpan jika ada diskon
-                        .map(d => ({
-                             item_id: itemId,
-                             customer_level_id: d.customer_level_id,
-                             discount_percentage: d.discount_percentage,
-                         }));
 
-                     if (discountRecords.length > 0) {
+                if (formData.customer_level_discounts && formData.customer_level_discounts.length > 0) {
+                    const discountRecords = formData.customer_level_discounts
+                        .filter(d => d.discount_percentage > 0)
+                        .map(d => ({
+                            item_id: itemId,
+                            customer_level_id: d.customer_level_id,
+                            discount_percentage: d.discount_percentage,
+                        }));
+
+                    if (discountRecords.length > 0) {
                         const { error: insertDiscountError } = await supabase.from('customer_level_discounts').insert(discountRecords);
                         if (insertDiscountError) throw insertDiscountError;
-                     }
-                 }
+                    }
+                }
 
                 if (unitConversionHook.conversions.length > 0) {
                     const uniqueConversions = unitConversionHook.conversions.reduce((acc: UnitConversion[], current: UnitConversion) => {
@@ -541,7 +521,7 @@ export const useAddItemForm = (itemId?: string) => {
                     category_id: formData.category_id,
                     type_id: formData.type_id,
                     unit_id: formData.unit_id,
-                    base_price: formData.base_price, 
+                    base_price: formData.base_price,
                     sell_price: formData.sell_price,
                     stock: 0,
                     min_stock: formData.min_stock,
@@ -564,7 +544,6 @@ export const useAddItemForm = (itemId?: string) => {
 
                 if (mainError) throw mainError;
 
-                // Simpan data diskon ke tabel customer_level_discounts
                 if (formData.customer_level_discounts && formData.customer_level_discounts.length > 0 && newItem?.id) {
                     const discountRecords = formData.customer_level_discounts
                         .filter(d => d.discount_percentage > 0)
@@ -578,7 +557,6 @@ export const useAddItemForm = (itemId?: string) => {
                         const { error: insertDiscountError } = await supabase.from('customer_level_discounts').insert(discountRecords);
                         if (insertDiscountError) {
                             console.error("Error saving customer level discounts:", insertDiscountError);
-                            // Mungkin perlu rollback atau notifikasi error
                         }
                     }
                 }
@@ -602,20 +580,20 @@ export const useAddItemForm = (itemId?: string) => {
                 to_unit_id?: string;
                 [key: string]: unknown;
             };
-            
+
             const currentConversionsForCompare = unitConversionHook.conversions
                 .filter((item: UnitConversion) => item && item.unit)
                 .map(({ unit, ...rest }: UnitConversion) => ({ ...rest, to_unit_id: unit.id }));
-            
-            const initialConversionsForCompare = Array.isArray(initialUnitConversions) 
+
+            const initialConversionsForCompare = Array.isArray(initialUnitConversions)
                 ? initialUnitConversions
                     .filter(item => item && typeof item === 'object')
-                    .map(item => ({ 
+                    .map(item => ({
                         ...item,
                         to_unit_id: item.to_unit_id || item.unit?.id
                     }))
                 : [];
-                
+
             const safeSortByUnitId = (arr: ConversionForCompare[]) => {
                 return [...arr].sort((a, b) => {
                     const idA = a?.to_unit_id || '';
@@ -623,16 +601,16 @@ export const useAddItemForm = (itemId?: string) => {
                     return idA.localeCompare(idB);
                 });
             };
-            
+
             const sortedCurrent = safeSortByUnitId(currentConversionsForCompare);
             const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
-            
+
             const conversionsChanged = JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
 
-            const customerDiscountsChanged = JSON.stringify(formData.customer_level_discounts?.sort((a,b) => a.customer_level_id.localeCompare(b.customer_level_id)))
-                 !== JSON.stringify(initialCustomerDiscounts?.sort((a,b) => a.customer_level_id.localeCompare(b.customer_level_id)));
+            const customerDiscountsChanged = JSON.stringify(formData.customer_level_discounts?.sort((a, b) => a.customer_level_id.localeCompare(b.customer_level_id)))
+                !== JSON.stringify(initialCustomerDiscounts?.sort((a, b) => a.customer_level_id.localeCompare(b.customer_level_id)));
 
-            return formDataChanged || conversionsChanged || customerDiscountsChanged; // Tambahkan pengecekan diskon pelanggan
+            return formDataChanged || conversionsChanged || customerDiscountsChanged;
         } catch (err) {
             console.error('Error in isDirty comparison:', err);
             return true;
@@ -645,7 +623,7 @@ export const useAddItemForm = (itemId?: string) => {
         displaySellPrice,
         categories,
         types,
-        customerLevels, // Ekspor customerLevels
+        customerLevels,
         units,
         loading,
         saving,
