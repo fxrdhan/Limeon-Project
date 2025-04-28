@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { supabase } from "../../lib/supabase";
+import { FaChevronDown } from "react-icons/fa";
 import { Input } from "../../components/ui/Input";
 import { useEffect, useState, useRef } from "react";
 import { Button } from "../../components/ui/Button";
+import { motion, AnimatePresence } from "framer-motion";
 import { Dropdown } from "../../components/ui/Dropdown";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
 import { AddCategoryModal } from "../../components/ui/AddEditModal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
-import { FaArrowLeft, FaSave, FaTrash, FaHistory, FaPen } from 'react-icons/fa';
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import UnitConversionManager from "../../components/tools/UnitConversionManager";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
-import { motion, AnimatePresence } from "framer-motion";
-import { FaChevronDown } from "react-icons/fa";
+import { FaArrowLeft, FaSave, FaTrash, FaHistory, FaPen, FaQuestionCircle } from 'react-icons/fa';
 
 const formatDateTime = (isoString: string | null | undefined): string => {
     if (!isoString) return "-";
@@ -44,6 +44,7 @@ const AddItem = () => {
     const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
     const [editingMinStock, setEditingMinStock] = useState(false);
     const [minStockValue, setMinStockValue] = useState<string>('0');
+    const [showFefoTooltip, setShowFefoTooltip] = useState(false);
     const descriptionRef = useRef<HTMLDivElement>(null);
     const marginInputRef = useRef<HTMLInputElement>(null);
     const minStockInputRef = useRef<HTMLInputElement>(null);
@@ -202,7 +203,6 @@ const AddItem = () => {
         }
     };
 
-    // --- Add handlers for Min Stock editing ---
     const startEditingMinStock = () => {
         setMinStockValue(String(formData.min_stock));
         setEditingMinStock(true);
@@ -220,7 +220,6 @@ const AddItem = () => {
         if (!isNaN(stockValue) && stockValue >= 0) {
             updateFormData({ min_stock: stockValue });
         } else {
-            // Optionally reset to original value or handle invalid input
             setMinStockValue(String(formData.min_stock));
         }
     };
@@ -234,8 +233,6 @@ const AddItem = () => {
             stopEditingMinStock();
         }
     };
-    // --- End of Min Stock handlers ---
-
 
     const handleDelete = () => {
         if (!id) return;
@@ -444,7 +441,7 @@ const AddItem = () => {
                                         </FormField>
                                     </div>
 
-                                    <div className="mt-2 pt-4">
+                                    <div className="mt-2 pt-2">
                                         <button
                                             type="button"
                                             onMouseEnter={() => setIsDescriptionHovered(true)}
@@ -494,31 +491,24 @@ const AddItem = () => {
                             <div className="w-full md:w-1/4">
                                 <FormSection title="Pengaturan Tambahan">
                                     <div className="grid grid-cols-1 gap-6">
-                                        <FormField label="Status Jual">
-                                            <div className="space-x-6">
-                                                <label className="inline-flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        name="is_active"
-                                                        checked={formData.is_active}
-                                                        onChange={() => updateFormData({ is_active: true })}
-                                                    />
-                                                    <span className="ml-2">Masih dijual</span>
-                                                </label>
-                                                <label className="inline-flex items-center">
-                                                    <input
-                                                        type="radio"
-                                                        name="is_active"
-                                                        checked={!formData.is_active}
-                                                        onChange={() => updateFormData({ is_active: false })}
-                                                    />
-                                                    <span className="ml-2">Tidak Dijual</span>
-                                                </label>
-                                            </div>
+                                        <FormField label="Status">
+                                            <Dropdown
+                                                name="is_active"
+                                                value={formData.is_active ? "true" : "false"}
+                                                onChange={(value) => {
+                                                    updateFormData({ is_active: value === "true" });
+                                                }}
+                                                options={[
+                                                    { id: "true", name: "Masih dijual" },
+                                                    { id: "false", name: "Tidak Dijual" }
+                                                ]}
+                                                withRadio
+                                                searchList={false}
+                                            />
                                         </FormField>
 
                                         <FormField label="Stok Minimal:" className="flex items-center">
-                                            <div className="ml-4 flex-grow flex items-center">
+                                            <div className="ml-2 flex-grow flex items-center">
                                                 {editingMinStock ? (
                                                     <input
                                                         ref={minStockInputRef}
@@ -532,15 +522,15 @@ const AddItem = () => {
                                                     />
                                                 ) : (
                                                     <div
-                                                        className="w-full pb-1 cursor-pointer flex items-center" // Removed justify-between
+                                                        className="w-full pb-1 cursor-pointer flex items-center"
                                                         onClick={startEditingMinStock}
                                                         title="Klik untuk mengubah stok minimal"
                                                     >
                                                         <span>{formData.min_stock}</span>
                                                         <FaPen
-                                                            className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors" // Kept ml-2 for spacing
+                                                            className="ml-2 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors"
                                                             size={14}
-                                                            onClick={(e) => { e.stopPropagation(); startEditingMinStock(); }} // Prevent triggering div click
+                                                            onClick={(e) => { e.stopPropagation(); startEditingMinStock(); }}
                                                             title="Edit stok minimal"
                                                         />
                                                     </div>
@@ -559,9 +549,24 @@ const AddItem = () => {
                                                 />
                                                 <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
                                             </label>
-                                            <div className="mt-1 text-sm text-gray-500">
-                                                Jika dicentang, obat ini akan menggunakan metode FEFO
+                                            <div className="mt-1 text-sm text-gray-500 flex items-center">
+                                                Akan digunakan metode FEFO
                                                 (First Expired First Out)
+                                                <div
+                                                    className="relative ml-1 inline-block"
+                                                    onMouseEnter={() => setShowFefoTooltip(true)}
+                                                    onMouseLeave={() => setShowFefoTooltip(false)}
+                                                >
+                                                    <FaQuestionCircle
+                                                        className="text-gray-400 cursor-help"
+                                                        size={14}
+                                                    />
+                                                    {showFefoTooltip && (
+                                                        <div className="absolute bottom-full right-0 mb-2 w-max max-w-xs p-2 bg-white text-gray-700 text-xs rounded-md shadow-lg z-10 border border-gray-200">
+                                                            Barang dengan tanggal kadaluarsa terdekat akan dikeluarkan lebih dulu saat penjualan.
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -633,7 +638,7 @@ const AddItem = () => {
                                                                 <FaPen
                                                                     className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors"
                                                                     size={14}
-                                                                    onClick={(e) => { e.stopPropagation(); startEditingMargin(); }} // Prevent triggering div click
+                                                                    onClick={(e) => { e.stopPropagation(); startEditingMargin(); }}
                                                                     title="Edit margin"
                                                                 />
                                                             </div>
