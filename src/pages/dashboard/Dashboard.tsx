@@ -95,11 +95,11 @@ const Dashboard = () => {
             : 0;
 
         const { count: totalMedicines } = await supabase
-            .from('medicines')
+            .from('items')
             .select('*', { count: 'exact' });
 
         const { count: lowStockCount } = await supabase
-            .from('medicines')
+            .from('items')
             .select('*', { count: 'exact' })
             .lt('stock', 10);
 
