@@ -1,5 +1,5 @@
-import { classNames } from "../../lib/classNames";
-import type { BadgeProps } from '../../types';
+import { classNames } from "@/lib/classNames";
+import type { BadgeProps } from '@/types';
 
 export const Badge = ({
     children,
