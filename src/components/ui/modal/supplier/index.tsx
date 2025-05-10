@@ -1,9 +1,9 @@
-import { Button } from './Button';
+import { Button } from '@components/ui/Button';
 import { createPortal } from 'react-dom';
-import { ImageUploader } from './ImageUploader';
+import { ImageUploader } from '@components/ui/ImageUploader';
 import { Transition, TransitionChild } from '@headlessui/react';
 import React, { useState, useEffect, Fragment, useRef } from 'react';
-import type { DetailEditModalProps } from '../../types';
+import type { DetailEditModalProps } from '@/types';
 import { FaPencilAlt, FaSpinner, FaSave, FaBan } from 'react-icons/fa';
 
 const DetailEditModal: React.FC<DetailEditModalProps> = ({

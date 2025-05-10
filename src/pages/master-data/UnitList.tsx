@@ -8,7 +8,7 @@ import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import type { Unit } from '../../types';
-import { AddCategoryModal } from "../../components/ui/AddEditModal";
+import { AddCategoryModal } from "@/components/ui/modal/add-edit";
 import { Pagination } from "../../components/ui/Pagination";
 import { SearchBar } from "../../components/ui/TableSearchBar";
 

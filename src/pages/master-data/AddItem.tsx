@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dropdown } from "../../components/ui/Dropdown";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
-import { AddCategoryModal } from "../../components/ui/AddEditModal";
+import { AddCategoryModal } from "@/components/ui/modal/add-edit";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
