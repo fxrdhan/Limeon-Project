@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import { Input } from "../ui/Input";
-import { Button } from "../ui/Button";
-import { Dropdown } from "../ui/Dropdown";
+import { Input } from "@components/ui/Input";
+import { Button } from "@components/ui/Button";
+import { Dropdown } from "@components/ui/Dropdown";
 import { FaTrash } from "react-icons/fa";
-import { FormSection, FormField } from "../ui/FormComponents";
-import type { UnitConversionManagerProps } from '../../types';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../ui/Table";
+import { FormSection, FormField } from "@components/ui/FormComponents";
+import type { UnitConversionManagerProps } from '@/types';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@components/ui/Table";
 
 const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
     unitConversionHook
