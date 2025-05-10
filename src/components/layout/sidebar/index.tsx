@@ -12,7 +12,7 @@ import {
     FaShoppingBag,
     FaCog
 } from "react-icons/fa";
-import type { SidebarProps, MenuItem } from '../../types';
+import type { SidebarProps, MenuItem } from '@/types';
 
 const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
     const location = useLocation();
