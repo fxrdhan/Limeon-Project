@@ -12,7 +12,7 @@ import { AddCategoryModal } from "../../components/ui/AddEditModal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
-import UnitConversionManager from "../../components/tools/UnitConversionManager";
+import UnitConversionManager from "@/components/tools/unit-converter";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
 import { FaArrowLeft, FaSave, FaTrash, FaHistory, FaPen, FaQuestionCircle } from 'react-icons/fa';
 
