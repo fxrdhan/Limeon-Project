@@ -19,6 +19,8 @@ get-database
 .env
 test.js
 
+.yarn
+
 dist
 dist-ssr
 *.local
