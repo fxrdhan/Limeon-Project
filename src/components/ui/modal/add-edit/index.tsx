@@ -1,8 +1,8 @@
-import { Input } from '@components/ui/Input';
-import { Button } from '@components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { createPortal } from 'react-dom';
 import { FaTimes } from 'react-icons/fa';
-import { useConfirmDialog } from '@components/ui/ConfirmDialog';
+import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
 import type { AddCategoryModalProps } from '@/types';
 import { Transition, TransitionChild } from '@headlessui/react';
 import React, { useState, useEffect, Fragment, useRef } from 'react';
