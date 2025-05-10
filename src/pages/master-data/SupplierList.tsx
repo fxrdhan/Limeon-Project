@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Loading } from '../../components/ui/Loading';
 import type { Supplier, FieldConfig } from '../../types';
 import { Card, CardHeader } from '../../components/ui/Card';
-import DetailEditModal from '../../components/ui/SupplierModal';
+import DetailEditModal from '@/components/ui/modal/supplier';
 import { useConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
