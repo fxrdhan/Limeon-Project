@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
-import MainLayout from './components/layout/MainLayout';
+import MainLayout from './components/layout/main-layout';
 import Login from './pages/auth/Login';
 import './index.css';
 import { useAuthStore } from './store/authStore';
