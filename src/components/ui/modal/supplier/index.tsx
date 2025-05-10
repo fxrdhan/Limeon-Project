@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { createPortal } from 'react-dom';
 import { ImageUploader } from '@/components/ui/ImageUploader';
 import { Transition, TransitionChild } from '@headlessui/react';

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "../../components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Loading } from "../../components/ui/Loading";
 import { Pagination } from "../../components/ui/Pagination";
 import { SearchBar } from "../../components/ui/TableSearchBar";

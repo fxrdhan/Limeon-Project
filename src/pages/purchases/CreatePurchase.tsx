@@ -2,7 +2,7 @@ import ItemSearchBar from './ItemSearchBar';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useRef } from 'react';
 import { Input } from '../../components/ui/Input';
-import { Button } from '../../components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { FaTrash, FaChevronDown } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePurchaseForm } from '../../hooks/usePurchaseForm';

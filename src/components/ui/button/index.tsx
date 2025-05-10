@@ -1,5 +1,5 @@
-import { classNames } from "../../lib/classNames";
-import type { ButtonProps } from '../../types';
+import { classNames } from "@/lib/classNames";
+import type { ButtonProps } from '@/types';
 
 export const Button = ({
     children,

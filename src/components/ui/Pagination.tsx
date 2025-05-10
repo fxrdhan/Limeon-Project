@@ -1,6 +1,6 @@
-import { Button } from "./Button";
-import { classNames } from "../../lib/classNames";
-import type { PaginationProps } from '../../types';
+import { Button } from "@/components/ui/button";
+import { classNames } from "@/lib/classNames";
+import type { PaginationProps } from '@/types';
 
 export const Pagination = ({
     currentPage,

@@ -3,7 +3,7 @@ import { supabase } from "../../lib/supabase";
 import { FaChevronDown } from "react-icons/fa";
 import { Input } from "../../components/ui/Input";
 import { useEffect, useState, useRef } from "react";
-import { Button } from "../../components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dropdown } from "../../components/ui/Dropdown";
 import { useNavigate, useParams } from "react-router-dom";

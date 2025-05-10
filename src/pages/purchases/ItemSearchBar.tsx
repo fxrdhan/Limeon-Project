@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaPlus } from 'react-icons/fa';
-import { Button } from '../../components/ui/Button';
-import type { PurchaseItem, ItemSearchBarProps } from '../../types';
+import { Button } from '@/components/ui/button';
+import type { PurchaseItem, ItemSearchBarProps } from '@/types';
 
 const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     searchItem,

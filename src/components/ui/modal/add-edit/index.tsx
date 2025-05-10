@@ -1,5 +1,5 @@
 import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { createPortal } from 'react-dom';
 import { FaTimes } from 'react-icons/fa';
 import { useConfirmDialog } from '@/components/ui/ConfirmDialog';

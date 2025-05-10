@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button } from '../../components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Loading } from '../../components/ui/Loading';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCheck, FaClock, FaRedo } from 'react-icons/fa';
