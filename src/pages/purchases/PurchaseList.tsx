@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "../../components/ui/Button";
 import { Loading } from "../../components/ui/Loading";
 import { Pagination } from "../../components/ui/Pagination";
