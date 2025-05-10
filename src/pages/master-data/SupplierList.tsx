@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FaPlus } from 'react-icons/fa';
 import { supabase } from '../../lib/supabase';
-import { Button } from '../../components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Loading } from '../../components/ui/Loading';
 import type { Supplier, FieldConfig } from '../../types';
 import { Card, CardHeader } from '../../components/ui/Card';

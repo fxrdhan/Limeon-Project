@@ -4,7 +4,7 @@ import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-quer
 import { supabase } from "../../lib/supabase";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { SearchBar } from "../../components/ui/TableSearchBar";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import { Pagination } from "../../components/ui/Pagination";

@@ -1,7 +1,7 @@
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 import { createPortal } from 'react-dom';
 import { Transition, TransitionChild } from '@headlessui/react';
-import type { ConfirmDialogContextType, ConfirmDialogOptions } from '../../types';
+import type { ConfirmDialogContextType, ConfirmDialogOptions } from '@/types';
 import React, { createContext, useState, useContext, useCallback, Fragment } from 'react';
 
 const initialState: ConfirmDialogContextType = {

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import type { Category } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { Card } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Loading } from "../../components/ui/Loading";
 import { Pagination } from "../../components/ui/Pagination";
 import { SearchBar } from "../../components/ui/TableSearchBar";

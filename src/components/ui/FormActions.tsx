@@ -1,6 +1,6 @@
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 import { FaSave, FaTimes } from 'react-icons/fa';
-import type { FormActionsProps } from '../../types';
+import type { FormActionsProps } from '@/types';
 
 export const FormActions: React.FC<FormActionsProps> = ({
     onCancel,

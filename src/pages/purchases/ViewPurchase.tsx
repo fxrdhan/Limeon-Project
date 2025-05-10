@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { Card } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Loading } from "../../components/ui/Loading";
 import type { PurchaseData, PurchaseItem } from '../../types';
 import { FaArrowLeft, FaSearchPlus, FaSearchMinus, FaPrint } from "react-icons/fa";

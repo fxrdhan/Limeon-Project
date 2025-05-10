@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { FaTrash } from "react-icons/fa";
 import { FormSection, FormField } from "@/components/ui/FormComponents";
