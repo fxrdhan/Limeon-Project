@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import type { NavbarProps } from '../../../types';
+import type { NavbarProps } from '@/types';
 import { useState, useEffect, useRef } from 'react';
-import { ImageUploader } from '../../ui/ImageUploader';
-import { useAuthStore } from '../../../store/authStore';
+import { ImageUploader } from '@/components/ui/ImageUploader';
+import { useAuthStore } from '@/store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaUserCircle, FaPencilAlt } from 'react-icons/fa';
 
