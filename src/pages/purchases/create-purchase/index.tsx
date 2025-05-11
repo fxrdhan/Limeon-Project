@@ -1,4 +1,4 @@
-import ItemSearchBar from '@pages/purchases/ItemSearchBar';
+import ItemSearchBar from '@/pages/purchases/item-search';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';

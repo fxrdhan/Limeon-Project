@@ -14,13 +14,13 @@ const UnitList = lazy(() => import('@/pages/master-data/unit-list'));
 const TypeList = lazy(() => import('@/pages/master-data/type-list'));
 const AddItem = lazy(() => import('@/pages/master-data/add-item'));
 const SupplierList = lazy(() => import('@/pages/master-data/supplier-list'));
-const UploadInvoice = lazy(() => import('@/pages/purchases/UploadInvoice'));
+const UploadInvoice = lazy(() => import('@/pages/purchases/upload-invoice'));
 const ConfirmInvoicePage = lazy(() => import('@/pages/purchases/confirm-invoice'));
-const PurchaseList = lazy(() => import('@/pages/purchases/PurchaseList'));
-const CreatePurchase = lazy(() => import('@/pages/purchases/CreatePurchase'));
+const PurchaseList = lazy(() => import('@/pages/purchases/purchase-list'));
+const CreatePurchase = lazy(() => import('@/pages/purchases/create-purchase'));
 const Profile = lazy(() => import('@/pages/settings/Profile'));
 const PrintPurchase = lazy(() => import('@/pages/purchases/PrintPurchase'));
-const ViewPurchase = lazy(() => import('@/pages/purchases/ViewPurchase'));
+const ViewPurchase = lazy(() => import('@/pages/purchases/view-purchase'));
 
 const ComingSoon = ({ title }: { title: string }) => {
   return (
