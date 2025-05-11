@@ -1,5 +1,5 @@
-import { classNames } from "../../lib/classNames";
-import type { FormSectionProps, FormFieldProps } from '../../types';
+import { classNames } from "@/lib/classNames";
+import type { FormSectionProps, FormFieldProps } from '@/types';
 
 export const FormSection: React.FC<FormSectionProps> = ({ title, children, className }) => {
     return (
