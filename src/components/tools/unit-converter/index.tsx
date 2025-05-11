@@ -5,7 +5,7 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { FaTrash } from "react-icons/fa";
 import { FormSection, FormField } from "@/components/ui/FormComponents";
 import type { UnitConversionManagerProps } from '@/types';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/Table";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
 
 const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
     unitConversionHook

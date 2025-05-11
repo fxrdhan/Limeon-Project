@@ -12,7 +12,7 @@ import { extractNumericValue, formatRupiah } from '../../lib/formatters';
 import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
 import { FormSection, FormField } from '../../components/ui/FormComponents';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '@/components/ui/table';
 
 const CreatePurchase: React.FC = () => {
     const navigate = useNavigate();

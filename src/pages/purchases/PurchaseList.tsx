@@ -10,7 +10,7 @@ import { SearchBar } from "../../components/ui/TableSearchBar";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
 
 interface Purchase {
     id: string;
