@@ -6,7 +6,7 @@ import { useUnitConversion } from "@/hooks/useUnitConversion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatRupiah, extractNumericValue } from "@/lib/formatters";
 import type { Category, MedicineType, Unit, FormData } from '@/types';
-import { generateTypeCode, generateUnitCode, generateCategoryCode, getUnitById } from "@/hooks/addItemFormHelpers";
+import { generateTypeCode, generateUnitCode, generateCategoryCode, getUnitById } from "@/hooks/add-item-form/helper";
 
 export const useAddItemForm = (itemId?: string) => {
     const navigate = useNavigate();
