@@ -18,7 +18,7 @@ const UploadInvoice = lazy(() => import('@/pages/purchases/upload-invoice'));
 const ConfirmInvoicePage = lazy(() => import('@/pages/purchases/confirm-invoice'));
 const PurchaseList = lazy(() => import('@/pages/purchases/purchase-list'));
 const CreatePurchase = lazy(() => import('@/pages/purchases/create-purchase'));
-const Profile = lazy(() => import('@/pages/settings/Profile'));
+const Profile = lazy(() => import('@/pages/settings/profile'));
 const PrintPurchase = lazy(() => import('@/pages/purchases/PrintPurchase'));
 const ViewPurchase = lazy(() => import('@/pages/purchases/view-purchase'));
 
