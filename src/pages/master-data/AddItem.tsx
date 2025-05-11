@@ -5,7 +5,7 @@ import { Input } from "../../components/ui/Input";
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dropdown } from "../../components/ui/Dropdown";
+import { Dropdown } from "@/components/ui/dropdown";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAddItemForm } from "../../hooks/useAddItemForm";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
