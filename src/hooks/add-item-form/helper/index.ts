@@ -1,5 +1,5 @@
-import { supabase } from "../lib/supabase";
-import type { MedicineType, Unit, Category } from '../types';
+import { supabase } from "@/lib/supabase";
+import type { MedicineType, Unit, Category } from '@/types';
 
 export const generateTypeCode = (typeId: string, types: MedicineType[]): string => {
     const selectedType = types.find(type => type.id === typeId);
