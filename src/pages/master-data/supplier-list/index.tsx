@@ -53,7 +53,7 @@ const SupplierList = () => {
             ...newSupplier,
             image_url: newSupplierImage
         };
-        
+
         const { data, error } = await supabase
             .from('suppliers')
             .insert([dataToInsert])
@@ -170,15 +170,6 @@ const SupplierList = () => {
         });
     };
 
-    const handleSupplierImageSave = async ({ supplierId, imageBase64 }: { supplierId: string; imageBase64: string }) => {
-        if (!selectedSupplier) return;
-        await updateSupplierImageMutation.mutateAsync({ supplierId, imageBase64 });
-    };
-
-    const handleSupplierImageDelete = async (supplierId: string) => {
-        await deleteSupplierImageMutation.mutateAsync(supplierId);
-    };
-
     const handleNewSupplierImageUpload = (imageBase64: string) => {
         setNewSupplierImage(imageBase64);
     };
@@ -216,8 +207,8 @@ const SupplierList = () => {
             <CardHeader className="mb-6 px-0">
                 <div className="flex justify-between items-center">
                     <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Supplier</h1>
-                    <Button 
-                        variant="primary" 
+                    <Button
+                        variant="primary"
                         className="flex items-center"
                         onClick={openAddSupplierModal}
                     >
@@ -279,8 +270,15 @@ const SupplierList = () => {
                     }
                     return Promise.resolve();
                 }}
-                onImageSave={handleSupplierImageSave}
-                onImageDelete={handleSupplierImageDelete}
+                onImageSave={async (data: { supplierId?: string; imageBase64: string }) => {
+                    const idToUse = data.supplierId || selectedSupplier?.id;
+                    if (idToUse) {
+                        await updateSupplierImageMutation.mutateAsync({ supplierId: idToUse, imageBase64: data.imageBase64 });
+                    }
+                }}
+                onImageDelete={async (supplierId?: string) => {
+                    if (supplierId) { await deleteSupplierImageMutation.mutateAsync(supplierId); }
+                }}
                 onDeleteRequest={() => {
                     if (selectedSupplier) handleDelete(selectedSupplier);
                 }}
@@ -300,8 +298,8 @@ const SupplierList = () => {
                     await createSupplierMutation.mutateAsync(newSupplierData);
                     return Promise.resolve();
                 }}
-                onImageSave={({ imageBase64 }) => {
-                    handleNewSupplierImageUpload(imageBase64);
+                onImageSave={(data: { imageBase64: string }) => {
+                    handleNewSupplierImageUpload(data.imageBase64);
                     return Promise.resolve();
                 }}
                 imagePlaceholder="https://via.placeholder.com/400x300?text=Foto+Supplier"
