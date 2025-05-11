@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import { Button } from '@/components/ui/button';
 import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
-import type { CompanyProfile, ProfileKey } from '../../types';
+import type { CompanyProfile, ProfileKey } from '../../../types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
