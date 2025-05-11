@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { FaTrash, FaChevronDown } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePurchaseForm } from '../../hooks/usePurchaseForm';
-import { FormActions } from '../../components/ui/FormActions';
+import { FormAction } from '@/components/ui/form-action';
 import { useItemSelection } from '../../hooks/useItemSelection';
 import { extractNumericValue, formatRupiah } from '../../lib/formatters';
 import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
@@ -486,7 +486,7 @@ const CreatePurchase: React.FC = () => {
                 </CardContent>
 
                 <CardFooter className="flex justify-between">
-                    <FormActions
+                    <FormAction
                         onCancel={() => navigate('/purchases')}
                         isSaving={loading}
                         isDisabled={purchaseItems.length === 0}
