@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import type { Item } from '../types';
+import { supabase } from '@/lib/supabase';
+import type { Item } from '@/types';
 
 export const useItemSelection = () => {
     const [items, setItems] = useState<Item[]>([]);

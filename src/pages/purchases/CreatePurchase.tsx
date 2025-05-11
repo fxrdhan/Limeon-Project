@@ -7,7 +7,7 @@ import { FaTrash, FaChevronDown } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePurchaseForm } from '@/hooks/usePurchaseForm';
 import { FormAction } from '@/components/ui/form-action';
-import { useItemSelection } from '@/hooks/useItemSelection';
+import { useItemSelection } from '@/hooks/item-selection';
 import { extractNumericValue, formatRupiah } from '@/lib/formatters';
 import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
 import { FormSection, FormField } from '@/components/ui/form';
