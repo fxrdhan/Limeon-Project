@@ -19,7 +19,7 @@ const ConfirmInvoicePage = lazy(() => import('@/pages/purchases/confirm-invoice'
 const PurchaseList = lazy(() => import('@/pages/purchases/purchase-list'));
 const CreatePurchase = lazy(() => import('@/pages/purchases/create-purchase'));
 const Profile = lazy(() => import('@/pages/settings/profile'));
-const PrintPurchase = lazy(() => import('@/pages/purchases/PrintPurchase'));
+const PrintPurchase = lazy(() => import('@/pages/purchases/print-purchase'));
 const ViewPurchase = lazy(() => import('@/pages/purchases/view-purchase'));
 
 const ComingSoon = ({ title }: { title: string }) => {
