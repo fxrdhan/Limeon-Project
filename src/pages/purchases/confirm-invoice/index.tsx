@@ -5,8 +5,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCheck, FaClock, FaRedo } from 'react-icons/fa';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '@/components/ui/table';
-import { saveInvoiceToDatabase, regenerateInvoiceData } from '../../services/invoiceService';
-import type { ExtractedInvoiceData } from '../../types';
+import { saveInvoiceToDatabase, regenerateInvoiceData } from '@/services/invoiceService';
+import type { ExtractedInvoiceData } from '@/types';
 
 const ConfirmInvoicePage = () => {
     const navigate = useNavigate();
