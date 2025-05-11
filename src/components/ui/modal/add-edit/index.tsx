@@ -2,7 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { createPortal } from 'react-dom';
 import { FaTimes } from 'react-icons/fa';
-import { useConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useConfirmDialog } from '@/components/ui/dialog-box';
 import type { AddCategoryModalProps } from '@/types';
 import { Transition, TransitionChild } from '@headlessui/react';
 import React, { useState, useEffect, Fragment, useRef } from 'react';

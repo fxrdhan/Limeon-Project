@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { FaPlus } from 'react-icons/fa';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Loading } from '@/components/ui/loading';
-import type { Supplier, FieldConfig } from '../../types';
+import type { Supplier, FieldConfig } from '@/types';
 import { Card, CardHeader } from '@/components/ui/card';
 import DetailEditModal from '@/components/ui/modal/supplier';
-import { useConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { useConfirmDialog } from '@/components/ui/dialog-box';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '@/components/ui/table';
 
