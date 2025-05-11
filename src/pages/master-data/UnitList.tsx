@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tansta
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
 import type { Unit } from '../../types';
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
-import { Pagination } from "../../components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "../../components/ui/TableSearchBar";
 
 const UnitList = () => {

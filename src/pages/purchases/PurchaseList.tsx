@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loading } from "../../components/ui/Loading";
-import { Pagination } from "../../components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "../../components/ui/TableSearchBar";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";

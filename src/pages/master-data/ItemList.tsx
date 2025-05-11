@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "../../components/ui/TableSearchBar";
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
-import { Pagination } from "../../components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 
 function ItemList() {
