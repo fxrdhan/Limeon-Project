@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { DropdownProps } from '../../types';
+import { DropdownProps } from '@/types';
 
 export const Dropdown = ({
     options,
