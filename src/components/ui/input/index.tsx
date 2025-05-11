@@ -1,5 +1,5 @@
-import type { InputProps } from '../../types';
-import { classNames } from '../../lib/classNames';
+import type { InputProps } from '@/types';
+import { classNames } from '@/lib/classNames';
 
 export const Input = ({
     label,
