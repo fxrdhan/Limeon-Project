@@ -263,8 +263,8 @@ export interface DetailEditModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
-    onImageSave?: (data: { supplierId: string; imageBase64: string }) => Promise<void>;
-    onImageDelete?: (supplierId: string) => Promise<void>;
+    onImageSave?: (data: { supplierId?: string; imageBase64: string }) => Promise<void>;
+    onImageDelete?: (supplierId?: string) => Promise<void>;
     onDeleteRequest?: (data: Record<string, string | number | boolean | null>) => void;
     deleteButtonLabel?: string;
     imageUrl?: string;
