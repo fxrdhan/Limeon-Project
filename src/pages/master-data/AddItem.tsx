@@ -13,7 +13,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { FormSection, FormField } from "../../components/ui/FormComponents";
 import UnitConversionManager from "@/components/tools/unit-converter";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { FaArrowLeft, FaSave, FaTrash, FaHistory, FaPen, FaQuestionCircle } from 'react-icons/fa';
 
 const formatDateTime = (isoString: string | null | undefined): string => {

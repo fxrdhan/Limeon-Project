@@ -1,7 +1,7 @@
 import { FaPlus } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
-import { Card } from "../../components/ui/Card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loading } from "../../components/ui/Loading";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";

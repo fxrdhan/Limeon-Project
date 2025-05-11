@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { Card } from "../../components/ui/Card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loading } from "../../components/ui/Loading";
 import type { PurchaseData, PurchaseItem } from '../../types';

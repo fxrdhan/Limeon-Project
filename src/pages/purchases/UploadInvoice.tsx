@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FaUpload, FaArrowLeft, FaTimes, FaImage, FaSearchPlus, FaSearchMinus } from 'react-icons/fa';
 import { uploadAndExtractInvoice } from '../../services/invoiceService';
