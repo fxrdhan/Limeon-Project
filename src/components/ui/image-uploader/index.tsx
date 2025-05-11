@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import type { ImageUploaderProps } from '../../types';
-import { compressImageIfNeeded } from '../../lib/imageUtils';
+import type { ImageUploaderProps } from '@/types';
+import { compressImageIfNeeded } from '@/lib/imageUtils';
 import { FaSpinner, FaPencilAlt, FaTrash, FaUpload } from 'react-icons/fa';
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
