@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loading } from '../../components/ui/Loading';
+import { Loading } from '@/components/ui/loading';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCheck, FaClock, FaRedo } from 'react-icons/fa';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';

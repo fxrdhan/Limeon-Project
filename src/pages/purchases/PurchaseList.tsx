@@ -4,7 +4,7 @@ import { supabase } from "../../lib/supabase";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loading } from "../../components/ui/Loading";
+import { Loading } from "@/components/ui/loading";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "../../components/ui/TableSearchBar";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";

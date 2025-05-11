@@ -1,5 +1,5 @@
-import type { LoadingProps } from '../../types';
-import { classNames } from "../../lib/classNames";
+import type { LoadingProps } from '@/types';
+import { classNames } from "@/lib/classNames";
 
 export const Loading = ({ className, message = "" }: LoadingProps) => (
     <div className={classNames("text-center py-6", className)}>

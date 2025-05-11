@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loading } from "../../components/ui/Loading";
+import { Loading } from "@/components/ui/loading";
 import type { PurchaseData, PurchaseItem } from '../../types';
 import { FaArrowLeft, FaSearchPlus, FaSearchMinus, FaPrint } from "react-icons/fa";
 
