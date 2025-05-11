@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
-import MainLayout from './components/layout/main-layout';
-import Login from './pages/auth/Login';
-import './index.css';
-import { useAuthStore } from './store/authStore';
-import { ConfirmDialogProvider } from './components/ui/ConfirmDialog';
-import OfflineAlert from './components/ui/OfflineAlert';
+import MainLayout from '@/components/layout/main-layout';
+import Login from '@/pages/auth/Login';
+import '@/index.css';
+import { useAuthStore } from '@/store/authStore';
+import { ConfirmDialogProvider } from '@/components/ui/ConfirmDialog';
+import OfflineAlert from '@/components/ui/offline-alert';
 
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const ItemList = lazy(() => import('./pages/master-data/ItemList'));
