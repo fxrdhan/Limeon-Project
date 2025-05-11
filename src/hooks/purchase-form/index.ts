@@ -1,7 +1,7 @@
-import { supabase } from '../lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Item, Supplier, CompanyProfile, PurchaseFormData, PurchaseItem, UnitConversion } from '../types';
+import type { Item, Supplier, CompanyProfile, PurchaseFormData, PurchaseItem, UnitConversion } from '@/types';
 
 export const usePurchaseForm = () => {
     const navigate = useNavigate();
