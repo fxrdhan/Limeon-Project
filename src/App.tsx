@@ -1,13 +1,13 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import MainLayout from '@/components/layout/main-layout';
-import Login from '@/pages/auth/Login';
+import Login from '@/pages/auth/login';
 import '@/index.css';
 import { useAuthStore } from '@/store/authStore';
 import { ConfirmDialogProvider } from '@/components/ui/dialog-box';
 import OfflineAlert from '@/components/ui/offline-alert';
 
-const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
+const Dashboard = lazy(() => import('./pages/dashboard'));
 const ItemList = lazy(() => import('./pages/master-data/ItemList'));
 const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
 const UnitList = lazy(() => import('./pages/master-data/UnitList'));
