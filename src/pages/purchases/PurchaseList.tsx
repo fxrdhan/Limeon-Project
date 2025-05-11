@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/ui/loading";
 import { Pagination } from "@/components/ui/pagination";
-import { SearchBar } from "../../components/ui/TableSearchBar";
+import { SearchBar } from "@/components/ui/search-bar";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaSearch } from 'react-icons/fa';
-import type { TableSearchProps } from '../../types';
+import type { TableSearchProps } from '@/types';
 
 export const SearchBar: React.FC<TableSearchProps> = ({
     value,

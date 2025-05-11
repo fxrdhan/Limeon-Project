@@ -10,7 +10,7 @@ import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@
 import type { Unit } from '../../types';
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
 import { Pagination } from "@/components/ui/pagination";
-import { SearchBar } from "../../components/ui/TableSearchBar";
+import { SearchBar } from "@/components/ui/search-bar";
 
 const UnitList = () => {
     const { openConfirmDialog } = useConfirmDialog();
