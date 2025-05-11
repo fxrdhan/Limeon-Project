@@ -12,7 +12,7 @@ const ItemList = lazy(() => import('./pages/master-data/ItemList'));
 const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
 const UnitList = lazy(() => import('./pages/master-data/UnitList'));
 const TypeList = lazy(() => import('./pages/master-data/TypeList'));
-const AddItem = lazy(() => import('./pages/master-data/AddItem'));
+const AddItem = lazy(() => import('./pages/master-data/add-item'));
 const SupplierList = lazy(() => import('./pages/master-data/SupplierList'));
 const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
 const ConfirmInvoicePage = lazy(() => import('./pages/purchases/ConfirmInvoice'));
