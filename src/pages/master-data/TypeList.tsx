@@ -1,14 +1,14 @@
 import { FaPlus } from "react-icons/fa";
 import { useState, useEffect } from "react";
-import type { ItemType } from '../../types';
-import { supabase } from "../../lib/supabase";
+import type { ItemType } from '@/types';
+import { supabase } from "@/lib/supabase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/ui/loading";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "@/components/ui/search-bar";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
-import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { useConfirmDialog } from "@/components/ui/dialog-box";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
 

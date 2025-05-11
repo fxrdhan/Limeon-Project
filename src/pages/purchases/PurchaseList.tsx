@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loading } from "@/components/ui/loading";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "@/components/ui/search-bar";
-import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { useConfirmDialog } from "@/components/ui/dialog-box";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
