@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { supabase } from "../../lib/supabase";
 import { FaChevronDown } from "react-icons/fa";
-import { Input } from "../../components/ui/Input";
+import { Input } from "@/components/ui/input";
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";

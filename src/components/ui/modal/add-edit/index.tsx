@@ -1,4 +1,4 @@
-import { Input } from '@/components/ui/Input';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { createPortal } from 'react-dom';
 import { FaTimes } from 'react-icons/fa';
