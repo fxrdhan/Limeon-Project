@@ -7,20 +7,20 @@ import { useAuthStore } from '@/store/authStore';
 import { ConfirmDialogProvider } from '@/components/ui/dialog-box';
 import OfflineAlert from '@/components/ui/offline-alert';
 
-const Dashboard = lazy(() => import('./pages/dashboard'));
-const ItemList = lazy(() => import('./pages/master-data/item-list'));
-const CategoryList = lazy(() => import('./pages/master-data/category-list'));
-const UnitList = lazy(() => import('./pages/master-data/unit-list'));
-const TypeList = lazy(() => import('./pages/master-data/type-list'));
-const AddItem = lazy(() => import('./pages/master-data/add-item'));
-const SupplierList = lazy(() => import('./pages/master-data/supplier-list'));
-const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
-const ConfirmInvoicePage = lazy(() => import('./pages/purchases/ConfirmInvoice'));
-const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
-const CreatePurchase = lazy(() => import('./pages/purchases/CreatePurchase'));
-const Profile = lazy(() => import('./pages/settings/Profile'));
-const PrintPurchase = lazy(() => import('./pages/purchases/PrintPurchase'));
-const ViewPurchase = lazy(() => import('./pages/purchases/ViewPurchase'));
+const Dashboard = lazy(() => import('@/pages/dashboard'));
+const ItemList = lazy(() => import('@/pages/master-data/item-list'));
+const CategoryList = lazy(() => import('@/pages/master-data/category-list'));
+const UnitList = lazy(() => import('@/pages/master-data/unit-list'));
+const TypeList = lazy(() => import('@/pages/master-data/type-list'));
+const AddItem = lazy(() => import('@/pages/master-data/add-item'));
+const SupplierList = lazy(() => import('@/pages/master-data/supplier-list'));
+const UploadInvoice = lazy(() => import('@/pages/purchases/UploadInvoice'));
+const ConfirmInvoicePage = lazy(() => import('@/pages/purchases/confirm-invoice'));
+const PurchaseList = lazy(() => import('@/pages/purchases/PurchaseList'));
+const CreatePurchase = lazy(() => import('@/pages/purchases/CreatePurchase'));
+const Profile = lazy(() => import('@/pages/settings/Profile'));
+const PrintPurchase = lazy(() => import('@/pages/purchases/PrintPurchase'));
+const ViewPurchase = lazy(() => import('@/pages/purchases/ViewPurchase'));
 
 const ComingSoon = ({ title }: { title: string }) => {
   return (
