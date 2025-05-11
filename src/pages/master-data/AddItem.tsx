@@ -11,7 +11,7 @@ import { useAddItemForm } from "@/hooks/useAddItemForm";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useConfirmDialog } from "@/components/ui/dialog-box";
-import { FormSection, FormField } from "@/components/ui/FormComponents";
+import { FormSection, FormField } from "@/components/ui/form";
 import UnitConversionManager from "@/components/tools/unit-converter";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { FaArrowLeft, FaSave, FaTrash, FaHistory, FaPen, FaQuestionCircle } from 'react-icons/fa';
