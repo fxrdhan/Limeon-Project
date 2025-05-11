@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { createPortal } from 'react-dom';
 import { ImageUploader } from '@/components/ui/image-uploader';
-import { Transition, TransitionChild } from '@headlessui/react';
-import React, { useState, useEffect, Fragment, useRef } from 'react';
+import { Transition, TransitionChild, Dialog } from '@headlessui/react';
+import React, { Fragment, useRef, useState, useEffect } from 'react';
 import type { DetailEditModalProps } from '@/types';
 import { FaPencilAlt, FaSpinner, FaSave, FaBan } from 'react-icons/fa';
+import { useSupplierDetailForm } from '@/hooks/supplier-detail';
 
 const DetailEditModal: React.FC<DetailEditModalProps> = ({
     title,
@@ -13,8 +14,8 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     isOpen,
     onClose,
     onSave,
-    onImageSave,
-    onImageDelete,
+    onImageSave: onImageSaveProp,
+    onImageDelete: onImageDeleteProp,
     imageUrl,
     imagePlaceholder,
     onDeleteRequest,
@@ -22,33 +23,34 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     mode = 'edit'
 }) => {
     const modalRef = useRef<HTMLDivElement>(null);
-    const [editMode, setEditMode] = useState<Record<string, boolean>>({});
-    const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({});
-    const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
-    const [isUploadingImage, setIsUploadingImage] = useState(false);
-    const [loading, setLoading] = useState<Record<string, boolean>>({});
-    const [localData, setLocalData] = useState<Record<string, string | number | boolean | null>>(data);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [, setIsClosing] = useState(false);
     const [, setIsAnimationComplete] = useState(!isOpen);
 
-    useEffect(() => {
-        if (isOpen) {
-            const initialEditMode: Record<string, boolean> = {};
-            if (mode === 'add') {
-                fields.forEach(field => {
-                    initialEditMode[field.key] = true;
-                });
-            } else {
-                fields.forEach(field => {
-                    initialEditMode[field.key] = false;
-                });
-            }
-            setEditMode(initialEditMode);
-        } else {
-            setEditMode({});
-        }
-    }, [isOpen, mode, fields]);
+    const {
+        editMode,
+        editValues,
+        currentImageUrl,
+        isUploadingImage,
+        loadingField,
+        isSubmitting,
+        localData,
+        toggleEdit,
+        handleChange,
+        handleSaveField,
+        handleSaveAll,
+        handleCancelEdit,
+        handleImageUpload,
+        handleImageDeleteInternal,
+    } = useSupplierDetailForm({
+        initialData: data,
+        fields,
+        onSave,
+        onImageSave: onImageSaveProp,
+        onImageDelete: onImageDeleteProp,
+        initialImageUrl: imageUrl,
+        mode,
+        isOpen,
+    });
 
     useEffect(() => {
         if (isOpen) {
@@ -56,72 +58,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
             setIsAnimationComplete(false);
         }
     }, [isOpen]);
-
-    useEffect(() => {
-        if (isOpen && data) {
-            const initialValues: Record<string, string | number | boolean | null> = {};
-            fields.forEach(field => {
-                initialValues[field.key] = data[field.key];
-            });
-            setEditValues(initialValues);
-            setLocalData(data);
-            setCurrentImageUrl(imageUrl);
-        }
-    }, [isOpen, data, fields, imageUrl]);
-
-    const toggleEdit = (key: string) => {
-        setEditMode(prev => ({
-            ...prev,
-            [key]: !prev[key]
-        }));
-    };
-
-    const handleChange = (key: string, value: string) => {
-        setEditValues(prev => ({
-            ...prev,
-            [key]: value
-        }));
-    };
-
-    const handleSaveField = async (key: string) => {
-        try {
-            setLoading(prev => ({ ...prev, [key]: true }));
-
-            const updatedData = { [key]: editValues[key] };
-            await onSave(updatedData);
-
-            setLocalData(prev => ({
-                ...prev,
-                [key]: editValues[key]
-            }));
-
-            toggleEdit(key);
-        } catch (error) {
-            console.error(`Error saving ${key}:`, error);
-        } finally {
-            setLoading(prev => ({ ...prev, [key]: false }));
-        }
-    };
-
-    const handleSaveAll = async () => {
-        try {
-            setIsSubmitting(true);
-            await onSave(editValues);
-            handleCloseModal();
-        } catch (error) {
-            console.error("Error saving supplier:", error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleCancel = (key: string) => {
-        setEditValues(prev => ({
-            ...prev,
-            [key]: localData[key]
-        }));
-        toggleEdit(key);
-    };
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
@@ -134,23 +70,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         onClose();
     };
 
-    const handleImageDelete = async () => {
-        if (mode === 'add') {
-            setCurrentImageUrl(undefined);
-        } else if (onImageDelete && data?.id) {
-            setIsUploadingImage(true);
-            try {
-                await onImageDelete(data.id as string);
-                setCurrentImageUrl(undefined);
-            } catch (error) {
-                console.error("Error deleting image:", error);
-                alert("Gagal menghapus gambar.");
-            } finally {
-                setIsUploadingImage(false);
-            }
-        }
-    };
-
     return createPortal(
         <Transition
             show={isOpen}
@@ -160,9 +79,10 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                 setIsClosing(false);
             }}
         >
-            <div
+            <Dialog
                 className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
                 onClick={handleBackdropClick}
+                onClose={handleCloseModal}
             >
                 <TransitionChild
                     as={Fragment}
@@ -188,7 +108,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                     leaveFrom="opacity-100 scale-100"
                     leaveTo="opacity-0 scale-95"
                 >
-                    <div 
+                    <Dialog.Panel
                         ref={modalRef}
                         className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden relative mx-4"
                         onClick={(e) => e.stopPropagation()}
@@ -204,37 +124,21 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                         id="supplier-image-upload"
                                         className="w-full"
                                         shape="rounded"
-                                        onImageUpload={async (base64) => {
-                                            if (mode === 'add') {
-                                                setCurrentImageUrl(base64);
-                                            } else if (onImageSave && data?.id) {
-                                                setIsUploadingImage(true);
-                                                try {
-                                                    await onImageSave({ supplierId: data.id as string, imageBase64: base64 });
-                                                    setCurrentImageUrl(base64);
-                                                } finally {
-                                                    setIsUploadingImage(false);
-                                                }
-                                            } else {
-                                                console.error("onImageSave prop or supplier ID is missing.");
-                                                alert("Gagal mengunggah gambar: Konfigurasi tidak lengkap.");
-                                            }
-                                        }}
-                                        onImageDelete={handleImageDelete}
-                                        disabled={isUploadingImage || (!onImageSave && mode !== 'add')}
+                                        onImageUpload={handleImageUpload}
+                                        onImageDelete={handleImageDeleteInternal}
+                                        disabled={isUploadingImage || (!onImageSaveProp && mode !== 'add')}
                                         loadingIcon={<FaSpinner className="text-white text-xl animate-spin" />}
                                         defaultIcon={<FaPencilAlt className="text-white text-xl" />}
                                     >
                                         {currentImageUrl ? (
                                             <img
                                                 src={currentImageUrl}
-                                                alt={String(data.name ?? 'Detail')}
+                                                alt={String(localData?.name ?? 'Detail')}
                                                 className="w-full h-auto aspect-video object-cover rounded-md border border-gray-200"
                                             />
                                         ) : mode === 'add' ? (
                                             <div className="w-full aspect-video flex items-center justify-center border border-dashed border-gray-300 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors">
                                                 <div className="text-center p-4">
-
                                                     <p className="text-sm font-medium text-gray-600">Unggah logo supplier</p>
                                                     <p className="text-xs text-gray-400 mt-1">Format: JPG, PNG</p>
                                                 </div>
@@ -242,7 +146,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                         ) : imagePlaceholder ? (
                                             <img
                                                 src={imagePlaceholder}
-                                                alt={String(data.name ?? 'Detail')}
+                                                alt={String(localData?.name ?? 'Detail')}
                                                 className="w-full h-auto aspect-video object-cover rounded-md border border-gray-200"
                                             />
                                         ) : (
@@ -274,7 +178,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                             <Button
                                                                 variant="text"
                                                                 size="sm"
-                                                                onClick={() => handleCancel(field.key)}
+                                                                onClick={() => handleCancelEdit(field.key)}
                                                                 className="text-gray-500 hover:text-gray-700 p-1"
                                                                 title="Batal"
                                                             >
@@ -285,10 +189,10 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                                 size="sm"
                                                                 onClick={() => handleSaveField(field.key)}
                                                                 className="text-gray-500 hover:text-gray-700 p-1"
-                                                                disabled={loading[field.key]}
+                                                                disabled={loadingField[field.key]}
                                                                 title="Simpan"
                                                             >
-                                                                {loading[field.key] ? (
+                                                                {loadingField[field.key] ? (
                                                                     <span className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin inline-block"></span>
                                                                 ) : (
                                                                     <FaSave className="text-green-500 text-sm" />
@@ -346,16 +250,17 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                             {deleteButtonLabel}
                                         </Button>
                                     )}
-                                    <Button variant="outline" onClick={handleCloseModal}>
+                                    <Button type="button" variant="outline" onClick={handleCloseModal}>
                                         Tutup
                                     </Button>
                                 </>
                             ) : (
                                 <>
-                                    <Button variant="outline" onClick={handleCloseModal}>
+                                    <Button type="button" variant="outline" onClick={handleCloseModal}>
                                         Batal
                                     </Button>
                                     <Button 
+                                        type="button"
                                         variant="primary" 
                                         onClick={handleSaveAll}
                                         disabled={isSubmitting}
@@ -372,11 +277,11 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                 </>
                             )}
                         </div>
-                    </div>
+                    </Dialog.Panel>
                 </TransitionChild>
-            </div>
-        </Transition>
-    , document.body
+            </Dialog>
+        </Transition>,
+        document.body
     );
 };
 
