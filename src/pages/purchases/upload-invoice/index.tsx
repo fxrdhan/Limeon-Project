@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FaUpload, FaArrowLeft, FaTimes, FaImage, FaSearchPlus, FaSearchMinus } from 'react-icons/fa';
-import { uploadAndExtractInvoice } from '../../services/invoiceService';
+import { uploadAndExtractInvoice } from '../../../services/invoiceService';
 
 const UploadInvoice = () => {
     const navigate = useNavigate();

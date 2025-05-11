@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { PurchaseData, PurchaseItem, Subtotals } from '../../types';
+import type { PurchaseData, PurchaseItem, Subtotals } from '@/types';
 
 const PrintPurchase = () => {
     const [purchase, setPurchase] = useState<PurchaseData | null>(null);

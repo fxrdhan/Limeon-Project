@@ -1,5 +1,5 @@
 import React from 'react';
-import type { InvoiceLayoutProps } from '../../types';
+import type { InvoiceLayoutProps } from '@/types';
 
 export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
     purchase,
