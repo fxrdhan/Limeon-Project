@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loading } from "../../components/ui/Loading";
+import { Loading } from "@/components/ui/loading";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
