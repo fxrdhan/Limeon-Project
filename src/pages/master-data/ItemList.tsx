@@ -6,7 +6,7 @@ import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "../../components/ui/TableSearchBar";
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "../../components/ui/Table";
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
 

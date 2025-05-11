@@ -1,6 +1,6 @@
 // src/components/ui/Table.tsx
-import { classNames } from '../../lib/classNames';
-import type { TableProps, TableCellProps, TableRowProps } from '../../types';
+import { classNames } from '@/lib/classNames';
+import type { TableProps, TableCellProps, TableRowProps } from '@/types';
 
 export const Table = ({ children, className }: TableProps) => {
     return (

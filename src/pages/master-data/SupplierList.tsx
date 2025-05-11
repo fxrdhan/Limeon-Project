@@ -8,7 +8,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import DetailEditModal from '@/components/ui/modal/supplier';
 import { useConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
+import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '@/components/ui/table';
 
 const SupplierList = () => {
     const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
