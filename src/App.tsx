@@ -8,12 +8,12 @@ import { ConfirmDialogProvider } from '@/components/ui/dialog-box';
 import OfflineAlert from '@/components/ui/offline-alert';
 
 const Dashboard = lazy(() => import('./pages/dashboard'));
-const ItemList = lazy(() => import('./pages/master-data/ItemList'));
-const CategoryList = lazy(() => import('./pages/master-data/CategoryList'));
-const UnitList = lazy(() => import('./pages/master-data/UnitList'));
-const TypeList = lazy(() => import('./pages/master-data/TypeList'));
+const ItemList = lazy(() => import('./pages/master-data/item-list'));
+const CategoryList = lazy(() => import('./pages/master-data/category-list'));
+const UnitList = lazy(() => import('./pages/master-data/unit-list'));
+const TypeList = lazy(() => import('./pages/master-data/type-list'));
 const AddItem = lazy(() => import('./pages/master-data/add-item'));
-const SupplierList = lazy(() => import('./pages/master-data/SupplierList'));
+const SupplierList = lazy(() => import('./pages/master-data/supplier-list'));
 const UploadInvoice = lazy(() => import('./pages/purchases/UploadInvoice'));
 const ConfirmInvoicePage = lazy(() => import('./pages/purchases/ConfirmInvoice'));
 const PurchaseList = lazy(() => import('./pages/purchases/PurchaseList'));
