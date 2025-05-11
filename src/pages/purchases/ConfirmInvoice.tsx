@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Loading } from '../../components/ui/Loading';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCheck, FaClock, FaRedo } from 'react-icons/fa';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '../../components/ui/Table';
 import { saveInvoiceToDatabase, regenerateInvoiceData } from '../../services/invoiceService';
 import type { ExtractedInvoiceData } from '../../types';
