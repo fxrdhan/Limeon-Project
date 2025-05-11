@@ -188,8 +188,8 @@ export interface ConfirmDialogOptions {
     variant?: 'danger' | 'primary';
 }
 
-// src/components/ui/FormActions.tsx
-export interface FormActionsProps {
+// src/components/ui/FormAction.tsx
+export interface FormActionProps {
     onCancel: () => void;
     isSaving: boolean;
     isDisabled?: boolean;

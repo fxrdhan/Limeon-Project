@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { FaSave, FaTimes } from 'react-icons/fa';
-import type { FormActionsProps } from '@/types';
+import type { FormActionProps } from '@/types';
 
-export const FormActions: React.FC<FormActionsProps> = ({
+export const FormAction: React.FC<FormActionProps> = ({
     onCancel,
     isSaving,
     isDisabled = false,
