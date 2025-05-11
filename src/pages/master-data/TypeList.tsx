@@ -5,7 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loading } from "../../components/ui/Loading";
-import { Pagination } from "../../components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { SearchBar } from "../../components/ui/TableSearchBar";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
 import { useConfirmDialog } from "../../components/ui/ConfirmDialog";
