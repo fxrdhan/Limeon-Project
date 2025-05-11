@@ -5,7 +5,7 @@ import { Transition, TransitionChild, Dialog } from '@headlessui/react';
 import React, { Fragment, useRef, useState, useEffect } from 'react';
 import type { DetailEditModalProps } from '@/types';
 import { FaPencilAlt, FaSpinner, FaSave, FaBan } from 'react-icons/fa';
-import { useSupplierDetailForm } from '@/hooks/supplier-detail';
+import { useSupplierDetailForm } from '@/hooks';
 
 const DetailEditModal: React.FC<DetailEditModalProps> = ({
     title,

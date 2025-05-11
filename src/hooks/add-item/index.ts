@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import type { UnitConversion } from '@/types';
-import { useUnitConversion } from "@/hooks/unit-conversion";
+import { useUnitConversion } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatRupiah, extractNumericValue } from "@/lib/formatters";
 import type { Category, MedicineType, Unit, FormData } from '@/types';
