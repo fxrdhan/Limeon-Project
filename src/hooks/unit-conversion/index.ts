@@ -1,6 +1,6 @@
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { useState, useEffect, useCallback } from "react";
-import type { UnitConversion, UseUnitConversionReturn, UnitData } from '../types';
+import type { UnitConversion, UseUnitConversionReturn, UnitData } from '@/types';
 
 export const useUnitConversion = (): UseUnitConversionReturn => {
     const [baseUnit, setBaseUnit] = useState<string>("");
