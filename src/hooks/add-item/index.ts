@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import type { UnitConversion } from '@/types';
 import { useUnitConversion } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { formatRupiah, extractNumericValue } from "@/lib/formatters";
+import { formatRupiah, extractNumericValue, formatDateTime } from "@/lib/formatters";
+import { useConfirmDialog } from "@/components/ui";
 import type { Category, MedicineType, Unit, FormData } from '@/types';
 import { generateTypeCode, generateUnitCode, generateCategoryCode, getUnitById } from "@/hooks/add-item/helper";
 
@@ -21,6 +23,17 @@ export const useAddItemForm = (itemId?: string) => {
     const [units, setUnits] = useState<Unit[]>([]);
     const [displayBasePrice, setDisplayBasePrice] = useState('');
     const [displaySellPrice, setDisplaySellPrice] = useState('');
+
+    // modals
+    const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+    const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
+    const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
+
+    // inline editing
+    const [editingMargin, setEditingMargin] = useState(false);
+    const [marginPercentage, setMarginPercentage] = useState<string>("0");
+    const [editingMinStock, setEditingMinStock] = useState(false);
+    const [minStockValue, setMinStockValue] = useState<string>("0");
 
     const unitConversionHook = useUnitConversion();
 
@@ -332,6 +345,27 @@ export const useAddItemForm = (itemId?: string) => {
         },
     });
 
+    // Add type mutation
+    const addTypeMutation = useMutation({
+        mutationFn: async (newType: { name: string; description: string }) => {
+            const { data, error } = await supabase
+                .from("item_types")
+                .insert(newType)
+                .select("id, name, description")
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["types"] });
+        },
+        onError: (error) => {
+            console.error("Error adding type:", error);
+        },
+    });
+
+    const confirmDialog = useConfirmDialog();
+
     const addUnitMutation = useMutation({
         mutationFn: async (newUnit: { name: string; description: string }) => {
             const { data, error } = await supabase
@@ -347,6 +381,22 @@ export const useAddItemForm = (itemId?: string) => {
         },
         onError: (error) => {
             console.error("Error adding unit:", error);
+        },
+    });
+
+    // Delete item mutation
+    const deleteItemMutation = useMutation({
+        mutationFn: async (itemIdToDelete: string) => {
+            const { error } = await supabase.from("items").delete().eq("id", itemIdToDelete);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["items"], refetchType: "all" });
+            navigate("/master-data/items");
+        },
+        onError: (error) => {
+            console.error("Error deleting item:", error);
+            alert("Gagal menghapus item. Silakan coba lagi.");
         },
     });
 
@@ -494,6 +544,89 @@ export const useAddItemForm = (itemId?: string) => {
         }
     };
 
+    // Cancel handler
+    const handleCancel = () => {
+        if (isDirty()) {
+            confirmDialog.openConfirmDialog({
+                title: "Konfirmasi Keluar",
+                message: "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
+                confirmText: "Tinggalkan",
+                cancelText: "Batal",
+                onConfirm: () => navigate("/master-data/items"),
+                variant: "danger",
+            });
+        } else {
+            navigate("/master-data/items");
+        }
+    };
+
+    const handleSaveCategory = async (categoryData: { name: string; description: string }) => {
+        try {
+            const newCategory = await addCategoryMutation.mutateAsync(categoryData);
+            const { data: updatedCategories } = await supabase.from("item_categories").select("id, name").order("name");
+            if (updatedCategories) setCategories(updatedCategories);
+            if (newCategory?.id) updateFormData({ category_id: newCategory.id });
+            setIsAddCategoryModalOpen(false);
+        } catch (error) {
+            alert("Gagal menyimpan kategori baru.");
+        }
+    };
+
+    const handleSaveType = async (typeData: { name: string; description: string }) => {
+        try {
+            const newType = await addTypeMutation.mutateAsync(typeData);
+            const { data: updatedTypes } = await supabase.from("item_types").select("id, name").order("name");
+            if (updatedTypes) setTypes(updatedTypes);
+            if (newType?.id) updateFormData({ type_id: newType.id });
+            setIsAddTypeModalOpen(false);
+        } catch (error) {
+            alert("Gagal menyimpan jenis item baru.");
+        }
+    };
+
+    const handleSaveUnit = async (unitData: { name: string; description: string }) => {
+        try {
+            const newUnit = await addUnitMutation.mutateAsync(unitData);
+            const { data: updatedUnits } = await supabase.from("item_units").select("id, name").order("name");
+            if (updatedUnits) setUnits(updatedUnits);
+            if (newUnit?.id) updateFormData({ unit_id: newUnit.id });
+            setIsAddUnitModalOpen(false);
+        } catch (error) {
+            alert("Gagal menyimpan satuan baru.");
+        }
+    };
+
+    const handleDeleteItem = () => {
+        if (!itemId) return;
+        confirmDialog.openConfirmDialog({
+            title: "Konfirmasi Hapus",
+            message: `Apakah Anda yakin ingin menghapus item "${formData.name}"? Stok terkait akan terpengaruh.`,
+            variant: "danger",
+            confirmText: "Hapus",
+            onConfirm: () => {
+                deleteItemMutation.mutate(itemId);
+            },
+        });
+    };
+
+    const calculateProfitPercentage = () => {
+        const { base_price, sell_price } = formData;
+        if (base_price > 0 && sell_price >= 0) {
+            return ((sell_price - base_price) / base_price) * 100;
+        }
+        return null;
+    };
+
+    const calculateSellPriceFromMargin = (margin: number) => {
+        if (formData.base_price > 0) {
+            const sellPrice = formData.base_price * (1 + margin / 100);
+            return Math.round(sellPrice);
+        }
+        return 0;
+    };
+
+    const formattedUpdateAt = formData.updated_at ? formatDateTime(formData.updated_at) : "-";
+
     return {
         formData,
         displayBasePrice,
@@ -514,6 +647,29 @@ export const useAddItemForm = (itemId?: string) => {
         setCategories,
         addUnitMutation,
         setUnits,
+        addTypeMutation,
         setTypes,
+        isAddCategoryModalOpen,
+        setIsAddCategoryModalOpen,
+        isAddTypeModalOpen,
+        setIsAddTypeModalOpen,
+        isAddUnitModalOpen,
+        setIsAddUnitModalOpen,
+        editingMargin,
+        setEditingMargin,
+        marginPercentage,
+        setMarginPercentage,
+        editingMinStock,
+        setEditingMinStock,
+        minStockValue,
+        setMinStockValue,
+        handleSaveCategory,
+        handleSaveType,
+        handleSaveUnit,
+        handleDeleteItem,
+        calculateProfitPercentage,
+        calculateSellPriceFromMargin,
+        handleCancel,
+        formattedUpdateAt,
     };
 };
