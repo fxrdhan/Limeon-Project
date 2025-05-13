@@ -96,7 +96,7 @@ export interface NavbarProps {
 }
 
 // src/components/layout/Sidebar.tsx
-import { JSX } from 'react';
+import { JSX, RefObject } from "react";
 
 export interface SidebarProps {
     collapsed: boolean;
@@ -121,7 +121,11 @@ export interface UnitConversionManagerProps {
 export interface AddCategoryModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (category: { id?: string; name: string; description: string }) => Promise<void>;
+    onSubmit: (category: {
+        id?: string;
+        name: string;
+        description: string;
+    }) => Promise<void>;
     initialData?: Category | null;
     onDelete?: (categoryId: string) => void;
     isLoading?: boolean;
@@ -152,7 +156,8 @@ export type ButtonVariant =
     | "text"
     | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps
+    extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: ButtonVariant;
     size?: ButtonSize;
     isLoading?: boolean;
@@ -174,7 +179,7 @@ export interface ConfirmDialogContextType {
     cancelText: string;
     onConfirm: () => void;
     onCancel: () => void;
-    variant: 'danger' | 'primary';
+    variant: "danger" | "primary";
     openConfirmDialog: (options: ConfirmDialogOptions) => void;
     closeConfirmDialog: () => void;
 }
@@ -185,7 +190,7 @@ export interface ConfirmDialogOptions {
     cancelText?: string;
     onConfirm: () => void;
     onCancel?: () => void;
-    variant?: 'danger' | 'primary';
+    variant?: "danger" | "primary";
 }
 
 // src/components/ui/FormAction.tsx
@@ -221,11 +226,12 @@ export interface ImageUploaderProps {
     disabled?: boolean;
     loadingIcon?: React.ReactNode;
     defaultIcon?: React.ReactNode;
-    shape?: 'rounded' | 'square' | 'full';
+    shape?: "rounded" | "square" | "full";
 }
 
 // src/components/ui/Input.tsx
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps
+    extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
     fullWidth?: boolean;
@@ -253,7 +259,7 @@ export interface PaginationProps {
 export interface FieldConfig {
     key: string;
     label: string;
-    type?: 'text' | 'email' | 'tel' | 'textarea';
+    type?: "text" | "email" | "tel" | "textarea";
     editable?: boolean;
 }
 export interface DetailEditModalProps {
@@ -262,14 +268,21 @@ export interface DetailEditModalProps {
     fields: FieldConfig[];
     isOpen: boolean;
     onClose: () => void;
-    onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
-    onImageSave?: (data: { supplierId?: string; imageBase64: string }) => Promise<void>;
+    onSave: (
+        updatedData: Record<string, string | number | boolean | null>
+    ) => Promise<void>;
+    onImageSave?: (data: {
+        supplierId?: string;
+        imageBase64: string;
+    }) => Promise<void>;
     onImageDelete?: (supplierId?: string) => Promise<void>;
-    onDeleteRequest?: (data: Record<string, string | number | boolean | null>) => void;
+    onDeleteRequest?: (
+        data: Record<string, string | number | boolean | null>
+    ) => void;
     deleteButtonLabel?: string;
     imageUrl?: string;
     imagePlaceholder?: string;
-    mode?: 'edit' | 'add';
+    mode?: "edit" | "add";
 }
 
 // src/components/ui/TableSearchBar.tsx
@@ -285,12 +298,14 @@ export interface TableProps {
     children: React.ReactNode;
     className?: string;
 }
-export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
+export interface TableCellProps
+    extends React.TdHTMLAttributes<HTMLTableCellElement> {
     colSpan?: number;
     rowSpan?: number;
-    align?: 'left' | 'center' | 'right';
+    align?: "left" | "center" | "right";
 }
-export interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+export interface TableRowProps
+    extends React.HTMLAttributes<HTMLTableRowElement> {
     children: React.ReactNode;
     className?: string;
 }
@@ -368,16 +383,23 @@ export interface UseUnitConversionReturn {
     setBasePrice: React.Dispatch<React.SetStateAction<number>>;
     sellPrice: number;
     setSellPrice: React.Dispatch<React.SetStateAction<number>>;
-    addUnitConversion: (unitConversion: Omit<UnitConversion, "id"> & { basePrice?: number, sellPrice?: number }) => void;
+    addUnitConversion: (
+        unitConversion: Omit<UnitConversion, "id"> & {
+            basePrice?: number;
+            sellPrice?: number;
+        }
+    ) => void;
     removeUnitConversion: (id: string) => void;
     unitConversionFormData: {
         unit: string;
         conversion: number;
     };
-    setUnitConversionFormData: React.Dispatch<React.SetStateAction<{
-        unit: string;
-        conversion: number;
-    }>>;
+    setUnitConversionFormData: React.Dispatch<
+        React.SetStateAction<{
+            unit: string;
+            conversion: number;
+        }>
+    >;
     recalculateBasePrices: () => void;
     skipNextRecalculation: () => void;
     availableUnits: UnitData[];
@@ -407,7 +429,13 @@ export interface RegularDashboardProps {
     };
     topMedicines: {
         labels: string[];
-        datasets: { label: string; data: number[]; backgroundColor: string[]; borderColor: string[]; borderWidth: number; }[];
+        datasets: {
+            label: string;
+            data: number[];
+            backgroundColor: string[];
+            borderColor: string[];
+            borderWidth: number;
+        }[];
     };
 }
 export interface TopSellingMedicine {
@@ -535,7 +563,7 @@ export interface ExtractedInvoiceData {
 }
 
 // src/store/authStore.ts
-import { Session } from '@supabase/supabase-js';
+import { Session } from "@supabase/supabase-js";
 
 export interface UserDetails {
     id: string;
@@ -553,4 +581,54 @@ export interface AuthState {
     logout: () => Promise<void>;
     updateProfilePhoto: (photoBase64: string) => Promise<void>;
     initialize: () => Promise<void>;
+}
+
+// Handler interfaces
+export interface HandleSelectChangeProps {
+    originalHandleSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+    units: Unit[];
+    unitConversionHook: UseUnitConversionReturn;
+}
+
+export interface HandleMarginChangeProps {
+    setMarginPercentage: (value: string) => void;
+    formData: FormData;
+    calculateSellPriceFromMargin: (margin: number) => number;
+    updateFormData: (data: Partial<FormData>) => void;
+}
+
+export interface HandleSellPriceChangeProps {
+    handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    calculateProfitPercentage: () => number | null;
+    setMarginPercentage: (value: string) => void;
+}
+
+export interface StartEditingMarginProps {
+    calculateProfitPercentage: () => number | null;
+    setMarginPercentage: (value: string) => void;
+    setEditingMargin: (value: boolean) => void;
+    marginInputRef: RefObject<HTMLInputElement | null>;
+}
+
+export interface StopEditingMarginProps {
+    setEditingMargin: (value: boolean) => void;
+    marginPercentage: string;
+    formData: FormData;
+    calculateSellPriceFromMargin: (margin: number) => number;
+    updateFormData: (data: Partial<FormData>) => void;
+}
+
+export interface StartEditingMinStockProps {
+    formData: FormData;
+    setMinStockValue: (value: string) => void;
+    setEditingMinStock: (value: boolean) => void;
+    minStockInputRef: RefObject<HTMLInputElement | null>;
+}
+
+export interface StopEditingMinStockProps {
+    setEditingMinStock: (value: boolean) => void;
+    minStockValue: string;
+    updateFormData: (data: Partial<FormData>) => void;
+    formData: FormData;
+    setMinStockValue: (value: string) => void;
 }

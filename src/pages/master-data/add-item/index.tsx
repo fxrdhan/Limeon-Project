@@ -1,5 +1,5 @@
 import { FaChevronDown } from "react-icons/fa";
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams } from "react-router-dom";
 import { useAddItemForm } from "@/hooks/add-item";
@@ -25,9 +25,9 @@ import {
     CardContent,
     CardFooter,
 } from "@/components/ui";
+import * as handlers from "./handlers";
 
 const AddItem = () => {
-    // const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const descriptionRef = useRef<HTMLDivElement>(null);
     const marginInputRef = useRef<HTMLInputElement>(null);
@@ -80,122 +80,62 @@ const AddItem = () => {
     const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
     const [showFefoTooltip, setShowFefoTooltip] = useState(false);
 
-    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        originalHandleSelectChange(e);
-        if (name === "unit_id" && value) {
-            const selectedUnit = units.find((unit) => unit.id === value);
-            if (selectedUnit) {
-                unitConversionHook.setBaseUnit(selectedUnit.name);
-            }
-        }
-    };
+    const handleSelectChange = handlers.handleSelectChange({
+        originalHandleSelectChange,
+        units,
+        unitConversionHook,
+    });
 
-    const handleDropdownChange = (name: string, value: string) => {
-        const syntheticEvent = {
-            target: { name, value },
-        } as React.ChangeEvent<HTMLSelectElement>;
+    const handleDropdownChange = handlers.handleDropdownChange(handleSelectChange);
 
-        handleSelectChange(syntheticEvent);
-    };
+    const handleMarginChange = handlers.handleMarginChange({
+        setMarginPercentage,
+        formData,
+        calculateSellPriceFromMargin,
+        updateFormData,
+    });
 
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isDirty()) {
-                e.preventDefault();
-                e.returnValue = "";
-                return "";
-            }
-        };
+    const handleSellPriceChange = handlers.handleSellPriceChange({
+        handleChange,
+        calculateProfitPercentage,
+        setMarginPercentage,
+    });
 
-        window.addEventListener("beforeunload", handleBeforeUnload);
+    const startEditingMargin = handlers.startEditingMargin({
+        calculateProfitPercentage,
+        setMarginPercentage,
+        setEditingMargin,
+        marginInputRef,
+    });
 
-        return () => {
-            window.removeEventListener("beforeunload", handleBeforeUnload);
-        };
-    }, [isDirty]);
+    const stopEditingMargin = handlers.stopEditingMargin({
+        setEditingMargin,
+        marginPercentage,
+        formData,
+        calculateSellPriceFromMargin,
+        updateFormData,
+    });
 
-    const handleMarginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setMarginPercentage(value);
+    const handleMarginKeyDown = handlers.handleMarginKeyDown(stopEditingMargin);
 
-        const margin = parseFloat(value);
-        if (!isNaN(margin) && formData.base_price > 0) {
-            const newSellPrice = calculateSellPriceFromMargin(margin);
-            updateFormData({ sell_price: newSellPrice });
-        }
-    };
+    const startEditingMinStock = handlers.startEditingMinStock({
+        formData,
+        setMinStockValue,
+        setEditingMinStock,
+        minStockInputRef,
+    });
 
-    const handleSellPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        handleChange(e);
-        setTimeout(() => {
-            const profit = calculateProfitPercentage();
-            if (profit !== null) {
-                setMarginPercentage(profit.toFixed(1));
-            }
-        }, 0);
-    };
+    const stopEditingMinStock = handlers.stopEditingMinStock({
+        setEditingMinStock,
+        minStockValue,
+        updateFormData,
+        formData,
+        setMinStockValue,
+    });
 
-    const startEditingMargin = () => {
-        const currentMargin = calculateProfitPercentage();
-        setMarginPercentage(
-            currentMargin !== null ? currentMargin.toFixed(1) : "0"
-        );
-        setEditingMargin(true);
-        setTimeout(() => {
-            if (marginInputRef.current) {
-                marginInputRef.current.focus();
-                marginInputRef.current.select();
-            }
-        }, 10);
-    };
+    const handleMinStockChange = handlers.handleMinStockChange(setMinStockValue);
 
-    const stopEditingMargin = () => {
-        setEditingMargin(false);
-
-        const margin = parseFloat(marginPercentage);
-        if (!isNaN(margin) && formData.base_price > 0) {
-            const newSellPrice = calculateSellPriceFromMargin(margin);
-            updateFormData({ sell_price: newSellPrice });
-        }
-    };
-
-    const handleMarginKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" || e.key === "Escape") {
-            stopEditingMargin();
-        }
-    };
-
-    const startEditingMinStock = () => {
-        setMinStockValue(String(formData.min_stock));
-        setEditingMinStock(true);
-        setTimeout(() => {
-            if (minStockInputRef.current) {
-                minStockInputRef.current.focus();
-                minStockInputRef.current.select();
-            }
-        }, 10);
-    };
-
-    const stopEditingMinStock = () => {
-        setEditingMinStock(false);
-        const stockValue = parseInt(minStockValue, 10);
-        if (!isNaN(stockValue) && stockValue >= 0) {
-            updateFormData({ min_stock: stockValue });
-        } else {
-            setMinStockValue(String(formData.min_stock));
-        }
-    };
-
-    const handleMinStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setMinStockValue(e.target.value);
-    };
-
-    const handleMinStockKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter" || e.key === "Escape") {
-            stopEditingMinStock();
-        }
-    };
+    const handleMinStockKeyDown = handlers.handleMinStockKeyDown(stopEditingMinStock);
 
     if (loading) {
         return (
