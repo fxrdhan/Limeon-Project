@@ -51,51 +51,57 @@ export const Pagination = ({
     return (
         <div
             className={classNames(
-                "flex justify-between items-center mt-4 gap-4",
+                "flex justify-between items-center mt-4 gap-4 select-none",
                 className
             )}
         >
-            <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden">
+            <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
                 <button
                     className={classNames(
-                        "px-3 py-1.5 rounded-full focus:outline-none transition-all duration-300 ease-in-out",
+                        "px-3 py-1.5 rounded-full focus:outline-none transition-all duration-300 ease-in-out select-none",
                         itemsPerPage === 10
                             ? "bg-blue-500 text-white font-medium shadow-sm transform scale-105"
                             : "hover:bg-blue-100 hover:text-blue-600"
                     )}
                     onClick={() => handleItemsPerPageClick(10)}
                 >
-                    {itemsPerPage === 10 ? "10 items" : "10"}
+                    <span className="select-none">
+                        {itemsPerPage === 10 ? "10 items" : "10"}
+                    </span>
                 </button>
                 <button
                     className={classNames(
-                        "px-3 py-1.5 rounded-full focus:outline-none transition-all duration-300 ease-in-out",
+                        "px-3 py-1.5 rounded-full focus:outline-none transition-all duration-300 ease-in-out select-none",
                         itemsPerPage === 20
                             ? "bg-blue-500 text-white font-medium shadow-sm transform scale-105"
                             : "hover:bg-blue-100 hover:text-blue-600"
                     )}
                     onClick={() => handleItemsPerPageClick(20)}
                 >
-                    {itemsPerPage === 20 ? "20 items" : "20"}
+                    <span className="select-none">
+                        {itemsPerPage === 20 ? "20 items" : "20"}
+                    </span>
                 </button>
                 <button
                     className={classNames(
-                        "px-3 py-1.5 rounded-full focus:outline-none transition-all duration-300 ease-in-out",
+                        "px-3 py-1.5 rounded-full focus:outline-none transition-all duration-300 ease-in-out select-none",
                         itemsPerPage === 40
                             ? "bg-blue-500 text-white font-medium shadow-sm transform scale-105"
                             : "hover:bg-blue-100 hover:text-blue-600"
                     )}
                     onClick={() => handleItemsPerPageClick(40)}
                 >
-                    {itemsPerPage === 40 ? "40 items" : "40"}
+                    <span className="select-none">
+                        {itemsPerPage === 40 ? "40 items" : "40"}
+                    </span>
                 </button>
             </div>
 
-            <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden">
+            <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
                 <div
                     onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
                     className={classNames(
-                        "p-2 rounded-full focus:outline-none transition-colors duration-150 cursor-pointer",
+                        "p-2 rounded-full focus:outline-none transition-colors duration-150 cursor-pointer select-none",
                         currentPage === 1
                             ? "opacity-50 cursor-not-allowed"
                             : "hover:bg-blue-100 hover:text-blue-600 transition-all duration-300 ease-in-out"
@@ -116,7 +122,7 @@ export const Pagination = ({
                     </svg>
                 </div>
 
-                <div className="flex items-center justify-center min-w-[2rem] h-8 rounded-full bg-blue-500 text-white font-medium shadow-sm px-3 mx-1 overflow-hidden">
+                <div className="flex items-center justify-center min-w-[2rem] h-8 rounded-full bg-blue-500 text-white font-medium shadow-sm px-3 mx-1 overflow-hidden select-none">
                     <AnimatePresence initial={false} custom={direction} mode="popLayout">
                         <motion.span
                             key={currentPage}
@@ -126,7 +132,7 @@ export const Pagination = ({
                             animate="center"
                             exit="exit"
                             transition={{ duration: 0.2 }}
-                            className="flex items-center justify-center"
+                            className="flex items-center justify-center select-none"
                         >
                             {currentPage}
                         </motion.span>
@@ -140,7 +146,7 @@ export const Pagination = ({
                         onPageChange(currentPage + 1)
                     }
                     className={classNames(
-                        "p-2 rounded-full focus:outline-none transition-colors duration-150 cursor-pointer",
+                        "p-2 rounded-full focus:outline-none transition-colors duration-150 cursor-pointer select-none",
                         currentPage === totalPages || totalPages === 0
                             ? "opacity-50 cursor-not-allowed"
                             : "hover:bg-blue-100 hover:text-blue-600 transition-all duration-300 ease-in-out"
