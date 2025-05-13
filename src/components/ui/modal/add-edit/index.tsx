@@ -1,11 +1,9 @@
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { createPortal } from 'react-dom';
-import { FaTimes } from 'react-icons/fa';
-import { useConfirmDialog } from '@/components/ui/dialog-box';
-import type { AddCategoryModalProps } from '@/types';
-import { Transition, TransitionChild } from '@headlessui/react';
-import React, { useState, useEffect, Fragment, useRef } from 'react';
+import { Input, Button, useConfirmDialog } from "@/components/ui";
+import { createPortal } from "react-dom";
+import { FaTimes } from "react-icons/fa";
+import type { AddCategoryModalProps } from "@/types";
+import { Transition, TransitionChild } from "@headlessui/react";
+import React, { useState, useEffect, Fragment, useRef } from "react";
 
 export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     isOpen,
@@ -15,11 +13,11 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     onDelete,
     isLoading = false,
     isDeleting = false,
-    entityName = "Kategori"
+    entityName = "Kategori",
 }) => {
     useConfirmDialog();
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isEditMode = Boolean(initialData);
 
@@ -27,10 +25,10 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
         if (isOpen) {
             if (initialData) {
                 setName(initialData.name);
-                setDescription(initialData.description || '');
+                setDescription(initialData.description || "");
             } else {
-                setName('');
-                setDescription('');
+                setName("");
+                setDescription("");
             }
         }
     }, [isOpen, initialData]);
@@ -38,7 +36,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
-            textarea.style.height = 'auto';
+            textarea.style.height = "auto";
             textarea.style.height = `${textarea.scrollHeight}px`;
         }
     }, [description]);
@@ -65,9 +63,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 
     return createPortal(
         <Transition show={isOpen} as={Fragment}>
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
-            >
+            <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
                 <TransitionChild
                     as={Fragment}
                     enter="transition-opacity duration-300"
@@ -77,9 +73,9 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div 
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm" 
-                        aria-hidden="true" 
+                    <div
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                        aria-hidden="true"
                         onClick={handleBackdropClick}
                     />
                 </TransitionChild>
@@ -95,16 +91,34 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                 >
                     <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
                         <div className="flex justify-between items-center p-4 border-b">
-                            <h2 className="text-xl font-semibold">{isEditMode ? `Edit ${entityName}` : `Tambah ${entityName} Baru`}</h2>
-                            <Button variant="text" onClick={onClose} className="text-gray-500 hover:text-gray-700 p-1">
+                            <h2 className="text-xl font-semibold">
+                                {isEditMode
+                                    ? `Edit ${entityName}`
+                                    : `Tambah ${entityName} Baru`}
+                            </h2>
+                            <Button
+                                variant="text"
+                                onClick={onClose}
+                                className="text-gray-500 hover:text-gray-700 p-1"
+                            >
                                 <FaTimes size={20} />
                             </Button>
                         </div>
                         <div className="p-6 space-y-4">
-                            <Input label={`Nama ${entityName}`} value={name} onChange={(e) => setName(e.target.value)} placeholder={`Masukkan nama ${entityName.toLowerCase()}`} required readOnly={isLoading || isDeleting} />
-                            
+                            <Input
+                                label={`Nama ${entityName}`}
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder={`Masukkan nama ${entityName.toLowerCase()}`}
+                                required
+                                readOnly={isLoading || isDeleting}
+                            />
+
                             <div className="space-y-1">
-                                <label htmlFor="description" className="block text-sm font-medium">
+                                <label
+                                    htmlFor="description"
+                                    className="block text-sm font-medium"
+                                >
                                     Deskripsi (Opsional)
                                 </label>
                                 <textarea
@@ -122,7 +136,13 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                         <div className="flex justify-between p-4 border-t">
                             <div>
                                 {isEditMode && onDelete ? (
-                                    <Button type="button" variant="danger" onClick={handleDelete} isLoading={isDeleting} disabled={isLoading || isDeleting}>
+                                    <Button
+                                        type="button"
+                                        variant="danger"
+                                        onClick={handleDelete}
+                                        isLoading={isDeleting}
+                                        disabled={isLoading || isDeleting}
+                                    >
                                         Hapus
                                     </Button>
                                 ) : (
@@ -132,7 +152,13 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                                 )}
                             </div>
                             <div>
-                                <Button type="button" variant="primary" onClick={handleSave} isLoading={isLoading} disabled={isLoading || !name.trim()}>
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    onClick={handleSave}
+                                    isLoading={isLoading}
+                                    disabled={isLoading || !name.trim()}
+                                >
                                     Simpan
                                 </Button>
                             </div>
