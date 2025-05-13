@@ -1,11 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { supabase } from "@/lib/supabase";
 import { FaChevronDown } from "react-icons/fa";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useAddItemForm } from "@/hooks/add-item";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import UnitConversionManager from "@/components/tools/unit-converter";
 import {
     FaArrowLeft,
@@ -20,7 +17,6 @@ import {
     Button,
     Dropdown,
     AddCategoryModal,
-    useConfirmDialog,
     FormSection,
     FormField,
     Card,
@@ -30,38 +26,9 @@ import {
     CardFooter,
 } from "@/components/ui";
 
-const formatDateTime = (isoString: string | null | undefined): string => {
-    if (!isoString) return "-";
-    try {
-        const date = new Date(isoString);
-        return date.toLocaleString("id-ID", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    } catch (e) {
-        return "Invalid Date";
-    }
-};
-
 const AddItem = () => {
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
-    const { openConfirmDialog } = useConfirmDialog();
-    const queryClient = useQueryClient();
-    const confirmDialog = useConfirmDialog();
-    const [editingMargin, setEditingMargin] = useState(false);
-    const [marginPercentage, setMarginPercentage] = useState<string>("0");
-    const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
-    const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
-    const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
-    const [showDescription, setShowDescription] = useState(false);
-    const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
-    const [editingMinStock, setEditingMinStock] = useState(false);
-    const [minStockValue, setMinStockValue] = useState<string>("0");
-    const [showFefoTooltip, setShowFefoTooltip] = useState(false);
     const descriptionRef = useRef<HTMLDivElement>(null);
     const marginInputRef = useRef<HTMLInputElement>(null);
     const minStockInputRef = useRef<HTMLInputElement>(null);
@@ -82,61 +49,36 @@ const AddItem = () => {
         updateFormData,
         unitConversionHook,
         isDirty,
+        isAddCategoryModalOpen,
+        setIsAddCategoryModalOpen,
+        isAddTypeModalOpen,
+        setIsAddTypeModalOpen,
+        isAddUnitModalOpen,
+        setIsAddUnitModalOpen,
+        handleSaveCategory,
+        handleSaveType,
+        handleSaveUnit,
+        editingMargin,
+        setEditingMargin,
+        marginPercentage,
+        setMarginPercentage,
+        editingMinStock,
+        setEditingMinStock,
+        minStockValue,
+        setMinStockValue,
+        handleDeleteItem,
+        calculateProfitPercentage,
+        calculateSellPriceFromMargin,
+        handleCancel,
+        formattedUpdateAt,
         addCategoryMutation,
-        setCategories,
-        setTypes,
         addUnitMutation,
-        setUnits,
+        addTypeMutation,
     } = useAddItemForm(id || undefined);
 
-    const deleteItemMutation = useMutation({
-        mutationFn: async (itemId: string) => {
-            const { error } = await supabase.from("items").delete().eq("id", itemId);
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ["items"],
-                refetchType: "all",
-            });
-            navigate("/master-data/items");
-        },
-        onError: (_error) => {
-            alert("Gagal menghapus item. Silakan coba lagi.");
-        },
-    });
-
-    const addTypeMutation = useMutation({
-        mutationFn: async (newType: { name: string; description: string }) => {
-            const { data, error } = await supabase
-                .from("item_types")
-                .insert(newType)
-                .select("id, name, description")
-                .single();
-            if (error) throw error;
-            return data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["types"] });
-        },
-        onError: (_error) => { },
-    });
-
-    const handleCancel = () => {
-        if (isDirty()) {
-            confirmDialog.openConfirmDialog({
-                title: "Konfirmasi Keluar",
-                message:
-                    "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
-                confirmText: "Tinggalkan",
-                cancelText: "Batal",
-                onConfirm: () => navigate("/master-data/items"),
-                variant: "danger",
-            });
-        } else {
-            navigate("/master-data/items");
-        }
-    };
+    const [showDescription, setShowDescription] = useState(false);
+    const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
+    const [showFefoTooltip, setShowFefoTooltip] = useState(false);
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -172,22 +114,6 @@ const AddItem = () => {
             window.removeEventListener("beforeunload", handleBeforeUnload);
         };
     }, [isDirty]);
-
-    const calculateProfitPercentage = () => {
-        const { base_price, sell_price } = formData;
-        if (base_price > 0 && sell_price >= 0) {
-            return ((sell_price - base_price) / base_price) * 100;
-        }
-        return null;
-    };
-
-    const calculateSellPriceFromMargin = (margin: number) => {
-        if (formData.base_price > 0) {
-            const sellPrice = formData.base_price * (1 + margin / 100);
-            return Math.round(sellPrice);
-        }
-        return 0;
-    };
 
     const handleMarginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -271,81 +197,6 @@ const AddItem = () => {
         }
     };
 
-    const handleDelete = () => {
-        if (!id) return;
-        openConfirmDialog({
-            title: "Konfirmasi Hapus",
-            message: `Apakah Anda yakin ingin menghapus item "${formData.name}"? Stok terkait akan terpengaruh.`,
-            variant: "danger",
-            confirmText: "Hapus",
-            onConfirm: () => {
-                deleteItemMutation.mutate(id);
-            },
-        });
-    };
-
-    const handleSaveCategory = async (categoryData: {
-        name: string;
-        description: string;
-    }) => {
-        try {
-            const newCategory = await addCategoryMutation.mutateAsync(categoryData);
-            const { data: updatedCategories } = await supabase
-                .from("item_categories")
-                .select("id, name")
-                .order("name");
-            if (updatedCategories) {
-                setCategories(updatedCategories);
-            }
-            if (newCategory?.id) {
-                updateFormData({ category_id: newCategory.id });
-            }
-            setIsAddCategoryModalOpen(false);
-        } catch (error) {
-            alert("Gagal menyimpan kategori baru.");
-        }
-    };
-
-    const handleSaveType = async (typeData: {
-        name: string;
-        description: string;
-    }) => {
-        try {
-            const newType = await addTypeMutation.mutateAsync(typeData);
-            const { data: updatedTypes } = await supabase
-                .from("item_types")
-                .select("id, name")
-                .order("name");
-            if (updatedTypes) {
-                setTypes(updatedTypes);
-            }
-            if (newType?.id) {
-                updateFormData({ type_id: newType.id });
-            }
-            setIsAddTypeModalOpen(false);
-        } catch (error) {
-            alert("Gagal menyimpan jenis item baru.");
-        }
-    };
-
-    const handleSaveUnit = async (unitData: {
-        name: string;
-        description: string;
-    }) => {
-        try {
-            const newUnit = await addUnitMutation.mutateAsync(unitData);
-            const { data: updatedUnits } = await supabase
-                .from("item_units")
-                .select("id, name")
-                .order("name");
-            if (updatedUnits) setUnits(updatedUnits);
-            if (newUnit?.id) updateFormData({ unit_id: newUnit.id });
-            setIsAddUnitModalOpen(false);
-        } catch (error) {
-            alert("Gagal menyimpan satuan baru.");
-        }
-    };
-
     if (loading) {
         return (
             <Card>
@@ -376,10 +227,10 @@ const AddItem = () => {
                         {isEditMode ? "Edit Data Item" : "Tambah Data Item Baru"}
                     </CardTitle>
 
-                    {isEditMode && formData.updated_at && (
+                    {isEditMode && formattedUpdateAt !== "-" && (
                         <span className="text-md text-gray-500 italic whitespace-nowrap flex items-center flex-shrink-0 ml-4">
                             <FaHistory className="mr-1" size={14} />{" "}
-                            {formatDateTime(formData.updated_at)}
+                            {formattedUpdateAt}
                         </span>
                     )}
                 </CardHeader>
@@ -770,9 +621,9 @@ const AddItem = () => {
                             <Button
                                 type="button"
                                 variant="danger"
-                                onClick={handleDelete}
-                                disabled={deleteItemMutation.isPending}
-                                isLoading={deleteItemMutation.isPending}
+                                onClick={handleDeleteItem}
+                                disabled={saving}
+                                isLoading={saving}
                             >
                                 <span className="flex items-center">
                                     <FaTrash className="mr-2" /> Hapus
