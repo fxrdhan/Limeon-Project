@@ -1,16 +1,28 @@
 import { FaPlus } from "react-icons/fa";
 import { useState, useEffect } from "react";
-import type { ItemType } from '@/types';
+import type { ItemType } from "@/types";
 import { supabase } from "@/lib/supabase";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loading } from "@/components/ui/loading";
-import { Pagination } from "@/components/ui/pagination";
-import { SearchBar } from "@/components/ui/search-bar";
+import {
+    Card,
+    Button,
+    Loading,
+    Pagination,
+    SearchBar,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    TableHeader,
+} from "@/components/ui";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
 import { useConfirmDialog } from "@/components/ui/dialog-box";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
+import {
+    useQuery,
+    useMutation,
+    useQueryClient,
+    keepPreviousData,
+} from "@tanstack/react-query";
 
 const TypeList = () => {
     const { openConfirmDialog } = useConfirmDialog();
@@ -18,7 +30,7 @@ const TypeList = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingType, setEditingType] = useState<ItemType | null>(null);
-    
+
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -33,7 +45,7 @@ const TypeList = () => {
         }
         return () => clearTimeout(timer);
     }, [editingType, isEditModalOpen]);
-    
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(search);
@@ -43,25 +55,29 @@ const TypeList = () => {
         return () => clearTimeout(timer);
     }, [search]);
 
-    const fetchTypes = async (page: number, searchTerm: string, limit: number) => {
+    const fetchTypes = async (
+        page: number,
+        searchTerm: string,
+        limit: number
+    ) => {
         try {
             const from = (page - 1) * limit;
             const to = from + limit - 1;
-            
+
             let query = supabase
                 .from("item_types")
-                .select("id, name, description", { count: 'exact' });
-                
+                .select("id, name, description", { count: "exact" });
+
             if (searchTerm) {
-                query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+                query = query.or(
+                    `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+                );
             }
-            
-            const { data, error, count } = await query
-                .order("name")
-                .range(from, to);
-                
+
+            const { data, error, count } = await query.order("name").range(from, to);
+
             if (error) throw error;
-            
+
             return { types: data || [], totalTypes: count || 0 };
         } catch (error) {
             console.error("Error fetching item types:", error);
@@ -70,7 +86,7 @@ const TypeList = () => {
     };
 
     const { data, isLoading, isError, error, isFetching } = useQuery({
-        queryKey: ['types', currentPage, debouncedSearch, itemsPerPage],
+        queryKey: ["types", currentPage, debouncedSearch, itemsPerPage],
         queryFn: () => fetchTypes(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
@@ -84,11 +100,14 @@ const TypeList = () => {
 
     const deleteTypeMutation = useMutation({
         mutationFn: async (typeId: string) => {
-            const { error } = await supabase.from("item_types").delete().eq("id", typeId);
+            const { error } = await supabase
+                .from("item_types")
+                .delete()
+                .eq("id", typeId);
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['types'] });
+            queryClient.invalidateQueries({ queryKey: ["types"] });
             console.log("Jenis item berhasil dihapus, cache diinvalidasi.");
         },
         onError: (error) => {
@@ -103,7 +122,7 @@ const TypeList = () => {
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['types'] });
+            queryClient.invalidateQueries({ queryKey: ["types"] });
             setIsAddModalOpen(false);
         },
         onError: (error) => {
@@ -112,7 +131,11 @@ const TypeList = () => {
     });
 
     const updateTypeMutation = useMutation({
-        mutationFn: async (updatedType: { id: string; name: string; description: string }) => {
+        mutationFn: async (updatedType: {
+            id: string;
+            name: string;
+            description: string;
+        }) => {
             const { id, ...updateData } = updatedType;
             const { error } = await supabase
                 .from("item_types")
@@ -121,7 +144,7 @@ const TypeList = () => {
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['types'] });
+            queryClient.invalidateQueries({ queryKey: ["types"] });
             setIsEditModalOpen(false);
             setEditingType(null);
         },
@@ -135,48 +158,64 @@ const TypeList = () => {
         setIsEditModalOpen(true);
     };
 
-    const handleModalSubmit = async (typeData: { id?: string; name: string; description: string }) => {
+    const handleModalSubmit = async (typeData: {
+        id?: string;
+        name: string;
+        description: string;
+    }) => {
         if (typeData.id) {
-            await updateTypeMutation.mutateAsync(typeData as { id: string; name: string; description: string });
+            await updateTypeMutation.mutateAsync(
+                typeData as { id: string; name: string; description: string }
+            );
         } else {
             await addTypeMutation.mutateAsync(typeData);
         }
     };
-    
+
     const handlePageChange = (newPage: number) => {
         setCurrentPage(newPage);
     };
 
-    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const handleItemsPerPageChange = (
+        e: React.ChangeEvent<HTMLSelectElement>
+    ) => {
         setItemsPerPage(Number(e.target.value));
         setCurrentPage(1);
     };
 
     return (
         <>
-            <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+            <Card
+                className={
+                    isFetching ? "opacity-75 transition-opacity duration-300" : ""
+                }
+            >
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Jenis Item</h1>
-                    <Button 
+                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">
+                        Daftar Jenis Item
+                    </h1>
+                    <Button
                         variant="primary"
-                        className="flex items-center" 
+                        className="flex items-center"
                         onClick={() => setIsAddModalOpen(true)}
                     >
                         <FaPlus className="mr-2" />
                         Tambah Jenis Item Baru
                     </Button>
                 </div>
-                
+
                 <SearchBar
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Cari nama atau deskripsi jenis item..."
                 />
-                
+
                 {isLoading ? (
                     <Loading />
                 ) : isError ? (
-                    <div className="text-center p-6 text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>
+                    <div className="text-center p-6 text-red-500">
+                        Error: {queryError?.message || "Gagal memuat data"}
+                    </div>
                 ) : (
                     <>
                         <Table>
@@ -189,13 +228,18 @@ const TypeList = () => {
                             <TableBody>
                                 {types.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center text-gray-500">
-                                            {debouncedSearch ? `Tidak ada jenis item dengan nama "${debouncedSearch}"` : "Tidak ada data jenis item yang ditemukan"}
+                                        <TableCell
+                                            colSpan={2}
+                                            className="text-center text-gray-500"
+                                        >
+                                            {debouncedSearch
+                                                ? `Tidak ada jenis item dengan nama "${debouncedSearch}"`
+                                                : "Tidak ada data jenis item yang ditemukan"}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     types.map((type) => (
-                                        <TableRow 
+                                        <TableRow
                                             key={type.id}
                                             onClick={() => handleEdit(type)}
                                             className="cursor-pointer hover:bg-blue-50"
@@ -230,21 +274,25 @@ const TypeList = () => {
 
             <AddCategoryModal
                 isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)} 
+                onClose={() => setIsEditModalOpen(false)}
                 onSubmit={handleModalSubmit}
                 initialData={editingType || undefined}
-                onDelete={editingType ? (typeId) => {
-                    openConfirmDialog({
-                        title: "Konfirmasi Hapus",
-                        message: `Apakah Anda yakin ingin menghapus jenis item "${editingType.name}"?`,
-                        variant: "danger",
-                        confirmText: "Hapus",
-                        onConfirm: () => {
-                            deleteTypeMutation.mutate(typeId);
-                            setIsEditModalOpen(false);
+                onDelete={
+                    editingType
+                        ? (typeId) => {
+                            openConfirmDialog({
+                                title: "Konfirmasi Hapus",
+                                message: `Apakah Anda yakin ingin menghapus jenis item "${editingType.name}"?`,
+                                variant: "danger",
+                                confirmText: "Hapus",
+                                onConfirm: () => {
+                                    deleteTypeMutation.mutate(typeId);
+                                    setIsEditModalOpen(false);
+                                },
+                            });
                         }
-                    });
-                } : undefined}
+                        : undefined
+                }
                 isLoading={updateTypeMutation.isPending}
                 isDeleting={deleteTypeMutation.isPending}
                 entityName="Jenis Item"
