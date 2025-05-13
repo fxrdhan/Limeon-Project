@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import { FaSave, FaTimes } from 'react-icons/fa';
 import type { FormActionProps } from '@/types';
 
