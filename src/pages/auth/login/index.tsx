@@ -1,13 +1,12 @@
 // src/pages/auth/Login.tsx
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useAuthStore } from '@/store/authStore';
+import { useState } from "react";
+import { Button, Input } from "@/components/ui";
+import { useAuthStore } from "@/store/authStore";
 
 const Login = () => {
     const { login, error, loading } = useAuthStore();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -17,17 +16,19 @@ const Login = () => {
     return (
         <div className="min-h-screen flex items-center focus:ring-0 justify-center bg-gray-100">
             <div className="bg-white p-8 rounded-lg shadow-md focus:ring-0 w-full max-w-md">
-                <h1 className="text-2xl font-bold text-center text-primary mb-6">Login</h1>
-                
+                <h1 className="text-2xl font-bold text-center text-primary mb-6">
+                    Login
+                </h1>
+
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                         {error}
                     </div>
                 )}
-                
+
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
-                        <Input 
+                        <Input
                             label="Email"
                             type="email"
                             value={email}
@@ -35,8 +36,8 @@ const Login = () => {
                             required
                         />
                     </div>
-                
-                    <Input 
+
+                    <Input
                         label="Password"
                         type="password"
                         className="mb-6"
@@ -44,13 +45,8 @@ const Login = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
-                
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        fullWidth
-                        isLoading={loading}
-                    >
+
+                    <Button type="submit" variant="primary" fullWidth isLoading={loading}>
                         Login
                     </Button>
                 </form>
