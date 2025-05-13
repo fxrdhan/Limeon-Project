@@ -1,16 +1,28 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Loading } from "@/components/ui/loading";
-import { Pagination } from "@/components/ui/pagination";
-import { SearchBar } from "@/components/ui/search-bar";
-import { useConfirmDialog } from "@/components/ui/dialog-box";
+import {
+    Card,
+    Badge,
+    Button,
+    Loading,
+    Pagination,
+    SearchBar,
+    useConfirmDialog,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    TableHeader,
+} from "@/components/ui";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
+import {
+    useQuery,
+    useMutation,
+    useQueryClient,
+    keepPreviousData,
+} from "@tanstack/react-query";
 
 interface Purchase {
     id: string;
@@ -41,11 +53,13 @@ const PurchaseList = () => {
         return () => clearTimeout(timer);
     }, [search]);
 
-    const fetchPurchases = async (page: number, searchTerm: string, limit: number) => {
+    const fetchPurchases = async (
+        page: number,
+        searchTerm: string,
+        limit: number
+    ) => {
         try {
-            let query = supabase
-                .from("purchases")
-                .select(`
+            let query = supabase.from("purchases").select(`
                     id,
                     invoice_number,
                     date,
@@ -55,14 +69,14 @@ const PurchaseList = () => {
                     supplier_id,
                     supplier:suppliers(name)
                 `);
-                
+
             let countQuery = supabase
                 .from("purchases")
-                .select('id', { count: 'exact' });
+                .select("id", { count: "exact" });
 
             if (searchTerm) {
-                query = query.ilike('invoice_number', `%${searchTerm}%`);
-                countQuery = countQuery.ilike('invoice_number', `%${searchTerm}%`);
+                query = query.ilike("invoice_number", `%${searchTerm}%`);
+                countQuery = countQuery.ilike("invoice_number", `%${searchTerm}%`);
             }
 
             const { count, error: countError } = await countQuery;
@@ -72,15 +86,18 @@ const PurchaseList = () => {
             const to = from + limit - 1;
 
             const { data, error } = await query
-                .order('date', { ascending: false })
+                .order("date", { ascending: false })
                 .range(from, to);
 
             if (error) throw error;
 
-            const transformedData = data?.map(item => ({
-                ...item,
-                supplier: Array.isArray(item.supplier) ? item.supplier[0] : item.supplier
-            })) || [];
+            const transformedData =
+                data?.map((item) => ({
+                    ...item,
+                    supplier: Array.isArray(item.supplier)
+                        ? item.supplier[0]
+                        : item.supplier,
+                })) || [];
             return { purchases: transformedData, totalItems: count || 0 };
         } catch (error) {
             console.error("Error fetching purchases:", error);
@@ -89,7 +106,7 @@ const PurchaseList = () => {
     };
 
     const { data, isLoading, isFetching } = useQuery({
-        queryKey: ['purchases', currentPage, debouncedSearch, itemsPerPage],
+        queryKey: ["purchases", currentPage, debouncedSearch, itemsPerPage],
         queryFn: () => fetchPurchases(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
@@ -110,9 +127,9 @@ const PurchaseList = () => {
 
             for (const item of purchaseItems || []) {
                 const { data: itemData } = await supabase
-                    .from('items')
-                    .select('stock, base_unit, unit_conversions')
-                    .eq('id', item.item_id)
+                    .from("items")
+                    .select("stock, base_unit, unit_conversions")
+                    .eq("id", item.item_id)
                     .single();
 
                 if (itemData) {
@@ -120,29 +137,33 @@ const PurchaseList = () => {
 
                     if (item.unit !== itemData.base_unit) {
                         const unitConversion = itemData.unit_conversions?.find(
-                            (uc: { unit_name: string; conversion_rate: number }) => uc.unit_name === item.unit
+                            (uc: { unit_name: string; conversion_rate: number }) =>
+                                uc.unit_name === item.unit
                         );
 
                         if (unitConversion) {
-                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
+                            quantityInBaseUnit =
+                                item.quantity / unitConversion.conversion_rate;
                         }
                     }
 
-                    const newStock = Math.max(0, (itemData.stock || 0) - quantityInBaseUnit);
+                    const newStock = Math.max(
+                        0,
+                        (itemData.stock || 0) - quantityInBaseUnit
+                    );
                     await supabase
-                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
+                        .from("items")
+                        .update({ stock: newStock })
+                        .eq("id", item.item_id);
                 }
             }
 
-            const { error } = await supabase
-                .from("purchases")
-                .delete()
-                .eq("id", id);
+            const { error } = await supabase.from("purchases").delete().eq("id", id);
 
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['purchases'] });
+            queryClient.invalidateQueries({ queryKey: ["purchases"] });
         },
         onError: (error) => {
             console.error("Error deleting purchase:", error);
@@ -154,7 +175,9 @@ const PurchaseList = () => {
         setCurrentPage(newPage);
     };
 
-    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const handleItemsPerPageChange = (
+        e: React.ChangeEvent<HTMLSelectElement>
+    ) => {
         setItemsPerPage(Number(e.target.value));
         setCurrentPage(1);
     };
@@ -163,35 +186,35 @@ const PurchaseList = () => {
         openConfirmDialog({
             title: "Konfirmasi Hapus",
             message: `Apakah Anda yakin ingin menghapus pembelian dengan nomor faktur "${purchase.invoice_number}"? Tindakan ini juga akan mengembalikan stok item yang terkait.`,
-            variant: 'danger',
-            confirmText: 'Hapus',
+            variant: "danger",
+            confirmText: "Hapus",
             onConfirm: () => {
                 deletePurchaseMutation.mutate(purchase.id);
-            }
+            },
         });
     };
 
     const getStatusBadgeVariant = (status: string) => {
         switch (status) {
-            case 'paid':
-                return 'success';
-            case 'partial':
-                return 'warning';
-            case 'unpaid':
-                return 'danger';
+            case "paid":
+                return "success";
+            case "partial":
+                return "warning";
+            case "unpaid":
+                return "danger";
             default:
-                return 'secondary';
+                return "secondary";
         }
     };
 
     const getStatusLabel = (status: string) => {
         switch (status) {
-            case 'paid':
-                return 'Lunas';
-            case 'partial':
-                return 'Sebagian';
-            case 'unpaid':
-                return 'Belum Bayar';
+            case "paid":
+                return "Lunas";
+            case "partial":
+                return "Sebagian";
+            case "unpaid":
+                return "Belum Bayar";
             default:
                 return status;
         }
@@ -199,12 +222,12 @@ const PurchaseList = () => {
 
     const getPaymentMethodLabel = (method: string) => {
         switch (method) {
-            case 'cash':
-                return 'Tunai';
-            case 'transfer':
-                return 'Transfer';
-            case 'credit':
-                return 'Kredit';
+            case "cash":
+                return "Tunai";
+            case "transfer":
+                return "Transfer";
+            case "credit":
+                return "Kredit";
             default:
                 return method;
         }
@@ -213,9 +236,13 @@ const PurchaseList = () => {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+        <Card
+            className={isFetching ? "opacity-75 transition-opacity duration-300" : ""}
+        >
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Pembelian</h1>
+                <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">
+                    Daftar Pembelian
+                </h1>
                 <div className="flex space-x-2">
                     <Link to="/purchases/upload-invoice">
                         <Button variant="primary">
@@ -239,7 +266,7 @@ const PurchaseList = () => {
             {isLoading ? (
                 <Loading message="Memuat data pembelian..." />
             ) : (
-                <> 
+                <>
                     <Table>
                         <TableHead>
                             <TableRow>
@@ -247,19 +274,22 @@ const PurchaseList = () => {
                                 <TableHeader>Tanggal</TableHeader>
                                 <TableHeader>Supplier</TableHeader>
                                 <TableHeader className="text-right">Total</TableHeader>
-                                <TableHeader className="text-center">Status Pembayaran</TableHeader>
-                                <TableHeader className="text-center">Metode Pembayaran</TableHeader>
+                                <TableHeader className="text-center">
+                                    Status Pembayaran
+                                </TableHeader>
+                                <TableHeader className="text-center">
+                                    Metode Pembayaran
+                                </TableHeader>
                                 <TableHeader className="text-center">Aksi</TableHeader>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {purchases.length === 0 ? (
                                 <TableRow>
-                                    <TableCell
-                                        colSpan={7}
-                                        className="text-center text-gray-600"
-                                    >
-                                        {debouncedSearch ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"` : "Tidak ada data pembelian yang ditemukan"}
+                                    <TableCell colSpan={7} className="text-center text-gray-600">
+                                        {debouncedSearch
+                                            ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"`
+                                            : "Tidak ada data pembelian yang ditemukan"}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -267,21 +297,25 @@ const PurchaseList = () => {
                                     <TableRow key={purchase.id}>
                                         <TableCell>{purchase.invoice_number}</TableCell>
                                         <TableCell>
-                                            {new Date(purchase.date).toLocaleDateString('id-ID', {
-                                                day: '2-digit',
-                                                month: 'short',
-                                                year: 'numeric'
+                                            {new Date(purchase.date).toLocaleDateString("id-ID", {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
                                             })}
                                         </TableCell>
-                                        <TableCell>{purchase.supplier?.name || 'Tidak ada supplier'}</TableCell>
+                                        <TableCell>
+                                            {purchase.supplier?.name || "Tidak ada supplier"}
+                                        </TableCell>
                                         <TableCell className="text-right">
-                                            {purchase.total.toLocaleString('id-ID', {
-                                                style: 'currency',
-                                                currency: 'IDR'
+                                            {purchase.total.toLocaleString("id-ID", {
+                                                style: "currency",
+                                                currency: "IDR",
                                             })}
                                         </TableCell>
                                         <TableCell className="text-center">
-                                            <Badge variant={getStatusBadgeVariant(purchase.payment_status)}>
+                                            <Badge
+                                                variant={getStatusBadgeVariant(purchase.payment_status)}
+                                            >
                                                 {getStatusLabel(purchase.payment_status)}
                                             </Badge>
                                         </TableCell>
@@ -304,10 +338,17 @@ const PurchaseList = () => {
                                                     variant="danger"
                                                     size="sm"
                                                     onClick={() => handleDelete(purchase)}
-                                                    disabled={deletePurchaseMutation.isPending && deletePurchaseMutation.variables === purchase.id}
+                                                    disabled={
+                                                        deletePurchaseMutation.isPending &&
+                                                        deletePurchaseMutation.variables === purchase.id
+                                                    }
                                                 >
-                                                    {deletePurchaseMutation.isPending && deletePurchaseMutation.variables === purchase.id ?
-                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span> : <FaTrash /> }
+                                                    {deletePurchaseMutation.isPending &&
+                                                        deletePurchaseMutation.variables === purchase.id ? (
+                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
+                                                    ) : (
+                                                        <FaTrash />
+                                                    )}
                                                 </Button>
                                             </div>
                                         </TableCell>
