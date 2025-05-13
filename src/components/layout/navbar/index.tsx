@@ -67,7 +67,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 10 }}
                             transition={{ duration: 0.2 }}
-                            className="text-xl font-semibold text-gray-800 transition-opacity duration-300 ease-in-out"
+                            className="text-xl font-semibold text-gray-800"
                         >
                             {sidebarCollapsed ? 'PharmaSys' : 'Pharmacy System App'}
                         </motion.h1>
