@@ -1,7 +1,7 @@
-import React from 'react';
-import { FaPlus } from 'react-icons/fa';
-import { Button } from '@/components/ui/button';
-import type { PurchaseItem, ItemSearchBarProps } from '@/types';
+import React from "react";
+import { FaPlus } from "react-icons/fa";
+import { Button } from "@/components/ui";
+import type { PurchaseItem, ItemSearchBarProps } from "@/types";
 
 const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     searchItem,
@@ -11,11 +11,11 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     filteredItems,
     selectedItem,
     setSelectedItem,
-    onAddItem
+    onAddItem,
 }) => {
     const addItem = () => {
         if (!selectedItem) return;
-        
+
         const newItem: PurchaseItem = {
             id: Date.now().toString(),
             item_id: selectedItem.id,
@@ -24,20 +24,20 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
             price: selectedItem.base_price,
             discount: 0,
             subtotal: selectedItem.base_price,
-            unit: selectedItem.base_unit || 'Unit',
+            unit: selectedItem.base_unit || "Unit",
             unit_conversion_rate: 1,
             vat_percentage: 0,
             batch_no: null,
             expiry_date: null,
             item: {
-                name: '',
-                code: ''
-            }
+                name: "",
+                code: "",
+            },
         };
-        
+
         onAddItem(newItem);
         setSelectedItem(null);
-        setSearchItem('');
+        setSearchItem("");
     };
 
     return (
@@ -55,13 +55,15 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                         }}
                         onFocus={() => setShowItemDropdown(true)}
                     />
-                    
+
                     {showItemDropdown && searchItem && (
                         <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
                             {filteredItems.length === 0 ? (
-                                <div className="p-3 text-gray-500">Tidak ada item yang ditemukan</div>
+                                <div className="p-3 text-gray-500">
+                                    Tidak ada item yang ditemukan
+                                </div>
                             ) : (
-                                filteredItems.map(item => (
+                                filteredItems.map((item) => (
                                     <div
                                         key={item.id}
                                         className="p-3 hover:bg-gray-100 cursor-pointer"
@@ -71,9 +73,16 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                                             setShowItemDropdown(false);
                                         }}
                                     >
-                                        <div><span className="font-semibold">{item.code}</span> - {item.name}</div>
+                                        <div>
+                                            <span className="font-semibold">{item.code}</span> -{" "}
+                                            {item.name}
+                                        </div>
                                         <div className="text-sm text-gray-500">
-                                            Harga Dasar: {item.base_price.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                                            Harga Dasar:{" "}
+                                            {item.base_price.toLocaleString("id-ID", {
+                                                style: "currency",
+                                                currency: "IDR",
+                                            })}
                                         </div>
                                     </div>
                                 ))
