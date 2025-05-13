@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { DropdownProps } from '@/types';
+import { useEffect, useState, useRef, useCallback } from "react";
+import { DropdownProps } from "@/types";
 
 export const Dropdown = ({
     options,
@@ -10,14 +10,14 @@ export const Dropdown = ({
     required = false,
     withRadio = false,
     onAddNew,
-    searchList = true
+    searchList = true,
 }: DropdownProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [, setIsAnimating] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState("");
     const [filteredOptions, setFilteredOptions] = useState(options);
-    const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
+    const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
     const [isScrollable, setIsScrollable] = useState(false);
     const [reachedBottom, setReachedBottom] = useState(false);
     const [scrolledFromTop, setScrolledFromTop] = useState(false);
@@ -28,7 +28,7 @@ export const Dropdown = ({
     const optionsContainerRef = useRef<HTMLDivElement>(null);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const selectedOption = options.find(option => option.id === value);
+    const selectedOption = options.find((option) => option.id === value);
 
     useEffect(() => {
         return () => {
@@ -44,7 +44,7 @@ export const Dropdown = ({
         const viewportHeight = window.innerHeight;
         const spaceBelow = viewportHeight - buttonRect.bottom;
         const shouldDropUp = spaceBelow < dropdownHeight + 10;
-        setDropDirection(shouldDropUp ? 'up' : 'down');
+        setDropDirection(shouldDropUp ? "up" : "down");
     }, []);
 
     const closeDropdown = useCallback(() => {
@@ -54,7 +54,7 @@ export const Dropdown = ({
             setIsOpen(false);
             setIsClosing(false);
             setIsAnimating(false);
-            setSearchTerm('');
+            setSearchTerm("");
         }, 100);
     }, [setIsAnimating]);
 
@@ -64,12 +64,12 @@ export const Dropdown = ({
     };
 
     const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && filteredOptions.length > 0) {
+        if (e.key === "Enter" && filteredOptions.length > 0) {
             e.preventDefault();
             handleSelect(filteredOptions[0].id);
         }
     };
-    
+
     const focusSearchInput = useCallback(() => {
         if (isOpen && searchInputRef.current) {
             setTimeout(() => {
@@ -81,10 +81,10 @@ export const Dropdown = ({
     useEffect(() => {
         if (!searchList) {
             setFilteredOptions(options);
-        } else if (searchTerm.trim() === '') {
+        } else if (searchTerm.trim() === "") {
             setFilteredOptions(options);
         } else {
-            const filtered = options.filter(option =>
+            const filtered = options.filter((option) =>
                 option.name.toLowerCase().includes(searchTerm.toLowerCase())
             );
             setFilteredOptions(filtered);
@@ -95,12 +95,12 @@ export const Dropdown = ({
         if (isOpen) {
             calculateDropdownPosition();
             focusSearchInput();
-            window.addEventListener('scroll', calculateDropdownPosition);
-            window.addEventListener('resize', calculateDropdownPosition);
+            window.addEventListener("scroll", calculateDropdownPosition);
+            window.addEventListener("resize", calculateDropdownPosition);
         }
         return () => {
-            window.removeEventListener('scroll', calculateDropdownPosition);
-            window.removeEventListener('resize', calculateDropdownPosition);
+            window.removeEventListener("scroll", calculateDropdownPosition);
+            window.removeEventListener("resize", calculateDropdownPosition);
         };
     }, [isOpen, focusSearchInput, calculateDropdownPosition]);
 
@@ -112,7 +112,7 @@ export const Dropdown = ({
 
         hoverTimeoutRef.current = setTimeout(() => {
             setIsOpen(true);
-            setIsClosing(false); 
+            setIsClosing(false);
             setTimeout(() => calculateDropdownPosition(), 5);
             focusSearchInput();
         }, 100);
@@ -131,16 +131,18 @@ export const Dropdown = ({
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if ((isOpen || isClosing) && 
-                dropdownRef.current && 
-                !dropdownRef.current.contains(event.target as Node)) {
+            if (
+                (isOpen || isClosing) &&
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
                 closeDropdown();
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener("mousedown", handleClickOutside);
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [isOpen, isClosing, closeDropdown]);
 
@@ -161,17 +163,18 @@ export const Dropdown = ({
 
     const checkScroll = useCallback(() => {
         if (!optionsContainerRef.current) return;
-        
+
         const container = optionsContainerRef.current;
         const isScrollable = container.scrollHeight > container.clientHeight;
         setIsScrollable(isScrollable);
-        
-        const isBottom = Math.abs(
-            (container.scrollHeight - container.scrollTop) - container.clientHeight
-        ) < 2;
-        
+
+        const isBottom =
+            Math.abs(
+                container.scrollHeight - container.scrollTop - container.clientHeight
+            ) < 2;
+
         const isScrolledFromTop = container.scrollTop > 2;
-        
+
         setReachedBottom(isBottom);
         setScrolledFromTop(isScrolledFromTop);
     }, []);
@@ -185,16 +188,16 @@ export const Dropdown = ({
     useEffect(() => {
         const optionsContainer = optionsContainerRef.current;
         if (optionsContainer && isOpen) {
-            optionsContainer.addEventListener('scroll', checkScroll);
+            optionsContainer.addEventListener("scroll", checkScroll);
             return () => {
-                optionsContainer.removeEventListener('scroll', checkScroll);
+                optionsContainer.removeEventListener("scroll", checkScroll);
             };
         }
     }, [isOpen, checkScroll]);
 
     return (
-        <div 
-            className="relative inline-flex w-full" 
+        <div
+            className="relative inline-flex w-full"
             ref={dropdownRef}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -211,7 +214,8 @@ export const Dropdown = ({
                     >
                         {selectedOption ? selectedOption.name : placeholder}
                         <svg
-                            className={`transition-transform duration-200 ${(isOpen || isClosing) ? 'rotate-180' : ''} w-4 h-4 ml-2`}
+                            className={`transition-transform duration-200 ${isOpen || isClosing ? "rotate-180" : ""
+                                } w-4 h-4 ml-2`}
                             xmlns="http://www.w3.org/2000/svg"
                             width="24"
                             height="24"
@@ -228,17 +232,15 @@ export const Dropdown = ({
 
                     <div
                         ref={dropdownMenuRef}
-                        className={`absolute left-0 ${
-                            dropDirection === 'down' 
-                                ? 'top-full mt-2 shadow-lg origin-top' 
-                                : 'bottom-full mb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),0_-2px_4px_-1px_rgba(0,0,0,0.06)] origin-bottom'
-                        } w-full z-20 bg-white rounded-lg border border-gray-200 transition-all duration-300 ease-out transform ${
-                            isOpen && !isClosing
-                                ? 'opacity-100 scale-y-100 translate-y-0' 
+                        className={`absolute left-0 ${dropDirection === "down"
+                                ? "top-full mt-2 shadow-lg origin-top"
+                                : "bottom-full mb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),0_-2px_4px_-1px_rgba(0,0,0,0.06)] origin-bottom"
+                            } w-full z-20 bg-white rounded-lg border border-gray-200 transition-all duration-300 ease-out transform ${isOpen && !isClosing
+                                ? "opacity-100 scale-y-100 translate-y-0"
                                 : isClosing
-                                    ? 'opacity-0 scale-y-0 translate-y-0' 
-                                    : 'opacity-0 scale-y-0 translate-y-2 pointer-events-none'
-                        }`}
+                                    ? "opacity-0 scale-y-0 translate-y-0"
+                                    : "opacity-0 scale-y-0 translate-y-2 pointer-events-none"
+                            }`}
                         role="menu"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -248,7 +250,18 @@ export const Dropdown = ({
                                     <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
                                         <div className="relative flex items-center">
                                             <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    className="text-gray-500"
+                                                >
                                                     <circle cx="11" cy="11" r="8"></circle>
                                                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                                 </svg>
@@ -279,8 +292,8 @@ export const Dropdown = ({
                                     </div>
                                 )}
                                 <div className="relative">
-                                    <div 
-                                        ref={optionsContainerRef} 
+                                    <div
+                                        ref={optionsContainerRef}
                                         className="p-1 max-h-60 overflow-y-auto"
                                     >
                                         {filteredOptions.length > 0 ? (
@@ -293,7 +306,12 @@ export const Dropdown = ({
                                                 >
                                                     {withRadio && (
                                                         <div className="mr-2 flex items-center">
-                                                            <div className={`w-4 h-4 rounded-full border ${option.id === value ? 'border-blue-500' : 'border-gray-300'} flex items-center justify-center`}>
+                                                            <div
+                                                                className={`w-4 h-4 rounded-full border ${option.id === value
+                                                                        ? "border-blue-500"
+                                                                        : "border-gray-300"
+                                                                    } flex items-center justify-center`}
+                                                            >
                                                                 {option.id === value && (
                                                                     <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                                                                 )}
@@ -304,14 +322,16 @@ export const Dropdown = ({
                                                 </button>
                                             ))
                                         ) : (
-                                            <div className="py-2 px-3 text-sm text-gray-500">Tidak ada pilihan yang sesuai</div>
+                                            <div className="py-2 px-3 text-sm text-gray-500">
+                                                Tidak ada pilihan yang sesuai
+                                            </div>
                                         )}
                                     </div>
                                     {isScrollable && scrolledFromTop && (
-                                        <div className="absolute top-0 left-0 w-full h-8 pointer-events-none bg-gradient-to-b from-black/20 to-transparent"></div>
+                                        <div className="absolute top-0 left-0 w-full h-8 pointer-events-none"></div>
                                     )}
                                     {isScrollable && !reachedBottom && (
-                                        <div className="absolute bottom-0 left-0 w-full h-8 pointer-events-none bg-gradient-to-t from-black/20 to-transparent rounded-b-lg"></div>
+                                        <div className="absolute bottom-0 left-0 w-full h-8 pointer-events-none"></div>
                                     )}
                                 </div>
                             </div>
