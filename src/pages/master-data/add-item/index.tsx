@@ -1,28 +1,45 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { supabase } from "@/lib/supabase";
 import { FaChevronDown } from "react-icons/fa";
-import { Input } from "@/components/ui/input";
 import { useEffect, useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dropdown } from "@/components/ui/dropdown";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAddItemForm } from "@/hooks/add-item";
-import { AddCategoryModal } from "@/components/ui/modal/add-edit";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useConfirmDialog } from "@/components/ui/dialog-box";
-import { FormSection, FormField } from "@/components/ui/form";
 import UnitConversionManager from "@/components/tools/unit-converter";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { FaArrowLeft, FaSave, FaTrash, FaHistory, FaPen, FaQuestionCircle } from 'react-icons/fa';
+import {
+    FaArrowLeft,
+    FaSave,
+    FaTrash,
+    FaHistory,
+    FaPen,
+    FaQuestionCircle,
+} from "react-icons/fa";
+import {
+    Input,
+    Button,
+    Dropdown,
+    AddCategoryModal,
+    useConfirmDialog,
+    FormSection,
+    FormField,
+    Card,
+    CardHeader,
+    CardTitle,
+    CardContent,
+    CardFooter,
+} from "@/components/ui";
 
 const formatDateTime = (isoString: string | null | undefined): string => {
     if (!isoString) return "-";
     try {
         const date = new Date(isoString);
-        return date.toLocaleString('id-ID', {
-            day: '2-digit', month: 'long', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
+        return date.toLocaleString("id-ID", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
         });
     } catch (e) {
         return "Invalid Date";
@@ -36,23 +53,40 @@ const AddItem = () => {
     const queryClient = useQueryClient();
     const confirmDialog = useConfirmDialog();
     const [editingMargin, setEditingMargin] = useState(false);
-    const [marginPercentage, setMarginPercentage] = useState<string>('0');
+    const [marginPercentage, setMarginPercentage] = useState<string>("0");
     const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
     const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
     const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
     const [showDescription, setShowDescription] = useState(false);
     const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
     const [editingMinStock, setEditingMinStock] = useState(false);
-    const [minStockValue, setMinStockValue] = useState<string>('0');
+    const [minStockValue, setMinStockValue] = useState<string>("0");
     const [showFefoTooltip, setShowFefoTooltip] = useState(false);
     const descriptionRef = useRef<HTMLDivElement>(null);
     const marginInputRef = useRef<HTMLInputElement>(null);
     const minStockInputRef = useRef<HTMLInputElement>(null);
 
     const {
-        formData, displayBasePrice, displaySellPrice, categories, types, units,
-        saving, loading, isEditMode, handleChange, handleSelectChange: originalHandleSelectChange, handleSubmit, updateFormData,
-        unitConversionHook, isDirty, addCategoryMutation, setCategories, setTypes, addUnitMutation, setUnits
+        formData,
+        displayBasePrice,
+        displaySellPrice,
+        categories,
+        types,
+        units,
+        saving,
+        loading,
+        isEditMode,
+        handleChange,
+        handleSelectChange: originalHandleSelectChange,
+        handleSubmit,
+        updateFormData,
+        unitConversionHook,
+        isDirty,
+        addCategoryMutation,
+        setCategories,
+        setTypes,
+        addUnitMutation,
+        setUnits,
     } = useAddItemForm(id || undefined);
 
     const deleteItemMutation = useMutation({
@@ -62,8 +96,8 @@ const AddItem = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ['items'],
-                refetchType: 'all'
+                queryKey: ["items"],
+                refetchType: "all",
             });
             navigate("/master-data/items");
         },
@@ -77,13 +111,13 @@ const AddItem = () => {
             const { data, error } = await supabase
                 .from("item_types")
                 .insert(newType)
-                .select('id, name, description')
+                .select("id, name, description")
                 .single();
             if (error) throw error;
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['types'] });
+            queryClient.invalidateQueries({ queryKey: ["types"] });
         },
         onError: (_error) => { },
     });
@@ -92,11 +126,12 @@ const AddItem = () => {
         if (isDirty()) {
             confirmDialog.openConfirmDialog({
                 title: "Konfirmasi Keluar",
-                message: "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
+                message:
+                    "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
                 confirmText: "Tinggalkan",
                 cancelText: "Batal",
                 onConfirm: () => navigate("/master-data/items"),
-                variant: 'danger'
+                variant: "danger",
             });
         } else {
             navigate("/master-data/items");
@@ -106,8 +141,8 @@ const AddItem = () => {
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target;
         originalHandleSelectChange(e);
-        if (name === 'unit_id' && value) {
-            const selectedUnit = units.find(unit => unit.id === value);
+        if (name === "unit_id" && value) {
+            const selectedUnit = units.find((unit) => unit.id === value);
             if (selectedUnit) {
                 unitConversionHook.setBaseUnit(selectedUnit.name);
             }
@@ -126,15 +161,15 @@ const AddItem = () => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
             if (isDirty()) {
                 e.preventDefault();
-                e.returnValue = '';
-                return '';
+                e.returnValue = "";
+                return "";
             }
         };
 
-        window.addEventListener('beforeunload', handleBeforeUnload);
+        window.addEventListener("beforeunload", handleBeforeUnload);
 
         return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
+            window.removeEventListener("beforeunload", handleBeforeUnload);
         };
     }, [isDirty]);
 
@@ -177,7 +212,9 @@ const AddItem = () => {
 
     const startEditingMargin = () => {
         const currentMargin = calculateProfitPercentage();
-        setMarginPercentage(currentMargin !== null ? currentMargin.toFixed(1) : '0');
+        setMarginPercentage(
+            currentMargin !== null ? currentMargin.toFixed(1) : "0"
+        );
         setEditingMargin(true);
         setTimeout(() => {
             if (marginInputRef.current) {
@@ -198,7 +235,7 @@ const AddItem = () => {
     };
 
     const handleMarginKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === 'Escape') {
+        if (e.key === "Enter" || e.key === "Escape") {
             stopEditingMargin();
         }
     };
@@ -229,7 +266,7 @@ const AddItem = () => {
     };
 
     const handleMinStockKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === 'Escape') {
+        if (e.key === "Enter" || e.key === "Escape") {
             stopEditingMinStock();
         }
     };
@@ -239,15 +276,18 @@ const AddItem = () => {
         openConfirmDialog({
             title: "Konfirmasi Hapus",
             message: `Apakah Anda yakin ingin menghapus item "${formData.name}"? Stok terkait akan terpengaruh.`,
-            variant: 'danger',
+            variant: "danger",
             confirmText: "Hapus",
             onConfirm: () => {
                 deleteItemMutation.mutate(id);
-            }
+            },
         });
     };
 
-    const handleSaveCategory = async (categoryData: { name: string; description: string }) => {
+    const handleSaveCategory = async (categoryData: {
+        name: string;
+        description: string;
+    }) => {
         try {
             const newCategory = await addCategoryMutation.mutateAsync(categoryData);
             const { data: updatedCategories } = await supabase
@@ -266,7 +306,10 @@ const AddItem = () => {
         }
     };
 
-    const handleSaveType = async (typeData: { name: string; description: string }) => {
+    const handleSaveType = async (typeData: {
+        name: string;
+        description: string;
+    }) => {
         try {
             const newType = await addTypeMutation.mutateAsync(typeData);
             const { data: updatedTypes } = await supabase
@@ -285,7 +328,10 @@ const AddItem = () => {
         }
     };
 
-    const handleSaveUnit = async (unitData: { name: string; description: string }) => {
+    const handleSaveUnit = async (unitData: {
+        name: string;
+        description: string;
+    }) => {
         try {
             const newUnit = await addUnitMutation.mutateAsync(unitData);
             const { data: updatedUnits } = await supabase
@@ -326,11 +372,14 @@ const AddItem = () => {
                         <span className="ml-2">Back</span>
                     </Button>
 
-                    <CardTitle className="flex-grow text-center">{isEditMode ? 'Edit Data Item' : 'Tambah Data Item Baru'}</CardTitle>
+                    <CardTitle className="flex-grow text-center">
+                        {isEditMode ? "Edit Data Item" : "Tambah Data Item Baru"}
+                    </CardTitle>
 
                     {isEditMode && formData.updated_at && (
                         <span className="text-md text-gray-500 italic whitespace-nowrap flex items-center flex-shrink-0 ml-4">
-                            <FaHistory className="mr-1" size={14} /> {formatDateTime(formData.updated_at)}
+                            <FaHistory className="mr-1" size={14} />{" "}
+                            {formatDateTime(formData.updated_at)}
                         </span>
                     )}
                 </CardHeader>
@@ -378,12 +427,15 @@ const AddItem = () => {
                                                     if (value === "obat") {
                                                         updateFormData({ is_medicine: true });
                                                     } else {
-                                                        updateFormData({ is_medicine: false, has_expiry_date: false });
+                                                        updateFormData({
+                                                            is_medicine: false,
+                                                            has_expiry_date: false,
+                                                        });
                                                     }
                                                 }}
                                                 options={[
                                                     { id: "obat", name: "Obat" },
-                                                    { id: "non-obat", name: "Non-Obat" }
+                                                    { id: "non-obat", name: "Non-Obat" },
                                                 ]}
                                                 withRadio
                                                 searchList={false}
@@ -396,7 +448,9 @@ const AddItem = () => {
                                             <Dropdown
                                                 name="category_id"
                                                 value={formData.category_id}
-                                                onChange={(value) => handleDropdownChange("category_id", value)}
+                                                onChange={(value) =>
+                                                    handleDropdownChange("category_id", value)
+                                                }
                                                 options={categories}
                                                 placeholder="-- Pilih Kategori --"
                                                 required
@@ -411,7 +465,9 @@ const AddItem = () => {
                                             <Dropdown
                                                 name="type_id"
                                                 value={formData.type_id}
-                                                onChange={(value) => handleDropdownChange("type_id", value)}
+                                                onChange={(value) =>
+                                                    handleDropdownChange("type_id", value)
+                                                }
                                                 options={types}
                                                 placeholder="-- Pilih Jenis --"
                                                 required
@@ -423,7 +479,9 @@ const AddItem = () => {
                                             <Dropdown
                                                 name="unit_id"
                                                 value={formData.unit_id}
-                                                onChange={(value) => handleDropdownChange("unit_id", value)}
+                                                onChange={(value) =>
+                                                    handleDropdownChange("unit_id", value)
+                                                }
                                                 options={units}
                                                 placeholder="-- Pilih Satuan --"
                                                 required
@@ -449,9 +507,14 @@ const AddItem = () => {
                                             className="flex items-center text-blue-500 transition-colors"
                                             onClick={() => setShowDescription(!showDescription)}
                                         >
-                                            <span className="mr-2 text-md text-blue-500 hover:text-blue-600">Keterangan</span>
+                                            <span className="mr-2 text-md text-blue-500 hover:text-blue-600">
+                                                Keterangan
+                                            </span>
                                             <motion.div
-                                                animate={{ rotate: (showDescription || isDescriptionHovered) ? 180 : 0 }}
+                                                animate={{
+                                                    rotate:
+                                                        showDescription || isDescriptionHovered ? 180 : 0,
+                                                }}
                                                 transition={{ duration: 0.3 }}
                                                 className="transform"
                                             >
@@ -469,7 +532,10 @@ const AddItem = () => {
                                                     onMouseEnter={() => setIsDescriptionHovered(true)}
                                                     onMouseLeave={() => setIsDescriptionHovered(false)}
                                                 >
-                                                    <div className="mt-2 min-h-[100px] max-h-[200px]" ref={descriptionRef}>
+                                                    <div
+                                                        className="mt-2 min-h-[100px] max-h-[200px]"
+                                                        ref={descriptionRef}
+                                                    >
                                                         <textarea
                                                             name="description"
                                                             value={formData.description}
@@ -484,7 +550,6 @@ const AddItem = () => {
                                             )}
                                         </AnimatePresence>
                                     </div>
-
                                 </FormSection>
                             </div>
 
@@ -500,14 +565,17 @@ const AddItem = () => {
                                                 }}
                                                 options={[
                                                     { id: "true", name: "Masih dijual" },
-                                                    { id: "false", name: "Tidak Dijual" }
+                                                    { id: "false", name: "Tidak Dijual" },
                                                 ]}
                                                 withRadio
                                                 searchList={false}
                                             />
                                         </FormField>
 
-                                        <FormField label="Stok Minimal:" className="flex items-center">
+                                        <FormField
+                                            label="Stok Minimal:"
+                                            className="flex items-center"
+                                        >
                                             <div className="ml-2 flex-grow flex items-center">
                                                 {editingMinStock ? (
                                                     <input
@@ -530,7 +598,10 @@ const AddItem = () => {
                                                         <FaPen
                                                             className="ml-2 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors"
                                                             size={14}
-                                                            onClick={(e) => { e.stopPropagation(); startEditingMinStock(); }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                startEditingMinStock();
+                                                            }}
                                                             title="Edit stok minimal"
                                                         />
                                                     </div>
@@ -538,7 +609,13 @@ const AddItem = () => {
                                             </div>
                                         </FormField>
 
-                                        <div className={formData.is_medicine ? "" : "opacity-50 pointer-events-none"}>
+                                        <div
+                                            className={
+                                                formData.is_medicine
+                                                    ? ""
+                                                    : "opacity-50 pointer-events-none"
+                                            }
+                                        >
                                             <label className="inline-flex items-center">
                                                 <input
                                                     type="checkbox"
@@ -547,11 +624,12 @@ const AddItem = () => {
                                                     disabled={!formData.is_medicine}
                                                     onChange={handleChange}
                                                 />
-                                                <span className="ml-2">Memiliki Tanggal Kadaluarsa</span>
+                                                <span className="ml-2">
+                                                    Memiliki Tanggal Kadaluarsa
+                                                </span>
                                             </label>
                                             <div className="mt-1 text-sm text-gray-500 flex items-center">
-                                                Akan digunakan metode FEFO
-                                                (First Expired First Out)
+                                                Akan digunakan metode FEFO (First Expired First Out)
                                                 <div
                                                     className="relative ml-1 inline-block"
                                                     onMouseEnter={() => setShowFefoTooltip(true)}
@@ -563,7 +641,8 @@ const AddItem = () => {
                                                     />
                                                     {showFefoTooltip && (
                                                         <div className="absolute bottom-full right-0 mb-2 w-max max-w-xs p-2 bg-white text-gray-700 text-xs rounded-md shadow-lg z-10 border border-gray-200">
-                                                            Barang dengan tanggal kadaluarsa terdekat akan dikeluarkan lebih dulu saat penjualan.
+                                                            Barang dengan tanggal kadaluarsa terdekat akan
+                                                            dikeluarkan lebih dulu saat penjualan.
                                                         </div>
                                                     )}
                                                 </div>
@@ -625,20 +704,34 @@ const AddItem = () => {
                                                                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                                                 step="0.1"
                                                             />
-                                                            <span className="ml-4 text-lg font-medium">%</span>
+                                                            <span className="ml-4 text-lg font-medium">
+                                                                %
+                                                            </span>
                                                         </div>
                                                     ) : (
                                                         <div className="flex items-center w-full">
                                                             <div
-                                                                className={`w-full py-2 cursor-pointer font-semibold flex items-center ${calculateProfitPercentage() !== null ? calculateProfitPercentage()! >= 0 ? 'text-green-600' : 'text-red-600' : 'text-gray-500'}`}
+                                                                className={`w-full py-2 cursor-pointer font-semibold flex items-center ${calculateProfitPercentage() !== null
+                                                                        ? calculateProfitPercentage()! >= 0
+                                                                            ? "text-green-600"
+                                                                            : "text-red-600"
+                                                                        : "text-gray-500"
+                                                                    }`}
                                                                 onClick={startEditingMargin}
                                                                 title="Klik untuk mengubah margin"
                                                             >
-                                                                {calculateProfitPercentage() !== null ? `${calculateProfitPercentage()!.toFixed(1)}%` : '-'}
+                                                                {calculateProfitPercentage() !== null
+                                                                    ? `${calculateProfitPercentage()!.toFixed(
+                                                                        1
+                                                                    )}%`
+                                                                    : "-"}
                                                                 <FaPen
                                                                     className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors"
                                                                     size={14}
-                                                                    onClick={(e) => { e.stopPropagation(); startEditingMargin(); }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        startEditingMargin();
+                                                                    }}
                                                                     title="Edit margin"
                                                                 />
                                                             </div>
@@ -665,7 +758,9 @@ const AddItem = () => {
                             </div>
 
                             <div className="w-full md:w-3/4">
-                                <UnitConversionManager unitConversionHook={unitConversionHook} />
+                                <UnitConversionManager
+                                    unitConversionHook={unitConversionHook}
+                                />
                             </div>
                         </div>
                     </CardContent>
@@ -684,11 +779,18 @@ const AddItem = () => {
                                 </span>
                             </Button>
                         ) : (
-                            <Button type="button" variant="outline" onClick={handleCancel}> Batal </Button>
+                            <Button type="button" variant="outline" onClick={handleCancel}>
+                                {" "}
+                                Batal{" "}
+                            </Button>
                         )}
-                        <Button type="submit" disabled={saving || !isDirty()} isLoading={saving}>
+                        <Button
+                            type="submit"
+                            disabled={saving || !isDirty()}
+                            isLoading={saving}
+                        >
                             <span className="flex items-center">
-                                <FaSave className="mr-2" /> {isEditMode ? 'Update' : 'Simpan'}
+                                <FaSave className="mr-2" /> {isEditMode ? "Update" : "Simpan"}
                             </span>
                         </Button>
                     </CardFooter>
