@@ -1,44 +1,56 @@
-import { Button } from '@/components/ui/button';
-import { createPortal } from 'react-dom';
-import { Transition, TransitionChild } from '@headlessui/react';
-import type { ConfirmDialogContextType, ConfirmDialogOptions } from '@/types';
-import React, { createContext, useState, useContext, useCallback, Fragment } from 'react';
+import { Button } from "@/components/ui";
+import { createPortal } from "react-dom";
+import { Transition, TransitionChild } from "@headlessui/react";
+import type { ConfirmDialogContextType, ConfirmDialogOptions } from "@/types";
+import React, {
+    createContext,
+    useState,
+    useContext,
+    useCallback,
+    Fragment,
+} from "react";
 
 const initialState: ConfirmDialogContextType = {
     isOpen: false,
-    title: '',
-    message: '',
-    confirmText: 'Ya',
-    cancelText: 'Batal',
+    title: "",
+    message: "",
+    confirmText: "Ya",
+    cancelText: "Batal",
     onConfirm: () => { },
     onCancel: () => { },
-    variant: 'primary',
+    variant: "primary",
     openConfirmDialog: () => { },
-    closeConfirmDialog: () => { }
+    closeConfirmDialog: () => { },
 };
 
-const ConfirmDialogContext = createContext<ConfirmDialogContextType>(initialState);
+const ConfirmDialogContext =
+    createContext<ConfirmDialogContextType>(initialState);
 
-export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [dialogState, setDialogState] = useState<Omit<ConfirmDialogContextType, 'openConfirmDialog' | 'closeConfirmDialog'>>(initialState);
+export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
+    children,
+}) => {
+    const [dialogState, setDialogState] =
+        useState<
+            Omit<ConfirmDialogContextType, "openConfirmDialog" | "closeConfirmDialog">
+        >(initialState);
 
     const openConfirmDialog = useCallback((options: ConfirmDialogOptions) => {
         setDialogState({
             isOpen: true,
             title: options.title,
             message: options.message,
-            confirmText: options.confirmText || 'Ya',
-            cancelText: options.cancelText || 'Batal',
+            confirmText: options.confirmText || "Ya",
+            cancelText: options.cancelText || "Batal",
             onConfirm: options.onConfirm,
             onCancel: options.onCancel || (() => { }),
-            variant: options.variant || 'primary'
+            variant: options.variant || "primary",
         });
     }, []);
 
     const closeConfirmDialog = useCallback(() => {
-        setDialogState(state => ({
+        setDialogState((state) => ({
             ...state,
-            isOpen: false
+            isOpen: false,
         }));
     }, []);
 
@@ -47,7 +59,7 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
             value={{
                 ...dialogState,
                 openConfirmDialog,
-                closeConfirmDialog
+                closeConfirmDialog,
             }}
         >
             {children}
@@ -60,7 +72,9 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useConfirmDialog = () => {
     const context = useContext(ConfirmDialogContext);
     if (!context) {
-        throw new Error('useConfirmDialog must be used within a ConfirmDialogProvider');
+        throw new Error(
+            "useConfirmDialog must be used within a ConfirmDialogProvider"
+        );
     }
     return context;
 };
@@ -75,7 +89,7 @@ const ConfirmDialogComponent: React.FC = () => {
         onConfirm,
         onCancel,
         variant,
-        closeConfirmDialog
+        closeConfirmDialog,
     } = useContext(ConfirmDialogContext);
 
     const handleConfirm = () => {
@@ -114,28 +128,18 @@ const ConfirmDialogComponent: React.FC = () => {
                     leaveFrom="opacity-100 scale-100"
                     leaveTo="opacity-0 scale-95"
                 >
-                    <div
-                        className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
-                    >
+                    <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
                         <div className="text-lg font-semibold mb-2">{title}</div>
                         <div className="text-gray-600 mb-6">{message}</div>
 
                         <div className="flex justify-between">
                             <div>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleCancel}
-                                >
+                                <Button type="button" variant="outline" onClick={handleCancel}>
                                     {cancelText}
                                 </Button>
                             </div>
                             <div>
-                                <Button
-                                    type="button"
-                                    variant={variant}
-                                    onClick={handleConfirm}
-                                >
+                                <Button type="button" variant={variant} onClick={handleConfirm}>
                                     {confirmText}
                                 </Button>
                             </div>
