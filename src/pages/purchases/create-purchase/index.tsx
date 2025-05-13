@@ -4,12 +4,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaTrash, FaChevronDown } from 'react-icons/fa';
 import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
 
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { FormAction } from '@/components/ui/form-action';
-import { FormSection, FormField } from '@/components/ui/form';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '@/components/ui/table';
+import {
+    Input,
+    Button,
+    FormAction,
+    FormSection,
+    FormField,
+    Card,
+    CardHeader,
+    CardTitle,
+    CardContent,
+    CardFooter,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    TableHeader
+} from '@/components/ui';
 import ItemSearchBar from '@/pages/purchases/item-search';
 
 import { usePurchaseForm, useItemSelection } from '@/hooks';
@@ -80,14 +92,14 @@ const CreatePurchase: React.FC = () => {
 
     const stopEditingVatPercentage = () => {
         setEditingVatPercentage(false);
-        
+
         const vatPercentage = parseFloat(vatPercentageValue);
         if (!isNaN(vatPercentage)) {
-            const fakeEvent = { 
-                target: { 
-                    name: 'vat_percentage', 
-                    value: Math.min(vatPercentage, 100).toString() 
-                } 
+            const fakeEvent = {
+                target: {
+                    name: 'vat_percentage',
+                    value: Math.min(vatPercentage, 100).toString()
+                }
             } as React.ChangeEvent<HTMLInputElement>;
             handleChange(fakeEvent);
         }
@@ -170,7 +182,7 @@ const CreatePurchase: React.FC = () => {
                                     minDate={formData.date ? new Date(formData.date) : undefined}
                                 />
                             </FormField>
-                            
+
                             <FormField label="Status Pembayaran">
                                 <select
                                     name="payment_status"
@@ -199,7 +211,7 @@ const CreatePurchase: React.FC = () => {
                         </div>
 
                         <div className="mt-4">
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setShowNotes(!showNotes)}
                                 className="flex items-center text-gray-700 hover:text-blue-600 transition-colors"
@@ -213,10 +225,10 @@ const CreatePurchase: React.FC = () => {
                                     <FaChevronDown size={14} />
                                 </motion.div>
                             </button>
-                            
+
                             <AnimatePresence>
                                 {showNotes && (
-                                    <motion.div 
+                                    <motion.div
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: 'auto', opacity: 1 }}
                                         exit={{ height: 0, opacity: 0 }}
