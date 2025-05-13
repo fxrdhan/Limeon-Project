@@ -1,6 +1,5 @@
-import { Button } from '@/components/ui/button';
+import { Button, ImageUploader } from '@/components/ui';
 import { createPortal } from 'react-dom';
-import { ImageUploader } from '@/components/ui/image-uploader';
 import { Transition, TransitionChild, Dialog } from '@headlessui/react';
 import React, { Fragment, useRef, useState, useEffect } from 'react';
 import type { DetailEditModalProps } from '@/types';
