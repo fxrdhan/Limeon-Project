@@ -1,17 +1,27 @@
-import { useState } from 'react';
-import { FaPlus } from 'react-icons/fa';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Loading } from '@/components/ui/loading';
-import type { Supplier, FieldConfig } from '@/types';
-import { Card, CardHeader } from '@/components/ui/card';
-import DetailEditModal from '@/components/ui/modal/supplier';
-import { useConfirmDialog } from '@/components/ui/dialog-box';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from '@/components/ui/table';
+import { useState } from "react";
+import { FaPlus } from "react-icons/fa";
+import { supabase } from "@/lib/supabase";
+import {
+    Button,
+    Loading,
+    Card,
+    CardHeader,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    TableHeader,
+} from "@/components/ui";
+import type { Supplier, FieldConfig } from "@/types";
+import DetailEditModal from "@/components/ui/modal/supplier";
+import { useConfirmDialog } from "@/components/ui/dialog-box";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const SupplierList = () => {
-    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
+        null
+    );
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newSupplierImage, setNewSupplierImage] = useState<string | null>(null);
@@ -20,16 +30,21 @@ const SupplierList = () => {
 
     const fetchSuppliers = async () => {
         const { data, error } = await supabase
-            .from('suppliers')
-            .select('id, name, address, phone, email, contact_person, image_url')
-            .order('name');
+            .from("suppliers")
+            .select("id, name, address, phone, email, contact_person, image_url")
+            .order("name");
 
         if (error) throw error;
         return data || [];
     };
 
-    const { data: suppliers, isLoading, isError, error } = useQuery<Supplier[]>({
-        queryKey: ['suppliers'],
+    const {
+        data: suppliers,
+        isLoading,
+        isError,
+        error,
+    } = useQuery<Supplier[]>({
+        queryKey: ["suppliers"],
         queryFn: fetchSuppliers,
         staleTime: 30 * 1000,
         refetchOnMount: true,
@@ -41,9 +56,9 @@ const SupplierList = () => {
         if (!selectedSupplier) return;
 
         const { error } = await supabase
-            .from('suppliers')
+            .from("suppliers")
             .update(updatedData)
-            .eq('id', selectedSupplier.id);
+            .eq("id", selectedSupplier.id);
 
         if (error) throw error;
     };
@@ -51,11 +66,11 @@ const SupplierList = () => {
     const createSupplier = async (newSupplier: Partial<Supplier>) => {
         const dataToInsert = {
             ...newSupplier,
-            image_url: newSupplierImage
+            image_url: newSupplierImage,
         };
 
         const { data, error } = await supabase
-            .from('suppliers')
+            .from("suppliers")
             .insert([dataToInsert])
             .select();
 
@@ -66,9 +81,11 @@ const SupplierList = () => {
     const updateSupplierMutation = useMutation<void, Error, Partial<Supplier>>({
         mutationFn: updateSupplier,
         onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+            queryClient.invalidateQueries({ queryKey: ["suppliers"] });
             if (selectedSupplier) {
-                setSelectedSupplier(prev => prev ? { ...prev, ...variables } : null);
+                setSelectedSupplier((prev) =>
+                    prev ? { ...prev, ...variables } : null
+                );
             }
         },
         onError: (error) => {
@@ -77,10 +94,14 @@ const SupplierList = () => {
         },
     });
 
-    const createSupplierMutation = useMutation<Supplier, Error, Partial<Supplier>>({
+    const createSupplierMutation = useMutation<
+        Supplier,
+        Error,
+        Partial<Supplier>
+    >({
         mutationFn: createSupplier,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+            queryClient.invalidateQueries({ queryKey: ["suppliers"] });
             setIsAddModalOpen(false);
             setNewSupplierImage(null);
         },
@@ -92,11 +113,14 @@ const SupplierList = () => {
 
     const deleteSupplierMutation = useMutation({
         mutationFn: async (supplierId: string) => {
-            const { error } = await supabase.from('suppliers').delete().eq('id', supplierId);
+            const { error } = await supabase
+                .from("suppliers")
+                .delete()
+                .eq("id", supplierId);
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+            queryClient.invalidateQueries({ queryKey: ["suppliers"] });
             console.log("Supplier berhasil dihapus, cache diinvalidasi.");
         },
         onError: (error) => {
@@ -105,17 +129,32 @@ const SupplierList = () => {
         },
     });
 
-    const updateSupplierImageMutation = useMutation<void, Error, { supplierId: string; imageBase64: string }>({
-        mutationFn: async ({ supplierId, imageBase64 }: { supplierId: string, imageBase64: string }) => {
+    const updateSupplierImageMutation = useMutation<
+        void,
+        Error,
+        { supplierId: string; imageBase64: string }
+    >({
+        mutationFn: async ({
+            supplierId,
+            imageBase64,
+        }: {
+            supplierId: string;
+            imageBase64: string;
+        }) => {
             const { error } = await supabase
-                .from('suppliers')
-                .update({ image_url: imageBase64, updated_at: new Date().toISOString() })
-                .eq('id', supplierId);
+                .from("suppliers")
+                .update({
+                    image_url: imageBase64,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("id", supplierId);
             if (error) throw error;
         },
         onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-            setSelectedSupplier(prev => prev ? { ...prev, image_url: variables.imageBase64 } : null);
+            queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+            setSelectedSupplier((prev) =>
+                prev ? { ...prev, image_url: variables.imageBase64 } : null
+            );
         },
         onError: (error) => {
             console.error("Error updating supplier image:", error);
@@ -126,14 +165,16 @@ const SupplierList = () => {
     const deleteSupplierImageMutation = useMutation<void, Error, string>({
         mutationFn: async (supplierId: string) => {
             const { error } = await supabase
-                .from('suppliers')
+                .from("suppliers")
                 .update({ image_url: null, updated_at: new Date().toISOString() })
-                .eq('id', supplierId);
+                .eq("id", supplierId);
             if (error) throw error;
         },
         onSuccess: (_data, supplierId) => {
-            queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-            setSelectedSupplier(prev => prev ? { ...prev, image_url: null } : null);
+            queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+            setSelectedSupplier((prev) =>
+                prev ? { ...prev, image_url: null } : null
+            );
             console.log(`Image for supplier ${supplierId} deleted.`);
         },
         onError: (error) => {
@@ -164,9 +205,9 @@ const SupplierList = () => {
         openConfirmDialog({
             title: "Konfirmasi Hapus",
             message: `Apakah Anda yakin ingin menghapus supplier "${supplier.name}"? Tindakan ini tidak dapat diurungkan.`,
-            variant: 'danger',
+            variant: "danger",
             confirmText: "Hapus",
-            onConfirm: () => deleteSupplierMutation.mutate(supplier.id)
+            onConfirm: () => deleteSupplierMutation.mutate(supplier.id),
         });
     };
 
@@ -175,38 +216,47 @@ const SupplierList = () => {
     };
 
     const supplierFields: FieldConfig[] = [
-        { key: 'name', label: 'Nama Supplier', type: 'text', editable: true },
-        { key: 'address', label: 'Alamat', type: 'textarea', editable: true },
-        { key: 'phone', label: 'Telepon', type: 'tel', editable: true },
-        { key: 'email', label: 'Email', type: 'email', editable: true },
-        { key: 'contact_person', label: 'Kontak Person', type: 'text', editable: true }
+        { key: "name", label: "Nama Supplier", type: "text", editable: true },
+        { key: "address", label: "Alamat", type: "textarea", editable: true },
+        { key: "phone", label: "Telepon", type: "tel", editable: true },
+        { key: "email", label: "Email", type: "email", editable: true },
+        {
+            key: "contact_person",
+            label: "Kontak Person",
+            type: "text",
+            editable: true,
+        },
     ];
 
-    const transformSupplierForModal = (supplier: Supplier | null): Record<string, string | number | boolean | null> => {
+    const transformSupplierForModal = (
+        supplier: Supplier | null
+    ): Record<string, string | number | boolean | null> => {
         if (!supplier) return {};
         return {
             id: supplier.id,
             name: supplier.name,
-            address: supplier.address ?? '',
-            phone: supplier.phone ?? '',
-            email: supplier.email ?? '',
-            contact_person: supplier.contact_person ?? '',
+            address: supplier.address ?? "",
+            phone: supplier.phone ?? "",
+            email: supplier.email ?? "",
+            contact_person: supplier.contact_person ?? "",
         };
     };
 
     const emptySupplierData = {
-        name: '',
-        address: '',
-        phone: '',
-        email: '',
-        contact_person: ''
+        name: "",
+        address: "",
+        phone: "",
+        email: "",
+        contact_person: "",
     };
 
     return (
         <Card>
             <CardHeader className="mb-6 px-0">
                 <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Supplier</h1>
+                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">
+                        Daftar Supplier
+                    </h1>
                     <Button
                         variant="primary"
                         className="flex items-center"
@@ -219,7 +269,11 @@ const SupplierList = () => {
             </CardHeader>
 
             {isLoading && <Loading message="Memuat supplier..." />}
-            {isError && <div className="text-center text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>}
+            {isError && (
+                <div className="text-center text-red-500">
+                    Error: {queryError?.message || "Gagal memuat data"}
+                </div>
+            )}
 
             {!isLoading && !isError && (
                 <Table>
@@ -239,12 +293,10 @@ const SupplierList = () => {
                                     onClick={() => openSupplierDetail(supplier)}
                                     className="cursor-pointer hover:bg-blue-50"
                                 >
-                                    <TableCell>
-                                        {supplier.name}
-                                    </TableCell>
-                                    <TableCell>{supplier.address || '-'}</TableCell>
-                                    <TableCell>{supplier.phone || '-'}</TableCell>
-                                    <TableCell>{supplier.contact_person || '-'}</TableCell>
+                                    <TableCell>{supplier.name}</TableCell>
+                                    <TableCell>{supplier.address || "-"}</TableCell>
+                                    <TableCell>{supplier.phone || "-"}</TableCell>
+                                    <TableCell>{supplier.contact_person || "-"}</TableCell>
                                 </TableRow>
                             ))
                         ) : (
@@ -259,32 +311,46 @@ const SupplierList = () => {
             )}
 
             <DetailEditModal
-                title={selectedSupplier?.name || ''}
+                title={selectedSupplier?.name || ""}
                 data={transformSupplierForModal(selectedSupplier)}
                 fields={supplierFields}
                 isOpen={isEditModalOpen}
                 onClose={closeEditModal}
-                onSave={async (updatedData: Record<string, string | number | boolean | null>) => {
+                onSave={async (
+                    updatedData: Record<string, string | number | boolean | null>
+                ) => {
                     if (selectedSupplier) {
                         await updateSupplierMutation.mutateAsync(updatedData);
                     }
                     return Promise.resolve();
                 }}
-                onImageSave={async (data: { supplierId?: string; imageBase64: string }) => {
+                onImageSave={async (data: {
+                    supplierId?: string;
+                    imageBase64: string;
+                }) => {
                     const idToUse = data.supplierId || selectedSupplier?.id;
                     if (idToUse) {
-                        await updateSupplierImageMutation.mutateAsync({ supplierId: idToUse, imageBase64: data.imageBase64 });
+                        await updateSupplierImageMutation.mutateAsync({
+                            supplierId: idToUse,
+                            imageBase64: data.imageBase64,
+                        });
                     }
                 }}
                 onImageDelete={async (supplierId?: string) => {
-                    if (supplierId) { await deleteSupplierImageMutation.mutateAsync(supplierId); }
+                    if (supplierId) {
+                        await deleteSupplierImageMutation.mutateAsync(supplierId);
+                    }
                 }}
                 onDeleteRequest={() => {
                     if (selectedSupplier) handleDelete(selectedSupplier);
                 }}
                 deleteButtonLabel="Hapus Supplier"
                 imageUrl={selectedSupplier?.image_url || undefined}
-                imagePlaceholder={selectedSupplier ? `https://picsum.photos/seed/${selectedSupplier.id}/400/300` : undefined}
+                imagePlaceholder={
+                    selectedSupplier
+                        ? `https://picsum.photos/seed/${selectedSupplier.id}/400/300`
+                        : undefined
+                }
                 mode="edit"
             />
 
