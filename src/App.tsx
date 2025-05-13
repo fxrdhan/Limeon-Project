@@ -4,8 +4,7 @@ import MainLayout from '@/components/layout/main-layout';
 import Login from '@/pages/auth/login';
 import '@/index.css';
 import { useAuthStore } from '@/store/authStore';
-import { ConfirmDialogProvider } from '@/components/ui/dialog-box';
-import OfflineAlert from '@/components/ui/offline-alert';
+import { ConfirmDialogProvider, OfflineAlert } from '@/components/ui';
 
 const Dashboard = lazy(() => import('@/pages/dashboard'));
 const ItemList = lazy(() => import('@/pages/master-data/item-list'));

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FaWifi } from 'react-icons/fa';
 
-const OfflineAlert = () => {
+export const OfflineAlert = () => {
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
     const [justCameOnline, setJustCameOnline] = useState(false);
 
@@ -43,5 +43,3 @@ const OfflineAlert = () => {
         </div>
     );
 };
-
-export default OfflineAlert;
