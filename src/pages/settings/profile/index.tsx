@@ -1,71 +1,90 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { Button } from '@/components/ui/button';
-import { FaEdit, FaCheck, FaTimes } from 'react-icons/fa';
-import type { CompanyProfile, ProfileKey } from '../../../types';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import {
+    Button,
+    Card,
+    CardHeader,
+    CardTitle,
+    CardContent,
+} from "@/components/ui";
+import { FaEdit, FaCheck, FaTimes } from "react-icons/fa";
+import type { CompanyProfile, ProfileKey } from "@/types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Profile = () => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
-    const [editValues, setEditValues] = useState<Record<string, string | null>>({});
+    const [editValues, setEditValues] = useState<Record<string, string | null>>(
+        {}
+    );
     const queryClient = useQueryClient();
 
     const fetchProfile = async () => {
         const { data, error } = await supabase
-            .from('company_profiles')
-            .select('*')
+            .from("company_profiles")
+            .select("*")
             .single();
 
-        if (error && error.code !== 'PGRST116') {
+        if (error && error.code !== "PGRST116") {
             throw new Error(error.message);
         }
         return data;
     };
 
-    const { data: profile, isLoading, isError, error } = useQuery<CompanyProfile | null>({
-        queryKey: ['companyProfile'],
+    const {
+        data: profile,
+        isLoading,
+        isError,
+        error,
+    } = useQuery<CompanyProfile | null>({
+        queryKey: ["companyProfile"],
         queryFn: fetchProfile,
         staleTime: 30 * 1000,
         refetchOnMount: true,
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
     });
 
     useEffect(() => {
         if (profile) {
             const initialValues: Record<string, string | null> = {};
             (Object.keys(profile) as Array<ProfileKey>).forEach((key: ProfileKey) => {
-                initialValues[key] = profile[key] ?? '';
+                initialValues[key] = profile[key] ?? "";
             });
             setEditValues(initialValues);
         }
     }, [profile]);
 
     const updateProfileMutation = useMutation({
-        mutationFn: async ({ field, value }: { field: string, value: string | null }) => {
-            if (!profile?.id) throw new Error("Profil ID tidak ditemukan untuk diperbarui.");
+        mutationFn: async ({
+            field,
+            value,
+        }: {
+            field: string;
+            value: string | null;
+        }) => {
+            if (!profile?.id)
+                throw new Error("Profil ID tidak ditemukan untuk diperbarui.");
 
             const { error } = await supabase
-                .from('company_profiles')
-                .update({ [field]: value === '' ? null : value })
-                .eq('id', profile.id);
+                .from("company_profiles")
+                .update({ [field]: value === "" ? null : value })
+                .eq("id", profile.id);
 
             if (error) throw new Error(error.message);
         },
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['companyProfile'] });
-            setEditMode(prev => ({ ...prev, [variables.field]: false }));
+            queryClient.invalidateQueries({ queryKey: ["companyProfile"] });
+            setEditMode((prev) => ({ ...prev, [variables.field]: false }));
         },
         onError: (error) => {
-            console.error('Error updating profile:', error);
+            console.error("Error updating profile:", error);
             alert(`Gagal memperbarui profil: ${error.message}`);
-        }
+        },
     });
 
     const toggleEdit = (field: ProfileKey) => {
-        setEditMode(prev => ({ ...prev, [field]: !prev[field] }));
+        setEditMode((prev) => ({ ...prev, [field]: !prev[field] }));
         if (editMode[field] && profile) {
-            setEditValues(prev => ({ ...prev, [field]: profile[field] ?? '' }));
+            setEditValues((prev) => ({ ...prev, [field]: profile[field] ?? "" }));
         }
     };
 
@@ -75,9 +94,9 @@ const Profile = () => {
 
     const handleCancel = (field: ProfileKey) => {
         if (profile) {
-            setEditValues(prev => ({ ...prev, [field]: profile[field] ?? '' }));
+            setEditValues((prev) => ({ ...prev, [field]: profile[field] ?? "" }));
         }
-        setEditMode(prev => ({ ...prev, [field]: false }));
+        setEditMode((prev) => ({ ...prev, [field]: false }));
     };
 
     const handleChange = (field: string, value: string) => {
@@ -87,20 +106,49 @@ const Profile = () => {
         }));
     };
 
-    const ProfileField = ({ label, field }: { label: string; field: ProfileKey; }) => {
+    const ProfileField = ({
+        label,
+        field,
+    }: {
+        label: string;
+        field: ProfileKey;
+    }) => {
         return (
             <div className="mb-4">
                 <div className="flex justify-between items-center mb-1">
                     <label className="text-sm font-medium text-gray-600">{label}</label>
                     {editMode[field] ? (
                         <div className="flex space-x-1">
-                            <Button variant="text" size="sm" onClick={() => handleCancel(field)} className="p-1 text-gray-500 hover:text-red-500"><FaTimes /></Button>
-                            <Button variant="text" size="sm" onClick={() => handleSave(field)} className="p-1 text-gray-500 hover:text-green-500" disabled={updateProfileMutation.isPending}>
-                                {updateProfileMutation.isPending && updateProfileMutation.variables?.field === field ? <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span> : <FaCheck />}
+                            <Button
+                                variant="text"
+                                size="sm"
+                                onClick={() => handleCancel(field)}
+                                className="p-1 text-gray-500 hover:text-red-500"
+                            >
+                                <FaTimes />
+                            </Button>
+                            <Button
+                                variant="text"
+                                size="sm"
+                                onClick={() => handleSave(field)}
+                                className="p-1 text-gray-500 hover:text-green-500"
+                                disabled={updateProfileMutation.isPending}
+                            >
+                                {updateProfileMutation.isPending &&
+                                    updateProfileMutation.variables?.field === field ? (
+                                    <span className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
+                                ) : (
+                                    <FaCheck />
+                                )}
                             </Button>
                         </div>
                     ) : (
-                        <Button variant="text" size="sm" onClick={() => toggleEdit(field)} className="p-1 text-gray-500 hover:text-primary">
+                        <Button
+                            variant="text"
+                            size="sm"
+                            onClick={() => toggleEdit(field)}
+                            className="p-1 text-gray-500 hover:text-primary"
+                        >
                             <FaEdit />
                         </Button>
                     )}
@@ -108,13 +156,15 @@ const Profile = () => {
                 {editMode[field] ? (
                     <input
                         type="text"
-                        value={editValues[field] || ''}
+                        value={editValues[field] || ""}
                         onChange={(e) => handleChange(field, e.target.value)}
                         className="w-full p-2 border rounded-md"
                     />
                 ) : (
                     <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
-                        {(profile && profile[field]) || <span className="text-gray-400 italic">Tidak ada data</span>}
+                        {(profile && profile[field]) || (
+                            <span className="text-gray-400 italic">Tidak ada data</span>
+                        )}
                     </div>
                 )}
             </div>
@@ -126,19 +176,27 @@ const Profile = () => {
     }
 
     if (isError) {
-        return <div className="text-center p-6 text-red-500">Error: {(error as Error).message}</div>;
+        return (
+            <div className="text-center p-6 text-red-500">
+                Error: {(error as Error).message}
+            </div>
+        );
     }
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Profil Perusahaan</CardTitle>
-                <p className="text-sm text-gray-500 mt-1">Kelola informasi detail mengenai apotek atau klinik Anda.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                    Kelola informasi detail mengenai apotek atau klinik Anda.
+                </p>
             </CardHeader>
             <CardContent>
                 {!profile ? (
                     <div className="text-center">
-                        <p className="mb-4">Belum ada data profil. Tambahkan profil perusahaan Anda.</p>
+                        <p className="mb-4">
+                            Belum ada data profil. Tambahkan profil perusahaan Anda.
+                        </p>
                         <Button onClick={createProfile}>Tambah Profil</Button>
                     </div>
                 ) : (
@@ -152,8 +210,14 @@ const Profile = () => {
                         <div>
                             <ProfileField label="Website" field="website" />
                             <ProfileField label="NPWP" field="tax_id" />
-                            <ProfileField label="Nama Apoteker Penanggung Jawab" field="pharmacist_name" />
-                            <ProfileField label="No. STRA / SIPA Apoteker" field="pharmacist_license" />
+                            <ProfileField
+                                label="Nama Apoteker Penanggung Jawab"
+                                field="pharmacist_name"
+                            />
+                            <ProfileField
+                                label="No. STRA / SIPA Apoteker"
+                                field="pharmacist_license"
+                            />
                         </div>
                     </div>
                 )}
@@ -164,32 +228,35 @@ const Profile = () => {
     async function createProfile() {
         try {
             const { data, error } = await supabase
-                .from('company_profiles')
+                .from("company_profiles")
                 .insert({
-                    name: 'Nama Apotek/Klinik Anda',
-                    address: 'Alamat Lengkap Apotek/Klinik Anda',
+                    name: "Nama Apotek/Klinik Anda",
+                    address: "Alamat Lengkap Apotek/Klinik Anda",
                 })
                 .select()
                 .single();
 
             if (error) {
-                console.error('Error creating profile:', error);
+                console.error("Error creating profile:", error);
                 alert(`Gagal membuat profil: ${error.message}`);
                 return;
             }
 
             if (data) {
-                queryClient.invalidateQueries({ queryKey: ['companyProfile'] });
+                queryClient.invalidateQueries({ queryKey: ["companyProfile"] });
                 const initialValues: Record<string, string | null> = {};
                 (Object.keys(data) as Array<ProfileKey>).forEach((key: ProfileKey) => {
-                    initialValues[key] = data[key] ?? '';
+                    initialValues[key] = data[key] ?? "";
                 });
                 setEditValues(initialValues);
-                alert('Profil berhasil dibuat. Silakan lengkapi data.');
+                alert("Profil berhasil dibuat. Silakan lengkapi data.");
             }
         } catch (error) {
-            console.error('Error:', error);
-            alert(`Terjadi kesalahan saat membuat profil: ${error instanceof Error ? error.message : 'Kesalahan tidak diketahui'}`);
+            console.error("Error:", error);
+            alert(
+                `Terjadi kesalahan saat membuat profil: ${error instanceof Error ? error.message : "Kesalahan tidak diketahui"
+                }`
+            );
         }
     }
 };
