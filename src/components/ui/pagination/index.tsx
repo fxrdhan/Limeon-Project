@@ -1,5 +1,7 @@
 import { classNames } from "@/lib/classNames";
 import type { PaginationProps } from "@/types";
+import { motion, AnimatePresence } from "framer-motion";
+import React, { useRef, useEffect } from "react";
 
 export const Pagination = ({
     currentPage,
@@ -14,6 +16,36 @@ export const Pagination = ({
             target: { value: value.toString() },
         } as React.ChangeEvent<HTMLSelectElement>;
         onItemsPerPageChange(event);
+    };
+
+    const prevPageRef = useRef(currentPage);
+
+    useEffect(() => {
+        prevPageRef.current = currentPage;
+    }, [currentPage]);
+
+    let direction = 0;
+    if (currentPage > prevPageRef.current) {
+        direction = 1;
+    } else if (currentPage < prevPageRef.current) {
+        direction = -1;
+    }
+
+    const variants = {
+        enter: (direction: number) => ({
+            x: direction > 0 ? 20 : -20,
+            opacity: 0,
+        }),
+        center: {
+            zIndex: 1,
+            x: 0,
+            opacity: 1,
+        },
+        exit: (direction: number) => ({
+            zIndex: 0,
+            x: direction > 0 ? -20 : 20,
+            opacity: 0,
+        }),
     };
 
     return (
@@ -59,14 +91,14 @@ export const Pagination = ({
                 </button>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden">
                 <div
                     onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
                     className={classNames(
-                        "p-2 rounded-md focus:outline-none transition-colors duration-150 cursor-pointer",
+                        "p-2 rounded-full focus:outline-none transition-colors duration-150 cursor-pointer",
                         currentPage === 1
                             ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-gray-200 text-gray-700 hover:text-gray-900"
+                            : "hover:bg-blue-100 hover:text-blue-600 transition-all duration-300 ease-in-out"
                     )}
                     aria-label="Halaman sebelumnya"
                 >
@@ -84,8 +116,21 @@ export const Pagination = ({
                     </svg>
                 </div>
 
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white font-semibold text-sm shadow">
-                    {currentPage}
+                <div className="flex items-center justify-center min-w-[2rem] h-8 rounded-full bg-blue-500 text-white font-medium shadow-sm px-3 mx-1 overflow-hidden">
+                    <AnimatePresence initial={false} custom={direction} mode="popLayout">
+                        <motion.span
+                            key={currentPage}
+                            custom={direction}
+                            variants={variants}
+                            initial="enter"
+                            animate="center"
+                            exit="exit"
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center justify-center"
+                        >
+                            {currentPage}
+                        </motion.span>
+                    </AnimatePresence>
                 </div>
 
                 <div
@@ -95,10 +140,10 @@ export const Pagination = ({
                         onPageChange(currentPage + 1)
                     }
                     className={classNames(
-                        "p-2 rounded-md focus:outline-none transition-colors duration-150 cursor-pointer",
+                        "p-2 rounded-full focus:outline-none transition-colors duration-150 cursor-pointer",
                         currentPage === totalPages || totalPages === 0
                             ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-gray-200 text-gray-700 hover:text-gray-900"
+                            : "hover:bg-blue-100 hover:text-blue-600 transition-all duration-300 ease-in-out"
                     )}
                     aria-label="Halaman berikutnya"
                 >
