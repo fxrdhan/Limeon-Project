@@ -1,16 +1,28 @@
 import { FaPlus } from "react-icons/fa";
-import { useState, useEffect } from 'react';
-import type { Category } from '@/types';
-import { supabase } from '@/lib/supabase';
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loading } from "@/components/ui/loading";
-import { Pagination } from "@/components/ui/pagination";
-import { SearchBar } from "@/components/ui/search-bar";
+import { useState, useEffect } from "react";
+import type { Category } from "@/types";
+import { supabase } from "@/lib/supabase";
+import {
+    Card,
+    Button,
+    Loading,
+    Pagination,
+    SearchBar,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    TableHeader,
+} from "@/components/ui";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
 import { useConfirmDialog } from "@/components/ui/dialog-box";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
+import {
+    useQuery,
+    useMutation,
+    useQueryClient,
+    keepPreviousData,
+} from "@tanstack/react-query";
 
 const CategoryList = () => {
     const { openConfirmDialog } = useConfirmDialog();
@@ -18,7 +30,7 @@ const CategoryList = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-    
+
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -43,39 +55,45 @@ const CategoryList = () => {
         return () => clearTimeout(timer);
     }, [search]);
 
-    const fetchCategories = async (page: number, searchTerm: string, limit: number) => {
+    const fetchCategories = async (
+        page: number,
+        searchTerm: string,
+        limit: number
+    ) => {
         const from = (page - 1) * limit;
         const to = from + limit - 1;
 
-        let categoriesQuery = supabase
-            .from("item_categories")
-            .select("*");
+        let categoriesQuery = supabase.from("item_categories").select("*");
 
         let countQuery = supabase
             .from("item_categories")
-            .select('id', { count: 'exact' });
+            .select("id", { count: "exact" });
 
         if (searchTerm) {
-            categoriesQuery = categoriesQuery.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
-            countQuery = countQuery.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+            categoriesQuery = categoriesQuery.or(
+                `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+            );
+            countQuery = countQuery.or(
+                `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+            );
         }
 
         const [categoriesResult, countResult] = await Promise.all([
-            categoriesQuery.order('name').range(from, to),
-            countQuery
+            categoriesQuery.order("name").range(from, to),
+            countQuery,
         ]);
 
         if (categoriesResult.error) throw categoriesResult.error;
         if (countResult.error) throw countResult.error;
 
-        return { 
-            categories: categoriesResult.data || [], 
-            totalCategories: countResult.count || 0 
+        return {
+            categories: categoriesResult.data || [],
+            totalCategories: countResult.count || 0,
         };
     };
 
     const { data, isLoading, isError, error, isFetching } = useQuery({
-        queryKey: ['categories', currentPage, debouncedSearch, itemsPerPage],
+        queryKey: ["categories", currentPage, debouncedSearch, itemsPerPage],
         queryFn: () => fetchCategories(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
@@ -88,11 +106,14 @@ const CategoryList = () => {
 
     const deleteCategoryMutation = useMutation({
         mutationFn: async (categoryId: string) => {
-            const { error } = await supabase.from("item_categories").delete().eq("id", categoryId);
+            const { error } = await supabase
+                .from("item_categories")
+                .delete()
+                .eq("id", categoryId);
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            queryClient.invalidateQueries({ queryKey: ["categories"] });
         },
         onError: (error) => {
             alert(`Gagal menghapus kategori: ${error.message}`);
@@ -101,11 +122,13 @@ const CategoryList = () => {
 
     const addCategoryMutation = useMutation({
         mutationFn: async (newCategory: { name: string; description: string }) => {
-            const { error } = await supabase.from("item_categories").insert(newCategory);
+            const { error } = await supabase
+                .from("item_categories")
+                .insert(newCategory);
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            queryClient.invalidateQueries({ queryKey: ["categories"] });
             setIsAddModalOpen(false);
         },
         onError: (error) => {
@@ -114,7 +137,11 @@ const CategoryList = () => {
     });
 
     const updateCategoryMutation = useMutation({
-        mutationFn: async (updatedCategory: { id: string; name: string; description: string }) => {
+        mutationFn: async (updatedCategory: {
+            id: string;
+            name: string;
+            description: string;
+        }) => {
             const { id, ...updateData } = updatedCategory;
             const { error } = await supabase
                 .from("item_categories")
@@ -123,7 +150,7 @@ const CategoryList = () => {
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            queryClient.invalidateQueries({ queryKey: ["categories"] });
             setIsEditModalOpen(false);
             setEditingCategory(null);
         },
@@ -137,9 +164,15 @@ const CategoryList = () => {
         setIsEditModalOpen(true);
     };
 
-    const handleModalSubmit = async (categoryData: { id?: string; name: string; description: string }) => {
+    const handleModalSubmit = async (categoryData: {
+        id?: string;
+        name: string;
+        description: string;
+    }) => {
         if (categoryData.id) {
-            await updateCategoryMutation.mutateAsync(categoryData as { id: string; name: string; description: string });
+            await updateCategoryMutation.mutateAsync(
+                categoryData as { id: string; name: string; description: string }
+            );
         } else {
             await addCategoryMutation.mutateAsync(categoryData);
         }
@@ -149,7 +182,9 @@ const CategoryList = () => {
         setCurrentPage(newPage);
     };
 
-    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const handleItemsPerPageChange = (
+        e: React.ChangeEvent<HTMLSelectElement>
+    ) => {
         setItemsPerPage(Number(e.target.value));
         setCurrentPage(1);
     };
@@ -158,9 +193,15 @@ const CategoryList = () => {
 
     return (
         <>
-            <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+            <Card
+                className={
+                    isFetching ? "opacity-75 transition-opacity duration-300" : ""
+                }
+            >
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Kategori Item</h1>
+                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">
+                        Daftar Kategori Item
+                    </h1>
                     <Button
                         variant="primary"
                         className="flex items-center"
@@ -180,7 +221,9 @@ const CategoryList = () => {
                 {isLoading ? (
                     <Loading />
                 ) : isError ? (
-                    <div className="text-center p-6 text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>
+                    <div className="text-center p-6 text-red-500">
+                        Error: {queryError?.message || "Gagal memuat data"}
+                    </div>
                 ) : (
                     <>
                         <Table>
@@ -193,8 +236,13 @@ const CategoryList = () => {
                             <TableBody>
                                 {categories.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center text-gray-500">
-                                            {debouncedSearch ? `Tidak ada kategori dengan nama "${debouncedSearch}"` : "Tidak ada data kategori yang ditemukan"}
+                                        <TableCell
+                                            colSpan={2}
+                                            className="text-center text-gray-500"
+                                        >
+                                            {debouncedSearch
+                                                ? `Tidak ada kategori dengan nama "${debouncedSearch}"`
+                                                : "Tidak ada data kategori yang ditemukan"}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -234,21 +282,25 @@ const CategoryList = () => {
 
             <AddCategoryModal
                 isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)} 
+                onClose={() => setIsEditModalOpen(false)}
                 onSubmit={handleModalSubmit}
                 initialData={editingCategory || undefined}
-                onDelete={editingCategory ? (categoryId) => {
-                    openConfirmDialog({
-                        title: "Konfirmasi Hapus",
-                        message: `Apakah Anda yakin ingin menghapus kategori item "${editingCategory.name}"?`,
-                        variant: "danger",
-                        confirmText: "Hapus",
-                        onConfirm: () => {
-                            deleteCategoryMutation.mutate(categoryId);
-                            setIsEditModalOpen(false);
+                onDelete={
+                    editingCategory
+                        ? (categoryId) => {
+                            openConfirmDialog({
+                                title: "Konfirmasi Hapus",
+                                message: `Apakah Anda yakin ingin menghapus kategori item "${editingCategory.name}"?`,
+                                variant: "danger",
+                                confirmText: "Hapus",
+                                onConfirm: () => {
+                                    deleteCategoryMutation.mutate(categoryId);
+                                    setIsEditModalOpen(false);
+                                },
+                            });
                         }
-                    });
-                } : undefined}
+                        : undefined
+                }
                 isLoading={updateCategoryMutation.isPending}
                 isDeleting={deleteCategoryMutation.isPending}
                 entityName="Kategori"
