@@ -1,14 +1,22 @@
 import { useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Dropdown } from "@/components/ui/dropdown";
+import {
+    Input,
+    Button,
+    Dropdown,
+    FormSection,
+    FormField,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    TableHeader,
+} from "@/components/ui";
 import { FaTrash } from "react-icons/fa";
-import { FormSection, FormField } from "@/components/ui/form";
-import type { UnitConversionManagerProps } from '@/types';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
+import type { UnitConversionManagerProps } from "@/types";
 
 const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
-    unitConversionHook
+    unitConversionHook,
 }) => {
     const {
         baseUnit,
@@ -19,7 +27,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         unitConversionFormData,
         setUnitConversionFormData,
         recalculateBasePrices,
-        availableUnits
+        availableUnits,
     } = unitConversionHook;
 
     useEffect(() => {
@@ -28,7 +36,9 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
         }
     }, [basePrice, recalculateBasePrices, conversions.length]);
 
-    const handleConversionFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleConversionFormChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
         const { name, value } = e.target;
         setUnitConversionFormData({
             ...unitConversionFormData,
@@ -37,7 +47,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
     };
 
     const handleUnitDropdownChange = (unitId: string) => {
-        const selectedUnit = availableUnits.find(u => u.id === unitId);
+        const selectedUnit = availableUnits.find((u) => u.id === unitId);
         if (selectedUnit) {
             setUnitConversionFormData({
                 ...unitConversionFormData,
@@ -47,18 +57,25 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
     };
 
     const handleAddConversion = () => {
-        if (!unitConversionFormData.unit || unitConversionFormData.conversion <= 0) {
+        if (
+            !unitConversionFormData.unit ||
+            unitConversionFormData.conversion <= 0
+        ) {
             alert("Satuan dan konversi harus diisi dengan benar!");
             return;
         }
 
-        const existingUnit = conversions.find(uc => uc.unit.name === unitConversionFormData.unit);
+        const existingUnit = conversions.find(
+            (uc) => uc.unit.name === unitConversionFormData.unit
+        );
         if (existingUnit) {
             alert("Satuan tersebut sudah ada dalam daftar!");
             return;
         }
 
-        const selectedUnit = availableUnits.find(u => u.name === unitConversionFormData.unit);
+        const selectedUnit = availableUnits.find(
+            (u) => u.name === unitConversionFormData.unit
+        );
         if (!selectedUnit) {
             alert("Satuan tidak valid!");
             return;
@@ -70,7 +87,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
             to_unit_id: selectedUnit.id,
             conversion: unitConversionFormData.conversion,
             basePrice: 0,
-            sellPrice: 0
+            sellPrice: 0,
         });
 
         setUnitConversionFormData({
@@ -85,23 +102,34 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                 <div className="flex-1 md:w-1/3 lg:w-1/4">
                     <h3 className="text-lg font-medium mb-3">Tambah Konversi Satuan</h3>
                     <p className="text-sm text-gray-600 mb-2">
-                        Berapa banyak satuan turunan yang setara dengan 1 {baseUnit || 'Satuan Dasar'}.
+                        Berapa banyak satuan turunan yang setara dengan 1{" "}
+                        {baseUnit || "Satuan Dasar"}.
                     </p>
                     <div className="flex flex-row gap-4 mb-4">
                         <FormField label="Satuan Turunan" className="flex-1">
                             <Dropdown
                                 name="unit"
-                                value={availableUnits.find(u => u.name === unitConversionFormData.unit)?.id || ""}
+                                value={
+                                    availableUnits.find(
+                                        (u) => u.name === unitConversionFormData.unit
+                                    )?.id || ""
+                                }
                                 onChange={handleUnitDropdownChange}
                                 options={availableUnits
-                                    .filter(unit => unit.name !== baseUnit)
-                                    .filter(unit => !conversions.some(uc => uc.unit.name === unit.name))
-                                    .map(unit => ({ id: unit.id, name: unit.name }))
-                                }
+                                    .filter((unit) => unit.name !== baseUnit)
+                                    .filter(
+                                        (unit) =>
+                                            !conversions.some((uc) => uc.unit.name === unit.name)
+                                    )
+                                    .map((unit) => ({ id: unit.id, name: unit.name }))}
                                 placeholder="-- Pilih Satuan --"
                             />
                         </FormField>
-                        <FormField label={`1 ${baseUnit || 'Satuan Dasar'} = ? ${unitConversionFormData.unit || 'Satuan Turunan'}`} className="flex-1">
+                        <FormField
+                            label={`1 ${baseUnit || "Satuan Dasar"} = ? ${unitConversionFormData.unit || "Satuan Turunan"
+                                }`}
+                            className="flex-1"
+                        >
                             <Input
                                 name="conversion"
                                 value={unitConversionFormData.conversion || ""}
@@ -111,7 +139,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                 placeholder="Jumlah Satuan Turunan"
                                 className="w-full"
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
+                                    if (e.key === "Enter") {
                                         e.preventDefault();
                                         handleAddConversion();
                                     }
@@ -126,47 +154,71 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             <TableHead>
                                 <TableRow>
                                     <TableHeader className="w-[20%]">Satuan Turunan</TableHeader>
-                                    <TableHeader className="w-[30%] text-left">Konversi</TableHeader>
-                                    <TableHeader className="w-[20%] text-right">Harga Pokok</TableHeader>
-                                    <TableHeader className="w-[20%] text-right">Harga Jual</TableHeader>
-                                    <TableHeader className="w-[10%] text-center">Aksi</TableHeader>
+                                    <TableHeader className="w-[30%] text-left">
+                                        Konversi
+                                    </TableHeader>
+                                    <TableHeader className="w-[20%] text-right">
+                                        Harga Pokok
+                                    </TableHeader>
+                                    <TableHeader className="w-[20%] text-right">
+                                        Harga Jual
+                                    </TableHeader>
+                                    <TableHeader className="w-[10%] text-center">
+                                        Aksi
+                                    </TableHeader>
                                 </TableRow>
                             </TableHead>
                             <TableBody className="h-[100px]">
                                 {conversions.length === 0 ? (
                                     <TableRow className="h-full">
-                                        <TableCell colSpan={5} className="text-center text-gray-500 py-4 align-middle">
+                                        <TableCell
+                                            colSpan={5}
+                                            className="text-center text-gray-500 py-4 align-middle"
+                                        >
                                             Belum ada data konversi
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    conversions.filter((uc, index, self) =>
-                                        index === self.findIndex(u => u.unit.name === uc.unit.name) && uc.unit
-                                    ).map((uc) => (
-                                        <TableRow key={uc.id}>
-                                            <TableCell>{uc.unit.name}</TableCell>
-                                            <TableCell>1 {baseUnit} = {uc.conversion} {uc.unit.name}</TableCell>
-                                            <TableCell className="text-right">
-                                                {(uc.basePrice || 0).toLocaleString("id-ID", {
-                                                    style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 2
-                                                })}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                {(uc.sellPrice || 0).toLocaleString("id-ID", {
-                                                    style: "currency", currency: "IDR", minimumFractionDigits: 0, maximumFractionDigits: 2
-                                                })}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <Button
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => removeUnitConversion(uc.id)}
-                                                >
-                                                    <FaTrash />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                    conversions
+                                        .filter(
+                                            (uc, index, self) =>
+                                                index ===
+                                                self.findIndex((u) => u.unit.name === uc.unit.name) &&
+                                                uc.unit
+                                        )
+                                        .map((uc) => (
+                                            <TableRow key={uc.id}>
+                                                <TableCell>{uc.unit.name}</TableCell>
+                                                <TableCell>
+                                                    1 {baseUnit} = {uc.conversion} {uc.unit.name}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    {(uc.basePrice || 0).toLocaleString("id-ID", {
+                                                        style: "currency",
+                                                        currency: "IDR",
+                                                        minimumFractionDigits: 0,
+                                                        maximumFractionDigits: 2,
+                                                    })}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    {(uc.sellPrice || 0).toLocaleString("id-ID", {
+                                                        style: "currency",
+                                                        currency: "IDR",
+                                                        minimumFractionDigits: 0,
+                                                        maximumFractionDigits: 2,
+                                                    })}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
+                                                        onClick={() => removeUnitConversion(uc.id)}
+                                                    >
+                                                        <FaTrash />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
                                 )}
                             </TableBody>
                         </Table>
