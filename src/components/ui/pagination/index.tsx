@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui";
 import { classNames } from "@/lib/classNames";
 import type { PaginationProps } from "@/types";
 
@@ -60,40 +59,62 @@ export const Pagination = ({
                 </button>
             </div>
 
-            <div className="flex items-center rounded-full bg-primary p-1 shadow-md text-white overflow-hidden">
-                <Button
-                    variant="text"
-                    size="sm"
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
+            <div className="flex items-center space-x-2">
+                <div
+                    onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
                     className={classNames(
-                        "px-3 py-1.5 rounded-full text-white focus:ring-0 focus:outline-none transition-all duration-300",
+                        "p-2 rounded-md focus:outline-none transition-colors duration-150 cursor-pointer",
                         currentPage === 1
                             ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-blue-600"
+                            : "hover:bg-gray-200 text-gray-700 hover:text-gray-900"
                     )}
+                    aria-label="Halaman sebelumnya"
                 >
-                    &lt;
-                </Button>
-
-                <div className="px-3 py-1.5 font-medium">
-                    {currentPage} of {totalPages}
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                    >
+                        <path
+                            fillRule="evenodd"
+                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                        />
+                    </svg>
                 </div>
 
-                <Button
-                    variant="text"
-                    size="sm"
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages || totalPages === 0}
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white font-semibold text-sm shadow">
+                    {currentPage}
+                </div>
+
+                <div
+                    onClick={() =>
+                        currentPage < totalPages &&
+                        totalPages !== 0 &&
+                        onPageChange(currentPage + 1)
+                    }
                     className={classNames(
-                        "px-3 py-1.5 rounded-full text-white focus:ring-0 focus:outline-none transition-all duration-300",
+                        "p-2 rounded-md focus:outline-none transition-colors duration-150 cursor-pointer",
                         currentPage === totalPages || totalPages === 0
                             ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-blue-600"
+                            : "hover:bg-gray-200 text-gray-700 hover:text-gray-900"
                     )}
+                    aria-label="Halaman berikutnya"
                 >
-                    &gt;
-                </Button>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                    >
+                        <path
+                            fillRule="evenodd"
+                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                            clipRule="evenodd"
+                        />
+                    </svg>
+                </div>
             </div>
         </div>
     );
