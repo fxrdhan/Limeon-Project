@@ -90,7 +90,7 @@ h1 {
 /* Untuk Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(26, 115, 232, 0.3) rgba(0, 0, 0, 0.02);
+  scrollbar-color: rgba(26, 115, 232, 0.5) rgba(0, 0, 0, 0.1);
 }
 
 /* Kelas untuk menghilangkan scrollbar jika diperlukan */
