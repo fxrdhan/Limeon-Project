@@ -1,16 +1,28 @@
 import { FaPlus } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Loading } from "@/components/ui/loading";
-import { useConfirmDialog } from "@/components/ui/dialog-box";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { Table, TableHead, TableBody, TableRow, TableCell, TableHeader } from "@/components/ui/table";
-import type { Unit } from '@/types';
+import {
+    Card,
+    Button,
+    Loading,
+    useConfirmDialog,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    TableHeader,
+    Pagination,
+    SearchBar,
+} from "@/components/ui";
+import {
+    useQuery,
+    useMutation,
+    useQueryClient,
+    keepPreviousData,
+} from "@tanstack/react-query";
+import type { Unit } from "@/types";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
-import { Pagination } from "@/components/ui/pagination";
-import { SearchBar } from "@/components/ui/search-bar";
 
 const UnitList = () => {
     const { openConfirmDialog } = useConfirmDialog();
@@ -42,28 +54,32 @@ const UnitList = () => {
         return () => clearTimeout(timer);
     }, [search]);
 
-    const fetchUnits = async (page: number, searchTerm: string, limit: number) => {
+    const fetchUnits = async (
+        page: number,
+        searchTerm: string,
+        limit: number
+    ) => {
         const from = (page - 1) * limit;
         const to = from + limit - 1;
 
         let query = supabase
             .from("item_units")
-            .select("id, name, description", { count: 'exact' });
-            
+            .select("id, name, description", { count: "exact" });
+
         if (searchTerm) {
-            query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+            query = query.or(
+                `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+            );
         }
 
-        const { data, error, count } = await query
-            .order("name")
-            .range(from, to);
+        const { data, error, count } = await query.order("name").range(from, to);
 
         if (error) throw error;
         return { units: data || [], totalUnits: count || 0 };
     };
 
     const { data, isLoading, isError, error, isFetching } = useQuery({
-        queryKey: ['units', currentPage, debouncedSearch, itemsPerPage],
+        queryKey: ["units", currentPage, debouncedSearch, itemsPerPage],
         queryFn: () => fetchUnits(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
@@ -77,11 +93,14 @@ const UnitList = () => {
 
     const deleteUnitMutation = useMutation({
         mutationFn: async (unitId: string) => {
-            const { error } = await supabase.from("item_units").delete().eq("id", unitId);
+            const { error } = await supabase
+                .from("item_units")
+                .delete()
+                .eq("id", unitId);
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['units'] });
+            queryClient.invalidateQueries({ queryKey: ["units"] });
         },
         onError: (error) => {
             console.error("Error deleting unit:", error);
@@ -95,7 +114,7 @@ const UnitList = () => {
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['units'] });
+            queryClient.invalidateQueries({ queryKey: ["units"] });
             setIsAddModalOpen(false);
         },
         onError: (error) => {
@@ -104,7 +123,11 @@ const UnitList = () => {
     });
 
     const updateUnitMutation = useMutation({
-        mutationFn: async (updatedUnit: { id: string; name: string; description: string }) => {
+        mutationFn: async (updatedUnit: {
+            id: string;
+            name: string;
+            description: string;
+        }) => {
             const { id, ...updateData } = updatedUnit;
             const { error } = await supabase
                 .from("item_units")
@@ -113,7 +136,7 @@ const UnitList = () => {
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['units'] });
+            queryClient.invalidateQueries({ queryKey: ["units"] });
             setIsEditModalOpen(false);
             setEditingUnit(null);
         },
@@ -126,12 +149,12 @@ const UnitList = () => {
         openConfirmDialog({
             title: "Konfirmasi Hapus",
             message: `Apakah Anda yakin ingin menghapus satuan item "${unit.name}"? Data yang terhubung mungkin akan terpengaruh.`,
-            variant: 'danger',
+            variant: "danger",
             confirmText: "Hapus",
             onConfirm: () => {
                 deleteUnitMutation.mutate(unit.id);
                 setIsEditModalOpen(false);
-            }
+            },
         });
     };
 
@@ -140,9 +163,15 @@ const UnitList = () => {
         setIsEditModalOpen(true);
     };
 
-    const handleModalSubmit = async (unitData: { id?: string; name: string; description: string }) => {
+    const handleModalSubmit = async (unitData: {
+        id?: string;
+        name: string;
+        description: string;
+    }) => {
         if (unitData.id) {
-            await updateUnitMutation.mutateAsync(unitData as { id: string; name: string; description: string });
+            await updateUnitMutation.mutateAsync(
+                unitData as { id: string; name: string; description: string }
+            );
         } else {
             await addUnitMutation.mutateAsync(unitData);
         }
@@ -152,7 +181,9 @@ const UnitList = () => {
         setCurrentPage(newPage);
     };
 
-    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const handleItemsPerPageChange = (
+        e: React.ChangeEvent<HTMLSelectElement>
+    ) => {
         setItemsPerPage(Number(e.target.value));
         setCurrentPage(1);
     };
@@ -161,9 +192,15 @@ const UnitList = () => {
 
     return (
         <>
-            <Card className={isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+            <Card
+                className={
+                    isFetching ? "opacity-75 transition-opacity duration-300" : ""
+                }
+            >
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">Daftar Satuan Item</h1>
+                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">
+                        Daftar Satuan Item
+                    </h1>
                     <Button
                         variant="primary"
                         className="flex items-center"
@@ -183,7 +220,9 @@ const UnitList = () => {
                 {isLoading ? (
                     <Loading message="Memuat satuan..." />
                 ) : isError ? (
-                    <div className="text-center p-6 text-red-500">Error: {queryError?.message || 'Gagal memuat data'}</div>
+                    <div className="text-center p-6 text-red-500">
+                        Error: {queryError?.message || "Gagal memuat data"}
+                    </div>
                 ) : (
                     <>
                         <Table>
@@ -196,8 +235,13 @@ const UnitList = () => {
                             <TableBody>
                                 {units.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center text-gray-500">
-                                            {debouncedSearch ? `Tidak ada satuan dengan nama "${debouncedSearch}"` : "Tidak ada data satuan yang ditemukan"}
+                                        <TableCell
+                                            colSpan={2}
+                                            className="text-center text-gray-500"
+                                        >
+                                            {debouncedSearch
+                                                ? `Tidak ada satuan dengan nama "${debouncedSearch}"`
+                                                : "Tidak ada data satuan yang ditemukan"}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -208,7 +252,7 @@ const UnitList = () => {
                                             className="cursor-pointer hover:bg-blue-50"
                                         >
                                             <TableCell>{unit.name}</TableCell>
-                                            <TableCell>{unit.description || '-'}</TableCell>
+                                            <TableCell>{unit.description || "-"}</TableCell>
                                         </TableRow>
                                     ))
                                 )}
@@ -240,7 +284,16 @@ const UnitList = () => {
                 onClose={() => setIsEditModalOpen(false)}
                 onSubmit={handleModalSubmit}
                 initialData={editingUnit || undefined}
-                onDelete={editingUnit ? (unitId) => handleDelete({ id: unitId, name: editingUnit.name, description: editingUnit.description }) : undefined}
+                onDelete={
+                    editingUnit
+                        ? (unitId) =>
+                            handleDelete({
+                                id: unitId,
+                                name: editingUnit.name,
+                                description: editingUnit.description,
+                            })
+                        : undefined
+                }
                 isLoading={updateUnitMutation.isPending}
                 isDeleting={deleteUnitMutation.isPending}
                 entityName="Satuan"
