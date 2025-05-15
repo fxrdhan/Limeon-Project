@@ -1,5 +1,5 @@
 import { FaChevronDown } from "react-icons/fa";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, ChangeEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useParams } from "react-router-dom";
 import { useAddItemForm } from "@/hooks/add-item";
@@ -25,7 +25,179 @@ import {
     CardContent,
     CardFooter,
 } from "@/components/ui";
-import * as handlers from "./handlers";
+import type { HandleSelectChangeProps, HandleMarginChangeProps, HandleSellPriceChangeProps, StartEditingMarginProps, StopEditingMarginProps, StartEditingMinStockProps, StopEditingMinStockProps } from "@/types";
+
+function handleSelectChange({
+    originalHandleSelectChange,
+    units,
+    unitConversionHook,
+}: HandleSelectChangeProps) {
+    return (e: ChangeEvent<HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        originalHandleSelectChange(e);
+        if (name === "unit_id" && value) {
+            const selectedUnit = units.find((unit) => unit.id === value);
+            if (selectedUnit) {
+                unitConversionHook.setBaseUnit(selectedUnit.name);
+            }
+        }
+    };
+}
+
+function handleDropdownChange(handleSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void) {
+    return (name: string, value: string) => {
+        const syntheticEvent = {
+            target: { name, value },
+        } as React.ChangeEvent<HTMLSelectElement>;
+        handleSelectChange(syntheticEvent);
+    };
+}
+
+function useBeforeUnload(isDirty: () => boolean) {
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isDirty()) {
+                e.preventDefault();
+                e.returnValue = "";
+                return "";
+            }
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [isDirty]);
+}
+
+function handleMarginChange({
+    setMarginPercentage,
+    formData,
+    calculateSellPriceFromMargin,
+    updateFormData
+}: HandleMarginChangeProps) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (e: { target: { value: any; }; }) => {
+        const value = e.target.value;
+        setMarginPercentage(value);
+        const margin = parseFloat(value);
+        if (!isNaN(margin) && formData.base_price > 0) {
+            const newSellPrice = calculateSellPriceFromMargin(margin);
+            updateFormData({ sell_price: newSellPrice });
+        }
+    };
+}
+
+function handleSellPriceChange({
+    handleChange,
+    calculateProfitPercentage,
+    setMarginPercentage,
+}: HandleSellPriceChangeProps) {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleChange(e);
+        setTimeout(() => {
+            const profit = calculateProfitPercentage();
+            if (profit !== null) {
+                setMarginPercentage(profit.toFixed(1));
+            }
+        }, 0);
+    };
+}
+
+function startEditingMargin({
+    calculateProfitPercentage,
+    setMarginPercentage,
+    setEditingMargin,
+    marginInputRef,
+}: StartEditingMarginProps) {
+    return (): void => {
+        const currentMargin = calculateProfitPercentage();
+        setMarginPercentage(
+            currentMargin !== null ? currentMargin.toFixed(1) : "0"
+        );
+        setEditingMargin(true);
+        setTimeout(() => {
+            if (marginInputRef.current) {
+                marginInputRef.current.focus();
+                marginInputRef.current.select();
+            }
+        }, 10);
+    };
+}
+
+function stopEditingMargin({
+    setEditingMargin,
+    marginPercentage,
+    formData,
+    calculateSellPriceFromMargin,
+    updateFormData
+}: StopEditingMarginProps) {
+    return () => {
+        setEditingMargin(false);
+        const margin = parseFloat(marginPercentage);
+        if (!isNaN(margin) && formData.base_price > 0) {
+            const newSellPrice = calculateSellPriceFromMargin(margin);
+            updateFormData({ sell_price: newSellPrice });
+        }
+    };
+}
+
+function handleMarginKeyDown(stopEditingMargin: () => void) {
+    return (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            stopEditingMargin();
+        }
+    };
+}
+
+function startEditingMinStock({
+    formData,
+    setMinStockValue,
+    setEditingMinStock,
+    minStockInputRef,
+}: StartEditingMinStockProps) {
+    return (): void => {
+        setMinStockValue(String(formData.min_stock));
+        setEditingMinStock(true);
+        setTimeout(() => {
+            if (minStockInputRef.current) {
+                minStockInputRef.current.focus();
+                minStockInputRef.current.select();
+            }
+        }, 10);
+    };
+}
+
+function stopEditingMinStock({
+    setEditingMinStock,
+    minStockValue,
+    updateFormData,
+    formData,
+    setMinStockValue
+}: StopEditingMinStockProps) {
+    return () => {
+        setEditingMinStock(false);
+        const stockValue = parseInt(minStockValue, 10);
+        if (!isNaN(stockValue) && stockValue >= 0) {
+            updateFormData({ min_stock: stockValue });
+        } else {
+            setMinStockValue(String(formData.min_stock));
+        }
+    };
+}
+
+function handleMinStockChange(setMinStockValue: (value: string) => void) {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+        setMinStockValue(e.target.value);
+    };
+}
+
+function handleMinStockKeyDown(stopEditingMinStock: () => void) {
+    return (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            stopEditingMinStock();
+        }
+    };
+}
 
 const AddItem = () => {
     const { id } = useParams<{ id: string }>();
@@ -80,35 +252,36 @@ const AddItem = () => {
     const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
     const [showFefoTooltip, setShowFefoTooltip] = useState(false);
 
-    const handleSelectChange = handlers.handleSelectChange({
+    // Use the handler functions directly in the component
+    const handleSelectChangeLocal: (e: React.ChangeEvent<HTMLSelectElement>) => void = handleSelectChange({
         originalHandleSelectChange,
         units,
         unitConversionHook,
     });
 
-    const handleDropdownChange = handlers.handleDropdownChange(handleSelectChange);
+    const handleDropdownChangeLocal = (name: string, value: string) => handleDropdownChange(handleSelectChangeLocal)(name, value);
 
-    const handleMarginChange = handlers.handleMarginChange({
+    const handleMarginChangeLocal = handleMarginChange({
         setMarginPercentage,
         formData,
         calculateSellPriceFromMargin,
         updateFormData,
     });
 
-    const handleSellPriceChange = handlers.handleSellPriceChange({
+    const handleSellPriceChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => handleSellPriceChange({
         handleChange,
         calculateProfitPercentage,
         setMarginPercentage,
-    });
+    })(e);
 
-    const startEditingMargin = handlers.startEditingMargin({
+    const startEditingMarginLocal = startEditingMargin({
         calculateProfitPercentage,
         setMarginPercentage,
         setEditingMargin,
         marginInputRef,
     });
 
-    const stopEditingMargin = handlers.stopEditingMargin({
+    const stopEditingMarginLocal = stopEditingMargin({
         setEditingMargin,
         marginPercentage,
         formData,
@@ -116,16 +289,16 @@ const AddItem = () => {
         updateFormData,
     });
 
-    const handleMarginKeyDown = handlers.handleMarginKeyDown(stopEditingMargin);
+    const handleMarginKeyDownLocal = (e: React.KeyboardEvent<HTMLInputElement>) => handleMarginKeyDown(stopEditingMarginLocal)(e);
 
-    const startEditingMinStock = handlers.startEditingMinStock({
+    const startEditingMinStockLocal = startEditingMinStock({
         formData,
         setMinStockValue,
         setEditingMinStock,
         minStockInputRef,
     });
 
-    const stopEditingMinStock = handlers.stopEditingMinStock({
+    const stopEditingMinStockLocal = stopEditingMinStock({
         setEditingMinStock,
         minStockValue,
         updateFormData,
@@ -133,9 +306,12 @@ const AddItem = () => {
         setMinStockValue,
     });
 
-    const handleMinStockChange = handlers.handleMinStockChange(setMinStockValue);
+    const handleMinStockChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => handleMinStockChange(setMinStockValue)(e);
 
-    const handleMinStockKeyDown = handlers.handleMinStockKeyDown(stopEditingMinStock);
+    const handleMinStockKeyDownLocal = (e: React.KeyboardEvent<HTMLInputElement>) => handleMinStockKeyDown(stopEditingMinStockLocal)(e);
+
+    // Add beforeunload handler
+    useBeforeUnload(isDirty);
 
     if (loading) {
         return (
@@ -240,7 +416,7 @@ const AddItem = () => {
                                                 name="category_id"
                                                 value={formData.category_id}
                                                 onChange={(value) =>
-                                                    handleDropdownChange("category_id", value)
+                                                    handleDropdownChangeLocal("category_id", value)
                                                 }
                                                 options={categories}
                                                 placeholder="-- Pilih Kategori --"
@@ -257,7 +433,7 @@ const AddItem = () => {
                                                 name="type_id"
                                                 value={formData.type_id}
                                                 onChange={(value) =>
-                                                    handleDropdownChange("type_id", value)
+                                                    handleDropdownChangeLocal("type_id", value)
                                                 }
                                                 options={types}
                                                 placeholder="-- Pilih Jenis --"
@@ -271,7 +447,7 @@ const AddItem = () => {
                                                 name="unit_id"
                                                 value={formData.unit_id}
                                                 onChange={(value) =>
-                                                    handleDropdownChange("unit_id", value)
+                                                    handleDropdownChangeLocal("unit_id", value)
                                                 }
                                                 options={units}
                                                 placeholder="-- Pilih Satuan --"
@@ -373,16 +549,16 @@ const AddItem = () => {
                                                         ref={minStockInputRef}
                                                         type="number"
                                                         value={minStockValue}
-                                                        onChange={handleMinStockChange}
-                                                        onBlur={stopEditingMinStock}
-                                                        onKeyDown={handleMinStockKeyDown}
+                                                        onChange={handleMinStockChangeLocal}
+                                                        onBlur={stopEditingMinStockLocal}
+                                                        onKeyDown={handleMinStockKeyDownLocal}
                                                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                                         min="0"
                                                     />
                                                 ) : (
                                                     <div
                                                         className="w-full pb-1 cursor-pointer flex items-center"
-                                                        onClick={startEditingMinStock}
+                                                        onClick={startEditingMinStockLocal}
                                                         title="Klik untuk mengubah stok minimal"
                                                     >
                                                         <span>{formData.min_stock}</span>
@@ -391,7 +567,7 @@ const AddItem = () => {
                                                             size={14}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                startEditingMinStock();
+                                                                startEditingMinStockLocal();
                                                             }}
                                                             title="Edit stok minimal"
                                                         />
@@ -489,9 +665,9 @@ const AddItem = () => {
                                                                 ref={marginInputRef}
                                                                 type="number"
                                                                 value={marginPercentage}
-                                                                onChange={handleMarginChange}
-                                                                onBlur={stopEditingMargin}
-                                                                onKeyDown={handleMarginKeyDown}
+                                                                onChange={handleMarginChangeLocal}
+                                                                onBlur={stopEditingMarginLocal}
+                                                                onKeyDown={handleMarginKeyDownLocal}
                                                                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                                                 step="0.1"
                                                             />
@@ -508,7 +684,7 @@ const AddItem = () => {
                                                                             : "text-red-600"
                                                                         : "text-gray-500"
                                                                     }`}
-                                                                onClick={startEditingMargin}
+                                                                onClick={startEditingMarginLocal}
                                                                 title="Klik untuk mengubah margin"
                                                             >
                                                                 {calculateProfitPercentage() !== null
@@ -521,7 +697,7 @@ const AddItem = () => {
                                                                     size={14}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        startEditingMargin();
+                                                                        startEditingMarginLocal();
                                                                     }}
                                                                     title="Edit margin"
                                                                 />
@@ -537,7 +713,7 @@ const AddItem = () => {
                                                     name="sell_price"
                                                     value={displaySellPrice}
                                                     placeholder="Rp 0"
-                                                    onChange={handleSellPriceChange}
+                                                    onChange={handleSellPriceChangeLocal}
                                                     min="0"
                                                     className="w-full"
                                                     required
