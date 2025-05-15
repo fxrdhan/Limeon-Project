@@ -13,7 +13,7 @@ import {
     TableHeader,
 } from "@/components/ui";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
-import { useTypeList } from "./handlers";
+import { useMasterDataManagement } from "@/pages/master-data/handlers";
 
 const TypeList = () => {
     const {
@@ -21,11 +21,11 @@ const TypeList = () => {
         setIsAddModalOpen,
         isEditModalOpen,
         setIsEditModalOpen,
-        editingType,
+        editingItem: editingType,
         search,
         setSearch,
-        types,
-        totalTypes,
+        data: types,
+        totalItems: totalTypes,
         totalPages,
         currentPage,
         itemsPerPage,
@@ -33,15 +33,16 @@ const TypeList = () => {
         isError,
         queryError,
         isFetching,
-        deleteTypeMutation,
+        deleteMutation: deleteTypeMutation,
         openConfirmDialog,
         handleEdit,
         handleModalSubmit,
         handlePageChange,
         handleItemsPerPageChange,
-        addTypeMutation,
-        updateTypeMutation
-    } = useTypeList();
+        addMutation: addTypeMutation,
+        updateMutation: updateTypeMutation,
+        debouncedSearch
+    } = useMasterDataManagement("item_types", "Jenis Item");
 
     return (
         <>
@@ -86,14 +87,14 @@ const TypeList = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {types.length === 0 ? (
+                                {types?.length === 0 ? (
                                     <TableRow>
                                         <TableCell
                                             colSpan={2}
                                             className="text-center text-gray-500"
                                         >
-                                            {search
-                                                ? `Tidak ada jenis item dengan nama "${search}"`
+                                            {debouncedSearch
+                                                ? `Tidak ada jenis item dengan kata kunci "${debouncedSearch}"`
                                                 : "Tidak ada data jenis item yang ditemukan"}
                                         </TableCell>
                                     </TableRow>
@@ -114,9 +115,9 @@ const TypeList = () => {
                         <Pagination
                             currentPage={currentPage}
                             totalPages={totalPages}
-                            totalItems={totalTypes}
-                            itemsPerPage={itemsPerPage}
-                            itemsCount={types.length}
+                            totalItems={totalTypes || 0}
+                            itemsPerPage={itemsPerPage || 10}
+                            itemsCount={types?.length || 0}
                             onPageChange={handlePageChange}
                             onItemsPerPageChange={handleItemsPerPageChange}
                         />
@@ -144,10 +145,10 @@ const TypeList = () => {
                                 title: "Konfirmasi Hapus",
                                 message: `Apakah Anda yakin ingin menghapus jenis item "${editingType.name}"?`,
                                 variant: "danger",
-                                confirmText: "Hapus",
-                                onConfirm: () => {
-                                    deleteTypeMutation.mutate(typeId);
-                                    setIsEditModalOpen(false);
+                                confirmText: "Ya, Hapus",
+                                onConfirm: async () => {
+                                    await deleteTypeMutation.mutateAsync(typeId);
+                                    // setIsEditModalOpen(false); // Dihandle oleh hook
                                 },
                             });
                         }
