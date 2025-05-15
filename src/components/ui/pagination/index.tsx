@@ -131,7 +131,7 @@ export const Pagination = ({
                             initial="enter"
                             animate="center"
                             exit="exit"
-                            transition={{ duration: 0.2 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
                             className="flex items-center justify-center select-none"
                         >
                             {currentPage}
