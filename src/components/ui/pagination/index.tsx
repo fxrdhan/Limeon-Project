@@ -1,6 +1,6 @@
 import { classNames } from "@/lib/classNames";
 import type { PaginationProps } from "@/types";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import React, { useRef, useEffect } from "react";
 
 export const Pagination = ({
@@ -57,39 +57,45 @@ export const Pagination = ({
                 className
             )}
         >
-            <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
-                {pageSizes.map((size) => (
-                    <button
-                        key={size}
-                        className={classNames(
-                            "px-3 py-1.5 rounded-full focus:outline-none transition-transform duration-300 ease-in-out select-none relative",
-                            itemsPerPage === size
-                                ? "transform scale-105 z-10"
-                                : "hover:bg-blue-100"
-                        )}
-                        onClick={() => handleItemsPerPageClick(size)}
-                    >
-                        {itemsPerPage === size && (
-                            <motion.div
-                                layoutId="activeItemsPerPageIndicator"
-                                className="absolute inset-0 bg-blue-500 rounded-full shadow-sm"
-                                style={{ borderRadius: "9999px" }}
-                                transition={{ type: "spring", stiffness: 700, damping: 35 }}
-                            />
-                        )}
-                        <span
+            <LayoutGroup>
+                <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
+                    {pageSizes.map((size) => (
+                        <motion.button
+                            key={size}
+                            layout
                             className={classNames(
-                                "relative z-10 select-none transition-colors duration-300 ease-in-out",
-                                itemsPerPage === size
-                                    ? "text-white font-medium"
-                                    : "text-gray-700 hover:text-blue-600"
+                                "px-3 py-1.5 rounded-full focus:outline-none select-none relative",
+                                itemsPerPage !== size ? "hover:bg-blue-100" : ""
                             )}
+                            onClick={() => handleItemsPerPageClick(size)}
+                            animate={{
+                                scale: itemsPerPage === size ? 1.05 : 1,
+                                zIndex: itemsPerPage === size ? 10 : 1,
+                            }}
+                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
                         >
-                            {itemsPerPage === size ? `${size} items` : size.toString()}
-                        </span>
-                    </button>
-                ))}
-            </div>
+                            {itemsPerPage === size && (
+                                <motion.div
+                                    layoutId="activeItemsPerPageIndicator"
+                                    className="absolute inset-0 bg-blue-500 rounded-full shadow-sm"
+                                    style={{ borderRadius: "9999px" }}
+                                    transition={{ type: "spring", stiffness: 700, damping: 35 }}
+                                />
+                            )}
+                            <span
+                                className={classNames(
+                                    "relative z-10 select-none transition-colors duration-300 ease-in-out",
+                                    itemsPerPage === size
+                                        ? "text-white font-medium"
+                                        : "text-gray-700 hover:text-blue-600"
+                                )}
+                            >
+                                {itemsPerPage === size ? `${size} items` : size.toString()}
+                            </span>
+                        </motion.button>
+                    ))}
+                </div>
+            </LayoutGroup>
 
             <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
                 <div
