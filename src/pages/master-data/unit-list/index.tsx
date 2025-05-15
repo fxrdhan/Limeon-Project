@@ -13,7 +13,7 @@ import {
     SearchBar,
 } from "@/components/ui";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
-import { useUnitManagement } from "./handlers";
+import { useMasterDataManagement } from "@/pages/master-data/handlers";
 
 const UnitList = () => {
     const {
@@ -21,16 +21,15 @@ const UnitList = () => {
         setIsAddModalOpen,
         isEditModalOpen,
         setIsEditModalOpen,
-        editingUnit,
+        editingItem: editingUnit,
         search,
         setSearch,
-        units,
-        totalItems,
+        data: units,
+        totalItems: totalUnits,
         isLoading,
         isError,
         queryError,
         isFetching,
-        handleDelete,
         handleEdit,
         handleModalSubmit,
         handlePageChange,
@@ -38,10 +37,12 @@ const UnitList = () => {
         totalPages,
         currentPage,
         itemsPerPage,
-        addUnitMutation,
-        updateUnitMutation,
-        deleteUnitMutation
-    } = useUnitManagement();
+        addMutation: addUnitMutation,
+        updateMutation: updateUnitMutation,
+        deleteMutation: deleteUnitMutation,
+        openConfirmDialog,
+        debouncedSearch
+    } = useMasterDataManagement("item_units", "Satuan");
 
     return (
         <>
@@ -92,8 +93,8 @@ const UnitList = () => {
                                             colSpan={2}
                                             className="text-center text-gray-500"
                                         >
-                                            {search
-                                                ? `Tidak ada satuan dengan nama "${search}"`
+                                            {debouncedSearch
+                                                ? `Tidak ada satuan dengan kata kunci "${debouncedSearch}"`
                                                 : "Tidak ada data satuan yang ditemukan"}
                                         </TableCell>
                                     </TableRow>
@@ -114,9 +115,9 @@ const UnitList = () => {
                         <Pagination
                             currentPage={currentPage}
                             totalPages={totalPages}
-                            totalItems={totalItems}
-                            itemsPerPage={itemsPerPage}
-                            itemsCount={units.length}
+                            totalItems={totalUnits || 0}
+                            itemsPerPage={itemsPerPage || 10}
+                            itemsCount={units?.length || 0}
                             onPageChange={handlePageChange}
                             onItemsPerPageChange={handleItemsPerPageChange}
                         />
@@ -139,13 +140,17 @@ const UnitList = () => {
                 initialData={editingUnit || undefined}
                 onDelete={
                     editingUnit
-                        ? (unitId) =>
-                            handleDelete({
-                                id: unitId,
-                                name: editingUnit.name,
-                                description: editingUnit.description,
-                            })
-                        : undefined
+                        ? (itemId) => {
+                            openConfirmDialog({
+                                title: "Konfirmasi Hapus",
+                                message: `Apakah Anda yakin ingin menghapus satuan "${editingUnit.name}"?`,
+                                variant: "danger",
+                                confirmText: "Ya, Hapus",
+                                onConfirm: async () => {
+                                    await deleteUnitMutation.mutateAsync(itemId);
+                                },
+                            });
+                        } : undefined
                 }
                 isLoading={updateUnitMutation.isPending}
                 isDeleting={deleteUnitMutation.isPending}

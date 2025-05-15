@@ -1,195 +1,38 @@
 import { FaPlus } from "react-icons/fa";
-import { useState, useEffect } from "react";
-import type { Category } from "@/types";
-import { supabase } from "@/lib/supabase";
 import {
-    Card,
-    Button,
-    Loading,
-    Pagination,
-    SearchBar,
-    Table,
-    TableHead,
-    TableBody,
-    TableRow,
-    TableCell,
-    TableHeader,
+    Card, Button, Loading, Pagination, SearchBar, Table, TableHead, TableBody, TableRow, TableCell, TableHeader
 } from "@/components/ui";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
-import { useConfirmDialog } from "@/components/ui/dialog-box";
-import {
-    useQuery,
-    useMutation,
-    useQueryClient,
-    keepPreviousData,
-} from "@tanstack/react-query";
+import { useMasterDataManagement } from "@/pages/master-data/handlers";
 
 const CategoryList = () => {
-    const { openConfirmDialog } = useConfirmDialog();
-    const queryClient = useQueryClient();
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-
-    const [search, setSearch] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-
-    useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (!isEditModalOpen && editingCategory) {
-            timer = setTimeout(() => {
-                setEditingCategory(null);
-            }, 300);
-        }
-        return () => clearTimeout(timer);
-    }, [editingCategory, isEditModalOpen]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-            setCurrentPage(1);
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [search]);
-
-    const fetchCategories = async (
-        page: number,
-        searchTerm: string,
-        limit: number
-    ) => {
-        const from = (page - 1) * limit;
-        const to = from + limit - 1;
-
-        let categoriesQuery = supabase.from("item_categories").select("*");
-
-        let countQuery = supabase
-            .from("item_categories")
-            .select("id", { count: "exact" });
-
-        if (searchTerm) {
-            categoriesQuery = categoriesQuery.or(
-                `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
-            );
-            countQuery = countQuery.or(
-                `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
-            );
-        }
-
-        const [categoriesResult, countResult] = await Promise.all([
-            categoriesQuery.order("name").range(from, to),
-            countQuery,
-        ]);
-
-        if (categoriesResult.error) throw categoriesResult.error;
-        if (countResult.error) throw countResult.error;
-
-        return {
-            categories: categoriesResult.data || [],
-            totalCategories: countResult.count || 0,
-        };
-    };
-
-    const { data, isLoading, isError, error, isFetching } = useQuery({
-        queryKey: ["categories", currentPage, debouncedSearch, itemsPerPage],
-        queryFn: () => fetchCategories(currentPage, debouncedSearch, itemsPerPage),
-        placeholderData: keepPreviousData,
-        staleTime: 30 * 1000,
-        refetchOnMount: true,
-    });
-
-    const categories = data?.categories || [];
-    const totalCategories = data?.totalCategories || 0;
-    const queryError = error instanceof Error ? error : null;
-
-    const deleteCategoryMutation = useMutation({
-        mutationFn: async (categoryId: string) => {
-            const { error } = await supabase
-                .from("item_categories")
-                .delete()
-                .eq("id", categoryId);
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["categories"] });
-        },
-        onError: (error) => {
-            alert(`Gagal menghapus kategori: ${error.message}`);
-        },
-    });
-
-    const addCategoryMutation = useMutation({
-        mutationFn: async (newCategory: { name: string; description: string }) => {
-            const { error } = await supabase
-                .from("item_categories")
-                .insert(newCategory);
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["categories"] });
-            setIsAddModalOpen(false);
-        },
-        onError: (error) => {
-            alert(`Gagal menambahkan kategori: ${error.message}`);
-        },
-    });
-
-    const updateCategoryMutation = useMutation({
-        mutationFn: async (updatedCategory: {
-            id: string;
-            name: string;
-            description: string;
-        }) => {
-            const { id, ...updateData } = updatedCategory;
-            const { error } = await supabase
-                .from("item_categories")
-                .update(updateData)
-                .eq("id", id);
-            if (error) throw error;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["categories"] });
-            setIsEditModalOpen(false);
-            setEditingCategory(null);
-        },
-        onError: (error) => {
-            alert(`Gagal memperbarui kategori: ${error.message}`);
-        },
-    });
-
-    const handleEdit = (category: Category) => {
-        setEditingCategory(category);
-        setIsEditModalOpen(true);
-    };
-
-    const handleModalSubmit = async (categoryData: {
-        id?: string;
-        name: string;
-        description: string;
-    }) => {
-        if (categoryData.id) {
-            await updateCategoryMutation.mutateAsync(
-                categoryData as { id: string; name: string; description: string }
-            );
-        } else {
-            await addCategoryMutation.mutateAsync(categoryData);
-        }
-    };
-
-    const handlePageChange = (newPage: number) => {
-        setCurrentPage(newPage);
-    };
-
-    const handleItemsPerPageChange = (
-        e: React.ChangeEvent<HTMLSelectElement>
-    ) => {
-        setItemsPerPage(Number(e.target.value));
-        setCurrentPage(1);
-    };
-
-    const totalPages = Math.ceil(totalCategories / itemsPerPage);
+    const {
+        isAddModalOpen,
+        setIsAddModalOpen,
+        isEditModalOpen,
+        setIsEditModalOpen,
+        editingItem: editingCategory,
+        search,
+        setSearch,
+        data: categories,
+        totalItems: totalCategories,
+        isLoading,
+        isError,
+        queryError,
+        isFetching,
+        handleEdit,
+        handleModalSubmit,
+        handlePageChange,
+        handleItemsPerPageChange,
+        totalPages,
+        currentPage,
+        itemsPerPage,
+        addMutation,
+        updateMutation,
+        deleteMutation,
+        openConfirmDialog,
+        debouncedSearch,
+    } = useMasterDataManagement("item_categories", "Kategori Item");
 
     return (
         <>
@@ -234,14 +77,14 @@ const CategoryList = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {categories.length === 0 ? (
+                                {categories?.length === 0 ? (
                                     <TableRow>
                                         <TableCell
                                             colSpan={2}
                                             className="text-center text-gray-500"
                                         >
                                             {debouncedSearch
-                                                ? `Tidak ada kategori dengan nama "${debouncedSearch}"`
+                                                ? `Tidak ada kategori dengan kata kunci "${debouncedSearch}"`
                                                 : "Tidak ada data kategori yang ditemukan"}
                                         </TableCell>
                                     </TableRow>
@@ -262,9 +105,9 @@ const CategoryList = () => {
                         <Pagination
                             currentPage={currentPage}
                             totalPages={totalPages}
-                            totalItems={totalCategories}
-                            itemsPerPage={itemsPerPage}
-                            itemsCount={categories.length}
+                            totalItems={totalCategories || 0}
+                            itemsPerPage={itemsPerPage || 10}
+                            itemsCount={categories?.length || 0}
                             onPageChange={handlePageChange}
                             onItemsPerPageChange={handleItemsPerPageChange}
                         />
@@ -276,7 +119,7 @@ const CategoryList = () => {
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onSubmit={handleModalSubmit}
-                isLoading={addCategoryMutation.isPending}
+                isLoading={addMutation.isPending}
                 entityName="Kategori"
             />
 
@@ -292,17 +135,17 @@ const CategoryList = () => {
                                 title: "Konfirmasi Hapus",
                                 message: `Apakah Anda yakin ingin menghapus kategori item "${editingCategory.name}"?`,
                                 variant: "danger",
-                                confirmText: "Hapus",
-                                onConfirm: () => {
-                                    deleteCategoryMutation.mutate(categoryId);
-                                    setIsEditModalOpen(false);
+                                confirmText: "Ya, Hapus",
+                                onConfirm: async () => {
+                                    await deleteMutation.mutateAsync(categoryId);
+                                    // setIsEditModalOpen(false); // Dihandle oleh hook
                                 },
                             });
                         }
                         : undefined
                 }
-                isLoading={updateCategoryMutation.isPending}
-                isDeleting={deleteCategoryMutation.isPending}
+                isLoading={updateMutation.isPending}
+                isDeleting={deleteMutation.isPending}
                 entityName="Kategori"
             />
         </>
