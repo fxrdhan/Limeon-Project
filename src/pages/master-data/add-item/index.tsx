@@ -22,7 +22,7 @@ import {
     CardContent,
     CardFooter,
 } from "@/components/ui";
-import { useAddItemPageHandlers } from "@/pages/master-data/handlers";
+import { useAddItemPageHandlers } from "@/pages/handlers";
 
 const AddItem = () => {
     const {

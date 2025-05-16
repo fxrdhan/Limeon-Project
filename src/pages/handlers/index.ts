@@ -41,7 +41,7 @@ export const useMasterDataManagement = (
         if (!isEditModalOpen && editingItem) {
             timer = setTimeout(() => {
                 setEditingItem(null);
-            }, 300); // Delay to allow modal close animation
+            }, 300);
         }
         return () => clearTimeout(timer);
     }, [editingItem, isEditModalOpen]);
@@ -49,8 +49,8 @@ export const useMasterDataManagement = (
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(search);
-            setCurrentPage(1); // Reset to first page on new search
-        }, 500); // Debounce time
+            setCurrentPage(1);
+        }, 500);
 
         return () => clearTimeout(timer);
     }, [search]);
@@ -77,7 +77,7 @@ export const useMasterDataManagement = (
         queryKey: [tableName, currentPage, debouncedSearch, itemsPerPage],
         queryFn: () => fetchData(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
-        staleTime: 30 * 1000, // 30 seconds
+        staleTime: 30 * 1000,
         refetchOnMount: true,
     });
 
@@ -122,7 +122,7 @@ export const useMasterDataManagement = (
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [tableName] });
-            setIsEditModalOpen(false); // Close edit modal if open
+            setIsEditModalOpen(false);
             setEditingItem(null);
         },
         onError: (error: Error) => {
@@ -146,7 +146,7 @@ export const useMasterDataManagement = (
     const handlePageChange = (newPage: number) => setCurrentPage(newPage);
     const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setItemsPerPage(Number(e.target.value));
-        setCurrentPage(1); // Reset to first page
+        setCurrentPage(1);
     };
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -166,7 +166,6 @@ export const useMasterDataManagement = (
     };
 };
 
-// --- Supplier handlers ---
 export const useSupplierHandlers = (
     openConfirmDialog: (options: ConfirmDialogOptionsSupplier) => void
 ) => {
@@ -423,7 +422,6 @@ export const useSupplierHandlers = (
     };
 };
 
-// Utility hooks and handlers for AddItem page
 export function useBeforeUnload(isDirty: () => boolean) {
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -552,16 +550,16 @@ export const useAddItemPageHandlers = () => {
         showDescription, setShowDescription,
         isDescriptionHovered, setIsDescriptionHovered,
         showFefoTooltip, setShowFefoTooltip,
-        handleSelectChange, // renamed from handleSelectChangeWrapper
-        handleDropdownChange, // renamed from handleDropdownChangeWrapper
-        handleMarginChange,   // renamed from handleMarginChangeWrapper
-        handleSellPriceChange, // renamed from handleSellPriceChangeWrapper
-        startEditingMargin,    // renamed from startEditingMarginWrapper
-        stopEditingMargin,     // renamed from stopEditingMarginWrapper
-        handleMarginKeyDown,   // renamed from handleMarginKeyDownWrapper
-        startEditingMinStock,  // renamed from startEditingMinStockWrapper
-        stopEditingMinStock,   // renamed from stopEditingMinStockWrapper
-        handleMinStockChange,  // renamed from handleMinStockChangeWrapper
-        handleMinStockKeyDown, // renamed from handleMinStockKeyDownWrapper
+        handleSelectChange,
+        handleDropdownChange,
+        handleMarginChange,
+        handleSellPriceChange,
+        startEditingMargin,
+        stopEditingMargin,
+        handleMarginKeyDown,
+        startEditingMinStock,
+        stopEditingMinStock,
+        handleMinStockChange,
+        handleMinStockKeyDown,
     };
 };

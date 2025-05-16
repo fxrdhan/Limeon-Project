@@ -3,7 +3,7 @@ import {
     Card, Button, Loading, Pagination, SearchBar, Table, TableHead, TableBody, TableRow, TableCell, TableHeader
 } from "@/components/ui";
 import { AddCategoryModal } from "@/components/ui/modal/add-edit";
-import { useMasterDataManagement } from "@/pages/master-data/handlers";
+import { useMasterDataManagement } from "@/pages/handlers";
 
 const CategoryList = () => {
     const {
