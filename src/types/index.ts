@@ -96,7 +96,7 @@ export interface NavbarProps {
 }
 
 // src/components/layout/Sidebar.tsx
-import { JSX, RefObject } from "react";
+import { JSX } from "react";
 
 export interface SidebarProps {
     collapsed: boolean;
@@ -581,54 +581,4 @@ export interface AuthState {
     logout: () => Promise<void>;
     updateProfilePhoto: (photoBase64: string) => Promise<void>;
     initialize: () => Promise<void>;
-}
-
-// Handler interfaces
-export interface HandleSelectChangeProps {
-    originalHandleSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-    units: Unit[];
-    unitConversionHook: UseUnitConversionReturn;
-}
-
-export interface HandleMarginChangeProps {
-    setMarginPercentage: (value: string) => void;
-    formData: FormData;
-    calculateSellPriceFromMargin: (margin: number) => number;
-    updateFormData: (data: Partial<FormData>) => void;
-}
-
-export interface HandleSellPriceChangeProps {
-    handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    calculateProfitPercentage: () => number | null;
-    setMarginPercentage: (value: string) => void;
-}
-
-export interface StartEditingMarginProps {
-    calculateProfitPercentage: () => number | null;
-    setMarginPercentage: (value: string) => void;
-    setEditingMargin: (value: boolean) => void;
-    marginInputRef: RefObject<HTMLInputElement | null>;
-}
-
-export interface StopEditingMarginProps {
-    setEditingMargin: (value: boolean) => void;
-    marginPercentage: string;
-    formData: FormData;
-    calculateSellPriceFromMargin: (margin: number) => number;
-    updateFormData: (data: Partial<FormData>) => void;
-}
-
-export interface StartEditingMinStockProps {
-    formData: FormData;
-    setMinStockValue: (value: string) => void;
-    setEditingMinStock: (value: boolean) => void;
-    minStockInputRef: RefObject<HTMLInputElement | null>;
-}
-
-export interface StopEditingMinStockProps {
-    setEditingMinStock: (value: boolean) => void;
-    minStockValue: string;
-    updateFormData: (data: Partial<FormData>) => void;
-    formData: FormData;
-    setMinStockValue: (value: string) => void;
 }
