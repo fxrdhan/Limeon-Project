@@ -14,6 +14,7 @@ import {
 import DetailEditModal from "@/components/modules/modal/supplier";
 import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { useSupplierHandlers } from "@/pages/handlers";
+import { PageTitle } from "@/components/modules/page-title";
 
 const SupplierList = () => {
     const { openConfirmDialog } = useConfirmDialog();
@@ -44,9 +45,7 @@ const SupplierList = () => {
         <Card>
             <CardHeader className="mb-6 px-0">
                 <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">
-                        Daftar Supplier
-                    </h1>
+                    <PageTitle title="Daftar Supplier" />
                     <Button
                         variant="primary"
                         className="flex items-center"

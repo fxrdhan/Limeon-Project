@@ -13,6 +13,7 @@ import {
     Pagination,
 } from "@/components/modules";
 import { useItemListManagement } from "@/pages/handlers";
+import { PageTitle } from "@/components/modules/page-title";
 
 function ItemList() {
     const {
@@ -38,9 +39,7 @@ function ItemList() {
             className={isFetching ? "opacity-75 transition-opacity duration-300" : ""}
         >
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">
-                    Daftar Item
-                </h1>
+                <PageTitle title="Daftar Item" />
 
                 <Link to="/master-data/items/add">
                     <Button variant="primary" className="flex items-center">
