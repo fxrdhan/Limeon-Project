@@ -14,3 +14,4 @@ export * from './offline-alert';
 export * from './pagination';
 export * from './search-bar';
 export * from './table';
+export * from './page-title';
