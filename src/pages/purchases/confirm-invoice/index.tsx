@@ -13,7 +13,7 @@ import {
     TableRow,
     TableCell,
     TableHeader,
-} from "@/components/ui";
+} from "@/components/modules";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaCheck, FaClock, FaRedo } from "react-icons/fa";
 import {

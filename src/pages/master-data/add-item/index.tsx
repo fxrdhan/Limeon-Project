@@ -21,7 +21,7 @@ import {
     CardTitle,
     CardContent,
     CardFooter,
-} from "@/components/ui";
+} from "@/components/modules";
 import { useAddItemPageHandlers } from "@/pages/handlers";
 
 const AddItem = () => {

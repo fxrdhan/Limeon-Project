@@ -6,7 +6,7 @@ import type { UnitConversion } from '@/types';
 import { useUnitConversion } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatRupiah, extractNumericValue, formatDateTime } from "@/lib/formatters";
-import { useConfirmDialog } from "@/components/ui";
+import { useConfirmDialog } from "@/components/modules";
 import type { Category, MedicineType, Unit, FormData } from '@/types';
 import { generateTypeCode, generateUnitCode, generateCategoryCode, getUnitById } from "@/hooks/add-item/helper";
 

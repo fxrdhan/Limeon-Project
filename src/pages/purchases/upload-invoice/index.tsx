@@ -7,7 +7,7 @@ import {
     CardTitle,
     CardContent,
     Button,
-} from "@/components/ui";
+} from "@/components/modules";
 import {
     FaUpload,
     FaArrowLeft,

@@ -1,4 +1,4 @@
-import { Input, Button, useConfirmDialog } from "@/components/ui";
+import { Input, Button, useConfirmDialog } from "@/components/modules";
 import { createPortal } from "react-dom";
 import { FaTimes } from "react-icons/fa";
 import type { AddCategoryModalProps } from "@/types";

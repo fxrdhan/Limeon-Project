@@ -21,7 +21,7 @@ import {
     TableRow,
     TableCell,
     TableHeader
-} from '@/components/ui';
+} from '@/components/modules';
 import ItemSearchBar from '@/pages/purchases/item-search';
 
 import { usePurchaseForm, useItemSelection } from '@/hooks';

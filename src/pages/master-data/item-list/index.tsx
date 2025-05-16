@@ -11,7 +11,7 @@ import {
     TableCell,
     TableHeader,
     Pagination,
-} from "@/components/ui";
+} from "@/components/modules";
 import { useItemListManagement } from "@/pages/handlers";
 
 function ItemList() {

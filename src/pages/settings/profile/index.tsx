@@ -6,7 +6,7 @@ import {
     CardHeader,
     CardTitle,
     CardContent,
-} from "@/components/ui";
+} from "@/components/modules";
 import { FaEdit, FaCheck, FaTimes } from "react-icons/fa";
 import type { CompanyProfile, ProfileKey } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
