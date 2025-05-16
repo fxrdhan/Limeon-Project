@@ -25,34 +25,8 @@ import {
     CardContent,
     CardFooter,
 } from "@/components/ui";
-import type { HandleSelectChangeProps, HandleMarginChangeProps, HandleSellPriceChangeProps, StartEditingMarginProps, StopEditingMarginProps, StartEditingMinStockProps, StopEditingMinStockProps } from "@/types";
 
-function handleSelectChange({
-    originalHandleSelectChange,
-    units,
-    unitConversionHook,
-}: HandleSelectChangeProps) {
-    return (e: ChangeEvent<HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        originalHandleSelectChange(e);
-        if (name === "unit_id" && value) {
-            const selectedUnit = units.find((unit) => unit.id === value);
-            if (selectedUnit) {
-                unitConversionHook.setBaseUnit(selectedUnit.name);
-            }
-        }
-    };
-}
-
-function handleDropdownChange(handleSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void) {
-    return (name: string, value: string) => {
-        const syntheticEvent = {
-            target: { name, value },
-        } as React.ChangeEvent<HTMLSelectElement>;
-        handleSelectChange(syntheticEvent);
-    };
-}
-
+// Utility hooks and handlers
 function useBeforeUnload(isDirty: () => boolean) {
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -63,140 +37,8 @@ function useBeforeUnload(isDirty: () => boolean) {
             }
         };
         window.addEventListener("beforeunload", handleBeforeUnload);
-        return () => {
-            window.removeEventListener("beforeunload", handleBeforeUnload);
-        };
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
     }, [isDirty]);
-}
-
-function handleMarginChange({
-    setMarginPercentage,
-    formData,
-    calculateSellPriceFromMargin,
-    updateFormData
-}: HandleMarginChangeProps) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (e: { target: { value: any; }; }) => {
-        const value = e.target.value;
-        setMarginPercentage(value);
-        const margin = parseFloat(value);
-        if (!isNaN(margin) && formData.base_price > 0) {
-            const newSellPrice = calculateSellPriceFromMargin(margin);
-            updateFormData({ sell_price: newSellPrice });
-        }
-    };
-}
-
-function handleSellPriceChange({
-    handleChange,
-    calculateProfitPercentage,
-    setMarginPercentage,
-}: HandleSellPriceChangeProps) {
-    return (e: React.ChangeEvent<HTMLInputElement>) => {
-        handleChange(e);
-        setTimeout(() => {
-            const profit = calculateProfitPercentage();
-            if (profit !== null) {
-                setMarginPercentage(profit.toFixed(1));
-            }
-        }, 0);
-    };
-}
-
-function startEditingMargin({
-    calculateProfitPercentage,
-    setMarginPercentage,
-    setEditingMargin,
-    marginInputRef,
-}: StartEditingMarginProps) {
-    return (): void => {
-        const currentMargin = calculateProfitPercentage();
-        setMarginPercentage(
-            currentMargin !== null ? currentMargin.toFixed(1) : "0"
-        );
-        setEditingMargin(true);
-        setTimeout(() => {
-            if (marginInputRef.current) {
-                marginInputRef.current.focus();
-                marginInputRef.current.select();
-            }
-        }, 10);
-    };
-}
-
-function stopEditingMargin({
-    setEditingMargin,
-    marginPercentage,
-    formData,
-    calculateSellPriceFromMargin,
-    updateFormData
-}: StopEditingMarginProps) {
-    return () => {
-        setEditingMargin(false);
-        const margin = parseFloat(marginPercentage);
-        if (!isNaN(margin) && formData.base_price > 0) {
-            const newSellPrice = calculateSellPriceFromMargin(margin);
-            updateFormData({ sell_price: newSellPrice });
-        }
-    };
-}
-
-function handleMarginKeyDown(stopEditingMargin: () => void) {
-    return (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            stopEditingMargin();
-        }
-    };
-}
-
-function startEditingMinStock({
-    formData,
-    setMinStockValue,
-    setEditingMinStock,
-    minStockInputRef,
-}: StartEditingMinStockProps) {
-    return (): void => {
-        setMinStockValue(String(formData.min_stock));
-        setEditingMinStock(true);
-        setTimeout(() => {
-            if (minStockInputRef.current) {
-                minStockInputRef.current.focus();
-                minStockInputRef.current.select();
-            }
-        }, 10);
-    };
-}
-
-function stopEditingMinStock({
-    setEditingMinStock,
-    minStockValue,
-    updateFormData,
-    formData,
-    setMinStockValue
-}: StopEditingMinStockProps) {
-    return () => {
-        setEditingMinStock(false);
-        const stockValue = parseInt(minStockValue, 10);
-        if (!isNaN(stockValue) && stockValue >= 0) {
-            updateFormData({ min_stock: stockValue });
-        } else {
-            setMinStockValue(String(formData.min_stock));
-        }
-    };
-}
-
-function handleMinStockChange(setMinStockValue: (value: string) => void) {
-    return (e: React.ChangeEvent<HTMLInputElement>) => {
-        setMinStockValue(e.target.value);
-    };
-}
-
-function handleMinStockKeyDown(stopEditingMinStock: () => void) {
-    return (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            stopEditingMinStock();
-        }
-    };
 }
 
 const AddItem = () => {
@@ -252,63 +94,98 @@ const AddItem = () => {
     const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
     const [showFefoTooltip, setShowFefoTooltip] = useState(false);
 
-    // Use the handler functions directly in the component
-    const handleSelectChangeLocal: (e: React.ChangeEvent<HTMLSelectElement>) => void = handleSelectChange({
-        originalHandleSelectChange,
-        units,
-        unitConversionHook,
-    });
+    // Simplified handlers
+    const handleSelectChangeLocal = (e: ChangeEvent<HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        originalHandleSelectChange(e);
+        
+        if (name === "unit_id" && value) {
+            const selectedUnit = units.find(unit => unit.id === value);
+            if (selectedUnit) unitConversionHook.setBaseUnit(selectedUnit.name);
+        }
+    };
 
-    const handleDropdownChangeLocal = (name: string, value: string) => handleDropdownChange(handleSelectChangeLocal)(name, value);
+    const handleDropdownChangeLocal = (name: string, value: string) => {
+        handleSelectChangeLocal({
+            target: { name, value }
+        } as ChangeEvent<HTMLSelectElement>);
+    };
 
-    const handleMarginChangeLocal = handleMarginChange({
-        setMarginPercentage,
-        formData,
-        calculateSellPriceFromMargin,
-        updateFormData,
-    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleMarginChangeLocal = (e: { target: { value: any } }) => {
+        const value = e.target.value;
+        setMarginPercentage(value);
+        
+        const margin = parseFloat(value);
+        if (!isNaN(margin) && formData.base_price > 0) {
+            updateFormData({ sell_price: calculateSellPriceFromMargin(margin) });
+        }
+    };
 
-    const handleSellPriceChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => handleSellPriceChange({
-        handleChange,
-        calculateProfitPercentage,
-        setMarginPercentage,
-    })(e);
+    const handleSellPriceChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
+        handleChange(e);
+        setTimeout(() => {
+            const profit = calculateProfitPercentage();
+            if (profit !== null) setMarginPercentage(profit.toFixed(1));
+        }, 0);
+    };
 
-    const startEditingMarginLocal = startEditingMargin({
-        calculateProfitPercentage,
-        setMarginPercentage,
-        setEditingMargin,
-        marginInputRef,
-    });
+    const startEditingMarginLocal = () => {
+        const currentMargin = calculateProfitPercentage();
+        setMarginPercentage(currentMargin !== null ? currentMargin.toFixed(1) : "0");
+        setEditingMargin(true);
+        
+        setTimeout(() => {
+            if (marginInputRef.current) {
+                marginInputRef.current.focus();
+                marginInputRef.current.select();
+            }
+        }, 10);
+    };
 
-    const stopEditingMarginLocal = stopEditingMargin({
-        setEditingMargin,
-        marginPercentage,
-        formData,
-        calculateSellPriceFromMargin,
-        updateFormData,
-    });
+    const stopEditingMarginLocal = () => {
+        setEditingMargin(false);
+        
+        const margin = parseFloat(marginPercentage);
+        if (!isNaN(margin) && formData.base_price > 0) {
+            updateFormData({ sell_price: calculateSellPriceFromMargin(margin) });
+        }
+    };
 
-    const handleMarginKeyDownLocal = (e: React.KeyboardEvent<HTMLInputElement>) => handleMarginKeyDown(stopEditingMarginLocal)(e);
+    const handleMarginKeyDownLocal = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") stopEditingMarginLocal();
+    };
 
-    const startEditingMinStockLocal = startEditingMinStock({
-        formData,
-        setMinStockValue,
-        setEditingMinStock,
-        minStockInputRef,
-    });
+    const startEditingMinStockLocal = () => {
+        setMinStockValue(String(formData.min_stock));
+        setEditingMinStock(true);
+        
+        setTimeout(() => {
+            if (minStockInputRef.current) {
+                minStockInputRef.current.focus();
+                minStockInputRef.current.select();
+            }
+        }, 10);
+    };
 
-    const stopEditingMinStockLocal = stopEditingMinStock({
-        setEditingMinStock,
-        minStockValue,
-        updateFormData,
-        formData,
-        setMinStockValue,
-    });
+    const stopEditingMinStockLocal = () => {
+        setEditingMinStock(false);
+        
+        const stockValue = parseInt(minStockValue, 10);
+        if (!isNaN(stockValue) && stockValue >= 0) {
+            updateFormData({ min_stock: stockValue });
+        } else {
+            setMinStockValue(String(formData.min_stock));
+        }
+    };
 
-    const handleMinStockChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => handleMinStockChange(setMinStockValue)(e);
+    const handleMinStockChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setMinStockValue(e.target.value);
+    };
 
-    const handleMinStockKeyDownLocal = (e: React.KeyboardEvent<HTMLInputElement>) => handleMinStockKeyDown(stopEditingMinStockLocal)(e);
+    const handleMinStockKeyDownLocal = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") stopEditingMinStockLocal();
+    };
 
     // Add beforeunload handler
     useBeforeUnload(isDirty);
