@@ -13,7 +13,7 @@ import {
 } from "@/components/ui";
 import DetailEditModal from "@/components/ui/modal/supplier";
 import { useConfirmDialog } from "@/components/ui/dialog-box";
-import { useSupplierHandlers } from "@/pages/master-data/handlers";
+import { useSupplierHandlers } from "@/pages/handlers";
 
 const SupplierList = () => {
     const { openConfirmDialog } = useConfirmDialog();
