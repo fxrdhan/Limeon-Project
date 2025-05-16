@@ -11,9 +11,9 @@ import {
     TableCell,
     TableHeader,
     Pagination,
+    PageTitle
 } from "@/components/modules";
 import { useItemListManagement } from "@/pages/handlers";
-import { PageTitle } from "@/components/modules/page-title";
 
 function ItemList() {
     const {

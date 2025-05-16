@@ -11,10 +11,10 @@ import {
     TableHeader,
     Pagination,
     SearchBar,
+    PageTitle
 } from "@/components/modules";
 import { AddCategoryModal } from "@/components/modules/modal/add-edit";
 import { useMasterDataManagement } from "@/pages/handlers";
-import { PageTitle } from "@/components/modules/page-title";
 
 const UnitList = () => {
     const {
