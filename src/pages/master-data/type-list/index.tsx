@@ -11,8 +11,8 @@ import {
     TableRow,
     TableCell,
     TableHeader,
-} from "@/components/ui";
-import { AddCategoryModal } from "@/components/ui/modal/add-edit";
+} from "@/components/modules";
+import { AddCategoryModal } from "@/components/modules/modal/add-edit";
 import { useMasterDataManagement } from "@/pages/handlers";
 
 const TypeList = () => {

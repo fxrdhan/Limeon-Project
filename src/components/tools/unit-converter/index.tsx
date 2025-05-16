@@ -11,7 +11,7 @@ import {
     TableRow,
     TableCell,
     TableHeader,
-} from "@/components/ui";
+} from "@/components/modules";
 import { FaTrash } from "react-icons/fa";
 import type { UnitConversionManagerProps } from "@/types";
 

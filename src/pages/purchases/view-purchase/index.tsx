@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { Card, Button, Loading } from "@/components/ui";
+import { Card, Button, Loading } from "@/components/modules";
 import type { PurchaseData, PurchaseItem } from "@/types";
 import {
     FaArrowLeft,

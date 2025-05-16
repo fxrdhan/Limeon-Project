@@ -10,9 +10,9 @@ import {
     TableRow,
     TableCell,
     TableHeader,
-} from "@/components/ui";
-import DetailEditModal from "@/components/ui/modal/supplier";
-import { useConfirmDialog } from "@/components/ui/dialog-box";
+} from "@/components/modules";
+import DetailEditModal from "@/components/modules/modal/supplier";
+import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { useSupplierHandlers } from "@/pages/handlers";
 
 const SupplierList = () => {

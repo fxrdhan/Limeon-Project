@@ -15,7 +15,7 @@ import {
     TableRow,
     TableCell,
     TableHeader,
-} from "@/components/ui";
+} from "@/components/modules";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
 import {
     useQuery,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import { supabase } from "@/lib/supabase";
-import { useConfirmDialog } from "@/components/ui";
+import { useConfirmDialog } from "@/components/modules";
 import {
     useQuery,
     useMutation,
