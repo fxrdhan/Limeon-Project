@@ -14,6 +14,7 @@ import {
 } from "@/components/modules";
 import { AddCategoryModal } from "@/components/modules/modal/add-edit";
 import { useMasterDataManagement } from "@/pages/handlers";
+import { PageTitle } from "@/components/modules/page-title";
 
 const UnitList = () => {
     const {
@@ -52,9 +53,7 @@ const UnitList = () => {
                 }
             >
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">
-                        Daftar Satuan Item
-                    </h1>
+                    <PageTitle title="Daftar Satuan Item" />
                     <Button
                         variant="primary"
                         className="flex items-center"

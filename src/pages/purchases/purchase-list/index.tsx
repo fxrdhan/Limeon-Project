@@ -23,6 +23,7 @@ import {
     useQueryClient,
     keepPreviousData,
 } from "@tanstack/react-query";
+import { PageTitle } from "@/components/modules/page-title";
 
 interface Purchase {
     id: string;
@@ -240,9 +241,7 @@ const PurchaseList = () => {
             className={isFetching ? "opacity-75 transition-opacity duration-300" : ""}
         >
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800 text-center flex-grow">
-                    Daftar Pembelian
-                </h1>
+                <PageTitle title="Daftar Pembelian" />
                 <div className="flex space-x-2">
                     <Link to="/purchases/upload-invoice">
                         <Button variant="primary">

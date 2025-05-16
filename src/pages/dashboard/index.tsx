@@ -17,6 +17,7 @@ import {
 } from 'chart.js';
 import { Line, Pie, Bar, Doughnut } from 'react-chartjs-2';
 import { FaShoppingBag, FaShoppingCart, FaBoxes, FaExclamationTriangle } from 'react-icons/fa';
+import { PageTitle } from "@/components/modules/page-title";
 
 ChartJS.register(
     CategoryScale,
@@ -194,7 +195,7 @@ const Dashboard = () => {
     return (
         <div className="min-h-screen">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+                <PageTitle title="Dashboard" />
                 <button
                     onClick={toggleDemoMode}
                     className={`px-4 py-2 rounded-md font-medium shadow-md border ${demoMode ? 'bg-red-500 text-white border-red-600' : 'bg-blue-500 text-white border-blue-600 hover:bg-blue-700'}`}
