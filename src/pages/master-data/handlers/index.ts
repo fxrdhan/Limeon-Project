@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, ChangeEvent } from "react";
 import { supabase } from "@/lib/supabase";
 import { useConfirmDialog } from "@/components/ui";
 import {
@@ -15,6 +15,8 @@ import type {
     FieldConfig as FieldConfigSupplier,
     ConfirmDialogOptions as ConfirmDialogOptionsSupplier
 } from "@/types";
+import { useParams } from "react-router-dom";
+import { useAddItemForm } from "@/hooks/add-item";
 
 type MasterDataItem = Category | ItemType | Unit;
 
@@ -418,5 +420,148 @@ export const useSupplierHandlers = (
         supplierFields,
         transformSupplierForModal,
         emptySupplierData
+    };
+};
+
+// Utility hooks and handlers for AddItem page
+export function useBeforeUnload(isDirty: () => boolean) {
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isDirty()) {
+                e.preventDefault();
+                e.returnValue = "";
+                return "";
+            }
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [isDirty]);
+}
+
+export const useAddItemPageHandlers = () => {
+    const { id } = useParams<{ id: string }>();
+    const descriptionRef = useRef<HTMLDivElement>(null);
+    const marginInputRef = useRef<HTMLInputElement>(null);
+    const minStockInputRef = useRef<HTMLInputElement>(null);
+
+    const addItemForm = useAddItemForm(id || undefined);
+
+    const [showDescription, setShowDescription] = useState(false);
+    const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
+    const [showFefoTooltip, setShowFefoTooltip] = useState(false);
+
+    const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        addItemForm.handleSelectChange(e); 
+        
+        if (name === "unit_id" && value) {
+            const selectedUnit = addItemForm.units.find(unit => unit.id === value);
+            if (selectedUnit) addItemForm.unitConversionHook.setBaseUnit(selectedUnit.name);
+        }
+    };
+
+    const handleDropdownChange = (name: string, value: string) => {
+        handleSelectChange({
+            target: { name, value }
+        } as ChangeEvent<HTMLSelectElement>);
+    };
+
+    const handleMarginChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        addItemForm.setMarginPercentage(value);
+        
+        const margin = parseFloat(value);
+        if (!isNaN(margin) && addItemForm.formData.base_price > 0) {
+            addItemForm.updateFormData({ sell_price: addItemForm.calculateSellPriceFromMargin(margin) });
+        }
+    };
+
+    const handleSellPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        addItemForm.handleChange(e);
+        setTimeout(() => {
+            const profit = addItemForm.calculateProfitPercentage();
+            if (profit !== null) addItemForm.setMarginPercentage(profit.toFixed(1));
+        }, 0);
+    };
+
+    const startEditingMargin = () => {
+        const currentMargin = addItemForm.calculateProfitPercentage();
+        addItemForm.setMarginPercentage(currentMargin !== null ? currentMargin.toFixed(1) : "0");
+        addItemForm.setEditingMargin(true);
+        
+        setTimeout(() => {
+            if (marginInputRef.current) {
+                marginInputRef.current.focus();
+                marginInputRef.current.select();
+            }
+        }, 10);
+    };
+
+    const stopEditingMargin = () => {
+        addItemForm.setEditingMargin(false);
+        
+        const margin = parseFloat(addItemForm.marginPercentage);
+        if (!isNaN(margin) && addItemForm.formData.base_price > 0) {
+            addItemForm.updateFormData({ sell_price: addItemForm.calculateSellPriceFromMargin(margin) });
+        }
+    };
+
+    const handleMarginKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") stopEditingMargin();
+    };
+
+    const startEditingMinStock = () => {
+        addItemForm.setMinStockValue(String(addItemForm.formData.min_stock));
+        addItemForm.setEditingMinStock(true);
+        
+        setTimeout(() => {
+            if (minStockInputRef.current) {
+                minStockInputRef.current.focus();
+                minStockInputRef.current.select();
+            }
+        }, 10);
+    };
+
+    const stopEditingMinStock = () => {
+        addItemForm.setEditingMinStock(false);
+        
+        const stockValue = parseInt(addItemForm.minStockValue, 10);
+        if (!isNaN(stockValue) && stockValue >= 0) {
+            addItemForm.updateFormData({ min_stock: stockValue });
+        } else {
+            addItemForm.setMinStockValue(String(addItemForm.formData.min_stock));
+        }
+    };
+
+    const handleMinStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        addItemForm.setMinStockValue(e.target.value);
+    };
+
+    const handleMinStockKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") stopEditingMinStock();
+    };
+
+    useBeforeUnload(addItemForm.isDirty);
+
+    return {
+        ...addItemForm,
+        id,
+        descriptionRef,
+        marginInputRef,
+        minStockInputRef,
+        showDescription, setShowDescription,
+        isDescriptionHovered, setIsDescriptionHovered,
+        showFefoTooltip, setShowFefoTooltip,
+        handleSelectChange, // renamed from handleSelectChangeWrapper
+        handleDropdownChange, // renamed from handleDropdownChangeWrapper
+        handleMarginChange,   // renamed from handleMarginChangeWrapper
+        handleSellPriceChange, // renamed from handleSellPriceChangeWrapper
+        startEditingMargin,    // renamed from startEditingMarginWrapper
+        stopEditingMargin,     // renamed from stopEditingMarginWrapper
+        handleMarginKeyDown,   // renamed from handleMarginKeyDownWrapper
+        startEditingMinStock,  // renamed from startEditingMinStockWrapper
+        stopEditingMinStock,   // renamed from stopEditingMinStockWrapper
+        handleMinStockChange,  // renamed from handleMinStockChangeWrapper
+        handleMinStockKeyDown, // renamed from handleMinStockKeyDownWrapper
     };
 };
