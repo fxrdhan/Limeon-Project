@@ -1,8 +1,5 @@
 import { FaChevronDown } from "react-icons/fa";
-import { useState, useRef, useEffect, ChangeEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useParams } from "react-router-dom";
-import { useAddItemForm } from "@/hooks/add-item";
 import UnitConversionManager from "@/components/tools/unit-converter";
 import {
     FaArrowLeft,
@@ -25,28 +22,9 @@ import {
     CardContent,
     CardFooter,
 } from "@/components/ui";
-
-// Utility hooks and handlers
-function useBeforeUnload(isDirty: () => boolean) {
-    useEffect(() => {
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            if (isDirty()) {
-                e.preventDefault();
-                e.returnValue = "";
-                return "";
-            }
-        };
-        window.addEventListener("beforeunload", handleBeforeUnload);
-        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-    }, [isDirty]);
-}
+import { useAddItemPageHandlers } from "@/pages/master-data/handlers";
 
 const AddItem = () => {
-    const { id } = useParams<{ id: string }>();
-    const descriptionRef = useRef<HTMLDivElement>(null);
-    const marginInputRef = useRef<HTMLInputElement>(null);
-    const minStockInputRef = useRef<HTMLInputElement>(null);
-
     const {
         formData,
         displayBasePrice,
@@ -58,11 +36,9 @@ const AddItem = () => {
         loading,
         isEditMode,
         handleChange,
-        handleSelectChange: originalHandleSelectChange,
         handleSubmit,
         updateFormData,
         unitConversionHook,
-        isDirty,
         isAddCategoryModalOpen,
         setIsAddCategoryModalOpen,
         isAddTypeModalOpen,
@@ -73,122 +49,37 @@ const AddItem = () => {
         handleSaveType,
         handleSaveUnit,
         editingMargin,
-        setEditingMargin,
         marginPercentage,
-        setMarginPercentage,
         editingMinStock,
-        setEditingMinStock,
         minStockValue,
-        setMinStockValue,
         handleDeleteItem,
         calculateProfitPercentage,
-        calculateSellPriceFromMargin,
         handleCancel,
         formattedUpdateAt,
         addCategoryMutation,
         addUnitMutation,
         addTypeMutation,
-    } = useAddItemForm(id || undefined);
-
-    const [showDescription, setShowDescription] = useState(false);
-    const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
-    const [showFefoTooltip, setShowFefoTooltip] = useState(false);
-
-    // Simplified handlers
-    const handleSelectChangeLocal = (e: ChangeEvent<HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        originalHandleSelectChange(e);
-        
-        if (name === "unit_id" && value) {
-            const selectedUnit = units.find(unit => unit.id === value);
-            if (selectedUnit) unitConversionHook.setBaseUnit(selectedUnit.name);
-        }
-    };
-
-    const handleDropdownChangeLocal = (name: string, value: string) => {
-        handleSelectChangeLocal({
-            target: { name, value }
-        } as ChangeEvent<HTMLSelectElement>);
-    };
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleMarginChangeLocal = (e: { target: { value: any } }) => {
-        const value = e.target.value;
-        setMarginPercentage(value);
-        
-        const margin = parseFloat(value);
-        if (!isNaN(margin) && formData.base_price > 0) {
-            updateFormData({ sell_price: calculateSellPriceFromMargin(margin) });
-        }
-    };
-
-    const handleSellPriceChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
-        handleChange(e);
-        setTimeout(() => {
-            const profit = calculateProfitPercentage();
-            if (profit !== null) setMarginPercentage(profit.toFixed(1));
-        }, 0);
-    };
-
-    const startEditingMarginLocal = () => {
-        const currentMargin = calculateProfitPercentage();
-        setMarginPercentage(currentMargin !== null ? currentMargin.toFixed(1) : "0");
-        setEditingMargin(true);
-        
-        setTimeout(() => {
-            if (marginInputRef.current) {
-                marginInputRef.current.focus();
-                marginInputRef.current.select();
-            }
-        }, 10);
-    };
-
-    const stopEditingMarginLocal = () => {
-        setEditingMargin(false);
-        
-        const margin = parseFloat(marginPercentage);
-        if (!isNaN(margin) && formData.base_price > 0) {
-            updateFormData({ sell_price: calculateSellPriceFromMargin(margin) });
-        }
-    };
-
-    const handleMarginKeyDownLocal = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") stopEditingMarginLocal();
-    };
-
-    const startEditingMinStockLocal = () => {
-        setMinStockValue(String(formData.min_stock));
-        setEditingMinStock(true);
-        
-        setTimeout(() => {
-            if (minStockInputRef.current) {
-                minStockInputRef.current.focus();
-                minStockInputRef.current.select();
-            }
-        }, 10);
-    };
-
-    const stopEditingMinStockLocal = () => {
-        setEditingMinStock(false);
-        
-        const stockValue = parseInt(minStockValue, 10);
-        if (!isNaN(stockValue) && stockValue >= 0) {
-            updateFormData({ min_stock: stockValue });
-        } else {
-            setMinStockValue(String(formData.min_stock));
-        }
-    };
-
-    const handleMinStockChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setMinStockValue(e.target.value);
-    };
-
-    const handleMinStockKeyDownLocal = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") stopEditingMinStockLocal();
-    };
-
-    // Add beforeunload handler
-    useBeforeUnload(isDirty);
+        descriptionRef,
+        marginInputRef,
+        setMarginPercentage,
+        minStockInputRef,
+        showDescription,
+        setShowDescription,
+        isDescriptionHovered,
+        setIsDescriptionHovered,
+        showFefoTooltip,
+        setShowFefoTooltip,
+        handleDropdownChange,
+        handleMarginChange,
+        handleSellPriceChange,
+        startEditingMargin,
+        stopEditingMargin,
+        handleMarginKeyDown,
+        startEditingMinStock,
+        stopEditingMinStock,
+        handleMinStockChange,
+        handleMinStockKeyDown,
+    } = useAddItemPageHandlers();
 
     if (loading) {
         return (
@@ -293,7 +184,7 @@ const AddItem = () => {
                                                 name="category_id"
                                                 value={formData.category_id}
                                                 onChange={(value) =>
-                                                    handleDropdownChangeLocal("category_id", value)
+                                                    handleDropdownChange("category_id", value)
                                                 }
                                                 options={categories}
                                                 placeholder="-- Pilih Kategori --"
@@ -310,7 +201,7 @@ const AddItem = () => {
                                                 name="type_id"
                                                 value={formData.type_id}
                                                 onChange={(value) =>
-                                                    handleDropdownChangeLocal("type_id", value)
+                                                    handleDropdownChange("type_id", value)
                                                 }
                                                 options={types}
                                                 placeholder="-- Pilih Jenis --"
@@ -324,7 +215,7 @@ const AddItem = () => {
                                                 name="unit_id"
                                                 value={formData.unit_id}
                                                 onChange={(value) =>
-                                                    handleDropdownChangeLocal("unit_id", value)
+                                                    handleDropdownChange("unit_id", value)
                                                 }
                                                 options={units}
                                                 placeholder="-- Pilih Satuan --"
@@ -426,16 +317,16 @@ const AddItem = () => {
                                                         ref={minStockInputRef}
                                                         type="number"
                                                         value={minStockValue}
-                                                        onChange={handleMinStockChangeLocal}
-                                                        onBlur={stopEditingMinStockLocal}
-                                                        onKeyDown={handleMinStockKeyDownLocal}
+                                                        onChange={handleMinStockChange}
+                                                        onBlur={stopEditingMinStock}
+                                                        onKeyDown={handleMinStockKeyDown}
                                                         className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                                         min="0"
                                                     />
                                                 ) : (
                                                     <div
                                                         className="w-full pb-1 cursor-pointer flex items-center"
-                                                        onClick={startEditingMinStockLocal}
+                                                        onClick={startEditingMinStock}
                                                         title="Klik untuk mengubah stok minimal"
                                                     >
                                                         <span>{formData.min_stock}</span>
@@ -444,7 +335,7 @@ const AddItem = () => {
                                                             size={14}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                startEditingMinStockLocal();
+                                                                startEditingMinStock();
                                                             }}
                                                             title="Edit stok minimal"
                                                         />
@@ -542,9 +433,9 @@ const AddItem = () => {
                                                                 ref={marginInputRef}
                                                                 type="number"
                                                                 value={marginPercentage}
-                                                                onChange={handleMarginChangeLocal}
-                                                                onBlur={stopEditingMarginLocal}
-                                                                onKeyDown={handleMarginKeyDownLocal}
+                                                                onChange={handleMarginChange}
+                                                                onBlur={stopEditingMargin}
+                                                                onKeyDown={handleMarginKeyDown}
                                                                 className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                                                 step="0.1"
                                                             />
@@ -553,32 +444,27 @@ const AddItem = () => {
                                                             </span>
                                                         </div>
                                                     ) : (
-                                                        <div className="flex items-center w-full">
-                                                            <div
-                                                                className={`w-full py-2 cursor-pointer font-semibold flex items-center ${calculateProfitPercentage() !== null
-                                                                        ? calculateProfitPercentage()! >= 0
-                                                                            ? "text-green-600"
-                                                                            : "text-red-600"
-                                                                        : "text-gray-500"
-                                                                    }`}
-                                                                onClick={startEditingMarginLocal}
-                                                                title="Klik untuk mengubah margin"
-                                                            >
-                                                                {calculateProfitPercentage() !== null
-                                                                    ? `${calculateProfitPercentage()!.toFixed(
-                                                                        1
-                                                                    )}%`
-                                                                    : "-"}
-                                                                <FaPen
-                                                                    className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors"
-                                                                    size={14}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        startEditingMarginLocal();
-                                                                    }}
-                                                                    title="Edit margin"
-                                                                />
-                                                            </div>
+                                                        <div className={`w-full py-2 cursor-pointer font-semibold flex items-center ${calculateProfitPercentage() !== null
+                                                                ? calculateProfitPercentage()! >= 0
+                                                                    ? "text-green-600"
+                                                                    : "text-red-600"
+                                                                : "text-gray-500"
+                                                            }`}
+                                                            onClick={startEditingMargin}
+                                                            title="Klik untuk mengubah margin"
+                                                        >
+                                                            {calculateProfitPercentage() !== null
+                                                                ? `${calculateProfitPercentage()!.toFixed(1)}%`
+                                                                : "-"}
+                                                            <FaPen
+                                                                className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors"
+                                                                size={14}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    startEditingMargin();
+                                                                }}
+                                                                title="Edit margin"
+                                                            />
                                                         </div>
                                                     )}
                                                 </div>
@@ -590,7 +476,7 @@ const AddItem = () => {
                                                     name="sell_price"
                                                     value={displaySellPrice}
                                                     placeholder="Rp 0"
-                                                    onChange={handleSellPriceChangeLocal}
+                                                    onChange={handleSellPriceChange}
                                                     min="0"
                                                     className="w-full"
                                                     required
@@ -630,7 +516,7 @@ const AddItem = () => {
                         )}
                         <Button
                             type="submit"
-                            disabled={saving || !isDirty()}
+                            disabled={saving}
                             isLoading={saving}
                         >
                             <span className="flex items-center">
