@@ -15,6 +15,7 @@ import {
     TableRow,
     TableCell,
     TableHeader,
+    PageTitle
 } from "@/components/modules";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
 import {
@@ -23,7 +24,6 @@ import {
     useQueryClient,
     keepPreviousData,
 } from "@tanstack/react-query";
-import { PageTitle } from "@/components/modules/page-title";
 
 interface Purchase {
     id: string;

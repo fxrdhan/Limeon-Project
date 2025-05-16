@@ -10,11 +10,11 @@ import {
     TableRow,
     TableCell,
     TableHeader,
+    PageTitle
 } from "@/components/modules";
 import DetailEditModal from "@/components/modules/modal/supplier";
 import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { useSupplierHandlers } from "@/pages/handlers";
-import { PageTitle } from "@/components/modules/page-title";
 
 const SupplierList = () => {
     const { openConfirmDialog } = useConfirmDialog();

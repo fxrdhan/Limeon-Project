@@ -1,10 +1,20 @@
 import { FaPlus } from "react-icons/fa";
 import {
-    Card, Button, Loading, Pagination, SearchBar, Table, TableHead, TableBody, TableRow, TableCell, TableHeader
+    Card,
+    Button,
+    Loading,
+    Pagination,
+    SearchBar,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    TableHeader,
+    PageTitle,
 } from "@/components/modules";
 import { AddCategoryModal } from "@/components/modules/modal/add-edit";
 import { useMasterDataManagement } from "@/pages/handlers";
-import { PageTitle } from "@/components/modules/page-title";
 
 const CategoryList = () => {
     const {
