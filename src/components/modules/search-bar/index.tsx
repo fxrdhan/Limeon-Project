@@ -13,7 +13,7 @@ export const SearchBar: React.FC<TableSearchProps> = ({
             <input
                 type="text"
                 placeholder={placeholder}
-                className="w-full p-3 border rounded-md pl-10"
+                className="w-full p-2 border rounded-md pl-10"
                 value={value}
                 onChange={onChange} />
             <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
