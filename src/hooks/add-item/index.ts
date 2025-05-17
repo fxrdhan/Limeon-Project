@@ -25,7 +25,7 @@ export const useAddItemForm = (itemId?: string) => {
     const [displaySellPrice, setDisplaySellPrice] = useState('');
 
     // modals
-    const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
+    const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
     const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
     const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
 
@@ -601,7 +601,7 @@ export const useAddItemForm = (itemId?: string) => {
             const { data: updatedCategories } = await supabase.from("item_categories").select("id, name").order("name");
             if (updatedCategories) setCategories(updatedCategories);
             if (newCategory?.id) updateFormData({ category_id: newCategory.id });
-            setIsAddCategoryModalOpen(false);
+            setIsAddEditModalOpen(false);
         } catch (error) {
             alert("Gagal menyimpan kategori baru.");
         }
@@ -684,8 +684,8 @@ export const useAddItemForm = (itemId?: string) => {
         setUnits,
         addTypeMutation,
         setTypes,
-        isAddCategoryModalOpen,
-        setIsAddCategoryModalOpen,
+        isAddEditModalOpen,
+        setIsAddEditModalOpen,
         isAddTypeModalOpen,
         setIsAddTypeModalOpen,
         isAddUnitModalOpen,

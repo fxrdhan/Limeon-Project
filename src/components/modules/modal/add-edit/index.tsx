@@ -1,11 +1,11 @@
 import { Input, Button, useConfirmDialog } from "@/components/modules";
 import { createPortal } from "react-dom";
 import { FaTimes } from "react-icons/fa";
-import type { AddCategoryModalProps } from "@/types";
+import type { AddEditModalProps } from "@/types";
 import { Transition, TransitionChild } from "@headlessui/react";
 import React, { useState, useEffect, Fragment, useRef } from "react";
 
-export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
+export const AddEditModal: React.FC<AddEditModalProps> = ({
     isOpen,
     onClose,
     onSubmit,

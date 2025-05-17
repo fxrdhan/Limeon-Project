@@ -13,7 +13,7 @@ import {
     SearchBar,
     PageTitle
 } from "@/components/modules";
-import { AddCategoryModal } from "@/components/modules"
+import { AddEditModal } from "@/components/modules"
 import { useMasterDataManagement } from "@/pages/handlers";
 
 const UnitList = () => {
@@ -124,7 +124,7 @@ const UnitList = () => {
                 )}
             </Card>
 
-            <AddCategoryModal
+            <AddEditModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onSubmit={handleModalSubmit}
@@ -132,7 +132,7 @@ const UnitList = () => {
                 entityName="Satuan"
             />
 
-            <AddCategoryModal
+            <AddEditModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 onSubmit={handleModalSubmit}

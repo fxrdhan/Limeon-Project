@@ -118,7 +118,7 @@ export interface UnitConversionManagerProps {
 }
 
 // src/components/ui/AddEditModal.tsx
-export interface AddCategoryModalProps {
+export interface AddEditModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (category: {

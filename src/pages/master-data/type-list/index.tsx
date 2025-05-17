@@ -13,7 +13,7 @@ import {
     TableHeader,
     PageTitle
 } from "@/components/modules";
-import { AddCategoryModal } from "@/components/modules/modal/add-edit";
+import { AddEditModal } from "@/components/modules";
 import { useMasterDataManagement } from "@/pages/handlers";
 
 const TypeList = () => {
@@ -124,7 +124,7 @@ const TypeList = () => {
                 )}
             </Card>
 
-            <AddCategoryModal
+            <AddEditModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onSubmit={handleModalSubmit}
@@ -132,7 +132,7 @@ const TypeList = () => {
                 entityName="Jenis Item"
             />
 
-            <AddCategoryModal
+            <AddEditModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 onSubmit={handleModalSubmit}
