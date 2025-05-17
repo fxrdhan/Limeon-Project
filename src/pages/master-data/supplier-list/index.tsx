@@ -12,7 +12,7 @@ import {
     TableHeader,
     PageTitle
 } from "@/components/modules";
-import DetailEditModal from "@/pages/master-data/supplier-list/add-edit-supplier";
+import DetailEditModal from "./add-edit-supplier";
 import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { useSupplierHandlers } from "@/pages/handlers";
 
