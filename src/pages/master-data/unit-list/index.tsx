@@ -11,9 +11,9 @@ import {
     TableHeader,
     Pagination,
     SearchBar,
-    PageTitle
+    PageTitle,
+    AddEditModal
 } from "@/components/modules";
-import { AddEditModal } from "@/components/modules"
 import { useMasterDataManagement } from "@/pages/handlers";
 
 const UnitList = () => {
