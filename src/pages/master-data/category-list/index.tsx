@@ -12,8 +12,8 @@ import {
     TableCell,
     TableHeader,
     PageTitle,
+    AddEditModal
 } from "@/components/modules";
-import { AddEditModal } from "@/components/modules/";
 import { useMasterDataManagement } from "@/pages/handlers";
 
 const CategoryList = () => {
