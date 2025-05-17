@@ -13,7 +13,7 @@ import {
     Input,
     Button,
     Dropdown,
-    AddCategoryModal,
+    AddEditModal,
     FormSection,
     FormField,
     Card,
@@ -39,8 +39,8 @@ const AddItem = () => {
         handleSubmit,
         updateFormData,
         unitConversionHook,
-        isAddCategoryModalOpen,
-        setIsAddCategoryModalOpen,
+        isAddEditModalOpen,
+        setIsAddEditModalOpen,
         isAddTypeModalOpen,
         setIsAddTypeModalOpen,
         isAddUnitModalOpen,
@@ -189,7 +189,7 @@ const AddItem = () => {
                                                 options={categories}
                                                 placeholder="-- Pilih Kategori --"
                                                 required
-                                                onAddNew={() => setIsAddCategoryModalOpen(true)}
+                                                onAddNew={() => setIsAddEditModalOpen(true)}
                                             />
                                         </FormField>
 
@@ -526,14 +526,14 @@ const AddItem = () => {
                     </CardFooter>
                 </form>
 
-                <AddCategoryModal
-                    isOpen={isAddCategoryModalOpen}
-                    onClose={() => setIsAddCategoryModalOpen(false)}
+                <AddEditModal
+                    isOpen={isAddEditModalOpen}
+                    onClose={() => setIsAddEditModalOpen(false)}
                     onSubmit={handleSaveCategory}
                     isLoading={addCategoryMutation.isPending}
                 />
 
-                <AddCategoryModal
+                <AddEditModal
                     isOpen={isAddTypeModalOpen}
                     onClose={() => setIsAddTypeModalOpen(false)}
                     onSubmit={handleSaveType}
@@ -541,7 +541,7 @@ const AddItem = () => {
                     entityName="Jenis Item"
                 />
 
-                <AddCategoryModal
+                <AddEditModal
                     isOpen={isAddUnitModalOpen}
                     onClose={() => setIsAddUnitModalOpen(false)}
                     onSubmit={handleSaveUnit}
