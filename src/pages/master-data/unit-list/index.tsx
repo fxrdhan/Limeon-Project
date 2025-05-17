@@ -13,7 +13,7 @@ import {
     SearchBar,
     PageTitle
 } from "@/components/modules";
-import { AddCategoryModal } from "@/components/modules/modal/add-edit";
+import { AddCategoryModal } from "@/components/modules"
 import { useMasterDataManagement } from "@/pages/handlers";
 
 const UnitList = () => {
