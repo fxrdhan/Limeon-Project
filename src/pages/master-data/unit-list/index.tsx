@@ -52,23 +52,26 @@ const UnitList = () => {
                     isFetching ? "opacity-75 transition-opacity duration-300" : ""
                 }
             >
-                <div className="flex justify-between items-center mb-6">
+                <div className="mb-6">
                     <PageTitle title="Daftar Satuan Item" />
+                </div>
+
+                <div className="flex items-center">
+                    <SearchBar
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Cari nama atau deskripsi satuan..."
+                        className="flex-grow"
+                    />
                     <Button
                         variant="primary"
-                        className="flex items-center"
+                        className="flex items-center ml-4 mb-4"
                         onClick={() => setIsAddModalOpen(true)}
                     >
                         <FaPlus className="mr-2" />
                         Tambah Satuan Baru
                     </Button>
                 </div>
-
-                <SearchBar
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Cari nama atau deskripsi satuan..."
-                />
 
                 {isLoading ? (
                     <Loading message="Memuat satuan..." />
