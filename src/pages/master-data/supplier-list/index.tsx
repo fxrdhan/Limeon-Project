@@ -10,10 +10,10 @@ import {
     TableRow,
     TableCell,
     TableHeader,
-    PageTitle
+    PageTitle,
+    useConfirmDialog
 } from "@/components/modules";
 import DetailEditModal from "./add-edit-supplier";
-import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { useSupplierHandlers } from "@/pages/handlers";
 
 const SupplierList = () => {
