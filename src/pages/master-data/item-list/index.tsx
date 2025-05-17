@@ -38,22 +38,24 @@ function ItemList() {
         <Card
             className={isFetching ? "opacity-75 transition-opacity duration-300" : ""}
         >
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-6">
                 <PageTitle title="Daftar Item" />
+            </div>
 
+            <div className="flex items-center">
+                <SearchBar
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Cari nama atau kode item..."
+                    className="flex-grow"
+                />
                 <Link to="/master-data/items/add">
-                    <Button variant="primary" className="flex items-center">
+                    <Button variant="primary" className="flex items-center ml-4 mb-4">
                         <FaPlus className="mr-2" />
                         Tambah Item Baru
                     </Button>
                 </Link>
             </div>
-
-            <SearchBar
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nama atau kode item..."
-            />
 
             {isLoading && <div className="text-center p-6">Memuat data awal...</div>}
             {isError && (
