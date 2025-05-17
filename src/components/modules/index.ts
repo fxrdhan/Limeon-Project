@@ -9,7 +9,6 @@ export * from './image-uploader';
 export * from './input';
 export * from './loading';
 export * from './modal/add-edit';
-export * from '../../pages/master-data/supplier-list/add-edit-supplier';
 export * from './offline-alert';
 export * from './pagination';
 export * from './search-bar';
