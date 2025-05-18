@@ -279,7 +279,7 @@ export const Dropdown = ({
                                             {onAddNew && (
                                                 <button
                                                     type="button"
-                                                    className="ml-2 bg-blue-500 text-white p-1.5 rounded-lg hover:bg-blue-600 flex-shrink-0"
+                                                    className="ml-2 bg-primary text-white p-1.5 rounded-lg hover:bg-blue-600 flex-shrink-0"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         onAddNew();
@@ -308,12 +308,12 @@ export const Dropdown = ({
                                                         <div className="mr-2 flex items-center">
                                                             <div
                                                                 className={`w-4 h-4 rounded-full border ${option.id === value
-                                                                        ? "border-blue-500"
+                                                                        ? "border-primary"
                                                                         : "border-gray-300"
                                                                     } flex items-center justify-center`}
                                                             >
                                                                 {option.id === value && (
-                                                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                                    <div className="w-2 h-2 rounded-full bg-primary"></div>
                                                                 )}
                                                             </div>
                                                         </div>
