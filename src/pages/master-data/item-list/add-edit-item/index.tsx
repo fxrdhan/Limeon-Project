@@ -1,5 +1,3 @@
-import { FaChevronDown } from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
 import UnitConversionManager from "@/components/tools/unit-converter";
 import {
     FaArrowLeft,
@@ -20,6 +18,7 @@ import {
     CardHeader,
     CardTitle,
     CardContent,
+    DescriptiveTextarea,
     CardFooter,
 } from "@/components/modules";
 import { useAddItemPageHandlers } from "@/pages/handlers";
@@ -59,14 +58,9 @@ const AddItem = () => {
         addCategoryMutation,
         addUnitMutation,
         addTypeMutation,
-        descriptionRef,
         marginInputRef,
         setMarginPercentage,
         minStockInputRef,
-        showDescription,
-        setShowDescription,
-        isDescriptionHovered,
-        setIsDescriptionHovered,
         showFefoTooltip,
         setShowFefoTooltip,
         handleDropdownChange,
@@ -245,56 +239,14 @@ const AddItem = () => {
                                         </FormField>
                                     </div>
 
-                                    <div className="mt-2 pt-2">
-                                        <button
-                                            type="button"
-                                            onMouseEnter={() => setIsDescriptionHovered(true)}
-                                            onMouseLeave={() => setIsDescriptionHovered(false)}
-                                            className="flex items-center text-blue-500 transition-colors"
-                                            onClick={() => setShowDescription(!showDescription)}
-                                        >
-                                            <span className="mr-2 text-md text-blue-500 hover:text-blue-600">
-                                                Keterangan
-                                            </span>
-                                            <motion.div
-                                                animate={{
-                                                    rotate:
-                                                        showDescription || isDescriptionHovered ? 180 : 0,
-                                                }}
-                                                transition={{ duration: 0.3 }}
-                                                className="transform"
-                                            >
-                                                <FaChevronDown size={12} />
-                                            </motion.div>
-                                        </button>
-                                        <AnimatePresence>
-                                            {(showDescription || isDescriptionHovered) && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: "auto", opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    transition={{ duration: 0.3 }}
-                                                    className="overflow-hidden"
-                                                    onMouseEnter={() => setIsDescriptionHovered(true)}
-                                                    onMouseLeave={() => setIsDescriptionHovered(false)}
-                                                >
-                                                    <div
-                                                        className="mt-2 min-h-[100px] max-h-[200px] p-1"
-                                                        ref={descriptionRef}
-                                                    >
-                                                        <textarea
-                                                            name="description"
-                                                            value={formData.description}
-                                                            onChange={handleChange}
-                                                            className="w-full h-full min-h-[100px] max-h-[200px] p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-blue-300"
-                                                            rows={3}
-                                                            onFocus={() => setShowDescription(true)}
-                                                            onBlur={() => setShowDescription(false)}
-                                                        />
-                                                    </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+                                    <div>
+                                        <DescriptiveTextarea
+                                            label="Keterangan"
+                                            name="description"
+                                            value={formData.description}
+                                            onChange={handleChange}
+                                            placeholder="Masukkan keterangan atau deskripsi tambahan untuk item ini..."
+                                        />
                                     </div>
                                 </FormSection>
                             </div>
@@ -422,7 +374,7 @@ const AddItem = () => {
                                                     onChange={(e) => {
                                                         handleChange(e);
                                                         setTimeout(() => {
-                                                            const profit = calculateProfitPercentage();
+                                                            const profit = formData.base_price > 0 ? calculateProfitPercentage() : null;
                                                             if (profit !== null) {
                                                                 setMarginPercentage(profit.toFixed(1));
                                                             }
