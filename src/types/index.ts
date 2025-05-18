@@ -1,4 +1,3 @@
-// Shared types
 export interface Category {
     id: string;
     name: string;
@@ -72,7 +71,6 @@ export interface Doctor {
     name: string;
 }
 
-// src/components/ui/Dropdown.tsx
 export interface DropdownOption {
     id: string;
     name: string;
@@ -90,12 +88,10 @@ export interface DropdownProps {
     searchList?: boolean;
 }
 
-// src/components/layout/Navbar.tsx
 export interface NavbarProps {
     sidebarCollapsed: boolean;
 }
 
-// src/components/layout/Sidebar.tsx
 import { JSX } from "react";
 
 export interface SidebarProps {
@@ -112,12 +108,10 @@ export interface MenuItem {
     }[];
 }
 
-// src/components/tools/UnitConversionManager.tsx
 export interface UnitConversionManagerProps {
     unitConversionHook: UseUnitConversionReturn;
 }
 
-// src/components/ui/AddEditModal.tsx
 export interface AddEditModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -133,7 +127,6 @@ export interface AddEditModalProps {
     entityName?: string;
 }
 
-// src/components/ui/Badge.tsx
 export type BadgeVariant =
     | "primary"
     | "secondary"
@@ -147,7 +140,6 @@ export interface BadgeProps {
     className?: string;
 }
 
-// src/components/ui/Button.tsx
 export type ButtonVariant =
     | "primary"
     | "secondary"
@@ -164,13 +156,11 @@ export interface ButtonProps
     fullWidth?: boolean;
 }
 
-// src/components/ui/Card.tsx
 export interface CardProps {
     children: React.ReactNode;
     className?: string;
 }
 
-// src/components/ui/ConfirmDialog.tsx
 export interface ConfirmDialogContextType {
     isOpen: boolean;
     title: string;
@@ -193,7 +183,6 @@ export interface ConfirmDialogOptions {
     variant?: "danger" | "primary";
 }
 
-// src/components/ui/FormAction.tsx
 export interface FormActionProps {
     onCancel: () => void;
     isSaving: boolean;
@@ -202,7 +191,6 @@ export interface FormActionProps {
     saveText?: string;
 }
 
-// src/components/ui/FormComponents.tsx
 export interface FormSectionProps {
     title: string;
     children: React.ReactNode;
@@ -214,7 +202,6 @@ export interface FormFieldProps {
     className?: string;
 }
 
-// src/components/ui/ImageUploader.tsx
 export interface ImageUploaderProps {
     id: string;
     onImageUpload: (imageBase64: string) => Promise<void> | void;
@@ -229,7 +216,6 @@ export interface ImageUploaderProps {
     shape?: "rounded" | "square" | "full";
 }
 
-// src/components/ui/Input.tsx
 export interface InputProps
     extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
@@ -237,13 +223,11 @@ export interface InputProps
     fullWidth?: boolean;
 }
 
-// src/components/ui/Loading.tsx
 export interface LoadingProps {
     className?: string;
     message?: string;
 }
 
-// src/components/ui/Pagination.tsx
 export interface PaginationProps {
     currentPage: number;
     totalPages: number;
@@ -255,7 +239,6 @@ export interface PaginationProps {
     className?: string;
 }
 
-// src/components/ui/SupplierModal.tsx
 export interface FieldConfig {
     key: string;
     label: string;
@@ -285,7 +268,6 @@ export interface DetailEditModalProps {
     mode?: "edit" | "add";
 }
 
-// src/components/ui/TableSearchBar.tsx
 export interface TableSearchProps {
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -293,7 +275,6 @@ export interface TableSearchProps {
     className?: string;
 }
 
-// src/components/ui/Table.tsx
 export interface TableProps {
     children: React.ReactNode;
     className?: string;
@@ -310,7 +291,6 @@ export interface TableRowProps
     className?: string;
 }
 
-// src/hooks/useAddItemForm.ts
 export interface FormData {
     code: string;
     name: string;
@@ -330,7 +310,6 @@ export interface FormData {
     customer_level_discounts?: CustomerLevelDiscount[];
 }
 
-// src/hooks/usePurchaseForm.ts
 export interface PurchaseFormData {
     supplier_id: string;
     invoice_number: string;
@@ -362,7 +341,6 @@ export interface PurchaseItem {
     unit_conversion_rate: number;
 }
 
-// src/hooks/useUnitConversion.ts
 export interface UnitConversion {
     unit_name: string;
     to_unit_id: string;
@@ -410,7 +388,6 @@ export interface UnitData {
     name: string;
 }
 
-// src/pages/dashboard/Dashboard.tsx
 export interface RegularDashboardProps {
     stats: {
         totalSales: number;
@@ -443,14 +420,12 @@ export interface TopSellingMedicine {
     total_quantity: number;
 }
 
-// src/pages/master-data/TypeList.tsx
 export interface ItemType {
     id: string;
     name: string;
     description: string;
 }
 
-// src/pages/purchases/InvoiceLayout.tsx
 export interface PurchaseData {
     id: string;
     invoice_number: string;
@@ -488,7 +463,6 @@ export interface InvoiceLayoutProps {
     title?: string;
 }
 
-// src/pages/purchases/ItemSearchBar.tsx
 export interface ItemSearchBarProps {
     searchItem: string;
     setSearchItem: (value: string) => void;
@@ -500,7 +474,6 @@ export interface ItemSearchBarProps {
     onAddItem: (item: PurchaseItem) => void;
 }
 
-// src/pages/sales/CreateSale.tsx
 export interface SaleFormData {
     patient_id: string;
     doctor_id: string;
@@ -513,10 +486,8 @@ export interface SaleFormData {
     }[];
 }
 
-// src/pages/settings/Profile.tsx
 export type ProfileKey = keyof CompanyProfile;
 
-// src/services/invoiceService.ts
 export interface CompanyDetails {
     name?: string;
     address?: string;
@@ -562,7 +533,6 @@ export interface ExtractedInvoiceData {
     imageIdentifier?: string;
 }
 
-// src/store/authStore.ts
 import { Session } from "@supabase/supabase-js";
 
 export interface UserDetails {
@@ -581,4 +551,18 @@ export interface AuthState {
     logout: () => Promise<void>;
     updateProfilePhoto: (photoBase64: string) => Promise<void>;
     initialize: () => Promise<void>;
+}
+
+export interface DescriptiveTextareaProps
+    extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+    label: string;
+    value: string;
+    onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    name: string;
+    placeholder?: string;
+    rows?: number;
+    containerClassName?: string;
+    textareaClassName?: string;
+    labelClassName?: string;
+    showInitially?: boolean;
 }
