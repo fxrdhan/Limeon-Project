@@ -286,7 +286,7 @@ const AddItem = () => {
                                                             name="description"
                                                             value={formData.description}
                                                             onChange={handleChange}
-                                                            className="w-full h-full min-h-[100px] max-h-[200px] p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary focus:border-transparent"
+                                                            className="w-full h-full min-h-[100px] max-h-[200px] p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-blue-300"
                                                             rows={3}
                                                             onFocus={() => setShowDescription(true)}
                                                             onBlur={() => setShowDescription(false)}
