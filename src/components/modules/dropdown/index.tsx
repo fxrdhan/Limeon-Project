@@ -235,7 +235,7 @@ export const Dropdown = ({
                         className={`absolute left-0 ${dropDirection === "down"
                                 ? "top-full mt-2 shadow-lg origin-top"
                                 : "bottom-full mb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),0_-2px_4px_-1px_rgba(0,0,0,0.06)] origin-bottom"
-                            } w-full z-20 bg-white rounded-lg border border-gray-200 transition-all duration-300 ease-out transform ${isOpen && !isClosing
+                            } w-full z-20 bg-white rounded-xl border border-gray-200 transition-all duration-300 ease-out transform ${isOpen && !isClosing
                                 ? "opacity-100 scale-y-100 translate-y-0"
                                 : isClosing
                                     ? "opacity-0 scale-y-0 translate-y-0"
@@ -247,7 +247,7 @@ export const Dropdown = ({
                         {(isOpen || isClosing) && (
                             <div>
                                 {searchList && (
-                                    <div className="p-2 border-b sticky top-0 bg-white z-10 rounded-t-lg">
+                                    <div className="p-2 border-b sticky top-0 z-10">
                                         <div className="relative flex items-center">
                                             <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
                                                 <svg
