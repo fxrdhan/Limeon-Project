@@ -207,7 +207,7 @@ export const Dropdown = ({
                     <button
                         ref={buttonRef}
                         type="button"
-                        className="py-2.5 px-4 w-full inline-flex justify-between items-center text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-1 focus:border-transparent"
+                        className="py-2.5 px-4 w-full inline-flex justify-between items-center text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-1 focus:border-transparent"
                         aria-haspopup="menu"
                         aria-expanded={isOpen || isClosing}
                         onClick={toggleDropdown}
@@ -269,7 +269,7 @@ export const Dropdown = ({
                                             <input
                                                 ref={searchInputRef}
                                                 type="text"
-                                                className="flex-grow py-1 px-2 pl-8 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-primary"
+                                                className="flex-grow py-1 px-2 pl-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-primary"
                                                 placeholder="Cari..."
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -279,7 +279,7 @@ export const Dropdown = ({
                                             {onAddNew && (
                                                 <button
                                                     type="button"
-                                                    className="ml-2 bg-blue-500 text-white p-1.5 rounded-md hover:bg-blue-600 flex-shrink-0"
+                                                    className="ml-2 bg-blue-500 text-white p-1.5 rounded-lg hover:bg-blue-600 flex-shrink-0"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         onAddNew();
