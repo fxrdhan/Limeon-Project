@@ -15,7 +15,7 @@ import type {
     FieldConfig as FieldConfigSupplier,
     ConfirmDialogOptions as ConfirmDialogOptionsSupplier
 } from "@/types";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAddItemForm } from "@/hooks/add-item";
 
 type MasterDataItem = Category | ItemType | Unit;
@@ -438,11 +438,13 @@ export function useBeforeUnload(isDirty: () => boolean) {
 
 export const useAddItemPageHandlers = () => {
     const { id } = useParams<{ id: string }>();
+    const location = useLocation();
+    const initialSearchQuery = location.state?.searchQuery as string | undefined;
     const descriptionRef = useRef<HTMLDivElement>(null);
     const marginInputRef = useRef<HTMLInputElement>(null);
     const minStockInputRef = useRef<HTMLInputElement>(null);
 
-    const addItemForm = useAddItemForm(id || undefined);
+    const addItemForm = useAddItemForm(id || undefined, initialSearchQuery);
 
     const [showDescription, setShowDescription] = useState(false);
     const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
