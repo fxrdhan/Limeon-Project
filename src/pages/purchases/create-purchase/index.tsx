@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaTrash, FaChevronDown } from 'react-icons/fa';
+import { FaTrash } from 'react-icons/fa';
 import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
 
 import {
@@ -20,7 +19,8 @@ import {
     TableBody,
     TableRow,
     TableCell,
-    TableHeader
+    TableHeader,
+    DescriptiveTextarea
 } from '@/components/modules';
 import ItemSearchBar from '@/pages/purchases/item-search';
 
@@ -115,9 +115,6 @@ const CreatePurchase: React.FC = () => {
         }
     };
 
-    const [showNotes, setShowNotes] = useState(false);
-    const notesRef = useRef<HTMLDivElement>(null);
-
     return (
         <Card>
             <CardHeader>
@@ -211,42 +208,14 @@ const CreatePurchase: React.FC = () => {
                         </div>
 
                         <div className="mt-4">
-                            <button
-                                type="button"
-                                onClick={() => setShowNotes(!showNotes)}
-                                className="flex items-center text-gray-700 hover:text-blue-600 transition-colors"
-                            >
-                                <span className="mr-2">Catatan</span>
-                                <motion.div
-                                    animate={{ rotate: showNotes ? 180 : 0 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="transform"
-                                >
-                                    <FaChevronDown size={14} />
-                                </motion.div>
-                            </button>
-
-                            <AnimatePresence>
-                                {showNotes && (
-                                    <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="overflow-hidden"
-                                    >
-                                        <div className="mt-2" ref={notesRef}>
-                                            <textarea
-                                                name="notes"
-                                                value={formData.notes}
-                                                onChange={handleChange}
-                                                className="w-full p-3 border rounded-md"
-                                                rows={3}
-                                            />
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                            <DescriptiveTextarea
+                                label="Catatan"
+                                name="notes"
+                                value={formData.notes}
+                                onChange={handleChange}
+                                placeholder="Tambahkan catatan untuk pembelian ini..."
+                                containerClassName="!pt-0" 
+                            />
                         </div>
                     </FormSection>
 
