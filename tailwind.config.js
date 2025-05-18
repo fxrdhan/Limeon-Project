@@ -17,10 +17,10 @@ module.exports = {
         ],
       },
       colors: {
-        primary: "rgb(59, 130, 246)",
-        secondary: "#4285f4",
-        accent: "#ea4335",
-        neutral: "#fbbc05",
+        primary: "rgb(59, 130, 246)", // blue-500
+        secondary: "#4285f4", // blue-500
+        accent: "#ea4335", // red-500
+        neutral: "#fbbc05", // yellow-500
       },
     },
   },
