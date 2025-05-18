@@ -2,20 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaChevronDown } from "react-icons/fa";
 import { classNames } from "@/lib/classNames";
-
-export interface DescriptiveTextareaProps
-    extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-    label: string;
-    value: string;
-    onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-    name: string;
-    placeholder?: string;
-    rows?: number;
-    containerClassName?: string;
-    textareaClassName?: string;
-    labelClassName?: string;
-    showInitially?: boolean;
-}
+import type { DescriptiveTextareaProps } from "@/types";
 
 export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
     label,
