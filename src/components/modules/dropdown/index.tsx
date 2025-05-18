@@ -234,7 +234,7 @@ export const Dropdown = ({
                         ref={dropdownMenuRef}
                         className={`absolute left-0 ${dropDirection === "down"
                                 ? "top-full mt-2 shadow-lg origin-top"
-                                : "bottom-full mb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),0_-2px_4px_-1px_rgba(0,0,0,0.06)] origin-bottom"
+                                : "bottom-full mb-2 origin-bottom"
                             } w-full z-20 bg-white rounded-xl border border-gray-200 transition-all duration-300 ease-out transform ${isOpen && !isClosing
                                 ? "opacity-100 scale-y-100 translate-y-0"
                                 : isClosing
@@ -269,7 +269,7 @@ export const Dropdown = ({
                                             <input
                                                 ref={searchInputRef}
                                                 type="text"
-                                                className="flex-grow py-1 px-2 pl-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-primary"
+                                                className="flex-grow py-2 px-2 pl-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-primary"
                                                 placeholder="Cari..."
                                                 value={searchTerm}
                                                 onChange={(e) => setSearchTerm(e.target.value)}
