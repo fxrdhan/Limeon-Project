@@ -279,7 +279,7 @@ const AddItem = () => {
                                                     onMouseLeave={() => setIsDescriptionHovered(false)}
                                                 >
                                                     <div
-                                                        className="mt-2 min-h-[100px] max-h-[200px]"
+                                                        className="mt-2 min-h-[100px] max-h-[200px] p-1"
                                                         ref={descriptionRef}
                                                     >
                                                         <textarea
