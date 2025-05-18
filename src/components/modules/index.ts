@@ -14,3 +14,4 @@ export * from './pagination';
 export * from './search-bar';
 export * from './table';
 export * from './page-title';
+export * from './descriptive-textarea';
