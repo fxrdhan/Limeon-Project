@@ -57,28 +57,6 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
         if (newData.base_price !== undefined) {
             setDisplayBasePrice(formatRupiah(newData.base_price));
         }
-        if (!initialFormData && !loading && (itemId || !isEditMode)) {
-            setInitialFormData(prev => {
-                const merged = { ...(prev ?? formData), ...newData };
-                return {
-                    code: merged.code ?? "",
-                    name: merged.name ?? "",
-                    type_id: merged.type_id ?? "",
-                    category_id: merged.category_id ?? "",
-                    unit_id: merged.unit_id ?? "",
-                    rack: merged.rack ?? "",
-                    barcode: merged.barcode ?? "",
-                    description: merged.description ?? "",
-                    base_price: merged.base_price ?? 0,
-                    sell_price: merged.sell_price ?? 0,
-                    min_stock: merged.min_stock ?? 10,
-                    is_active: merged.is_active ?? true,
-                    is_medicine: merged.is_medicine ?? true,
-                    has_expiry_date: merged.has_expiry_date ?? false,
-                    updated_at: merged.updated_at ?? null,
-                };
-            });
-        }
         setFormData(prev => {
             const merged = { ...prev, ...newData };
             return {
@@ -103,13 +81,14 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
 
     useEffect(() => {
         fetchMasterData();
+
         if (itemId) {
             fetchItemData(itemId);
             setIsEditMode(true);
         } else {
-            const defaultState: FormData = {
+            const pristineDefaultState: FormData = {
                 code: "",
-                name: initialSearchQuery || "",
+                name: "",
                 type_id: "",
                 category_id: "",
                 unit_id: "",
@@ -124,13 +103,16 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
                 has_expiry_date: false,
                 updated_at: null,
             };
-            setFormData(defaultState);
-            setInitialFormData(defaultState);
-            setDisplayBasePrice(formatRupiah(defaultState.base_price));
-            setDisplaySellPrice(formatRupiah(defaultState.sell_price));
-            if (initialSearchQuery) {
-                setMarginPercentage("0");
-            }
+            setInitialFormData(pristineDefaultState);
+
+            const formDataForAddMode: FormData = {
+                ...pristineDefaultState,
+                name: initialSearchQuery || "",
+            };
+            setFormData(formDataForAddMode);
+            setDisplayBasePrice(formatRupiah(formDataForAddMode.base_price));
+            setDisplaySellPrice(formatRupiah(formDataForAddMode.sell_price));
+            setMarginPercentage("0");
             unitConversionHook.resetConversions();
             unitConversionHook.setBaseUnit("");
             unitConversionHook.setBasePrice(0);
