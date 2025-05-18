@@ -170,7 +170,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                         ${collapsed ? 'w-16' : 'w-64'} relative group z-10`}
         >
             <div className="flex flex-col h-full">
-                <div className="p-4 border-b border-blue-500/30 flex items-center">
+                <div className="p-4 border-b border-primary/30 flex items-center">
                     <div className="flex items-center">
                         <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center flex-shrink-0">
                             <span className="text-blue-600 text-xl font-bold">P</span>
@@ -189,10 +189,10 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                     <button
                                         onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
                                         className={`w-full text-left flex items-center px-4 py-3 h-12 justify-between 
-                                                  ${isActive(item.path) || hasActiveChild(item.children)
+                                                ${isActive(item.path) || hasActiveChild(item.children)
                                                 ? 'bg-white/20 font-medium border-l-4 border-white'
                                                 : 'border-l-4 border-transparent hover:bg-white/5'}
-                                                  transition-all duration-150 group relative`}
+                                                transition-all duration-150 group relative`}
                                     >
                                         <div className="flex items-center overflow-hidden">
                                             <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
@@ -236,10 +236,10 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                 <Link
                                     to={item.path}
                                     className={`w-full text-left flex items-center px-4 py-3 h-12 
-                                                  ${isActive(item.path)
+                                                ${isActive(item.path)
                                             ? 'bg-white/20 font-medium border-l-4 border-white'
                                             : 'border-l-4 border-transparent hover:bg-white/5'}
-                                                  transition-all duration-150 group relative`}
+                                                transition-all duration-150 group relative`}
                                 >
                                     <div className="flex items-center overflow-hidden">
                                         <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
@@ -253,7 +253,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                     ))}
                 </nav>
 
-                <div className={`p-4 text-xs text-blue-200/70 border-t border-blue-500/30 ${collapsed ? 'text-center' : ''}`}>
+                <div className={`p-4 text-xs text-blue-200/70 border-t border-primary/30 ${collapsed ? 'text-center' : ''}`}>
                     {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
                 </div>
             </div>
