@@ -81,15 +81,17 @@ const AddItem = () => {
         handleMinStockKeyDown,
     } = useAddItemPageHandlers();
 
-    if (loading) {
-        return (
-            <Card>
-                <CardContent className="flex justify-center items-center h-40">
-                    <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-                    <span className="ml-3">Memuat data...</span>
-                </CardContent>
-            </Card>
-        );
+    if (loading && !isEditMode) {
+        if (isEditMode && !formData.name) {
+            return (
+                <Card>
+                    <CardContent className="flex justify-center items-center h-40">
+                        <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
+                        <span className="ml-3">Memuat data item...</span>
+                    </CardContent>
+                </Card>
+            );
+        }
     }
 
     return (
@@ -180,48 +182,57 @@ const AddItem = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                         <FormField label="Kategori">
-                                            <Dropdown
-                                                name="category_id"
-                                                value={formData.category_id}
-                                                onChange={(value) =>
-                                                    handleDropdownChange("category_id", value)
-                                                }
-                                                options={categories}
-                                                placeholder="-- Pilih Kategori --"
-                                                required
-                                                onAddNew={() => setIsAddEditModalOpen(true)}
-                                            />
+                                            {loading && categories.length === 0 ? (
+                                                <Input value="Memuat kategori..." readOnly disabled />
+                                            ) : (
+                                                <Dropdown
+                                                    name="category_id"
+                                                    value={formData.category_id}
+                                                    onChange={(value) =>
+                                                        handleDropdownChange("category_id", value)
+                                                    }
+                                                    options={categories}
+                                                    placeholder="-- Pilih Kategori --"
+                                                    required
+                                                    onAddNew={() => setIsAddEditModalOpen(true)}
+                                                />
+                                            )}
                                         </FormField>
 
                                         <FormField label="Jenis">
-                                            {categories.length === 0 && (
-                                                <span className="inline-block w-4 h-4 mr-2 border-t-2 border-primary rounded-full animate-spin"></span>
+                                            {loading && types.length === 0 ? (
+                                                <Input value="Memuat jenis..." readOnly disabled />
+                                            ) : (
+                                                <Dropdown
+                                                    name="type_id"
+                                                    value={formData.type_id}
+                                                    onChange={(value) =>
+                                                        handleDropdownChange("type_id", value)
+                                                    }
+                                                    options={types}
+                                                    placeholder="-- Pilih Jenis --"
+                                                    required
+                                                    onAddNew={() => setIsAddTypeModalOpen(true)}
+                                                />
                                             )}
-                                            <Dropdown
-                                                name="type_id"
-                                                value={formData.type_id}
-                                                onChange={(value) =>
-                                                    handleDropdownChange("type_id", value)
-                                                }
-                                                options={types}
-                                                placeholder="-- Pilih Jenis --"
-                                                required
-                                                onAddNew={() => setIsAddTypeModalOpen(true)}
-                                            />
                                         </FormField>
 
                                         <FormField label="Satuan">
-                                            <Dropdown
-                                                name="unit_id"
-                                                value={formData.unit_id}
-                                                onChange={(value) =>
-                                                    handleDropdownChange("unit_id", value)
-                                                }
-                                                options={units}
-                                                placeholder="-- Pilih Satuan --"
-                                                required
-                                                onAddNew={() => setIsAddUnitModalOpen(true)}
-                                            />
+                                            {loading && units.length === 0 ? (
+                                                <Input value="Memuat satuan..." readOnly disabled />
+                                            ) : (
+                                                <Dropdown
+                                                    name="unit_id"
+                                                    value={formData.unit_id}
+                                                    onChange={(value) =>
+                                                        handleDropdownChange("unit_id", value)
+                                                    }
+                                                    options={units}
+                                                    placeholder="-- Pilih Satuan --"
+                                                    required
+                                                    onAddNew={() => setIsAddUnitModalOpen(true)}
+                                                />
+                                            )}
                                         </FormField>
 
                                         <FormField label="Rak">
