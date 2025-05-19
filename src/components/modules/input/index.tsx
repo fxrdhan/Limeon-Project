@@ -1,13 +1,14 @@
+import { forwardRef } from 'react';
 import type { InputProps } from '@/types';
 import { classNames } from '@/lib/classNames';
 
-export const Input = ({
+export const Input = forwardRef<HTMLInputElement, InputProps>(({
     label,
     error,
     className,
     fullWidth = true,
     ...props
-}: InputProps) => {
+}, ref) => {
     return (
         <div className={fullWidth ? 'w-full' : ''}>
             {label && (
@@ -16,6 +17,7 @@ export const Input = ({
                 </label>
             )}
             <input
+                ref={ref}
                 className={classNames(
                     'p-2 border rounded-lg',
                     error ? 'border-red-500' : 'border-gray-300',
@@ -31,4 +33,6 @@ export const Input = ({
             {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
         </div>
     );
-};
+});
+
+Input.displayName = 'Input';
