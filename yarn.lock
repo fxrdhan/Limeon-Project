@@ -1083,15 +1083,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tanstack/query-persist-client-core@npm:5.76.1":
-  version: 5.76.1
-  resolution: "@tanstack/query-persist-client-core@npm:5.76.1"
-  dependencies:
-    "@tanstack/query-core": 5.76.0
-  checksum: 2169976a00ab5204699d277a3263da3f573aa169b9fca3cf9d11961492156eebdedd3bd2131ef4bb1d9c840b8460a6ea69ff213b5e51f557a1504239e3e99c13
-  languageName: node
-  linkType: hard
-
 "@tanstack/react-query-devtools@npm:^5.76.1":
   version: 5.76.1
   resolution: "@tanstack/react-query-devtools@npm:5.76.1"
@@ -1101,18 +1092,6 @@ __metadata:
     "@tanstack/react-query": ^5.76.1
     react: ^18 || ^19
   checksum: deac49c1aba3f8c75e4919a58a87af5c0b80e5b20e3aae52c468973f5058d78623b72331ff33d0aefca599842385fbe54d037b96a1a8181b7ee67ab499c1ba97
-  languageName: node
-  linkType: hard
-
-"@tanstack/react-query-persist-client@npm:^5.76.1":
-  version: 5.76.1
-  resolution: "@tanstack/react-query-persist-client@npm:5.76.1"
-  dependencies:
-    "@tanstack/query-persist-client-core": 5.76.1
-  peerDependencies:
-    "@tanstack/react-query": ^5.76.1
-    react: ^18 || ^19
-  checksum: 763379b98fa5464be565e073b0182b8e509f672f88cae3ad2ed4ca569bca652a79cf0d7f7a7b66749e737b3b695b24efd4de3cbe436bcd311fc76e64507fbf9d
   languageName: node
   linkType: hard
 
@@ -1471,7 +1450,6 @@ __metadata:
     "@supabase/supabase-js": ^2.49.5
     "@tanstack/react-query": ^5.76.1
     "@tanstack/react-query-devtools": ^5.76.1
-    "@tanstack/react-query-persist-client": ^5.76.1
     "@types/react": ^19.1.4
     "@types/react-dom": ^19.1.5
     "@vitejs/plugin-react": ^4.4.1
