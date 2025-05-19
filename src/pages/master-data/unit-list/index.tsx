@@ -14,7 +14,7 @@ import {
     PageTitle,
     AddEditModal
 } from "@/components/modules";
-import { useMasterDataManagement } from "@/pages/handlers";
+import { useMasterDataManagement } from "@/handlers";
 
 const UnitList = () => {
     const {
