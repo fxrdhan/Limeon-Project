@@ -145,7 +145,7 @@ export const Dropdown = ({
             focusSearchInput();
         }, 100);
     };
-    
+
     const handleMenuEnter = () => {
         if (leaveTimeoutRef.current) {
             clearTimeout(leaveTimeoutRef.current);
@@ -173,7 +173,7 @@ export const Dropdown = ({
                 dropdownRef.current &&
                 !dropdownRef.current.contains(target) &&
                 (!dropdownMenuRef.current || // Check if menu exists
-                 (dropdownMenuRef.current && !dropdownMenuRef.current.contains(target)))
+                    (dropdownMenuRef.current && !dropdownMenuRef.current.contains(target)))
             ) {
                 closeDropdown();
             }
@@ -293,7 +293,7 @@ export const Dropdown = ({
                                 {(isOpen || isClosing) && (
                                     <div>
                                         {searchList && (
-                                            <div className="p-2 border-b sticky top-0 z-10 bg-white"> {/* Added bg-white here for sticky search */}
+                                            <div className="p-2 border-b sticky top-0 z-10">
                                                 <div className="relative flex items-center">
                                                     <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
                                                         <svg
@@ -354,8 +354,8 @@ export const Dropdown = ({
                                                                 <div className="mr-2 flex items-center">
                                                                     <div
                                                                         className={`w-4 h-4 rounded-full border ${option.id === value
-                                                                                ? "border-primary"
-                                                                                : "border-gray-300"
+                                                                            ? "border-primary"
+                                                                            : "border-gray-300"
                                                                             } flex items-center justify-center`}
                                                                     >
                                                                         {option.id === value && (
