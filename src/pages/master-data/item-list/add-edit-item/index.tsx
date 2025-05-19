@@ -21,6 +21,7 @@ import {
     CardContent,
     DescriptiveTextarea,
     CardFooter,
+    Checkbox,
 } from "@/components/modules";
 import { useAddItemPageHandlers } from "@/handlers";
 
@@ -326,18 +327,14 @@ const AddItem = () => {
                                                     : "opacity-50 pointer-events-none"
                                             }
                                         >
-                                            <label className="inline-flex items-center">
-                                                <input
-                                                    type="checkbox"
-                                                    name="has_expiry_date"
-                                                    checked={formData.has_expiry_date}
-                                                    disabled={!formData.is_medicine}
-                                                    onChange={handleChange}
-                                                />
-                                                <span className="ml-2">
-                                                    Memiliki Tanggal Kadaluarsa
-                                                </span>
-                                            </label>
+                                            <Checkbox
+                                                id="has_expiry_date"
+                                                label="Memiliki Tanggal Kadaluarsa"
+                                                checked={formData.has_expiry_date}
+                                                disabled={!formData.is_medicine}
+                                                onChange={(isChecked) => updateFormData({ has_expiry_date: isChecked })}
+                                                className="py-1" // Tambahkan padding jika perlu untuk alignment vertikal
+                                            />
                                             <div className="mt-1 text-sm text-gray-500 flex items-center">
                                                 Akan digunakan metode FEFO (First Expired First Out)
                                                 <div
