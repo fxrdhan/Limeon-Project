@@ -1,4 +1,4 @@
-import { Button, ImageUploader } from '@/components/modules';
+import { Button, ImageUploader, Input } from '@/components/modules';
 import { createPortal } from 'react-dom';
 import { Transition, TransitionChild, Dialog } from '@headlessui/react';
 import React, { Fragment, useRef, useState, useEffect } from 'react';
@@ -169,7 +169,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                 {fields.map(field => (
                                     <div key={field.key} className="bg-white rounded-md">
                                         <div className="flex justify-between items-center mb-1">
-                                            <label className="text-sm font-medium text-gray-600">{field.label}</label>
+                                            <label htmlFor={field.key} className="text-sm font-medium text-gray-600">{field.label}</label>
                                             {field.editable !== false && mode === 'edit' && (
                                                 <div className="flex">
                                                     {editMode[field.key] ? (
@@ -178,7 +178,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                                 variant="text"
                                                                 size="sm"
                                                                 onClick={() => handleCancelEdit(field.key)}
-                                                                className="text-gray-500 hover:text-gray-700 p-1"
+                                                                className="text-gray-500 hover:text-red-500 p-1"
                                                                 title="Batal"
                                                             >
                                                                 <FaBan className="text-red-500 text-sm" />
@@ -216,17 +216,19 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                         {(editMode[field.key] || mode === 'add') ? (
                                             field.type === 'textarea' ? (
                                                 <textarea
+                                                    id={field.key}
+                                                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
                                                     value={String(editValues[field.key] ?? '')}
-                                                    onChange={(e) => handleChange(field.key, e.target.value)}
-                                                    className="w-full p-2 border rounded-md focus:ring-primary focus:border-primary"
+                                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange(field.key, e.target.value)}
                                                     rows={3}
                                                 />
                                             ) : (
-                                                <input
+                                                <Input
+                                                    id={field.key}
                                                     type={field.type || 'text'}
                                                     value={String(editValues[field.key] ?? '')}
-                                                    onChange={(e) => handleChange(field.key, e.target.value)}
-                                                    className="w-full p-2 border rounded-md focus:ring-primary focus:border-primary"
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(field.key, e.target.value)}
+                                                    fullWidth
                                                 />
                                             )
                                         ) : (
