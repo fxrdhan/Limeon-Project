@@ -7,15 +7,12 @@ export const Dropdown = ({
     value,
     onChange,
     placeholder = "-- Pilih --",
-    // name,
-    // required = false,
     withRadio = false,
     onAddNew,
     searchList = true,
 }: DropdownProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
-    const [, setIsAnimating] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredOptions, setFilteredOptions] = useState(options);
     const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
@@ -23,6 +20,7 @@ export const Dropdown = ({
     const [reachedBottom, setReachedBottom] = useState(false);
     const [scrolledFromTop, setScrolledFromTop] = useState(false);
     const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
+    const [applyOpenStyles, setApplyOpenStyles] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownMenuRef = useRef<HTMLDivElement>(null);
@@ -43,12 +41,10 @@ export const Dropdown = ({
         if (!buttonRef.current || !dropdownMenuRef.current) return;
 
         const buttonRect = buttonRef.current.getBoundingClientRect();
-        // Use scrollHeight for true height, unaffected by transform: scaleY
         const dropdownActualHeight = dropdownMenuRef.current.scrollHeight;
         const viewportHeight = window.innerHeight;
 
         const spaceBelow = viewportHeight - buttonRect.bottom;
-        // Ensure there's enough space above if dropping up
         const shouldDropUp =
             spaceBelow < dropdownActualHeight + 10 &&
             buttonRect.top > dropdownActualHeight + 10;
@@ -59,10 +55,10 @@ export const Dropdown = ({
             position: "fixed",
             left: `${buttonRect.left}px`,
             width: `${buttonRect.width}px`,
-            zIndex: 1050, // Ensure dropdown is above other content
+            zIndex: 1050,
         };
 
-        const margin = 8; // Corresponds to original mt-2/mb-2 (0.5rem)
+        const margin = 8;
 
         if (shouldDropUp) {
             newMenuStyle.top = `${buttonRect.top + window.scrollY - dropdownActualHeight - margin}px`;
@@ -70,18 +66,16 @@ export const Dropdown = ({
             newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
         }
         setPortalStyle(newMenuStyle);
-    }, []); // Dependencies are implicitly handled by when this is called
+    }, []);
 
     const closeDropdown = useCallback(() => {
         setIsClosing(true);
-        setIsAnimating(true);
         setTimeout(() => {
             setIsOpen(false);
             setIsClosing(false);
-            setIsAnimating(false);
             setSearchTerm("");
         }, 100);
-    }, [setIsAnimating]);
+    }, []);
 
     const handleSelect = (optionId: string) => {
         onChange(optionId);
@@ -99,7 +93,7 @@ export const Dropdown = ({
         if (isOpen && searchInputRef.current) {
             setTimeout(() => {
                 searchInputRef.current?.focus();
-            }, 5); // Keep small delay for focus
+            }, 5);
         }
     }, [isOpen]);
 
@@ -117,18 +111,34 @@ export const Dropdown = ({
     }, [searchTerm, options, searchList]);
 
     useEffect(() => {
+        let openStyleTimerId: NodeJS.Timeout | undefined;
+
         if (isOpen) {
-            // Calculate position after a brief delay to allow menu to render in portal
-            setTimeout(() => calculateDropdownPosition(), 0);
-            focusSearchInput();
-            window.addEventListener("scroll", calculateDropdownPosition, true); // Use capture phase for scroll
+            openStyleTimerId = setTimeout(() => {
+                setApplyOpenStyles(true);
+                requestAnimationFrame(() => {
+                    if (dropdownMenuRef.current) {
+                        calculateDropdownPosition();
+                        focusSearchInput();
+                    }
+                });
+            }, 20);
+
+            window.addEventListener("scroll", calculateDropdownPosition, true);
             window.addEventListener("resize", calculateDropdownPosition);
+        } else {
+            setApplyOpenStyles(false);
         }
+
         return () => {
-            window.removeEventListener("scroll", calculateDropdownPosition, true);
-            window.removeEventListener("resize", calculateDropdownPosition);
+            if (openStyleTimerId) clearTimeout(openStyleTimerId);
+            if (isOpen) {
+                window.removeEventListener("scroll", calculateDropdownPosition, true);
+                window.removeEventListener("resize", calculateDropdownPosition);
+            }
         };
-    }, [isOpen, focusSearchInput, calculateDropdownPosition]);
+    }, [isOpen, calculateDropdownPosition, focusSearchInput]);
+
 
     const handleTriggerAreaEnter = () => {
         if (leaveTimeoutRef.current) {
@@ -139,10 +149,6 @@ export const Dropdown = ({
         hoverTimeoutRef.current = setTimeout(() => {
             setIsOpen(true);
             setIsClosing(false);
-            // Position calculation will be triggered by useEffect on isOpen change
-            // Or call it directly after a micro-delay if needed for faster visual feedback on hover
-            setTimeout(() => calculateDropdownPosition(), 5);
-            focusSearchInput();
         }, 100);
     };
 
@@ -172,7 +178,7 @@ export const Dropdown = ({
                 (isOpen || isClosing) &&
                 dropdownRef.current &&
                 !dropdownRef.current.contains(target) &&
-                (!dropdownMenuRef.current || // Check if menu exists
+                (!dropdownMenuRef.current ||
                     (dropdownMenuRef.current && !dropdownMenuRef.current.contains(target)))
             ) {
                 closeDropdown();
@@ -191,12 +197,6 @@ export const Dropdown = ({
             closeDropdown();
         } else {
             setIsOpen(true);
-            setIsAnimating(true);
-            setTimeout(() => {
-                calculateDropdownPosition();
-                focusSearchInput();
-                setIsAnimating(false);
-            }, 300);
         }
     };
 
@@ -278,11 +278,11 @@ export const Dropdown = ({
                                     ${dropDirection === "down" ? "origin-top" : "origin-bottom"}
                                     shadow-lg bg-white rounded-xl border border-gray-200
                                     transition-all duration-300 ease-out transform
-                                    ${isOpen && !isClosing
-                                        ? "opacity-100 scale-y-100 translate-y-0"
-                                        : isClosing
-                                            ? "opacity-0 scale-y-0 translate-y-0"
-                                            : "opacity-0 scale-y-0 translate-y-2 pointer-events-none"
+                                    ${isClosing
+                                        ? "opacity-0 scale-y-0 translate-y-0"
+                                        : isOpen && applyOpenStyles
+                                            ? "opacity-100 scale-y-100 translate-y-0"
+                                            : `opacity-0 scale-y-0 ${dropDirection === 'down' ? 'translate-y-2' : '-translate-y-2'} pointer-events-none`
                                     }
                                 `}
                                 role="menu"
