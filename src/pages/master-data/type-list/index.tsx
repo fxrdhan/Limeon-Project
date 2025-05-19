@@ -14,7 +14,7 @@ import {
     PageTitle
 } from "@/components/modules";
 import { AddEditModal } from "@/components/modules";
-import { useMasterDataManagement } from "@/pages/handlers";
+import { useMasterDataManagement } from "@/handlers";
 
 const TypeList = () => {
     const {

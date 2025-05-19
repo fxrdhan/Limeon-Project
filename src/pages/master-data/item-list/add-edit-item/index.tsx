@@ -21,7 +21,7 @@ import {
     DescriptiveTextarea,
     CardFooter,
 } from "@/components/modules";
-import { useAddItemPageHandlers } from "@/pages/handlers";
+import { useAddItemPageHandlers } from "@/handlers";
 
 const AddItem = () => {
     const {

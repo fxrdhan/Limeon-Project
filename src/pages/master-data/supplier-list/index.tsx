@@ -14,7 +14,7 @@ import {
     useConfirmDialog
 } from "@/components/modules";
 import DetailEditModal from "./add-edit-supplier";
-import { useSupplierHandlers } from "@/pages/handlers";
+import { useSupplierHandlers } from "@/handlers";
 
 const SupplierList = () => {
     const { openConfirmDialog } = useConfirmDialog();

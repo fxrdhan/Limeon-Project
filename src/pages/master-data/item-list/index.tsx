@@ -13,7 +13,7 @@ import {
     Pagination,
     PageTitle
 } from "@/components/modules";
-import { useItemListManagement } from "@/pages/handlers";
+import { useItemListManagement } from "@/handlers";
 
 function ItemList() {
     const {
