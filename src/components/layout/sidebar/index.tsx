@@ -254,36 +254,25 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                     ))}
                 </nav>
 
-                <div className={`p-4 text-xs text-teal-200/70 border-t border-teal-500/30 ${collapsed ? 'text-center' : ''} mt-auto`}>
-                    {/* Wrapper div with fixed height to prevent y-axis movement of the border */}
-                    <div className="h-4"> {/* h-4 corresponds to 1rem, the line-height for text-xs */}
-                        <AnimatePresence mode="wait" initial={false}>
-                            {collapsed ? (
-                                <motion.span
-                                    key="collapsed"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="block"
-                                    style={{ position: 'relative' }}
-                                >
-                                    v2.3
-                                </motion.span>
-                            ) : (
-                                <motion.span
-                                    key="opened"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="block"
-                                    style={{ position: 'relative' }}
-                                >
-                                    PharmaSys v2.3.0
-                                </motion.span>
-                            )}
-                        </AnimatePresence>
+                <div className={`p-4 text-xs text-teal-200/70 border-t border-teal-500/30 mt-auto`}>
+                    <div className="h-4">
+                        <div style={{ display: 'inline-flex', alignItems: 'center', height: '100%' }}>
+                            <AnimatePresence initial={false}>
+                                {!collapsed && (
+                                    <motion.div
+                                        key="pharmasys-text"
+                                        initial={{ opacity: 0, width: 0, marginRight: 0 }}
+                                        animate={{ opacity: 1, width: 'auto', marginRight: '0.25em' }}
+                                        exit={{ opacity: 0, width: 0, marginRight: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}
+                                    >
+                                        PharmaSys
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                            <span>v2.3.0</span>
+                        </div>
                     </div>
                 </div>
             </div>
