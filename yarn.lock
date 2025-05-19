@@ -1553,9 +1553,9 @@ __metadata:
     framer-motion: ^12.12.1
     globals: ^15.15.0
     postcss: ^8.5.3
-    react: ^19.0.0
+    react: ^19.1.0
     react-chartjs-2: ^5.3.0
-    react-dom: ^19.0.0
+    react-dom: ^19.1.0
     react-fast-marquee: ^1.6.5
     react-icons: ^5.5.0
     react-router-dom: ^6.30.0
@@ -3489,7 +3489,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:^19.0.0":
+"react-dom@npm:^19.1.0":
   version: 19.1.0
   resolution: "react-dom@npm:19.1.0"
   dependencies:
@@ -3560,7 +3560,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:^19.0.0":
+"react@npm:^19.1.0":
   version: 19.1.0
   resolution: "react@npm:19.1.0"
   checksum: c0905f8cfb878b0543a5522727e5ed79c67c8111dc16ceee135b7fe19dce77b2c1c19293513061a8934e721292bfc1517e0487e262d1906f306bdf95fa54d02f
