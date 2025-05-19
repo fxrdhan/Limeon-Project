@@ -220,7 +220,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                                 <Link
                                                     key={child.name}
                                                     to={child.path}
-                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition-colors transition-opacity duration-300 ease-in-out ${
+                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition duration-300 ease-in-out ${
                                                         isActive(child.path)
                                                         ? 'bg-white/20 text-white font-medium hover:bg-white/20 hover:text-white'
                                                         : 'text-blue-100 hover:bg-white/10 hover:text-white'
