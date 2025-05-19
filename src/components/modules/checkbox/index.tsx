@@ -37,7 +37,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
             />
             <motion.div
                 className={classNames(
-                    "w-5 h-5 border-2 rounded flex items-center justify-center mr-2 flex-shrink-0 transition-colors duration-200",
+                    "relative w-5 h-5 border-2 rounded flex items-center justify-center mr-2 flex-shrink-0 transition-colors duration-200",
                     checked ? "bg-primary border-primary" : "bg-white border-gray-300",
                     !disabled && !checked ? "group-hover:border-teal-400" : ""
                 )}
@@ -45,6 +45,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
                 <AnimatePresence>
                     {checked && (
                         <motion.div
+                            className="absolute inset-0 flex items-center justify-center"
                             initial={{ scale: 0.5, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.5, opacity: 0 }}
