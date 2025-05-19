@@ -1,9 +1,9 @@
-import { Input, Button, useConfirmDialog } from "@/components/modules";
+import { Input, Button, useConfirmDialog, DescriptiveTextarea } from "@/components/modules";
 import { createPortal } from "react-dom";
 import { FaTimes } from "react-icons/fa";
 import type { AddEditModalProps } from "@/types";
 import { Transition, TransitionChild } from "@headlessui/react";
-import React, { useState, useEffect, Fragment, useRef } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 
 export const AddEditModal: React.FC<AddEditModalProps> = ({
     isOpen,
@@ -18,7 +18,6 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
     useConfirmDialog();
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const isEditMode = Boolean(initialData);
 
     useEffect(() => {
@@ -32,14 +31,6 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
             }
         }
     }, [isOpen, initialData]);
-
-    useEffect(() => {
-        const textarea = textareaRef.current;
-        if (textarea) {
-            textarea.style.height = "auto";
-            textarea.style.height = `${textarea.scrollHeight}px`;
-        }
-    }, [description]);
 
     const handleSave = async () => {
         if (!name.trim()) {
@@ -114,24 +105,17 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
                                 readOnly={isLoading || isDeleting}
                             />
 
-                            <div className="space-y-1">
-                                <label
-                                    htmlFor="description"
-                                    className="block text-sm font-medium"
-                                >
-                                    Deskripsi (Opsional)
-                                </label>
-                                <textarea
-                                    ref={textareaRef}
-                                    id="description"
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    placeholder="Masukkan deskripsi singkat"
-                                    readOnly={isLoading || isDeleting}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm min-h-[80px] resize-none"
-                                    rows={3}
-                                />
-                            </div>
+                            <DescriptiveTextarea
+                                label="Deskripsi"
+                                name="description"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Masukkan deskripsi singkat"
+                                readOnly={isLoading || isDeleting}
+                                textareaClassName="text-sm min-h-[80px] resize-none"
+                                rows={3}
+                                showInitially={!!(initialData?.description || description)}
+                            />
                         </div>
                         <div className="flex justify-between p-4 border-t">
                             <div>
