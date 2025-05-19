@@ -591,3 +591,12 @@ export interface UseDropdownHandlersProps {
     setReachedBottom: (reachedBottom: boolean) => void;
     setScrolledFromTop: (scrolledFromTop: boolean) => void;
 }
+
+export interface CheckboxProps {
+    id?: string;
+    label?: string;
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+    disabled?: boolean;
+    className?: string;
+}
