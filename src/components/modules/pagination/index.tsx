@@ -64,8 +64,10 @@ export const Pagination = ({
                             key={size}
                             layout
                             className={classNames(
-                                "px-3 py-1.5 rounded-full focus:outline-none select-none relative",
-                                itemsPerPage !== size ? "hover:bg-teal-100" : ""
+                                "group px-3 py-1.5 rounded-full focus:outline-none select-none relative transition-colors duration-300",
+                                itemsPerPage !== size
+                                    ? "hover:bg-teal-100"
+                                    : ""
                             )}
                             onClick={() => handleItemsPerPageClick(size)}
                             animate={{
@@ -87,7 +89,7 @@ export const Pagination = ({
                                     "relative z-10 select-none transition-colors duration-300 ease-in-out",
                                     itemsPerPage === size
                                         ? "text-white font-medium"
-                                        : "text-gray-700 hover:text-secondary"
+                                        : "text-gray-700 group-hover:text-secondary"
                                 )}
                             >
                                 {itemsPerPage === size ? `${size} items` : size.toString()}
