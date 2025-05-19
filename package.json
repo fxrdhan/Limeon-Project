@@ -24,7 +24,7 @@
     "chart.js": "^4.4.8",
     "dayjs": "^1.11.13",
     "flowbite": "^3.1.2",
-    "framer-motion": "^12.6.5",
+    "framer-motion": "^12.12.1",
     "postcss": "^8.5.3",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.3.0",
@@ -33,7 +33,7 @@
     "react-icons": "^5.5.0",
     "react-router-dom": "^6.30.0",
     "react-tailwindcss-datepicker": "^2.0.0",
-    "zustand": "^5.0.3"
+    "zustand": "^5.0.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
@@ -46,8 +46,8 @@
     "globals": "^15.15.0",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.24.1",
-    "vite": "^6.2.0"
+    "typescript-eslint": "^8.32.1",
+    "vite": "^6.3.5"
   },
   "packageManager": "yarn@3.2.3+sha512.f26f951f67de0c6a33ee381e5ff364709c87e70eb5e65c694e4facde3512f1fa80b8679e6ba31ce7d340fbb46f08dd683af9457e240f25a204be7427940d767e"
 }
