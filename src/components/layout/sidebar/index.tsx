@@ -195,7 +195,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                                 transition-all duration-150 group relative`}
                                     >
                                         <div className="flex items-center overflow-hidden">
-                                            <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-teal-50' : 'text-teal-200'} transition-colors duration-200`}>
+                                            <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-teal-50' : 'text-teal-100'} transition-colors duration-200`}>
                                                 {item.icon}
                                             </div>
                                             <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
@@ -215,7 +215,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                                 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                                         }`}                  
                                     >                  
-                                        <div className="pl-10 pr-2 py-1 bg-teal-900/50">
+                                        <div className="pl-10 pr-1 py-0.5 bg-teal-900/50">
                                             {item.children.map((child) => (
                                                 <Link
                                                     key={child.name}
@@ -223,7 +223,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                                     className={`block px-3 py-2 my-0.5 text-sm rounded-md transition duration-300 ease-in-out ${
                                                         isActive(child.path)
                                                         ? 'bg-teal-500/40 text-white font-medium hover:bg-teal-500/50 hover:text-white'
-                                                        : 'text-teal-100 hover:bg-teal-700/40 hover:text-white'
+                                                        : 'text-teal-100 hover:bg-teal-600/40 hover:text-white'
                                                     } whitespace-nowrap overflow-hidden text-ellipsis`}
                                                 >
                                                     {child.name}
@@ -242,7 +242,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                                 transition-all duration-150 group relative`}
                                 >
                                     <div className="flex items-center overflow-hidden">
-                                        <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-teal-50' : 'text-teal-200'} transition-colors duration-200`}>
+                                        <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-teal-50' : 'text-teal-100'} transition-colors duration-200`}>
                                             {item.icon}
                                         </div>
                                         <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
