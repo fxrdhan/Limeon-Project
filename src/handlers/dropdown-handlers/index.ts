@@ -1,29 +1,6 @@
-import { useCallback, CSSProperties, RefObject, useEffect } from "react";
-import type { DropdownOption } from "@/types";
-interface UseDropdownHandlersProps {
-    options: DropdownOption[];
-    onChange: (value: string) => void;
-    isOpen: boolean;
-    setIsOpen: (isOpen: boolean) => void;
-    isClosing: boolean;
-    setIsClosing: (isClosing: boolean) => void;
-    searchTerm: string;
-    setSearchTerm: (term: string) => void;
-    setDropDirection: (direction: "up" | "down") => void;
-    setPortalStyle: (style: CSSProperties) => void;
-    filteredOptions: DropdownOption[];
-    setFilteredOptions: (options: DropdownOption[]) => void;
-    searchList: boolean;
-    buttonRef: RefObject<HTMLButtonElement | null>;
-    dropdownMenuRef: RefObject<HTMLDivElement | null>;
-    searchInputRef: RefObject<HTMLInputElement | null>;
-    optionsContainerRef: RefObject<HTMLDivElement | null>;
-    hoverTimeoutRef: RefObject<NodeJS.Timeout | null>;
-    leaveTimeoutRef: RefObject<NodeJS.Timeout | null>;
-    setIsScrollable: (isScrollable: boolean) => void;
-    setReachedBottom: (reachedBottom: boolean) => void;
-    setScrolledFromTop: (scrolledFromTop: boolean) => void;
-}
+import { useCallback, CSSProperties, useEffect } from "react";
+import type { UseDropdownHandlersProps } from "@/types";
+
 export const useDropdownHandlers = (props: UseDropdownHandlersProps) => {
     const {
         options,
