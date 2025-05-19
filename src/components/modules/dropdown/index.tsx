@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef, useCallback, CSSProperties } from "react";
+import { useEffect, useState, useRef, CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { DropdownProps } from "@/types";
+import { useDropdownHandlers } from "@/handlers/dropdown-handlers";
 
 export const Dropdown = ({
     options,
@@ -28,87 +29,52 @@ export const Dropdown = ({
     const optionsContainerRef = useRef<HTMLDivElement>(null);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const selectedOption = options.find((option) => option.id === value);
+    const selectedOption = options.find((option) => option?.id === value);
+
+    const {
+        calculateDropdownPosition,
+        closeDropdown,
+        handleSelect,
+        handleSearchKeyDown,
+        focusSearchInput,
+        handleTriggerAreaEnter,
+        handleMenuEnter,
+        handleMouseLeaveWithCloseIntent,
+        toggleDropdown,
+        checkScroll,
+    } = useDropdownHandlers({
+        options,
+        onChange,
+        isOpen,
+        setIsOpen,
+        isClosing,
+        setIsClosing,
+        searchTerm,
+        setSearchTerm,
+        setDropDirection,
+        setPortalStyle,
+        filteredOptions,
+        setFilteredOptions,
+        searchList,
+        buttonRef,
+        dropdownMenuRef,
+        searchInputRef,
+        optionsContainerRef,
+        hoverTimeoutRef,
+        leaveTimeoutRef,
+        setIsScrollable,
+        setReachedBottom,
+        setScrolledFromTop,
+    });
 
     useEffect(() => {
+        const currentHoverTimeout = hoverTimeoutRef.current;
+        const currentLeaveTimeout = leaveTimeoutRef.current;
         return () => {
-            if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-            if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+            if (currentHoverTimeout) clearTimeout(currentHoverTimeout);
+            if (currentLeaveTimeout) clearTimeout(currentLeaveTimeout);
         };
     }, []);
-
-    const calculateDropdownPosition = useCallback(() => {
-        if (!buttonRef.current || !dropdownMenuRef.current) return;
-
-        const buttonRect = buttonRef.current.getBoundingClientRect();
-        const dropdownActualHeight = dropdownMenuRef.current.scrollHeight;
-        const viewportHeight = window.innerHeight;
-
-        const spaceBelow = viewportHeight - buttonRect.bottom;
-        const shouldDropUp =
-            spaceBelow < dropdownActualHeight + 10 &&
-            buttonRect.top > dropdownActualHeight + 10;
-
-        setDropDirection(shouldDropUp ? "up" : "down");
-
-        const newMenuStyle: CSSProperties = {
-            position: "fixed",
-            left: `${buttonRect.left}px`,
-            width: `${buttonRect.width}px`,
-            zIndex: 1050,
-        };
-
-        const margin = 8;
-
-        if (shouldDropUp) {
-            newMenuStyle.top = `${buttonRect.top + window.scrollY - dropdownActualHeight - margin}px`;
-        } else {
-            newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
-        }
-        setPortalStyle(newMenuStyle);
-    }, []);
-
-    const closeDropdown = useCallback(() => {
-        setIsClosing(true);
-        setTimeout(() => {
-            setIsOpen(false);
-            setIsClosing(false);
-            setSearchTerm("");
-        }, 100);
-    }, []);
-
-    const handleSelect = (optionId: string) => {
-        onChange(optionId);
-        closeDropdown();
-    };
-
-    const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && filteredOptions.length > 0) {
-            e.preventDefault();
-            handleSelect(filteredOptions[0].id);
-        }
-    };
-
-    const focusSearchInput = useCallback(() => {
-        if (isOpen && searchInputRef.current) {
-            setTimeout(() => {
-                searchInputRef.current?.focus();
-            }, 5);
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (!searchList) {
-            setFilteredOptions(options);
-        } else if (searchTerm.trim() === "") {
-            setFilteredOptions(options);
-        } else {
-            const filtered = options.filter((option) =>
-                option.name.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            setFilteredOptions(filtered);
-        }
-    }, [searchTerm, options, searchList]);
 
     useEffect(() => {
         let openStyleTimerId: NodeJS.Timeout | undefined;
@@ -139,38 +105,6 @@ export const Dropdown = ({
         };
     }, [isOpen, calculateDropdownPosition, focusSearchInput]);
 
-
-    const handleTriggerAreaEnter = () => {
-        if (leaveTimeoutRef.current) {
-            clearTimeout(leaveTimeoutRef.current);
-            leaveTimeoutRef.current = null;
-        }
-
-        hoverTimeoutRef.current = setTimeout(() => {
-            setIsOpen(true);
-            setIsClosing(false);
-        }, 100);
-    };
-
-    const handleMenuEnter = () => {
-        if (leaveTimeoutRef.current) {
-            clearTimeout(leaveTimeoutRef.current);
-            leaveTimeoutRef.current = null;
-        }
-    };
-
-    const handleMouseLeaveWithCloseIntent = () => {
-        if (hoverTimeoutRef.current) {
-            clearTimeout(hoverTimeoutRef.current);
-            hoverTimeoutRef.current = null;
-        }
-
-        leaveTimeoutRef.current = setTimeout(() => {
-            closeDropdown();
-        }, 150);
-    };
-
-
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
@@ -179,7 +113,8 @@ export const Dropdown = ({
                 dropdownRef.current &&
                 !dropdownRef.current.contains(target) &&
                 (!dropdownMenuRef.current ||
-                    (dropdownMenuRef.current && !dropdownMenuRef.current.contains(target)))
+                    (dropdownMenuRef.current &&
+                        !dropdownMenuRef.current.contains(target)))
             ) {
                 closeDropdown();
             }
@@ -191,36 +126,10 @@ export const Dropdown = ({
         };
     }, [isOpen, isClosing, closeDropdown]);
 
-    const toggleDropdown = (e: React.MouseEvent) => {
-        e.preventDefault();
-        if (isOpen) {
-            closeDropdown();
-        } else {
-            setIsOpen(true);
-        }
-    };
-
-    const checkScroll = useCallback(() => {
-        if (!optionsContainerRef.current) return;
-
-        const container = optionsContainerRef.current;
-        const isScrollable = container.scrollHeight > container.clientHeight;
-        setIsScrollable(isScrollable);
-
-        const isBottom =
-            Math.abs(
-                container.scrollHeight - container.scrollTop - container.clientHeight
-            ) < 2;
-
-        const isScrolledFromTop = container.scrollTop > 2;
-
-        setReachedBottom(isBottom);
-        setScrolledFromTop(isScrolledFromTop);
-    }, []);
-
     useEffect(() => {
         if (isOpen) {
-            setTimeout(checkScroll, 50);
+            const timer = setTimeout(checkScroll, 50);
+            return () => clearTimeout(timer);
         }
     }, [isOpen, filteredOptions, checkScroll]);
 
@@ -251,7 +160,9 @@ export const Dropdown = ({
                         aria-expanded={isOpen || isClosing}
                         onClick={toggleDropdown}
                     >
-                        {selectedOption ? selectedOption.name : placeholder}
+                        {selectedOption
+                            ? selectedOption.name
+                            : placeholder ?? "-- Pilih --"}
                         <svg
                             className={`transition-transform duration-200 ${isOpen || isClosing ? "rotate-180" : ""
                                 } w-4 h-4 ml-2`}
@@ -269,20 +180,27 @@ export const Dropdown = ({
                         </svg>
                     </button>
 
-                    {(isOpen || isClosing) && typeof document !== "undefined" &&
+                    {(isOpen || isClosing) &&
+                        typeof document !== "undefined" &&
                         createPortal(
                             <div
                                 ref={dropdownMenuRef}
                                 style={portalStyle}
                                 className={`
-                                    ${dropDirection === "down" ? "origin-top" : "origin-bottom"}
+                                    ${dropDirection === "down"
+                                        ? "origin-top"
+                                        : "origin-bottom"
+                                    }
                                     shadow-lg bg-white rounded-xl border border-gray-200
                                     transition-all duration-300 ease-out transform
                                     ${isClosing
                                         ? "opacity-0 scale-y-0 translate-y-0"
                                         : isOpen && applyOpenStyles
                                             ? "opacity-100 scale-y-100 translate-y-0"
-                                            : `opacity-0 scale-y-0 ${dropDirection === 'down' ? 'translate-y-2' : '-translate-y-2'} pointer-events-none`
+                                            : `opacity-0 scale-y-0 ${dropDirection === "down"
+                                                ? "translate-y-2"
+                                                : "-translate-y-2"
+                                            } pointer-events-none`
                                     }
                                 `}
                                 role="menu"
@@ -309,7 +227,12 @@ export const Dropdown = ({
                                                             className="text-gray-500"
                                                         >
                                                             <circle cx="11" cy="11" r="8"></circle>
-                                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                                            <line
+                                                                x1="21"
+                                                                y1="21"
+                                                                x2="16.65"
+                                                                y2="16.65"
+                                                            ></line>
                                                         </svg>
                                                     </div>
                                                     <input
@@ -355,8 +278,8 @@ export const Dropdown = ({
                                                                 <div className="mr-2 flex items-center">
                                                                     <div
                                                                         className={`w-4 h-4 rounded-full border ${option.id === value
-                                                                            ? "border-primary"
-                                                                            : "border-gray-300"
+                                                                                ? "border-primary"
+                                                                                : "border-gray-300"
                                                                             } flex items-center justify-center`}
                                                                     >
                                                                         {option.id === value && (
