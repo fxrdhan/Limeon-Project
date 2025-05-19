@@ -23,7 +23,6 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
         await logout();
     };
 
-    // Effect for dropdown click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -44,18 +43,50 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
         <nav className="bg-white border-b px-6 py-3 sticky top-0 z-20">
             <div className="grid grid-cols-[1fr,auto,1fr] items-center">
                 <div className="flex items-center h-8">
-                    <AnimatePresence mode="wait">
-                        <motion.h1
-                            key={sidebarCollapsed ? 'PharmaSys' : 'Pharmacy System App'}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 10 }}
-                            transition={{ duration: 0.2 }}
-                            className="text-xl font-semibold text-gray-800"
-                        >
-                            {sidebarCollapsed ? 'PharmaSys' : 'Pharmacy System App'}
-                        </motion.h1>
-                    </AnimatePresence>
+                    <h1 className="text-xl font-semibold text-gray-800 flex items-baseline" style={{ minHeight: '1.5em' }}>
+                        <span>Pharma</span>
+                        <AnimatePresence>
+                            {!sidebarCollapsed && (
+                                <motion.span
+                                    key="space_after_pharma_part"
+                                    initial={{ opacity: 0, width: 0 }}
+                                    animate={{ opacity: 1, width: 'auto' }}
+                                    exit={{ opacity: 0, width: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    style={{ display: 'inline-block', whiteSpace: 'nowrap', overflow: 'hidden' }}
+                                >
+                                    &nbsp;
+                                </motion.span>
+                            )}
+                        </AnimatePresence>
+                        <span>Sys</span>
+                        <AnimatePresence>
+                            {!sidebarCollapsed && (
+                                <motion.span
+                                    key="tem_part"
+                                    initial={{ opacity: 0, width: 0 }}
+                                    animate={{ opacity: 1, width: 'auto' }}
+                                    exit={{ opacity: 0, width: 0 }}
+                                    transition={{ duration: 0.2, delay: 0.05 }}
+                                    style={{ display: 'inline-block', whiteSpace: 'nowrap', overflow: 'hidden' }}
+                                >
+                                    tem
+                                </motion.span>
+                            )}
+                            {!sidebarCollapsed && (
+                                <motion.span
+                                    key="app_part"
+                                    initial={{ opacity: 0, width: 0 }}
+                                    animate={{ opacity: 1, width: 'auto' }}
+                                    exit={{ opacity: 0, width: 0 }}
+                                    transition={{ duration: 0.2, delay: 0.1 }}
+                                    style={{ display: 'inline-block', whiteSpace: 'nowrap', overflow: 'hidden' }}
+                                >
+                                    &nbsp;App
+                                </motion.span>
+                            )}
+                        </AnimatePresence>
+                    </h1>
                 </div>
                 <div className="flex items-center justify-center space-x-3">
                     <motion.button
