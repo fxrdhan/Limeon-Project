@@ -329,6 +329,7 @@ export const Dropdown = ({
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 onAddNew();
+                                                                closeDropdown();
                                                             }}
                                                         >
                                                             +
