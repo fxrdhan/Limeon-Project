@@ -89,7 +89,7 @@ export const Pagination = ({
                                     "relative z-10 select-none transition-colors duration-300 ease-in-out",
                                     itemsPerPage === size
                                         ? "text-white font-medium"
-                                        : "text-gray-700 group-hover:text-secondary"
+                                        : "text-gray-700 group-hover:text-teal-700"
                                 )}
                             >
                                 {itemsPerPage === size ? `${size} items` : size.toString()}
