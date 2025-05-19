@@ -18,7 +18,7 @@ module.exports = {
       },
       colors: {
         primary: "#14b8a6", // teal-500
-        secondary: "#0d9488", // teal-600
+        secondary: "#2dd4bf", // teal-600
         accent: "#ec4899", // pink-500
         neutral: "#fbbc05", // yellow-500
       },
