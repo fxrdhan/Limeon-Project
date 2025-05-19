@@ -39,7 +39,7 @@ export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                 )}
                 onClick={() => setShowTextarea(!showTextarea)}
             >
-                <span className="mr-2 text-md text-primary hover:text-blue-600">
+                <span className="mr-2 text-md text-primary">
                     {label}
                 </span>
                 <motion.div
@@ -71,7 +71,7 @@ export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                                 onChange={onChange}
                                 placeholder={placeholder}
                                 className={classNames(
-                                    "w-full h-full min-h-[100px] max-h-[200px] p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-blue-300",
+                                    "w-full h-full min-h-[100px] max-h-[200px] p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring-4 focus:ring-teal-100",
                                     textareaClassName
                                 )}
                                 rows={rows}
