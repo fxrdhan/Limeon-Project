@@ -65,7 +65,7 @@ export const Pagination = ({
                             layout
                             className={classNames(
                                 "px-3 py-1.5 rounded-full focus:outline-none select-none relative",
-                                itemsPerPage !== size ? "hover:bg-blue-100" : ""
+                                itemsPerPage !== size ? "hover:bg-teal-100" : ""
                             )}
                             onClick={() => handleItemsPerPageClick(size)}
                             animate={{
@@ -77,7 +77,7 @@ export const Pagination = ({
                             {itemsPerPage === size && (
                                 <motion.div
                                     layoutId="activeItemsPerPageIndicator"
-                                    className="absolute inset-0 bg-blue-500 rounded-full shadow-sm"
+                                    className="absolute inset-0 bg-primary rounded-full shadow-sm"
                                     style={{ borderRadius: "9999px" }}
                                     transition={{ type: "spring", stiffness: 700, damping: 35 }}
                                 />
@@ -87,7 +87,7 @@ export const Pagination = ({
                                     "relative z-10 select-none transition-colors duration-300 ease-in-out",
                                     itemsPerPage === size
                                         ? "text-white font-medium"
-                                        : "text-gray-700 hover:text-blue-600"
+                                        : "text-gray-700 hover:text-secondary"
                                 )}
                             >
                                 {itemsPerPage === size ? `${size} items` : size.toString()}
@@ -104,7 +104,7 @@ export const Pagination = ({
                         "p-2 rounded-full focus:outline-none transition-colors duration-150 cursor-pointer select-none",
                         currentPage === 1
                             ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-blue-100 hover:text-blue-600 transition-all duration-300 ease-in-out"
+                            : "hover:bg-teal-100 hover:text-secondary transition-all duration-300 ease-in-out"
                     )}
                     aria-label="Halaman sebelumnya"
                 >
@@ -122,7 +122,7 @@ export const Pagination = ({
                     </svg>
                 </div>
 
-                <div className="flex items-center justify-center min-w-[2rem] h-8 rounded-full bg-blue-500 text-white font-medium shadow-sm px-3 mx-1 overflow-hidden select-none">
+                <div className="flex items-center justify-center min-w-[2rem] h-8 rounded-full bg-primary text-white font-medium shadow-sm px-3 mx-1 overflow-hidden select-none">
                     <AnimatePresence initial={false} custom={direction} mode="popLayout">
                         <motion.span
                             key={currentPage}
@@ -149,7 +149,7 @@ export const Pagination = ({
                         "p-2 rounded-full focus:outline-none transition-colors duration-150 cursor-pointer select-none",
                         currentPage === totalPages || totalPages === 0
                             ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-blue-100 hover:text-blue-600 transition-all duration-300 ease-in-out"
+                            : "hover:bg-teal-100 hover:text-secondary transition-all duration-300 ease-in-out"
                     )}
                     aria-label="Halaman berikutnya"
                 >
