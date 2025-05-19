@@ -18,7 +18,8 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
     const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [isEditMode, setIsEditMode] = useState(false);
+    // const [isEditMode, setIsEditMode] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(Boolean(itemId));
     const [categories, setCategories] = useState<Category[]>([]);
     const [types, setTypes] = useState<MedicineType[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
