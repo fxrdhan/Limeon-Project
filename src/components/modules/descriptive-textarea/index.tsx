@@ -75,6 +75,7 @@ export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                                     textareaClassName
                                 )}
                                 rows={rows}
+                                spellCheck="false"
                                 onFocus={() => setShowTextarea(true)}
                                 {...props}
                             />
