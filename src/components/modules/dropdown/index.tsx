@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef, CSSProperties } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { DropdownProps } from "@/types";
-import { useDropdownHandlers } from "@/handlers/dropdown-handlers";
+import { useDropdownLogic } from "@/hooks";
 
 export const Dropdown = ({
     options,
@@ -12,26 +12,25 @@ export const Dropdown = ({
     onAddNew,
     searchList = true,
 }: DropdownProps) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isClosing, setIsClosing] = useState(false);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filteredOptions, setFilteredOptions] = useState(options);
-    const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
-    const [isScrollable, setIsScrollable] = useState(false);
-    const [reachedBottom, setReachedBottom] = useState(false);
-    const [scrolledFromTop, setScrolledFromTop] = useState(false);
-    const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
-    const [applyOpenStyles, setApplyOpenStyles] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const buttonRef = useRef<HTMLButtonElement>(null);
-    const dropdownMenuRef = useRef<HTMLDivElement>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
-    const optionsContainerRef = useRef<HTMLDivElement>(null);
-    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const selectedOption = options.find((option) => option?.id === value);
-
     const {
+        isOpen,
+        isClosing,
+        searchTerm,
+        setSearchTerm,
+        filteredOptions,
+        isScrollable,
+        reachedBottom,
+        scrolledFromTop,
+        dropDirection,
+        portalStyle,
+        applyOpenStyles,
+        setApplyOpenStyles,
+        dropdownRef,
+        buttonRef,
+        dropdownMenuRef,
+        searchInputRef,
+        optionsContainerRef,
+        selectedOption,
         calculateDropdownPosition,
         closeDropdown,
         handleSelect,
@@ -42,39 +41,7 @@ export const Dropdown = ({
         handleMouseLeaveWithCloseIntent,
         toggleDropdown,
         checkScroll,
-    } = useDropdownHandlers({
-        options,
-        onChange,
-        isOpen,
-        setIsOpen,
-        isClosing,
-        setIsClosing,
-        searchTerm,
-        setSearchTerm,
-        setDropDirection,
-        setPortalStyle,
-        filteredOptions,
-        setFilteredOptions,
-        searchList,
-        buttonRef,
-        dropdownMenuRef,
-        searchInputRef,
-        optionsContainerRef,
-        hoverTimeoutRef,
-        leaveTimeoutRef,
-        setIsScrollable,
-        setReachedBottom,
-        setScrolledFromTop,
-    });
-
-    useEffect(() => {
-        const currentHoverTimeout = hoverTimeoutRef.current;
-        const currentLeaveTimeout = leaveTimeoutRef.current;
-        return () => {
-            if (currentHoverTimeout) clearTimeout(currentHoverTimeout);
-            if (currentLeaveTimeout) clearTimeout(currentLeaveTimeout);
-        };
-    }, []);
+    } = useDropdownLogic(options, value, onChange, searchList);
 
     useEffect(() => {
         let openStyleTimerId: NodeJS.Timeout | undefined;
@@ -103,7 +70,7 @@ export const Dropdown = ({
                 window.removeEventListener("resize", calculateDropdownPosition);
             }
         };
-    }, [isOpen, calculateDropdownPosition, focusSearchInput]);
+    }, [isOpen, calculateDropdownPosition, focusSearchInput, setApplyOpenStyles, dropdownMenuRef]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -124,7 +91,7 @@ export const Dropdown = ({
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [isOpen, isClosing, closeDropdown]);
+    }, [isOpen, isClosing, closeDropdown, dropdownRef, dropdownMenuRef]);
 
     useEffect(() => {
         if (isOpen) {
@@ -141,7 +108,7 @@ export const Dropdown = ({
                 optionsContainer.removeEventListener("scroll", checkScroll);
             };
         }
-    }, [isOpen, checkScroll]);
+    }, [isOpen, checkScroll, optionsContainerRef]);
 
     return (
         <div
