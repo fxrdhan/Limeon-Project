@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { FaTimes } from "react-icons/fa";
 import type { AddEditModalProps } from "@/types";
 import { Transition, TransitionChild } from "@headlessui/react";
-import React, { useState, useEffect, Fragment } from "react";
+import React, { useState, useEffect, Fragment, useRef } from "react";
 
 export const AddEditModal: React.FC<AddEditModalProps> = ({
     isOpen,
@@ -18,6 +18,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
     useConfirmDialog();
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
+    const nameInputRef = useRef<HTMLInputElement>(null);
     const isEditMode = Boolean(initialData);
 
     useEffect(() => {
@@ -29,6 +30,9 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
                 setName("");
                 setDescription("");
             }
+            setTimeout(() => {
+                nameInputRef.current?.focus();
+            }, 50);
         }
     }, [isOpen, initialData]);
 
@@ -97,6 +101,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
                         </div>
                         <div className="p-6 space-y-4">
                             <Input
+                                ref={nameInputRef}
                                 label={`Nama ${entityName}`}
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
