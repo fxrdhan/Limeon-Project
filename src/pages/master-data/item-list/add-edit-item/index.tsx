@@ -1,4 +1,5 @@
 import UnitConversionManager from "@/components/tools/unit-converter";
+import { useRef, useEffect } from "react";
 import {
     FaArrowLeft,
     FaSave,
@@ -75,6 +76,16 @@ const AddItem = () => {
         handleMinStockKeyDown,
     } = useAddItemPageHandlers();
 
+    const nameInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!isEditMode && nameInputRef.current) {
+            setTimeout(() => {
+                nameInputRef.current?.focus();
+            }, 50);
+        }
+    }, [isEditMode]);
+
     if (loading && !isEditMode) {
         if (isEditMode && !formData.name) {
             return (
@@ -133,6 +144,7 @@ const AddItem = () => {
                                         <FormField label="Nama Item" className="md:col-span-2">
                                             <Input
                                                 name="name"
+                                                ref={nameInputRef}
                                                 value={formData.name}
                                                 onChange={handleChange}
                                                 className="w-full"
