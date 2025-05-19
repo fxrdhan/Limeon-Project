@@ -315,7 +315,7 @@ export const Dropdown = ({
                                                     <input
                                                         ref={searchInputRef}
                                                         type="text"
-                                                        className="flex-grow py-2 px-2 pl-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-primary"
+                                                        className="flex-grow py-2 px-2 pl-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-primary transition duration-200 ease-in-out"
                                                         placeholder="Cari..."
                                                         value={searchTerm}
                                                         onChange={(e) => setSearchTerm(e.target.value)}
