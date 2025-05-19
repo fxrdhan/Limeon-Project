@@ -483,17 +483,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eslint/js@npm:9.27.0":
+"@eslint/js@npm:9.27.0, @eslint/js@npm:^9.27.0":
   version: 9.27.0
   resolution: "@eslint/js@npm:9.27.0"
   checksum: b31cfd61bb64e187f8758d13c893bf710f0500c29ced5dd6958c4fda254059489f1cee69567c20ba21608ce51224019b1fd10975b09d41adf16616d875da6ea4
-  languageName: node
-  linkType: hard
-
-"@eslint/js@npm:^9.21.0":
-  version: 9.24.0
-  resolution: "@eslint/js@npm:9.24.0"
-  checksum: 423c09a9a52ae596cd77f38f97491261447e04d31a6d681b49cec7ff25dadb64f9b30e48ee5fcfb0a238a3dc3f6ee7c678fdd6ec2415bf687a73ddebaa8adff4
   languageName: node
   linkType: hard
 
@@ -566,19 +559,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@headlessui/react@npm:^2.2.2":
-  version: 2.2.2
-  resolution: "@headlessui/react@npm:2.2.2"
+"@headlessui/react@npm:^2.2.3":
+  version: 2.2.3
+  resolution: "@headlessui/react@npm:2.2.3"
   dependencies:
     "@floating-ui/react": ^0.26.16
-    "@react-aria/focus": ^3.17.1
-    "@react-aria/interactions": ^3.21.3
+    "@react-aria/focus": ^3.20.2
+    "@react-aria/interactions": ^3.25.0
     "@tanstack/react-virtual": ^3.13.6
     use-sync-external-store: ^1.5.0
   peerDependencies:
     react: ^18 || ^19 || ^19.0.0-rc
     react-dom: ^18 || ^19 || ^19.0.0-rc
-  checksum: 64826349a032b970c1072c3da9001217a81a96410d83cdbab3c2fa1b5a414ba73cf3d1e35e9e9d5aa4a2e50e8d0837b1133ce59389c14150d3f42f423e6fd3ff
+  checksum: e7203fd379ab02cf1cfc54ac616be135b64ab2e4f63b99d2317b6be8607f677a03a400eba8eb57bda0f2e1d79fd70fd6b9f9c6985ca73d28aace27117d96e654
   languageName: node
   linkType: hard
 
@@ -755,92 +748,92 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-aria/focus@npm:^3.17.1":
-  version: 3.20.1
-  resolution: "@react-aria/focus@npm:3.20.1"
+"@react-aria/focus@npm:^3.20.2":
+  version: 3.20.3
+  resolution: "@react-aria/focus@npm:3.20.3"
   dependencies:
-    "@react-aria/interactions": ^3.24.1
-    "@react-aria/utils": ^3.28.1
-    "@react-types/shared": ^3.28.0
+    "@react-aria/interactions": ^3.25.1
+    "@react-aria/utils": ^3.29.0
+    "@react-types/shared": ^3.29.1
     "@swc/helpers": ^0.5.0
     clsx: ^2.0.0
   peerDependencies:
     react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
     react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-  checksum: 212596f44e3d02e51efbeb395eb8b1b0a3d4236876ddf25757acffc575cd1692704639e342ead111e6fbaba19bc34ee80c0e5dc2cef9ea3e46ffbefe6e546d03
+  checksum: 08c02495a4d6e74ecea6daa3063a732ebc8bdd50a6987b07c048f141a8001594418ec1f34f404d2879fbb8c91b5b3c6d1e86dac16de536a04d07d09c800347c9
   languageName: node
   linkType: hard
 
-"@react-aria/interactions@npm:^3.21.3, @react-aria/interactions@npm:^3.24.1":
-  version: 3.24.1
-  resolution: "@react-aria/interactions@npm:3.24.1"
+"@react-aria/interactions@npm:^3.25.0, @react-aria/interactions@npm:^3.25.1":
+  version: 3.25.1
+  resolution: "@react-aria/interactions@npm:3.25.1"
   dependencies:
-    "@react-aria/ssr": ^3.9.7
-    "@react-aria/utils": ^3.28.1
-    "@react-stately/flags": ^3.1.0
-    "@react-types/shared": ^3.28.0
+    "@react-aria/ssr": ^3.9.8
+    "@react-aria/utils": ^3.29.0
+    "@react-stately/flags": ^3.1.1
+    "@react-types/shared": ^3.29.1
     "@swc/helpers": ^0.5.0
   peerDependencies:
     react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
     react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-  checksum: 2d18ffb3a028adf138d225b52cb520c2e6f28951db6528e61712fd0f571968c18d1094c681c0af3811e8a98bbd6ed08b78a3fac1368e7f3b669cc9c7f42810e8
+  checksum: aa2ec8e380a2befe7967951f55469daff4485a7e9ac42ce59fc603f958d1f68518d6b3247db65732700628e8e2e2c479d3dd1bf6b5070303475e7e440a449897
   languageName: node
   linkType: hard
 
-"@react-aria/ssr@npm:^3.9.7":
-  version: 3.9.7
-  resolution: "@react-aria/ssr@npm:3.9.7"
+"@react-aria/ssr@npm:^3.9.8":
+  version: 3.9.8
+  resolution: "@react-aria/ssr@npm:3.9.8"
   dependencies:
     "@swc/helpers": ^0.5.0
   peerDependencies:
     react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-  checksum: 10ad277d8c4db6cf9b546f5800dd084451a4a8173a57b06c6597fd39375526a81f1fb398fe46558d372f8660d33c0a09a2580e0529351d76b2c8938482597b3f
+  checksum: 5cde99515e00c8f04f98b59c634f5958d3aebfd18180a07cdd4972b9d9c56b87ff68556f603e95c46ba66e4b1f878177134ac0d531afc5fa3a5c308423f187a1
   languageName: node
   linkType: hard
 
-"@react-aria/utils@npm:^3.28.1":
-  version: 3.28.1
-  resolution: "@react-aria/utils@npm:3.28.1"
+"@react-aria/utils@npm:^3.29.0":
+  version: 3.29.0
+  resolution: "@react-aria/utils@npm:3.29.0"
   dependencies:
-    "@react-aria/ssr": ^3.9.7
-    "@react-stately/flags": ^3.1.0
-    "@react-stately/utils": ^3.10.5
-    "@react-types/shared": ^3.28.0
+    "@react-aria/ssr": ^3.9.8
+    "@react-stately/flags": ^3.1.1
+    "@react-stately/utils": ^3.10.6
+    "@react-types/shared": ^3.29.1
     "@swc/helpers": ^0.5.0
     clsx: ^2.0.0
   peerDependencies:
     react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
     react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-  checksum: 201aac61ee0e6b857bc9718f798f809f55bca08c2333d5d07a89c50c327d016646588f21b47708a7126b77163b18defe35c88830db976df6f33136f0cb8ba3f0
+  checksum: fc416284344340d30ea6c954411126d5ad8c1c26aee9dbbb037bca286b32892e03f6235bd8b39d8965ccd6d6a115fd6bd8107e03ff532e47fc0ac823fc793c8d
   languageName: node
   linkType: hard
 
-"@react-stately/flags@npm:^3.1.0":
-  version: 3.1.0
-  resolution: "@react-stately/flags@npm:3.1.0"
+"@react-stately/flags@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@react-stately/flags@npm:3.1.1"
   dependencies:
     "@swc/helpers": ^0.5.0
-  checksum: 2b68e0881f9ca748ba20cb9b4fb227671bc253ec6acef4c9fcce2efcdd32f7a71ff6e2ee20999d0c4a6518117e880c481a9733bbbfbae24c42bb381626bc2712
+  checksum: d9d3b73f262e76b563220de7df96ab251f9a6d1bb04ec31dd4bfa4e947e8aa59705392cffa3c5aa782bcc247ae2204eac47b446843e5c10b3ad6b2344fdedefa
   languageName: node
   linkType: hard
 
-"@react-stately/utils@npm:^3.10.5":
-  version: 3.10.5
-  resolution: "@react-stately/utils@npm:3.10.5"
+"@react-stately/utils@npm:^3.10.6":
+  version: 3.10.6
+  resolution: "@react-stately/utils@npm:3.10.6"
   dependencies:
     "@swc/helpers": ^0.5.0
   peerDependencies:
     react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-  checksum: 4f4292ccf7bb86578a20b354cf9569f88d2d50ecb2e10ac6046fab3b9eb2175f734acf1b9bd87787e439220b912785a54551a724ab285f03e4f33b2942831f57
+  checksum: c32ab2521f9eff2c6be3ccd0d9481232fdf7b98d0420aeed9f0a9d8de294b8f09be7645164806eff698e829be19d177f7400dc74cb405a614be7821f316c7c81
   languageName: node
   linkType: hard
 
-"@react-types/shared@npm:^3.28.0":
-  version: 3.28.0
-  resolution: "@react-types/shared@npm:3.28.0"
+"@react-types/shared@npm:^3.29.1":
+  version: 3.29.1
+  resolution: "@react-types/shared@npm:3.29.1"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-  checksum: c0d1b3f8bc2f45ff1850bc34bf6322998eb8e6c842281ec4b248fe5b6ced158567ef39f086fc37ae42295c1c604412d2bdd5e3fb0ec8f4f03fe3bc68632b4ade
+  checksum: 033870d0ebf0bfc9005c2030bf5fd7c8b9e7b249190e31292e4c0702506d0e5ad05cddd1ddeb4fb732c47d9331f848e95ae00a0a4ef48a8b2e8e170720eedbcb
   languageName: node
   linkType: hard
 
@@ -1075,9 +1068,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@supabase/supabase-js@npm:^2.49.3":
-  version: 2.49.4
-  resolution: "@supabase/supabase-js@npm:2.49.4"
+"@supabase/supabase-js@npm:^2.49.5":
+  version: 2.49.5
+  resolution: "@supabase/supabase-js@npm:2.49.5"
   dependencies:
     "@supabase/auth-js": 2.69.1
     "@supabase/functions-js": 2.4.4
@@ -1085,7 +1078,7 @@ __metadata:
     "@supabase/postgrest-js": 1.19.4
     "@supabase/realtime-js": 2.11.2
     "@supabase/storage-js": 2.7.1
-  checksum: 1f8b8a04abb662eee61d13ea7841b1f689002317d168312a1de31d8b4bc22867841708e7f7b8e9cc87ae36e99fd334fd1f0baf56ecae5ec83b593a0b5502bb0c
+  checksum: 07737efca8c1f6194137ff27b078172efd37e2ce6071d5e2d149410ddff3961023311b672a6b53d2db317bfd5dfba410e903ac0768aaadb7b5816000dbd60e8e
   languageName: node
   linkType: hard
 
@@ -1521,9 +1514,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "apotek-klinik-app@workspace:."
   dependencies:
-    "@eslint/js": ^9.21.0
-    "@headlessui/react": ^2.2.2
-    "@supabase/supabase-js": ^2.49.3
+    "@eslint/js": ^9.27.0
+    "@headlessui/react": ^2.2.3
+    "@supabase/supabase-js": ^2.49.5
     "@tanstack/react-query": ^5.76.1
     "@tanstack/react-query-devtools": ^5.76.1
     "@tanstack/react-query-persist-client": ^5.76.1
