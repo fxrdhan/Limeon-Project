@@ -12,6 +12,7 @@ import {
     FaShoppingBag,
     FaCog
 } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 import type { SidebarProps, MenuItem } from '@/types';
 
 const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
@@ -254,7 +255,31 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                 </nav>
 
                 <div className={`p-4 text-xs text-teal-200/70 border-t border-teal-500/30 ${collapsed ? 'text-center' : ''}`}>
-                    {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
+                    <AnimatePresence mode="wait" initial={false}>
+                        {collapsed ? (
+                            <motion.span
+                                key="collapsed"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="block"
+                            >
+                                v2.3
+                            </motion.span>
+                        ) : (
+                            <motion.span
+                                key="opened"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="block"
+                            >
+                                PharmaSys v2.3.0
+                            </motion.span>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
         </aside>
