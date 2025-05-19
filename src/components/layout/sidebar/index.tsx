@@ -164,8 +164,8 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
     return (
         <aside
             onMouseEnter={handleMouseEnterSidebar}
-            onMouseLeave={handleMouseLeaveSidebar}
-            className={`bg-gradient-to-b from-blue-600 to-blue-800 text-white 
+            onMouseLeave={handleMouseLeaveSidebar}      
+            className={`bg-gradient-to-b from-teal-600 to-teal-800 text-white 
                         transition-all duration-500 ease-in-out h-screen 
                         ${collapsed ? 'w-16' : 'w-64'} relative group z-10`}
         >
@@ -173,9 +173,9 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                 <div className="p-4 border-b border-primary/30 flex items-center">
                     <div className="flex items-center">
                         <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center flex-shrink-0">
-                            <span className="text-blue-600 text-xl font-bold">P</span>
+                            <span className="text-teal-600 text-xl font-bold">P</span>
                         </div>
-                        <h2 className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'}`}>
+                        <h2 className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'} text-white`}>
                             PharmaSys
                         </h2>
                     </div>
@@ -190,19 +190,19 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                         onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
                                         className={`w-full text-left flex items-center px-4 py-3 h-12 justify-between 
                                                 ${isActive(item.path) || hasActiveChild(item.children)
-                                                ? 'bg-white/20 font-medium border-l-4 border-white'
-                                                : 'border-l-4 border-transparent hover:bg-white/5'}
+                                                ? 'bg-teal-500/40 font-medium border-l-4 border-teal-100'
+                                                : 'border-l-4 border-transparent hover:bg-teal-700/60'}
                                                 transition-all duration-150 group relative`}
                                     >
                                         <div className="flex items-center overflow-hidden">
-                                            <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
+                                            <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-teal-50' : 'text-teal-200'} transition-colors duration-200`}>
                                                 {item.icon}
                                             </div>
                                             <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
                                         </div>
                                         {!collapsed && item.children && (
                                             <FaAngleDown
-                                                className={`text-sm text-blue-100/80 transition-transform duration-300 ease-in-out ${
+                                                className={`text-sm text-teal-100/80 transition-transform duration-300 ease-in-out ${
                                                     openMenus[item.name.toLowerCase().replace(' ', '')] ? "rotate-180" : "rotate-0"
                                                 }`}
                                             />
@@ -213,17 +213,17 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                         className={`overflow-hidden transition-all duration-500 ease-in-out ${
                                             !collapsed && openMenus[item.name.toLowerCase().replace(' ', '')] ?
                                                 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                                        }`}
-                                    >
-                                        <div className="pl-10 pr-2 py-1 bg-black/10">
+                                        }`}                  
+                                    >                  
+                                        <div className="pl-10 pr-2 py-1 bg-teal-900/50">
                                             {item.children.map((child) => (
                                                 <Link
                                                     key={child.name}
                                                     to={child.path}
                                                     className={`block px-3 py-2 my-0.5 text-sm rounded-md transition duration-300 ease-in-out ${
                                                         isActive(child.path)
-                                                        ? 'bg-white/20 text-white font-medium hover:bg-white/20 hover:text-white'
-                                                        : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                                                        ? 'bg-teal-500/40 text-white font-medium hover:bg-teal-500/50 hover:text-white'
+                                                        : 'text-teal-100 hover:bg-teal-700/40 hover:text-white'
                                                     } whitespace-nowrap overflow-hidden text-ellipsis`}
                                                 >
                                                     {child.name}
@@ -237,12 +237,12 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                     to={item.path}
                                     className={`w-full text-left flex items-center px-4 py-3 h-12 
                                                 ${isActive(item.path)
-                                            ? 'bg-white/20 font-medium border-l-4 border-white'
-                                            : 'border-l-4 border-transparent hover:bg-white/5'}
+                                            ? 'bg-teal-500/40 font-medium border-l-4 border-teal-100'
+                                            : 'border-l-4 border-transparent hover:bg-teal-700/60'}
                                                 transition-all duration-150 group relative`}
                                 >
                                     <div className="flex items-center overflow-hidden">
-                                        <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-white' : 'text-blue-100'} transition-colors duration-200`}>
+                                        <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-teal-50' : 'text-teal-200'} transition-colors duration-200`}>
                                             {item.icon}
                                         </div>
                                         <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
@@ -253,7 +253,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                     ))}
                 </nav>
 
-                <div className={`p-4 text-xs text-blue-200/70 border-t border-primary/30 ${collapsed ? 'text-center' : ''}`}>
+                <div className={`p-4 text-xs text-teal-200/70 border-t border-teal-500/30 ${collapsed ? 'text-center' : ''}`}>
                     {collapsed ? 'v2.3' : 'PharmaSys v2.3.0'}
                 </div>
             </div>
