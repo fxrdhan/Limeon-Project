@@ -17,7 +17,6 @@
     "@tanstack/react-query-devtools": "^5.76.1",
     "@tanstack/react-query-persist-client": "^5.76.1",
     "@tanstack/react-table": "^8.21.3",
-    "arktype": "^2.1.19",
     "autoprefixer": "^10.4.21",
     "axios": "^1.9.0",
     "browser-image-compression": "^2.0.2",
