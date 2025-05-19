@@ -50,14 +50,14 @@ const DateTimeDisplay = () => {
                     <AnimatedTimeSegment value={hours[1]} widthClass="w-[0.9ch]" />
                 </>
             ) : <span className="w-[1.8ch]">--</span>}
-            <span className="w-[0.5ch] text-center">:</span>
+            <span className="w-[0.5ch] text-center mr-1">:</span>
             {minutes ? (
                 <>
                     <AnimatedTimeSegment value={minutes[0]} widthClass="w-[0.9ch]" />
                     <AnimatedTimeSegment value={minutes[1]} widthClass="w-[0.9ch]" />
                 </>
             ) : <span className="w-[1.8ch]">--</span>}
-            <span className="w-[0.5ch] text-center">:</span>
+            <span className="w-[0.5ch] text-center mr-1">:</span>
             {seconds ? (
                 <>
                     <AnimatedTimeSegment value={seconds[0]} widthClass="w-[0.9ch]" />
