@@ -192,7 +192,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                                 title="Simpan"
                                                             >
                                                                 {loadingField[field.key] ? (
-                                                                    <span className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin inline-block"></span>
+                                                                    <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin inline-block"></span>
                                                                 ) : (
                                                                     <FaSave className="text-green-500 text-sm" />
                                                                 )}
@@ -206,7 +206,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                             className="text-gray-500 hover:text-gray-700 p-1"
                                                             title="Edit"
                                                         >
-                                                            <FaPencilAlt className="text-blue-500 text-sm" />
+                                                            <FaPencilAlt className="text-primary text-sm" />
                                                         </Button>
                                                     )}
                                                 </div>
@@ -218,7 +218,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                 <textarea
                                                     value={String(editValues[field.key] ?? '')}
                                                     onChange={(e) => handleChange(field.key, e.target.value)}
-                                                    className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                                    className="w-full p-2 border rounded-md focus:ring-primary focus:border-primary"
                                                     rows={3}
                                                 />
                                             ) : (
@@ -226,7 +226,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                     type={field.type || 'text'}
                                                     value={String(editValues[field.key] ?? '')}
                                                     onChange={(e) => handleChange(field.key, e.target.value)}
-                                                    className="w-full p-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                                    className="w-full p-2 border rounded-md focus:ring-primary focus:border-primary"
                                                 />
                                             )
                                         ) : (
