@@ -89,29 +89,29 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     </h1>
                 </div>
                 <div className="flex items-center justify-center space-x-3">
-                    <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                    <button
                         onClick={() => navigate(-1)}
-                        className="p-2 pb-3 w-10 rounded-full hover:bg-gray-100 transition-colors"
+                        className="p-2 pb-3 w-10 rounded-full group active:scale-90 transition-transform duration-100"
                         aria-label="Go Back"
                         title="Go Back"
                     >
-                        <span className="text-gray-600 font-bold text-lg">&lt;</span>
-                    </motion.button>
+                        <span className="text-gray-600 font-bold text-lg inline-block group-hover:text-primary group-hover:scale-120 transition duration-150">
+                            &lt;
+                        </span>
+                    </button>
 
                     <DateTimeDisplay />
 
-                    <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                    <button
                         onClick={() => navigate(1)}
-                        className="p-2 pb-3 w-10 rounded-full hover:bg-gray-100 transition-colors"
+                        className="p-2 pb-3 w-10 rounded-full group active:scale-90 transition-transform duration-100"
                         aria-label="Go Forward"
                         title="Go Forward"
                     >
-                        <span className="text-gray-600 font-bold text-lg">&gt;</span>
-                    </motion.button>
+                        <span className="text-gray-600 font-bold text-lg inline-block group-hover:text-primary group-hover:scale-120 transition duration-150">
+                            &gt;
+                        </span>
+                    </button>
                 </div>
                 <div className="relative flex justify-end">
                     <button
