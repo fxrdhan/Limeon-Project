@@ -11,8 +11,8 @@ export const Button = ({
     ...props
 }: ButtonProps) => {
     const variants = {
-        primary: "rounded-ld ring-0 outline-hidden shadow-md bg-primary flex items-center hover:bg-blue-600 text-white hover:text-white hover:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)]",
-        secondary: "rounded-lg bg-blue-600 bg-secondary focus:ring-0 focus:outline-none flex items-center hover:bg-blue-700 text-white hover:text-white",
+        primary: "rounded-ld ring-0 outline-hidden shadow-md bg-primary flex items-center hover:bg-secondary text-white hover:text-white hover:shadow-[0_0_5px_theme(colors.secondary),0_0_15px_theme(colors.secondary),0_0_30px_theme(colors.secondary)]",
+        secondary: "rounded-lg bg-secondary bg-secondary focus:ring-0 focus:outline-none flex items-center hover:bg-blue-700 text-white hover:text-white",
         accent: "bg-accent hover:bg-red-600 text-white focus:outline-none focus:ring-0",
         outline: "border border-primary text-primary hover:bg-blue-50",
         text: "bg-transparent hover:bg-opacity-10 focus:outline-none focus:ring-0 active:ring-0 active:outline-none focus:shadow-none",
