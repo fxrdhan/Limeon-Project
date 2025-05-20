@@ -1,7 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef, CSSProperties, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { DropdownProps } from "@/types";
-import { useDropdownLogic } from "@/hooks";
+import type { DropdownProps } from "@/types";
 
 export const Dropdown = ({
     options,
@@ -12,36 +11,148 @@ export const Dropdown = ({
     onAddNew,
     searchList = true,
 }: DropdownProps) => {
-    const {
-        isOpen,
-        isClosing,
-        searchTerm,
-        setSearchTerm,
-        filteredOptions,
-        isScrollable,
-        reachedBottom,
-        scrolledFromTop,
-        dropDirection,
-        portalStyle,
-        applyOpenStyles,
-        setApplyOpenStyles,
-        dropdownRef,
-        buttonRef,
-        dropdownMenuRef,
-        searchInputRef,
-        optionsContainerRef,
-        selectedOption,
-        calculateDropdownPosition,
-        closeDropdown,
-        handleSelect,
-        handleSearchKeyDown,
-        focusSearchInput,
-        handleTriggerAreaEnter,
-        handleMenuEnter,
-        handleMouseLeaveWithCloseIntent,
-        toggleDropdown,
-        checkScroll,
-    } = useDropdownLogic(options, value, onChange, searchList);
+    const [isOpen, setIsOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [currentFilteredOptions, setCurrentFilteredOptions] = useState(options);
+    const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
+    const [isScrollable, setIsScrollable] = useState(false);
+    const [reachedBottom, setReachedBottom] = useState(false);
+    const [scrolledFromTop, setScrolledFromTop] = useState(false);
+    const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
+    const [applyOpenStyles, setApplyOpenStyles] = useState(false);
+
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const dropdownMenuRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const optionsContainerRef = useRef<HTMLDivElement>(null);
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const selectedOption = options.find((option) => option?.id === value);
+
+    useEffect(() => {
+        if (!searchList && searchTerm.trim() === "") {
+            setCurrentFilteredOptions(options);
+        } else if (searchTerm.trim() !== "") {
+            const filtered = options.filter((option) =>
+                option.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            setCurrentFilteredOptions(filtered);
+        } else if (searchList && searchTerm.trim() === "") {
+            setCurrentFilteredOptions(options);
+        }
+    }, [options, searchTerm, searchList, setCurrentFilteredOptions]);
+
+    const calculateDropdownPosition = useCallback(() => {
+        if (!buttonRef.current || !dropdownMenuRef.current) return;
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+        const dropdownActualHeight = dropdownMenuRef.current.scrollHeight;
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - buttonRect.bottom;
+        const shouldDropUp =
+            spaceBelow < dropdownActualHeight + 10 &&
+            buttonRect.top > dropdownActualHeight + 10;
+        setDropDirection(shouldDropUp ? "up" : "down");
+        const newMenuStyle: CSSProperties = {
+            position: "fixed",
+            left: `${buttonRect.left}px`,
+            width: `${buttonRect.width}px`,
+            zIndex: 1050,
+        };
+        const margin = 8;
+        if (shouldDropUp) {
+            newMenuStyle.top = `${buttonRect.top + window.scrollY - dropdownActualHeight - margin}px`;
+        } else {
+            newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
+        }
+        setPortalStyle(newMenuStyle);
+    }, [buttonRef, dropdownMenuRef, setDropDirection, setPortalStyle]);
+
+    const closeDropdown = useCallback(() => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsOpen(false);
+            setIsClosing(false);
+            setSearchTerm("");
+        }, 100);
+    }, [setIsClosing, setIsOpen, setSearchTerm]);
+
+    const handleSelect = useCallback(
+        (optionId: string) => {
+            onChange(optionId);
+            closeDropdown();
+        },
+        [onChange, closeDropdown]
+    );
+
+    const handleSearchKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter" && currentFilteredOptions.length > 0) {
+                e.preventDefault();
+                handleSelect(currentFilteredOptions[0].id);
+            }
+        },
+        [currentFilteredOptions, handleSelect]
+    );
+
+    const focusSearchInput = useCallback(() => {
+        if (isOpen && searchInputRef.current) {
+            setTimeout(() => {
+                searchInputRef.current?.focus();
+            }, 5);
+        }
+    }, [isOpen, searchInputRef]);
+
+    const handleTriggerAreaEnter = useCallback(() => {
+        if (leaveTimeoutRef.current) {
+            clearTimeout(leaveTimeoutRef.current);
+            leaveTimeoutRef.current = null;
+        }
+        hoverTimeoutRef.current = setTimeout(() => {
+            setIsOpen(true);
+            setIsClosing(false);
+        }, 100);
+    }, [hoverTimeoutRef, leaveTimeoutRef, setIsOpen, setIsClosing]);
+
+    const handleMenuEnter = useCallback(() => {
+        if (leaveTimeoutRef.current) {
+            clearTimeout(leaveTimeoutRef.current);
+            leaveTimeoutRef.current = null;
+        }
+    }, [leaveTimeoutRef]);
+
+    const handleMouseLeaveWithCloseIntent = useCallback(() => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+        leaveTimeoutRef.current = setTimeout(() => {
+            closeDropdown();
+        }, 150);
+    }, [hoverTimeoutRef, leaveTimeoutRef, closeDropdown]);
+
+    const toggleDropdown = useCallback(
+        (e: React.MouseEvent) => {
+            e.preventDefault();
+            if (isOpen) closeDropdown();
+            else setIsOpen(true);
+        },
+        [isOpen, closeDropdown, setIsOpen]
+    );
+
+    const checkScroll = useCallback(() => {
+        if (!optionsContainerRef.current) return;
+        const container = optionsContainerRef.current;
+        setIsScrollable(container.scrollHeight > container.clientHeight);
+        setReachedBottom(
+            Math.abs(
+                container.scrollHeight - container.scrollTop - container.clientHeight
+            ) < 2
+        );
+        setScrolledFromTop(container.scrollTop > 2);
+    }, [optionsContainerRef, setIsScrollable, setReachedBottom, setScrolledFromTop]);
 
     useEffect(() => {
         let openStyleTimerId: NodeJS.Timeout | undefined;
@@ -98,7 +209,7 @@ export const Dropdown = ({
             const timer = setTimeout(checkScroll, 50);
             return () => clearTimeout(timer);
         }
-    }, [isOpen, filteredOptions, checkScroll]);
+    }, [isOpen, currentFilteredOptions, checkScroll]);
 
     useEffect(() => {
         const optionsContainer = optionsContainerRef.current;
@@ -232,9 +343,10 @@ export const Dropdown = ({
                                             <div
                                                 ref={optionsContainerRef}
                                                 className="p-1 max-h-60 overflow-y-auto"
+                                                onScroll={checkScroll}
                                             >
-                                                {filteredOptions.length > 0 ? (
-                                                    filteredOptions.map((option) => (
+                                                {currentFilteredOptions.length > 0 ? (
+                                                    currentFilteredOptions.map((option) => (
                                                         <button
                                                             key={option.id}
                                                             type="button"
