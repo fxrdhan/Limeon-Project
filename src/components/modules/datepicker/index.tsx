@@ -324,7 +324,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                             onClick={() => !isDisabled && handleDateSelect(currentDate)}
                             disabled={isDisabled}
                             className={classNames(
-                                "py-1.5 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
+                                "py-1.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
                                 isDisabled
                                     ? "text-gray-100 cursor-not-allowed"
                                     : "hover:bg-teal-100",
@@ -373,7 +373,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                             onClick={() => !isDisabled && handleMonthSelect(index)}
                             disabled={isDisabled}
                             className={classNames(
-                                "p-2 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
+                                "p-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
                                 isDisabled
                                     ? "text-gray-300 cursor-not-allowed"
                                     : "hover:bg-teal-100 text-gray-700",
@@ -411,7 +411,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                             onClick={() => !isDisabled && handleYearSelect(yearVal)}
                             disabled={isDisabled}
                             className={classNames(
-                                "p-2 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
+                                "p-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
                                 isDisabled
                                     ? "text-gray-300 cursor-not-allowed"
                                     : "hover:bg-teal-100 text-gray-700",
@@ -453,7 +453,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                             ref={portalContentRef}
                             style={portalStyle}
                             className={classNames(
-                                "bg-white shadow-lg rounded-md border border-gray-200 p-4 w-[280px]",
+                                "bg-white shadow-lg rounded-lg border border-gray-200 p-4 w-[280px]",
                                 dropDirection === "down" ? "origin-top" : "origin-bottom",
                                 "transition-all duration-200 ease-out",
                                 isClosing
@@ -471,7 +471,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                             <div className="flex justify-between items-center mb-3">
                                 <button
                                     onClick={() => navigateViewDate("prev")}
-                                    className="p-1.5 rounded hover:bg-gray-100 focus:outline-none"
+                                    className="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-none"
                                     aria-label={
                                         currentView === "days"
                                             ? "Previous month"
@@ -491,7 +491,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                                 </button>
                                 <button
                                     onClick={() => navigateViewDate("next")}
-                                    className="p-1.5 rounded hover:bg-gray-100 focus:outline-none"
+                                    className="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-none"
                                     aria-label={
                                         currentView === "days"
                                             ? "Next month"
