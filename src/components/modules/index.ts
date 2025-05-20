@@ -16,4 +16,4 @@ export * from './table';
 export * from './page-title';
 export * from './descriptive-textarea';
 export * from './checkbox';
-export * from './portalled-datepicker';
+export * from './datepicker';

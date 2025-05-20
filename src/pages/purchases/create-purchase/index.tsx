@@ -21,7 +21,7 @@ import {
     TableHeader,
     DescriptiveTextarea,
     Dropdown,
-    PortalledDatepicker,
+    Datepicker,
 } from '@/components/modules';
 import ItemSearchBar from '@/pages/purchases/item-search';
 
@@ -140,7 +140,7 @@ const CreatePurchase: React.FC = () => {
 
                             <div className="flex flex-col">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Pembelian</label>
-                                <PortalledDatepicker
+                                <Datepicker
                                     value={formData.date ? new Date(formData.date) : null}
                                     onChange={(newDate: CustomDateValueType) => {
                                         const fakeEvent = { target: { name: 'date', value: newDate ? newDate.toISOString().split('T')[0] : '' } } as React.ChangeEvent<HTMLInputElement>;
@@ -153,7 +153,7 @@ const CreatePurchase: React.FC = () => {
 
                             <div className="flex flex-col">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Jatuh Tempo</label>
-                                <PortalledDatepicker
+                                <Datepicker
                                     value={formData.due_date ? new Date(formData.due_date) : null}
                                     onChange={(newDate: CustomDateValueType) => {
                                         const fakeEvent = { target: { name: 'due_date', value: newDate ? newDate.toISOString().split('T')[0] : '' } } as React.ChangeEvent<HTMLInputElement>;
