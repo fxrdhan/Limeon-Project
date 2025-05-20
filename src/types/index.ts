@@ -567,31 +567,6 @@ export interface DescriptiveTextareaProps
     showInitially?: boolean;
 }
 
-export interface UseDropdownHandlersProps {
-    options: DropdownOption[];
-    onChange: (value: string) => void;
-    isOpen: boolean;
-    setIsOpen: (isOpen: boolean) => void;
-    isClosing: boolean;
-    setIsClosing: (isClosing: boolean) => void;
-    searchTerm: string;
-    setSearchTerm: (term: string) => void;
-    setDropDirection: (direction: "up" | "down") => void;
-    setPortalStyle: (style: React.CSSProperties) => void;
-    filteredOptions: DropdownOption[];
-    setFilteredOptions: (options: DropdownOption[]) => void;
-    searchList: boolean;
-    buttonRef: React.RefObject<HTMLButtonElement | null>;
-    dropdownMenuRef: React.RefObject<HTMLDivElement | null>;
-    searchInputRef: React.RefObject<HTMLInputElement | null>;
-    optionsContainerRef: React.RefObject<HTMLDivElement | null>;
-    hoverTimeoutRef: React.RefObject<NodeJS.Timeout | null>;
-    leaveTimeoutRef: React.RefObject<NodeJS.Timeout | null>;
-    setIsScrollable: (isScrollable: boolean) => void;
-    setReachedBottom: (reachedBottom: boolean) => void;
-    setScrolledFromTop: (scrolledFromTop: boolean) => void;
-}
-
 export interface CheckboxProps {
     id?: string;
     label?: string;
