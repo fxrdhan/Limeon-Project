@@ -600,3 +600,15 @@ export interface CheckboxProps {
     disabled?: boolean;
     className?: string;
 }
+
+export type CustomDateValueType = Date | null;
+
+export interface PortalledDatepickerProps {
+    value: CustomDateValueType;
+    onChange: (date: CustomDateValueType) => void;
+    label?: string;
+    inputClassName?: string;
+    placeholder?: string;
+    minDate?: Date;
+    maxDate?: Date;
+}

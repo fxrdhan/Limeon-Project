@@ -3,18 +3,7 @@ import { createPortal } from 'react-dom';
 import { Input } from '@/components/modules';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { classNames } from '@/lib/classNames';
-
-export type CustomDateValueType = Date | null;
-
-interface PortalledDatepickerProps {
-    value: CustomDateValueType;
-    onChange: (date: CustomDateValueType) => void;
-    label?: string;
-    inputClassName?: string;
-    placeholder?: string;
-    minDate?: Date;
-    maxDate?: Date;
-}
+import type { PortalledDatepickerProps } from '@/types'; // <-- import from types
 
 export const PortalledDatepicker: React.FC<PortalledDatepickerProps> = ({
     value,
