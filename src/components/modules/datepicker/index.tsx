@@ -5,6 +5,18 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { classNames } from '@/lib/classNames';
 import type { DatepickerProps } from '@/types';
 
+type CalendarView = 'days' | 'months' | 'years';
+
+const MONTH_NAMES_ID = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
+
+const getYearsToDisplay = (year: number) => {
+    const startYear = Math.floor(year / 10) * 10;
+    return Array.from({ length: 12 }, (_, i) => startYear + i - 1); 
+};
+
 export const Datepicker: React.FC<DatepickerProps> = ({
     value,
     onChange,
@@ -22,7 +34,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const portalContentRef = useRef<HTMLDivElement>(null);
     const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const [currentMonthDate, setCurrentMonthDate] = useState(value || new Date());
+    const [displayDate, setDisplayDate] = useState(value || new Date());
+    const [currentView, setCurrentView] = useState<CalendarView>('days');
     const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
 
     const calculatePosition = useCallback(() => {
@@ -55,7 +68,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     useEffect(() => {
         let openStyleTimerId: NodeJS.Timeout | undefined;
         if (isOpen) {
-            setCurrentMonthDate(value || new Date());
+            setDisplayDate(value || new Date());
+            setCurrentView('days');
             openStyleTimerId = setTimeout(() => {
                 setApplyOpenStyles(true);
                 requestAnimationFrame(() => {
@@ -163,8 +177,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
-    const year = currentMonthDate.getFullYear();
-    const month = currentMonthDate.getMonth();
+    const year = displayDate.getFullYear();
+    const month = displayDate.getMonth();
 
     const numDays = daysInMonth(year, month);
     let firstDay = firstDayOfMonth(year, month);
@@ -176,13 +190,185 @@ export const Datepicker: React.FC<DatepickerProps> = ({
 
     const dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
-    const changeMonth = (amount: number) => {
-        setCurrentMonthDate(prevDate => {
-            const newDate = new Date(prevDate);
-            newDate.setDate(1);
-            newDate.setMonth(newDate.getMonth() + amount);
+    const navigateViewDate = (direction: 'prev' | 'next') => {
+        setDisplayDate(prev => {
+            const newDate = new Date(prev);
+            if (currentView === 'days') {
+                newDate.setDate(1); 
+                newDate.setMonth(newDate.getMonth() + (direction === 'prev' ? -1 : 1));
+            } else if (currentView === 'months') {
+                newDate.setFullYear(newDate.getFullYear() + (direction === 'prev' ? -1 : 1));
+            } else if (currentView === 'years') {
+                const decadeShift = 10; 
+                newDate.setFullYear(newDate.getFullYear() + (direction === 'prev' ? -decadeShift : decadeShift));
+            }
             return newDate;
         });
+    };
+
+    const handleHeaderClick = () => {
+        if (currentView === 'days') {
+            setCurrentView('months');
+        } else if (currentView === 'months') {
+            setCurrentView('years');
+        }
+        requestAnimationFrame(() => {
+            if (isOpen && portalContentRef.current) {
+                calculatePosition();
+            }
+        });
+    };
+
+    const handleMonthSelect = (selectedMonth: number) => {
+        setDisplayDate(prev => {
+            const newDate = new Date(prev);
+            newDate.setMonth(selectedMonth);
+            newDate.setDate(1);
+            return newDate;
+        });
+        setCurrentView('days');
+        requestAnimationFrame(() => {
+            if (isOpen && portalContentRef.current) {
+                calculatePosition();
+            }
+        });
+    };
+
+    const handleYearSelect = (selectedYear: number) => {
+        setDisplayDate(prev => {
+            const newDate = new Date(prev);
+            newDate.setFullYear(selectedYear);
+            return newDate;
+        });
+        setCurrentView('months');
+        requestAnimationFrame(() => {
+            if (isOpen && portalContentRef.current) {
+                calculatePosition();
+            }
+        });
+    };
+    
+    const renderHeaderContent = () => {
+        if (currentView === 'days') {
+            return displayDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+        } else if (currentView === 'months') {
+            return displayDate.getFullYear().toString();
+        } else if (currentView === 'years') {
+            const years = getYearsToDisplay(displayDate.getFullYear());
+            return `${years[0]} - ${years[years.length - 1]}`;
+        }
+        return '';
+    };
+
+    const renderDaysGrid = () => (
+        <>
+            <div className="grid grid-cols-7 gap-px text-center text-xs">
+                {dayLabels.map(day => <div key={day} className="font-medium text-gray-500 py-1.5">{day}</div>)}
+                {calendarDays.map((day, index) => {
+                    if (day === null) return <div key={`empty-${index}`} className="py-1.5"></div>;
+                    const currentDate = new Date(year, month, day);
+                    const isSelected = value && currentDate.toDateString() === value.toDateString();
+                    
+                    let isDisabled = false;
+                    if (minDate) {
+                        const min = new Date(minDate);
+                        min.setHours(0,0,0,0);
+                        if (currentDate < min) isDisabled = true;
+                    }
+                    if (maxDate) {
+                        const max = new Date(maxDate);
+                        max.setHours(0,0,0,0);
+                        if (currentDate > max) isDisabled = true;
+                    }
+
+                    return (
+                        <button
+                            key={day}
+                            onClick={() => !isDisabled && handleDateSelect(currentDate)}
+                            disabled={isDisabled}
+                            className={classNames(
+                                "py-1.5 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
+                                isDisabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-teal-100",
+                                isSelected ? "bg-primary text-white hover:bg-primary/90" : "text-gray-700",
+                                !isDisabled && !isSelected && new Date(year, month, day).toDateString() === new Date().toDateString() ? "border border-primary text-primary" : ""
+                            )}
+                        >
+                            {day}
+                        </button>
+                    );
+                })}
+            </div>
+        </>
+    );
+
+    const renderMonthsGrid = () => {
+        const currentYear = displayDate.getFullYear();
+        return (
+            <div className="grid grid-cols-3 gap-2 py-1">
+                {MONTH_NAMES_ID.map((monthName, index) => {
+                    let isDisabled = false;
+                    if (minDate) {
+                        const minD = new Date(minDate);
+                        minD.setDate(1); minD.setHours(0,0,0,0);
+                        const lastDayOfMonth = new Date(currentYear, index + 1, 0);
+                        if (lastDayOfMonth < minD) isDisabled = true;
+                    }
+                    if (maxDate) {
+                        const maxD = new Date(maxDate);
+                        maxD.setDate(1); maxD.setHours(0,0,0,0);
+                        const firstDayOfMonth = new Date(currentYear, index, 1);
+                        if (firstDayOfMonth > maxD) isDisabled = true;
+                    }
+                    return (
+                        <button
+                            key={monthName}
+                            onClick={() => !isDisabled && handleMonthSelect(index)}
+                            disabled={isDisabled}
+                            className={classNames(
+                                "p-2 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
+                                isDisabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-teal-100 text-gray-700",
+                                value && value.getFullYear() === currentYear && value.getMonth() === index && "bg-primary/20 text-primary-dark",
+                            )}
+                        >
+                            {monthName.substring(0,3)}
+                        </button>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    const renderYearsGrid = () => {
+        const yearsToDisplay = getYearsToDisplay(displayDate.getFullYear());
+        return (
+            <div className="grid grid-cols-3 gap-2 py-1">
+                {yearsToDisplay.map((yearVal) => {
+                     let isDisabled = false;
+                     if (minDate) {
+                         const minD = new Date(minDate);
+                         if (yearVal < minD.getFullYear()) isDisabled = true;
+                     }
+                     if (maxDate) {
+                         const maxD = new Date(maxDate);
+                         if (yearVal > maxD.getFullYear()) isDisabled = true;
+                     }
+                    return (
+                        <button
+                            key={yearVal}
+                            onClick={() => !isDisabled && handleYearSelect(yearVal)}
+                            disabled={isDisabled}
+                            className={classNames(
+                                "p-2 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
+                                isDisabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-teal-100 text-gray-700",
+                                value && value.getFullYear() === yearVal && "bg-primary/20 text-primary-dark",
+                            )}
+                        >
+                            {yearVal}
+                        </button>
+                    );
+                })}
+            </div>
+        );
     };
 
     return (
@@ -218,48 +404,33 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         onMouseLeave={handleCalendarMouseLeave}
                     >
                         <div className="flex justify-between items-center mb-3">
-                            <button onClick={() => changeMonth(-1)} className="p-1.5 rounded hover:bg-gray-100 focus:outline-none"><FaChevronLeft size={12} /></button>
-                            <div className="font-semibold text-sm">
-                                {currentMonthDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                            </div>
-                            <button onClick={() => changeMonth(1)} className="p-1.5 rounded hover:bg-gray-100 focus:outline-none"><FaChevronRight size={12} /></button>
+                            <button 
+                                onClick={() => navigateViewDate('prev')} 
+                                className="p-1.5 rounded hover:bg-gray-100 focus:outline-none"
+                                aria-label={currentView === 'days' ? 'Previous month' : currentView === 'months' ? 'Previous year' : 'Previous decade'}
+                            >
+                                <FaChevronLeft size={12} />
+                            </button>
+                            <button 
+                                onClick={handleHeaderClick}
+                                className="font-semibold text-sm hover:bg-gray-100 p-1.5 rounded focus:outline-none min-w-[120px] text-center"
+                                aria-live="polite"
+                            >
+                                {renderHeaderContent()}
+                            </button>
+                            <button 
+                                onClick={() => navigateViewDate('next')} 
+                                className="p-1.5 rounded hover:bg-gray-100 focus:outline-none"
+                                aria-label={currentView === 'days' ? 'Next month' : currentView === 'months' ? 'Next year' : 'Next decade'}
+                            >
+                                <FaChevronRight size={12} />
+                            </button>
                         </div>
-                        <div className="grid grid-cols-7 gap-px text-center text-xs">
-                            {dayLabels.map(day => <div key={day} className="font-medium text-gray-500 py-1.5">{day}</div>)}
-                            {calendarDays.map((day, index) => {
-                                if (day === null) return <div key={`empty-${index}`} className="py-1.5"></div>;
-                                const currentDate = new Date(year, month, day);
-                                const isSelected = value && currentDate.toDateString() === value.toDateString();
-                                
-                                let isDisabled = false;
-                                if (minDate) {
-                                    const min = new Date(minDate);
-                                    min.setHours(0,0,0,0);
-                                    if (currentDate < min) isDisabled = true;
-                                }
-                                if (maxDate) {
-                                    const max = new Date(maxDate);
-                                    max.setHours(0,0,0,0);
-                                    if (currentDate > max) isDisabled = true;
-                                }
+                        
+                        {currentView === 'days' && renderDaysGrid()}
+                        {currentView === 'months' && renderMonthsGrid()}
+                        {currentView === 'years' && renderYearsGrid()}
 
-                                return (
-                                    <button
-                                        key={day}
-                                        onClick={() => !isDisabled && handleDateSelect(currentDate)}
-                                        disabled={isDisabled}
-                                        className={classNames(
-                                            "py-1.5 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
-                                            isDisabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-teal-100",
-                                            isSelected ? "bg-primary text-white hover:bg-primary/90" : "text-gray-700",
-                                            !isDisabled && !isSelected && new Date(year, month, day).toDateString() === new Date().toDateString() ? "border border-primary text-primary" : ""
-                                        )}
-                                    >
-                                        {day}
-                                    </button>
-                                );
-                            })}
-                        </div>
                     </div>,
                     document.body
                 )}
