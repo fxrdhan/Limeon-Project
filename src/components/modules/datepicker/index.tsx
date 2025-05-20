@@ -157,8 +157,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     };
 
     const handleDateSelect = (date: Date) => {
-        onChange(date);
-        closeCalendar();
+        const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+        onChange(selectedDate);
     };
 
     useEffect(() => {
