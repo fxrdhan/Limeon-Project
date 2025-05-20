@@ -8,7 +8,7 @@ import {
     Button,
     FormAction,
     FormSection,
-    FormField,
+    // FormField,
     Card,
     CardHeader,
     CardTitle,
@@ -20,7 +20,8 @@ import {
     TableRow,
     TableCell,
     TableHeader,
-    DescriptiveTextarea
+    DescriptiveTextarea,
+    Dropdown,
 } from '@/components/modules';
 import ItemSearchBar from '@/pages/purchases/item-search';
 
@@ -46,12 +47,12 @@ const CreatePurchase: React.FC = () => {
         handleSubmit
     } = usePurchaseForm();
 
-    const [purchaseDateValue, setPurchaseDateValue] = useState<DateValueType>({
+    const [purchaseDateValue] = useState<DateValueType>({
         startDate: formData.date ? new Date(formData.date) : null,
         endDate: formData.date ? new Date(formData.date) : null
     });
 
-    const [dueDateValue, setDueDateValue] = useState<DateValueType>({
+    const [dueDateValue] = useState<DateValueType>({
         startDate: formData.due_date ? new Date(formData.due_date) : null,
         endDate: formData.due_date ? new Date(formData.due_date) : null
     });
@@ -125,86 +126,89 @@ const CreatePurchase: React.FC = () => {
                 <CardContent className="space-y-6">
                     <FormSection title="Informasi Pembelian">
                         <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                            <FormField label="Supplier">
-                                <select
+                            <div className="flex flex-col">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                                <Dropdown
                                     name="supplier_id"
                                     value={formData.supplier_id}
-                                    onChange={handleChange}
-                                    className="w-full p-3 border rounded-md"
+                                    onChange={(value) => handleChange({ target: { name: 'supplier_id', value } } as React.ChangeEvent<HTMLSelectElement>)}
+                                    options={suppliers.map(supplier => ({ id: supplier.id, name: supplier.name }))}
+                                    placeholder="-- Pilih Supplier --"
                                 >
-                                    <option value="">-- Pilih Supplier --</option>
-                                    {suppliers.map(supplier => (
-                                        <option key={supplier.id} value={supplier.id}>
-                                            {supplier.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </FormField>
+                                </Dropdown>
+                            </div>
 
-                            <FormField label="Nomor Faktur">
+                            <div className="flex flex-col">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Faktur</label>
                                 <Input
                                     name="invoice_number"
                                     value={formData.invoice_number}
                                     onChange={handleChange}
                                     placeholder="Masukkan nomor faktur"
                                 />
-                            </FormField>
+                            </div>
 
-                            <FormField label="Tanggal Pembelian">
+                            <div className="flex flex-col">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Pembelian</label>
                                 <Datepicker
                                     primaryColor={"blue"}
                                     useRange={false}
                                     asSingle={true}
                                     value={purchaseDateValue}
                                     onChange={(newValue) => {
-                                        setPurchaseDateValue(newValue);
                                         const fakeEvent = { target: { name: 'date', value: newValue?.startDate ? new Date(newValue.startDate).toISOString().split('T')[0] : '' } } as React.ChangeEvent<HTMLInputElement>;
                                         handleChange(fakeEvent);
                                     }}
                                     inputClassName="w-full p-3 border rounded-md"
                                 />
-                            </FormField>
+                            </div>
 
-                            <FormField label="Tanggal Jatuh Tempo">
+                            <div className="flex flex-col">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Jatuh Tempo</label>
                                 <Datepicker
                                     useRange={false}
                                     asSingle={true}
                                     value={dueDateValue}
                                     onChange={(newValue) => {
-                                        setDueDateValue(newValue);
                                         const fakeEvent = { target: { name: 'due_date', value: newValue?.startDate ? new Date(newValue.startDate).toISOString().split('T')[0] : '' } } as React.ChangeEvent<HTMLInputElement>;
                                         handleChange(fakeEvent);
                                     }}
                                     inputClassName="w-full p-3 border rounded-md"
                                     minDate={formData.date ? new Date(formData.date) : undefined}
                                 />
-                            </FormField>
+                            </div>
 
-                            <FormField label="Status Pembayaran">
-                                <select
+                            <div className="flex flex-col">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Status Pembayaran</label>
+                                <Dropdown
                                     name="payment_status"
                                     value={formData.payment_status}
-                                    onChange={handleChange}
-                                    className="w-full p-3 border rounded-md"
+                                    onChange={(value) => handleChange({ target: { name: 'payment_status', value } } as React.ChangeEvent<HTMLSelectElement>)}
+                                    options={[
+                                        { id: "unpaid", name: "Belum Dibayar" },
+                                        { id: "partial", name: "Sebagian" },
+                                        { id: "paid", name: "Lunas" }
+                                    ]}
+                                    placeholder="-- Pilih Status --"
                                 >
-                                    <option value="unpaid">Belum Dibayar</option>
-                                    <option value="partial">Sebagian</option>
-                                    <option value="paid">Lunas</option>
-                                </select>
-                            </FormField>
+                                </Dropdown>
+                            </div>
 
-                            <FormField label="Metode Pembayaran">
-                                <select
+                            <div className="flex flex-col">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Metode Pembayaran</label>
+                                <Dropdown
                                     name="payment_method"
                                     value={formData.payment_method}
-                                    onChange={handleChange}
-                                    className="w-full p-3 border rounded-md"
+                                    onChange={(value) => handleChange({ target: { name: 'payment_method', value } } as React.ChangeEvent<HTMLSelectElement>)}
+                                    options={[
+                                        { id: "cash", name: "Tunai" },
+                                        { id: "transfer", name: "Transfer" },
+                                        { id: "credit", name: "Kredit" }
+                                    ]}
+                                    placeholder="-- Pilih Metode --"
                                 >
-                                    <option value="cash">Tunai</option>
-                                    <option value="transfer">Transfer</option>
-                                    <option value="credit">Kredit</option>
-                                </select>
-                            </FormField>
+                                </Dropdown>
+                            </div>
                         </div>
 
                         <div className="mt-4">
