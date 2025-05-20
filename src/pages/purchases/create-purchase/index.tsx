@@ -1,14 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
-import Datepicker, { DateValueType } from "react-tailwindcss-datepicker";
+import type { CustomDateValueType } from '@/components/modules/portalled-datepicker';
 
 import {
     Input,
     Button,
     FormAction,
     FormSection,
-    // FormField,
     Card,
     CardHeader,
     CardTitle,
@@ -22,6 +21,7 @@ import {
     TableHeader,
     DescriptiveTextarea,
     Dropdown,
+    PortalledDatepicker,
 } from '@/components/modules';
 import ItemSearchBar from '@/pages/purchases/item-search';
 
@@ -46,16 +46,6 @@ const CreatePurchase: React.FC = () => {
         removeItem,
         handleSubmit
     } = usePurchaseForm();
-
-    const [purchaseDateValue] = useState<DateValueType>({
-        startDate: formData.date ? new Date(formData.date) : null,
-        endDate: formData.date ? new Date(formData.date) : null
-    });
-
-    const [dueDateValue] = useState<DateValueType>({
-        startDate: formData.due_date ? new Date(formData.due_date) : null,
-        endDate: formData.due_date ? new Date(formData.due_date) : null
-    });
 
     const [editingVatPercentage, setEditingVatPercentage] = useState(false);
     const [vatPercentageValue, setVatPercentageValue] = useState(formData.vat_percentage.toString());
@@ -150,31 +140,28 @@ const CreatePurchase: React.FC = () => {
 
                             <div className="flex flex-col">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Pembelian</label>
-                                <Datepicker
-                                    primaryColor={"blue"}
-                                    useRange={false}
-                                    asSingle={true}
-                                    value={purchaseDateValue}
-                                    onChange={(newValue) => {
-                                        const fakeEvent = { target: { name: 'date', value: newValue?.startDate ? new Date(newValue.startDate).toISOString().split('T')[0] : '' } } as React.ChangeEvent<HTMLInputElement>;
+                                <PortalledDatepicker
+                                    value={formData.date ? new Date(formData.date) : null}
+                                    onChange={(newDate: CustomDateValueType) => {
+                                        const fakeEvent = { target: { name: 'date', value: newDate ? newDate.toISOString().split('T')[0] : '' } } as React.ChangeEvent<HTMLInputElement>;
                                         handleChange(fakeEvent);
                                     }}
-                                    inputClassName="w-full p-3 border rounded-md"
+                                    inputClassName="w-full p-2.5 border rounded-lg text-sm"
+                                    placeholder="Pilih tanggal pembelian"
                                 />
                             </div>
 
                             <div className="flex flex-col">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Jatuh Tempo</label>
-                                <Datepicker
-                                    useRange={false}
-                                    asSingle={true}
-                                    value={dueDateValue}
-                                    onChange={(newValue) => {
-                                        const fakeEvent = { target: { name: 'due_date', value: newValue?.startDate ? new Date(newValue.startDate).toISOString().split('T')[0] : '' } } as React.ChangeEvent<HTMLInputElement>;
+                                <PortalledDatepicker
+                                    value={formData.due_date ? new Date(formData.due_date) : null}
+                                    onChange={(newDate: CustomDateValueType) => {
+                                        const fakeEvent = { target: { name: 'due_date', value: newDate ? newDate.toISOString().split('T')[0] : '' } } as React.ChangeEvent<HTMLInputElement>;
                                         handleChange(fakeEvent);
                                     }}
-                                    inputClassName="w-full p-3 border rounded-md"
+                                    inputClassName="w-full p-2.5 border rounded-lg text-sm"
                                     minDate={formData.date ? new Date(formData.date) : undefined}
+                                    placeholder="Pilih tanggal jatuh tempo"
                                 />
                             </div>
 
