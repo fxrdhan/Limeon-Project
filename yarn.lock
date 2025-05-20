@@ -1469,7 +1469,6 @@ __metadata:
     react-dom: ^19.1.0
     react-icons: ^5.5.0
     react-router-dom: ^7.6.0
-    react-tailwindcss-datepicker: ^2.0.0
     tailwindcss: ^3.4.17
     typescript: ^5.8.3
     typescript-eslint: ^8.32.1
@@ -3385,16 +3384,6 @@ __metadata:
     react-dom:
       optional: true
   checksum: 229b7e6d8340f6b5d72269519939cdc0d5d8dd6c84a0829cbaacb3471f0c661ae010e79115e6cee6bb2c1d1c79eef8c6fda62ec8ebc2011f7d3b3c47df17c427
-  languageName: node
-  linkType: hard
-
-"react-tailwindcss-datepicker@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "react-tailwindcss-datepicker@npm:2.0.0"
-  peerDependencies:
-    dayjs: ^1.11.12
-    react: ^17.0.2 || ^18.2.0 || ^19.0.0
-  checksum: 66c2b2008de3ef00b33e3a10711b84353b860b6004ba7cc5f2954200dfc1ff355a2a93a81db484d70729fe30ea8f5efac389b1b62d52ec20333a264aff0b3588
   languageName: node
   linkType: hard
 
