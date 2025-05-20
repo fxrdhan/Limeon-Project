@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
 import type { CustomDateValueType } from '@/types';
@@ -50,6 +50,7 @@ const CreatePurchase: React.FC = () => {
     const [editingVatPercentage, setEditingVatPercentage] = useState(false);
     const [vatPercentageValue, setVatPercentageValue] = useState(formData.vat_percentage.toString());
     const vatPercentageInputRef = useRef<HTMLInputElement>(null);
+    const invoiceNumberInputRef = useRef<HTMLInputElement>(null);
 
     const {
         searchItem,
@@ -65,6 +66,12 @@ const CreatePurchase: React.FC = () => {
     const onHandleSubmit = (e: React.FormEvent) => {
         handleSubmit(e);
     };
+
+    useEffect(() => {
+        if (invoiceNumberInputRef.current) {
+            invoiceNumberInputRef.current.focus();
+        }
+    }, []);
 
     const onHandleUnitChange = (id: string, unitName: string) => {
         handleUnitChange(id, unitName, getItemByID);
@@ -117,6 +124,17 @@ const CreatePurchase: React.FC = () => {
                     <FormSection title="Informasi Pembelian">
                         <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                             <div className="flex flex-col">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Faktur</label>
+                                <Input
+                                    ref={invoiceNumberInputRef}
+                                    name="invoice_number"
+                                    value={formData.invoice_number}
+                                    onChange={handleChange}
+                                    placeholder="Masukkan nomor faktur"
+                                />
+                            </div>
+
+                            <div className="flex flex-col">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
                                 <Dropdown
                                     name="supplier_id"
@@ -126,16 +144,6 @@ const CreatePurchase: React.FC = () => {
                                     placeholder="-- Pilih Supplier --"
                                 >
                                 </Dropdown>
-                            </div>
-
-                            <div className="flex flex-col">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Faktur</label>
-                                <Input
-                                    name="invoice_number"
-                                    value={formData.invoice_number}
-                                    onChange={handleChange}
-                                    placeholder="Masukkan nomor faktur"
-                                />
                             </div>
 
                             <div className="flex flex-col">
