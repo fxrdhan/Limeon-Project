@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Input } from '@/components/modules';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { classNames } from '@/lib/classNames';
-import type { DatepickerProps } from '@/types'; // <-- import from types
+import type { DatepickerProps } from '@/types';
 
 export const Datepicker: React.FC<DatepickerProps> = ({
     value,
@@ -78,9 +78,9 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const month = currentMonthDate.getMonth();
 
     const numDays = daysInMonth(year, month);
-    let firstDay = firstDayOfMonth(year, month); // Sunday is 0, Saturday is 6
-    if (firstDay === 0) firstDay = 6; // Make Sunday last day of week (index 6)
-    else firstDay -= 1; // Adjust Monday to be 0
+    let firstDay = firstDayOfMonth(year, month);
+    if (firstDay === 0) firstDay = 6;
+    else firstDay -= 1;
 
     const calendarDays: (number | null)[] = Array(firstDay).fill(null);
     for (let i = 1; i <= numDays; i++) calendarDays.push(i);
@@ -90,7 +90,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const changeMonth = (amount: number) => {
         setCurrentMonthDate(prevDate => {
             const newDate = new Date(prevDate);
-            newDate.setDate(1); // Avoid issues with month lengths
+            newDate.setDate(1);
             newDate.setMonth(newDate.getMonth() + amount);
             return newDate;
         });
@@ -103,13 +103,12 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                 ref={triggerInputRef}
                 type="text"
                 value={formattedDisplayValue()}
-                readOnly
                 placeholder={placeholder}
                 className={classNames("cursor-pointer", inputClassName)}
                 onClick={handleTriggerClick}
             />
             {isOpen && createPortal(
-                <div ref={portalContentRef} style={portalStyle} className="bg-white shadow-lg rounded-md border border-gray-200 p-4 w-[280px]"> {/* Adjusted width */}
+                <div ref={portalContentRef} style={portalStyle} className="bg-white shadow-lg rounded-md border border-gray-200 p-4 w-[280px]">
                     <div className="flex justify-between items-center mb-3">
                         <button onClick={() => changeMonth(-1)} className="p-1.5 rounded hover:bg-gray-100 focus:outline-none"><FaChevronLeft size={12} /></button>
                         <div className="font-semibold text-sm">
@@ -117,7 +116,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         </div>
                         <button onClick={() => changeMonth(1)} className="p-1.5 rounded hover:bg-gray-100 focus:outline-none"><FaChevronRight size={12} /></button>
                     </div>
-                    <div className="grid grid-cols-7 gap-px text-center text-xs"> {/* gap-px for thin lines */}
+                    <div className="grid grid-cols-7 gap-px text-center text-xs">
                         {dayLabels.map(day => <div key={day} className="font-medium text-gray-500 py-1.5">{day}</div>)}
                         {calendarDays.map((day, index) => {
                             if (day === null) return <div key={`empty-${index}`} className="py-1.5"></div>;
