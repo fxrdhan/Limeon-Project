@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
-import type { CustomDateValueType } from '@/components/modules/portalled-datepicker';
+import type { CustomDateValueType } from '@/types';
 
 import {
     Input,
