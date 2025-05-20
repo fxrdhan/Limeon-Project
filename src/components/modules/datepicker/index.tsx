@@ -3,9 +3,9 @@ import { createPortal } from 'react-dom';
 import { Input } from '@/components/modules';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { classNames } from '@/lib/classNames';
-import type { PortalledDatepickerProps } from '@/types'; // <-- import from types
+import type { DatepickerProps } from '@/types'; // <-- import from types
 
-export const PortalledDatepicker: React.FC<PortalledDatepickerProps> = ({
+export const Datepicker: React.FC<DatepickerProps> = ({
     value,
     onChange,
     label,

@@ -603,7 +603,7 @@ export interface CheckboxProps {
 
 export type CustomDateValueType = Date | null;
 
-export interface PortalledDatepickerProps {
+export interface DatepickerProps {
     value: CustomDateValueType;
     onChange: (date: CustomDateValueType) => void;
     label?: string;
