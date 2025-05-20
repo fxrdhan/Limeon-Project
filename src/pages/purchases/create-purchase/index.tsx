@@ -23,7 +23,7 @@ import {
     Dropdown,
     Datepicker,
 } from '@/components/modules';
-import ItemSearchBar from '@/pages/purchases/item-search';
+import ItemSearchBar from '@/components/modules/item-search';
 
 import { usePurchaseForm, useItemSelection } from '@/hooks';
 import { extractNumericValue, formatRupiah } from '@/lib/formatters';
