@@ -654,6 +654,7 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
         calculateProfitPercentage,
         calculateSellPriceFromMargin,
         handleCancel,
-        formattedUpdateAt,
+        formattedUpdateAt,    
+        deleteItemMutation,
     };
 };
