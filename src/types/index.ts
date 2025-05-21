@@ -86,6 +86,7 @@ export interface DropdownProps {
     onAddNew?: () => void;
     withRadio?: boolean;
     searchList?: boolean;
+    tabIndex?: number;
 }
 
 export interface NavbarProps {
@@ -570,6 +571,7 @@ export interface DescriptiveTextareaProps
     textareaClassName?: string;
     labelClassName?: string;
     showInitially?: boolean;
+    tabIndex?: number;
 }
 
 export interface CheckboxProps {
@@ -579,6 +581,7 @@ export interface CheckboxProps {
     onChange: (checked: boolean) => void;
     disabled?: boolean;
     className?: string;
+    tabIndex?: number;
 }
 
 export type CustomDateValueType = Date | null;
