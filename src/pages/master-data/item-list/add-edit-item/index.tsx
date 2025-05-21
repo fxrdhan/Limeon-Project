@@ -2,7 +2,6 @@ import UnitConversionManager from "@/components/tools/unit-converter";
 import { useRef, useEffect } from "react";
 import {
     FaArrowLeft,
-    FaSave,
     FaTrash,
     FaHistory,
     FaPen,
@@ -21,6 +20,7 @@ import {
     CardContent,
     DescriptiveTextarea,
     CardFooter,
+    FormAction,
     Checkbox,
 } from "@/components/modules";
 import { useAddItemPageHandlers } from "@/handlers";
@@ -75,6 +75,7 @@ const AddItem = () => {
         stopEditingMinStock,
         handleMinStockChange,
         handleMinStockKeyDown,
+        deleteItemMutation,
     } = useAddItemPageHandlers();
 
     const nameInputRef = useRef<HTMLInputElement>(null);
@@ -468,33 +469,28 @@ const AddItem = () => {
                     </CardContent>
 
                     <CardFooter className="flex justify-between">
-                        {isEditMode ? (
-                            <Button
-                                type="button"
-                                variant="danger"
-                                onClick={handleDeleteItem}
-                                disabled={saving}
-                                isLoading={saving}
-                            >
-                                <span className="flex items-center">
-                                    <FaTrash className="mr-2" /> Hapus
-                                </span>
-                            </Button>
-                        ) : (
-                            <Button type="button" variant="outline" onClick={handleCancel}>
-                                {" "}
-                                Batal{" "}
-                            </Button>
-                        )}
-                        <Button
-                            type="submit"
-                            disabled={saving}
-                            isLoading={saving}
-                        >
-                            <span className="flex items-center">
-                                <FaSave className="mr-2" /> {isEditMode ? "Update" : "Simpan"}
-                            </span>
-                        </Button>
+                        <div>
+                            {isEditMode && (
+                                <Button
+                                    type="button"
+                                    variant="danger"
+                                    onClick={handleDeleteItem}
+                                    disabled={addTypeMutation.isPending || addUnitMutation.isPending || addCategoryMutation.isPending || deleteItemMutation.isPending || saving}
+                                    isLoading={deleteItemMutation.isPending}
+                                >
+                                    <span className="flex items-center">
+                                        <FaTrash className="mr-2" /> Hapus
+                                    </span>
+                                </Button>
+                            )}
+                        </div>
+                        <div className={isEditMode ? "" : "w-full flex justify-end"}>
+                            <FormAction
+                                onCancel={handleCancel}
+                                isSaving={saving}
+                                saveText={isEditMode ? "Update" : "Simpan"}
+                            />
+                        </div>
                     </CardFooter>
                 </form>
 
