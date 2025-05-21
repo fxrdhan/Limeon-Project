@@ -268,17 +268,18 @@ const CreatePurchase: React.FC = () => {
                                                         value={item.batch_no || ''}
                                                         onChange={(e) => updateItemBatchNo(item.id, e.target.value)}
                                                         className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
-                                                        placeholder="No Batch"
+                                                        placeholder="No. Batch"
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <input
-                                                        type="date"
-                                                        value={item.expiry_date || ''}
-                                                        onChange={(e) => updateItemExpiry(item.id, e.target.value)}
-                                                        className="w-32 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
-                                                        min={new Date().toISOString().split('T')[0]}
-                                                        title="Tanggal Kadaluarsa"
+                                                    <Datepicker
+                                                        value={item.expiry_date ? new Date(item.expiry_date) : null}
+                                                        onChange={(newDate: CustomDateValueType) => {
+                                                            updateItemExpiry(item.id, newDate ? newDate.toISOString().split('T')[0] : '');
+                                                        }}
+                                                        inputClassName="w-full text-center text-sm !py-[3px] !px-1 bg-transparent !border-0 border-b !border-gray-300 focus:!border-primary focus:!ring-0 !rounded-none"
+                                                        placeholder="Pilih ED"
+                                                        minDate={new Date()}
                                                     />
                                                 </TableCell>
                                                 <TableCell className="text-center">
