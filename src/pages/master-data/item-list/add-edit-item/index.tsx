@@ -485,11 +485,21 @@ const AddItem = () => {
                             )}
                         </div>
                         <div className={isEditMode ? "" : "w-full flex justify-end"}>
-                            <FormAction
-                                onCancel={handleCancel}
-                                isSaving={saving}
-                                saveText={isEditMode ? "Update" : "Simpan"}
-                            />
+                            {isEditMode ? (
+                                <Button
+                                    type="submit"
+                                    disabled={saving}
+                                    isLoading={saving}
+                                >
+                                    Update
+                                </Button>
+                            ) : (
+                                <FormAction
+                                    onCancel={handleCancel}
+                                    isSaving={saving}
+                                    saveText="Simpan"
+                                />
+                            )}
                         </div>
                     </CardFooter>
                 </form>
