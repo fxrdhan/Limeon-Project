@@ -81,13 +81,22 @@ const AddItem = () => {
     const nameInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
+        if (nameInputRef.current && (isEditMode ? formData.name || !loading : !isEditMode)) {
+            setTimeout(() => {
+                nameInputRef.current?.focus();
+            }, 50);
+        }
+    }, [isEditMode, formData.name, loading]);
+
+    /*
+    useEffect(() => {
         if (!isEditMode && nameInputRef.current) {
             setTimeout(() => {
                 nameInputRef.current?.focus();
             }, 50);
         }
     }, [isEditMode]);
-
+    */
     if (loading && !isEditMode) {
         if (isEditMode && !formData.name) {
             return (
@@ -100,6 +109,17 @@ const AddItem = () => {
             );
         }
     }
+
+    const formIsInvalid =
+        !formData.name.trim() ||
+        !formData.category_id ||
+        !formData.type_id ||
+        !formData.unit_id ||
+        formData.base_price <= 0 ||
+        formData.sell_price < 0;
+
+    const operationsPending =
+        addTypeMutation.isPending || addUnitMutation.isPending || addCategoryMutation.isPending || deleteItemMutation.isPending;
 
     return (
         <div>
@@ -475,7 +495,7 @@ const AddItem = () => {
                             isSaving={saving}
                             isDeleting={deleteItemMutation.isPending}
                             isEditMode={isEditMode}
-                            isDisabled={addTypeMutation.isPending || addUnitMutation.isPending || addCategoryMutation.isPending || deleteItemMutation.isPending}
+                            isDisabled={formIsInvalid || operationsPending}
                             saveText="Simpan"
                             updateText="Update"
                             deleteText={
