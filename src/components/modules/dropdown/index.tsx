@@ -89,8 +89,11 @@ export const Dropdown = ({
         (optionId: string) => {
             onChange(optionId);
             closeDropdown();
+            setTimeout(() => {
+                buttonRef.current?.focus();
+            }, 150);
         },
-        [onChange, closeDropdown]
+        [onChange, closeDropdown, buttonRef]
     );
 
     const handleDropdownKeyDown = useCallback(
