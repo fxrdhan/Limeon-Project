@@ -185,10 +185,15 @@ export interface ConfirmDialogOptions {
 
 export interface FormActionProps {
     onCancel: () => void;
+    onDelete?: () => void;
     isSaving: boolean;
+    isDeleting?: boolean;
     isDisabled?: boolean;
     cancelText?: string;
     saveText?: string;
+    updateText?: string;
+    deleteText?: React.ReactNode;
+    isEditMode?: boolean;
 }
 
 export interface FormSectionProps {
