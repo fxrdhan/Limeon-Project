@@ -47,7 +47,7 @@ export const TableCell = ({ children, className, colSpan, ...props }: TableCellP
         <td
             colSpan={colSpan}
             className={classNames(
-                'py-3 px-3 text-gray-700 align-middle overflow-hidden whitespace-nowrap text-ellipsis',
+                'text-sm py-3 px-3 text-gray-700 align-middle overflow-hidden whitespace-nowrap text-ellipsis',
                 'group-hover:whitespace-normal group-hover:text-ellipsis-none group-hover:overflow-visible',
                 'transition-all duration-200 max-h-[40px] group-hover:max-h-[300px]',
                 className
