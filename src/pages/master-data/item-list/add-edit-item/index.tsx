@@ -289,14 +289,13 @@ const AddItem = () => {
                                         >
                                             <div className="ml-2 flex-grow flex items-center">
                                                 {editingMinStock ? (
-                                                    <input
+                                                    <Input
                                                         ref={minStockInputRef}
                                                         type="number"
                                                         value={minStockValue}
                                                         onChange={handleMinStockChange}
                                                         onBlur={stopEditingMinStock}
                                                         onKeyDown={handleMinStockKeyDown}
-                                                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                                         min="0"
                                                     />
                                                 ) : (
@@ -401,14 +400,13 @@ const AddItem = () => {
                                                 <div className="flex items-center">
                                                     {editingMargin ? (
                                                         <div className="flex items-center w-full">
-                                                            <input
+                                                            <Input
                                                                 ref={marginInputRef}
                                                                 type="number"
                                                                 value={marginPercentage}
                                                                 onChange={handleMarginChange}
                                                                 onBlur={stopEditingMargin}
                                                                 onKeyDown={handleMarginKeyDown}
-                                                                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                                                                 step="0.1"
                                                             />
                                                             <span className="ml-4 text-lg font-medium">
