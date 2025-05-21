@@ -332,13 +332,19 @@ const AddItem = () => {
                                                 ) : (
                                                     <div
                                                         tabIndex={10}
-                                                        className="w-full pb-1 cursor-pointer flex items-center"
+                                                        className="group w-full pb-1 cursor-pointer flex items-center focus:outline-none"
                                                         onClick={startEditingMinStock}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                e.preventDefault();
+                                                                startEditingMinStock();
+                                                            }
+                                                        }}
                                                         title="Klik untuk mengubah stok minimal"
                                                     >
                                                         <span>{formData.min_stock}</span>
                                                         <FaPen
-                                                            className="ml-2 text-gray-400 hover:text-primary cursor-pointer transition-colors"
+                                                            className="ml-2 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors"
                                                             size={14}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
