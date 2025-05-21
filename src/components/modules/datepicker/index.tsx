@@ -326,7 +326,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                             className={classNames(
                                 "py-1.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
                                 isDisabled
-                                    ? "text-gray-100 cursor-not-allowed"
+                                    ? "text-gray-300 cursor-not-allowed"
                                     : "hover:bg-teal-100",
                                 isSelected
                                     ? "bg-primary text-white hover:bg-primary/90"
