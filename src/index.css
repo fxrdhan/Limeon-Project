@@ -110,3 +110,16 @@ h1 {
   margin: 0 auto;
   background: white;
 }
+
+/* Sembunyikan spinner untuk browser WebKit (Chrome, Safari, Edge) */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Sembunyikan spinner untuk Firefox */
+input[type=number] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
