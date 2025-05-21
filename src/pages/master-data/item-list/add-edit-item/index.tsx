@@ -468,39 +468,22 @@ const AddItem = () => {
                         </div>
                     </CardContent>
 
-                    <CardFooter className="flex justify-between">
-                        <div>
-                            {isEditMode && (
-                                <Button
-                                    type="button"
-                                    variant="danger"
-                                    onClick={handleDeleteItem}
-                                    disabled={addTypeMutation.isPending || addUnitMutation.isPending || addCategoryMutation.isPending || deleteItemMutation.isPending || saving}
-                                    isLoading={deleteItemMutation.isPending}
-                                >
-                                    <span className="flex items-center">
-                                        <FaTrash className="mr-2" /> Hapus
-                                    </span>
-                                </Button>
-                            )}
-                        </div>
-                        <div className={isEditMode ? "" : "w-full flex justify-end"}>
-                            {isEditMode ? (
-                                <Button
-                                    type="submit"
-                                    disabled={saving}
-                                    isLoading={saving}
-                                >
-                                    Update
-                                </Button>
-                            ) : (
-                                <FormAction
-                                    onCancel={handleCancel}
-                                    isSaving={saving}
-                                    saveText="Simpan"
-                                />
-                            )}
-                        </div>
+                    <CardFooter>
+                        <FormAction
+                            onCancel={handleCancel}
+                            onDelete={isEditMode ? handleDeleteItem : undefined}
+                            isSaving={saving}
+                            isDeleting={deleteItemMutation.isPending}
+                            isEditMode={isEditMode}
+                            isDisabled={addTypeMutation.isPending || addUnitMutation.isPending || addCategoryMutation.isPending || deleteItemMutation.isPending}
+                            saveText="Simpan"
+                            updateText="Update"
+                            deleteText={
+                                <span className="flex items-center">
+                                    <FaTrash className="mr-2" /> Hapus
+                                </span>
+                            }
+                        />
                     </CardFooter>
                 </form>
 
