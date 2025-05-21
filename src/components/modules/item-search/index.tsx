@@ -116,6 +116,9 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     }, [isOpen, calculateDropdownPosition]);
 
     useEffect(() => {
+        const currentOpenTimeout = openTimeoutRef.current;
+        const currentCloseTimeout = closeTimeoutRef.current;
+
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 isOpen &&
@@ -128,8 +131,8 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-            if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+            if (currentOpenTimeout) clearTimeout(currentOpenTimeout);
+            if (currentCloseTimeout) clearTimeout(currentCloseTimeout);
         };
     }, [isOpen, closeDropdown, searchBarRef, itemDropdownRef]);
 
