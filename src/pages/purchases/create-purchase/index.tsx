@@ -157,6 +157,7 @@ const CreatePurchase: React.FC = () => {
                                     }}
                                     inputClassName="w-full p-2.5 border rounded-lg text-sm"
                                     placeholder="Pilih tanggal pembelian"
+                                    portalWidth="280px"
                                 />
                             </div>
 
@@ -171,6 +172,7 @@ const CreatePurchase: React.FC = () => {
                                     inputClassName="w-full p-2.5 border rounded-lg text-sm"
                                     minDate={formData.date ? new Date(formData.date) : undefined}
                                     placeholder="Pilih tanggal jatuh tempo"
+                                    portalWidth="280px"
                                 />
                             </div>
 
@@ -280,6 +282,7 @@ const CreatePurchase: React.FC = () => {
                                                         inputClassName="w-full text-center text-sm !py-[3px] !px-1 bg-transparent !border-0 border-b !border-gray-300 focus:!border-primary focus:!ring-0 !rounded-none"
                                                         placeholder="Pilih ED"
                                                         minDate={new Date()}
+                                                        portalWidth="280px"
                                                     />
                                                 </TableCell>
                                                 <TableCell className="text-center">
