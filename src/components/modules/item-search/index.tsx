@@ -1,19 +1,31 @@
-import React from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from 'react-dom';
 import { FaPlus } from "react-icons/fa";
 import { Button } from "@/components/modules";
-import type { PurchaseItem, ItemSearchBarProps } from "@/types";
+import type { PurchaseItem, ItemSearchBarProps, Item } from "@/types";
+import { classNames } from "@/lib/classNames";
 
 const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     searchItem,
     setSearchItem,
-    showItemDropdown,
-    setShowItemDropdown,
     filteredItems,
     selectedItem,
     setSelectedItem,
     onAddItem,
 }) => {
-    const addItem = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+    const [applyOpenStyles, setApplyOpenStyles] = useState(false);
+    const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
+    const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
+
+    const searchBarRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const itemDropdownRef = useRef<HTMLDivElement>(null);
+    const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const addItemToPurchase = () => {
         if (!selectedItem) return;
 
         const newItem: PurchaseItem = {
@@ -40,59 +52,173 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         setSearchItem("");
     };
 
+    const calculateDropdownPosition = useCallback(() => {
+        if (!inputRef.current || !itemDropdownRef.current) return;
+        const inputRect = inputRef.current.getBoundingClientRect();
+        const dropdownActualHeight = itemDropdownRef.current.scrollHeight;
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - inputRect.bottom;
+        const shouldDropUp = spaceBelow < dropdownActualHeight + 10 && inputRect.top > dropdownActualHeight + 10;
+        setDropDirection(shouldDropUp ? "up" : "down");
+
+        const newMenuStyle: React.CSSProperties = {
+            position: "fixed",
+            left: `${inputRect.left}px`,
+            width: `${inputRect.width}px`,
+            zIndex: 1050,
+        };
+        const margin = 5;
+        if (shouldDropUp) {
+            newMenuStyle.top = `${inputRect.top + window.scrollY - dropdownActualHeight - margin}px`;
+        } else {
+            newMenuStyle.top = `${inputRect.bottom + window.scrollY + margin}px`;
+        }
+        setPortalStyle(newMenuStyle);
+    }, [inputRef, itemDropdownRef]);
+
+    const openDropdown = useCallback(() => {
+        if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+        setIsOpen(true);
+        setIsClosing(false);
+    }, []);
+
+    const closeDropdown = useCallback(() => {
+        if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsOpen(false);
+            setIsClosing(false);
+            setApplyOpenStyles(false);
+        }, 200);
+    }, []);
+
+    useEffect(() => {
+        let openStyleTimerId: NodeJS.Timeout | undefined;
+        if (isOpen) {
+            openStyleTimerId = setTimeout(() => {
+                setApplyOpenStyles(true);
+                requestAnimationFrame(() => {
+                    if (itemDropdownRef.current) {
+                        calculateDropdownPosition();
+                    }
+                });
+            }, 20);
+            window.addEventListener("scroll", calculateDropdownPosition, true);
+            window.addEventListener("resize", calculateDropdownPosition);
+        } else {
+            setApplyOpenStyles(false);
+        }
+        return () => {
+            if (openStyleTimerId) clearTimeout(openStyleTimerId);
+            window.removeEventListener("scroll", calculateDropdownPosition, true);
+            window.removeEventListener("resize", calculateDropdownPosition);
+        };
+    }, [isOpen, calculateDropdownPosition]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                isOpen &&
+                searchBarRef.current && !searchBarRef.current.contains(event.target as Node) &&
+                itemDropdownRef.current && !itemDropdownRef.current.contains(event.target as Node)
+            ) {
+                closeDropdown();
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+            if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+        };
+    }, [isOpen, closeDropdown]);
+
+    const handleItemSelect = (item: Item) => {
+        setSelectedItem(item);
+        setSearchItem(item.name);
+        closeDropdown();
+    };
+
+    const handleInputFocus = () => openDropdown();
+
+    const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        closeTimeoutRef.current = setTimeout(() => {
+            if (itemDropdownRef.current && !itemDropdownRef.current.contains(e.relatedTarget as Node)) {
+                closeDropdown();
+            } else if (!e.relatedTarget && itemDropdownRef.current && !itemDropdownRef.current.contains(document.activeElement)) {
+                closeDropdown();
+            }
+        }, 150);
+    };
+
     return (
-        <div className="mb-4">
+        <div className="mb-4" ref={searchBarRef}>
             <div className="flex space-x-2">
                 <div className="relative flex-1">
                     <input
+                        ref={inputRef}
                         type="text"
                         placeholder="Cari nama atau kode item..."
                         className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
                         value={searchItem}
                         onChange={(e) => {
                             setSearchItem(e.target.value);
-                            setShowItemDropdown(true);
+                            if (e.target.value) {
+                                openDropdown();
+                            } else {
+                                closeDropdown();
+                            }
                         }}
-                        onFocus={() => setShowItemDropdown(true)}
+                        onFocus={handleInputFocus}
+                        onBlur={handleInputBlur}
                     />
 
-                    {showItemDropdown && searchItem && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {(isOpen || isClosing) && searchItem && createPortal(
+                        <div
+                            ref={itemDropdownRef}
+                            style={portalStyle}
+                            className={classNames(
+                                "bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto",
+                                dropDirection === "down" ? "origin-top" : "origin-bottom",
+                                "transition-all duration-200 ease-out",
+                                isClosing
+                                    ? "opacity-0 scale-y-95"
+                                    : isOpen && applyOpenStyles
+                                        ? "opacity-100 scale-y-100"
+                                        : `opacity-0 scale-y-95 ${dropDirection === "down" ? "translate-y-1" : "-translate-y-1"} pointer-events-none`
+                            )}
+                            onMouseEnter={() => { if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current); }}
+                        >
                             {filteredItems.length === 0 ? (
-                                <div className="p-3 text-gray-500">
-                                    Tidak ada item yang ditemukan
+                                <div className="p-3 text-sm text-gray-500">
+                                    Item tidak ditemukan.
                                 </div>
                             ) : (
                                 filteredItems.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="p-3 hover:bg-gray-100 cursor-pointer"
-                                        onClick={() => {
-                                            setSelectedItem(item);
-                                            setSearchItem(item.name);
-                                            setShowItemDropdown(false);
-                                        }}
+                                        className="p-3 hover:bg-gray-100 cursor-pointer text-sm"
+                                        onClick={() => handleItemSelect(item)}
                                     >
                                         <div>
-                                            <span className="font-semibold">{item.code}</span> -{" "}
-                                            {item.name}
+                                            <span className="font-semibold">{item.code}</span> - {item.name}
                                         </div>
-                                        <div className="text-sm text-gray-500">
-                                            Harga Dasar:{" "}
-                                            {item.base_price.toLocaleString("id-ID", {
-                                                style: "currency",
-                                                currency: "IDR",
-                                            })}
+                                        <div className="text-xs text-gray-500">
+                                            Harga: {item.base_price.toLocaleString("id-ID", { style: "currency", currency: "IDR" })}
                                         </div>
                                     </div>
                                 ))
                             )}
-                        </div>
+                        </div>,
+                        document.body
                     )}
                 </div>
                 <Button
                     type="button"
-                    onClick={addItem}
+                    onClick={addItemToPurchase}
                     disabled={!selectedItem}
                     className="flex items-center whitespace-nowrap"
                 >
