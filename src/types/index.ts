@@ -591,4 +591,5 @@ export interface DatepickerProps {
     placeholder?: string;
     minDate?: Date;
     maxDate?: Date;
+    portalWidth?: string | number;
 }
