@@ -239,12 +239,12 @@ const CreatePurchase: React.FC = () => {
                                     <TableRow>
                                         <TableHeader className="w-[5%] text-center">No</TableHeader>
                                         <TableHeader className="w-[8%]">Kode</TableHeader>
-                                        <TableHeader className="w-[25%]">Nama</TableHeader>
+                                        <TableHeader className="w-[27%]">Nama</TableHeader>
                                         <TableHeader className="w-[9%] text-center">Batch No.</TableHeader>
                                         <TableHeader className="w-[10%] text-center">Kadaluarsa</TableHeader>
                                         <TableHeader className="w-[5%] text-center">Jml.</TableHeader>
                                         <TableHeader className="w-[6%] text-center">Satuan</TableHeader>
-                                        <TableHeader className="w-[10%] text-right">Harga</TableHeader>
+                                        <TableHeader className="w-[8%] text-right">Harga</TableHeader>
                                         <TableHeader className="w-[5%] text-right">Disc</TableHeader>
                                         {!formData.is_vat_included && <TableHeader className="w-[5%] text-right">VAT</TableHeader>}
                                         <TableHeader className="w-[10%] text-right">Subtotal</TableHeader>
