@@ -165,7 +165,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                         <Table className="w-full h-full">
                             <TableHead>
                                 <TableRow>
-                                    <TableHeader className="w-[20%]">Satuan Turunan</TableHeader>
+                                    <TableHeader className="w-[20%]">Turunan</TableHeader>
                                     <TableHeader className="w-[30%] text-left">
                                         Konversi
                                     </TableHeader>
