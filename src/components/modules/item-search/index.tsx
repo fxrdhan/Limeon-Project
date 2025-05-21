@@ -137,12 +137,12 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     }, [isOpen, closeDropdown, searchBarRef, itemDropdownRef]);
 
     useEffect(() => {
-        if (searchItem && !isOpen && !isClosing) {
+        if (searchItem && !selectedItem && !isOpen && !isClosing) {
             openDropdown();
         } else if (!searchItem && isOpen && !isClosing) {
             closeDropdown();
         }
-    }, [searchItem, isOpen, isClosing, openDropdown, closeDropdown]);
+    }, [searchItem, selectedItem, isOpen, isClosing, openDropdown, closeDropdown]);
 
     const handleItemSelect = (item: Item) => {
         setSelectedItem(item);
