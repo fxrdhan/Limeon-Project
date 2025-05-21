@@ -252,7 +252,7 @@ const CreatePurchase: React.FC = () => {
                                 <TableBody>
                                     {purchaseItems.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={12} className="text-center text-gray-500">
+                                            <TableCell colSpan={formData.is_vat_included ? 11 : 12} className="text-center text-gray-500">
                                                 {"Belum ada item ditambahkan"}
                                             </TableCell>
                                         </TableRow>
