@@ -174,7 +174,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                         ref={inputRef}
                         type="text"
                         placeholder="Cari nama atau kode item..."
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
+                        className="w-full text-sm p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
                         value={searchItem}
                         onChange={(e) => {
                             setSearchItem(e.target.value);
