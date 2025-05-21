@@ -325,18 +325,12 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                             disabled={isDisabled}
                             className={classNames(
                                 "py-1.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
-                                isDisabled
-                                    ? "text-gray-300 cursor-not-allowed"
-                                    : "hover:bg-teal-100",
-                                isSelected
-                                    ? "bg-primary text-white hover:bg-primary/90"
-                                    : "text-gray-700",
-                                !isDisabled &&
-                                    !isSelected &&
-                                    new Date(year, month, day).toDateString() ===
-                                    new Date().toDateString()
-                                    ? "border border-primary text-primary"
-                                    : ""
+                                isDisabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-teal-100",
+                                !isDisabled && (isSelected
+                                    ? "bg-primary text-white hover:bg-primary"
+                                    : new Date(year, month, day).toDateString() === new Date().toDateString()
+                                        ? "border border-primary text-primary"
+                                        : "text-gray-700")
                             )}
                         >
                             {day}
