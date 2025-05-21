@@ -146,10 +146,10 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                     }}
                                 />
                                 <div
-                                    className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest ${
+                                    className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 ${
                                         unitConversionFormData.unit && unitConversionFormData.conversion > 0
                                             ? "text-primary"
-                                            : "text-gray-400"
+                                            : "text-gray-300"
                                     }`}
                                     onClick={(e) => { e.preventDefault(); handleAddConversion(); }}
                                     title="Tekan Enter atau klik untuk menambah"
