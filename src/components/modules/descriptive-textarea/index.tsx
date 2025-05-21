@@ -70,6 +70,7 @@ export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                                 ref={textareaRef}
                                 name={name}
                                 value={value}
+                                tabIndex={tabIndex}
                                 onChange={onChange}
                                 placeholder={placeholder}
                                 className={classNames(
