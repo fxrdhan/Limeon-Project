@@ -15,6 +15,7 @@ export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
     textareaClassName,
     labelClassName,
     showInitially = false,
+    tabIndex,
     ...props
 }) => {
     const [showTextarea, setShowTextarea] = useState(showInitially);
@@ -31,6 +32,7 @@ export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
         <div className={classNames("mt-2 pt-2", containerClassName)}>
             <button
                 type="button"
+                tabIndex={tabIndex}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 className={classNames(
