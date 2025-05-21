@@ -71,7 +71,7 @@ export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                                 onChange={onChange}
                                 placeholder={placeholder}
                                 className={classNames(
-                                    "w-full h-full min-h-[100px] max-h-[200px] p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100",
+                                    "w-full h-full min-h-[100px] max-h-[200px] p-2 pl-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100",
                                     textareaClassName
                                 )}
                                 rows={rows}
