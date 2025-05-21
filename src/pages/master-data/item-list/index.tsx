@@ -69,11 +69,11 @@ function ItemList() {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableHeader className="w-[20%]">Nama Item</TableHeader>
-                                <TableHeader className="w-[8%]">Kode</TableHeader>
+                                <TableHeader className="w-[23%]">Nama Item</TableHeader>
+                                <TableHeader className="w-[5%]">Kode</TableHeader>
                                 <TableHeader className="w-[8%]">Barcode</TableHeader>
                                 <TableHeader className="w-[8%]">Kategori</TableHeader>
-                                <TableHeader className="w-[16%]">Jenis</TableHeader>
+                                <TableHeader className="w-[14%]">Jenis</TableHeader>
                                 <TableHeader className="w-[6%]">Satuan</TableHeader>
                                 <TableHeader className="w-[10%]">Satuan Turunan</TableHeader>
                                 <TableHeader className="w-[10%] text-right">Harga Pokok</TableHeader>
