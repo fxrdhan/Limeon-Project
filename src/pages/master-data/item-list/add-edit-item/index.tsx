@@ -307,7 +307,7 @@ const AddItem = () => {
                                                     >
                                                         <span>{formData.min_stock}</span>
                                                         <FaPen
-                                                            className="ml-2 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors"
+                                                            className="ml-2 text-gray-400 hover:text-primary cursor-pointer transition-colors"
                                                             size={14}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -429,7 +429,7 @@ const AddItem = () => {
                                                                 ? `${calculateProfitPercentage()!.toFixed(1)} %`
                                                                 : "-"}
                                                             <FaPen
-                                                                className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors"
+                                                                className="ml-4 text-gray-400 hover:text-primary cursor-pointer transition-colors"
                                                                 size={14}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
