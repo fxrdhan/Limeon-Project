@@ -10,6 +10,7 @@ export const Dropdown = ({
     withRadio = false,
     onAddNew,
     searchList = true,
+    tabIndex
 }: DropdownProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -304,6 +305,7 @@ export const Dropdown = ({
                     <button
                         ref={buttonRef}
                         type="button"
+                        tabIndex={tabIndex}
                         className="py-2.5 px-3 w-full inline-flex justify-between items-center text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring focus:ring-teal-100 focus:border-primary transition duration-200 ease-in-out"
                         aria-haspopup="menu"
                         aria-expanded={isOpen || isClosing}
