@@ -55,8 +55,8 @@ const CreatePurchase: React.FC = () => {
     const {
         searchItem,
         setSearchItem,
-        showItemDropdown,
-        setShowItemDropdown,
+        // showItemDropdown,
+        // setShowItemDropdown,
         selectedItem,
         setSelectedItem,
         filteredItems,
@@ -222,8 +222,8 @@ const CreatePurchase: React.FC = () => {
                         <ItemSearchBar
                             searchItem={searchItem}
                             setSearchItem={setSearchItem}
-                            showItemDropdown={showItemDropdown}
-                            setShowItemDropdown={setShowItemDropdown}
+                            // showItemDropdown={showItemDropdown}
+                            // setShowItemDropdown={setShowItemDropdown}
                             filteredItems={filteredItems}
                             selectedItem={selectedItem}
                             setSelectedItem={setSelectedItem}
