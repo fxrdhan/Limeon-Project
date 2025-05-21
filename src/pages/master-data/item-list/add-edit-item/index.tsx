@@ -168,6 +168,7 @@ const AddItem = () => {
                                                 name="name"
                                                 ref={nameInputRef}
                                                 value={formData.name}
+                                                tabIndex={1}
                                                 onChange={handleChange}
                                                 className="w-full"
                                                 required
@@ -178,6 +179,7 @@ const AddItem = () => {
                                             <Input
                                                 name="barcode"
                                                 value={formData.barcode}
+                                                tabIndex={2}
                                                 onChange={handleChange}
                                                 className="w-full"
                                                 placeholder="Masukkan barcode item"
@@ -187,6 +189,7 @@ const AddItem = () => {
                                         <FormField label="Jenis Produk" className="md:col-span-1">
                                             <Dropdown
                                                 name="is_medicine"
+                                                tabIndex={3}
                                                 value={formData.is_medicine ? "obat" : "non-obat"}
                                                 onChange={(value) => {
                                                     if (value === "obat") {
@@ -215,6 +218,7 @@ const AddItem = () => {
                                             ) : (
                                                 <Dropdown
                                                     name="category_id"
+                                                    tabIndex={4}
                                                     value={formData.category_id}
                                                     onChange={(value) =>
                                                         handleDropdownChange("category_id", value)
@@ -233,6 +237,7 @@ const AddItem = () => {
                                             ) : (
                                                 <Dropdown
                                                     name="type_id"
+                                                    tabIndex={5}
                                                     value={formData.type_id}
                                                     onChange={(value) =>
                                                         handleDropdownChange("type_id", value)
@@ -251,6 +256,7 @@ const AddItem = () => {
                                             ) : (
                                                 <Dropdown
                                                     name="unit_id"
+                                                    tabIndex={6}
                                                     value={formData.unit_id}
                                                     onChange={(value) =>
                                                         handleDropdownChange("unit_id", value)
@@ -266,6 +272,7 @@ const AddItem = () => {
                                         <FormField label="Rak">
                                             <Input
                                                 name="rack"
+                                                tabIndex={7}
                                                 value={formData.rack}
                                                 onChange={handleChange}
                                                 className="w-full"
@@ -276,6 +283,7 @@ const AddItem = () => {
                                     <div>
                                         <DescriptiveTextarea
                                             label="Keterangan"
+                                            tabIndex={8}
                                             name="description"
                                             value={formData.description}
                                             onChange={handleChange}
@@ -291,6 +299,7 @@ const AddItem = () => {
                                         <FormField label="Status">
                                             <Dropdown
                                                 name="is_active"
+                                                tabIndex={9}
                                                 value={formData.is_active ? "true" : "false"}
                                                 onChange={(value) => {
                                                     updateFormData({ is_active: value === "true" });
@@ -322,6 +331,7 @@ const AddItem = () => {
                                                     />
                                                 ) : (
                                                     <div
+                                                        tabIndex={10}
                                                         className="w-full pb-1 cursor-pointer flex items-center"
                                                         onClick={startEditingMinStock}
                                                         title="Klik untuk mengubah stok minimal"
@@ -350,6 +360,7 @@ const AddItem = () => {
                                         >
                                             <Checkbox
                                                 id="has_expiry_date"
+                                                tabIndex={11}
                                                 label="Memiliki Tanggal Kadaluarsa"
                                                 checked={formData.has_expiry_date}
                                                 disabled={!formData.is_medicine}
@@ -399,6 +410,7 @@ const AddItem = () => {
                                                 <Input
                                                     type="text"
                                                     name="base_price"
+                                                    tabIndex={12}
                                                     value={displayBasePrice}
                                                     placeholder="Rp 0"
                                                     onChange={(e) => {
@@ -437,7 +449,9 @@ const AddItem = () => {
                                                             </span>
                                                         </div>
                                                     ) : (
-                                                        <div className={`w-full py-2 cursor-pointer font-semibold flex items-center ${calculateProfitPercentage() !== null
+                                                        <div 
+                                                            tabIndex={13}
+                                                            className={`w-full py-2 cursor-pointer font-semibold flex items-center ${calculateProfitPercentage() !== null
                                                                 ? calculateProfitPercentage()! >= 0
                                                                     ? "text-green-600"
                                                                     : "text-red-600"
@@ -445,6 +459,7 @@ const AddItem = () => {
                                                             }`}
                                                             onClick={startEditingMargin}
                                                             title="Klik untuk mengubah margin"
+                                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEditingMargin(); }}}
                                                         >
                                                             {calculateProfitPercentage() !== null
                                                                 ? `${calculateProfitPercentage()!.toFixed(1)} %`
@@ -467,6 +482,7 @@ const AddItem = () => {
                                                 <Input
                                                     type="text"
                                                     name="sell_price"
+                                                    tabIndex={14}
                                                     value={displaySellPrice}
                                                     placeholder="Rp 0"
                                                     onChange={handleSellPriceChange}
