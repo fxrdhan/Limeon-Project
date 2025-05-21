@@ -34,12 +34,12 @@ export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 className={classNames(
-                    "flex items-center text-primary transition-colors",
+                    "flex items-center text-primary transition-colors focus:outline-none focus:text-teal-600",
                     labelClassName
                 )}
                 onClick={() => setShowTextarea(!showTextarea)}
             >
-                <span className="mr-2 text-md text-primary">
+                <span className="mr-2 text-md text-primary focus:outline-none focus:text-teal-600">
                     {label}
                 </span>
                 <motion.div
