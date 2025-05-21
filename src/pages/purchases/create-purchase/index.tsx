@@ -18,6 +18,7 @@ import {
     TableBody,
     TableRow,
     TableCell,
+    Checkbox,
     TableHeader,
     DescriptiveTextarea,
     Dropdown,
@@ -415,16 +416,19 @@ const CreatePurchase: React.FC = () => {
 
                             <div className="flex justify-between items-center mt-4 font-semibold">
                                 <div className="flex items-center gap-6">
-                                    <div className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="is_vat_included"
-                                            checked={formData.is_vat_included}
-                                            onChange={handleChange}
-                                            className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                                        />
-                                        <label className="ml-2">PPN Termasuk Harga</label>
-                                    </div>
+                                    <Checkbox
+                                        id="is_vat_included_checkbox"
+                                        // name="is_vat_included"
+                                        label="PPN Termasuk Harga"
+                                        checked={formData.is_vat_included}
+                                        onChange={(isChecked) => {
+                                            const event = {
+                                                target: { name: 'is_vat_included', type: 'checkbox', checked: isChecked, value: String(isChecked) }
+                                            } as unknown as React.ChangeEvent<HTMLInputElement>;
+                                            handleChange(event);
+                                        }}
+                                        className="text-sm"
+                                    />
                                     <div className="flex items-center">
                                         <label className="mr-2">PPN:</label>
                                         <div className="flex items-center">
