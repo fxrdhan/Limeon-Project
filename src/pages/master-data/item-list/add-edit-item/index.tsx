@@ -290,6 +290,7 @@ const AddItem = () => {
                                             <div className="ml-2 flex-grow flex items-center">
                                                 {editingMinStock ? (
                                                     <Input
+                                                        className="max-w-20"
                                                         ref={minStockInputRef}
                                                         type="number"
                                                         value={minStockValue}
@@ -332,7 +333,7 @@ const AddItem = () => {
                                                 checked={formData.has_expiry_date}
                                                 disabled={!formData.is_medicine}
                                                 onChange={(isChecked) => updateFormData({ has_expiry_date: isChecked })}
-                                                className="py-1" // Tambahkan padding jika perlu untuk alignment vertikal
+                                                className="py-1"
                                             />
                                             <div className="mt-1 text-sm text-gray-500 flex items-center">
                                                 Akan digunakan metode FEFO (First Expired First Out)
@@ -399,8 +400,9 @@ const AddItem = () => {
                                             <FormField label="Margin">
                                                 <div className="flex items-center">
                                                     {editingMargin ? (
-                                                        <div className="flex items-center w-full">
+                                                        <div className="flex items-center">
                                                             <Input
+                                                                className="max-w-20"
                                                                 ref={marginInputRef}
                                                                 type="number"
                                                                 value={marginPercentage}
@@ -409,7 +411,7 @@ const AddItem = () => {
                                                                 onKeyDown={handleMarginKeyDown}
                                                                 step="0.1"
                                                             />
-                                                            <span className="ml-4 text-lg font-medium">
+                                                            <span className="ml-2 text-lg font-medium">
                                                                 %
                                                             </span>
                                                         </div>
@@ -424,7 +426,7 @@ const AddItem = () => {
                                                             title="Klik untuk mengubah margin"
                                                         >
                                                             {calculateProfitPercentage() !== null
-                                                                ? `${calculateProfitPercentage()!.toFixed(1)}%`
+                                                                ? `${calculateProfitPercentage()!.toFixed(1)} %`
                                                                 : "-"}
                                                             <FaPen
                                                                 className="ml-4 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors"
