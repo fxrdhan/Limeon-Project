@@ -105,14 +105,12 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                     }
                 });
             }, 20);
-            window.addEventListener("scroll", calculateDropdownPosition, true);
             window.addEventListener("resize", calculateDropdownPosition);
         } else {
             setApplyOpenStyles(false);
         }
         return () => {
             if (openStyleTimerId) clearTimeout(openStyleTimerId);
-            window.removeEventListener("scroll", calculateDropdownPosition, true);
             window.removeEventListener("resize", calculateDropdownPosition);
         };
     }, [isOpen, calculateDropdownPosition]);
@@ -130,11 +128,18 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
-            // eslint-disable-next-line react-hooks/exhaustive-deps
             if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
             if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
         };
-    }, [isOpen, closeDropdown]);
+    }, [isOpen, closeDropdown, searchBarRef, itemDropdownRef]);
+
+    useEffect(() => {
+        if (searchItem && !isOpen && !isClosing) {
+            openDropdown();
+        } else if (!searchItem && isOpen && !isClosing) {
+            closeDropdown();
+        }
+    }, [searchItem, isOpen, isClosing, openDropdown, closeDropdown]);
 
     const handleItemSelect = (item: Item) => {
         setSelectedItem(item);
@@ -142,7 +147,11 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         closeDropdown();
     };
 
-    const handleInputFocus = () => openDropdown();
+    const handleInputFocus = () => {
+        if (inputRef.current?.value) {
+            openDropdown();
+        }
+    };
 
     const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
         closeTimeoutRef.current = setTimeout(() => {
@@ -166,11 +175,6 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                         value={searchItem}
                         onChange={(e) => {
                             setSearchItem(e.target.value);
-                            if (e.target.value) {
-                                openDropdown();
-                            } else {
-                                closeDropdown();
-                            }
                         }}
                         onFocus={handleInputFocus}
                         onBlur={handleInputBlur}
