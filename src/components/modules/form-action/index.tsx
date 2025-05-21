@@ -1,5 +1,4 @@
 import { Button } from '@/components/modules';
-import { FaSave, FaTimes } from 'react-icons/fa';
 import type { FormActionProps } from '@/types';
 
 export const FormAction: React.FC<FormActionProps> = ({
@@ -16,16 +15,14 @@ export const FormAction: React.FC<FormActionProps> = ({
                 variant="outline"
                 onClick={onCancel}
             >
-                <div className="flex items-center">
-                    <FaTimes className="mr-2" /> <span>{cancelText}</span>
-                </div>
+                <span>{cancelText}</span>
             </Button>
             <Button 
                 type="submit"
                 disabled={isSaving || isDisabled}
                 isLoading={isSaving}
             >
-                <FaSave className="mr-2" /> {saveText}
+                {saveText}
             </Button>
         </div>
     );
