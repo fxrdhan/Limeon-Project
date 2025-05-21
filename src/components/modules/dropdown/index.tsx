@@ -146,13 +146,17 @@ export const Dropdown = ({
         [isOpen, currentFilteredOptions, highlightedIndex, handleSelect, closeDropdown]
     );
 
-    const focusSearchInput = useCallback(() => {
+    const manageFocusOnOpen = useCallback(() => {
         if (isOpen && searchInputRef.current) {
             setTimeout(() => {
                 searchInputRef.current?.focus();
             }, 5);
+        } else if (isOpen && !searchList && optionsContainerRef.current) {
+            setTimeout(() => {
+                optionsContainerRef.current?.focus();
+            }, 50);
         }
-    }, [isOpen, searchInputRef]);
+    }, [isOpen, searchList, searchInputRef, optionsContainerRef]);
 
     const handleTriggerAreaEnter = useCallback(() => {
         if (leaveTimeoutRef.current) {
@@ -212,7 +216,7 @@ export const Dropdown = ({
                 requestAnimationFrame(() => {
                     if (dropdownMenuRef.current) {
                         calculateDropdownPosition();
-                        focusSearchInput();
+                        manageFocusOnOpen();
                     }
                 });
             }, 20);
@@ -230,7 +234,7 @@ export const Dropdown = ({
                 window.removeEventListener("resize", calculateDropdownPosition);
             }
         };
-    }, [isOpen, calculateDropdownPosition, focusSearchInput, setApplyOpenStyles, dropdownMenuRef]);
+    }, [isOpen, calculateDropdownPosition, manageFocusOnOpen, setApplyOpenStyles, dropdownMenuRef]);
 
     useEffect(() => {
         if (isOpen) {
@@ -419,7 +423,7 @@ export const Dropdown = ({
                                                 ref={optionsContainerRef}
                                                 role="listbox"
                                                 tabIndex={-1}
-                                                className="p-1 max-h-60 overflow-y-auto"
+                                                className="p-1 max-h-60 overflow-y-auto focus:outline-none"
                                                 onScroll={checkScroll}
                                                 onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
                                             >
