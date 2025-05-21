@@ -11,6 +11,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
     onChange,
     disabled = false,
     className = "",
+    tabIndex,
 }) => {
     const handleChange = () => {
         if (!disabled) {
@@ -21,6 +22,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
     return (
         <label
             htmlFor={id}
+            tabIndex={tabIndex}
             className={classNames(
                 "inline-flex items-center group",
                 disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
