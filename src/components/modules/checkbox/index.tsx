@@ -19,12 +19,20 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         }
     };
 
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLLabelElement>) => {
+        if (event.key === "Enter" && !disabled) {
+            event.preventDefault();
+            onChange(!checked);
+        }
+    };
+
     return (
         <label
             htmlFor={id}
             tabIndex={tabIndex}
+            onKeyDown={handleKeyDown}
             className={classNames(
-                "inline-flex items-center group",
+                "inline-flex items-center group focus:outline-none",
                 disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
                 className
             )}
@@ -39,7 +47,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
             />
             <motion.div
                 className={classNames(
-                    "relative w-5 h-5 border-2 rounded flex items-center justify-center mr-2 flex-shrink-0 transition-colors duration-200",
+                    "relative w-5 h-5 border-2 rounded flex items-center justify-center mr-2 flex-shrink-0 transition-colors duration-200 group-focus:border-teal-400",
                     checked ? "bg-primary border-primary" : "bg-white border-gray-300",
                     !disabled && !checked ? "group-hover:border-teal-400" : ""
                 )}
