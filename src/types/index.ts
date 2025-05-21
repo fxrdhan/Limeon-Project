@@ -466,8 +466,8 @@ export interface InvoiceLayoutProps {
 export interface ItemSearchBarProps {
     searchItem: string;
     setSearchItem: (value: string) => void;
-    showItemDropdown: boolean;
-    setShowItemDropdown: (value: boolean) => void;
+    // showItemDropdown: boolean;
+    // setShowItemDropdown: (value: boolean) => void;
     filteredItems: Item[];
     selectedItem: Item | null;
     setSelectedItem: (item: Item | null) => void;
