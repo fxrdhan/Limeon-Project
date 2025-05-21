@@ -12,7 +12,7 @@ import {
     TableCell,
     TableHeader,
 } from "@/components/modules";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaReply } from "react-icons/fa";
 import type { UnitConversionManagerProps } from "@/types";
 
 const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
@@ -130,21 +130,30 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                 }`}
                             className="flex-1"
                         >
-                            <Input
-                                name="conversion"
-                                value={unitConversionFormData.conversion || ""}
-                                onChange={handleConversionFormChange}
-                                type="number"
-                                min="1"
-                                placeholder="Jumlah Satuan Turunan"
-                                className="w-full"
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        handleAddConversion();
-                                    }
-                                }}
-                            />
+                            <div className="relative w-full">
+                                <Input
+                                    name="conversion"
+                                    value={unitConversionFormData.conversion || ""}
+                                    onChange={handleConversionFormChange}
+                                    type="number"
+                                    min="1"
+                                    placeholder="Jumlah Satuan Turunan"
+                                    className="w-full pr-10"
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            handleAddConversion();
+                                        }
+                                    }}
+                                />
+                                <div
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-primary"
+                                    onClick={(e) => { e.preventDefault(); handleAddConversion(); }}
+                                    title="Tekan Enter atau klik untuk menambah"
+                                >
+                                    <FaReply className="transform scale-x-[-1]" />
+                                </div>
+                            </div>
                         </FormField>
                     </div>
                 </div>
