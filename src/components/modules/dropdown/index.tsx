@@ -19,6 +19,7 @@ export const Dropdown = ({
     const [isScrollable, setIsScrollable] = useState(false);
     const [reachedBottom, setReachedBottom] = useState(false);
     const [scrolledFromTop, setScrolledFromTop] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
     const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
     const [applyOpenStyles, setApplyOpenStyles] = useState(false);
 
@@ -46,6 +47,10 @@ export const Dropdown = ({
     }, [options, searchTerm, searchList, setCurrentFilteredOptions]);
 
     const calculateDropdownPosition = useCallback(() => {
+        if (!isOpen || !dropdownMenuRef.current) {
+            if (isOpen && !dropdownMenuRef.current) requestAnimationFrame(calculateDropdownPosition);
+            return;
+        }
         if (!buttonRef.current || !dropdownMenuRef.current) return;
         const buttonRect = buttonRef.current.getBoundingClientRect();
         const dropdownActualHeight = dropdownMenuRef.current.scrollHeight;
@@ -68,7 +73,7 @@ export const Dropdown = ({
             newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
         }
         setPortalStyle(newMenuStyle);
-    }, [buttonRef, dropdownMenuRef, setDropDirection, setPortalStyle]);
+    }, [buttonRef, dropdownMenuRef, setDropDirection, setPortalStyle, isOpen]);
 
     const closeDropdown = useCallback(() => {
         setIsClosing(true);
@@ -77,6 +82,7 @@ export const Dropdown = ({
             setIsClosing(false);
             setSearchTerm("");
         }, 100);
+        setHighlightedIndex(-1);
     }, [setIsClosing, setIsOpen, setSearchTerm]);
 
     const handleSelect = useCallback(
@@ -87,14 +93,57 @@ export const Dropdown = ({
         [onChange, closeDropdown]
     );
 
-    const handleSearchKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === "Enter" && currentFilteredOptions.length > 0) {
-                e.preventDefault();
-                handleSelect(currentFilteredOptions[0].id);
+    const handleDropdownKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLElement>) => {
+            if (!isOpen) return;
+
+            const items = currentFilteredOptions;
+            if (!items.length && !['Escape'].includes(e.key)) return;
+
+            let newIndex = highlightedIndex;
+
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    newIndex = items.length ? (highlightedIndex + 1) % items.length : -1;
+                    setHighlightedIndex(newIndex);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    newIndex = items.length ? (highlightedIndex - 1 + items.length) % items.length : -1;
+                    setHighlightedIndex(newIndex);
+                    break;
+                case 'PageDown':
+                    e.preventDefault();
+                    if (items.length) {
+                        newIndex = Math.min(highlightedIndex + 5, items.length - 1);
+                        if (highlightedIndex === -1) newIndex = Math.min(4, items.length - 1);
+                        setHighlightedIndex(newIndex);
+                    }
+                    break;
+                case 'PageUp':
+                    e.preventDefault();
+                    if (items.length) {
+                        newIndex = Math.max(highlightedIndex - 5, 0);
+                        if (highlightedIndex === -1) newIndex = 0;
+                        setHighlightedIndex(newIndex);
+                    }
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (highlightedIndex >= 0 && highlightedIndex < items.length) {
+                        handleSelect(items[highlightedIndex].id);
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    closeDropdown();
+                    break;
+                default:
+                    return;
             }
         },
-        [currentFilteredOptions, handleSelect]
+        [isOpen, currentFilteredOptions, highlightedIndex, handleSelect, closeDropdown]
     );
 
     const focusSearchInput = useCallback(() => {
@@ -184,6 +233,38 @@ export const Dropdown = ({
     }, [isOpen, calculateDropdownPosition, focusSearchInput, setApplyOpenStyles, dropdownMenuRef]);
 
     useEffect(() => {
+        if (isOpen) {
+            const timer = setTimeout(checkScroll, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, currentFilteredOptions, checkScroll]);
+
+    useEffect(() => {
+        const optionsContainer = optionsContainerRef.current;
+        if (optionsContainer && isOpen) {
+            optionsContainer.addEventListener("scroll", checkScroll);
+            return () => {
+                optionsContainer.removeEventListener("scroll", checkScroll);
+            };
+        }
+    }, [isOpen, checkScroll, optionsContainerRef]);
+
+    useEffect(() => {
+        if (isOpen && highlightedIndex >= 0 && optionsContainerRef.current) {
+            const optionElements = optionsContainerRef.current.querySelectorAll('[role="option"]');
+            if (optionElements && optionElements[highlightedIndex]) {
+                (optionElements[highlightedIndex] as HTMLElement).scrollIntoView({
+                    block: 'nearest',
+                });
+            }
+        }
+    }, [highlightedIndex, isOpen]);
+
+    useEffect(() => {
+        setHighlightedIndex(-1);
+    }, [currentFilteredOptions]);
+
+    useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
             if (
@@ -204,23 +285,6 @@ export const Dropdown = ({
         };
     }, [isOpen, isClosing, closeDropdown, dropdownRef, dropdownMenuRef]);
 
-    useEffect(() => {
-        if (isOpen) {
-            const timer = setTimeout(checkScroll, 50);
-            return () => clearTimeout(timer);
-        }
-    }, [isOpen, currentFilteredOptions, checkScroll]);
-
-    useEffect(() => {
-        const optionsContainer = optionsContainerRef.current;
-        if (optionsContainer && isOpen) {
-            optionsContainer.addEventListener("scroll", checkScroll);
-            return () => {
-                optionsContainer.removeEventListener("scroll", checkScroll);
-            };
-        }
-    }, [isOpen, checkScroll, optionsContainerRef]);
-
     return (
         <div
             className="relative inline-flex w-full"
@@ -237,6 +301,8 @@ export const Dropdown = ({
                         aria-haspopup="menu"
                         aria-expanded={isOpen || isClosing}
                         onClick={toggleDropdown}
+                        onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
+                        aria-controls={isOpen ? "dropdown-options-list" : undefined}
                     >
                         {selectedOption
                             ? selectedOption.name
@@ -320,8 +386,16 @@ export const Dropdown = ({
                                                         placeholder="Cari..."
                                                         value={searchTerm}
                                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                                        onKeyDown={handleSearchKeyDown}
+                                                        onKeyDown={handleDropdownKeyDown}
                                                         onClick={(e) => e.stopPropagation()}
+                                                        aria-autocomplete="list"
+                                                        aria-expanded={isOpen}
+                                                        aria-controls="dropdown-options-list"
+                                                        aria-activedescendant={
+                                                            highlightedIndex >= 0 && currentFilteredOptions[highlightedIndex]
+                                                            ? `dropdown-option-${currentFilteredOptions[highlightedIndex].id}`
+                                                            : undefined
+                                                        }
                                                     />
                                                     {onAddNew && (
                                                         <button
@@ -341,17 +415,27 @@ export const Dropdown = ({
                                         )}
                                         <div className="relative">
                                             <div
+                                                id="dropdown-options-list"
                                                 ref={optionsContainerRef}
+                                                role="listbox"
+                                                tabIndex={-1}
                                                 className="p-1 max-h-60 overflow-y-auto"
                                                 onScroll={checkScroll}
+                                                onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
                                             >
                                                 {currentFilteredOptions.length > 0 ? (
-                                                    currentFilteredOptions.map((option) => (
+                                                    currentFilteredOptions.map((option, index) => (
                                                         <button
                                                             key={option.id}
+                                                            id={`dropdown-option-${option.id}`}
+                                                            role="option"
+                                                            aria-selected={highlightedIndex === index}
                                                             type="button"
-                                                            className="flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                                                            className={`flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none ${
+                                                                highlightedIndex === index ? 'bg-gray-100' : ''
+                                                            }`}
                                                             onClick={() => handleSelect(option.id)}
+                                                            onMouseEnter={() => setHighlightedIndex(index)}
                                                         >
                                                             {withRadio && (
                                                                 <div className="mr-2 flex items-center">
