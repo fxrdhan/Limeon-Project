@@ -12,7 +12,7 @@ import {
     TableCell,
     TableHeader,
 } from "@/components/modules";
-import { FaTrash, FaReply } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa";
 import type { UnitConversionManagerProps } from "@/types";
 
 const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
@@ -137,7 +137,6 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                     onChange={handleConversionFormChange}
                                     type="number"
                                     min="1"
-                                    placeholder="Jumlah Satuan Turunan"
                                     className="w-full pr-10"
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter") {
@@ -147,11 +146,15 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                     }}
                                 />
                                 <div
-                                    className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-primary"
+                                    className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest ${
+                                        unitConversionFormData.unit && unitConversionFormData.conversion > 0
+                                            ? "text-primary"
+                                            : "text-gray-400"
+                                    }`}
                                     onClick={(e) => { e.preventDefault(); handleAddConversion(); }}
                                     title="Tekan Enter atau klik untuk menambah"
                                 >
-                                    <FaReply className="transform scale-x-[-1]" />
+                                    ENTER
                                 </div>
                             </div>
                         </FormField>
