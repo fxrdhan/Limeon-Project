@@ -35,6 +35,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     placeholder = "Pilih tanggal",
     minDate,
     maxDate,
+    portalWidth,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -63,7 +64,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         const newMenuStyle: React.CSSProperties = {
             position: "fixed",
             left: `${buttonRect.left + window.scrollX}px`,
-            width: `${buttonRect.width}px`,
+            width: portalWidth ? (typeof portalWidth === 'number' ? `${portalWidth}px` : portalWidth) : `${buttonRect.width}px`,
             zIndex: 1050,
         };
         const margin = 5;
@@ -74,7 +75,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
         }
         setPortalStyle(newMenuStyle);
-    }, [triggerInputRef, portalContentRef, setDropDirection, setPortalStyle]);
+    }, [triggerInputRef, portalContentRef, setDropDirection, setPortalStyle, portalWidth]);
 
     useEffect(() => {
         let openStyleTimerId: NodeJS.Timeout | undefined;
