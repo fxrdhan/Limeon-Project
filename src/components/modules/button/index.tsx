@@ -1,7 +1,8 @@
 import { classNames } from "@/lib/classNames";
 import type { ButtonProps, ButtonVariant } from '@/types';
+import React from 'react';
 
-export const Button = ({
+const ButtonComponent = React.forwardRef<HTMLButtonElement, ButtonProps>(({
     children,
     className,
     variant = "primary",
@@ -9,7 +10,7 @@ export const Button = ({
     isLoading = false,
     fullWidth = false,
     ...props
-}: ButtonProps) => {
+}, ref) => {
     const variants: Record<ButtonVariant, string> = {
         primary: "rounded-lg ring-0 outline-none shadow-md bg-primary flex items-center text-white hover:text-white hover:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)] focus:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)]",
         secondary: "rounded-lg bg-secondary bg-secondary ring-0 outline-none flex items-center hover:bg-blue-700 text-white hover:text-white",
@@ -26,9 +27,9 @@ export const Button = ({
     };
 
     const baseClasses = "font-medium rounded-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden focus:outline-none";
-    
     return (
         <button
+            ref={ref}
             className={classNames(
                 baseClasses,
                 variants[variant],
@@ -70,4 +71,8 @@ export const Button = ({
             )}
         </button>
     );
-};
+});
+
+ButtonComponent.displayName = 'Button';
+
+export const Button = ButtonComponent;
