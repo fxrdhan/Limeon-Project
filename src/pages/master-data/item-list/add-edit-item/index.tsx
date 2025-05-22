@@ -26,6 +26,7 @@ import {
 import { useAddItemPageHandlers } from "@/handlers";
 
 const AddItem = () => {
+    const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
     const {
         formData,
         displayBasePrice,
@@ -76,7 +77,7 @@ const AddItem = () => {
         handleMinStockChange,
         handleMinStockKeyDown,
         deleteItemMutation,
-    } = useAddItemPageHandlers();
+    } = useAddItemPageHandlers(expiryCheckboxRef);
 
     const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -367,6 +368,7 @@ const AddItem = () => {
                                             <Checkbox
                                                 id="has_expiry_date"
                                                 tabIndex={11}
+                                                ref={expiryCheckboxRef}
                                                 label="Memiliki Tanggal Kadaluarsa"
                                                 checked={formData.has_expiry_date}
                                                 disabled={!formData.is_medicine}
