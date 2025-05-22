@@ -3,7 +3,7 @@ import { useParams, useLocation } from "react-router-dom";
 import { useAddItemForm } from "@/hooks/add-item";
 import { useBeforeUnload } from "@/handlers";
 
-export const useAddItemPageHandlers = () => {
+export const useAddItemPageHandlers = (expiryCheckboxRef?: React.RefObject<HTMLLabelElement | null>) => {
     const { id } = useParams<{ id: string }>();
     const location = useLocation();
     const initialSearchQuery = location.state?.searchQuery as string | undefined;
@@ -74,7 +74,15 @@ export const useAddItemPageHandlers = () => {
     };
 
     const handleMarginKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") stopEditingMargin();
+        if (e.key === "Enter") {
+            e.preventDefault();
+            stopEditingMargin();
+
+            const margin = parseFloat(addItemForm.marginPercentage);
+            if (!isNaN(margin) && addItemForm.formData.base_price > 0) {
+                addItemForm.updateFormData({ sell_price: addItemForm.calculateSellPriceFromMargin(margin) });
+            }
+        }
     };
 
     const startEditingMinStock = () => {
@@ -105,7 +113,15 @@ export const useAddItemPageHandlers = () => {
     };
 
     const handleMinStockKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") stopEditingMinStock();
+        if (e.key === "Enter") {
+            e.preventDefault();
+            stopEditingMinStock();
+            if (addItemForm.formData.is_medicine && expiryCheckboxRef?.current) {
+                setTimeout(() => {
+                    expiryCheckboxRef.current?.focus();
+                }, 0);
+            }
+        }
     };
 
     useBeforeUnload(addItemForm.isDirty);
