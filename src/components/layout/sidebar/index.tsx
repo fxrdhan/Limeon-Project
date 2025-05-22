@@ -140,7 +140,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
         if (collapsed) {
             hoverTimeoutRef.current = setTimeout(() => {
                 toggleSidebar();
-            }, 250);
+            }, 100);
         }
     }, [collapsed, toggleSidebar]);
 
