@@ -351,6 +351,7 @@ export interface PurchaseItem {
 }
 
 export interface UnitConversion {
+    conversion_rate: number;
     unit_name: string;
     to_unit_id: string;
     id: string;
