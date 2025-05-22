@@ -160,6 +160,18 @@ const ConfirmDialogComponent: React.FC = () => {
             >
                 <TransitionChild
                     as={Fragment}
+                    enter="transition-opacity duration-300"
+                    enterFrom="opacity-0"
+                    enterTo="opacity-100"
+                    leave="transition-opacity duration-200"
+                    leaveFrom="opacity-100"
+                    leaveTo="opacity-0"
+                >
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
+                </TransitionChild>
+
+                <TransitionChild
+                    as={Fragment}
                     enter="transition-all duration-300 ease-out"
                     enterFrom="opacity-0 scale-95"
                     enterTo="opacity-100 scale-100"
