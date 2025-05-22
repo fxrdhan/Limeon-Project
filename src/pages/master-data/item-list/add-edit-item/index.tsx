@@ -2,7 +2,6 @@ import UnitConversionManager from "@/components/tools/unit-converter";
 import { useRef, useEffect } from "react";
 import {
     FaArrowLeft,
-    FaTrash,
     FaHistory,
     FaPen,
     FaQuestionCircle,
@@ -523,11 +522,7 @@ const AddItem = () => {
                             isDisabled={formIsInvalid || operationsPending}
                             saveText="Simpan"
                             updateText="Update"
-                            deleteText={
-                                <span className="flex items-center">
-                                    <FaTrash className="mr-2" /> Hapus
-                                </span>
-                            }
+                            deleteText={"Hapus"}
                         />
                     </CardFooter>
                 </form>
