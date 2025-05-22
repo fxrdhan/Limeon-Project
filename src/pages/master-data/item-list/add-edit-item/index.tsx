@@ -504,6 +504,7 @@ const AddItem = () => {
 
                             <div className="w-full md:w-3/4">
                                 <UnitConversionManager
+                                    tabIndex={15}
                                     unitConversionHook={unitConversionHook}
                                 />
                             </div>
