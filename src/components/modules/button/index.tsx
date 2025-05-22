@@ -16,7 +16,7 @@ export const Button = ({
         accent: "bg-accent hover:bg-rose-600 text-white outline-none ring-0",
         outline: "border border-primary text-primary hover:bg-teal-50 ring-0 outline-none",
         text: "bg-transparent hover:bg-opacity-10 outline-none ring-0 focus:shadow-none",
-        danger: "bg-accent outline-none ring-0 text-white hover:shadow-[0_0_5px_theme(colors.accent),0_0_15px_theme(colors.accent),0_0_30px_theme(colors.accent)]",
+        danger: "bg-accent outline-none ring-0 text-white focus:shadow-[0_0_5px_theme(colors.accent),0_0_15px_theme(colors.accent),0_0_30px_theme(colors.accent)] hover:shadow-[0_0_5px_theme(colors.accent),0_0_15px_theme(colors.accent),0_0_30px_theme(colors.accent)]",
     };
 
     const sizes = {
