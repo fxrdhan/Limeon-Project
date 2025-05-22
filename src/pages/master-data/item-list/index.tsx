@@ -49,8 +49,8 @@ function ItemList() {
                     placeholder="Cari nama atau kode item..."
                     className="flex-grow"
                 />
-                <Link to="/master-data/items/add" state={{ searchQuery: debouncedSearch }} className="focus:outline-none">
-                    <Button variant="primary" className="flex items-center ml-4 mb-4">
+                <Link to="/master-data/items/add" state={{ searchQuery: debouncedSearch }} className="ml-4 mb-4 focus:outline-none focus:border-none focus:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)] rounded-lg transition-shadow duration-300">
+                    <Button variant="primary" className="flex items-center">
                         <FaPlus className="mr-2" />
                         Tambah Item Baru
                     </Button>
