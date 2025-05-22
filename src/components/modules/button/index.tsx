@@ -1,5 +1,5 @@
 import { classNames } from "@/lib/classNames";
-import type { ButtonProps } from '@/types';
+import type { ButtonProps, ButtonVariant } from '@/types';
 
 export const Button = ({
     children,
@@ -10,8 +10,8 @@ export const Button = ({
     fullWidth = false,
     ...props
 }: ButtonProps) => {
-    const variants = {
-        primary: "rounded-lg ring-0 outline-none shadow-md bg-primary flex items-center text-white hover:text-white hover:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)]",
+    const variants: Record<ButtonVariant, string> = {
+        primary: "rounded-lg ring-0 outline-none shadow-md bg-primary flex items-center text-white hover:text-white hover:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)] focus:outline-none",
         secondary: "rounded-lg bg-secondary bg-secondary ring-0 outline-none flex items-center hover:bg-blue-700 text-white hover:text-white",
         accent: "bg-accent hover:bg-rose-600 text-white outline-none ring-0",
         outline: "border border-primary text-primary hover:bg-teal-50 ring-0 outline-none",
@@ -25,7 +25,7 @@ export const Button = ({
         lg: "px-6 py-3 text-lg",
     };
 
-    const baseClasses = "font-medium rounded-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden";
+    const baseClasses = "font-medium rounded-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden focus:outline-none";
     
     return (
         <button
