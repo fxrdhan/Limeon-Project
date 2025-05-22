@@ -12,6 +12,8 @@ export const FormAction: React.FC<FormActionProps> = ({
     updateText = 'Update',
     deleteText = 'Hapus',
     isEditMode = false,
+    cancelTabIndex,
+    saveTabIndex,
 }) => {
     return (
         <div className="flex justify-between w-full">
@@ -22,6 +24,7 @@ export const FormAction: React.FC<FormActionProps> = ({
                         variant="danger"
                         onClick={onDelete}
                         isLoading={isDeleting}
+                        tabIndex={cancelTabIndex}
                         disabled={isSaving || isDeleting || isDisabled}
                     >
                         {deleteText}
@@ -31,6 +34,7 @@ export const FormAction: React.FC<FormActionProps> = ({
                         type="button"
                         variant="outline"
                         onClick={onCancel}
+                        tabIndex={cancelTabIndex}
                         disabled={isSaving || isDisabled}
                     >
                         {cancelText}
@@ -42,6 +46,7 @@ export const FormAction: React.FC<FormActionProps> = ({
                     type="submit"
                     variant="primary"
                     disabled={isSaving || isDeleting || isDisabled}
+                    tabIndex={saveTabIndex}
                     isLoading={isSaving}
                 >
                     {isEditMode ? updateText : saveText}
