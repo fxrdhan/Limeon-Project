@@ -79,6 +79,7 @@ export interface DropdownOption {
 export interface DropdownProps {
     options: DropdownOption[];
     value: string;
+    tabIndex?: number;
     onChange: (value: string) => void;
     placeholder?: string;
     name: string;
@@ -86,7 +87,6 @@ export interface DropdownProps {
     onAddNew?: () => void;
     withRadio?: boolean;
     searchList?: boolean;
-    tabIndex?: number;
 }
 
 export interface NavbarProps {
@@ -110,6 +110,7 @@ export interface MenuItem {
 }
 
 export interface UnitConversionManagerProps {
+    tabIndex?: number;
     unitConversionHook: UseUnitConversionReturn;
 }
 
