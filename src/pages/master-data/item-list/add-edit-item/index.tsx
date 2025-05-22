@@ -4,6 +4,7 @@ import {
     FaArrowLeft,
     FaHistory,
     FaPen,
+    FaUndoAlt,
     FaQuestionCircle,
 } from "react-icons/fa";
 import {
@@ -76,6 +77,7 @@ const AddItem = () => {
         handleMinStockChange,
         handleMinStockKeyDown,
         deleteItemMutation,
+        resetForm,
     } = useAddItemPageHandlers(expiryCheckboxRef);
 
     const nameInputRef = useRef<HTMLInputElement>(null);
@@ -119,33 +121,54 @@ const AddItem = () => {
         formData.sell_price < 0;
 
     const operationsPending =
-        addTypeMutation.isPending || addUnitMutation.isPending || addCategoryMutation.isPending || deleteItemMutation.isPending;
+        addTypeMutation.isPending ||
+        addUnitMutation.isPending ||
+        addCategoryMutation.isPending ||
+        deleteItemMutation.isPending;
+
+    const handleReset = () => {
+        resetForm();
+        if (nameInputRef.current) {
+            nameInputRef.current.focus();
+        }
+    };
 
     return (
         <div>
             <Card>
-                <CardHeader className="flex items-center">
-                    <Button
-                        variant="text"
-                        size="sm"
-                        onClick={handleCancel}
-                        className="text-gray-500 p-2 rounded-full transition-transform duration-200 ease-in-out hover:scale-110 active:scale-95 flex items-center"
-                        title="Kembali ke Daftar Item"
-                    >
-                        <FaArrowLeft size={18} />
-                        <span className="ml-2">Back</span>
-                    </Button>
-
-                    <CardTitle className="flex-grow text-center">
-                        {isEditMode ? "Edit Data Item" : "Tambah Data Item Baru"}
-                    </CardTitle>
-
-                    {isEditMode && formattedUpdateAt !== "-" && (
-                        <span className="text-md text-gray-500 italic whitespace-nowrap flex items-center flex-shrink-0 ml-4">
-                            <FaHistory className="mr-1" size={14} />{" "}
-                            {formattedUpdateAt}
-                        </span>
-                    )}
+                <CardHeader className="flex items-center justify-between">
+                    <div className="flex items-center">
+                        <Button
+                            variant="text"
+                            size="sm"
+                            onClick={handleCancel}
+                            className="text-gray-500 p-2 rounded-full transition-transform duration-200 ease-in-out hover:scale-110 active:scale-95 flex items-center"
+                            title="Kembali ke Daftar Item"
+                        >
+                            <FaArrowLeft size={18} /> 
+                            <span className="ml-2 sr-only">Back</span> 
+                        </Button>
+                        <CardTitle className="ml-2">
+                            {isEditMode ? "Edit Data Item" : "Tambah Data Item Baru"}
+                        </CardTitle>
+                    </div>
+                    <div className="flex items-center space-x-2 flex-shrink-0">
+                        {isEditMode && formattedUpdateAt !== "-" && (
+                            <span className="text-sm text-gray-500 italic whitespace-nowrap flex items-center">
+                                <FaHistory className="mr-1" size={12} />
+                                {formattedUpdateAt}
+                            </span>
+                        )}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleReset}
+                            className="text-gray-600 hover:text-primary flex items-center"
+                            title={isEditMode ? "Reset ke Data Awal Tersimpan" : "Reset Form"}
+                        >
+                            <FaUndoAlt className="mr-1" size={12} /> Reset
+                        </Button>
+                    </div>
                 </CardHeader>
 
                 <form onSubmit={handleSubmit}>
