@@ -47,11 +47,13 @@ export const useItemListManagement = () => {
         let countQuery = supabase.from("items").select("id", { count: "exact" });
 
         if (searchTerm) {
+            const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
+            
             itemsQuery = itemsQuery.or(
-                `name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`
+                `name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern}`
             );
             countQuery = countQuery.or(
-                `name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`
+                `name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern}`
             );
         }
 
