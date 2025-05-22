@@ -136,7 +136,7 @@ const AddItem = () => {
     return (
         <div>
             <Card>
-                <CardHeader className="flex items-center justify-between">
+                <CardHeader className="flex items-center justify-between relative">
                     <div className="flex items-center">
                         <Button
                             variant="text"
@@ -148,10 +148,14 @@ const AddItem = () => {
                             <FaArrowLeft size={18} /> 
                             <span className="ml-2 sr-only">Back</span> 
                         </Button>
-                        <CardTitle className="ml-2">
+                    </div>
+                    
+                    <div className="absolute left-1/2 transform -translate-x-1/2">
+                        <CardTitle>
                             {isEditMode ? "Edit Data Item" : "Tambah Data Item Baru"}
                         </CardTitle>
                     </div>
+                    
                     <div className="flex items-center space-x-2 flex-shrink-0">
                         {isEditMode && formattedUpdateAt !== "-" && (
                             <span className="text-sm text-gray-500 italic whitespace-nowrap flex items-center">
