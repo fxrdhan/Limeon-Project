@@ -49,7 +49,7 @@ function ItemList() {
                     placeholder="Cari nama atau kode item..."
                     className="flex-grow"
                 />
-                <Link to="/master-data/items/add" state={{ searchQuery: debouncedSearch }}>
+                <Link to="/master-data/items/add" state={{ searchQuery: debouncedSearch }} className="focus:outline-none">
                     <Button variant="primary" className="flex items-center ml-4 mb-4">
                         <FaPlus className="mr-2" />
                         Tambah Item Baru

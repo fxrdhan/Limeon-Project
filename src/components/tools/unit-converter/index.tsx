@@ -149,7 +149,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                     }}
                                 />
                                 <div
-                                    className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 ${
+                                    className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 focus:outline-none ${
                                         unitConversionFormData.unit && unitConversionFormData.conversion > 0 && baseUnit
                                             ? "text-primary"
                                             : "text-gray-300"
