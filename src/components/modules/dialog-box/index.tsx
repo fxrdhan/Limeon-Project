@@ -8,6 +8,8 @@ import React, {
     useContext,
     useCallback,
     Fragment,
+    useRef,
+    useEffect
 } from "react";
 
 const initialState: ConfirmDialogContextType = {
@@ -91,6 +93,8 @@ const ConfirmDialogComponent: React.FC = () => {
         variant,
         closeConfirmDialog,
     } = useContext(ConfirmDialogContext);
+    const dialogRef = useRef<HTMLDivElement>(null);
+    const cancelButtonRef = useRef<HTMLButtonElement>(null);
 
     const handleConfirm = () => {
         onConfirm();
@@ -108,17 +112,52 @@ const ConfirmDialogComponent: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => cancelButtonRef.current?.focus(), 50);
+        }
+    }, [isOpen]);
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === 'Tab') {
+            if (!dialogRef.current) return;
+
+            const focusableElements = Array.from(
+                dialogRef.current.querySelectorAll<HTMLElement>(
+                    'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                )
+            ).filter(el => el.offsetParent !== null);
+
+            if (focusableElements.length === 0) return;
+
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            if (event.shiftKey) {
+                if (document.activeElement === firstElement) {
+                    lastElement.focus();
+                    event.preventDefault();
+                }
+            } else {
+                if (document.activeElement === lastElement) {
+                    firstElement.focus();
+                    event.preventDefault();
+                }
+            }
+        }
+    };
+
     return createPortal(
         <Transition show={isOpen} as={Fragment}>
             <div
+                ref={dialogRef}
+                onKeyDown={handleKeyDown}
                 className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
                 onClick={handleBackdropClick}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dialog-title"
             >
-                <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
-                    aria-hidden="true"
-                />
-
                 <TransitionChild
                     as={Fragment}
                     enter="transition-all duration-300 ease-out"
@@ -128,13 +167,15 @@ const ConfirmDialogComponent: React.FC = () => {
                     leaveFrom="opacity-100 scale-100"
                     leaveTo="opacity-0 scale-95"
                 >
-                    <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-                        <div className="text-lg font-semibold mb-2">{title}</div>
+                    <div
+                        className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+                    >
+                        <div id="dialog-title" className="text-lg font-semibold mb-2">{title}</div>
                         <div className="text-gray-600 mb-6">{message}</div>
 
                         <div className="flex justify-between">
                             <div>
-                                <Button type="button" variant="outline" onClick={handleCancel}>
+                                <Button type="button" variant="outline" onClick={handleCancel} ref={cancelButtonRef}>
                                     {cancelText}
                                 </Button>
                             </div>
