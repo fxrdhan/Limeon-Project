@@ -519,6 +519,8 @@ const AddItem = () => {
                             isSaving={saving}
                             isDeleting={deleteItemMutation.isPending}
                             isEditMode={isEditMode}
+                            cancelTabIndex={19}
+                            saveTabIndex={20}
                             isDisabled={formIsInvalid || operationsPending}
                             saveText="Simpan"
                             updateText="Update"
