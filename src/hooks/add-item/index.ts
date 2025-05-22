@@ -18,7 +18,6 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
     const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    // const [isEditMode, setIsEditMode] = useState(false);
     const [isEditMode, setIsEditMode] = useState(Boolean(itemId));
     const [categories, setCategories] = useState<Category[]>([]);
     const [types, setTypes] = useState<MedicineType[]>([]);
@@ -50,6 +49,34 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
         has_expiry_date: false,
         updated_at: null,
     });
+
+    const calculateProfitPercentage = (base_price?: number, sell_price?: number) => {
+        const currentBasePrice = base_price ?? formData.base_price;
+        const currentSellPrice = sell_price ?? formData.sell_price;
+        if (currentBasePrice > 0 && currentSellPrice >= 0) {
+            return ((currentSellPrice - currentBasePrice) / currentBasePrice) * 100;
+        }
+        return null;
+    };
+
+    const setFormToPristineAddState = () => {
+        const pristineState: FormData = {
+            code: "", name: initialSearchQuery || "", type_id: "", category_id: "", unit_id: "",
+            rack: "", barcode: "", description: "", base_price: 0, sell_price: 0, min_stock: 10,
+            is_active: true, is_medicine: true, has_expiry_date: false, updated_at: null,
+        };
+        setInitialFormData({ ...pristineState });
+        setFormData({ ...pristineState });
+        setDisplayBasePrice(formatRupiah(0));
+        setDisplaySellPrice(formatRupiah(0));
+        setMarginPercentage("0");
+        setMinStockValue("10");
+        unitConversionHook.resetConversions();
+        unitConversionHook.setBaseUnit(units.find(u => u.id === pristineState.unit_id)?.name || "");
+        unitConversionHook.setBasePrice(pristineState.base_price);
+        unitConversionHook.setSellPrice(pristineState.sell_price);
+        setInitialUnitConversions([]);
+    };
 
     const updateFormData = (newData: Partial<FormData>) => {
         if (newData.sell_price !== undefined) {
@@ -224,10 +251,33 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
                 has_expiry_date: itemData.has_expiry_date !== undefined ? itemData.has_expiry_date : false,
                 updated_at: itemData.updated_at,
             });
-            setInitialFormData({ ...itemData });
-            const initialConversions = itemData.unit_conversions ? (typeof itemData.unit_conversions === 'string' ? JSON.parse(itemData.unit_conversions) : itemData.unit_conversions) : [];
-            if (Array.isArray(initialConversions)) {
-                setInitialUnitConversions(initialConversions);
+            setInitialFormData({ ...formData });
+
+            let parsedConversionsFromDB = [];
+            if (itemData.unit_conversions) {
+                try {
+                    parsedConversionsFromDB = typeof itemData.unit_conversions === 'string'
+                        ? JSON.parse(itemData.unit_conversions)
+                        : itemData.unit_conversions;
+                } catch (e) {
+                    console.error("Error parsing unit_conversions from DB:", e);
+                    parsedConversionsFromDB = [];
+                }
+            }
+
+            if (Array.isArray(parsedConversionsFromDB)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const mappedConversions = parsedConversionsFromDB.map((conv: any) => ({
+                    id: conv.id || Date.now().toString() + Math.random().toString(),
+                    unit_name: conv.unit_name,
+                    to_unit_id: conv.to_unit_id || units.find(u => u.name === conv.unit_name)?.id || '',
+                    unit: units.find(u => u.name === conv.unit_name) || { id: conv.to_unit_id || '', name: conv.unit_name },
+                    conversion: conv.conversion_rate || 0,
+                    basePrice: conv.base_price || 0,
+                    sellPrice: conv.sell_price || 0,
+                    conversion_rate: conv.conversion_rate || 0,
+                }));
+                setInitialUnitConversions(mappedConversions);
             } else {
                 setInitialUnitConversions([]);
             }
@@ -255,7 +305,7 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
             if (Array.isArray(conversions)) {
                 for (const conv of conversions) {
                     const unit = await getUnitById(conv.unit_name);
-                    if (unit) {
+                    if (unit && typeof conv.conversion_rate === 'number') {
                         unitConversionHook.addUnitConversion({
                             to_unit_id: unit.id,
                             unit_name: unit.name,
@@ -263,6 +313,7 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
                             conversion: conv.conversion_rate || 0,
                             basePrice: conv.base_price,
                             sellPrice: conv.sellPrice,
+                            conversion_rate: conv.conversion_rate || 0,
                         });
                     }
                 }
@@ -593,20 +644,49 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
         });
     };
 
-    const calculateProfitPercentage = () => {
-        const { base_price, sell_price } = formData;
-        if (base_price > 0 && sell_price >= 0) {
-            return ((sell_price - base_price) / base_price) * 100;
-        }
-        return null;
-    };
-
     const calculateSellPriceFromMargin = (margin: number) => {
         if (formData.base_price > 0) {
             const sellPrice = formData.base_price * (1 + margin / 100);
             return Math.round(sellPrice);
         }
         return 0;
+    };
+
+    const resetForm = () => {
+        if (isEditMode && initialFormData && initialUnitConversions) {
+            setFormData({ ...initialFormData });
+            setDisplayBasePrice(formatRupiah(initialFormData.base_price || 0));
+            setDisplaySellPrice(formatRupiah(initialFormData.sell_price || 0));
+
+            const profit = calculateProfitPercentage(initialFormData.base_price || 0, initialFormData.sell_price || 0);
+            setMarginPercentage(profit !== null ? profit.toFixed(1) : "0");
+            setMinStockValue(String(initialFormData.min_stock || 10));
+
+            unitConversionHook.resetConversions();
+            const baseUnitName = units.find(u => u.id === initialFormData.unit_id)?.name || "";
+            unitConversionHook.setBaseUnit(baseUnitName);
+            unitConversionHook.setBasePrice(initialFormData.base_price || 0);
+            unitConversionHook.setSellPrice(initialFormData.sell_price || 0);
+            unitConversionHook.skipNextRecalculation();
+
+            initialUnitConversions.forEach(convDataFromDB => {
+                const unitDetails = units.find(u => u.name === convDataFromDB.unit_name);
+                if (unitDetails && typeof convDataFromDB.conversion_rate === 'number') {
+                    unitConversionHook.addUnitConversion({
+                        to_unit_id: unitDetails.id,
+                        unit_name: unitDetails.name,
+                        unit: unitDetails,
+                        conversion: convDataFromDB.conversion,
+                        basePrice: convDataFromDB.basePrice || 0,
+                        sellPrice: convDataFromDB.sellPrice || 0,
+                        conversion_rate: convDataFromDB.conversion_rate,
+                    });
+                }
+            });
+
+        } else {
+            setFormToPristineAddState();
+        }
     };
 
     const formattedUpdateAt = formData.updated_at ? formatDateTime(formData.updated_at) : "-";
@@ -651,10 +731,11 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
         handleSaveType,
         handleSaveUnit,
         handleDeleteItem,
-        calculateProfitPercentage,
         calculateSellPriceFromMargin,
         handleCancel,
+        calculateProfitPercentage,
         formattedUpdateAt,    
         deleteItemMutation,
+        resetForm,
     };
 };
