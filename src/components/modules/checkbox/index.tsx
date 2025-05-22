@@ -4,7 +4,7 @@ import { FaCheck } from "react-icons/fa";
 import type { CheckboxProps } from "@/types";
 import { classNames } from "@/lib/classNames";
 
-export const Checkbox: React.FC<CheckboxProps> = ({
+const CheckboxComponent: React.ForwardRefRenderFunction<HTMLLabelElement, CheckboxProps> = ({
     id,
     label,
     checked,
@@ -12,7 +12,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
     disabled = false,
     className = "",
     tabIndex,
-}) => {
+}, ref) => {
     const handleChange = () => {
         if (!disabled) {
             onChange(!checked);
@@ -29,6 +29,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
     return (
         <label
             htmlFor={id}
+            ref={ref}
             tabIndex={tabIndex}
             onKeyDown={handleKeyDown}
             className={classNames(
@@ -72,3 +73,6 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         </label>
     );
 };
+
+export const Checkbox = React.forwardRef(CheckboxComponent);
+Checkbox.displayName = 'Checkbox';
