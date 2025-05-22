@@ -42,10 +42,24 @@ export const useItemSelection = () => {
         return item;
     };
 
-    const filteredItems = items.filter(item =>
-        item.name.toLowerCase().includes(searchItem.toLowerCase()) || 
-        (item.code && item.code.toLowerCase().includes(searchItem.toLowerCase()))
-    );
+    const fuzzyMatch = (text: string, pattern: string): boolean => {
+        const lowerText = text.toLowerCase();
+        const lowerPattern = pattern.toLowerCase();
+        let tIdx = 0;
+        let pIdx = 0;
+        while (tIdx < lowerText.length && pIdx < lowerPattern.length) {
+            if (lowerText[tIdx] === lowerPattern[pIdx]) {
+                pIdx++;
+            }
+            tIdx++;
+        }
+        return pIdx === lowerPattern.length;
+    };
+
+    const filteredItems = items.filter(item => {
+        const searchTermLower = searchItem.toLowerCase();
+        return fuzzyMatch(item.name, searchTermLower) || (item.code && fuzzyMatch(item.code, searchTermLower));
+    });
 
     return {
         items,
@@ -56,6 +70,6 @@ export const useItemSelection = () => {
         selectedItem,
         setSelectedItem,
         filteredItems,
-        getItemByID
+        getItemByID,
     };
 };
