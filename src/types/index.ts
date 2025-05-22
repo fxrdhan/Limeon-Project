@@ -196,6 +196,8 @@ export interface FormActionProps {
     updateText?: string;
     deleteText?: React.ReactNode;
     isEditMode?: boolean;
+    cancelTabIndex?: number;
+    saveTabIndex?: number;
 }
 
 export interface FormSectionProps {
