@@ -17,6 +17,7 @@ import type { UnitConversionManagerProps } from "@/types";
 
 const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
     unitConversionHook,
+    tabIndex,
 }) => {
     const {
         baseUnit,
@@ -109,6 +110,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                         <FormField label="Satuan Turunan" className="flex-1">
                             <Dropdown
                                 name="unit"
+                                tabIndex={tabIndex}
                                 value={
                                     availableUnits.find(
                                         (u) => u.name === unitConversionFormData.unit
@@ -133,6 +135,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             <div className="relative w-full">
                                 <Input
                                     name="conversion"
+                                    tabIndex={tabIndex ? tabIndex + 1 : undefined}
                                     value={unitConversionFormData.conversion || ""}
                                     onChange={handleConversionFormChange}
                                     type="number"
@@ -147,11 +150,18 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                 />
                                 <div
                                     className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 ${
-                                        unitConversionFormData.unit && unitConversionFormData.conversion > 0
+                                        unitConversionFormData.unit && unitConversionFormData.conversion > 0 && baseUnit
                                             ? "text-primary"
                                             : "text-gray-300"
                                     }`}
+                                    tabIndex={tabIndex ? tabIndex + 2 : undefined}
                                     onClick={(e) => { e.preventDefault(); handleAddConversion(); }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleAddConversion();
+                                        }
+                                    }}
                                     title="Tekan Enter atau klik untuk menambah"
                                 >
                                     ENTER
@@ -224,6 +234,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                                     <Button
                                                         variant="danger"
                                                         size="sm"
+                                                        tabIndex={tabIndex ? tabIndex + 3 : undefined}
                                                         onClick={() => removeUnitConversion(uc.id)}
                                                     >
                                                         <FaTrash />
