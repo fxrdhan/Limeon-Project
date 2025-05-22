@@ -435,13 +435,13 @@ const AddItem = () => {
                                             </FormField>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-6">
+                                        <div className="grid grid-cols-2 gap-6 focus:outline-none">
                                             <FormField label="Margin">
-                                                <div className="flex items-center">
+                                                <div className="flex items-center focus:outline-none">
                                                     {editingMargin ? (
-                                                        <div className="flex items-center">
+                                                        <div className="flex items-center focus:outline-none">
                                                             <Input
-                                                                className="max-w-20"
+                                                                className="max-w-20 focus:outline-none"
                                                                 ref={marginInputRef}
                                                                 type="number"
                                                                 value={marginPercentage}
@@ -457,12 +457,12 @@ const AddItem = () => {
                                                     ) : (
                                                         <div 
                                                             tabIndex={13}
-                                                            className={`w-full py-2 cursor-pointer font-semibold flex items-center ${calculateProfitPercentage() !== null
+                                                            className={`group w-full py-2 cursor-pointer font-semibold flex items-center ${calculateProfitPercentage() !== null
                                                                 ? calculateProfitPercentage()! >= 0
                                                                     ? "text-green-600"
                                                                     : "text-red-600"
                                                                 : "text-gray-500"
-                                                            }`}
+                                                            } focus:outline-none`}
                                                             onClick={startEditingMargin}
                                                             title="Klik untuk mengubah margin"
                                                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEditingMargin(); }}}
@@ -471,7 +471,7 @@ const AddItem = () => {
                                                                 ? `${calculateProfitPercentage()!.toFixed(1)} %`
                                                                 : "-"}
                                                             <FaPen
-                                                                className="ml-4 text-gray-400 hover:text-primary cursor-pointer transition-colors"
+                                                                className="ml-4 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors"
                                                                 size={14}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
