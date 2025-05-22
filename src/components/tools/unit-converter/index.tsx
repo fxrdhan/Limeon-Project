@@ -154,7 +154,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                                             ? "text-primary"
                                             : "text-gray-300"
                                     }`}
-                                    tabIndex={tabIndex ? tabIndex + 2 : undefined}
+                                    // tabIndex={tabIndex ? tabIndex + 2 : undefined}
                                     onClick={(e) => { e.preventDefault(); handleAddConversion(); }}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
