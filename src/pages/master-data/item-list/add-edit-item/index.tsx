@@ -163,15 +163,17 @@ const AddItem = () => {
                                 {formattedUpdateAt}
                             </span>
                         )}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleReset}
-                            className="text-gray-600 hover:text-primary flex items-center"
-                            title={isEditMode ? "Reset ke Data Awal Tersimpan" : "Reset Form"}
-                        >
-                            <FaUndoAlt className="mr-1" size={12} /> Reset
-                        </Button>
+                        {!isEditMode && (
+                            <Button
+                                variant="text"
+                                size="md"
+                                onClick={handleReset}
+                                className="text-gray-600 hover:text-orange-600 flex items-center"
+                                title="Reset Form"
+                            >
+                                <FaUndoAlt className="mr-1.5" size={12} /> Reset All
+                            </Button>
+                        )}
                     </div>
                 </CardHeader>
 
