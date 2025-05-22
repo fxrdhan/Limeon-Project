@@ -146,5 +146,6 @@ export const useAddItemPageHandlers = (expiryCheckboxRef?: React.RefObject<HTMLL
         stopEditingMinStock,
         handleMinStockChange,
         handleMinStockKeyDown,
+        resetForm: addItemForm.resetForm,
     };
 };
