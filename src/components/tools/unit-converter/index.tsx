@@ -89,6 +89,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
             conversion: unitConversionFormData.conversion,
             basePrice: 0,
             sellPrice: 0,
+            conversion_rate: 0
         });
 
         setUnitConversionFormData({
