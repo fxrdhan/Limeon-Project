@@ -11,6 +11,7 @@ import type {
     FieldConfig as FieldConfigSupplier,
     ConfirmDialogOptions as ConfirmDialogOptionsSupplier
 } from "@/types";
+import { fetchSuppliers as fetchSuppliersShared } from '@/lib/prefetchQueries';
 
 export const useSupplierHandlers = (
     openConfirmDialog: (options: ConfirmDialogOptionsSupplier) => void
@@ -33,58 +34,6 @@ export const useSupplierHandlers = (
         return () => clearTimeout(timer);
     }, [search]);
 
-    const fetchSuppliers = async (page: number, searchTerm: string, limit: number) => {
-        const from = (page - 1) * limit;
-        const to = from + limit - 1;
-
-        let query = supabase
-            .from("suppliers")
-            .select("id, name, address, phone, email, contact_person, image_url");
-
-        let countQuery = supabase
-            .from("suppliers")
-            .select('id', { count: 'exact' });
-
-        if (searchTerm) {
-            const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
-            query = query.or(`name.ilike.${fuzzySearchPattern},address.ilike.${fuzzySearchPattern},phone.ilike.${fuzzySearchPattern}`);
-            countQuery = countQuery.or(`name.ilike.${fuzzySearchPattern},address.ilike.${fuzzySearchPattern},phone.ilike.${fuzzySearchPattern}`);
-        } else {
-            query = query.order("name");
-        }
-
-        const [suppliersResult, countResult] = await Promise.all([
-            query.order("name").range(from, to),
-            countQuery
-        ]);
-
-        if (suppliersResult.error) throw suppliersResult.error;
-        if (countResult.error) throw countResult.error;
-
-        const suppliersData = suppliersResult.data || [];
-
-        if (searchTerm && suppliersData.length > 0) {
-            const lowerSearchTerm = searchTerm.toLowerCase();
-            suppliersData.sort((a, b) => {
-                const nameA = a.name.toLowerCase();
-                const nameB = b.name.toLowerCase();
-
-                const isAExactMatch = nameA === lowerSearchTerm;
-                const isBExactMatch = nameB === lowerSearchTerm;
-                if (isAExactMatch && !isBExactMatch) return -1;
-                if (!isAExactMatch && isBExactMatch) return 1;
-
-                const aStartsWith = nameA.startsWith(lowerSearchTerm);
-                const bStartsWith = nameB.startsWith(lowerSearchTerm);
-                if (aStartsWith && !bStartsWith) return -1;
-                if (!aStartsWith && bStartsWith) return 1;
-
-                return nameA.localeCompare(nameB);
-            });
-        }
-        return { suppliers: suppliersData, totalItems: countResult.count || 0 };
-    };
-
     const {
         data,
         isLoading,
@@ -93,7 +42,7 @@ export const useSupplierHandlers = (
         isFetching,
     } = useQuery<{ suppliers: SupplierType[], totalItems: number }>({
         queryKey: ["suppliers", currentPage, debouncedSearch, itemsPerPage],
-        queryFn: () => fetchSuppliers(currentPage, debouncedSearch, itemsPerPage),
+        queryFn: () => fetchSuppliersShared(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
         refetchOnMount: true,
