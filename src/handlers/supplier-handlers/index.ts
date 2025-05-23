@@ -73,6 +73,7 @@ export const useSupplierHandlers = (
         isLoading,
         isError,
         error,
+        isFetching,
     } = useQuery<SupplierType[]>({
         queryKey: ["suppliers", debouncedSearch],
         queryFn: () => fetchSuppliers(debouncedSearch),
@@ -288,6 +289,7 @@ export const useSupplierHandlers = (
         isLoading,
         isError,
         queryError,
+        isFetching,
         updateSupplierMutation,
         createSupplierMutation,
         deleteSupplierMutation,
