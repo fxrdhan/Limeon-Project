@@ -2,7 +2,6 @@ import { FaPlus } from "react-icons/fa";
 import {
     Card,
     Button,
-    Loading,
     Pagination,
     SearchBar,
     Table,
@@ -47,11 +46,7 @@ const TypeList = () => {
 
     return (
         <>
-            <Card
-                className={
-                    isFetching ? "opacity-75 transition-opacity duration-300" : ""
-                }
-            >
+            <Card>
                 <div className="mb-6">
                     <PageTitle title="Daftar Jenis Item" />
                 </div>
@@ -73,14 +68,12 @@ const TypeList = () => {
                     </Button>
                 </div>
 
-                {isLoading ? (
-                    <Loading />
-                ) : isError ? (
+                {isError ? (
                     <div className="text-center p-6 text-red-500">
                         Error: {queryError?.message || "Gagal memuat data"}
                     </div>
                 ) : (
-                    <>
+                    <div className={isFetching ? "opacity-50 transition-opacity duration-300" : ""}>
                         <Table>
                             <TableHead>
                                 <TableRow>
@@ -89,18 +82,13 @@ const TypeList = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {types?.length === 0 ? (
+                                {isLoading && (!types || types.length === 0) ? (
                                     <TableRow>
-                                        <TableCell
-                                            colSpan={2}
-                                            className="text-center text-gray-500"
-                                        >
-                                            {debouncedSearch
-                                                ? `Tidak ada jenis item dengan kata kunci "${debouncedSearch}"`
-                                                : "Tidak ada data jenis item yang ditemukan"}
+                                        <TableCell colSpan={2} className="text-center text-gray-500 py-10">
+                                            Memuat data jenis item...
                                         </TableCell>
                                     </TableRow>
-                                ) : (
+                                ) : types && types.length > 0 ? (
                                     types.map((type) => (
                                         <TableRow
                                             key={type.id}
@@ -111,6 +99,14 @@ const TypeList = () => {
                                             <TableCell>{type.description}</TableCell>
                                         </TableRow>
                                     ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={2} className="text-center text-gray-500 py-10">
+                                            {debouncedSearch
+                                                ? `Tidak ada jenis item dengan kata kunci "${debouncedSearch}"`
+                                                : "Tidak ada data jenis item yang ditemukan"}
+                                        </TableCell>
+                                    </TableRow>
                                 )}
                             </TableBody>
                         </Table>
@@ -123,7 +119,7 @@ const TypeList = () => {
                             onPageChange={handlePageChange}
                             onItemsPerPageChange={handleItemsPerPageChange}
                         />
-                    </>
+                    </div>
                 )}
             </Card>
 
