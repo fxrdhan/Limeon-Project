@@ -7,8 +7,6 @@ import {
     FaShoppingCart,
     FaHome,
     FaChartBar,
-    FaLock,
-    FaLockOpen,
     FaHospital,
     FaShoppingBag,
     FaCog,
@@ -16,6 +14,65 @@ import {
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import type { SidebarProps, MenuItem } from '@/types';
+
+// Custom SVG Lock Icons
+const LockIcon = ({ className }: { className?: string }) => (
+    <motion.svg
+        key="lock-closed"
+        initial={{ scale: 0.7, opacity: 0, rotate: -10 }}
+        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+        exit={{ scale: 0.7, opacity: 0, rotate: 10 }}
+        transition={{ 
+            duration: 0.4,
+            type: "spring",
+            stiffness: 300,
+            damping: 20,
+            ease: [0.25, 0.46, 0.45, 0.94]
+        }}
+        className={className}
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ transformOrigin: "center" }}
+    >
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </motion.svg>
+);
+
+const UnlockIcon = ({ className }: { className?: string }) => (
+    <motion.svg
+        key="lock-open"
+        initial={{ scale: 0.7, opacity: 0, rotate: 10 }}
+        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+        exit={{ scale: 0.7, opacity: 0, rotate: -10 }}
+        transition={{ 
+            duration: 0.4,
+            type: "spring",
+            stiffness: 300,
+            damping: 20,
+            ease: [0.25, 0.46, 0.45, 0.94]
+        }}
+        className={className}
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ transformOrigin: "center" }}
+    >
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+    </motion.svg>
+);
 
 const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSidebar }: SidebarProps) => {
     const location = useLocation();
@@ -183,14 +240,22 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
                         </h2>
                     </div>
                     {!collapsed && (
-                        <button
+                        <motion.button
                             onClick={toggleLock}
-                            className="p-2 rounded-full text-teal-100 hover:bg-teal-700 focus:outline-none transition-colors duration-150"
+                            className="p-2 rounded-full text-teal-100 hover:bg-teal-700 focus:outline-none transition-colors duration-150 relative overflow-hidden"
                             title={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
                             aria-label={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                         >
-                            {isLocked ? <FaLock size={16} /> : <FaLockOpen size={16} />}
-                        </button>
+                            <AnimatePresence mode="wait">
+                                {isLocked ? (
+                                    <LockIcon />
+                                ) : (
+                                    <UnlockIcon />
+                                )}
+                            </AnimatePresence>
+                        </motion.button>
                     )}
                 </div>
 
