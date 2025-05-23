@@ -5,14 +5,39 @@ import Sidebar from "@/components/layout/sidebar";
 
 const MainLayout = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [isLocked, setIsLocked] = useState(false);
 
-    const toggleSidebar = () => {
-        setSidebarCollapsed(!sidebarCollapsed);
+    const expandSidebar = () => {
+        if (!isLocked) {
+            setSidebarCollapsed(false);
+        }
+    };
+
+    const collapseSidebar = () => {
+        if (!isLocked) {
+            setSidebarCollapsed(true);
+        }
+    };
+
+    const toggleLock = () => {
+        setIsLocked((prevIsLocked) => {
+            const newLockState = !prevIsLocked;
+            if (newLockState && sidebarCollapsed) {
+                setSidebarCollapsed(false);
+            }
+            return newLockState;
+        });
     };
 
     return (
         <div className="flex h-screen bg-gray-100 text-gray-800">
-            <Sidebar collapsed={sidebarCollapsed} toggleSidebar={toggleSidebar} />
+            <Sidebar
+                collapsed={sidebarCollapsed}
+                isLocked={isLocked}
+                toggleLock={toggleLock}
+                expandSidebar={expandSidebar}
+                collapseSidebar={collapseSidebar}
+            />
 
             <div className="flex flex-col flex-1 overflow-hidden">
                 <Navbar sidebarCollapsed={sidebarCollapsed} />
