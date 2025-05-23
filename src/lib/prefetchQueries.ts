@@ -8,15 +8,16 @@ const fetchCategories = async (page = 1, searchTerm = '', limit = 10) => {
 
     let categoriesQuery = supabase
         .from("item_categories")
-        .select("*");
+        .select("id, name, description");
 
     let countQuery = supabase
         .from("item_categories")
         .select('id', { count: 'exact' });
 
     if (searchTerm) {
-        categoriesQuery = categoriesQuery.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
-        countQuery = countQuery.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+        const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
+        categoriesQuery = categoriesQuery.or(`name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`);
+        countQuery = countQuery.or(`name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`);
     }
 
     const [categoriesResult, countResult] = await Promise.all([
@@ -28,8 +29,8 @@ const fetchCategories = async (page = 1, searchTerm = '', limit = 10) => {
     if (countResult.error) throw countResult.error;
 
     return { 
-        categories: categoriesResult.data || [], 
-        totalCategories: countResult.count || 0 
+        data: categoriesResult.data || [],
+        totalItems: countResult.count || 0
     };
 };
 
@@ -42,7 +43,8 @@ const fetchTypes = async (page = 1, searchTerm = '', limit = 10) => {
         .select("id, name, description", { count: 'exact' });
         
     if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+        const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
+        query = query.or(`name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`);
     }
     
     const { data, error, count } = await query
@@ -51,7 +53,7 @@ const fetchTypes = async (page = 1, searchTerm = '', limit = 10) => {
         
     if (error) throw error;
     
-    return { types: data || [], totalTypes: count || 0 };
+    return { data: data || [], totalItems: count || 0 };
 };
 
 const fetchUnits = async (page = 1, searchTerm = '', limit = 10) => {
@@ -63,7 +65,8 @@ const fetchUnits = async (page = 1, searchTerm = '', limit = 10) => {
         .select("id, name, description", { count: 'exact' });
         
     if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+        const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
+        query = query.or(`name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`);
     }
 
     const { data, error, count } = await query
@@ -71,7 +74,7 @@ const fetchUnits = async (page = 1, searchTerm = '', limit = 10) => {
         .range(from, to);
 
     if (error) throw error;
-    return { units: data || [], totalUnits: count || 0 };
+    return { data: data || [], totalItems: count || 0 };
 };
 
 const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
@@ -99,8 +102,9 @@ const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
         .select('id', { count: 'exact' });
 
     if (searchTerm) {
-        itemsQuery = itemsQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
-        countQuery = countQuery.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%`);
+        const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
+        itemsQuery = itemsQuery.or(`name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern},barcode.ilike.${fuzzySearchPattern}`);
+        countQuery = countQuery.or(`name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern},barcode.ilike.${fuzzySearchPattern}`);
     }
 
     const [itemsResult, countResult, categoriesRes, typesRes, unitsRes] = await Promise.all([
@@ -207,7 +211,6 @@ const fetchPurchases = async (page = 1, searchTerm = '', limit = 10) => {
     }
 };
 
-// Hook untuk prefetch semua query
 export const usePrefetchQueries = () => {
     const queryClient = useQueryClient();
 
@@ -215,37 +218,32 @@ export const usePrefetchQueries = () => {
         const prefetchAll = async () => {
             console.log('Memulai prefetching semua data...');
 
-            // Define page sizes to prefetch
             const pageSizes = [10, 20, 40];
 
-            // Prefetch categories for different page sizes
             for (const pageSize of pageSizes) {
                 queryClient.prefetchQuery({
-                    queryKey: ['categories', 1, '', pageSize],
+                    queryKey: ['item_categories', 1, '', pageSize],
                     queryFn: () => fetchCategories(1, '', pageSize),
                     staleTime: 30 * 1000,
                 });
             }
 
-            // Prefetch types for different page sizes
             for (const pageSize of pageSizes) {
                 queryClient.prefetchQuery({
-                    queryKey: ['types', 1, '', pageSize],
+                    queryKey: ['item_types', 1, '', pageSize],
                     queryFn: () => fetchTypes(1, '', pageSize),
                     staleTime: 30 * 1000,
                 });
             }
 
-            // Prefetch units for different page sizes
             for (const pageSize of pageSizes) {
                 queryClient.prefetchQuery({
-                    queryKey: ['units', 1, '', pageSize],
+                    queryKey: ['item_units', 1, '', pageSize],
                     queryFn: () => fetchUnits(1, '', pageSize),
                     staleTime: 30 * 1000,
                 });
             }
 
-            // Prefetch items for different page sizes
             for (const pageSize of pageSizes) {
                 queryClient.prefetchQuery({
                     queryKey: ['items', 1, '', pageSize],
@@ -254,7 +252,6 @@ export const usePrefetchQueries = () => {
                 });
             }
 
-            // Prefetch purchases for different page sizes
             for (const pageSize of pageSizes) {
                 queryClient.prefetchQuery({
                     queryKey: ['purchases', 1, '', pageSize],
@@ -263,14 +260,12 @@ export const usePrefetchQueries = () => {
                 });
             }
 
-            // Prefetch suppliers (not paginated)
             queryClient.prefetchQuery({
                 queryKey: ['suppliers'],
                 queryFn: fetchSuppliers,
                 staleTime: 30 * 1000,
             });
 
-            // Prefetch company profile (not paginated)
             queryClient.prefetchQuery({
                 queryKey: ['companyProfile'],
                 queryFn: fetchProfile,
