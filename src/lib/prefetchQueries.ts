@@ -139,14 +139,37 @@ const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
     return { items: completedData, totalItems: countResult.count || 0 };
 };
 
-const fetchSuppliers = async () => {
-    const { data, error } = await supabase
-        .from('suppliers')
-        .select('id, name, address, phone, email, contact_person, image_url')
-        .order('name');
+export const fetchSuppliers = async (page = 1, searchTerm = '', limit = 10) => {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
-    if (error) throw error;
-    return data || [];
+    let query = supabase
+        .from("suppliers")
+        .select("id, name, address, phone, email, contact_person, image_url");
+
+    let countQuery = supabase
+        .from("suppliers")
+        .select('id', { count: 'exact' });
+
+    if (searchTerm) {
+        const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
+        query = query.or(`name.ilike.${fuzzySearchPattern},address.ilike.${fuzzySearchPattern},phone.ilike.${fuzzySearchPattern}`);
+        countQuery = countQuery.or(`name.ilike.${fuzzySearchPattern},address.ilike.${fuzzySearchPattern},phone.ilike.${fuzzySearchPattern}`);
+        query = query.order("name", { ascending: true });
+    } else {
+        query = query.order("name", { ascending: true });
+    }
+
+    const [suppliersResult, countResult] = await Promise.all([
+        query.range(from, to),
+        countQuery
+    ]);
+
+    if (suppliersResult.error) throw suppliersResult.error;
+    if (countResult.error) throw countResult.error;
+
+    const suppliersData = suppliersResult.data || [];
+    return { suppliers: suppliersData, totalItems: countResult.count || 0 };
 };
 
 const fetchProfile = async () => {
@@ -260,11 +283,13 @@ export const usePrefetchQueries = () => {
                 });
             }
 
-            queryClient.prefetchQuery({
-                queryKey: ['suppliers'],
-                queryFn: fetchSuppliers,
-                staleTime: 30 * 1000,
-            });
+            for (const pageSize of pageSizes) {
+                queryClient.prefetchQuery({
+                    queryKey: ['suppliers', 1, '', pageSize],
+                    queryFn: () => fetchSuppliers(1, '', pageSize),
+                    staleTime: 30 * 1000,
+                });
+            }
 
             queryClient.prefetchQuery({
                 queryKey: ['companyProfile'],
