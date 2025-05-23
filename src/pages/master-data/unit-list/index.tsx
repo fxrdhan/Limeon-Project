@@ -2,7 +2,6 @@ import { FaPlus } from "react-icons/fa";
 import {
     Card,
     Button,
-    Loading,
     Table,
     TableHead,
     TableBody,
@@ -73,9 +72,7 @@ const UnitList = () => {
                     </Button>
                 </div>
 
-                {isLoading ? (
-                    <Loading message="Memuat satuan..." />
-                ) : isError ? (
+                {isError ? (
                     <div className="text-center p-6 text-red-500">
                         Error: {queryError?.message || "Gagal memuat data"}
                     </div>
@@ -89,18 +86,16 @@ const UnitList = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {units.length === 0 ? (
+                                {isLoading && (!units || units.length === 0) ? (
                                     <TableRow>
                                         <TableCell
                                             colSpan={2}
-                                            className="text-center text-gray-500"
+                                            className="text-center text-gray-500 py-10"
                                         >
-                                            {debouncedSearch
-                                                ? `Tidak ada satuan dengan kata kunci "${debouncedSearch}"`
-                                                : "Tidak ada data satuan yang ditemukan"}
+                                            Memuat data satuan...
                                         </TableCell>
                                     </TableRow>
-                                ) : (
+                                ) : units && units.length > 0 ? (
                                     units.map((unit) => (
                                         <TableRow
                                             key={unit.id}
@@ -111,6 +106,17 @@ const UnitList = () => {
                                             <TableCell>{unit.description || "-"}</TableCell>
                                         </TableRow>
                                     ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={2}
+                                            className="text-center text-gray-500 py-10"
+                                        >
+                                            {debouncedSearch
+                                                ? `Tidak ada satuan dengan kata kunci "${debouncedSearch}"`
+                                                : "Tidak ada data satuan yang ditemukan"}
+                                        </TableCell>
+                                    </TableRow>
                                 )}
                             </TableBody>
                         </Table>
