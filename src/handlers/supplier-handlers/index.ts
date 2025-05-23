@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import {
     useQuery,
@@ -18,13 +18,28 @@ export const useSupplierHandlers = (
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newSupplierImage, setNewSupplierImage] = useState<string | null>(null);
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const queryClient = useQueryClient();
 
-    const fetchSuppliers = async () => {
-        const { data, error } = await supabase
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const fetchSuppliers = async (searchTerm: string) => {
+        let query = supabase
             .from("suppliers")
             .select("id, name, address, phone, email, contact_person, image_url")
             .order("name");
+
+        if (searchTerm) {
+            const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
+            query = query.or(`name.ilike.${fuzzySearchPattern},address.ilike.${fuzzySearchPattern},phone.ilike.${fuzzySearchPattern}`);
+        }
+        const { data, error } = await query;
 
         if (error) throw error;
         return data || [];
@@ -36,8 +51,8 @@ export const useSupplierHandlers = (
         isError,
         error,
     } = useQuery<SupplierType[]>({
-        queryKey: ["suppliers"],
-        queryFn: fetchSuppliers,
+        queryKey: ["suppliers", debouncedSearch],
+        queryFn: () => fetchSuppliers(debouncedSearch),
         staleTime: 30 * 1000,
         refetchOnMount: true,
     });
@@ -263,6 +278,9 @@ export const useSupplierHandlers = (
         handleNewSupplierImageUpload,
         supplierFields,
         transformSupplierForModal,
-        emptySupplierData
+        emptySupplierData,
+        search,
+        setSearch,
+        debouncedSearch,
     };
 };
