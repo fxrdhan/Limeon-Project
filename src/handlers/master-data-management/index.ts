@@ -7,11 +7,7 @@ import {
     useQueryClient,
     keepPreviousData,
 } from "@tanstack/react-query";
-import type {
-    Category,
-    ItemType,
-    Unit,
-} from "@/types";
+import type { Category, ItemType, Unit } from "@/types";
 
 type MasterDataItem = Category | ItemType | Unit;
 
@@ -54,10 +50,15 @@ export const useMasterDataManagement = (
         const from = (page - 1) * limit;
         const to = from + limit - 1;
 
-        let query = supabase.from(tableName).select("id, name, description", { count: "exact" });
+        let query = supabase
+            .from(tableName)
+            .select("id, name, description", { count: "exact" });
 
         if (searchTerm) {
-            const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
+            const fuzzySearchPattern = `%${searchTerm
+                .toLowerCase()
+                .split("")
+                .join("%")}%`;
             query = query.or(
                 `name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`
             );
@@ -69,7 +70,13 @@ export const useMasterDataManagement = (
         return { data: data || [], totalItems: count || 0 };
     };
 
-    const { data: queryData, isLoading, isError, error, isFetching } = useQuery({
+    const {
+        data: queryData,
+        isLoading,
+        isError,
+        error,
+        isFetching,
+    } = useQuery({
         queryKey: [tableName, currentPage, debouncedSearch, itemsPerPage],
         queryFn: () => fetchData(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
@@ -96,9 +103,16 @@ export const useMasterDataManagement = (
     });
 
     const updateMutation = useMutation({
-        mutationFn: async (updatedItem: { id: string; name: string; description?: string }) => {
+        mutationFn: async (updatedItem: {
+            id: string;
+            name: string;
+            description?: string;
+        }) => {
             const { id, ...updateData } = updatedItem;
-            const { error } = await supabase.from(tableName).update(updateData).eq("id", id);
+            const { error } = await supabase
+                .from(tableName)
+                .update(updateData)
+                .eq("id", id);
             if (error) throw error;
         },
         onSuccess: () => {
@@ -113,7 +127,10 @@ export const useMasterDataManagement = (
 
     const deleteMutation = useMutation({
         mutationFn: async (itemId: string) => {
-            const { error } = await supabase.from(tableName).delete().eq("id", itemId);
+            const { error } = await supabase
+                .from(tableName)
+                .delete()
+                .eq("id", itemId);
             if (error) throw error;
         },
         onSuccess: () => {
@@ -131,16 +148,23 @@ export const useMasterDataManagement = (
         setIsEditModalOpen(true);
     };
 
-    const handleModalSubmit = useCallback(async (itemData: { id?: string; name: string; description?: string }) => {
-        if (itemData.id) {
-            await updateMutation.mutateAsync(itemData as { id: string; name: string; description?: string });
-        } else {
-            await addMutation.mutateAsync(itemData);
-        }
-    }, [addMutation, updateMutation]);
+    const handleModalSubmit = useCallback(
+        async (itemData: { id?: string; name: string; description?: string }) => {
+            if (itemData.id) {
+                await updateMutation.mutateAsync(
+                    itemData as { id: string; name: string; description?: string }
+                );
+            } else {
+                await addMutation.mutateAsync(itemData);
+            }
+        },
+        [addMutation, updateMutation]
+    );
 
     const handlePageChange = (newPage: number) => setCurrentPage(newPage);
-    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const handleItemsPerPageChange = (
+        e: React.ChangeEvent<HTMLSelectElement>
+    ) => {
         setItemsPerPage(Number(e.target.value));
         setCurrentPage(1);
     };
@@ -148,16 +172,33 @@ export const useMasterDataManagement = (
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return {
-        isAddModalOpen, setIsAddModalOpen,
-        isEditModalOpen, setIsEditModalOpen,
-        editingItem, setEditingItem,
-        search, setSearch, debouncedSearch,
-        currentPage, setCurrentPage,
-        itemsPerPage, setItemsPerPage,
-        data: items, totalItems, totalPages,
-        isLoading, isError, queryError, isFetching,
-        addMutation, updateMutation, deleteMutation,
-        handleEdit, handleModalSubmit, handlePageChange, handleItemsPerPageChange,
-        openConfirmDialog
+        isAddModalOpen,
+        setIsAddModalOpen,
+        isEditModalOpen,
+        setIsEditModalOpen,
+        editingItem,
+        setEditingItem,
+        search,
+        setSearch,
+        debouncedSearch,
+        currentPage,
+        setCurrentPage,
+        itemsPerPage,
+        setItemsPerPage,
+        data: items,
+        totalItems,
+        totalPages,
+        isLoading,
+        isError,
+        queryError,
+        isFetching,
+        addMutation,
+        updateMutation,
+        deleteMutation,
+        handleEdit,
+        handleModalSubmit,
+        handlePageChange,
+        handleItemsPerPageChange,
+        openConfirmDialog,
     };
 };
