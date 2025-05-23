@@ -181,6 +181,7 @@ export const useMasterDataManagement = (
         search,
         setSearch,
         debouncedSearch,
+        setDebouncedSearch,
         currentPage,
         setCurrentPage,
         itemsPerPage,
@@ -200,5 +201,6 @@ export const useMasterDataManagement = (
         handlePageChange,
         handleItemsPerPageChange,
         openConfirmDialog,
+        queryClient
     };
 };
