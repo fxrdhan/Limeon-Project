@@ -55,25 +55,25 @@ const SupplierList = () => {
     return (
         <Card>
             <CardHeader className="mb-6 px-0">
-                <div className="flex justify-between items-center">
-                    <PageTitle title="Daftar Supplier" />
-                    <Button
-                        variant="primary"
-                        className="flex items-center"
-                        onClick={openAddSupplierModal}
-                    >
-                        <FaPlus className="mr-2" />
-                        Tambah Supplier Baru
-                    </Button>
-                </div>
+                <PageTitle title="Daftar Supplier" />
             </CardHeader>
 
-            <SearchBar
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari supplier..."
-                className="mb-4"
-            />
+            <div className="flex items-center">
+                <SearchBar
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Cari supplier..."
+                    className="flex-grow"
+                />
+                <Button
+                    variant="primary"
+                    className="flex items-center ml-4 mb-4"
+                    onClick={openAddSupplierModal}
+                >
+                    <FaPlus className="mr-2" />
+                    Tambah Supplier Baru
+                </Button>
+            </div>
             {isError && !isLoading && (
                 <div className="text-center text-red-500">
                     Error: {queryError?.message || "Gagal memuat data"}
