@@ -104,8 +104,7 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                 <div className="flex-1 md:w-1/3 lg:w-1/4">
                     <h3 className="text-lg font-medium mb-3">Tambah Konversi Satuan</h3>
                     <p className="text-sm text-gray-600 mb-2">
-                        Berapa banyak satuan turunan yang setara dengan 1{" "}
-                        {baseUnit || "Satuan Dasar"}.
+                        1 {baseUnit || "Satuan Dasar"} setara berapa satuan turunan?
                     </p>
                     <div className="flex flex-row gap-4 mb-4">
                         <FormField label="Satuan Turunan" className="flex-1">
@@ -129,8 +128,11 @@ const UnitConversionManager: React.FC<UnitConversionManagerProps> = ({
                             />
                         </FormField>
                         <FormField
-                            label={`1 ${baseUnit || "Satuan Dasar"} = ? ${unitConversionFormData.unit || "Satuan Turunan"
-                                }`}
+                            label={
+                                unitConversionFormData.unit
+                                    ? `1 ${baseUnit || "Satuan Dasar"} = ? ${unitConversionFormData.unit}`
+                                    : "Nilai Konversi"
+                            }
                             className="flex-1"
                         >
                             <div className="relative w-full">
