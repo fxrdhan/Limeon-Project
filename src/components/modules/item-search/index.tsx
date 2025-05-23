@@ -23,7 +23,6 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     const inputRef = useRef<HTMLInputElement>(null);
     const itemDropdownRef = useRef<HTMLDivElement>(null);
     const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const addItemToPurchase = () => {
         if (!selectedItem) return;
@@ -78,14 +77,12 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
 
     const openDropdown = useCallback(() => {
         if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
         setIsOpen(true);
         setIsClosing(false);
     }, []);
 
     const closeDropdown = useCallback(() => {
         if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
         setIsClosing(true);
         setTimeout(() => {
             setIsOpen(false);
@@ -105,19 +102,38 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                     }
                 });
             }, 20);
-            window.addEventListener("resize", calculateDropdownPosition);
         } else {
             setApplyOpenStyles(false);
         }
         return () => {
             if (openStyleTimerId) clearTimeout(openStyleTimerId);
-            window.removeEventListener("resize", calculateDropdownPosition);
         };
     }, [isOpen, calculateDropdownPosition]);
 
     useEffect(() => {
+        if (!isOpen || !inputRef.current) {
+            return;
+        }
+
+        const observer = new ResizeObserver(() => {
+            if (itemDropdownRef.current) {
+                calculateDropdownPosition();
+            }
+        });
+
+        observer.observe(inputRef.current);
+
+        return () => {
+            if (inputRef.current) {
+                // eslint-disable-next-line react-hooks/exhaustive-deps
+                observer.unobserve(inputRef.current);
+            }
+            observer.disconnect();
+        };
+    }, [isOpen, calculateDropdownPosition, inputRef]);
+
+    useEffect(() => {
         const currentOpenTimeout = openTimeoutRef.current;
-        const currentCloseTimeout = closeTimeoutRef.current;
 
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -132,7 +148,6 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             if (currentOpenTimeout) clearTimeout(currentOpenTimeout);
-            if (currentCloseTimeout) clearTimeout(currentCloseTimeout);
         };
     }, [isOpen, closeDropdown, searchBarRef, itemDropdownRef]);
 
@@ -157,7 +172,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     };
 
     const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-        closeTimeoutRef.current = setTimeout(() => {
+        setTimeout(() => {
             if (itemDropdownRef.current && !itemDropdownRef.current.contains(e.relatedTarget as Node)) {
                 closeDropdown();
             } else if (!e.relatedTarget && itemDropdownRef.current && !itemDropdownRef.current.contains(document.activeElement)) {
@@ -197,7 +212,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                                         ? "opacity-100 scale-y-100"
                                         : `opacity-0 scale-y-95 ${dropDirection === "down" ? "translate-y-1" : "-translate-y-1"} pointer-events-none`
                             )}
-                            onMouseEnter={() => { if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current); }}
+                            onMouseEnter={() => { if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current); }}
                         >
                             {filteredItems.length === 0 ? (
                                 <div className="p-3 text-sm text-gray-500">
