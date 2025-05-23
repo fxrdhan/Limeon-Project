@@ -4,6 +4,7 @@ import {
     useQuery,
     useMutation,
     useQueryClient,
+    keepPreviousData,
 } from "@tanstack/react-query";
 import type {
     Supplier as SupplierType,
@@ -20,31 +21,47 @@ export const useSupplierHandlers = (
     const [newSupplierImage, setNewSupplierImage] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10); // Default items per page
     const queryClient = useQueryClient();
 
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(search);
+            setCurrentPage(1); // Reset to first page on new search
         }, 500);
         return () => clearTimeout(timer);
     }, [search]);
 
-    const fetchSuppliers = async (searchTerm: string) => {
+    const fetchSuppliers = async (page: number, searchTerm: string, limit: number) => {
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
         let query = supabase
             .from("suppliers")
             .select("id, name, address, phone, email, contact_person, image_url");
 
+        let countQuery = supabase
+            .from("suppliers")
+            .select('id', { count: 'exact' });
+
         if (searchTerm) {
             const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
             query = query.or(`name.ilike.${fuzzySearchPattern},address.ilike.${fuzzySearchPattern},phone.ilike.${fuzzySearchPattern}`);
+            countQuery = countQuery.or(`name.ilike.${fuzzySearchPattern},address.ilike.${fuzzySearchPattern},phone.ilike.${fuzzySearchPattern}`);
         } else {
             query = query.order("name");
         }
-        const { data, error } = await query;
 
-        if (error) throw error;
+        const [suppliersResult, countResult] = await Promise.all([
+            query.order("name").range(from, to),
+            countQuery
+        ]);
 
-        const suppliersData = data || [];
+        if (suppliersResult.error) throw suppliersResult.error;
+        if (countResult.error) throw countResult.error;
+
+        const suppliersData = suppliersResult.data || [];
 
         if (searchTerm && suppliersData.length > 0) {
             const lowerSearchTerm = searchTerm.toLowerCase();
@@ -65,21 +82,25 @@ export const useSupplierHandlers = (
                 return nameA.localeCompare(nameB);
             });
         }
-        return suppliersData;
+        return { suppliers: suppliersData, totalItems: countResult.count || 0 };
     };
 
     const {
-        data: suppliers,
+        data,
         isLoading,
         isError,
         error,
         isFetching,
-    } = useQuery<SupplierType[]>({
-        queryKey: ["suppliers", debouncedSearch],
-        queryFn: () => fetchSuppliers(debouncedSearch),
+    } = useQuery<{ suppliers: SupplierType[], totalItems: number }>({
+        queryKey: ["suppliers", currentPage, debouncedSearch, itemsPerPage],
+        queryFn: () => fetchSuppliers(currentPage, debouncedSearch, itemsPerPage),
+        placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
         refetchOnMount: true,
     });
+
+    const suppliers = data?.suppliers || [];
+    const totalItems = data?.totalItems || 0;
 
     const queryError = error instanceof Error ? error : null;
 
@@ -281,6 +302,16 @@ export const useSupplierHandlers = (
         contact_person: "",
     };
 
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+    };
+
+    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setItemsPerPage(Number(e.target.value));
+        setCurrentPage(1); // Reset to first page when items per page changes
+    };
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
     return {
         selectedSupplier,
         isEditModalOpen,
@@ -307,5 +338,11 @@ export const useSupplierHandlers = (
         search,
         setSearch,
         debouncedSearch,
+        currentPage,
+        itemsPerPage,
+        totalItems,
+        totalPages,
+        handlePageChange,
+        handleItemsPerPageChange,
     };
 };
