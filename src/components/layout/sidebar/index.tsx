@@ -7,15 +7,17 @@ import {
     FaShoppingCart,
     FaHome,
     FaChartBar,
-    FaAngleDown,
+    FaLock,
+    FaLockOpen,
     FaHospital,
     FaShoppingBag,
-    FaCog
+    FaCog,
+    FaAngleDown
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import type { SidebarProps, MenuItem } from '@/types';
 
-const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
+const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSidebar }: SidebarProps) => {
     const location = useLocation();
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
         masterData: false,
@@ -137,22 +139,22 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
             clearTimeout(hoverTimeoutRef.current);
             hoverTimeoutRef.current = null;
         }
-        if (collapsed) {
+        if (!isLocked && collapsed) {
             hoverTimeoutRef.current = setTimeout(() => {
-                toggleSidebar();
+                expandSidebar();
             }, 100);
         }
-    }, [collapsed, toggleSidebar]);
+    }, [collapsed, isLocked, expandSidebar]);
 
     const handleMouseLeaveSidebar = useCallback(() => {
         if (hoverTimeoutRef.current) {
             clearTimeout(hoverTimeoutRef.current);
             hoverTimeoutRef.current = null;
         }
-        if (!collapsed) {
-            toggleSidebar();
+        if (!isLocked && !collapsed) {
+            collapseSidebar();
         }
-    }, [collapsed, toggleSidebar]);
+    }, [collapsed, isLocked, collapseSidebar]);
 
     useEffect(() => {
         return () => {
@@ -165,13 +167,13 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
     return (
         <aside
             onMouseEnter={handleMouseEnterSidebar}
-            onMouseLeave={handleMouseLeaveSidebar}      
+            onMouseLeave={handleMouseLeaveSidebar}
             className={`bg-gradient-to-b from-teal-600 to-teal-800 text-white 
                         transition-all duration-500 ease-in-out h-screen 
                         ${collapsed ? 'w-16' : 'w-64'} relative group z-10`}
         >
             <div className="flex flex-col h-full">
-                <div className="p-4 border-b border-primary/30 flex items-center">
+                <div className="p-4 border-b border-primary/30 flex items-center justify-between">
                     <div className="flex items-center">
                         <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center flex-shrink-0">
                             <span className="text-teal-600 text-xl font-bold">P</span>
@@ -180,6 +182,16 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                             PharmaSys
                         </h2>
                     </div>
+                    {!collapsed && (
+                        <button
+                            onClick={toggleLock}
+                            className="p-2 rounded-full text-teal-100 hover:bg-teal-700 focus:outline-none transition-colors duration-150"
+                            title={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
+                            aria-label={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
+                        >
+                            {isLocked ? <FaLock size={16} /> : <FaLockOpen size={16} />}
+                        </button>
+                    )}
                 </div>
 
                 <nav className="flex-grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -189,7 +201,7 @@ const Sidebar = ({ collapsed, toggleSidebar }: SidebarProps) => {
                                 <>
                                     <button
                                         onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
-                                        className={`w-full text-left flex items-center px-4 py-3 h-12 justify-between 
+                                        className={`w-full text-left flex items-center px-4 py-3 h-10 justify-between 
                                                 ${isActive(item.path) || hasActiveChild(item.children)
                                                 ? 'bg-teal-500/40 font-medium border-l-4 border-teal-100'
                                                 : 'border-l-4 border-transparent hover:bg-teal-700/60'}
