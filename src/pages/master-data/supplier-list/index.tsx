@@ -5,6 +5,7 @@ import {
     Card,
     CardHeader,
     Table,
+    SearchBar,
     TableHead,
     TableBody,
     TableRow,
@@ -38,7 +39,10 @@ const SupplierList = () => {
         handleNewSupplierImageUpload,
         supplierFields,
         transformSupplierForModal,
-        emptySupplierData
+        emptySupplierData,
+        search,
+        setSearch,
+        debouncedSearch
     } = useSupplierHandlers(openConfirmDialog);
 
     return (
@@ -57,6 +61,12 @@ const SupplierList = () => {
                 </div>
             </CardHeader>
 
+            <SearchBar
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari supplier..."
+                className="mb-4"
+            />
             {isLoading && <Loading message="Memuat supplier..." />}
             {isError && (
                 <div className="text-center text-red-500">
@@ -91,7 +101,9 @@ const SupplierList = () => {
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={4} className="text-center text-gray-500">
-                                    Belum ada data supplier.
+                                    {debouncedSearch
+                                        ? `Tidak ada supplier dengan kata kunci "${debouncedSearch}"`
+                                        : "Belum ada data supplier."}
                                 </TableCell>
                             </TableRow>
                         )}
