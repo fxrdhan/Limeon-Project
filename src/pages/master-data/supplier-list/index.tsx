@@ -10,6 +10,7 @@ import {
     TableRow,
     TableCell,
     TableHeader,
+    Pagination,
     PageTitle,
     useConfirmDialog
 } from "@/components/modules";
@@ -42,7 +43,13 @@ const SupplierList = () => {
         emptySupplierData,
         search,
         setSearch,
-        debouncedSearch
+        debouncedSearch,
+        currentPage,
+        itemsPerPage,
+        totalItems,
+        totalPages,
+        handlePageChange,
+        handleItemsPerPageChange
     } = useSupplierHandlers(openConfirmDialog);
 
     return (
@@ -79,46 +86,57 @@ const SupplierList = () => {
                 }`}
             >
                 {!isError && (
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeader className="w-[20%]">Nama Supplier</TableHeader>
-                                <TableHeader className="w-[60%]">Alamat</TableHeader>
-                                <TableHeader className="w-[10%]">Telepon</TableHeader>
-                                <TableHeader className="w-[10%]">Kontak Person</TableHeader>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {isLoading && (!suppliers || suppliers.length === 0) ? (
+                    <>
+                        <Table>
+                            <TableHead>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center text-gray-500 py-10">
-                                        Memuat data supplier...
-                                    </TableCell>
+                                    <TableHeader className="w-[20%]">Nama Supplier</TableHeader>
+                                    <TableHeader className="w-[60%]">Alamat</TableHeader>
+                                    <TableHeader className="w-[10%]">Telepon</TableHeader>
+                                    <TableHeader className="w-[10%]">Kontak Person</TableHeader>
                                 </TableRow>
-                            ) : suppliers && suppliers.length > 0 ? (
-                                suppliers.map((supplier) => (
-                                    <TableRow
-                                        key={supplier.id}
-                                        onClick={() => openSupplierDetail(supplier)}
-                                        className="cursor-pointer hover:bg-blue-50"
-                                    >
-                                        <TableCell>{supplier.name}</TableCell>
-                                        <TableCell>{supplier.address || "-"}</TableCell>
-                                        <TableCell>{supplier.phone || "-"}</TableCell>
-                                        <TableCell>{supplier.contact_person || "-"}</TableCell>
+                            </TableHead>
+                            <TableBody>
+                                {isLoading && (!suppliers || suppliers.length === 0) ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center text-gray-500 py-10">
+                                            Memuat data supplier...
+                                        </TableCell>
                                     </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="text-center text-gray-500 py-10">
-                                        {debouncedSearch
-                                            ? `Tidak ada supplier dengan kata kunci "${debouncedSearch}"`
-                                            : "Belum ada data supplier."}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                                ) : suppliers && suppliers.length > 0 ? (
+                                    suppliers.map((supplier) => (
+                                        <TableRow
+                                            key={supplier.id}
+                                            onClick={() => openSupplierDetail(supplier)}
+                                            className="cursor-pointer hover:bg-blue-50"
+                                        >
+                                            <TableCell>{supplier.name}</TableCell>
+                                            <TableCell>{supplier.address || "-"}</TableCell>
+                                            <TableCell>{supplier.phone || "-"}</TableCell>
+                                            <TableCell>{supplier.contact_person || "-"}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center text-gray-500 py-10">
+                                            {debouncedSearch
+                                                ? `Tidak ada supplier dengan kata kunci "${debouncedSearch}"`
+                                                : "Belum ada data supplier."}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            itemsPerPage={itemsPerPage}
+                            itemsCount={suppliers?.length || 0}
+                            onPageChange={handlePageChange}
+                            onItemsPerPageChange={handleItemsPerPageChange}
+                        />
+                    </>
                 )}
             </div>
 
