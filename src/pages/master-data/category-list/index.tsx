@@ -2,7 +2,6 @@ import { FaPlus } from "react-icons/fa";
 import {
     Card,
     Button,
-    Loading,
     Pagination,
     SearchBar,
     Table,
@@ -73,9 +72,7 @@ const CategoryList = () => {
                     </Button>
                 </div>
 
-                {isLoading ? (
-                    <Loading />
-                ) : isError ? (
+                {isError ? (
                     <div className="text-center p-6 text-red-500">
                         Error: {queryError?.message || "Gagal memuat data"}
                     </div>
@@ -89,18 +86,16 @@ const CategoryList = () => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {categories?.length === 0 ? (
+                                {isLoading && (!categories || categories.length === 0) ? (
                                     <TableRow>
                                         <TableCell
                                             colSpan={2}
-                                            className="text-center text-gray-500"
+                                            className="text-center text-gray-500 py-10"
                                         >
-                                            {debouncedSearch
-                                                ? `Tidak ada kategori dengan kata kunci "${debouncedSearch}"`
-                                                : "Tidak ada data kategori yang ditemukan"}
+                                            Memuat data kategori...
                                         </TableCell>
                                     </TableRow>
-                                ) : (
+                                ) : categories && categories.length > 0 ? (
                                     categories.map((category) => (
                                         <TableRow
                                             key={category.id}
@@ -111,6 +106,17 @@ const CategoryList = () => {
                                             <TableCell>{category.description}</TableCell>
                                         </TableRow>
                                     ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={2}
+                                            className="text-center text-gray-500 py-10"
+                                        >
+                                            {debouncedSearch
+                                                ? `Tidak ada kategori dengan kata kunci "${debouncedSearch}"`
+                                                : "Tidak ada data kategori yang ditemukan"}
+                                        </TableCell>
+                                    </TableRow>
                                 )}
                             </TableBody>
                         </Table>
