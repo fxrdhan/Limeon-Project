@@ -32,17 +32,40 @@ export const useSupplierHandlers = (
     const fetchSuppliers = async (searchTerm: string) => {
         let query = supabase
             .from("suppliers")
-            .select("id, name, address, phone, email, contact_person, image_url")
-            .order("name");
+            .select("id, name, address, phone, email, contact_person, image_url");
 
         if (searchTerm) {
             const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
             query = query.or(`name.ilike.${fuzzySearchPattern},address.ilike.${fuzzySearchPattern},phone.ilike.${fuzzySearchPattern}`);
+        } else {
+            query = query.order("name");
         }
         const { data, error } = await query;
 
         if (error) throw error;
-        return data || [];
+
+        const suppliersData = data || [];
+
+        if (searchTerm && suppliersData.length > 0) {
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            suppliersData.sort((a, b) => {
+                const nameA = a.name.toLowerCase();
+                const nameB = b.name.toLowerCase();
+
+                const isAExactMatch = nameA === lowerSearchTerm;
+                const isBExactMatch = nameB === lowerSearchTerm;
+                if (isAExactMatch && !isBExactMatch) return -1;
+                if (!isAExactMatch && isBExactMatch) return 1;
+
+                const aStartsWith = nameA.startsWith(lowerSearchTerm);
+                const bStartsWith = nameB.startsWith(lowerSearchTerm);
+                if (aStartsWith && !bStartsWith) return -1;
+                if (!aStartsWith && bStartsWith) return 1;
+
+                return nameA.localeCompare(nameB);
+            });
+        }
+        return suppliersData;
     };
 
     const {
