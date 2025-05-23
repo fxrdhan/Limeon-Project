@@ -1,7 +1,6 @@
 import { FaPlus } from "react-icons/fa";
 import {
     Button,
-    Loading,
     Card,
     CardHeader,
     Table,
@@ -27,6 +26,7 @@ const SupplierList = () => {
         isLoading,
         isError,
         queryError,
+        isFetching,
         updateSupplierMutation,
         createSupplierMutation,
         updateSupplierImageMutation,
@@ -67,49 +67,60 @@ const SupplierList = () => {
                 placeholder="Cari supplier..."
                 className="mb-4"
             />
-            {isLoading && <Loading message="Memuat supplier..." />}
-            {isError && (
+            {isError && !isLoading && (
                 <div className="text-center text-red-500">
                     Error: {queryError?.message || "Gagal memuat data"}
                 </div>
             )}
-
-            {!isLoading && !isError && (
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableHeader className="w-[20%]">Nama Supplier</TableHeader>
-                            <TableHeader className="w-[60%]">Alamat</TableHeader>
-                            <TableHeader className="w-[10%]">Telepon</TableHeader>
-                            <TableHeader className="w-[10%]">Kontak Person</TableHeader>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {suppliers && suppliers.length > 0 ? (
-                            suppliers.map((supplier) => (
-                                <TableRow
-                                    key={supplier.id}
-                                    onClick={() => openSupplierDetail(supplier)}
-                                    className="cursor-pointer hover:bg-blue-50"
-                                >
-                                    <TableCell>{supplier.name}</TableCell>
-                                    <TableCell>{supplier.address || "-"}</TableCell>
-                                    <TableCell>{supplier.phone || "-"}</TableCell>
-                                    <TableCell>{supplier.contact_person || "-"}</TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
+            
+            <div
+                className={`${
+                    isFetching ? "opacity-50 transition-opacity duration-300" : ""
+                }`}
+            >
+                {!isError && (
+                    <Table>
+                        <TableHead>
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center text-gray-500">
-                                    {debouncedSearch
-                                        ? `Tidak ada supplier dengan kata kunci "${debouncedSearch}"`
-                                        : "Belum ada data supplier."}
-                                </TableCell>
+                                <TableHeader className="w-[20%]">Nama Supplier</TableHeader>
+                                <TableHeader className="w-[60%]">Alamat</TableHeader>
+                                <TableHeader className="w-[10%]">Telepon</TableHeader>
+                                <TableHeader className="w-[10%]">Kontak Person</TableHeader>
                             </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            )}
+                        </TableHead>
+                        <TableBody>
+                            {isLoading && (!suppliers || suppliers.length === 0) ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center text-gray-500 py-10">
+                                        Memuat data supplier...
+                                    </TableCell>
+                                </TableRow>
+                            ) : suppliers && suppliers.length > 0 ? (
+                                suppliers.map((supplier) => (
+                                    <TableRow
+                                        key={supplier.id}
+                                        onClick={() => openSupplierDetail(supplier)}
+                                        className="cursor-pointer hover:bg-blue-50"
+                                    >
+                                        <TableCell>{supplier.name}</TableCell>
+                                        <TableCell>{supplier.address || "-"}</TableCell>
+                                        <TableCell>{supplier.phone || "-"}</TableCell>
+                                        <TableCell>{supplier.contact_person || "-"}</TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center text-gray-500 py-10">
+                                        {debouncedSearch
+                                            ? `Tidak ada supplier dengan kata kunci "${debouncedSearch}"`
+                                            : "Belum ada data supplier."}
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                )}
+            </div>
 
             <DetailEditModal
                 title={selectedSupplier?.name || ""}
