@@ -70,7 +70,7 @@ function ItemList() {
                         <TableHead>
                             <TableRow>
                                 <TableHeader className="w-[23%]">Nama Item</TableHeader>
-                                <TableHeader className="w-[5%]">Kode</TableHeader>
+                                <TableHeader className="w-[6%]">Kode</TableHeader>
                                 <TableHeader className="w-[8%]">Barcode</TableHeader>
                                 <TableHeader className="w-[8%]">Kategori</TableHeader>
                                 <TableHeader className="w-[14%]">Jenis</TableHeader>
@@ -78,7 +78,7 @@ function ItemList() {
                                 <TableHeader className="w-[10%]">Satuan Turunan</TableHeader>
                                 <TableHeader className="w-[10%] text-right">Harga Pokok</TableHeader>
                                 <TableHeader className="w-[10%] text-right">Harga Jual</TableHeader>
-                                <TableHeader className="w-[6%] text-center">Stok</TableHeader>
+                                <TableHeader className="w-[5%] text-center">Stok</TableHeader>
                             </TableRow>
                         </TableHead>
                         <TableBody>
