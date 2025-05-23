@@ -97,7 +97,10 @@ import { JSX } from "react";
 
 export interface SidebarProps {
     collapsed: boolean;
-    toggleSidebar: () => void;
+    isLocked: boolean;
+    toggleLock: () => void;
+    expandSidebar: () => void;
+    collapseSidebar: () => void;
 }
 export interface MenuItem {
     name: string;
