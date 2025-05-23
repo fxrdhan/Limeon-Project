@@ -12,7 +12,6 @@ import {
     TableHeader,
     Pagination,
     PageTitle,
-    useConfirmDialog
 } from "@/components/modules";
 import DetailEditModal from "./add-edit-supplier";
 import { useState, useEffect } from "react";
@@ -20,26 +19,40 @@ import { supabase } from "@/lib/supabase";
 import {
     useQuery,
     useMutation,
-    useQueryClient,
     keepPreviousData,
 } from "@tanstack/react-query";
 import type {
     Supplier as SupplierType,
-    FieldConfig as FieldConfigSupplier} from "@/types";
-import { fetchSuppliers as fetchSuppliersShared } from '@/lib/prefetchQueries';
+    FieldConfig as FieldConfigSupplier,
+} from "@/types";
+import { fetchSuppliers as fetchSuppliersShared } from "@/lib/prefetchQueries";
+import { useMasterDataManagement } from "@/handlers/master-data-management";
 
 const SupplierList = () => {
-    const { openConfirmDialog } = useConfirmDialog();
-
-    const [selectedSupplier, setSelectedSupplier] = useState<SupplierType | null>(null);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [selectedSupplier, setSelectedSupplier] = useState<SupplierType | null>(
+        null
+    );
     const [newSupplierImage, setNewSupplierImage] = useState<string | null>(null);
-    const [search, setSearch] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const queryClient = useQueryClient();
+
+    const {
+        handlePageChange,
+        itemsPerPage,
+        isAddModalOpen,
+        isEditModalOpen,
+        setIsEditModalOpen,
+        setIsAddModalOpen,
+        handleItemsPerPageChange,
+        search,
+        setSearch,
+        debouncedSearch,
+        setDebouncedSearch,
+        currentPage,
+        setCurrentPage,
+        queryClient,
+        openConfirmDialog,
+        totalItems,
+        queryError
+    } = useMasterDataManagement("suppliers", "Supplier");
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -47,25 +60,21 @@ const SupplierList = () => {
             setCurrentPage(1);
         }, 500);
         return () => clearTimeout(timer);
-    }, [search]);
+    }, [search, setCurrentPage, setDebouncedSearch]);
 
-    const {
-        data,
-        isLoading,
-        isError,
-        error,
-        isFetching,
-    } = useQuery<{ suppliers: SupplierType[], totalItems: number }>({
+    const { data, isLoading, isError, isFetching } = useQuery<{
+        suppliers: SupplierType[];
+        totalItems: number;
+    }>({
         queryKey: ["suppliers", currentPage, debouncedSearch, itemsPerPage],
-        queryFn: () => fetchSuppliersShared(currentPage, debouncedSearch, itemsPerPage),
+        queryFn: () =>
+            fetchSuppliersShared(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
         staleTime: 30 * 1000,
         refetchOnMount: true,
     });
 
     const suppliers = data?.suppliers || [];
-    const totalItems = data?.totalItems || 0;
-    const queryError = error instanceof Error ? error : null;
 
     const updateSupplier = async (updatedData: Partial<SupplierType>) => {
         if (!selectedSupplier) return;
@@ -89,7 +98,11 @@ const SupplierList = () => {
         return data[0];
     };
 
-    const updateSupplierMutation = useMutation<void, Error, Partial<SupplierType>>({
+    const updateSupplierMutation = useMutation<
+        void,
+        Error,
+        Partial<SupplierType>
+    >({
         mutationFn: updateSupplier,
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ["suppliers"] });
@@ -261,14 +274,6 @@ const SupplierList = () => {
         contact_person: "",
     };
 
-    const handlePageChange = (newPage: number) => {
-        setCurrentPage(newPage);
-    };
-
-    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setItemsPerPage(Number(e.target.value));
-        setCurrentPage(1);
-    };
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
@@ -298,11 +303,10 @@ const SupplierList = () => {
                     Error: {queryError?.message || "Gagal memuat data"}
                 </div>
             )}
-            
+
             <div
-                className={`${
-                    isFetching ? "opacity-50 transition-opacity duration-300" : ""
-                }`}
+                className={`${isFetching ? "opacity-50 transition-opacity duration-300" : ""
+                    }`}
             >
                 {!isError && (
                     <>
@@ -318,7 +322,10 @@ const SupplierList = () => {
                             <TableBody>
                                 {isLoading && (!suppliers || suppliers.length === 0) ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-gray-500 py-10">
+                                        <TableCell
+                                            colSpan={4}
+                                            className="text-center text-gray-500 py-10"
+                                        >
                                             Memuat data supplier...
                                         </TableCell>
                                     </TableRow>
@@ -337,7 +344,10 @@ const SupplierList = () => {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-gray-500 py-10">
+                                        <TableCell
+                                            colSpan={4}
+                                            className="text-center text-gray-500 py-10"
+                                        >
                                             {debouncedSearch
                                                 ? `Tidak ada supplier dengan kata kunci "${debouncedSearch}"`
                                                 : "Belum ada data supplier."}
