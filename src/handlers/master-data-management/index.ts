@@ -57,8 +57,9 @@ export const useMasterDataManagement = (
         let query = supabase.from(tableName).select("id, name, description", { count: "exact" });
 
         if (searchTerm) {
+            const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
             query = query.or(
-                `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+                `name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`
             );
         }
 
