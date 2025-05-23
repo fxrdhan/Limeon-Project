@@ -26,7 +26,7 @@ import type {
     FieldConfig as FieldConfigSupplier,
 } from "@/types";
 import { fetchSuppliers as fetchSuppliersShared } from "@/lib/prefetchQueries";
-import { useMasterDataManagement } from "@/handlers/master-data-management";
+import { useMasterDataManagement } from "@/handlers";
 
 const SupplierList = () => {
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierType | null>(
