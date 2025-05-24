@@ -143,6 +143,8 @@ const SupplierList = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["suppliers"] });
             console.log("Supplier berhasil dihapus, cache diinvalidasi.");
+            setIsEditModalOpen(false);
+            setSelectedSupplier(null);
         },
         onError: (error: Error) => {
             console.error("Error deleting supplier:", error);
