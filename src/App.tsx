@@ -11,7 +11,7 @@ const ItemList = lazy(() => import('@/pages/master-data/item-list'));
 const CategoryList = lazy(() => import('@/pages/master-data/category-list'));
 const UnitList = lazy(() => import('@/pages/master-data/unit-list'));
 const TypeList = lazy(() => import('@/pages/master-data/type-list'));
-const AddItem = lazy(() => import('@/pages/master-data/item-list/add-edit-item'));
+const AddItem = lazy(() => import('@/pages/master-data/item-list/add-edit-page'));
 const SupplierList = lazy(() => import('@/pages/master-data/supplier-list'));
 const UploadInvoice = lazy(() => import('@/pages/purchases/upload-invoice'));
 const ConfirmInvoicePage = lazy(() => import('@/pages/purchases/confirm-invoice'));
