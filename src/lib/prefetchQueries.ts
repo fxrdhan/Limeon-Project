@@ -1,10 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from './supabase';
+import type { Item as ItemDataType, UnitConversion } from '@/types';
 
 const fetchCategories = async (page = 1, searchTerm = '', limit = 10) => {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
+    // type CategoryListItem = { id: string; name: string; description: string | null };
 
     let categoriesQuery = supabase
         .from("item_categories")
@@ -30,7 +32,7 @@ const fetchCategories = async (page = 1, searchTerm = '', limit = 10) => {
 
     return { 
         data: categoriesResult.data || [],
-        totalItems: countResult.count || 0
+        totalItems: countResult.count || 0,
     };
 };
 
@@ -77,6 +79,29 @@ const fetchUnits = async (page = 1, searchTerm = '', limit = 10) => {
     return { data: data || [], totalItems: count || 0 };
 };
 
+type RawUnitConversionFromDB = {
+    id: string;
+    unit_name: string;
+    conversion_rate: number;
+    base_price: number | null;
+    sell_price: number | null;
+    created_at?: string;
+};
+
+type RawItemFromDB = {
+    id: string;
+    name: string;
+    code?: string | null;
+    base_price?: number | null;
+    sell_price?: number | null;
+    stock?: number | null;
+    barcode?: string | null;
+    unit_conversions?: string | RawUnitConversionFromDB[];
+    category_id?: string | null;
+    type_id?: string | null;
+    unit_id?: string | null;
+};
+
 const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
@@ -86,15 +111,8 @@ const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
         .select(`
         id,
         name,
-        code,
-        base_price,
-        sell_price,
-        stock,
-        barcode,
-        unit_conversions,
-        category_id,
-        type_id,
-        unit_id
+        code, base_price, sell_price, stock, barcode,
+        unit_conversions, category_id, type_id, unit_id
     `);
 
     let countQuery = supabase
@@ -107,36 +125,65 @@ const fetchItems = async (page = 1, searchTerm = '', limit = 10) => {
         countQuery = countQuery.or(`name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern},barcode.ilike.${fuzzySearchPattern}`);
     }
 
-    const [itemsResult, countResult, categoriesRes, typesRes, unitsRes] = await Promise.all([
+    const [itemsResult, countResult, categoriesRes, typesRes, unitsRes, allUnitsForConversionRes] = await Promise.all([
         itemsQuery.order('name').range(from, to),
         countQuery,
         supabase.from("item_categories").select("id, name"),
         supabase.from("item_types").select("id, name"),
-        supabase.from("item_units").select("id, name")
+        supabase.from("item_units").select("id, name"),
+        supabase.from("item_units").select("id, name") // Fetch all units for mapping conversions
     ]);
 
     if (itemsResult.error) throw itemsResult.error;
     if (countResult.error) throw countResult.error;
+    if (categoriesRes.error) throw categoriesRes.error;
+    if (typesRes.error) throw typesRes.error;
+    if (unitsRes.error) throw unitsRes.error;
+    if (allUnitsForConversionRes.error) throw allUnitsForConversionRes.error;
 
     const categories = categoriesRes.data || [];
     const types = typesRes.data || [];
     const units = unitsRes.data || [];
+    const allUnitsForConversion = allUnitsForConversionRes.data || [];
 
-    const completedData = (itemsResult.data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        code: item.code,
-        base_price: item.base_price,
-        sell_price: item.sell_price,
-        barcode: item.barcode,
-        unit_conversions: typeof item.unit_conversions === 'string' ? JSON.parse(item.unit_conversions || '[]') : (item.unit_conversions || []),
-        stock: item.stock,
-        category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
-        type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
-        unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
-    }));
+    const completedData = (itemsResult.data || []).map((item: RawItemFromDB) => {
+        let rawConversions: RawUnitConversionFromDB[] = [];
+        if (typeof item.unit_conversions === 'string') {
+            try { rawConversions = JSON.parse(item.unit_conversions || '[]'); } catch (e) { console.error("Error parsing unit_conversions in prefetch:", item.id, e); }
+        } else if (Array.isArray(item.unit_conversions)) {
+            rawConversions = item.unit_conversions;
+        }
 
-    return { items: completedData, totalItems: countResult.count || 0 };
+        const mappedConversions: UnitConversion[] = rawConversions.map(conv => {
+            const unitDetail = allUnitsForConversion.find(u => u.name === conv.unit_name);
+            return {
+                id: conv.id,
+                conversion_rate: conv.conversion_rate,
+                unit_name: conv.unit_name,
+                to_unit_id: unitDetail ? unitDetail.id : '',
+                unit: unitDetail ? { id: unitDetail.id, name: unitDetail.name } : { id: '', name: conv.unit_name || 'Unknown' },
+                conversion: conv.conversion_rate,
+                basePrice: conv.base_price ?? 0,
+                sellPrice: conv.sell_price ?? 0,
+            };
+        });
+
+        return {
+            id: item.id,
+            name: item.name,
+            code: item.code,
+            barcode: item.barcode,
+            base_price: item.base_price,
+            sell_price: item.sell_price,
+            stock: item.stock,
+            unit_conversions: mappedConversions,
+            category: { name: categories?.find(cat => cat.id === item.category_id)?.name || "" },
+            type: { name: types?.find(t => t.id === item.type_id)?.name || "" },
+            unit: { name: units?.find(u => u.id === item.unit_id)?.name || "" }
+        } as ItemDataType;
+    });
+
+    return { data: completedData, totalItems: countResult.count || 0 };
 };
 
 export const fetchSuppliers = async (page = 1, searchTerm = '', limit = 10) => {

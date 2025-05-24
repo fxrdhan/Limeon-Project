@@ -7,9 +7,9 @@ import {
     useQueryClient,
     keepPreviousData,
 } from "@tanstack/react-query";
-import type { Category, ItemType, Unit } from "@/types";
+import type { Category, ItemType, Unit, Item as ItemDataType, UnitConversion, UnitData } from "@/types";
 
-type MasterDataItem = Category | ItemType | Unit;
+type MasterDataItem = Category | ItemType | Unit | ItemDataType;
 
 export const useMasterDataManagement = (
     tableName: string,
@@ -48,26 +48,108 @@ export const useMasterDataManagement = (
 
     const fetchData = async (page: number, searchTerm: string, limit: number) => {
         const from = (page - 1) * limit;
-        const to = from + limit - 1;
 
-        let query = supabase
-            .from(tableName)
-            .select("id, name, description", { count: "exact" });
+        if (tableName === "items") {
+            const to = from + limit - 1;
+            let itemsQuery = supabase.from("items").select(`
+                id,
+                name,
+                code,
+                barcode,
+                base_price,
+                sell_price,
+                stock,
+                unit_conversions,
+                category_id,
+                type_id,
+                unit_id,
+                item_categories (name),
+                item_types (name),
+                item_units (name)
+            `);
 
-        if (searchTerm) {
-            const fuzzySearchPattern = `%${searchTerm
-                .toLowerCase()
-                .split("")
-                .join("%")}%`;
-            query = query.or(
-                `name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`
-            );
+            let countQuery = supabase.from("items").select("id", { count: "exact" });
+
+            if (searchTerm) {
+                const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
+                itemsQuery = itemsQuery.or(
+                    `name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern},barcode.ilike.${fuzzySearchPattern}`
+                );
+                countQuery = countQuery.or(
+                    `name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern},barcode.ilike.${fuzzySearchPattern}`
+                );
+            }
+
+            const [itemsResult, countResult] = await Promise.all([
+                itemsQuery.order("name").range(from, to),
+                countQuery,
+                supabase.from("item_units").select("id, name")
+            ]);
+
+            if (itemsResult.error) throw itemsResult.error;
+            if (countResult.error) throw countResult.error;
+            const allUnitsForConversion: UnitData[] = (await supabase.from("item_units").select("id, name")).data || [];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const completedData = (itemsResult.data || []).map((item: any) => {
+                let parsedConversions: UnitConversion[] = [];
+                if (typeof item.unit_conversions === 'string') {
+                    try {
+                        parsedConversions = JSON.parse(item.unit_conversions || "[]");
+                    } catch (e) {
+                        console.error("Error parsing unit_conversions for item:", item.id, e);
+                    }
+                } else if (Array.isArray(item.unit_conversions)) {
+                    parsedConversions = item.unit_conversions;
+                }
+                const mappedConversions: UnitConversion[] = parsedConversions.map((conv) => {
+                    const unitDetail = allUnitsForConversion.find(u => u.name === conv.unit_name);
+                    return {
+                        id: conv.id || Date.now().toString() + Math.random(),
+                        conversion_rate: conv.conversion_rate || conv.conversion,
+                        unit_name: conv.unit_name,
+                        to_unit_id: unitDetail ? unitDetail.id : '',
+                        unit: unitDetail ? { id: unitDetail.id, name: unitDetail.name } : { id: '', name: conv.unit_name || 'Unknown Unit' },
+                        conversion: conv.conversion_rate || conv.conversion,
+                        basePrice: conv.basePrice ?? 0,
+                        sellPrice: conv.sellPrice ?? 0,
+                    };
+                });
+                return {
+                    id: item.id,
+                    name: item.name,
+                    code: item.code,
+                    barcode: item.barcode,
+                    base_price: item.base_price,
+                    sell_price: item.sell_price,
+                    stock: item.stock,
+                    unit_conversions: mappedConversions,
+                    category: { name: item.item_categories?.name || "" },
+                    type: { name: item.item_types?.name || "" },
+                    unit: { name: item.item_units?.name || "" },
+                } as ItemDataType;
+            });
+            return { data: completedData, totalItems: countResult.count || 0 };
+        } else {
+            const to = from + limit - 1;
+            let query = supabase
+                .from(tableName)
+                .select("id, name, description", { count: "exact" });
+
+            if (searchTerm) {
+                const fuzzySearchPattern = `%${searchTerm
+                    .toLowerCase()
+                    .split("")
+                    .join("%")}%`;
+                query = query.or(
+                    `name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`
+                );
+            }
+
+            const { data, error, count } = await query.order("name").range(from, to);
+
+            if (error) throw error;
+            return { data: (data || []) as MasterDataItem[], totalItems: count || 0 };
         }
-
-        const { data, error, count } = await query.order("name").range(from, to);
-
-        if (error) throw error;
-        return { data: data || [], totalItems: count || 0 };
     };
 
     const {
@@ -84,7 +166,7 @@ export const useMasterDataManagement = (
         refetchOnMount: true,
     });
 
-    const items = queryData?.data || [];
+    const currentData = queryData?.data || [];
     const totalItems = queryData?.totalItems || 0;
     const queryError = error instanceof Error ? error : null;
 
@@ -186,7 +268,7 @@ export const useMasterDataManagement = (
         setCurrentPage,
         itemsPerPage,
         setItemsPerPage,
-        data: items,
+        data: currentData,
         totalItems,
         totalPages,
         isLoading,

@@ -47,13 +47,17 @@ export interface Item {
     id: string;
     name: string;
     code?: string;
+    barcode?: string | null;
     base_price: number;
     sell_price: number;
     stock: number;
-    unit_id: string;
-    base_unit: string;
+    unit_id?: string;
+    base_unit?: string;
     unit_conversions: UnitConversion[];
     customer_level_discounts?: CustomerLevelDiscount[];
+    category: { name: string };
+    type: { name: string };
+    unit: { name: string };
 }
 
 export interface CustomerLevelDiscount {
