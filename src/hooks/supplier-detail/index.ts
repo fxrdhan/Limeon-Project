@@ -96,7 +96,9 @@ export const useSupplierDetailForm = ({
         try {
             const dataToSave = { ...editValues };
             if (mode === 'add' && currentImageUrl) {
-                dataToSave.image_url = currentImageUrl;
+                if (typeof currentImageUrl === 'string' && currentImageUrl.startsWith('data:image')) {
+                    dataToSave.image_url = currentImageUrl;
+                }
             }
             await onSave(dataToSave);
         } catch (error) {
@@ -129,7 +131,7 @@ export const useSupplierDetailForm = ({
         } finally {
             setIsUploadingImage(false);
         }
-    }, [onImageSaveProp, mode, initialData]);
+    }, [onImageSaveProp, mode, initialData, setCurrentImageUrl, setLocalData, setIsUploadingImage]);
 
     const handleImageDeleteInternal = useCallback(async () => {
         setIsUploadingImage(true);
