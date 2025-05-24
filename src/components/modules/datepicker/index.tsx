@@ -80,6 +80,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     useEffect(() => {
         let openStyleTimerId: NodeJS.Timeout | undefined;
         if (isOpen) {
+            document.body.style.overflow = 'hidden';
             setDisplayDate(value || new Date());
             setCurrentView("days");
             openStyleTimerId = setTimeout(() => {
@@ -94,13 +95,15 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             window.addEventListener("resize", calculatePosition);
         } else {
             setApplyOpenStyles(false);
+            document.body.style.overflow = '';
         }
         return () => {
             if (openStyleTimerId) clearTimeout(openStyleTimerId);
+            document.body.style.overflow = '';
             window.removeEventListener("scroll", calculatePosition, true);
             window.removeEventListener("resize", calculatePosition);
         };
-    }, [isOpen, calculatePosition, value, setApplyOpenStyles]);
+    }, [isOpen, calculatePosition, value, setApplyOpenStyles, portalContentRef]);
 
     const openCalendar = useCallback(() => {
         if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
