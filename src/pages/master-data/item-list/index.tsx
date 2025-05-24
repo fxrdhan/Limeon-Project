@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaPlus } from "react-icons/fa";
 import {
     Card,
@@ -13,26 +13,29 @@ import {
     Pagination,
     PageTitle
 } from "@/components/modules";
-import { useItemListManagement } from "@/handlers";
+import { useMasterDataManagement } from "@/handlers";
+import type { Item as ItemDataType, UnitConversion } from "@/types";
 
 function ItemList() {
+    const navigate = useNavigate();
     const {
-        navigate,
         search,
         setSearch,
         debouncedSearch,
         currentPage,
         itemsPerPage,
-        items,
+        data,
         totalItems,
         isLoading,
         isError,
-        error,
+        queryError,
         isFetching,
         handlePageChange,
         handleItemsPerPageChange,
         totalPages,
-    } = useItemListManagement();
+    } = useMasterDataManagement("items", "Item");
+
+    const items = data as ItemDataType[];
 
     return (
         <Card
@@ -60,7 +63,7 @@ function ItemList() {
             {isLoading && <div className="text-center p-6">Memuat data awal...</div>}
             {isError && (
                 <div className="text-center p-6 text-red-500">
-                    Error: {error instanceof Error ? error.message : "Gagal memuat data"}
+                    Error: {queryError instanceof Error ? queryError.message : "Gagal memuat data"}
                 </div>
             )}
 
@@ -108,7 +111,7 @@ function ItemList() {
                                         <TableCell>
                                             {item.unit_conversions && item.unit_conversions.length > 0
                                                 ? item.unit_conversions
-                                                    .map((uc: { unit_name: string }) => uc.unit_name)
+                                                    .map((uc: UnitConversion) => uc.unit?.name || 'N/A')
                                                     .join(", ")
                                                 : "-"}
                                         </TableCell>
