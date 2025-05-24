@@ -32,7 +32,7 @@ const SupplierList = () => {
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierType | null>(
         null
     );
-    const [newSupplierImage, setNewSupplierImage] = useState<string | null>(null);
+    const [, setNewSupplierImage] = useState<string | null>(null);
 
     const {
         handlePageChange,
@@ -86,10 +86,7 @@ const SupplierList = () => {
     };
 
     const createSupplier = async (newSupplier: Partial<SupplierType>) => {
-        const dataToInsert = {
-            ...newSupplier,
-            image_url: newSupplierImage,
-        };
+        const dataToInsert = { ...newSupplier };
         const { data, error } = await supabase
             .from("suppliers")
             .insert([dataToInsert])
