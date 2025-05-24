@@ -23,7 +23,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
 }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     const [, setIsClosing] = useState(false);
-    const [, setIsAnimationComplete] = useState(!isOpen);
 
     const {
         editMode,
@@ -40,6 +39,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         handleCancelEdit,
         handleImageUpload,
         handleImageDeleteInternal,
+        resetInternalState,
     } = useSupplierDetailForm({
         initialData: data,
         fields,
@@ -54,7 +54,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             setIsClosing(false);
-            setIsAnimationComplete(false);
         }
     }, [isOpen]);
 
@@ -74,8 +73,8 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
             show={isOpen}
             as={Fragment}
             afterLeave={() => {
-                setIsAnimationComplete(true);
                 setIsClosing(false);
+                if (resetInternalState) resetInternalState();
             }}
         >
             <Dialog
