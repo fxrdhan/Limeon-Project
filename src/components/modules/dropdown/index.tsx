@@ -215,6 +215,7 @@ export const Dropdown = ({
         let openStyleTimerId: NodeJS.Timeout | undefined;
 
         if (isOpen) {
+            document.body.style.overflow = 'hidden';
             openStyleTimerId = setTimeout(() => {
                 setApplyOpenStyles(true);
                 requestAnimationFrame(() => {
@@ -229,10 +230,12 @@ export const Dropdown = ({
             window.addEventListener("resize", calculateDropdownPosition);
         } else {
             setApplyOpenStyles(false);
+            document.body.style.overflow = '';
         }
 
         return () => {
             if (openStyleTimerId) clearTimeout(openStyleTimerId);
+            document.body.style.overflow = '';
             if (isOpen) {
                 window.removeEventListener("scroll", calculateDropdownPosition, true);
                 window.removeEventListener("resize", calculateDropdownPosition);
