@@ -33,6 +33,18 @@ export const useSupplierDetailForm = ({
     const [localData, setLocalData] = useState<Record<string, string | number | boolean | null>>(initialData);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const resetInternalState = useCallback(() => {
+        setEditMode({});
+        setEditValues({});
+        setCurrentImageUrl(undefined);
+        setIsUploadingImage(false);
+        setLoadingField({});
+        setIsSubmitting(false);
+        if (mode === 'add') {
+            setLocalData(initialData); 
+        }
+    }, [mode, initialData]);
+
     useEffect(() => {
         if (isOpen) {
             const initialEditState: Record<string, boolean> = {};
@@ -46,16 +58,8 @@ export const useSupplierDetailForm = ({
             setEditValues(initialFormValues);
             setLocalData(initialData);
             setCurrentImageUrl(initialImageUrl);
-        } else {
-            setEditMode({});
-            setEditValues({});
-            setCurrentImageUrl(undefined);
-            setIsUploadingImage(false);
-            setLoadingField({});
-            setIsSubmitting(false);
         }
     }, [isOpen, initialData, fields, initialImageUrl, mode]);
-
 
     const toggleEdit = useCallback((key: string) => {
         setEditMode(prev => ({
@@ -165,5 +169,6 @@ export const useSupplierDetailForm = ({
         handleCancelEdit,
         handleImageUpload,
         handleImageDeleteInternal,
+        resetInternalState,
     };
 };
