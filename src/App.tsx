@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import MainLayout from '@/components/layout/main';
 import Login from '@/pages/auth/login';
-import '@/index.css';
 import { useAuthStore } from '@/store/authStore';
 import { ConfirmDialogProvider, OfflineAlert } from '@/components/modules';
 
