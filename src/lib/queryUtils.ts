@@ -7,9 +7,9 @@ import {
   UseMutationOptions,
   MutationFunction,
 } from '@tanstack/react-query';
-import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-import { supabase } from './supabase';
-import React from 'react';
+// import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+// import { supabase } from './supabase';
+// import React from 'react';
 
 export function useSupabaseQuery<TQueryFnData = unknown, TError = Error, TData = TQueryFnData>(
   key: QueryKey,
@@ -47,30 +47,4 @@ export function useSupabaseMutation<TData = unknown, TError = Error, TVariables 
     },
     ...options,
   });
-}
-
-export function useSupabaseSubscription<T extends Record<string, unknown> = Record<string, unknown>>(
-  tableName: string,
-  onDataChange: (payload: RealtimePostgresChangesPayload<T>) => void,
-) {
-  const queryClient = useQueryClient();
-
-  React.useEffect(() => {
-    const subscription = supabase
-      .channel(`public:${tableName}`)
-      .on('postgres_changes',
-          { event: '*', schema: 'public', table: tableName },
-          (payload: RealtimePostgresChangesPayload<T>) => {
-            if (onDataChange) {
-              onDataChange(payload);
-            }
-
-            queryClient.invalidateQueries({ queryKey: [tableName] });
-          })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [tableName, onDataChange, queryClient]);
 }
