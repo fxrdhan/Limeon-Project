@@ -42,7 +42,7 @@ const TypeList = () => {
         addMutation: addTypeMutation,
         updateMutation: updateTypeMutation,
         debouncedSearch
-    } = useMasterDataManagement("item_types", "Jenis Item");
+    } = useMasterDataManagement("item_types", "Jenis Item", true);
 
     return (
         <>
@@ -96,7 +96,7 @@ const TypeList = () => {
                                             className="cursor-pointer hover:bg-blue-50"
                                         >
                                             <TableCell>{type.name}</TableCell>
-                                            <TableCell>{type.description}</TableCell>
+                                            <TableCell>{("description" in type && type.description) ? type.description : "-"}</TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
