@@ -323,7 +323,7 @@ const CreatePurchase: React.FC = () => {
                                                         {(() => {
                                                             const conversions = getItemByID(item.item_id)?.unit_conversions;
                                                             if (!conversions) return null;
-                                                            if (conversions.length === 0) return <span className="text-xs">No units defined</span>;
+                                                            // if (conversions.length === 0) return <span className="text-xs">No units defined</span>;
 
                                                             const uniqueUnits = Array.from(new Map(conversions.map(uc => [uc.to_unit_id, { id: uc.to_unit_id, unit_name: uc.unit_name }])).values());
 
