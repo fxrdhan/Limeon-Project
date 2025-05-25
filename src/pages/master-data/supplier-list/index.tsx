@@ -16,49 +16,12 @@ import {
 import DetailEditModal from "./modal";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import {
-    useQuery,
-    useMutation,
-    keepPreviousData,
-} from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import type {
     Supplier as SupplierType,
     FieldConfig as FieldConfigSupplier,
 } from "@/types";
 import { useMasterDataManagement } from "@/handlers";
-
-const fetchSuppliers = async (page = 1, searchTerm = '', limit = 10) => {
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-
-    let query = supabase
-        .from("suppliers")
-        .select("id, name, address, phone, email, contact_person, image_url");
-
-    let countQuery = supabase
-        .from("suppliers")
-        .select('id', { count: 'exact' });
-
-    if (searchTerm) {
-        const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
-        query = query.or(`name.ilike.${fuzzySearchPattern},address.ilike.${fuzzySearchPattern},phone.ilike.${fuzzySearchPattern}`);
-        countQuery = countQuery.or(`name.ilike.${fuzzySearchPattern},address.ilike.${fuzzySearchPattern},phone.ilike.${fuzzySearchPattern}`);
-        query = query.order("name", { ascending: true });
-    } else {
-        query = query.order("name", { ascending: true });
-    }
-
-    const [suppliersResult, countResult] = await Promise.all([
-        query.range(from, to),
-        countQuery
-    ]);
-
-    if (suppliersResult.error) throw suppliersResult.error;
-    if (countResult.error) throw countResult.error;
-
-    const suppliersData = suppliersResult.data || [];
-    return { suppliers: suppliersData, totalItems: countResult.count || 0 };
-};
 
 const SupplierList = () => {
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierType | null>(
@@ -82,8 +45,12 @@ const SupplierList = () => {
         setCurrentPage,
         queryClient,
         openConfirmDialog,
-        totalItems,
-        queryError
+        totalItems, // This is totalItems from the hook
+        queryError, // This is error from the hook's useQuery
+        data: suppliersData, // Renaming 'data' from hook to 'suppliersData' for clarity
+        isLoading,    // isLoading from the hook
+        isError,      // isError from the hook
+        isFetching    // isFetching from the hook
     } = useMasterDataManagement("suppliers", "Supplier", true);
 
     useEffect(() => {
@@ -94,20 +61,8 @@ const SupplierList = () => {
         return () => clearTimeout(timer);
     }, [search, setCurrentPage, setDebouncedSearch]);
 
-    const { data, isLoading, isError, isFetching } = useQuery<{
-        suppliers: SupplierType[];
-        totalItems: number;
-    }>({
-        queryKey: ["suppliers", currentPage, debouncedSearch, itemsPerPage],
-        queryFn: () =>
-            fetchSuppliers(currentPage, debouncedSearch, itemsPerPage),
-        placeholderData: keepPreviousData,
-        staleTime: 30 * 1000,
-        refetchOnMount: true,
-    });
-
-    const suppliers = data?.suppliers || [];
-
+    const suppliers = suppliersData || [];
+    const currentTotalItems = totalItems || 0;
     const updateSupplier = async (updatedData: Partial<SupplierType>) => {
         if (!selectedSupplier || !selectedSupplier.id) {
             console.error("Tidak dapat memperbarui: selectedSupplier atau ID-nya hilang.");
@@ -311,7 +266,7 @@ const SupplierList = () => {
         contact_person: "",
     };
 
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const totalPages = Math.ceil(currentTotalItems / itemsPerPage);
 
     return (
         <Card>
@@ -367,18 +322,27 @@ const SupplierList = () => {
                                         </TableCell>
                                     </TableRow>
                                 ) : suppliers && suppliers.length > 0 ? (
-                                    suppliers.map((supplier) => (
-                                        <TableRow
-                                            key={supplier.id}
-                                            onClick={() => openSupplierDetail(supplier)}
-                                            className="cursor-pointer hover:bg-blue-50"
-                                        >
-                                            <TableCell>{supplier.name}</TableCell>
-                                            <TableCell>{supplier.address || "-"}</TableCell>
-                                            <TableCell>{supplier.phone || "-"}</TableCell>
-                                            <TableCell>{supplier.contact_person || "-"}</TableCell>
-                                        </TableRow>
-                                    ))
+                                    suppliers
+                                        .filter(
+                                            (supplier): supplier is SupplierType =>
+                                                typeof supplier === "object" &&
+                                                supplier !== null &&
+                                                "address" in supplier &&
+                                                "name" in supplier &&
+                                                "id" in supplier
+                                        )
+                                        .map((supplier) => (
+                                            <TableRow
+                                                key={supplier.id}
+                                                onClick={() => openSupplierDetail(supplier)}
+                                                className="cursor-pointer hover:bg-blue-50"
+                                            >
+                                                <TableCell>{supplier.name}</TableCell>
+                                                <TableCell>{supplier.address || "-"}</TableCell>
+                                                <TableCell>{supplier.phone || "-"}</TableCell>
+                                                <TableCell>{supplier.contact_person || "-"}</TableCell>
+                                            </TableRow>
+                                        ))
                                 ) : (
                                     <TableRow>
                                         <TableCell
@@ -396,7 +360,7 @@ const SupplierList = () => {
                         <Pagination
                             currentPage={currentPage}
                             totalPages={totalPages}
-                            totalItems={totalItems}
+                            totalItems={currentTotalItems}
                             itemsPerPage={itemsPerPage}
                             itemsCount={suppliers?.length || 0}
                             onPageChange={handlePageChange}

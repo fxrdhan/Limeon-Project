@@ -7,9 +7,17 @@ import {
     useQueryClient,
     keepPreviousData,
 } from "@tanstack/react-query";
-import type { Category, ItemType, Unit, Item as ItemDataType, UnitConversion, UnitData } from "@/types";
+import type {
+    Category,
+    ItemType,
+    Unit,
+    Item as ItemDataType,
+    Supplier,           // added
+    UnitConversion,
+    UnitData
+} from "@/types";
 
-type MasterDataItem = Category | ItemType | Unit | ItemDataType;
+type MasterDataItem = Category | ItemType | Unit | ItemDataType | Supplier; // include Supplier
 
 export const useMasterDataManagement = (
     tableName: string,
@@ -134,19 +142,19 @@ export const useMasterDataManagement = (
             const to = from + limit - 1;
             let query = supabase
                 .from(tableName)
-                .select("id, name, description", { count: "exact" });
+                .select("*", { count: "exact" });               // select all columns
 
             if (searchTerm) {
                 const fuzzySearchPattern = `%${searchTerm
                     .toLowerCase()
                     .split("")
                     .join("%")}%`;
-                query = query.or(
-                    `name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`
-                );
+                query = query.ilike("name", fuzzySearchPattern); // only filter on name
             }
 
-            const { data, error, count } = await query.order("name").range(from, to);
+            const { data, error, count } = await query
+                .order("name")
+                .range(from, to);
 
             if (error) throw error;
             return { data: (data || []) as MasterDataItem[], totalItems: count || 0 };
@@ -271,14 +279,11 @@ export const useMasterDataManagement = (
                 if (status === 'SUBSCRIBED') {
                     console.log(`Subscribed to realtime updates for ${tableName}`);
                 }
-                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
-                    if (err) {
-                        console.error(`Realtime subscription error for ${tableName} (Status: ${status}):`, err);
-                    } else {
-                        console.warn(`Realtime subscription event for ${tableName}: ${status}. This may be normal during cleanup or if connection was lost.`);
-                    }
+                if (err) {
+                    console.error(`Realtime subscription error for ${tableName}:`, err);
                 }
             });
+
         return () => {
             supabase.removeChannel(channel);
         };
