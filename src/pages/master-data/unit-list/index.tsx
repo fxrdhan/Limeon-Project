@@ -42,7 +42,7 @@ const UnitList = () => {
         deleteMutation: deleteUnitMutation,
         openConfirmDialog,
         debouncedSearch
-    } = useMasterDataManagement("item_units", "Satuan");
+    } = useMasterDataManagement("item_units", "Satuan", true);
 
     return (
         <>
@@ -103,7 +103,7 @@ const UnitList = () => {
                                             className="cursor-pointer hover:bg-blue-50"
                                         >
                                             <TableCell>{unit.name}</TableCell>
-                                            <TableCell>{unit.description || "-"}</TableCell>
+                                            <TableCell>{("description" in unit && unit.description) ? unit.description : "-"}</TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
