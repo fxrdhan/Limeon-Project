@@ -52,7 +52,7 @@ const SupplierList = () => {
         openConfirmDialog,
         totalItems,
         queryError
-    } = useMasterDataManagement("suppliers", "Supplier");
+    } = useMasterDataManagement("suppliers", "Supplier", true);
 
     useEffect(() => {
         const timer = setTimeout(() => {
