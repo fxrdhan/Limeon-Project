@@ -11,8 +11,7 @@ import {
     TableCell,
     TableHeader,
     Pagination,
-    PageTitle,
-    Loading
+    PageTitle
 } from "@/components/modules";
 import { FaPlus } from "react-icons/fa";
 import { supabase } from "@/lib/supabase";
@@ -171,7 +170,6 @@ function ItemList() {
             <div className="mb-6">
                 <PageTitle title="Daftar Item" />
             </div>
-
             <div className="flex items-center">
                 <SearchBar
                     value={search}
@@ -186,14 +184,11 @@ function ItemList() {
                     </Button>
                 </Link>
             </div>
-
-            {isLoadingState && items.length === 0 && <Loading message="Memuat data item..." />}
             {isErrorState && (
                 <div className="text-center p-6 text-red-500">
                     Error: {errorState instanceof Error ? errorState.message : "Gagal memuat data"}
                 </div>
             )}
-
             {!isErrorState && (
                 <>
                     <Table>
@@ -212,9 +207,15 @@ function ItemList() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {items.length === 0 ? (
+                            {isLoadingState && items.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={10} className="text-center text-gray-600">
+                                    <TableCell colSpan={10} className="text-center text-gray-500 py-10">
+                                        Memuat data item...
+                                    </TableCell>
+                                </TableRow>
+                            ) : items.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={10} className="text-center text-gray-500 py-10">
                                         {debouncedSearch
                                             ? `Tidak ada item dengan nama "${debouncedSearch}"`
                                             : "Tidak ada data item yang ditemukan"}
