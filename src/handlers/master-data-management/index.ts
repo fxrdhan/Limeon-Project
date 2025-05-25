@@ -272,7 +272,11 @@ export const useMasterDataManagement = (
                     console.log(`Subscribed to realtime updates for ${tableName}`);
                 }
                 if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
-                    console.error(`Realtime subscription error for ${tableName}:`, err);
+                    if (err) {
+                        console.error(`Realtime subscription error for ${tableName} (Status: ${status}):`, err);
+                    } else {
+                        console.warn(`Realtime subscription event for ${tableName}: ${status}. This may be normal during cleanup or if connection was lost.`);
+                    }
                 }
             });
         return () => {
