@@ -160,6 +160,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     }, [searchItem, selectedItem, isOpen, isClosing, openDropdown, closeDropdown]);
 
     const handleItemSelect = (item: Item) => {
+        if (!item) return;
         setSelectedItem(item);
         setSearchItem(item.name);
         closeDropdown();
@@ -181,6 +182,19 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         }, 150);
     };
 
+    const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            if (isOpen && filteredItems.length > 0) {
+                e.preventDefault();
+                handleItemSelect(filteredItems[0]);
+            }
+        } else if (e.key === 'Escape') {
+            if (isOpen) {
+                closeDropdown();
+            }
+        }
+    };
+
     return (
         <div className="mb-4" ref={searchBarRef}>
             <div className="flex space-x-2">
@@ -195,6 +209,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                             setSearchItem(e.target.value);
                         }}
                         onFocus={handleInputFocus}
+                        onKeyDown={handleInputKeyDown}
                         onBlur={handleInputBlur}
                     />
 
