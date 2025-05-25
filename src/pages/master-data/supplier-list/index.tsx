@@ -109,10 +109,16 @@ const SupplierList = () => {
     const suppliers = data?.suppliers || [];
 
     const updateSupplier = async (updatedData: Partial<SupplierType>) => {
-        if (!selectedSupplier) return;
+        if (!selectedSupplier || !selectedSupplier.id) {
+            console.error("Tidak dapat memperbarui: selectedSupplier atau ID-nya hilang.");
+            return;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, ...dataToUpdate } = updatedData;
+
         const { error } = await supabase
             .from("suppliers")
-            .update(updatedData)
+            .update(dataToUpdate)
             .eq("id", selectedSupplier.id);
         if (error) throw error;
     };
@@ -413,6 +419,12 @@ const SupplierList = () => {
                         await updateSupplierMutation.mutateAsync(updatedData);
                     }
                     return Promise.resolve();
+                }}
+                onFieldSave={async (key: string, value: unknown) => {
+                    if (selectedSupplier && selectedSupplier.id) {
+                        const dataToUpdate: Partial<SupplierType> = { id: selectedSupplier.id, [key]: value };
+                        await updateSupplierMutation.mutateAsync(dataToUpdate);
+                    }
                 }}
                 onImageSave={async (data: {
                     supplierId?: string;
