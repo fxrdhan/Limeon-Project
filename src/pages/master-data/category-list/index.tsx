@@ -103,7 +103,7 @@ const CategoryList = () => {
                                             className="cursor-pointer hover:bg-blue-50"
                                         >
                                             <TableCell>{category.name}</TableCell>
-                                            <TableCell>{category.description}</TableCell>
+                                            <TableCell>{("description" in category && category.description) ? category.description : "-"}</TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
@@ -156,7 +156,7 @@ const CategoryList = () => {
                                 confirmText: "Ya, Hapus",
                                 onConfirm: async () => {
                                     await deleteMutation.mutateAsync(categoryId);
-                                    // setIsEditModalOpen(false); // Dihandle oleh hook
+                                    // setIsEditModalOpen(false);
                                 },
                             });
                         }
