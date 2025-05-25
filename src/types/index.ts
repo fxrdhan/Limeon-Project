@@ -270,6 +270,7 @@ export interface DetailEditModalProps {
     onSave: (
         updatedData: Record<string, string | number | boolean | null>
     ) => Promise<void>;
+    onFieldSave?: (key: string, value: unknown) => Promise<void>;
     onImageSave?: (data: {
         supplierId?: string;
         imageBase64: string;
