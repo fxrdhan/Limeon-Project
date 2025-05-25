@@ -41,6 +41,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         handleImageUpload,
         handleImageDeleteInternal,
         resetInternalState,
+        setInputRef,
     } = useSupplierDetailForm({
         initialData: data,
         fields,
@@ -217,6 +218,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                         {(editMode[field.key] || mode === 'add') ? (
                                             field.type === 'textarea' ? (
                                                 <textarea
+                                                    ref={el => setInputRef(field.key, el as HTMLTextAreaElement)}
                                                     id={field.key}
                                                     className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
                                                     value={String(editValues[field.key] ?? '')}
@@ -225,6 +227,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                 />
                                             ) : (
                                                 <Input
+                                                    ref={el => setInputRef(field.key, el as HTMLInputElement)}
                                                     id={field.key}
                                                     type={field.type || 'text'}
                                                     value={String(editValues[field.key] ?? '')}
