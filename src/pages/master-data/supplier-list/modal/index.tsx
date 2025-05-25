@@ -233,7 +233,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                 />
                                             )
                                         ) : (
-                                            <div className="p-2 bg-gray-50 rounded-md min-h-[40px]">
+                                            <div className="p-2 bg-gray-50 rounded-md min-h-[40px] text-sm">
                                                 {String(localData[field.key] ?? '') || (
                                                     <span className="text-gray-400 italic">Tidak ada data</span>
                                                 )}
