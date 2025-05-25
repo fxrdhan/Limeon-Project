@@ -1,5 +1,5 @@
 // src/hooks/useSupplierDetailForm.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FieldConfig } from '@/types';
 
 interface UseSupplierDetailFormProps {
@@ -32,6 +32,7 @@ export const useSupplierDetailForm = ({
     const [loadingField, setLoadingField] = useState<Record<string, boolean>>({});
     const [localData, setLocalData] = useState<Record<string, string | number | boolean | null>>(initialData);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const inputRefs = useRef<Record<string, { el: HTMLInputElement | HTMLTextAreaElement | null }>>({});
 
     const resetInternalState = useCallback(() => {
         setEditMode({});
@@ -40,6 +41,7 @@ export const useSupplierDetailForm = ({
         setIsUploadingImage(false);
         setLoadingField({});
         setIsSubmitting(false);
+        inputRefs.current = {}; // Reset refs saat state di-reset
         if (mode === 'add') {
             setLocalData(initialData); 
         }
@@ -61,12 +63,34 @@ export const useSupplierDetailForm = ({
         }
     }, [isOpen, initialData, fields, initialImageUrl, mode]);
 
-    const toggleEdit = useCallback((key: string) => {
-        setEditMode(prev => ({
-            ...prev,
-            [key]: !prev[key]
-        }));
+    const setInputRef = useCallback((key: string, el: HTMLInputElement | HTMLTextAreaElement | null) => {
+        if (el) {
+            inputRefs.current[key] = { el };
+        } else {
+            // Hapus ref jika elemen di-unmount
+            delete inputRefs.current[key];
+        }
     }, []);
+
+    const toggleEdit = useCallback((key: string) => {
+        setEditMode(prevEditModeMap => {
+            const isCurrentlyEditing = prevEditModeMap[key];
+            const newEditState = !isCurrentlyEditing;
+
+            if (newEditState) { // Memasuki mode edit
+                setTimeout(() => {
+                    const refData = inputRefs.current[key];
+                    if (refData && refData.el) {
+                        refData.el.focus();
+                        if (typeof (refData.el as HTMLInputElement | HTMLTextAreaElement).select === 'function') {
+                            (refData.el as HTMLInputElement | HTMLTextAreaElement).select();
+                        }
+                    }
+                }, 50); // Penundaan kecil untuk memastikan elemen sudah dirender
+            }
+            return { ...prevEditModeMap, [key]: newEditState };
+        });
+    }, [inputRefs]);
 
     const handleChange = useCallback((key: string, value: string | number | boolean) => {
         setEditValues(prev => ({
@@ -170,5 +194,6 @@ export const useSupplierDetailForm = ({
         handleImageUpload,
         handleImageDeleteInternal,
         resetInternalState,
+        setInputRef, // Ekspor fungsi untuk mengatur ref
     };
 };
