@@ -13,7 +13,8 @@ type MasterDataItem = Category | ItemType | Unit | ItemDataType;
 
 export const useMasterDataManagement = (
     tableName: string,
-    entityNameLabel: string
+    entityNameLabel: string,
+    realtime: boolean = false
 ) => {
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
@@ -252,6 +253,32 @@ export const useMasterDataManagement = (
     };
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    useEffect(() => {
+        if (!realtime) return;
+
+        const channel = supabase
+            .channel(`public:${tableName}`)
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: tableName },
+                (payload) => {
+                    console.log(`Realtime update on ${tableName}:`, payload);
+                    queryClient.invalidateQueries({ queryKey: [tableName] });
+                }
+            )
+            .subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log(`Subscribed to realtime updates for ${tableName}`);
+                }
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
+                    console.error(`Realtime subscription error for ${tableName}:`, err);
+                }
+            });
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [tableName, queryClient, realtime]);
 
     return {
         isAddModalOpen,

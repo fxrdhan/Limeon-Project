@@ -42,7 +42,7 @@ const CategoryList = () => {
         deleteMutation,
         openConfirmDialog,
         debouncedSearch,
-    } = useMasterDataManagement("item_categories", "Kategori Item");
+    } = useMasterDataManagement("item_categories", "Kategori Item", true);
 
     return (
         <>
