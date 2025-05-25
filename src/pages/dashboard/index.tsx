@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { usePrefetchQueries } from '../../lib/prefetchQueries';
 import type { RegularDashboardProps, TopSellingMedicine } from '../../types';
 import {
     Chart as ChartJS,
@@ -33,8 +32,6 @@ ChartJS.register(
 
 const Dashboard = () => {
     const [demoMode, setDemoMode] = useState(false);
-
-    usePrefetchQueries();
 
     const [stats, setStats] = useState({
         totalSales: 0,
