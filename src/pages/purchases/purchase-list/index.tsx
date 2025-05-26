@@ -110,9 +110,39 @@ const PurchaseList = () => {
         queryKey: ["purchases", currentPage, debouncedSearch, itemsPerPage],
         queryFn: () => fetchPurchases(currentPage, debouncedSearch, itemsPerPage),
         placeholderData: keepPreviousData,
-        staleTime: 30 * 1000,
-        refetchOnMount: true,
+        staleTime: 0,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
     });
+
+    useEffect(() => {
+        const channel = supabase
+            .channel('custom-purchase-list-channel')
+            .on<Purchase>(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'purchases' },
+                (payload) => {
+                    console.log('Realtime purchase change received!', payload);
+                    queryClient.invalidateQueries({ queryKey: ['purchases'] });
+                }
+            )
+            .subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Subscribed to realtime purchase updates');
+                }
+                if (err) {
+                    console.error('Error subscribing to purchase changes:', err);
+                }
+            });
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [queryClient]);
+
+    useEffect(() => {
+        queryClient.invalidateQueries({ queryKey: ['purchases'] });
+    }, [queryClient]);
 
     const purchases = data?.purchases || [];
     const totalItems = data?.totalItems || 0;
