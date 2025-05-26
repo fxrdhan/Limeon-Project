@@ -34,6 +34,13 @@ const MainLayout = () => {
         });
     }, [sidebarCollapsed]);
 
+    // Auto unlock when sidebar collapses
+    useEffect(() => {
+        if (sidebarCollapsed) {
+            setIsLocked(false);
+        }
+    }, [sidebarCollapsed]);
+
     useEffect(() => {
         const timer = setTimeout(() => {
             if (!isLockedRef.current) {
@@ -43,6 +50,22 @@ const MainLayout = () => {
 
         return () => clearTimeout(timer);
     }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.ctrlKey && (event.key === 's' || event.key === 'S')) {
+                event.preventDefault();
+                // Toggle sidebar state and lock it
+                setSidebarCollapsed(prevCollapsed => !prevCollapsed);
+                setIsLocked(true);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [setIsLocked, setSidebarCollapsed]);
 
     return (
         <div className="flex h-screen bg-gray-100 text-gray-800">
