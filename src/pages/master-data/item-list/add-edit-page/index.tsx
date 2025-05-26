@@ -1,5 +1,5 @@
 import UnitConversionManager from "@/components/tools/unit-converter";
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
     FaHistory,
@@ -39,6 +39,8 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     itemId,
     initialSearchQuery,
 }) => {
+    const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+    const fefoIconRef = useRef<HTMLDivElement>(null);
     const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
     const {
         formData,
@@ -99,6 +101,22 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     });
 
     const nameInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFefoTooltipMouseEnter = () => {
+        if (fefoIconRef.current) {
+            const rect = fefoIconRef.current.getBoundingClientRect();
+            setTooltipPosition({
+                top: rect.top - 10,
+                left: rect.left + rect.width / 2,
+            });
+        }
+        setShowFefoTooltip(true);
+    };
+
+    const handleFefoTooltipMouseLeave = () => {
+        setShowFefoTooltip(false);
+        setTooltipPosition(null);
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -422,21 +440,32 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                     Akan digunakan metode FEFO 
                                                     <div
                                                         className="relative ml-1 inline-block"
-                                                        onMouseEnter={() => setShowFefoTooltip(true)}
-                                                        onMouseLeave={() => setShowFefoTooltip(false)}
+                                                        onMouseEnter={handleFefoTooltipMouseEnter}
+                                                        onMouseLeave={handleFefoTooltipMouseLeave}
+                                                        ref={fefoIconRef}
                                                     >
                                                         <FaQuestionCircle
                                                             className="text-gray-400 cursor-help"
                                                             size={14}
                                                         />
-                                                        {showFefoTooltip && (
-                                                            <div className="absolute bottom-full right-0 mb-2 w-max z-50 max-w-xs p-2 bg-white text-gray-700 text-xs rounded-md shadow-lg border border-gray-200">
-                                                                First Expired First Out
-                                                                Barang dengan tanggal kadaluarsa terdekat akan
-                                                                dikeluarkan lebih dulu saat penjualan.
-                                                            </div>
-                                                        )}
                                                     </div>
+                                                    {showFefoTooltip && tooltipPosition && createPortal(
+                                                        <div
+                                                            style={{
+                                                                position: 'fixed',
+                                                                top: `${tooltipPosition.top}px`,
+                                                                left: `${tooltipPosition.left}px`,
+                                                                transform: 'translate(-50%, -100%)',
+                                                                zIndex: 1000,
+                                                            }}
+                                                            className="w-max max-w-xs p-2 bg-zinc-500 text-white text-xs rounded-md shadow-lg"
+                                                            onMouseEnter={() => setShowFefoTooltip(true)} 
+                                                            onMouseLeave={handleFefoTooltipMouseLeave} 
+                                                        >
+                                                            First Expired First Out: Barang dengan tanggal kadaluarsa terdekat akan dikeluarkan lebih dulu saat penjualan.
+                                                        </div>,
+                                                        document.body
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
