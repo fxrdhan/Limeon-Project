@@ -152,12 +152,12 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     }, [isOpen, closeDropdown, searchBarRef, itemDropdownRef]);
 
     useEffect(() => {
-        if (searchItem && !selectedItem && !isOpen && !isClosing) {
+        if (searchItem && !isOpen && !isClosing) {
             openDropdown();
         } else if (!searchItem && isOpen && !isClosing) {
             closeDropdown();
         }
-    }, [searchItem, selectedItem, isOpen, isClosing, openDropdown, closeDropdown]);
+    }, [searchItem, isOpen, isClosing, openDropdown, closeDropdown]);
 
     const handleItemSelect = (item: Item) => {
         if (!item) return;
@@ -206,7 +206,12 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                         className="w-full text-sm p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
                         value={searchItem}
                         onChange={(e) => {
-                            setSearchItem(e.target.value);
+                            const value = e.target.value;
+                            setSearchItem(value);
+                            // Clear selected item when user starts typing again
+                            if (selectedItem && value !== selectedItem.name) {
+                                setSelectedItem(null);
+                            }
                         }}
                         onFocus={handleInputFocus}
                         onKeyDown={handleInputKeyDown}
