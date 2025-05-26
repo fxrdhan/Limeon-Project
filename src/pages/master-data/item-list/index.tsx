@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import {
     Card,
@@ -16,6 +16,7 @@ import {
 import { FaPlus } from "react-icons/fa";
 import { supabase } from "@/lib/supabase";
 import type { Item as ItemDataType, UnitConversion, UnitData } from "@/types";
+import AddItemPortal from "./add-edit-page";
 
 const fetchItemsList = async (page: number, searchTerm: string, limit: number) => {
     const from = (page - 1) * limit;
@@ -93,7 +94,7 @@ const fetchItemsList = async (page: number, searchTerm: string, limit: number) =
 };
 
 function ItemList() {
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
     // const queryClient = useQueryClient();
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -105,6 +106,9 @@ function ItemList() {
     const [isLoadingState, setIsLoadingState] = useState<boolean>(true);
     const [isErrorState, setIsErrorState] = useState<boolean>(false);
     const [errorState, setErrorState] = useState<Error | null>(null);
+    const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+    const [editingItemId, setEditingItemId] = useState<string | undefined>(undefined);
+    const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -136,16 +140,26 @@ function ItemList() {
         fetchData();
     }, [fetchData]);
 
+    const openAddItemModal = (itemId?: string, searchQuery?: string) => {
+        setEditingItemId(itemId);
+        setCurrentSearchQueryForModal(searchQuery);
+        setIsAddItemModalOpen(true);
+    };
+
+    const closeAddItemModal = () => {
+        setIsAddItemModalOpen(false);
+        setEditingItemId(undefined);
+        setCurrentSearchQueryForModal(undefined);
+        fetchData(); // Re-fetch data after modal closes
+    };
+
     useEffect(() => {
         const channel = supabase
             .channel('item-list-changes')
             .on<ItemDataType>(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'items' },
-                (payload) => setTimeout(() => { 
-                    console.log(payload);
-                    fetchData(); 
-                }, 250)
+                () => setTimeout(fetchData, 250)
             )
             .subscribe();
         return () => {
@@ -164,117 +178,125 @@ function ItemList() {
     };
 
     return (
-        <Card
-            className={isLoadingState ? "opacity-75 transition-opacity duration-300" : ""}
-        >
-            <div className="mb-6">
-                <PageTitle title="Daftar Item" />
-            </div>
-            <div className="flex items-center">
-                <SearchBar
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Cari nama atau kode item..."
-                    className="flex-grow"
-                />
-                <Link to="/master-data/items/add" state={{ searchQuery: debouncedSearch }} className="ml-4 mb-4 focus:outline-none focus:border-none focus:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)] rounded-lg transition-shadow duration-300">
-                    <Button variant="primary" className="flex items-center">
+        <>
+            <Card
+                className={isLoadingState ? "opacity-75 transition-opacity duration-300" : ""}
+            >
+                <div className="mb-6">
+                    <PageTitle title="Daftar Item" />
+                </div>
+                <div className="flex items-center">
+                    <SearchBar
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Cari nama atau kode item..."
+                        className="flex-grow"
+                    />
+                    <Button 
+                        variant="primary" 
+                        className="flex items-center ml-4 mb-4 focus:outline-none focus:border-none focus:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)] rounded-lg transition-shadow duration-300"
+                        onClick={() => openAddItemModal(undefined, debouncedSearch)}
+                    >
                         <FaPlus className="mr-2" />
                         Tambah Item Baru
                     </Button>
-                </Link>
-            </div>
-            {isErrorState && (
-                <div className="text-center p-6 text-red-500">
-                    Error: {errorState instanceof Error ? errorState.message : "Gagal memuat data"}
                 </div>
-            )}
-            {!isErrorState && (
-                <>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeader className="w-[23%]">Nama Item</TableHeader>
-                                <TableHeader className="w-[6%]">Kode</TableHeader>
-                                <TableHeader className="w-[8%]">Barcode</TableHeader>
-                                <TableHeader className="w-[8%]">Kategori</TableHeader>
-                                <TableHeader className="w-[14%]">Jenis</TableHeader>
-                                <TableHeader className="w-[6%]">Satuan</TableHeader>
-                                <TableHeader className="w-[10%]">Satuan Turunan</TableHeader>
-                                <TableHeader className="w-[10%] text-right">Harga Pokok</TableHeader>
-                                <TableHeader className="w-[10%] text-right">Harga Jual</TableHeader>
-                                <TableHeader className="w-[5%] text-center">Stok</TableHeader>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {isLoadingState && items.length === 0 ? (
+                {isErrorState && (
+                    <div className="text-center p-6 text-red-500">
+                        Error: {errorState instanceof Error ? errorState.message : "Gagal memuat data"}
+                    </div>
+                )}
+                {!isErrorState && (
+                    <>
+                        <Table>
+                            <TableHead>
                                 <TableRow>
-                                    <TableCell colSpan={10} className="text-center text-gray-500 py-10">
-                                        Memuat data item...
-                                    </TableCell>
+                                    <TableHeader className="w-[23%]">Nama Item</TableHeader>
+                                    <TableHeader className="w-[6%]">Kode</TableHeader>
+                                    <TableHeader className="w-[8%]">Barcode</TableHeader>
+                                    <TableHeader className="w-[8%]">Kategori</TableHeader>
+                                    <TableHeader className="w-[14%]">Jenis</TableHeader>
+                                    <TableHeader className="w-[6%]">Satuan</TableHeader>
+                                    <TableHeader className="w-[10%]">Satuan Turunan</TableHeader>
+                                    <TableHeader className="w-[10%] text-right">Harga Pokok</TableHeader>
+                                    <TableHeader className="w-[10%] text-right">Harga Jual</TableHeader>
+                                    <TableHeader className="w-[5%] text-center">Stok</TableHeader>
                                 </TableRow>
-                            ) : items.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={10} className="text-center text-gray-500 py-10">
-                                        {debouncedSearch
-                                            ? `Tidak ada item dengan nama "${debouncedSearch}"`
-                                            : "Tidak ada data item yang ditemukan"}
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                items.map((item) => (
-                                    <TableRow
-                                        key={item.id}
-                                        onClick={() =>
-                                            navigate(`/master-data/items/edit/${item.id}`)
-                                        }
-                                        className="cursor-pointer hover:bg-blue-50"
-                                    >
-                                        <TableCell>{item.name}</TableCell>
-                                        <TableCell>{item.code}</TableCell>
-                                        <TableCell>{item.barcode || "-"}</TableCell>
-                                        <TableCell>{item.category.name}</TableCell>
-                                        <TableCell>{item.type.name}</TableCell>
-                                        <TableCell>{item.unit.name}</TableCell>
-                                        <TableCell>
-                                            {item.unit_conversions && item.unit_conversions.length > 0
-                                                ? item.unit_conversions
-                                                    .map((uc: UnitConversion) => uc.unit?.name || 'N/A')
-                                                    .join(", ")
-                                                : "-"}
+                            </TableHead>
+                            <TableBody>
+                                {isLoadingState && items.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={10} className="text-center text-gray-500 py-10">
+                                            Memuat data item...
                                         </TableCell>
-                                        <TableCell className="text-right">
-                                            {item.base_price.toLocaleString("id-ID", {
-                                                style: "currency",
-                                                currency: "IDR",
-                                            })}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            {item.sell_price.toLocaleString("id-ID", {
-                                                style: "currency",
-                                                currency: "IDR",
-                                                minimumFractionDigits: 0,
-                                                maximumFractionDigits: 0,
-                                            })}
-                                        </TableCell>
-                                        <TableCell className="text-center">{item.stock}</TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalItemsState}
-                        itemsPerPage={itemsPerPage}
-                        itemsCount={items.length}
-                        onPageChange={handlePageChange}
-                        onItemsPerPageChange={handleItemsPerPageChange}
-                    />
-                </>
-            )}
-        </Card>
+                                ) : items.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={10} className="text-center text-gray-500 py-10">
+                                            {debouncedSearch
+                                                ? `Tidak ada item dengan nama "${debouncedSearch}"`
+                                                : "Tidak ada data item yang ditemukan"}
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    items.map((item) => (
+                                        <TableRow
+                                            key={item.id}
+                                            onClick={() => openAddItemModal(item.id)}
+                                            className="cursor-pointer hover:bg-blue-50"
+                                        >
+                                            <TableCell>{item.name}</TableCell>
+                                            <TableCell>{item.code}</TableCell>
+                                            <TableCell>{item.barcode || "-"}</TableCell>
+                                            <TableCell>{item.category.name}</TableCell>
+                                            <TableCell>{item.type.name}</TableCell>
+                                            <TableCell>{item.unit.name}</TableCell>
+                                            <TableCell>
+                                                {item.unit_conversions && item.unit_conversions.length > 0
+                                                    ? item.unit_conversions
+                                                        .map((uc: UnitConversion) => uc.unit?.name || 'N/A')
+                                                        .join(", ")
+                                                    : "-"}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {item.base_price.toLocaleString("id-ID", {
+                                                    style: "currency",
+                                                    currency: "IDR",
+                                                })}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {item.sell_price.toLocaleString("id-ID", {
+                                                    style: "currency",
+                                                    currency: "IDR",
+                                                    minimumFractionDigits: 0,
+                                                    maximumFractionDigits: 0,
+                                                })}
+                                            </TableCell>
+                                            <TableCell className="text-center">{item.stock}</TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItemsState}
+                            itemsPerPage={itemsPerPage}
+                            itemsCount={items.length}
+                            onPageChange={handlePageChange}
+                            onItemsPerPageChange={handleItemsPerPageChange}
+                        />
+                    </>
+                )}
+            </Card>
+            <AddItemPortal
+                isOpen={isAddItemModalOpen}
+                onClose={closeAddItemModal}
+                itemId={editingItemId}
+                initialSearchQuery={currentSearchQueryForModal}
+            />
+        </>
     );
 }
 

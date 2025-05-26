@@ -10,7 +10,6 @@ const ItemList = lazy(() => import('@/pages/master-data/item-list'));
 const CategoryList = lazy(() => import('@/pages/master-data/category-list'));
 const UnitList = lazy(() => import('@/pages/master-data/unit-list'));
 const TypeList = lazy(() => import('@/pages/master-data/type-list'));
-const AddItem = lazy(() => import('@/pages/master-data/item-list/add-edit-page'));
 const SupplierList = lazy(() => import('@/pages/master-data/supplier-list'));
 const UploadInvoice = lazy(() => import('@/pages/purchases/upload-invoice'));
 const ConfirmInvoicePage = lazy(() => import('@/pages/purchases/confirm-invoice'));
@@ -68,16 +67,6 @@ function App() {
             <Route path="items" element={
               <Suspense fallback={<div>Loading...</div>}>
                 <ItemList />
-              </Suspense>
-            } />
-            <Route path="items/add" element={
-              <Suspense fallback={<div>Loading...</div>}>
-                <AddItem />
-              </Suspense>
-            } />
-            <Route path="items/edit/:id" element={
-              <Suspense fallback={<div>Loading...</div>}>
-                <AddItem />
               </Suspense>
             } />
             <Route path="categories" element={

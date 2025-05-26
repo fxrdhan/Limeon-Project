@@ -1,17 +1,24 @@
 import { useRef, useState, ChangeEvent } from "react";
-import { useParams, useLocation } from "react-router-dom";
 import { useAddItemForm } from "@/hooks/add-item";
 import { useBeforeUnload } from "@/handlers";
 
-export const useAddItemPageHandlers = (expiryCheckboxRef?: React.RefObject<HTMLLabelElement | null>) => {
-    const { id } = useParams<{ id: string }>();
-    const location = useLocation();
-    const initialSearchQuery = location.state?.searchQuery as string | undefined;
+interface AddItemPageHandlersProps {
+    itemId?: string;
+    initialSearchQuery?: string;
+    onClose: () => void;
+    expiryCheckboxRef?: React.RefObject<HTMLLabelElement | null>;
+}
+
+export const useAddItemPageHandlers = ({
+    itemId,
+    initialSearchQuery,
+    onClose,
+    expiryCheckboxRef
+}: AddItemPageHandlersProps) => {
     const descriptionRef = useRef<HTMLDivElement>(null);
     const marginInputRef = useRef<HTMLInputElement>(null);
     const minStockInputRef = useRef<HTMLInputElement>(null);
-
-    const addItemForm = useAddItemForm(id || undefined, initialSearchQuery);
+    const addItemForm = useAddItemForm({ itemId, initialSearchQuery, onClose });
 
     const [showDescription, setShowDescription] = useState(false);
     const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
@@ -124,11 +131,27 @@ export const useAddItemPageHandlers = (expiryCheckboxRef?: React.RefObject<HTMLL
         }
     };
 
-    useBeforeUnload(addItemForm.isDirty);
+    const isDirty = addItemForm.isDirty; // Assuming isDirty is exposed from useAddItemForm
+    useBeforeUnload(isDirty);
+
+    const handleActualCancel = () => {
+        if (addItemForm.isDirty()) {
+            addItemForm.confirmDialog.openConfirmDialog({
+                title: "Konfirmasi Keluar",
+                message: "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
+                confirmText: "Tinggalkan",
+                cancelText: "Batal",
+                onConfirm: onClose,
+                variant: "danger",
+            });
+        } else {
+            onClose();
+        }
+    };
 
     return {
         ...addItemForm,
-        id,
+        id: itemId,
         descriptionRef,
         marginInputRef,
         minStockInputRef,
@@ -147,5 +170,6 @@ export const useAddItemPageHandlers = (expiryCheckboxRef?: React.RefObject<HTMLL
         handleMinStockChange,
         handleMinStockKeyDown,
         resetForm: addItemForm.resetForm,
+        handleCancel: handleActualCancel, // Expose the cancel handler that calls onClose
     };
 };
