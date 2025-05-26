@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import type { UnitConversion } from '@/types';
 import { useUnitConversion } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,8 +11,12 @@ import { useConfirmDialog } from "@/components/modules";
 import type { Category, MedicineType, Unit, FormData } from '@/types';
 import { generateTypeCode, generateUnitCode, generateCategoryCode, getUnitById } from "@/hooks/add-item/helper";
 
-export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => {
-    const navigate = useNavigate();
+interface UseAddItemFormProps {
+    itemId?: string;
+    initialSearchQuery?: string;
+    onClose: () => void;
+}
+export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddItemFormProps) => {
     const queryClient = useQueryClient();
     const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
     const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null);
@@ -420,8 +424,8 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
             if (error) throw error;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["items"], refetchType: "all" });
-            navigate("/master-data/items");
+            // queryClient.invalidateQueries({ queryKey: ["items"], refetchType: "all" }); // Already done by main submit
+            onClose();
         },
         onError: (error) => {
             console.error("Error deleting item:", error);
@@ -535,7 +539,8 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
                     }
                 }
             }
-            navigate("/master-data/items");
+            queryClient.invalidateQueries({ queryKey: ["items"], refetchType: "all" });
+            onClose();
         } catch (error) {
             console.error("Error saving item:", error);
             alert("Gagal menyimpan data item. Silakan coba lagi.");
@@ -587,11 +592,11 @@ export const useAddItemForm = (itemId?: string, initialSearchQuery?: string) => 
                 message: "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
                 confirmText: "Tinggalkan",
                 cancelText: "Batal",
-                onConfirm: () => navigate("/master-data/items"),
+                onConfirm: () => onClose(),
                 variant: "danger",
             });
         } else {
-            navigate("/master-data/items");
+            onClose();
         }
     };
 
