@@ -184,9 +184,41 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
 
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
+            e.preventDefault();
+            
+            // If an item is already selected, add it to the purchase
+            if (selectedItem) {
+                addItemToPurchase();
+                return;
+            }
+            
+            // Directly add the first filtered item to the purchase table
             if (isOpen && filteredItems.length > 0) {
-                e.preventDefault();
-                handleItemSelect(filteredItems[0]);
+                const firstItem = filteredItems[0];
+                
+                const newItem: PurchaseItem = {
+                    id: Date.now().toString(),
+                    item_id: firstItem.id,
+                    item_name: firstItem.name,
+                    quantity: 1,
+                    price: firstItem.base_price,
+                    discount: 0,
+                    subtotal: firstItem.base_price,
+                    unit: firstItem.base_unit || "Unit",
+                    unit_conversion_rate: 1,
+                    vat_percentage: 0,
+                    batch_no: null,
+                    expiry_date: null,
+                    item: {
+                        name: "",
+                        code: "",
+                    },
+                };
+
+                onAddItem(newItem);
+                setSelectedItem(null);
+                setSearchItem("");
+                closeDropdown();
             }
         } else if (e.key === 'Escape') {
             if (isOpen) {
