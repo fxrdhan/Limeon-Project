@@ -166,7 +166,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     };
 
     return createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 rounded-lg">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-[90vw] max-h-[90vh] flex flex-col">
                 <CardHeader className="flex items-center justify-between sticky top-0 bg-white z-10 !py-6 !px-4 !border-b rounded-t-lg">
                     <div className="flex items-center"></div>
