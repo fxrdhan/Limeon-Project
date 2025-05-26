@@ -39,7 +39,6 @@ export const Datepicker: React.FC<DatepickerProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
-    const [applyOpenStyles, setApplyOpenStyles] = useState(false);
     const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
     const triggerInputRef = useRef<HTMLInputElement>(null);
     const portalContentRef = useRef<HTMLDivElement>(null);
@@ -51,14 +50,14 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
 
     const calculatePosition = useCallback(() => {
-        if (!triggerInputRef.current || !portalContentRef.current) return;
+        if (!triggerInputRef.current) return;
         const buttonRect = triggerInputRef.current.getBoundingClientRect();
-        const calendarActualHeight = portalContentRef.current.scrollHeight;
+        const calendarHeight = 320;
         const viewportHeight = window.innerHeight;
         const spaceBelow = viewportHeight - buttonRect.bottom;
         const shouldDropUp =
-            spaceBelow < calendarActualHeight + 10 &&
-            buttonRect.top > calendarActualHeight + 10;
+            spaceBelow < calendarHeight + 10 &&
+            buttonRect.top > calendarHeight + 10;
 
         setDropDirection(shouldDropUp ? "up" : "down");
 
@@ -70,49 +69,45 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         };
         const margin = 5;
         if (shouldDropUp) {
-            newMenuStyle.top = `${buttonRect.top + window.scrollY - calendarActualHeight - margin
-                }px`;
+            newMenuStyle.top = `${buttonRect.top + window.scrollY - calendarHeight - margin}px`;
         } else {
             newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
         }
         setPortalStyle(newMenuStyle);
-    }, [triggerInputRef, portalContentRef, setDropDirection, setPortalStyle, portalWidth]);
+    }, [portalWidth]);
 
     useEffect(() => {
-        let openStyleTimerId: NodeJS.Timeout | undefined;
         if (isOpen) {
-            document.body.style.overflow = 'hidden';
             setDisplayDate(value || new Date());
             setCurrentView("days");
             setHighlightedDate(value || new Date());
-            openStyleTimerId = setTimeout(() => {
-                setApplyOpenStyles(true);
-                requestAnimationFrame(() => {
-                    if (portalContentRef.current) {
-                        calculatePosition();
-                    }
-                });
-            }, 20);
+            calculatePosition();
             window.addEventListener("scroll", calculatePosition, true);
             window.addEventListener("resize", calculatePosition);
+            setTimeout(() => {
+                if (portalContentRef.current) {
+                    portalContentRef.current.focus();
+                }
+            }, 0);
         } else {
-            setApplyOpenStyles(false);
             setHighlightedDate(null);
-            document.body.style.overflow = '';
         }
         return () => {
-            if (openStyleTimerId) clearTimeout(openStyleTimerId);
-            document.body.style.overflow = '';
             window.removeEventListener("scroll", calculatePosition, true);
             window.removeEventListener("resize", calculatePosition);
         };
-    }, [isOpen, calculatePosition, value, setApplyOpenStyles, portalContentRef]);
+    }, [isOpen, calculatePosition, value]);
 
     const openCalendar = useCallback(() => {
         if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
         if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
         setIsOpen(true);
         setIsClosing(false);
+        setTimeout(() => {
+            if (portalContentRef.current) {
+                portalContentRef.current.focus();
+            }
+        }, 0);
     }, []);
 
     const closeCalendar = useCallback(() => {
@@ -122,7 +117,6 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         setTimeout(() => {
             setIsOpen(false);
             setIsClosing(false);
-            setApplyOpenStyles(false);
         }, 200);
     }, []);
 
@@ -209,7 +203,6 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     return;
             }
             
-            // Check if new date is within allowed range
             let isValidDate = true;
             if (minDate) {
                 const min = new Date(minDate);
@@ -224,12 +217,74 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             
             if (isValidDate) {
                 setHighlightedDate(newHighlight);
-                // Update display month if necessary
                 if (newHighlight.getMonth() !== displayDate.getMonth() || 
                     newHighlight.getFullYear() !== displayDate.getFullYear()) {
                     setDisplayDate(new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1));
                 }
             }
+        }
+    };
+
+    const handleCalendarKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (currentView === "days") {
+            const currentHighlight = highlightedDate || value || new Date();
+            const newHighlight = new Date(currentHighlight);
+            
+            switch (e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    newHighlight.setDate(newHighlight.getDate() - 1);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    newHighlight.setDate(newHighlight.getDate() + 1);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    newHighlight.setDate(newHighlight.getDate() - 7);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    newHighlight.setDate(newHighlight.getDate() + 7);
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (highlightedDate) {
+                        handleDateSelect(highlightedDate);
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    closeCalendar();
+                    break;
+                default:
+                    return;
+            }
+            
+            if (e.key.startsWith('Arrow')) {
+                let isValidDate = true;
+                if (minDate) {
+                    const min = new Date(minDate);
+                    min.setHours(0, 0, 0, 0);
+                    if (newHighlight < min) isValidDate = false;
+                }
+                if (maxDate) {
+                    const max = new Date(maxDate);
+                    max.setHours(0, 0, 0, 0);
+                    if (newHighlight > max) isValidDate = false;
+                }
+                
+                if (isValidDate) {
+                    setHighlightedDate(newHighlight);
+                    if (newHighlight.getMonth() !== displayDate.getMonth() || 
+                        newHighlight.getFullYear() !== displayDate.getFullYear()) {
+                        setDisplayDate(new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1));
+                    }
+                }
+            }
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            closeCalendar();
         }
     };
 
@@ -312,11 +367,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         } else if (currentView === "months") {
             setCurrentView("years");
         }
-        requestAnimationFrame(() => {
-            if (isOpen && portalContentRef.current) {
-                calculatePosition();
-            }
-        });
+        calculatePosition();
     };
 
     const handleMonthSelect = (selectedMonth: number) => {
@@ -327,11 +378,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             return newDate;
         });
         setCurrentView("days");
-        requestAnimationFrame(() => {
-            if (isOpen && portalContentRef.current) {
-                calculatePosition();
-            }
-        });
+        calculatePosition();
     };
 
     const handleYearSelect = (selectedYear: number) => {
@@ -341,11 +388,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             return newDate;
         });
         setCurrentView("months");
-        requestAnimationFrame(() => {
-            if (isOpen && portalContentRef.current) {
-                calculatePosition();
-            }
-        });
+        calculatePosition();
     };
 
     const renderHeaderContent = () => {
@@ -396,6 +439,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         <button
                             key={day}
                             onClick={() => !isDisabled && handleDateSelect(currentDate)}
+                            onMouseEnter={() => !isDisabled && setHighlightedDate(currentDate)}
+                            onMouseLeave={() => setHighlightedDate(null)}
                             disabled={isDisabled}
                             className={classNames(
                                 "py-1.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
@@ -522,22 +567,22 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     createPortal(
                         <div
                             ref={portalContentRef}
-                            style={portalStyle}
+                            tabIndex={0}
+                            style={{
+                                ...portalStyle,
+                                outline: "none"
+                            }}
                             className={classNames(
                                 "bg-white shadow-lg rounded-lg border border-gray-200 p-4 w-[280px]",
                                 dropDirection === "down" ? "origin-top" : "origin-bottom",
-                                "transition-all duration-200 ease-out",
+                                "transition-all duration-150 ease-out focus:outline-none",
                                 isClosing
-                                    ? "opacity-0 scale-y-95"
-                                    : isOpen && applyOpenStyles
-                                        ? "opacity-100 scale-y-100"
-                                        : `opacity-0 scale-y-95 ${dropDirection === "down"
-                                            ? "translate-y-1"
-                                            : "-translate-y-1"
-                                        } pointer-events-none`
+                                    ? "opacity-0 scale-95"
+                                    : "opacity-100 scale-100"
                             )}
                             onMouseEnter={handleCalendarMouseEnter}
                             onMouseLeave={handleCalendarMouseLeave}
+                            onKeyDown={handleCalendarKeyDown}
                         >
                             <div className="flex justify-between items-center mb-3">
                                 <button
