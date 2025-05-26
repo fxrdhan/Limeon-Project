@@ -266,11 +266,13 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
                                 <>
                                     <button
                                         onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
-                                        className={`w-full text-left flex items-center px-4 py-3 h-10 justify-between focus:outline-none
+                                        className={`w-full text-left flex items-center px-4 py-3 h-10 justify-between focus-visible:outline-none outline-none border-0
+                                                [&:focus]:outline-none [&:active]:outline-none
                                                 ${isActive(item.path) || hasActiveChild(item.children)
                                                 ? 'bg-teal-500/40 font-medium border-l-4 border-teal-100'
                                                 : 'border-l-4 border-transparent hover:bg-teal-700/60'}
                                                 transition-all duration-150 group relative`}
+                                        style={{ outline: 'none', border: 'none', borderLeft: '4px solid transparent' }}
                                     >
                                         <div className="flex items-center overflow-hidden">
                                             <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-teal-50' : 'text-teal-100'} transition-colors duration-200`}>
@@ -298,11 +300,15 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
                                                 <Link
                                                     key={child.name}
                                                     to={child.path}
-                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition duration-300 ease-in-out focus:outline-none ${
+                                                    className={`block px-3 py-2 my-0.5 text-sm rounded-md transition duration-300 ease-in-out 
+                                                            focus-visible:outline-none outline-none
+                                                            [&:focus]:outline-none [&:active]:outline-none
+                                                            ${
                                                         isActive(child.path)
                                                         ? 'bg-teal-500/40 text-white font-medium hover:bg-teal-500/50 hover:text-white'
                                                         : 'text-teal-100 hover:bg-teal-600/40 hover:text-white'
                                                     } whitespace-nowrap overflow-hidden text-ellipsis`}
+                                                    style={{ outline: 'none' }}
                                                 >
                                                     {child.name}
                                                 </Link>
@@ -313,11 +319,14 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
                             ) : (
                                 <Link
                                     to={item.path}
-                                    className={`w-full text-left flex items-center px-4 py-3 h-12 focus:outline-none
-                                                ${isActive(item.path)
-                                            ? 'bg-teal-500/40 font-medium border-l-4 border-teal-100'
-                                            : 'border-l-4 border-transparent hover:bg-teal-700/60'}
-                                                transition-all duration-150 group relative`}
+                                    className={`w-full text-left flex items-center px-4 py-3 h-12 
+                                            focus-visible:outline-none outline-none
+                                            [&:focus]:outline-none [&:active]:outline-none
+                                            ${isActive(item.path)
+                                        ? 'bg-teal-500/40 font-medium border-l-4 border-teal-100'
+                                        : 'border-l-4 border-transparent hover:bg-teal-700/60'}
+                                            transition-all duration-150 group relative`}
+                                    style={{ outline: 'none' }}
                                 >
                                     <div className="flex items-center overflow-hidden">
                                         <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-teal-50' : 'text-teal-100'} transition-colors duration-200`}>
