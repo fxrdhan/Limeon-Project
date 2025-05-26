@@ -48,6 +48,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const [displayDate, setDisplayDate] = useState(value || new Date());
     const [currentView, setCurrentView] = useState<CalendarView>("days");
     const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
+    const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
 
     const calculatePosition = useCallback(() => {
         if (!triggerInputRef.current || !portalContentRef.current) return;
@@ -83,6 +84,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             document.body.style.overflow = 'hidden';
             setDisplayDate(value || new Date());
             setCurrentView("days");
+            setHighlightedDate(value || new Date());
             openStyleTimerId = setTimeout(() => {
                 setApplyOpenStyles(true);
                 requestAnimationFrame(() => {
@@ -95,6 +97,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             window.addEventListener("resize", calculatePosition);
         } else {
             setApplyOpenStyles(false);
+            setHighlightedDate(null);
             document.body.style.overflow = '';
         }
         return () => {
@@ -163,6 +166,71 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const handleDateSelect = (date: Date) => {
         const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
         onChange(selectedDate);
+        closeCalendar();
+    };
+
+    const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (isOpen && !isClosing) {
+                if (highlightedDate) {
+                    handleDateSelect(highlightedDate);
+                } else {
+                    closeCalendar();
+                }
+            } else {
+                openCalendar();
+            }
+        } else if (e.key === 'Escape' && isOpen) {
+            e.preventDefault();
+            closeCalendar();
+        } else if (isOpen && currentView === "days") {
+            const currentHighlight = highlightedDate || value || new Date();
+            const newHighlight = new Date(currentHighlight);
+            
+            switch (e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    newHighlight.setDate(newHighlight.getDate() - 1);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    newHighlight.setDate(newHighlight.getDate() + 1);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    newHighlight.setDate(newHighlight.getDate() - 7);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    newHighlight.setDate(newHighlight.getDate() + 7);
+                    break;
+                default:
+                    return;
+            }
+            
+            // Check if new date is within allowed range
+            let isValidDate = true;
+            if (minDate) {
+                const min = new Date(minDate);
+                min.setHours(0, 0, 0, 0);
+                if (newHighlight < min) isValidDate = false;
+            }
+            if (maxDate) {
+                const max = new Date(maxDate);
+                max.setHours(0, 0, 0, 0);
+                if (newHighlight > max) isValidDate = false;
+            }
+            
+            if (isValidDate) {
+                setHighlightedDate(newHighlight);
+                // Update display month if necessary
+                if (newHighlight.getMonth() !== displayDate.getMonth() || 
+                    newHighlight.getFullYear() !== displayDate.getFullYear()) {
+                    setDisplayDate(new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1));
+                }
+            }
+        }
     };
 
     useEffect(() => {
@@ -309,6 +377,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     const currentDate = new Date(year, month, day);
                     const isSelected =
                         value && currentDate.toDateString() === value.toDateString();
+                    const isHighlighted = 
+                        highlightedDate && currentDate.toDateString() === highlightedDate.toDateString();
 
                     let isDisabled = false;
                     if (minDate) {
@@ -332,9 +402,11 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                                 isDisabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-teal-100",
                                 !isDisabled && (isSelected
                                     ? "bg-primary text-white hover:bg-primary"
-                                    : new Date(year, month, day).toDateString() === new Date().toDateString()
-                                        ? "border border-primary text-primary"
-                                        : "text-gray-700")
+                                    : isHighlighted
+                                        ? "bg-primary/30 text-primary-dark ring-2 ring-primary/50"
+                                        : new Date(year, month, day).toDateString() === new Date().toDateString()
+                                            ? "border border-primary text-primary"
+                                            : "text-gray-700")
                             )}
                         >
                             {day}
@@ -441,6 +513,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     placeholder={placeholder}
                     className={classNames("cursor-pointer", inputClassName)}
                     onClick={handleTriggerClick}
+                    onKeyDown={handleInputKeyDown}
                     onMouseEnter={handleTriggerMouseEnter}
                     onMouseLeave={handleTriggerMouseLeave}
                     readOnly={false}
