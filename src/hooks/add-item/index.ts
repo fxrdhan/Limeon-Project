@@ -742,5 +742,6 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
         formattedUpdateAt,    
         deleteItemMutation,
         resetForm,
+        confirmDialog,
     };
 };
