@@ -1,8 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-// import { useNavigate } from "react-router-dom";
 import type { UnitConversion } from '@/types';
 import { useUnitConversion } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -65,11 +62,11 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
 
     const setFormToPristineAddState = () => {
         const pristineState: FormData = {
-            code: "", name: initialSearchQuery || "", type_id: "", category_id: "", unit_id: "",
+            code: "", name: "",
+            type_id: "", category_id: "", unit_id: "",
             rack: "", barcode: "", description: "", base_price: 0, sell_price: 0, min_stock: 10,
             is_active: true, is_medicine: true, has_expiry_date: false, updated_at: null,
         };
-        setInitialFormData({ ...pristineState });
         setFormData({ ...pristineState });
         setDisplayBasePrice(formatRupiah(0));
         setDisplaySellPrice(formatRupiah(0));
@@ -150,6 +147,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             unitConversionHook.setBasePrice(0);
             unitConversionHook.setSellPrice(0);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemId, initialSearchQuery]);
 
     useEffect(() => {
@@ -424,7 +422,6 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             if (error) throw error;
         },
         onSuccess: () => {
-            // queryClient.invalidateQueries({ queryKey: ["items"], refetchType: "all" }); // Already done by main submit
             onClose();
         },
         onError: (error) => {
@@ -607,6 +604,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             if (updatedCategories) setCategories(updatedCategories);
             if (newCategory?.id) updateFormData({ category_id: newCategory.id });
             setIsAddEditModalOpen(false);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             alert("Gagal menyimpan kategori baru.");
         }
@@ -619,6 +617,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             if (updatedTypes) setTypes(updatedTypes);
             if (newType?.id) updateFormData({ type_id: newType.id });
             setIsAddTypeModalOpen(false);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             alert("Gagal menyimpan jenis item baru.");
         }
@@ -631,6 +630,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             if (updatedUnits) setUnits(updatedUnits);
             if (newUnit?.id) updateFormData({ unit_id: newUnit.id });
             setIsAddUnitModalOpen(false);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             alert("Gagal menyimpan satuan baru.");
         }
