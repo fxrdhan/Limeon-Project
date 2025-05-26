@@ -112,9 +112,10 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
         fetchMasterData();
 
         if (itemId) {
-            fetchItemData(itemId);
             setIsEditMode(true);
+            fetchItemData(itemId);
         } else {
+            setIsEditMode(false);
             const pristineDefaultState: FormData = {
                 code: "",
                 name: "",
