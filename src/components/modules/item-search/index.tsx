@@ -18,11 +18,13 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     const [applyOpenStyles, setApplyOpenStyles] = useState(false);
     const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
     const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
     const searchBarRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const itemDropdownRef = useRef<HTMLDivElement>(null);
     const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const highlightedItemRef = useRef<HTMLDivElement>(null);
 
     const addItemToPurchase = () => {
         if (!selectedItem) return;
@@ -75,15 +77,34 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         setPortalStyle(newMenuStyle);
     }, [inputRef, itemDropdownRef]);
 
+    const scrollToHighlightedItem = (index: number) => {
+        if (!itemDropdownRef.current) return;
+        
+        const dropdown = itemDropdownRef.current;
+        const itemHeight = 60; // Approximate height of each item
+        const itemTop = index * itemHeight;
+        const itemBottom = itemTop + itemHeight;
+        const dropdownScrollTop = dropdown.scrollTop;
+        const dropdownHeight = dropdown.clientHeight;
+        
+        if (itemTop < dropdownScrollTop) {
+            dropdown.scrollTop = itemTop;
+        } else if (itemBottom > dropdownScrollTop + dropdownHeight) {
+            dropdown.scrollTop = itemBottom - dropdownHeight;
+        }
+    };
+
     const openDropdown = useCallback(() => {
         if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
         setIsOpen(true);
         setIsClosing(false);
+        setHighlightedIndex(-1);
     }, []);
 
     const closeDropdown = useCallback(() => {
         if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
         setIsClosing(true);
+        setHighlightedIndex(-1);
         setTimeout(() => {
             setIsOpen(false);
             setIsClosing(false);
@@ -159,6 +180,11 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         }
     }, [searchItem, isOpen, isClosing, openDropdown, closeDropdown]);
 
+    // Reset highlighted index when filtered items change
+    useEffect(() => {
+        setHighlightedIndex(-1);
+    }, [filteredItems]);
+
     const handleItemSelect = (item: Item) => {
         if (!item) return;
         setSelectedItem(item);
@@ -185,6 +211,36 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
+            
+            // If there's a highlighted item, select it
+            if (highlightedIndex >= 0 && highlightedIndex < filteredItems.length) {
+                const highlightedItem = filteredItems[highlightedIndex];
+                
+                const newItem: PurchaseItem = {
+                    id: Date.now().toString(),
+                    item_id: highlightedItem.id,
+                    item_name: highlightedItem.name,
+                    quantity: 1,
+                    price: highlightedItem.base_price,
+                    discount: 0,
+                    subtotal: highlightedItem.base_price,
+                    unit: highlightedItem.base_unit || "Unit",
+                    unit_conversion_rate: 1,
+                    vat_percentage: 0,
+                    batch_no: null,
+                    expiry_date: null,
+                    item: {
+                        name: "",
+                        code: "",
+                    },
+                };
+
+                onAddItem(newItem);
+                setSelectedItem(null);
+                setSearchItem("");
+                closeDropdown();
+                return;
+            }
             
             // If an item is already selected, add it to the purchase
             if (selectedItem) {
@@ -219,6 +275,36 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                 setSelectedItem(null);
                 setSearchItem("");
                 closeDropdown();
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (isOpen && filteredItems.length > 0) {
+                const newIndex = highlightedIndex < filteredItems.length - 1 ? highlightedIndex + 1 : 0;
+                setHighlightedIndex(newIndex);
+                scrollToHighlightedItem(newIndex);
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (isOpen && filteredItems.length > 0) {
+                const newIndex = highlightedIndex > 0 ? highlightedIndex - 1 : filteredItems.length - 1;
+                setHighlightedIndex(newIndex);
+                scrollToHighlightedItem(newIndex);
+            }
+        } else if (e.key === 'PageDown') {
+            e.preventDefault();
+            if (isOpen && filteredItems.length > 0) {
+                const pageSize = 5; // Show 5 items per page
+                const newIndex = Math.min(highlightedIndex + pageSize, filteredItems.length - 1);
+                setHighlightedIndex(newIndex);
+                scrollToHighlightedItem(newIndex);
+            }
+        } else if (e.key === 'PageUp') {
+            e.preventDefault();
+            if (isOpen && filteredItems.length > 0) {
+                const pageSize = 5; // Show 5 items per page
+                const newIndex = Math.max(highlightedIndex - pageSize, 0);
+                setHighlightedIndex(newIndex);
+                scrollToHighlightedItem(newIndex);
             }
         } else if (e.key === 'Escape') {
             if (isOpen) {
@@ -271,11 +357,18 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                                     Item tidak ditemukan.
                                 </div>
                             ) : (
-                                filteredItems.map((item) => (
+                                filteredItems.map((item, index) => (
                                     <div
                                         key={item.id}
-                                        className="p-3 hover:bg-gray-100 cursor-pointer text-sm"
+                                        ref={index === highlightedIndex ? highlightedItemRef : null}
+                                        className={classNames(
+                                            "p-3 cursor-pointer text-sm transition-colors duration-150",
+                                            index === highlightedIndex 
+                                                ? "bg-primary/10 border-l-4 border-primary" 
+                                                : "hover:bg-gray-100"
+                                        )}
                                         onClick={() => handleItemSelect(item)}
+                                        onMouseEnter={() => setHighlightedIndex(index)}
                                     >
                                         <div>
                                             <span className="font-semibold">{item.code}</span> - {item.name}
