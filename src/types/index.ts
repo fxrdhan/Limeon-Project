@@ -220,7 +220,7 @@ export interface FormFieldProps {
 
 export interface ImageUploaderProps {
     id: string;
-    onImageUpload: (imageBase64: string) => Promise<void> | void;
+    onImageUpload: (file: File) => Promise<void> | void;
     onImageDelete?: () => Promise<void> | void;
     children: React.ReactNode;
     maxSizeMB?: number;
@@ -273,7 +273,7 @@ export interface DetailEditModalProps {
     onFieldSave?: (key: string, value: unknown) => Promise<void>;
     onImageSave?: (data: {
         supplierId?: string;
-        imageBase64: string;
+        file: File;
     }) => Promise<void>;
     onImageDelete?: (supplierId?: string) => Promise<void>;
     onDeleteRequest?: (
@@ -567,7 +567,7 @@ export interface AuthState {
     error: string | null;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
-    updateProfilePhoto: (photoBase64: string) => Promise<void>;
+    updateProfilePhoto: (file: File) => Promise<void>;
     initialize: () => Promise<void>;
 }
 

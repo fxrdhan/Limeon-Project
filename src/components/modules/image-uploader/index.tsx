@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import type { ImageUploaderProps } from '@/types';
-import { compressImageIfNeeded } from '@/lib/imageUtils';
 import { FaSpinner, FaPencilAlt, FaTrash, FaUpload } from 'react-icons/fa';
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -8,7 +7,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     onImageUpload,
     onImageDelete,
     children,
-    validTypes = ['image/png', 'image/jpeg', 'image/jpg'],
+    validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
     className = '',
     disabled = false,
     loadingIcon = <FaSpinner className="text-white text-xl animate-spin" />,
@@ -44,36 +43,15 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         setError(null);
 
         try {
-            const processedFile = await compressImageIfNeeded(file);
-
-            const reader = new FileReader();
-            reader.readAsDataURL(processedFile);
-            reader.onloadend = async () => {
-                if (typeof reader.result === 'string') {
-                    try {
-                        await onImageUpload(reader.result);
-                    } catch (uploadError) {
-                        console.error("Error during image upload callback:", uploadError);
-                        setError("Gagal memproses gambar.");
-                    } finally {
-                        setIsUploading(false);
-                        if (fileInputRef.current) {
-                            fileInputRef.current.value = '';
-                        }
-                    }
-                } else {
-                    setError("Gagal membaca file gambar.");
-                    setIsUploading(false);
-                }
-            };
-            reader.onerror = () => {
-                setError("Gagal membaca file gambar.");
-                setIsUploading(false);
-            };
-        } catch (compressionError: unknown) {
-            setError(compressionError instanceof Error ? compressionError.message : "Gagal mengompres gambar.");
+            await onImageUpload(file);
+        } catch (uploadError) {
+            console.error("Error during image upload callback:", uploadError);
+            setError("Gagal memproses gambar.");
+        } finally {
             setIsUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         }
     };
 
