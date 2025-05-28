@@ -1,3 +1,5 @@
+import { Session } from "@supabase/supabase-js";
+
 export interface Category {
     id: string;
     name: string;
@@ -548,8 +550,6 @@ export interface ExtractedInvoiceData {
     rawText?: string;
     imageIdentifier?: string;
 }
-
-import { Session } from "@supabase/supabase-js";
 
 export interface UserDetails {
     id: string;
