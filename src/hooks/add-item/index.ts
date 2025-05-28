@@ -616,41 +616,43 @@ export const useAddItemForm = ({
         if (!initialFormData) return false;
         const formDataChanged =
             JSON.stringify(formData) !== JSON.stringify(initialFormData);
-        try {
-            type ConversionForCompare = {
-                to_unit_id?: string;
-                [key: string]: unknown;
+
+        type ConversionForCompare = {
+            to_unit_id: string;
+            conversion_rate: number;
+            basePrice: number;
+            sellPrice: number;
+        };
+
+        const mapConversionForComparison = (conv: UnitConversion): ConversionForCompare | null => {
+            if (!conv || !conv.unit || !conv.unit.id) return null;
+            return {
+                to_unit_id: conv.unit.id,
+                conversion_rate: conv.conversion_rate,
+                basePrice: conv.basePrice,
+                sellPrice: conv.sellPrice,
             };
-            const currentConversionsForCompare = unitConversionHook.conversions
-                .filter((item: UnitConversion) => item && item.unit)
-                .map(({ unit, ...rest }: UnitConversion) => ({
-                    ...rest,
-                    to_unit_id: unit.id,
-                }));
-            const initialConversionsForCompare = Array.isArray(initialUnitConversions)
-                ? initialUnitConversions
-                    .filter((item) => item && typeof item === "object")
-                    .map((item) => ({
-                        ...item,
-                        to_unit_id: item.to_unit_id || item.unit?.id,
-                    }))
-                : [];
-            const safeSortByUnitId = (arr: ConversionForCompare[]) => {
-                return [...arr].sort((a, b) => {
-                    const idA = a?.to_unit_id || "";
-                    const idB = b?.to_unit_id || "";
-                    return idA.localeCompare(idB);
-                });
-            };
-            const sortedCurrent = safeSortByUnitId(currentConversionsForCompare);
-            const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
-            const conversionsChanged =
-                JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
-            return formDataChanged || conversionsChanged;
-        } catch (err) {
-            console.error("Error in isDirty comparison:", err);
-            return true;
-        }
+        };
+
+        const currentConversionsForCompare = unitConversionHook.conversions
+            .map(mapConversionForComparison)
+            .filter(Boolean) as ConversionForCompare[];
+
+        const initialConversionsForCompare = Array.isArray(initialUnitConversions)
+            ? initialUnitConversions
+                .map(mapConversionForComparison)
+                .filter(Boolean) as ConversionForCompare[]
+            : [];
+
+        const safeSortByUnitId = (arr: ConversionForCompare[]) => {
+            return [...arr].sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id));
+        };
+
+        const sortedCurrent = safeSortByUnitId(currentConversionsForCompare);
+        const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
+
+        const conversionsChanged = JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
+        return formDataChanged || conversionsChanged;
     };
 
     const handleCancel = () => {
