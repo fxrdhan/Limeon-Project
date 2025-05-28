@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { StorageService } from '../lib/storageUtils';
 import type {AuthState } from '../types';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -72,7 +73,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
     },
 
-    updateProfilePhoto: async (photoBase64) => {
+    updateProfilePhoto: async (file: File) => {
         const { user, session } = get();
         if (!session || !user) {
             set({ error: 'User not authenticated', loading: false });
@@ -80,12 +81,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
         set({ loading: true, error: null });
         try {
+            // Delete old profile photo if exists
+            if (user.profilephoto) {
+                const oldPath = StorageService.extractPathFromUrl(user.profilephoto, 'profiles');
+                if (oldPath) {
+                    await StorageService.deleteProfilePhoto(oldPath);
+                }
+            }
+
+            // Upload new photo
+            const { publicUrl } = await StorageService.uploadProfilePhoto(user.id, file);
+
+            // Update database
             const { error: updateError } = await supabase
                 .from('users')
-                .update({ profilephoto: photoBase64, updated_at: new Date().toISOString() })
+                .update({ profilephoto: publicUrl, updated_at: new Date().toISOString() })
                 .eq('id', user.id);
+            
             if (updateError) throw updateError;
-            set((state) => ({ user: state.user ? { ...state.user, profilephoto: photoBase64 } : null, loading: false }));
+            
+            set((state) => ({ 
+                user: state.user ? { ...state.user, profilephoto: publicUrl } : null, 
+                loading: false 
+            }));
         } catch (error: unknown) {
             set({ error: error instanceof Error ? error.message : 'Failed to update profile photo', loading: false });
         }

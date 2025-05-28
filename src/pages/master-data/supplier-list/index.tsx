@@ -22,6 +22,7 @@ import type {
     FieldConfig as FieldConfigSupplier,
 } from "@/types";
 import { useMasterDataManagement } from "@/handlers";
+import { StorageService } from "@/lib/storageUtils";
 
 const SupplierList = () => {
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierType | null>(
@@ -148,54 +149,50 @@ const SupplierList = () => {
     const updateSupplierImageMutation = useMutation<
         void,
         Error,
-        { supplierId: string; imageBase64: string }
+        { supplierId: string; file: File }
     >({
         mutationFn: async ({
             supplierId,
-            imageBase64,
+            file,
         }: {
             supplierId: string;
-            imageBase64: string;
+            file: File;
         }) => {
+            // Get current supplier data to check for existing image
+            const { data: supplierData } = await supabase
+                .from("suppliers")
+                .select("image_url")
+                .eq("id", supplierId)
+                .single();
+
+            // Delete old image if exists
+            if (supplierData?.image_url) {
+                const oldPath = StorageService.extractPathFromUrl(supplierData.image_url, 'suppliers');
+                if (oldPath) {
+                    await StorageService.deleteSupplierImage(oldPath);
+                }
+            }
+
+            // Upload new image
+            const { publicUrl } = await StorageService.uploadSupplierImage(supplierId, file);
+
+            // Update database
             const { error } = await supabase
                 .from("suppliers")
                 .update({
-                    image_url: imageBase64,
+                    image_url: publicUrl,
                     updated_at: new Date().toISOString(),
                 })
                 .eq("id", supplierId);
             if (error) throw error;
         },
-        onSuccess: (_data, variables) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-            setSelectedSupplier((prev) =>
-                prev ? { ...prev, image_url: variables.imageBase64 } : null
-            );
+            // The component will re-fetch and get the new image URL
         },
         onError: (error) => {
             console.error("Error updating supplier image:", error);
             alert(`Gagal memperbarui foto supplier: ${error.message}`);
-        },
-    });
-
-    const deleteSupplierImageMutation = useMutation<void, Error, string>({
-        mutationFn: async (supplierId: string) => {
-            const { error } = await supabase
-                .from("suppliers")
-                .update({ image_url: null, updated_at: new Date().toISOString() })
-                .eq("id", supplierId);
-            if (error) throw error;
-        },
-        onSuccess: (_data, supplierId) => {
-            queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-            setSelectedSupplier((prev) =>
-                prev ? { ...prev, image_url: null } : null
-            );
-            console.log(`Image for supplier ${supplierId} deleted.`);
-        },
-        onError: (error) => {
-            console.error("Error deleting supplier image:", error);
-            alert(`Gagal menghapus gambar supplier: ${error.message}`);
         },
     });
 
@@ -225,10 +222,6 @@ const SupplierList = () => {
             confirmText: "Hapus",
             onConfirm: () => deleteSupplierMutation.mutate(supplier.id),
         });
-    };
-
-    const handleNewSupplierImageUpload = (imageBase64: string) => {
-        setNewSupplierImage(imageBase64);
     };
 
     const supplierFields: FieldConfigSupplier[] = [
@@ -392,19 +385,14 @@ const SupplierList = () => {
                 }}
                 onImageSave={async (data: {
                     supplierId?: string;
-                    imageBase64: string;
+                    file: File;
                 }) => {
                     const idToUse = data.supplierId || selectedSupplier?.id;
                     if (idToUse) {
                         await updateSupplierImageMutation.mutateAsync({
                             supplierId: idToUse,
-                            imageBase64: data.imageBase64,
+                            file: data.file,
                         });
-                    }
-                }}
-                onImageDelete={async (supplierId?: string) => {
-                    if (supplierId) {
-                        await deleteSupplierImageMutation.mutateAsync(supplierId);
                     }
                 }}
                 onDeleteRequest={() => {
@@ -430,8 +418,9 @@ const SupplierList = () => {
                     await createSupplierMutation.mutateAsync(newSupplierData);
                     return Promise.resolve();
                 }}
-                onImageSave={(data: { imageBase64: string }) => {
-                    handleNewSupplierImageUpload(data.imageBase64);
+                onImageSave={(data: { file: File }) => {
+                    // Handle image upload for new supplier
+                    console.log("Image uploaded for new supplier:", data.file);
                     return Promise.resolve();
                 }}
                 imagePlaceholder="https://via.placeholder.com/400x300?text=Foto+Supplier"

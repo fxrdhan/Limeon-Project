@@ -141,10 +141,10 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                         id="profile-upload"
                                         className="w-16 h-16"
                                         shape="full"
-                                        onImageUpload={async (base64) => {
+                                        onImageUpload={async (file: File) => {
                                             setIsUploading(true);
                                             try {
-                                                await useAuthStore.getState().updateProfilePhoto(base64);
+                                                await useAuthStore.getState().updateProfilePhoto(file);
                                             } finally {
                                                 setIsUploading(false);
                                             }

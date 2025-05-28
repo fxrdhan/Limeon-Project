@@ -7,7 +7,7 @@ interface UseSupplierDetailFormProps {
     fields: FieldConfig[];
     onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
     onFieldSave?: (key: string, value: unknown) => Promise<void>;
-    onImageSave?: (data: { supplierId?: string; imageBase64: string }) => Promise<void>;
+    onImageSave?: (data: { supplierId?: string; file: File }) => Promise<void>;
     onImageDelete?: (supplierId?: string) => Promise<void>;
     initialImageUrl?: string;
     mode?: 'edit' | 'add';
@@ -144,22 +144,23 @@ export const useSupplierDetailForm = ({
         setEditMode(prev => ({ ...prev, [key]: false }));
     }, [localData]);
 
-    const handleImageUpload = useCallback(async (imageBase64: string) => {
+    const handleImageUpload = useCallback(async (file: File) => {
         setIsUploadingImage(true);
         try {
             if (mode === 'add') {
-                setCurrentImageUrl(imageBase64);
+                // For add mode, create temporary URL for preview
+                const tempUrl = URL.createObjectURL(file);
+                setCurrentImageUrl(tempUrl);
             } else if (onImageSaveProp && initialData?.id) {
-                await onImageSaveProp({ supplierId: String(initialData.id), imageBase64 });
-                setCurrentImageUrl(imageBase64);
-                setLocalData(prev => ({ ...prev, image_url: imageBase64 }));
+                await onImageSaveProp({ supplierId: String(initialData.id), file });
+                // The parent will handle updating the image URL
             }
         } catch (error) {
             console.error("Error pada handleImageUpload:", error);
         } finally {
             setIsUploadingImage(false);
         }
-    }, [onImageSaveProp, mode, initialData, setCurrentImageUrl, setLocalData, setIsUploadingImage]);
+    }, [onImageSaveProp, mode, initialData]);
 
     const handleImageDeleteInternal = useCallback(async () => {
         setIsUploadingImage(true);
