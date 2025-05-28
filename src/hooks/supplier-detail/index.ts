@@ -1,4 +1,3 @@
-// src/hooks/useSupplierDetailForm.ts
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FieldConfig } from '@/types';
 
@@ -41,7 +40,7 @@ export const useSupplierDetailForm = ({
         setIsUploadingImage(false);
         setLoadingField({});
         setIsSubmitting(false);
-        inputRefs.current = {}; // Reset refs saat state di-reset
+        inputRefs.current = {};
         if (mode === 'add') {
             setLocalData(initialData); 
         }
@@ -67,7 +66,6 @@ export const useSupplierDetailForm = ({
         if (el) {
             inputRefs.current[key] = { el };
         } else {
-            // Hapus ref jika elemen di-unmount
             delete inputRefs.current[key];
         }
     }, []);
@@ -77,7 +75,7 @@ export const useSupplierDetailForm = ({
             const isCurrentlyEditing = prevEditModeMap[key];
             const newEditState = !isCurrentlyEditing;
 
-            if (newEditState) { // Memasuki mode edit
+            if (newEditState) {
                 setTimeout(() => {
                     const refData = inputRefs.current[key];
                     if (refData && refData.el) {
@@ -86,7 +84,7 @@ export const useSupplierDetailForm = ({
                             (refData.el as HTMLInputElement | HTMLTextAreaElement).select();
                         }
                     }
-                }, 50); // Penundaan kecil untuk memastikan elemen sudah dirender
+                }, 50);
             }
             return { ...prevEditModeMap, [key]: newEditState };
         });
@@ -148,12 +146,10 @@ export const useSupplierDetailForm = ({
         setIsUploadingImage(true);
         try {
             if (mode === 'add') {
-                // For add mode, create temporary URL for preview
                 const tempUrl = URL.createObjectURL(file);
                 setCurrentImageUrl(tempUrl);
             } else if (onImageSaveProp && initialData?.id) {
                 await onImageSaveProp({ supplierId: String(initialData.id), file });
-                // The parent will handle updating the image URL
             }
         } catch (error) {
             console.error("Error pada handleImageUpload:", error);
@@ -195,6 +191,6 @@ export const useSupplierDetailForm = ({
         handleImageUpload,
         handleImageDeleteInternal,
         resetInternalState,
-        setInputRef, // Ekspor fungsi untuk mengatur ref
+        setInputRef,
     };
 };
