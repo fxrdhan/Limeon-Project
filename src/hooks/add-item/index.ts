@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { UnitConversion } from "@/types";
 import { useUnitConversion } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,6 +9,7 @@ import {
 } from "@/lib/formatters";
 import { useConfirmDialog } from "@/components/modules";
 import type {
+    UnitConversion,
     Category,
     MedicineType,
     Unit,
