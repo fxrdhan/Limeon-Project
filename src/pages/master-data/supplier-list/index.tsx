@@ -145,7 +145,7 @@ const SupplierList = () => {
     });
 
     const updateSupplierImageMutation = useMutation<
-        string | undefined, // Specify that mutationFn returns the new image URL or undefined
+        string | undefined,
         Error,
         { supplierId: string; file: File }
     >({
@@ -179,11 +179,10 @@ const SupplierList = () => {
                 })
                 .eq("id", supplierId);
             if (error) throw error;
-            return publicUrl; // Return the new public URL
+            return publicUrl;
         },
-        onSuccess: (newImageUrl) => { // newImageUrl is the publicUrl returned by mutationFn
+        onSuccess: (newImageUrl) => {
             queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-            // Update selectedSupplier state with the new image URL
             if (newImageUrl && selectedSupplier) {
                 setSelectedSupplier(prev => {
                     if (!prev) return null;
