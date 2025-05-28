@@ -46,12 +46,12 @@ const SupplierList = () => {
         setCurrentPage,
         queryClient,
         openConfirmDialog,
-        totalItems, // This is totalItems from the hook
-        queryError, // This is error from the hook's useQuery
-        data: suppliersData, // Renaming 'data' from hook to 'suppliersData' for clarity
-        isLoading,    // isLoading from the hook
-        isError,      // isError from the hook
-        isFetching    // isFetching from the hook
+        totalItems,
+        queryError,
+        data: suppliersData,
+        isLoading,
+        isError,
+        isFetching
     } = useMasterDataManagement("suppliers", "Supplier", true);
 
     useEffect(() => {
@@ -69,8 +69,7 @@ const SupplierList = () => {
             console.error("Tidak dapat memperbarui: selectedSupplier atau ID-nya hilang.");
             return;
         }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, ...dataToUpdate } = updatedData;
+        const { ...dataToUpdate } = updatedData;
 
         const { error } = await supabase
             .from("suppliers")
@@ -136,7 +135,6 @@ const SupplierList = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-            console.log("Supplier berhasil dihapus, cache diinvalidasi.");
             setIsEditModalOpen(false);
             setSelectedSupplier(null);
         },
@@ -158,14 +156,12 @@ const SupplierList = () => {
             supplierId: string;
             file: File;
         }) => {
-            // Get current supplier data to check for existing image
             const { data: supplierData } = await supabase
                 .from("suppliers")
                 .select("image_url")
                 .eq("id", supplierId)
                 .single();
 
-            // Delete old image if exists
             if (supplierData?.image_url) {
                 const oldPath = StorageService.extractPathFromUrl(supplierData.image_url, 'suppliers');
                 if (oldPath) {
@@ -173,10 +169,8 @@ const SupplierList = () => {
                 }
             }
 
-            // Upload new image
             const { publicUrl } = await StorageService.uploadSupplierImage(supplierId, file);
 
-            // Update database
             const { error } = await supabase
                 .from("suppliers")
                 .update({
@@ -188,7 +182,6 @@ const SupplierList = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-            // The component will re-fetch and get the new image URL
         },
         onError: (error) => {
             console.error("Error updating supplier image:", error);
@@ -419,7 +412,6 @@ const SupplierList = () => {
                     return Promise.resolve();
                 }}
                 onImageSave={(data: { file: File }) => {
-                    // Handle image upload for new supplier
                     console.log("Image uploaded for new supplier:", data.file);
                     return Promise.resolve();
                 }}
