@@ -299,9 +299,10 @@ const SupplierList = () => {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableHeader className="w-[20%]">Nama Supplier</TableHeader>
-                                    <TableHeader className="w-[60%]">Alamat</TableHeader>
+                                    <TableHeader className="w-[15%]">Nama Supplier</TableHeader>
+                                    <TableHeader className="w-[50%]">Alamat</TableHeader>
                                     <TableHeader className="w-[10%]">Telepon</TableHeader>
+                                    <TableHeader className="w-[15%]">Email</TableHeader>
                                     <TableHeader className="w-[10%]">Kontak Person</TableHeader>
                                 </TableRow>
                             </TableHead>
@@ -334,6 +335,7 @@ const SupplierList = () => {
                                                 <TableCell>{supplier.name}</TableCell>
                                                 <TableCell>{supplier.address || "-"}</TableCell>
                                                 <TableCell>{supplier.phone || "-"}</TableCell>
+                                                <TableCell>{supplier.email || "-"}</TableCell>
                                                 <TableCell>{supplier.contact_person || "-"}</TableCell>
                                             </TableRow>
                                         ))
