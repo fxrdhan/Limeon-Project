@@ -41,7 +41,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         
         const newUnitConversion: UnitConversion = {
             ...unitConversion,
-            id: Date.now().toString(),
+            id: `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
             basePrice: calculatedBasePrice,
             sellPrice: calculatedSellPrice,
         };
@@ -65,7 +65,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
             const newBasePrice = basePrice > 0 ? (basePrice / uc.conversion) : 0;
             const newSellPrice = sellPrice > 0 ? (sellPrice / uc.conversion) : 0;
             return Math.abs(uc.basePrice - newBasePrice) > 0.001 || 
-                   Math.abs(uc.sellPrice - newSellPrice) > 0.001;
+                    Math.abs(uc.sellPrice - newSellPrice) > 0.001;
         });
         
         if (needsUpdate) {
