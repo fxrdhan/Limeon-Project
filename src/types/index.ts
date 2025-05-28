@@ -606,3 +606,18 @@ export interface DatepickerProps {
     maxDate?: Date;
     portalWidth?: string | number;
 }
+
+export interface UseAddItemFormProps {
+    itemId?: string;
+    initialSearchQuery?: string;
+    onClose: () => void;
+}
+
+export interface DBUnitConversion {
+    id?: string;
+    unit_name: string;
+    to_unit_id?: string;
+    conversion_rate: number;
+    base_price?: number;
+    sell_price?: number;
+}

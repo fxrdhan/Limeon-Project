@@ -1,30 +1,47 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import type { UnitConversion } from '@/types';
+import type { UnitConversion } from "@/types";
 import { useUnitConversion } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { formatRupiah, extractNumericValue, formatDateTime } from "@/lib/formatters";
+import {
+    formatRupiah,
+    extractNumericValue,
+    formatDateTime,
+} from "@/lib/formatters";
 import { useConfirmDialog } from "@/components/modules";
-import type { Category, MedicineType, Unit, FormData } from '@/types';
-import { generateTypeCode, generateUnitCode, generateCategoryCode, getUnitById } from "@/hooks/add-item/helper";
+import type {
+    Category,
+    MedicineType,
+    Unit,
+    FormData,
+    UnitData,
+    UseAddItemFormProps,
+    DBUnitConversion,
+} from "@/types";
+import {
+    generateTypeCode,
+    generateUnitCode,
+    generateCategoryCode,
+} from "@/hooks/add-item/helper";
 
-interface UseAddItemFormProps {
-    itemId?: string;
-    initialSearchQuery?: string;
-    onClose: () => void;
-}
-export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddItemFormProps) => {
+export const useAddItemForm = ({
+    itemId,
+    initialSearchQuery,
+    onClose,
+}: UseAddItemFormProps) => {
     const queryClient = useQueryClient();
     const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
-    const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null);
+    const [initialUnitConversions, setInitialUnitConversions] = useState<
+        UnitConversion[] | null
+    >(null);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [isEditMode, setIsEditMode] = useState(Boolean(itemId));
     const [categories, setCategories] = useState<Category[]>([]);
     const [types, setTypes] = useState<MedicineType[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
-    const [displayBasePrice, setDisplayBasePrice] = useState('');
-    const [displaySellPrice, setDisplaySellPrice] = useState('');
+    const [displayBasePrice, setDisplayBasePrice] = useState("");
+    const [displaySellPrice, setDisplaySellPrice] = useState("");
     const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
     const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
     const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
@@ -51,7 +68,10 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
         updated_at: null,
     });
 
-    const calculateProfitPercentage = (base_price?: number, sell_price?: number) => {
+    const calculateProfitPercentage = (
+        base_price?: number,
+        sell_price?: number
+    ) => {
         const currentBasePrice = base_price ?? formData.base_price;
         const currentSellPrice = sell_price ?? formData.sell_price;
         if (currentBasePrice > 0 && currentSellPrice >= 0) {
@@ -62,10 +82,21 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
 
     const setFormToPristineAddState = () => {
         const pristineState: FormData = {
-            code: "", name: "",
-            type_id: "", category_id: "", unit_id: "",
-            rack: "", barcode: "", description: "", base_price: 0, sell_price: 0, min_stock: 10,
-            is_active: true, is_medicine: true, has_expiry_date: false, updated_at: null,
+            code: "",
+            name: "",
+            type_id: "",
+            category_id: "",
+            unit_id: "",
+            rack: "",
+            barcode: "",
+            description: "",
+            base_price: 0,
+            sell_price: 0,
+            min_stock: 10,
+            is_active: true,
+            is_medicine: true,
+            has_expiry_date: false,
+            updated_at: null,
         };
         setFormData({ ...pristineState });
         setDisplayBasePrice(formatRupiah(0));
@@ -73,7 +104,9 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
         setMarginPercentage("0");
         setMinStockValue("10");
         unitConversionHook.resetConversions();
-        unitConversionHook.setBaseUnit(units.find(u => u.id === pristineState.unit_id)?.name || "");
+        unitConversionHook.setBaseUnit(
+            units.find((u) => u.id === pristineState.unit_id)?.name || ""
+        );
         unitConversionHook.setBasePrice(pristineState.base_price);
         unitConversionHook.setSellPrice(pristineState.sell_price);
         setInitialUnitConversions([]);
@@ -86,7 +119,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
         if (newData.base_price !== undefined) {
             setDisplayBasePrice(formatRupiah(newData.base_price));
         }
-        setFormData(prev => {
+        setFormData((prev) => {
             const merged = { ...prev, ...newData };
             return {
                 code: merged.code ?? "",
@@ -148,7 +181,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             unitConversionHook.setBasePrice(0);
             unitConversionHook.setSellPrice(0);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemId, initialSearchQuery]);
 
     useEffect(() => {
@@ -157,7 +190,10 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                 return;
             const typeCode = generateTypeCode(formData.type_id, types);
             const unitCode = generateUnitCode(formData.unit_id, units);
-            const categoryCode = generateCategoryCode(formData.category_id, categories);
+            const categoryCode = generateCategoryCode(
+                formData.category_id,
+                categories
+            );
             const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
             try {
                 const { data } = await supabase
@@ -175,7 +211,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                 }
                 const sequenceStr = sequence.toString().padStart(2, "0");
                 const generatedCode = `${codePrefix}${sequenceStr}`;
-                setFormData(prevFormData => ({
+                setFormData((prevFormData) => ({
                     ...prevFormData,
                     code: generatedCode,
                 }));
@@ -183,17 +219,38 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                 console.error("Error generating item code:", error);
             }
         };
-        if (formData.type_id && formData.category_id && formData.unit_id &&
-            categories.length > 0 && types.length > 0 && units.length > 0) {
+        if (
+            formData.type_id &&
+            formData.category_id &&
+            formData.unit_id &&
+            categories.length > 0 &&
+            types.length > 0 &&
+            units.length > 0
+        ) {
             generateItemCode();
         }
-    }, [formData.type_id, formData.category_id, formData.unit_id, categories, types, units]);
+    }, [
+        formData.type_id,
+        formData.category_id,
+        formData.unit_id,
+        categories,
+        types,
+        units,
+    ]);
 
     useEffect(() => {
-        if (unitConversionHook.basePrice > 0 && unitConversionHook.conversions.length > 0) {
+        if (
+            unitConversionHook.basePrice > 0 &&
+            unitConversionHook.conversions.length > 0
+        ) {
             unitConversionHook.recalculateBasePrices();
         }
-    }, [unitConversionHook.basePrice, unitConversionHook.recalculateBasePrices, unitConversionHook.conversions.length, unitConversionHook]);
+    }, [
+        unitConversionHook.basePrice,
+        unitConversionHook.recalculateBasePrices,
+        unitConversionHook.conversions.length,
+        unitConversionHook,
+    ]);
 
     useEffect(() => {
         unitConversionHook.setSellPrice(formData.sell_price || 0);
@@ -229,10 +286,12 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             setLoading(true);
             const { data: itemData, error: itemError } = await supabase
                 .from("items")
-                .select(`
+                .select(
+                    `
                     *, updated_at,
                     unit_conversions
-                `)
+                `
+                )
                 .eq("id", id)
                 .single();
             if (itemError) throw itemError;
@@ -250,8 +309,12 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                 sell_price: itemData.sell_price || 0,
                 min_stock: itemData.min_stock || 10,
                 is_active: itemData.is_active !== undefined ? itemData.is_active : true,
-                is_medicine: itemData.is_medicine !== undefined ? itemData.is_medicine : true,
-                has_expiry_date: itemData.has_expiry_date !== undefined ? itemData.has_expiry_date : false,
+                is_medicine:
+                    itemData.is_medicine !== undefined ? itemData.is_medicine : true,
+                has_expiry_date:
+                    itemData.has_expiry_date !== undefined
+                        ? itemData.has_expiry_date
+                        : false,
                 updated_at: itemData.updated_at,
             });
             setInitialFormData({ ...formData });
@@ -259,9 +322,10 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             let parsedConversionsFromDB = [];
             if (itemData.unit_conversions) {
                 try {
-                    parsedConversionsFromDB = typeof itemData.unit_conversions === 'string'
-                        ? JSON.parse(itemData.unit_conversions)
-                        : itemData.unit_conversions;
+                    parsedConversionsFromDB =
+                        typeof itemData.unit_conversions === "string"
+                            ? JSON.parse(itemData.unit_conversions)
+                            : itemData.unit_conversions;
                 } catch (e) {
                     console.error("Error parsing unit_conversions from DB:", e);
                     parsedConversionsFromDB = [];
@@ -269,17 +333,24 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             }
 
             if (Array.isArray(parsedConversionsFromDB)) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const mappedConversions = parsedConversionsFromDB.map((conv: any) => ({
-                    id: conv.id || Date.now().toString() + Math.random().toString(),
-                    unit_name: conv.unit_name,
-                    to_unit_id: conv.to_unit_id || units.find(u => u.name === conv.unit_name)?.id || '',
-                    unit: units.find(u => u.name === conv.unit_name) || { id: conv.to_unit_id || '', name: conv.unit_name },
-                    conversion: conv.conversion_rate || 0,
-                    basePrice: conv.base_price || 0,
-                    sellPrice: conv.sell_price || 0,
-                    conversion_rate: conv.conversion_rate || 0,
-                }));
+                const mappedConversions = parsedConversionsFromDB.map(
+                    (conv: DBUnitConversion) => ({
+                        id: conv.id || Date.now().toString() + Math.random().toString(),
+                        unit_name: conv.unit_name,
+                        to_unit_id:
+                            conv.to_unit_id ||
+                            units.find((u) => u.name === conv.unit_name)?.id ||
+                            "",
+                        unit: units.find((u) => u.name === conv.unit_name) || {
+                            id: conv.to_unit_id || "",
+                            name: conv.unit_name,
+                        },
+                        conversion: conv.conversion_rate || 0,
+                        basePrice: conv.base_price || 0,
+                        sellPrice: conv.sell_price || 0,
+                        conversion_rate: conv.conversion_rate || 0,
+                    })
+                );
                 setInitialUnitConversions(mappedConversions);
             } else {
                 setInitialUnitConversions([]);
@@ -297,9 +368,10 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             let conversions = [];
             if (itemData.unit_conversions) {
                 try {
-                    conversions = typeof itemData.unit_conversions === 'string'
-                        ? JSON.parse(itemData.unit_conversions)
-                        : itemData.unit_conversions;
+                    conversions =
+                        typeof itemData.unit_conversions === "string"
+                            ? JSON.parse(itemData.unit_conversions)
+                            : itemData.unit_conversions;
                 } catch (e) {
                     console.error("Error parsing unit_conversions:", e);
                     conversions = [];
@@ -307,15 +379,36 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             }
             if (Array.isArray(conversions)) {
                 for (const conv of conversions) {
-                    const unit = await getUnitById(conv.unit_name);
-                    if (unit && typeof conv.conversion_rate === 'number') {
+                    const unitDetail = units.find((u) => u.name === conv.unit_name);
+                    if (unitDetail && typeof conv.conversion_rate === "number") {
                         unitConversionHook.addUnitConversion({
-                            to_unit_id: unit.id,
-                            unit_name: unit.name,
-                            unit: unit,
+                            to_unit_id: unitDetail.id,
+                            unit_name: unitDetail.name,
+                            unit: { id: unitDetail.id, name: unitDetail.name },
                             conversion: conv.conversion_rate || 0,
-                            basePrice: conv.base_price,
-                            sellPrice: conv.sellPrice,
+                            basePrice: conv.base_price || 0,
+                            sellPrice: conv.sell_price || 0,
+                            conversion_rate: conv.conversion_rate || 0,
+                        });
+                    } else if (typeof conv.conversion_rate === "number") {
+                        console.warn(
+                            `Unit dengan nama "${conv.unit_name}" tidak ditemukan di daftar unit utama. Menggunakan placeholder.`
+                        );
+                        const placeholderUnit: UnitData = {
+                            id:
+                                conv.to_unit_id ||
+                                `temp_id_${Date.now()}_${Math.random()
+                                    .toString(36)
+                                    .substr(2, 9)}`,
+                            name: conv.unit_name || "Unknown Unit",
+                        };
+                        unitConversionHook.addUnitConversion({
+                            to_unit_id: placeholderUnit.id,
+                            unit_name: placeholderUnit.name,
+                            unit: placeholderUnit,
+                            conversion: conv.conversion_rate || 0,
+                            basePrice: conv.base_price || 0,
+                            sellPrice: conv.sell_price || 0,
                             conversion_rate: conv.conversion_rate || 0,
                         });
                     }
@@ -330,7 +423,10 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
     };
 
     const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        e: React.ChangeEvent<
+            HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >
+    ) => {
         const { name, value, type } = e.target as HTMLInputElement;
         if (name === "base_price" || name === "sell_price") {
             const numericInt = extractNumericValue(value);
@@ -355,7 +451,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prevFormData => ({
+        setFormData((prevFormData) => ({
             ...prevFormData,
             [name]: value,
         }));
@@ -366,13 +462,13 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             const { data, error } = await supabase
                 .from("item_categories")
                 .insert(newCategory)
-                .select('id, name, description')
+                .select("id, name, description")
                 .single();
             if (error) throw error;
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            queryClient.invalidateQueries({ queryKey: ["categories"] });
         },
         onError: (error) => {
             console.error("Error adding category:", error);
@@ -404,13 +500,13 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             const { data, error } = await supabase
                 .from("item_units")
                 .insert(newUnit)
-                .select('id, name, description')
+                .select("id, name, description")
                 .single();
             if (error) throw error;
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['units'] });
+            queryClient.invalidateQueries({ queryKey: ["units"] });
         },
         onError: (error) => {
             console.error("Error adding unit:", error);
@@ -419,7 +515,10 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
 
     const deleteItemMutation = useMutation({
         mutationFn: async (itemIdToDelete: string) => {
-            const { error } = await supabase.from("items").delete().eq("id", itemIdToDelete);
+            const { error } = await supabase
+                .from("items")
+                .delete()
+                .eq("id", itemIdToDelete);
             if (error) throw error;
         },
         onSuccess: () => {
@@ -452,7 +551,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                     is_medicine: formData.is_medicine,
                     base_unit: unitConversionHook.baseUnit,
                     has_expiry_date: formData.has_expiry_date,
-                    unit_conversions: unitConversionHook.conversions.map(uc => ({
+                    unit_conversions: unitConversionHook.conversions.map((uc) => ({
                         unit_name: uc.unit.name,
                         to_unit_id: uc.to_unit_id,
                         conversion_rate: uc.conversion_rate,
@@ -483,7 +582,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                     is_medicine: formData.is_medicine,
                     base_unit: unitConversionHook.baseUnit,
                     has_expiry_date: formData.has_expiry_date,
-                    unit_conversions: unitConversionHook.conversions.map(uc => ({
+                    unit_conversions: unitConversionHook.conversions.map((uc) => ({
                         unit_name: uc.unit.name,
                         to_unit_id: uc.to_unit_id,
                         conversion_rate: uc.conversion_rate,
@@ -497,9 +596,13 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                     .select("id")
                     .single();
                 if (mainError) throw mainError;
-                if (!insertedItem) throw new Error("Gagal mendapatkan ID item baru setelah insert.");
+                if (!insertedItem)
+                    throw new Error("Gagal mendapatkan ID item baru setelah insert.");
             }
-            queryClient.invalidateQueries({ queryKey: ["items"], refetchType: "all" });
+            queryClient.invalidateQueries({
+                queryKey: ["items"],
+                refetchType: "all",
+            });
             onClose();
         } catch (error) {
             console.error("Error saving item:", error);
@@ -511,7 +614,8 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
 
     const isDirty = () => {
         if (!initialFormData) return false;
-        const formDataChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+        const formDataChanged =
+            JSON.stringify(formData) !== JSON.stringify(initialFormData);
         try {
             type ConversionForCompare = {
                 to_unit_id?: string;
@@ -519,28 +623,32 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             };
             const currentConversionsForCompare = unitConversionHook.conversions
                 .filter((item: UnitConversion) => item && item.unit)
-                .map(({ unit, ...rest }: UnitConversion) => ({ ...rest, to_unit_id: unit.id }));
+                .map(({ unit, ...rest }: UnitConversion) => ({
+                    ...rest,
+                    to_unit_id: unit.id,
+                }));
             const initialConversionsForCompare = Array.isArray(initialUnitConversions)
                 ? initialUnitConversions
-                    .filter(item => item && typeof item === 'object')
-                    .map(item => ({
+                    .filter((item) => item && typeof item === "object")
+                    .map((item) => ({
                         ...item,
-                        to_unit_id: item.to_unit_id || item.unit?.id
+                        to_unit_id: item.to_unit_id || item.unit?.id,
                     }))
                 : [];
             const safeSortByUnitId = (arr: ConversionForCompare[]) => {
                 return [...arr].sort((a, b) => {
-                    const idA = a?.to_unit_id || '';
-                    const idB = b?.to_unit_id || '';
+                    const idA = a?.to_unit_id || "";
+                    const idB = b?.to_unit_id || "";
                     return idA.localeCompare(idB);
                 });
             };
             const sortedCurrent = safeSortByUnitId(currentConversionsForCompare);
             const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
-            const conversionsChanged = JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
+            const conversionsChanged =
+                JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
             return formDataChanged || conversionsChanged;
         } catch (err) {
-            console.error('Error in isDirty comparison:', err);
+            console.error("Error in isDirty comparison:", err);
             return true;
         }
     };
@@ -549,7 +657,8 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
         if (isDirty()) {
             confirmDialog.openConfirmDialog({
                 title: "Konfirmasi Keluar",
-                message: "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
+                message:
+                    "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
                 confirmText: "Tinggalkan",
                 cancelText: "Batal",
                 onConfirm: () => onClose(),
@@ -560,40 +669,58 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
         }
     };
 
-    const handleSaveCategory = async (categoryData: { name: string; description: string }) => {
+    const handleSaveCategory = async (categoryData: {
+        name: string;
+        description: string;
+    }) => {
         try {
             const newCategory = await addCategoryMutation.mutateAsync(categoryData);
-            const { data: updatedCategories } = await supabase.from("item_categories").select("id, name").order("name");
+            const { data: updatedCategories } = await supabase
+                .from("item_categories")
+                .select("id, name")
+                .order("name");
             if (updatedCategories) setCategories(updatedCategories);
             if (newCategory?.id) updateFormData({ category_id: newCategory.id });
             setIsAddEditModalOpen(false);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             alert("Gagal menyimpan kategori baru.");
         }
     };
 
-    const handleSaveType = async (typeData: { name: string; description: string }) => {
+    const handleSaveType = async (typeData: {
+        name: string;
+        description: string;
+    }) => {
         try {
             const newType = await addTypeMutation.mutateAsync(typeData);
-            const { data: updatedTypes } = await supabase.from("item_types").select("id, name").order("name");
+            const { data: updatedTypes } = await supabase
+                .from("item_types")
+                .select("id, name")
+                .order("name");
             if (updatedTypes) setTypes(updatedTypes);
             if (newType?.id) updateFormData({ type_id: newType.id });
             setIsAddTypeModalOpen(false);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             alert("Gagal menyimpan jenis item baru.");
         }
     };
 
-    const handleSaveUnit = async (unitData: { name: string; description: string }) => {
+    const handleSaveUnit = async (unitData: {
+        name: string;
+        description: string;
+    }) => {
         try {
             const newUnit = await addUnitMutation.mutateAsync(unitData);
-            const { data: updatedUnits } = await supabase.from("item_units").select("id, name").order("name");
+            const { data: updatedUnits } = await supabase
+                .from("item_units")
+                .select("id, name")
+                .order("name");
             if (updatedUnits) setUnits(updatedUnits);
             if (newUnit?.id) updateFormData({ unit_id: newUnit.id });
             setIsAddUnitModalOpen(false);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             alert("Gagal menyimpan satuan baru.");
         }
@@ -626,20 +753,26 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
             setDisplayBasePrice(formatRupiah(initialFormData.base_price || 0));
             setDisplaySellPrice(formatRupiah(initialFormData.sell_price || 0));
 
-            const profit = calculateProfitPercentage(initialFormData.base_price || 0, initialFormData.sell_price || 0);
+            const profit = calculateProfitPercentage(
+                initialFormData.base_price || 0,
+                initialFormData.sell_price || 0
+            );
             setMarginPercentage(profit !== null ? profit.toFixed(1) : "0");
             setMinStockValue(String(initialFormData.min_stock || 10));
 
             unitConversionHook.resetConversions();
-            const baseUnitName = units.find(u => u.id === initialFormData.unit_id)?.name || "";
+            const baseUnitName =
+                units.find((u) => u.id === initialFormData.unit_id)?.name || "";
             unitConversionHook.setBaseUnit(baseUnitName);
             unitConversionHook.setBasePrice(initialFormData.base_price || 0);
             unitConversionHook.setSellPrice(initialFormData.sell_price || 0);
             unitConversionHook.skipNextRecalculation();
 
-            initialUnitConversions.forEach(convDataFromDB => {
-                const unitDetails = units.find(u => u.name === convDataFromDB.unit_name);
-                if (unitDetails && typeof convDataFromDB.conversion_rate === 'number') {
+            initialUnitConversions.forEach((convDataFromDB) => {
+                const unitDetails = units.find(
+                    (u) => u.name === convDataFromDB.unit_name
+                );
+                if (unitDetails && typeof convDataFromDB.conversion_rate === "number") {
                     unitConversionHook.addUnitConversion({
                         to_unit_id: unitDetails.id,
                         unit_name: unitDetails.name,
@@ -651,13 +784,14 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                     });
                 }
             });
-
         } else {
             setFormToPristineAddState();
         }
     };
 
-    const formattedUpdateAt = formData.updated_at ? formatDateTime(formData.updated_at) : "-";
+    const formattedUpdateAt = formData.updated_at
+        ? formatDateTime(formData.updated_at)
+        : "-";
 
     return {
         formData,
@@ -702,7 +836,7 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
         calculateSellPriceFromMargin,
         handleCancel,
         calculateProfitPercentage,
-        formattedUpdateAt,    
+        formattedUpdateAt,
         deleteItemMutation,
         resetForm,
         confirmDialog,
