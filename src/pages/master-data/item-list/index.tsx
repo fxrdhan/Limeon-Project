@@ -16,7 +16,7 @@ import {
 import { FaPlus } from "react-icons/fa";
 import { supabase } from "@/lib/supabase";
 import type { Item as ItemDataType, UnitConversion, UnitData } from "@/types";
-import AddItemPortal from "./add-edit-page";
+import AddItemPortal from "./add-edit";
 
 const fetchItemsList = async (page: number, searchTerm: string, limit: number) => {
     const from = (page - 1) * limit;
