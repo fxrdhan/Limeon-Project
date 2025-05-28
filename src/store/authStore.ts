@@ -81,7 +81,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
         set({ loading: true, error: null });
         try {
-            // Delete old profile photo if exists
             if (user.profilephoto) {
                 const oldPath = StorageService.extractPathFromUrl(user.profilephoto, 'profiles');
                 if (oldPath) {
@@ -89,10 +88,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 }
             }
 
-            // Upload new photo
             const { publicUrl } = await StorageService.uploadProfilePhoto(user.id, file);
 
-            // Update database
             const { error: updateError } = await supabase
                 .from('users')
                 .update({ profilephoto: publicUrl, updated_at: new Date().toISOString() })
