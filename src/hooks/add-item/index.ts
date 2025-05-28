@@ -452,47 +452,19 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                     is_medicine: formData.is_medicine,
                     base_unit: unitConversionHook.baseUnit,
                     has_expiry_date: formData.has_expiry_date,
+                    unit_conversions: unitConversionHook.conversions.map(uc => ({
+                        unit_name: uc.unit.name,
+                        to_unit_id: uc.to_unit_id,
+                        conversion_rate: uc.conversion_rate,
+                        base_price: uc.basePrice,
+                        sell_price: uc.sellPrice,
+                    })),
                 };
                 const { error: updateError } = await supabase
                     .from("items")
                     .update(itemUpdateData)
                     .eq("id", itemId);
                 if (updateError) throw updateError;
-                const { error: deleteError } = await supabase
-                    .from("unit_conversions")
-                    .delete()
-                    .eq("item_id", itemId);
-                if (deleteError) {
-                    console.error("Error deleting old unit conversions:", deleteError);
-                    throw deleteError;
-                }
-                if (unitConversionHook.conversions.length > 0) {
-                    const uniqueConversions = unitConversionHook.conversions.reduce((acc: UnitConversion[], current: UnitConversion) => {
-                        const isDuplicate = acc.find((item: UnitConversion) => item.unit.name === current.unit.name);
-                        if (!isDuplicate && current.unit && current.unit.name) {
-                            acc.push(current);
-                        } else if (isDuplicate) {
-                            console.warn(`Duplicate unit conversion found for ${current.unit.name}, skipping...`);
-                        }
-                        return acc;
-                    }, [] as UnitConversion[]);
-                    const conversionRecords = uniqueConversions.map((uc: UnitConversion) => ({
-                        item_id: itemId,
-                        unit_name: uc.unit.name,
-                        conversion_rate: uc.conversion,
-                        base_price: uc.basePrice,
-                        sell_price: uc.sellPrice,
-                    }));
-                    if (conversionRecords.length > 0) {
-                        const { error: insertConversionError } = await supabase
-                            .from("unit_conversions")
-                            .insert(conversionRecords);
-                        if (insertConversionError) {
-                            console.error("Error inserting new unit conversions:", insertConversionError);
-                            throw insertConversionError;
-                        }
-                    }
-                }
             } else {
                 const mainItemData = {
                     name: formData.name,
@@ -511,6 +483,13 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                     is_medicine: formData.is_medicine,
                     base_unit: unitConversionHook.baseUnit,
                     has_expiry_date: formData.has_expiry_date,
+                    unit_conversions: unitConversionHook.conversions.map(uc => ({
+                        unit_name: uc.unit.name,
+                        to_unit_id: uc.to_unit_id,
+                        conversion_rate: uc.conversion_rate,
+                        base_price: uc.basePrice,
+                        sell_price: uc.sellPrice,
+                    })),
                 };
                 const { data: insertedItem, error: mainError } = await supabase
                     .from("items")
@@ -519,23 +498,6 @@ export const useAddItemForm = ({ itemId, initialSearchQuery, onClose }: UseAddIt
                     .single();
                 if (mainError) throw mainError;
                 if (!insertedItem) throw new Error("Gagal mendapatkan ID item baru setelah insert.");
-                const newItemId = insertedItem.id;
-                if (unitConversionHook.conversions.length > 0) {
-                    const conversionRecords = unitConversionHook.conversions.map((uc: UnitConversion) => ({
-                        item_id: newItemId,
-                        unit_name: uc.unit.name,
-                        conversion_rate: uc.conversion,
-                        base_price: uc.basePrice,
-                        sell_price: uc.sellPrice,
-                    }));
-                    const { error: conversionError } = await supabase
-                        .from("unit_conversions")
-                        .insert(conversionRecords);
-                    if (conversionError) {
-                        console.error("Error saving unit conversions for new item:", conversionError);
-                        throw conversionError;
-                    }
-                }
             }
             queryClient.invalidateQueries({ queryKey: ["items"], refetchType: "all" });
             onClose();
