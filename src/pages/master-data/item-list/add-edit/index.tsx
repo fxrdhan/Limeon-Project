@@ -94,6 +94,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
         handleMinStockKeyDown,
         deleteItemMutation,
         resetForm,
+        isDirty,
     } = useAddItemPageHandlers({
         itemId,
         initialSearchQuery,
@@ -152,13 +153,16 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
         !formData.unit_id ||
         formData.base_price <= 0 ||
         formData.sell_price < 0;
-
+    
     const operationsPending =
         addTypeMutation.isPending ||
         addUnitMutation.isPending ||
         addCategoryMutation.isPending ||
         deleteItemMutation.isPending;
-
+    
+    const disableCondition = formIsInvalid || operationsPending;
+    const finalDisabledState = isEditMode ? (disableCondition || !isDirty()) : disableCondition;
+    
     const handleReset = () => {
         resetForm();
         if (nameInputRef.current) {
@@ -621,7 +625,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                     isEditMode={isEditMode}
                                     cancelTabIndex={19}
                                     saveTabIndex={20}
-                                    isDisabled={formIsInvalid || operationsPending}
+                                    isDisabled={finalDisabledState}
                                     saveText="Simpan"
                                     updateText="Update"
                                     deleteText={"Hapus"}
