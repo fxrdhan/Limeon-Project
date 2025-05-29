@@ -73,6 +73,7 @@ export const Dropdown = ({
         const buttonRect = buttonRef.current.getBoundingClientRect();
         const dropdownActualHeight = dropdownMenuRef.current.scrollHeight;
         const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
         const spaceBelow = viewportHeight - buttonRect.bottom;
         const shouldDropUp =
             spaceBelow < dropdownActualHeight + 10 &&
@@ -80,10 +81,24 @@ export const Dropdown = ({
         
         setDropDirection(shouldDropUp ? "up" : "down");
         
+        // Calculate width with minimum constraints
+        const minWidth = Math.min(250, viewportWidth - 32); // 32px for margins
+        const maxWidth = Math.min(buttonRect.width, viewportWidth - 32);
+        const dropdownWidth = Math.max(minWidth, maxWidth);
+        
+        // Calculate left position to ensure dropdown stays within viewport
+        let leftPosition = buttonRect.left;
+        if (leftPosition + dropdownWidth > viewportWidth - 16) {
+            leftPosition = viewportWidth - dropdownWidth - 16;
+        }
+        if (leftPosition < 16) {
+            leftPosition = 16;
+        }
+        
         const newMenuStyle: CSSProperties = {
             position: "fixed",
-            left: `${buttonRect.left}px`,
-            width: `${buttonRect.width}px`,
+            left: `${leftPosition}px`,
+            width: `${dropdownWidth}px`,
             zIndex: 1050,
         };
         
@@ -472,54 +487,56 @@ export const Dropdown = ({
                                     <div>
                                         {searchList && (
                                             <div className="p-2 border-b sticky top-0 z-10">
-                                                <div className="relative flex items-center">
-                                                    <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            width="16"
-                                                            height="16"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            className="text-gray-500"
-                                                        >
-                                                            <circle cx="11" cy="11" r="8"></circle>
-                                                            <line
-                                                                x1="21"
-                                                                y1="21"
-                                                                x2="16.65"
-                                                                y2="16.65"
-                                                            ></line>
-                                                        </svg>
+                                                <div className="relative flex items-center gap-2 min-w-0">
+                                                    <div className="relative flex-1 min-w-0">
+                                                        <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="16"
+                                                                height="16"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                className="text-gray-500"
+                                                            >
+                                                                <circle cx="11" cy="11" r="8"></circle>
+                                                                <line
+                                                                    x1="21"
+                                                                    y1="21"
+                                                                    x2="16.65"
+                                                                    y2="16.65"
+                                                                ></line>
+                                                            </svg>
+                                                        </div>
+                                                        <input
+                                                            ref={searchInputRef}
+                                                            type="text"
+                                                            className="w-full py-2 px-2 pl-8 pr-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-teal-100 focus:border-primary transition duration-200 ease-in-out min-w-0"
+                                                            placeholder="Cari..."
+                                                            value={searchTerm}
+                                                            onChange={handleSearchChange}
+                                                            onKeyDown={handleSearchBarKeyDown}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onFocus={() => setIsSearching(true)}
+                                                            onBlur={() => setTimeout(() => setIsSearching(false), 100)}
+                                                            aria-autocomplete="list"
+                                                            aria-expanded={isOpen}
+                                                            aria-controls="dropdown-options-list"
+                                                            aria-activedescendant={
+                                                                highlightedIndex >= 0 && currentFilteredOptions[highlightedIndex]
+                                                                ? `dropdown-option-${currentFilteredOptions[highlightedIndex].id}`
+                                                                : undefined
+                                                            }
+                                                        />
                                                     </div>
-                                                    <input
-                                                        ref={searchInputRef}
-                                                        type="text"
-                                                        className="flex-grow py-2 px-2 pl-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-teal-100 focus:border-primary transition duration-200 ease-in-out"
-                                                        placeholder="Cari..."
-                                                        value={searchTerm}
-                                                        onChange={handleSearchChange}
-                                                        onKeyDown={handleSearchBarKeyDown}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        onFocus={() => setIsSearching(true)}
-                                                        onBlur={() => setTimeout(() => setIsSearching(false), 100)}
-                                                        aria-autocomplete="list"
-                                                        aria-expanded={isOpen}
-                                                        aria-controls="dropdown-options-list"
-                                                        aria-activedescendant={
-                                                            highlightedIndex >= 0 && currentFilteredOptions[highlightedIndex]
-                                                            ? `dropdown-option-${currentFilteredOptions[highlightedIndex].id}`
-                                                            : undefined
-                                                        }
-                                                    />
                                                     {onAddNew && (
                                                         <button
                                                             ref={addNewButtonRef}
                                                             type="button"
-                                                            className="ml-2 bg-primary text-white p-1.5 rounded-lg hover:bg-secondary flex-shrink-0 focus:outline-none focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
+                                                            className="bg-primary text-white p-1.5 rounded-lg hover:bg-secondary flex-shrink-0 focus:outline-none focus:ring focus:ring-teal-100 transition duration-200 ease-in-out min-w-[32px]"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 onAddNew();
