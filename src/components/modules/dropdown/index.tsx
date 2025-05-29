@@ -361,7 +361,11 @@ export const Dropdown = ({
         if (isOpen && highlightedIndex >= 0 && optionsContainerRef.current) {
             const optionElements = optionsContainerRef.current.querySelectorAll('[role="option"]');
             if (optionElements && optionElements[highlightedIndex]) {
-                if (highlightedIndex !== 0 || currentFilteredOptions.length === 0) {
+                if (highlightedIndex === 0) {
+                    optionsContainerRef.current.scrollTop = 0;
+                } else if (highlightedIndex === currentFilteredOptions.length - 1) {
+                    optionsContainerRef.current.scrollTop = optionsContainerRef.current.scrollHeight;
+                } else {
                     (optionElements[highlightedIndex] as HTMLElement).scrollIntoView({
                         block: 'nearest',
                         behavior: 'auto'
