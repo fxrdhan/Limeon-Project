@@ -623,3 +623,30 @@ export interface DBUnitConversion {
     base_price?: number;
     sell_price?: number;
 }
+
+export interface DBItem {
+    id: string;
+    name: string;
+    code?: string;
+    barcode?: string | null;
+    base_price: number;
+    sell_price: number;
+    stock: number;
+    unit_conversions: string | UnitConversion[];
+    category_id?: string;
+    type_id?: string;
+    unit_id?: string;
+    item_categories?: { name: string }[] | null;
+    item_types?: { name: string }[] | null;
+    item_units?: { name: string }[] | null;
+}
+
+export interface RawUnitConversion {
+    id?: string;
+    unit_name?: string;
+    conversion_rate?: number;
+    conversion?: number;
+    to_unit_id?: string;
+    basePrice?: number;
+    sellPrice?: number;
+}
