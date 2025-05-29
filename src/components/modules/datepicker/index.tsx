@@ -6,7 +6,6 @@ import { classNames } from "@/lib/classNames";
 import type { DatepickerProps } from "@/types";
 
 type CalendarView = "days" | "months" | "years";
-type FocusArea = "header" | "grid";
 
 const MONTH_NAMES_ID = [
     "Januari",
@@ -49,7 +48,6 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const [currentView, setCurrentView] = useState<CalendarView>("days");
     const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
     const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
-    const [focusArea, setFocusArea] = useState<FocusArea>("grid");
 
     const calculatePosition = useCallback(() => {
         if (!triggerInputRef.current) return;
@@ -83,7 +81,6 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             setDisplayDate(value || new Date());
             setCurrentView("days");
             setHighlightedDate(value || new Date());
-            setFocusArea("grid");
             calculatePosition();
             window.addEventListener("scroll", calculatePosition, true);
             window.addEventListener("resize", calculatePosition);
@@ -94,7 +91,6 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             }, 0);
         } else {
             setHighlightedDate(null);
-            setFocusArea("grid");
         }
         return () => {
             window.removeEventListener("scroll", calculatePosition, true);
@@ -171,9 +167,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         if (e.key === 'Enter') {
             e.preventDefault();
             if (isOpen && !isClosing) {
-                if (focusArea === "header") {
-                    handleHeaderClick();
-                } else if (highlightedDate) {
+                if (currentView === "days" && highlightedDate) {
                     handleDateSelect(highlightedDate);
                 } else {
                     closeCalendar();
@@ -185,150 +179,58 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             e.preventDefault();
             closeCalendar();
         } else if (isOpen) {
-            if (e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-                e.preventDefault();
-                setFocusArea(prev => prev === "header" ? "grid" : "header");
-                return;
+            if (e.ctrlKey && currentView === "days") {
+                let navigated = false;
+                switch (e.key) {
+                    case 'ArrowLeft':
+                        navigateViewDate("prev");
+                        navigated = true;
+                        break;
+                    case 'ArrowRight':
+                        navigateViewDate("next");
+                        navigated = true;
+                        break;
+                    case 'ArrowUp':
+                        navigateYear("prev");
+                        navigated = true;
+                        break;
+                    case 'ArrowDown':
+                        navigateYear("next");
+                        navigated = true;
+                        break;
+                }
+                if (navigated) {
+                    e.preventDefault();
+                    return; 
+                }
             }
             
-            if (focusArea === "header") {
-                switch (e.key) {
-                    case 'ArrowLeft':
-                        e.preventDefault();
-                        navigateViewDate("prev");
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        navigateViewDate("next");
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        navigateYear("prev");
-                        break;
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        navigateYear("next");
-                        break;
-                }
-            } else if (focusArea === "grid" && currentView === "days") {
+            if (currentView === "days" && !e.ctrlKey) {
                 const currentHighlight = highlightedDate || value || new Date();
                 const newHighlight = new Date(currentHighlight);
+                let navigated = false;
                 
                 switch (e.key) {
                     case 'ArrowLeft':
-                        e.preventDefault();
                         newHighlight.setDate(newHighlight.getDate() - 1);
+                        navigated = true;
                         break;
                     case 'ArrowRight':
-                        e.preventDefault();
                         newHighlight.setDate(newHighlight.getDate() + 1);
+                        navigated = true;
                         break;
                     case 'ArrowUp':
-                        e.preventDefault();
                         newHighlight.setDate(newHighlight.getDate() - 7);
+                        navigated = true;
                         break;
                     case 'ArrowDown':
-                        e.preventDefault();
                         newHighlight.setDate(newHighlight.getDate() + 7);
+                        navigated = true;
                         break;
-                    default:
-                        return;
                 }
                 
-                let isValidDate = true;
-                if (minDate) {
-                    const min = new Date(minDate);
-                    min.setHours(0, 0, 0, 0);
-                    if (newHighlight < min) isValidDate = false;
-                }
-                if (maxDate) {
-                    const max = new Date(maxDate);
-                    max.setHours(0, 0, 0, 0);
-                    if (newHighlight > max) isValidDate = false;
-                }
-                
-                if (isValidDate) {
-                    setHighlightedDate(newHighlight);
-                    if (newHighlight.getMonth() !== displayDate.getMonth() || 
-                        newHighlight.getFullYear() !== displayDate.getFullYear()) {
-                        setDisplayDate(new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1));
-                    }
-                }
-            }
-        }
-    };
-
-    const handleCalendarKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-            e.preventDefault();
-            setFocusArea(prev => prev === "header" ? "grid" : "header");
-            return;
-        }
-        
-        if (focusArea === "header") {
-            switch (e.key) {
-                case 'ArrowLeft':
+                if (navigated) {
                     e.preventDefault();
-                    navigateViewDate("prev");
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    navigateViewDate("next");
-                    break;
-                case 'ArrowUp':
-                    e.preventDefault();
-                    navigateYear("prev");
-                    break;
-                case 'ArrowDown':
-                    e.preventDefault();
-                    navigateYear("next");
-                    break;
-                case 'Enter':
-                    e.preventDefault();
-                    handleHeaderClick();
-                    break;
-                case 'Escape':
-                    e.preventDefault();
-                    closeCalendar();
-                    break;
-            }
-        } else if (focusArea === "grid") {
-            if (currentView === "days") {
-                const currentHighlight = highlightedDate || value || new Date();
-                const newHighlight = new Date(currentHighlight);
-                
-                switch (e.key) {
-                    case 'ArrowLeft':
-                        e.preventDefault();
-                        newHighlight.setDate(newHighlight.getDate() - 1);
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        newHighlight.setDate(newHighlight.getDate() + 1);
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        newHighlight.setDate(newHighlight.getDate() - 7);
-                        break;
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        newHighlight.setDate(newHighlight.getDate() + 7);
-                        break;
-                    case 'Enter':
-                        e.preventDefault();
-                        if (highlightedDate) {
-                            handleDateSelect(highlightedDate);
-                        }
-                        break;
-                    case 'Escape':
-                        e.preventDefault();
-                        closeCalendar();
-                        break;
-                    default:
-                        return;
-                }
-                
-                if (e.key.startsWith('Arrow')) {
                     let isValidDate = true;
                     if (minDate) {
                         const min = new Date(minDate);
@@ -349,9 +251,104 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         }
                     }
                 }
-            } else if (e.key === 'Escape') {
+            }
+        }
+    };
+
+    const handleCalendarKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.ctrlKey && currentView === "days") {
+            let navigated = false;
+            switch (e.key) {
+                case 'ArrowLeft':
+                    navigateViewDate("prev");
+                    navigated = true;
+                    break;
+                case 'ArrowRight':
+                    navigateViewDate("next");
+                    navigated = true;
+                    break;
+                case 'ArrowUp':
+                    navigateYear("prev");
+                    navigated = true;
+                    break;
+                case 'ArrowDown':
+                    navigateYear("next");
+                    navigated = true;
+                    break;
+            }
+            if (navigated) {
                 e.preventDefault();
+                return;
+            }
+        }
+        
+        if (e.key === 'Enter') {
+            if (e.target === portalContentRef.current && currentView === "days" && highlightedDate) {
+                e.preventDefault();
+                handleDateSelect(highlightedDate);
+            }
+            return; 
+        }
+        
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            if (currentView === 'years') {
+                setCurrentView('months');
+                setHighlightedDate(null); 
+            } else if (currentView === 'months') {
+                setCurrentView('days');
+                setHighlightedDate(value || new Date(displayDate.getFullYear(), displayDate.getMonth(), 1));
+            } else {
                 closeCalendar();
+            }
+            return;
+        }
+
+        if (currentView === "days" && !e.ctrlKey) {
+            const currentHighlight = highlightedDate || value || new Date();
+            const newHighlight = new Date(currentHighlight);
+            let navigated = false;
+            
+            switch (e.key) {
+                case 'ArrowLeft':
+                    newHighlight.setDate(newHighlight.getDate() - 1);
+                    navigated = true;
+                    break;
+                case 'ArrowRight':
+                    newHighlight.setDate(newHighlight.getDate() + 1);
+                    navigated = true;
+                    break;
+                case 'ArrowUp':
+                    newHighlight.setDate(newHighlight.getDate() - 7);
+                    navigated = true;
+                    break;
+                case 'ArrowDown':
+                    newHighlight.setDate(newHighlight.getDate() + 7);
+                    navigated = true;
+                    break;
+            }
+            
+            if (navigated) {
+                e.preventDefault();
+                let isValidDate = true;
+                if (minDate) {
+                    const min = new Date(minDate);
+                    min.setHours(0, 0, 0, 0);
+                    if (newHighlight < min) isValidDate = false;
+                }
+                if (maxDate) {
+                    const max = new Date(maxDate);
+                    max.setHours(0, 0, 0, 0);
+                    if (newHighlight > max) isValidDate = false;
+                }
+                
+                if (isValidDate) {
+                    setHighlightedDate(newHighlight);
+                    if (newHighlight.getMonth() !== displayDate.getMonth() || 
+                        newHighlight.getFullYear() !== displayDate.getFullYear()) {
+                        setDisplayDate(new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1));
+                    }
+                }
             }
         }
     };
@@ -678,9 +675,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                                     onClick={handleHeaderClick}
                                     className={classNames(
                                         "font-semibold text-sm hover:bg-gray-100 p-1.5 rounded focus:outline-none min-w-[120px] text-center transition-colors",
-                                        focusArea === "header"
-                                            ? "ring-2 ring-primary/50 bg-primary/10" 
-                                            : ""
+                                        "focus:ring-2 focus:ring-primary/50 focus:bg-primary/10" // Example CSS focus style
                                     )}
                                     aria-live="polite"
                                 >
