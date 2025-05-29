@@ -34,6 +34,7 @@ export const Dropdown = ({
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownMenuRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const addNewButtonRef = useRef<HTMLButtonElement>(null);
     const optionsContainerRef = useRef<HTMLDivElement>(null);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -377,6 +378,23 @@ export const Dropdown = ({
         }, 500);
     }, []);
 
+    const handleSearchBarKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "ArrowRight" && onAddNew && addNewButtonRef.current) {
+            e.preventDefault();
+            addNewButtonRef.current.focus();
+        }
+        if (["ArrowDown", "ArrowUp", "Tab", "PageDown", "PageUp", "Enter", "Escape"].includes(e.key)) {
+            handleDropdownKeyDown(e as never);
+        }
+    }, [onAddNew, addNewButtonRef, handleDropdownKeyDown]);
+
+    const handleAddNewKeyDown = useCallback((e: React.KeyboardEvent<HTMLButtonElement>) => {
+        if (e.key === "ArrowLeft" && searchInputRef.current) {
+            e.preventDefault();
+            searchInputRef.current.focus();
+        }
+    }, [searchInputRef]);
+
     return (
         <div
             className="relative inline-flex w-full"
@@ -479,7 +497,7 @@ export const Dropdown = ({
                                                         placeholder="Cari..."
                                                         value={searchTerm}
                                                         onChange={handleSearchChange}
-                                                        onKeyDown={handleDropdownKeyDown}
+                                                        onKeyDown={handleSearchBarKeyDown}
                                                         onClick={(e) => e.stopPropagation()}
                                                         onFocus={() => setIsSearching(true)}
                                                         onBlur={() => setTimeout(() => setIsSearching(false), 100)}
@@ -494,13 +512,15 @@ export const Dropdown = ({
                                                     />
                                                     {onAddNew && (
                                                         <button
+                                                            ref={addNewButtonRef}
                                                             type="button"
-                                                            className="ml-2 bg-primary text-white p-1.5 rounded-lg hover:bg-secondary flex-shrink-0"
+                                                            className="ml-2 bg-primary text-white p-1.5 rounded-lg hover:bg-secondary flex-shrink-0 focus:outline-none focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 onAddNew();
                                                                 actualCloseDropdown();
                                                             }}
+                                                            onKeyDown={handleAddNewKeyDown}
                                                         >
                                                             +
                                                         </button>
