@@ -15,7 +15,9 @@ import type {
     Item as ItemDataType,
     Supplier,
     UnitConversion,
-    UnitData
+    UnitData,
+    DBItem,
+    RawUnitConversion
 } from "@/types";
 
 type MasterDataItem = Category | ItemType | Unit | ItemDataType | Supplier;
@@ -102,8 +104,7 @@ export const useMasterDataManagement = (
 
             const allUnitsForConversion: UnitData[] = allUnitsForConversionRes.data || [];
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const completedData = (itemsResult.data || []).map((item: any) => {
+            const completedData = (itemsResult.data || []).map((item: DBItem) => {
                 let parsedConversions: UnitConversion[] = [];
                 if (typeof item.unit_conversions === 'string') {
                     try {
@@ -115,8 +116,7 @@ export const useMasterDataManagement = (
                     parsedConversions = item.unit_conversions;
                 }
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const mappedConversions: UnitConversion[] = parsedConversions.map((conv: any) => {
+                const mappedConversions: UnitConversion[] = parsedConversions.map((conv: RawUnitConversion) => {
                     const unitDetail = allUnitsForConversion.find(u => u.name === conv.unit_name);
                     return {
                         id: conv.id || Date.now().toString() + Math.random(),
@@ -139,26 +139,29 @@ export const useMasterDataManagement = (
                     sell_price: item.sell_price,
                     stock: item.stock,
                     unit_conversions: mappedConversions,
-                    category: { name: item.item_categories?.name || "" },
-                    type: { name: item.item_types?.name || "" },
-                    unit: { name: item.item_units?.name || "" },
+                    category: { name: item.item_categories?.[0]?.name || "" },
+                    type: { name: item.item_types?.[0]?.name || "" },
+                    unit: { name: item.item_units?.[0]?.name || "" },
                 } as ItemDataType;
             });
 
-            // Terapkan filter dan sort fuzzy jika searchTerm ada
             let filteredData = completedData;
             if (searchTerm) {
                 const searchTermLower = searchTerm.toLowerCase();
-                filteredData = completedData.filter(item =>
-                    fuzzyMatch(item.name, searchTermLower) ||
-                    (item.code && fuzzyMatch(item.code, searchTermLower)) ||
-                    (item.barcode && fuzzyMatch(item.barcode, searchTermLower))
-                ).sort((a, b) => {
-                    const scoreA = getScore(a, searchTermLower);
-                    const scoreB = getScore(b, searchTermLower);
-                    if (scoreA !== scoreB) return scoreB - scoreA;
-                    return a.name.localeCompare(b.name);
-                });
+                if (Array.isArray(completedData)) {
+                    filteredData = completedData.filter(item =>
+                        fuzzyMatch(item.name, searchTermLower) ||
+                        (item.code && fuzzyMatch(item.code, searchTermLower)) ||
+                        (item.barcode && fuzzyMatch(item.barcode, searchTermLower))
+                    ).sort((a, b) => {
+                        const scoreA = getScore(a, searchTermLower);
+                        const scoreB = getScore(b, searchTermLower);
+                        if (scoreA !== scoreB) return scoreB - scoreA;
+                        return a.name.localeCompare(b.name);
+                    });
+                } else {
+                    filteredData = [];
+                }
             }
 
             return { data: filteredData, totalItems: countResult.count || 0 };
@@ -180,8 +183,40 @@ export const useMasterDataManagement = (
                 .order("name")
                 .range(from, to);
 
-            if (error) throw error;
-            return { data: (data || []) as MasterDataItem[], totalItems: count || 0 };
+            if (error) {
+                console.error(`Error fetching data for ${tableName}:`, error);
+                throw error;
+            }
+            
+            let processedData = (data || []) as MasterDataItem[];
+
+            if (searchTerm && processedData.length > 0) {
+                const searchTermLower = searchTerm.toLowerCase();
+                processedData = processedData.filter(item => {
+                    if (item.name && fuzzyMatch(item.name, searchTermLower)) return true;
+                    if ('description' in item && item.description && fuzzyMatch(item.description, searchTermLower)) return true;
+                    if (tableName === 'suppliers') {
+                        const supplier = item as Supplier;
+                        if (supplier.address && fuzzyMatch(supplier.address, searchTermLower)) return true;
+                        if (supplier.phone && fuzzyMatch(supplier.phone, searchTermLower)) return true;
+                        if (supplier.email && fuzzyMatch(supplier.email, searchTermLower)) return true;
+                        if (supplier.contact_person && fuzzyMatch(supplier.contact_person, searchTermLower)) return true;
+                    }
+                    return false;
+                }).sort((a, b) => {
+                    const nameScore = (itemToSort: MasterDataItem) => {
+                        if (itemToSort.name && itemToSort.name.toLowerCase().startsWith(searchTermLower)) return 3;
+                        if (itemToSort.name && itemToSort.name.toLowerCase().includes(searchTermLower)) return 2;
+                        if (itemToSort.name && fuzzyMatch(itemToSort.name, searchTermLower)) return 1;
+                        return 0;
+                    };
+                    const scoreA = nameScore(a);
+                    const scoreB = nameScore(b);
+                    if (scoreA !== scoreB) return scoreB - scoreA;
+                    return a.name.localeCompare(b.name);
+                });
+            }
+            return { data: processedData, totalItems: count || 0 };
         }
     };
 
