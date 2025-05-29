@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useConfirmDialog } from "@/components/modules";
-import { fuzzyMatch, getScore } from "@/lib/search";
+import { fuzzyMatch, getScore } from "@/utils/search";
 import {
     useQuery,
     useMutation,

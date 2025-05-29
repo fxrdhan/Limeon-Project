@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { fuzzyMatch, getScore } from '@/lib/search';
+import { fuzzyMatch, getScore } from '@/utils/search';
 import type { Item, UnitConversion } from '@/types';
 
 export const useItemSelection = () => {

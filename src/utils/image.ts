@@ -1,4 +1,3 @@
-// src/lib/imageUtils.ts
 import imageCompression from 'browser-image-compression';
 
 const MAX_SIZE_MB = 1;
