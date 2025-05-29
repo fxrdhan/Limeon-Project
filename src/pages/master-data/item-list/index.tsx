@@ -1,5 +1,5 @@
 // import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     Card,
     Button,
@@ -14,98 +14,27 @@ import {
     PageTitle
 } from "@/components/modules";
 import { FaPlus } from "react-icons/fa";
-import { supabase } from "@/lib/supabase";
-import type { Item as ItemDataType, UnitConversion, UnitData } from "@/types";
+import type { Item as ItemDataType, UnitConversion } from "@/types";
 import AddItemPortal from "./add-edit";
-
-const fetchItemsList = async (page: number, searchTerm: string, limit: number) => {
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-
-    let itemsQuery = supabase.from("items").select(`
-        id, name, code, barcode, base_price, sell_price, stock,
-        unit_conversions, category_id, type_id, unit_id,
-        item_categories (name), item_types (name), item_units (name)
-    `);
-    let countQuery = supabase.from("items").select("id", { count: "exact" });
-
-    if (searchTerm) {
-        const fuzzySearchPattern = `%${searchTerm.toLowerCase().split('').join('%')}%`;
-        itemsQuery = itemsQuery.or(`name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern},barcode.ilike.${fuzzySearchPattern}`);
-        countQuery = countQuery.or(`name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern},barcode.ilike.${fuzzySearchPattern}`);
-    }
-
-    const [itemsResult, countResult, allUnitsForConversionRes] = await Promise.all([
-        itemsQuery.order("name").range(from, to),
-        countQuery,
-        supabase.from("item_units").select("id, name")
-    ]);
-
-    if (itemsResult.error) throw itemsResult.error;
-    if (countResult.error) throw countResult.error;
-    if (allUnitsForConversionRes.error) throw allUnitsForConversionRes.error;
-
-    const allUnitsForConversion: UnitData[] = allUnitsForConversionRes.data || [];
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const completedData = (itemsResult.data || []).map((item: any) => {
-        let parsedConversions: UnitConversion[] = [];
-        if (typeof item.unit_conversions === 'string') {
-            try {
-                parsedConversions = JSON.parse(item.unit_conversions || "[]");
-            } catch (e) {
-                console.error("Error parsing unit_conversions for item:", item.id, e);
-            }
-        } else if (Array.isArray(item.unit_conversions)) {
-            parsedConversions = item.unit_conversions;
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mappedConversions: UnitConversion[] = parsedConversions.map((conv: any) => {
-            const unitDetail = allUnitsForConversion.find(u => u.name === conv.unit_name);
-            return {
-                id: conv.id || Date.now().toString() + Math.random(),
-                conversion_rate: conv.conversion_rate || conv.conversion || 0,
-                unit_name: conv.unit_name || 'Unknown',
-                to_unit_id: unitDetail ? unitDetail.id : '',
-                unit: unitDetail ? { id: unitDetail.id, name: unitDetail.name } : { id: '', name: conv.unit_name || 'Unknown Unit' },
-                conversion: conv.conversion_rate || conv.conversion || 0,
-                basePrice: conv.basePrice ?? 0,
-                sellPrice: conv.sellPrice ?? 0,
-            };
-        });
-
-        return {
-            id: item.id,
-            name: item.name,
-            code: item.code,
-            barcode: item.barcode,
-            base_price: item.base_price,
-            sell_price: item.sell_price,
-            stock: item.stock,
-            unit_conversions: mappedConversions,
-            category: { name: item.item_categories?.name || "" },
-            type: { name: item.item_types?.name || "" },
-            unit: { name: item.item_units?.name || "" },
-        } as ItemDataType;
-    });
-
-    return { data: completedData, totalItems: countResult.count || 0 };
-};
+import { useMasterDataManagement } from "@/handlers/master-data-management";
 
 function ItemList() {
-    // const navigate = useNavigate();
-    // const queryClient = useQueryClient();
-    const [search, setSearch] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const {
+        search,
+        setSearch,
+        debouncedSearch,
+        currentPage,
+        itemsPerPage,
+        data: items,
+        totalItems: totalItemsState,
+        totalPages,
+        isLoading: isLoadingState,
+        isError: isErrorState,
+        queryError: errorState,
+        handlePageChange,
+        handleItemsPerPageChange,
+    } = useMasterDataManagement("items", "Item", true);
 
-    const [items, setItems] = useState<ItemDataType[]>([]);
-    const [totalItemsState, setTotalItemsState] = useState<number>(0);
-    const [isLoadingState, setIsLoadingState] = useState<boolean>(true);
-    const [isErrorState, setIsErrorState] = useState<boolean>(false);
-    const [errorState, setErrorState] = useState<Error | null>(null);
     const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [editingItemId, setEditingItemId] = useState<string | undefined>(undefined);
     const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<string | undefined>(undefined);
@@ -113,38 +42,8 @@ function ItemList() {
     const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-            setCurrentPage(1);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [search]);
-
-    useEffect(() => {
         searchInputRef.current?.focus();
     }, [currentPage, itemsPerPage, debouncedSearch]);
-
-    const fetchData = useCallback(async () => {
-        setIsLoadingState(true);
-        setIsErrorState(false);
-        setErrorState(null);
-        try {
-            const result = await fetchItemsList(currentPage, debouncedSearch, itemsPerPage);
-            setItems(result.data);
-            setTotalItemsState(result.totalItems);
-        } catch (err) {
-            setIsErrorState(true);
-            setErrorState(err instanceof Error ? err : new Error('An unknown error occurred'));
-            setItems([]);
-            setTotalItemsState(0);
-        } finally {
-            setIsLoadingState(false);
-        }
-    }, [currentPage, debouncedSearch, itemsPerPage]);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
 
     const openAddItemModal = (itemId?: string, searchQuery?: string) => {
         setEditingItemId(itemId);
@@ -156,41 +55,6 @@ function ItemList() {
         setIsAddItemModalOpen(false);
         setEditingItemId(undefined);
         setCurrentSearchQueryForModal(undefined);
-        fetchData(); 
-    };
-
-    useEffect(() => {
-        const channel = supabase
-            .channel('item-list-changes')
-            .on<ItemDataType>(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'items' },
-                (payload) => {
-                    console.log('Realtime item list change received!', payload);
-                    setTimeout(fetchData, 250);
-                }
-            )
-            .subscribe((status, err) => {
-                if (status === 'SUBSCRIBED') {
-                    console.log('Subscribed to realtime updates for items');
-                }
-                if (err) {
-                    console.error('Realtime subscription error for items:', err);
-                }
-            });
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [fetchData]);
-
-    const totalPages = Math.ceil(totalItemsState / itemsPerPage);
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page);
-    };
-
-    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setItemsPerPage(Number(e.target.value));
-        setCurrentPage(1);
     };
 
     return (
@@ -256,7 +120,7 @@ function ItemList() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    items.map((item) => (
+                                    (items as ItemDataType[]).map((item) => (
                                         <TableRow
                                             key={item.id}
                                             onClick={() => openAddItemModal(item.id)}
