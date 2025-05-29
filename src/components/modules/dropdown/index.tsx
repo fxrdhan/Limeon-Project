@@ -57,13 +57,7 @@ export const Dropdown = ({
     useEffect(() => {
         if (isOpen && currentFilteredOptions.length > 0) {
             setHighlightedIndex(0);
-        }
-    }, [currentFilteredOptions.length, isOpen]);
-
-    useEffect(() => {
-        if (isOpen && currentFilteredOptions.length > 0) {
-            setHighlightedIndex(0);
-        } else if (currentFilteredOptions.length === 0) {
+        } else if (!isOpen || currentFilteredOptions.length === 0) {
             setHighlightedIndex(-1);
         }
     }, [currentFilteredOptions, isOpen]);
@@ -354,10 +348,31 @@ export const Dropdown = ({
             if (optionElements && optionElements[highlightedIndex]) {
                 (optionElements[highlightedIndex] as HTMLElement).scrollIntoView({
                     block: 'nearest',
+                    behavior: 'auto'
                 });
             }
         }
-    }, [highlightedIndex, isOpen]);
+    }, [highlightedIndex, isOpen, currentFilteredOptions]);
+
+    // Add new useEffect to scroll to top when dropdown opens
+    useEffect(() => {
+        if (isOpen && applyOpenStyles && optionsContainerRef.current && currentFilteredOptions.length > 0) {
+            // Reset scroll position to top when dropdown opens
+            optionsContainerRef.current.scrollTop = 0;
+            // Ensure first item is highlighted and visible
+            setTimeout(() => {
+                if (highlightedIndex === 0 && optionsContainerRef.current) {
+                    const firstOption = optionsContainerRef.current.querySelector('[role="option"]');
+                    if (firstOption) {
+                        (firstOption as HTMLElement).scrollIntoView({
+                            block: 'nearest',
+                            behavior: 'auto'
+                        });
+                    }
+                }
+            }, 10);
+        }
+    }, [isOpen, applyOpenStyles, currentFilteredOptions.length, highlightedIndex]);
 
     const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
