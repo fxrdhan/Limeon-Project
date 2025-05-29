@@ -83,7 +83,9 @@ export const useItemSelection = () => {
 
     const filteredItems = items.filter(item => {
         const searchTermLower = searchItem.toLowerCase();
-        return fuzzyMatch(item.name, searchTermLower) || (item.code && fuzzyMatch(item.code, searchTermLower));
+        return fuzzyMatch(item.name, searchTermLower) || 
+                (item.code && fuzzyMatch(item.code, searchTermLower)) ||
+                (item.barcode && fuzzyMatch(item.barcode, searchTermLower));
     });
 
     return {
