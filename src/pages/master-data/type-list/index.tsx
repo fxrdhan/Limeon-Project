@@ -14,6 +14,7 @@ import {
 } from "@/components/modules";
 import { AddEditModal } from "@/components/modules";
 import { useMasterDataManagement } from "@/handlers";
+import { useRef, useEffect } from 'react';
 
 const TypeList = () => {
     const {
@@ -44,6 +45,12 @@ const TypeList = () => {
         debouncedSearch
     } = useMasterDataManagement("item_types", "Jenis Item", true);
 
+    const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+
+    useEffect(() => {
+        searchInputRef.current?.focus();
+    }, [currentPage, itemsPerPage, debouncedSearch]);
+
     return (
         <>
             <Card>
@@ -53,6 +60,7 @@ const TypeList = () => {
 
                 <div className="flex items-center">
                     <SearchBar
+                        inputRef={searchInputRef}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Cari nama atau deskripsi jenis item..."
