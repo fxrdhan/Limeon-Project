@@ -201,6 +201,14 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         e.preventDefault();
                         navigateViewDate("next");
                         break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        navigateYear("prev");
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        navigateYear("next");
+                        break;
                 }
             } else if (focusArea === "grid" && currentView === "days") {
                 const currentHighlight = highlightedDate || value || new Date();
@@ -266,6 +274,14 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                 case 'ArrowRight':
                     e.preventDefault();
                     navigateViewDate("next");
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    navigateYear("prev");
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    navigateYear("next");
                     break;
                 case 'Enter':
                     e.preventDefault();
@@ -391,6 +407,14 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     for (let i = 1; i <= numDays; i++) calendarDays.push(i);
 
     const dayLabels = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+
+    const navigateYear = (direction: "prev" | "next") => {
+        setDisplayDate((prev) => {
+            const newDate = new Date(prev);
+            newDate.setFullYear(newDate.getFullYear() + (direction === "prev" ? -1 : 1));
+            return newDate;
+        });
+    };
 
     const navigateViewDate = (direction: "prev" | "next") => {
         setDisplayDate((prev) => {
