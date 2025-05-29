@@ -14,7 +14,7 @@ import {
     PageTitle,
 } from "@/components/modules";
 import DetailEditModal from "./add-edit";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useMutation } from "@tanstack/react-query";
 import type {
@@ -54,6 +54,8 @@ const SupplierList = () => {
         isFetching
     } = useMasterDataManagement("suppliers", "Supplier", true);
 
+    const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(search);
@@ -61,6 +63,10 @@ const SupplierList = () => {
         }, 500);
         return () => clearTimeout(timer);
     }, [search, setCurrentPage, setDebouncedSearch]);
+
+    useEffect(() => {
+        searchInputRef.current?.focus();
+    }, [currentPage, itemsPerPage, debouncedSearch]);
 
     const suppliers = suppliersData || [];
     const currentTotalItems = totalItems || 0;
@@ -269,6 +275,7 @@ const SupplierList = () => {
 
             <div className="flex items-center">
                 <SearchBar
+                    inputRef={searchInputRef}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Cari supplier..."
