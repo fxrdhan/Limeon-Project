@@ -7,9 +7,6 @@ import {
   UseMutationOptions,
   MutationFunction,
 } from '@tanstack/react-query';
-// import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-// import { supabase } from './supabase';
-// import React from 'react';
 
 export function useSupabaseQuery<TQueryFnData = unknown, TError = Error, TData = TQueryFnData>(
   key: QueryKey,
