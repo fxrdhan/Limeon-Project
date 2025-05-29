@@ -170,6 +170,11 @@ export const useAddItemPageHandlers = ({
         handleMinStockChange,
         handleMinStockKeyDown,
         resetForm: addItemForm.resetForm,
-        handleCancel: handleActualCancel, // Expose the cancel handler that calls onClose
+        currentSearchTermForModal: addItemForm.currentSearchTermForModal,
+        handleAddNewCategory: addItemForm.handleAddNewCategory,
+        handleAddNewType: addItemForm.handleAddNewType,
+        handleAddNewUnit: addItemForm.handleAddNewUnit,
+        closeModalAndClearSearch: addItemForm.closeModalAndClearSearch,
+        handleCancel: handleActualCancel,
     };
 };
