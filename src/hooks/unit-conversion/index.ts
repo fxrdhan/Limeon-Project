@@ -40,8 +40,12 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
             : sellPrice / unitConversion.conversion;
         
         const newUnitConversion: UnitConversion = {
-            ...unitConversion,
             id: `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
+            unit: unitConversion.unit,
+            unit_name: unitConversion.unit_name,
+            to_unit_id: unitConversion.to_unit_id,
+            conversion: unitConversion.conversion,
+            conversion_rate: unitConversion.conversion_rate,
             basePrice: calculatedBasePrice,
             sellPrice: calculatedSellPrice,
         };
@@ -60,7 +64,6 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         
         if ((basePrice <= 0 && sellPrice <= 0) || unitConversions.length === 0) return;
         
-        // Check if any values actually need to be updated to avoid unnecessary state updates
         const needsUpdate = unitConversions.some(uc => {
             const newBasePrice = basePrice > 0 ? (basePrice / uc.conversion) : 0;
             const newSellPrice = sellPrice > 0 ? (sellPrice / uc.conversion) : 0;
