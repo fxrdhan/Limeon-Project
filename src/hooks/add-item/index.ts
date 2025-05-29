@@ -334,22 +334,19 @@ export const useAddItemForm = ({
 
             if (Array.isArray(parsedConversionsFromDB)) {
                 const mappedConversions = parsedConversionsFromDB.map(
-                    (conv: DBUnitConversion) => ({
-                        id: conv.id || Date.now().toString() + Math.random().toString(),
-                        unit_name: conv.unit_name,
-                        to_unit_id:
-                            conv.to_unit_id ||
-                            units.find((u) => u.name === conv.unit_name)?.id ||
-                            "",
-                        unit: units.find((u) => u.name === conv.unit_name) || {
-                            id: conv.to_unit_id || "",
-                            name: conv.unit_name,
-                        },
-                        conversion: conv.conversion_rate || 0,
-                        basePrice: conv.base_price || 0,
-                        sellPrice: conv.sell_price || 0,
-                        conversion_rate: conv.conversion_rate || 0,
-                    })
+                    (conv: DBUnitConversion) => {
+                        const unitDetail = units.find(u => u.id === conv.to_unit_id) || units.find(u => u.name === conv.unit_name);
+                        return {
+                            id: conv.id || `${Date.now().toString()}-${Math.random().toString(36).slice(2,9)}`,
+                            unit_name: conv.unit_name,
+                            to_unit_id: unitDetail ? unitDetail.id : (conv.to_unit_id || ""),
+                            unit: unitDetail ? { id: unitDetail.id, name: unitDetail.name } : { id: conv.to_unit_id || "", name: conv.unit_name || "Unknown Unit"},
+                            conversion: conv.conversion_rate || 0,
+                            basePrice: conv.base_price || 0,
+                            sellPrice: conv.sell_price || 0,
+                            conversion_rate: conv.conversion_rate || 0,
+                        };
+                    }
                 );
                 setInitialUnitConversions(mappedConversions);
             } else {
