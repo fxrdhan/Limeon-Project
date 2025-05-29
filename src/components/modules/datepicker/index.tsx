@@ -48,6 +48,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const [currentView, setCurrentView] = useState<CalendarView>("days");
     const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
     const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
+    const [highlightedMonth, setHighlightedMonth] = useState<number | null>(null);
+    const [highlightedYear, setHighlightedYear] = useState<number | null>(null);
 
     const focusPortal = useCallback(() => {
         setTimeout(() => {
@@ -89,6 +91,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             setDisplayDate(value || new Date());
             setCurrentView("days");
             setHighlightedDate(value || new Date());
+            setHighlightedMonth(null);
+            setHighlightedYear(null);
             calculatePosition();
             window.addEventListener("scroll", calculatePosition, true);
             window.addEventListener("resize", calculatePosition);
@@ -99,6 +103,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             }, 0);
         } else {
             setHighlightedDate(null);
+            setHighlightedMonth(null);
+            setHighlightedYear(null);
         }
         return () => {
             window.removeEventListener("scroll", calculatePosition, true);
@@ -177,6 +183,10 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             if (isOpen && !isClosing) {
                 if (currentView === "days" && highlightedDate) {
                     handleDateSelect(highlightedDate);
+                } else if (currentView === "months" && highlightedMonth !== null) {
+                    handleMonthSelect(highlightedMonth);
+                } else if (currentView === "years" && highlightedYear !== null) {
+                    handleYearSelect(highlightedYear);
                 } else {
                     closeCalendar();
                 }
@@ -259,6 +269,86 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         }
                     }
                 }
+            } else if (currentView === "months") {
+                const currentHighlight = highlightedMonth ?? (value ? value.getMonth() : 0);
+                let newHighlight = currentHighlight;
+                let navigated = false;
+                
+                switch (e.key) {
+                    case 'ArrowLeft':
+                        newHighlight = Math.max(0, currentHighlight - 1);
+                        navigated = true;
+                        break;
+                    case 'ArrowRight':
+                        newHighlight = Math.min(11, currentHighlight + 1);
+                        navigated = true;
+                        break;
+                    case 'ArrowUp':
+                        newHighlight = Math.max(0, currentHighlight - 3);
+                        navigated = true;
+                        break;
+                    case 'ArrowDown':
+                        newHighlight = Math.min(11, currentHighlight + 3);
+                        navigated = true;
+                        break;
+                }
+                
+                if (navigated) {
+                    e.preventDefault();
+                    const currentYear = displayDate.getFullYear();
+                    let isValidMonth = true;
+                    if (minDate) {
+                        const minD = new Date(minDate);
+                        const lastDayOfMonth = new Date(currentYear, newHighlight + 1, 0);
+                        if (lastDayOfMonth < minD) isValidMonth = false;
+                    }
+                    if (maxDate) {
+                        const maxD = new Date(maxDate);
+                        const firstDayOfMonth = new Date(currentYear, newHighlight, 1);
+                        if (firstDayOfMonth > maxD) isValidMonth = false;
+                    }
+                    
+                    if (isValidMonth) {
+                        setHighlightedMonth(newHighlight);
+                    }
+                }
+            } else if (currentView === "years") {
+                const yearsToDisplay = getYearsToDisplay(displayDate.getFullYear());
+                const currentHighlight = highlightedYear ?? (value ? value.getFullYear() : yearsToDisplay[5]);
+                const currentIndex = yearsToDisplay.indexOf(currentHighlight);
+                let newIndex = currentIndex;
+                let navigated = false;
+                
+                switch (e.key) {
+                    case 'ArrowLeft':
+                        newIndex = Math.max(0, currentIndex - 1);
+                        navigated = true;
+                        break;
+                    case 'ArrowRight':
+                        newIndex = Math.min(yearsToDisplay.length - 1, currentIndex + 1);
+                        navigated = true;
+                        break;
+                    case 'ArrowUp':
+                        newIndex = Math.max(0, currentIndex - 3);
+                        navigated = true;
+                        break;
+                    case 'ArrowDown':
+                        newIndex = Math.min(yearsToDisplay.length - 1, currentIndex + 3);
+                        navigated = true;
+                        break;
+                }
+                
+                if (navigated) {
+                    e.preventDefault();
+                    const newYear = yearsToDisplay[newIndex];
+                    let isValidYear = true;
+                    if (minDate && newYear < new Date(minDate).getFullYear()) isValidYear = false;
+                    if (maxDate && newYear > new Date(maxDate).getFullYear()) isValidYear = false;
+                    
+                    if (isValidYear) {
+                        setHighlightedYear(newYear);
+                    }
+                }
             }
         }
     };
@@ -291,9 +381,15 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         }
         
         if (e.key === 'Enter') {
-            if (e.target === portalContentRef.current && currentView === "days" && highlightedDate) {
+            if (e.target === portalContentRef.current) {
                 e.preventDefault();
-                handleDateSelect(highlightedDate);
+                if (currentView === "days" && highlightedDate) {
+                    handleDateSelect(highlightedDate);
+                } else if (currentView === "months" && highlightedMonth !== null) {
+                    handleMonthSelect(highlightedMonth);
+                } else if (currentView === "years" && highlightedYear !== null) {
+                    handleYearSelect(highlightedYear);
+                }
             }
             return; 
         }
@@ -302,7 +398,9 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             e.preventDefault();
             if (currentView === 'years') {
                 setCurrentView('months');
-                setHighlightedDate(null); 
+                setHighlightedYear(null);
+                const currentDisplayYear = displayDate.getFullYear();
+                setHighlightedMonth(value && value.getFullYear() === currentDisplayYear ? value.getMonth() : 0);
                 focusPortal();
             } else if (currentView === 'months') {
                 setCurrentView('days');
@@ -315,6 +413,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     newHighlight = new Date(currentDisplayYear, currentDisplayMonth, 1);
                 }
                 setHighlightedDate(newHighlight);
+                setHighlightedMonth(null);
                 focusPortal();
             } else {
                 closeCalendar();
@@ -366,6 +465,86 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         newHighlight.getFullYear() !== displayDate.getFullYear()) {
                         setDisplayDate(new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1));
                     }
+                }
+            }
+        } else if (currentView === "months") {
+            const currentHighlight = highlightedMonth ?? (value ? value.getMonth() : 0);
+            let newHighlight = currentHighlight;
+            let navigated = false;
+            
+            switch (e.key) {
+                case 'ArrowLeft':
+                    newHighlight = Math.max(0, currentHighlight - 1);
+                    navigated = true;
+                    break;
+                case 'ArrowRight':
+                    newHighlight = Math.min(11, currentHighlight + 1);
+                    navigated = true;
+                    break;
+                case 'ArrowUp':
+                    newHighlight = Math.max(0, currentHighlight - 3);
+                    navigated = true;
+                    break;
+                case 'ArrowDown':
+                    newHighlight = Math.min(11, currentHighlight + 3);
+                    navigated = true;
+                    break;
+            }
+            
+            if (navigated) {
+                e.preventDefault();
+                const currentYear = displayDate.getFullYear();
+                let isValidMonth = true;
+                if (minDate) {
+                    const minD = new Date(minDate);
+                    const lastDayOfMonth = new Date(currentYear, newHighlight + 1, 0);
+                    if (lastDayOfMonth < minD) isValidMonth = false;
+                }
+                if (maxDate) {
+                    const maxD = new Date(maxDate);
+                    const firstDayOfMonth = new Date(currentYear, newHighlight, 1);
+                    if (firstDayOfMonth > maxD) isValidMonth = false;
+                }
+                
+                if (isValidMonth) {
+                    setHighlightedMonth(newHighlight);
+                }
+            }
+        } else if (currentView === "years") {
+            const yearsToDisplay = getYearsToDisplay(displayDate.getFullYear());
+            const currentHighlight = highlightedYear ?? (value ? value.getFullYear() : yearsToDisplay[5]);
+            const currentIndex = yearsToDisplay.indexOf(currentHighlight);
+            let newIndex = currentIndex;
+            let navigated = false;
+            
+            switch (e.key) {
+                case 'ArrowLeft':
+                    newIndex = Math.max(0, currentIndex - 1);
+                    navigated = true;
+                    break;
+                case 'ArrowRight':
+                    newIndex = Math.min(yearsToDisplay.length - 1, currentIndex + 1);
+                    navigated = true;
+                    break;
+                case 'ArrowUp':
+                    newIndex = Math.max(0, currentIndex - 3);
+                    navigated = true;
+                    break;
+                case 'ArrowDown':
+                    newIndex = Math.min(yearsToDisplay.length - 1, currentIndex + 3);
+                    navigated = true;
+                    break;
+            }
+            
+            if (navigated) {
+                e.preventDefault();
+                const newYear = yearsToDisplay[newIndex];
+                let isValidYear = true;
+                if (minDate && newYear < new Date(minDate).getFullYear()) isValidYear = false;
+                if (maxDate && newYear > new Date(maxDate).getFullYear()) isValidYear = false;
+                
+                if (isValidYear) {
+                    setHighlightedYear(newYear);
                 }
             }
         }
@@ -456,9 +635,11 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         if (currentView === "days") {
             setCurrentView("months");
             setHighlightedDate(null);
+            setHighlightedMonth(value ? value.getMonth() : 0);
         } else if (currentView === "months") {
             setCurrentView("years");
-            setHighlightedDate(null);
+            setHighlightedMonth(null);
+            setHighlightedYear(value ? value.getFullYear() : displayDate.getFullYear());
         }
         calculatePosition();
         focusPortal();
@@ -478,6 +659,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             newHighlight = new Date(currentDisplayYear, selectedMonth, 1);
         }
         setHighlightedDate(newHighlight);
+        setHighlightedMonth(null);
         
         calculatePosition();
         focusPortal();
@@ -490,7 +672,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             return newDate;
         });
         setCurrentView("months");
-        setHighlightedDate(null);
+        setHighlightedYear(null);
+        setHighlightedMonth(value && value.getFullYear() === selectedYear ? value.getMonth() : 0);
         calculatePosition();
         focusPortal();
     };
@@ -586,20 +769,27 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         const firstDayOfMonth = new Date(currentYear, index, 1);
                         if (firstDayOfMonth > maxD) isDisabled = true;
                     }
+                    
+                    const isSelected = value && value.getFullYear() === currentYear && value.getMonth() === index;
+                    const isHighlighted = highlightedMonth === index;
+                    
                     return (
                         <button
                             key={monthName}
                             onClick={() => !isDisabled && handleMonthSelect(index)}
+                            onMouseEnter={() => !isDisabled && setHighlightedMonth(index)}
+                            onMouseLeave={() => setHighlightedMonth(null)}
                             disabled={isDisabled}
                             className={classNames(
                                 "p-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
                                 isDisabled
                                     ? "text-gray-300 cursor-not-allowed"
                                     : "hover:bg-teal-100 text-gray-700",
-                                value &&
-                                value.getFullYear() === currentYear &&
-                                value.getMonth() === index &&
-                                "bg-primary/20 text-primary-dark"
+                                !isDisabled && (isSelected
+                                    ? "bg-primary text-white hover:text-primary"
+                                    : isHighlighted
+                                        ? "bg-primary/30 text-primary-dark ring-2 ring-primary/50"
+                                        : "")
                             )}
                         >
                             {monthName.substring(0, 3)}
@@ -624,19 +814,27 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         const maxD = new Date(maxDate);
                         if (yearVal > maxD.getFullYear()) isDisabled = true;
                     }
+                    
+                    const isSelected = value && value.getFullYear() === yearVal;
+                    const isHighlighted = highlightedYear === yearVal;
+                    
                     return (
                         <button
                             key={yearVal}
                             onClick={() => !isDisabled && handleYearSelect(yearVal)}
+                            onMouseEnter={() => !isDisabled && setHighlightedYear(yearVal)}
+                            onMouseLeave={() => setHighlightedYear(null)}
                             disabled={isDisabled}
                             className={classNames(
                                 "p-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
                                 isDisabled
                                     ? "text-gray-300 cursor-not-allowed"
                                     : "hover:bg-teal-100 text-gray-700",
-                                value &&
-                                value.getFullYear() === yearVal &&
-                                "bg-primary/20 text-primary-dark"
+                                !isDisabled && (isSelected
+                                    ? "bg-primary text-white hover:text-primary"
+                                    : isHighlighted
+                                        ? "bg-primary/30 text-primary-dark ring-2 ring-primary/50"
+                                        : "")
                             )}
                         >
                             {yearVal}
