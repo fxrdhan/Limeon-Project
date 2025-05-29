@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useConfirmDialog } from "@/components/modules";
+import { fuzzyMatch, getScore } from "@/lib/search";
 import {
     useQuery,
     useMutation,
@@ -54,31 +55,6 @@ export const useMasterDataManagement = (
 
         return () => clearTimeout(timer);
     }, [search]);
-
-    const fuzzyMatch = (text: string, pattern: string): boolean => {
-        const lowerText = text?.toLowerCase?.() ?? "";
-        const lowerPattern = pattern?.toLowerCase?.() ?? "";
-        let tIdx = 0;
-        let pIdx = 0;
-        while (tIdx < lowerText.length && pIdx < lowerPattern.length) {
-            if (lowerText[tIdx] === lowerPattern[pIdx]) {
-                pIdx++;
-            }
-            tIdx++;
-        }
-        return pIdx === lowerPattern.length;
-    };
-
-    const getScore = (item: ItemDataType, searchTermLower: string): number => {
-        const nameLower = item.name?.toLowerCase?.() ?? "";
-        const codeLower = item.code?.toLowerCase?.() ?? "";
-        const barcodeLower = item.barcode?.toLowerCase?.() ?? "";
-
-        if (nameLower.includes(searchTermLower)) return 3;
-        if (codeLower.includes(searchTermLower)) return 2;
-        if (barcodeLower.includes(searchTermLower)) return 1;
-        return 0;
-    };
 
     const fetchData = async (page: number, searchTerm: string, limit: number) => {
         const from = (page - 1) * limit;

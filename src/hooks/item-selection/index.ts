@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { fuzzyMatch, getScore } from '@/lib/search';
 import type { Item, UnitConversion } from '@/types';
 
 export const useItemSelection = () => {
@@ -67,20 +68,6 @@ export const useItemSelection = () => {
         return item;
     };
 
-    const fuzzyMatch = (text: string, pattern: string): boolean => {
-        const lowerText = text.toLowerCase();
-        const lowerPattern = pattern.toLowerCase();
-        let tIdx = 0;
-        let pIdx = 0;
-        while (tIdx < lowerText.length && pIdx < lowerPattern.length) {
-            if (lowerText[tIdx] === lowerPattern[pIdx]) {
-                pIdx++;
-            }
-            tIdx++;
-        }
-        return pIdx === lowerPattern.length;
-    };
-
     const filteredItems = items.filter(item => {
         const searchTermLower = searchItem.toLowerCase();
         if (searchTermLower === "") return true;
@@ -91,19 +78,8 @@ export const useItemSelection = () => {
         const searchTermLower = searchItem.toLowerCase();
         if (searchTermLower === "") return 0;
 
-        const getScore = (item: Item): number => {
-            const nameLower = item.name.toLowerCase();
-            const codeLower = item.code?.toLowerCase();
-            const barcodeLower = item.barcode?.toLowerCase();
-
-            if (nameLower.includes(searchTermLower)) return 3;
-            if (codeLower?.includes(searchTermLower)) return 2;
-            if (barcodeLower?.includes(searchTermLower)) return 1;
-            return 0;
-        };
-
-        const scoreA = getScore(a);
-        const scoreB = getScore(b);
+        const scoreA = getScore(a, searchTermLower);
+        const scoreB = getScore(b, searchTermLower);
 
         if (scoreA !== scoreB) {
             return scoreB - scoreA;
