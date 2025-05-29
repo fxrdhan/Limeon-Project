@@ -293,6 +293,7 @@ export interface TableSearchProps {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     placeholder?: string;
     className?: string;
+    inputRef?: React.RefObject<HTMLInputElement>;
 }
 
 export interface TableProps {
