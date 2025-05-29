@@ -118,9 +118,11 @@ export interface MenuItem {
     }[];
 }
 
-export interface UnitConversionManagerProps {
-    tabIndex?: number;
-    unitConversionHook: UseUnitConversionReturn;
+export interface AddItemPortalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    itemId?: string;
+    initialSearchQuery?: string;
 }
 
 export interface AddEditModalProps {
