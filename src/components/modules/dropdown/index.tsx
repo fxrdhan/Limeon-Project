@@ -346,10 +346,12 @@ export const Dropdown = ({
         if (isOpen && highlightedIndex >= 0 && optionsContainerRef.current) {
             const optionElements = optionsContainerRef.current.querySelectorAll('[role="option"]');
             if (optionElements && optionElements[highlightedIndex]) {
-                (optionElements[highlightedIndex] as HTMLElement).scrollIntoView({
-                    block: 'nearest',
-                    behavior: 'auto'
-                });
+                if (highlightedIndex !== 0 || currentFilteredOptions.length === 0) {
+                    (optionElements[highlightedIndex] as HTMLElement).scrollIntoView({
+                        block: 'nearest',
+                        behavior: 'auto'
+                    });
+                }
             }
         }
     }, [highlightedIndex, isOpen, currentFilteredOptions]);
@@ -357,19 +359,8 @@ export const Dropdown = ({
     useEffect(() => {
         if (isOpen && applyOpenStyles && optionsContainerRef.current && currentFilteredOptions.length > 0) {
             optionsContainerRef.current.scrollTop = 0;
-            setTimeout(() => {
-                if (highlightedIndex === 0 && optionsContainerRef.current) {
-                    const firstOption = optionsContainerRef.current.querySelector('[role="option"]');
-                    if (firstOption) {
-                        (firstOption as HTMLElement).scrollIntoView({
-                            block: 'nearest',
-                            behavior: 'auto'
-                        });
-                    }
-                }
-            }, 10);
         }
-    }, [isOpen, applyOpenStyles, currentFilteredOptions.length, highlightedIndex]);
+    }, [isOpen, applyOpenStyles, currentFilteredOptions.length]);
 
     const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
