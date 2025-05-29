@@ -1,6 +1,9 @@
-import { useEffect, useState, useRef, CSSProperties, useCallback } from "react";
+import { useEffect, useState, useRef, CSSProperties, useCallback, useId } from "react";
 import { createPortal } from "react-dom";
 import type { DropdownProps } from "@/types";
+
+let activeDropdownCloseCallback: (() => void) | null = null;
+let activeDropdownId: string | null = null;
 
 export const Dropdown = ({
     options,
@@ -23,6 +26,9 @@ export const Dropdown = ({
     const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
     const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
     const [applyOpenStyles, setApplyOpenStyles] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+
+    const instanceId = useId();
 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -48,11 +54,13 @@ export const Dropdown = ({
     }, [options, searchTerm, searchList, setCurrentFilteredOptions]);
 
     const calculateDropdownPosition = useCallback(() => {
-        if (!isOpen || !dropdownMenuRef.current) {
-            if (isOpen && !dropdownMenuRef.current) requestAnimationFrame(calculateDropdownPosition);
+        if (!isOpen || !dropdownMenuRef.current || !buttonRef.current) {
+            if (isOpen && !dropdownMenuRef.current) {
+                requestAnimationFrame(calculateDropdownPosition);
+            }
             return;
         }
-        if (!buttonRef.current || !dropdownMenuRef.current) return;
+        
         const buttonRect = buttonRef.current.getBoundingClientRect();
         const dropdownActualHeight = dropdownMenuRef.current.scrollHeight;
         const viewportHeight = window.innerHeight;
@@ -60,41 +68,61 @@ export const Dropdown = ({
         const shouldDropUp =
             spaceBelow < dropdownActualHeight + 10 &&
             buttonRect.top > dropdownActualHeight + 10;
+        
         setDropDirection(shouldDropUp ? "up" : "down");
+        
         const newMenuStyle: CSSProperties = {
             position: "fixed",
             left: `${buttonRect.left}px`,
             width: `${buttonRect.width}px`,
             zIndex: 1050,
         };
+        
         const margin = 8;
         if (shouldDropUp) {
             newMenuStyle.top = `${buttonRect.top + window.scrollY - dropdownActualHeight - margin}px`;
         } else {
             newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
         }
+        
         setPortalStyle(newMenuStyle);
-    }, [buttonRef, dropdownMenuRef, setDropDirection, setPortalStyle, isOpen]);
+    }, [isOpen]);
 
-    const closeDropdown = useCallback(() => {
+    const actualCloseDropdown = useCallback(() => {
         setIsClosing(true);
         setTimeout(() => {
             setIsOpen(false);
             setIsClosing(false);
             setSearchTerm("");
+            if (activeDropdownId === instanceId) {
+                activeDropdownCloseCallback = null;
+                activeDropdownId = null;
+            }
         }, 100);
         setHighlightedIndex(-1);
-    }, [setIsClosing, setIsOpen, setSearchTerm]);
+    }, [instanceId, setIsClosing, setIsOpen, setSearchTerm]);
+
+    const openThisDropdown = useCallback(() => {
+        if (activeDropdownId !== null && activeDropdownId !== instanceId && activeDropdownCloseCallback) {
+            activeDropdownCloseCallback();
+        }
+        
+        setIsOpen(true);
+
+        activeDropdownCloseCallback = actualCloseDropdown;
+        activeDropdownId = instanceId;
+    }, [instanceId, actualCloseDropdown, setIsOpen]);
+
 
     const handleSelect = useCallback(
         (optionId: string) => {
             onChange(optionId);
-            closeDropdown();
+            actualCloseDropdown();
             setTimeout(() => {
                 buttonRef.current?.focus();
             }, 150);
         },
-        [onChange, closeDropdown, buttonRef]
+        [onChange, actualCloseDropdown, buttonRef]
     );
 
     const handleDropdownKeyDown = useCallback(
@@ -141,13 +169,13 @@ export const Dropdown = ({
                     break;
                 case 'Escape':
                     e.preventDefault();
-                    closeDropdown();
+                    actualCloseDropdown();
                     break;
                 default:
                     return;
             }
         },
-        [isOpen, currentFilteredOptions, highlightedIndex, handleSelect, closeDropdown]
+        [isOpen, currentFilteredOptions, highlightedIndex, handleSelect, actualCloseDropdown]
     );
 
     const manageFocusOnOpen = useCallback(() => {
@@ -168,10 +196,10 @@ export const Dropdown = ({
             leaveTimeoutRef.current = null;
         }
         hoverTimeoutRef.current = setTimeout(() => {
-            setIsOpen(true);
+            openThisDropdown();
             setIsClosing(false);
         }, 100);
-    }, [hoverTimeoutRef, leaveTimeoutRef, setIsOpen, setIsClosing]);
+    }, [hoverTimeoutRef, leaveTimeoutRef, openThisDropdown, setIsClosing]);
 
     const handleMenuEnter = useCallback(() => {
         if (leaveTimeoutRef.current) {
@@ -181,22 +209,29 @@ export const Dropdown = ({
     }, [leaveTimeoutRef]);
 
     const handleMouseLeaveWithCloseIntent = useCallback(() => {
+        if (isSearching || (searchInputRef.current && document.activeElement === searchInputRef.current)) {
+            return;
+        }
+        
         if (hoverTimeoutRef.current) {
             clearTimeout(hoverTimeoutRef.current);
             hoverTimeoutRef.current = null;
         }
         leaveTimeoutRef.current = setTimeout(() => {
-            closeDropdown();
+            actualCloseDropdown();
         }, 150);
-    }, [hoverTimeoutRef, leaveTimeoutRef, closeDropdown]);
+    }, [hoverTimeoutRef, leaveTimeoutRef, actualCloseDropdown, isSearching]);
 
     const toggleDropdown = useCallback(
         (e: React.MouseEvent) => {
             e.preventDefault();
-            if (isOpen) closeDropdown();
-            else setIsOpen(true);
+            if (isOpen) {
+                actualCloseDropdown();
+            } else {
+                openThisDropdown();
+            }
         },
-        [isOpen, closeDropdown, setIsOpen]
+        [isOpen, actualCloseDropdown, openThisDropdown]
     );
 
     const checkScroll = useCallback(() => {
@@ -241,7 +276,16 @@ export const Dropdown = ({
                 window.removeEventListener("resize", calculateDropdownPosition);
             }
         };
-    }, [isOpen, calculateDropdownPosition, manageFocusOnOpen, setApplyOpenStyles, dropdownMenuRef]);
+    }, [isOpen, calculateDropdownPosition, manageFocusOnOpen]);
+
+    useEffect(() => {
+        if (isOpen && applyOpenStyles) {
+            const timer = setTimeout(() => {
+                calculateDropdownPosition();
+            }, 10);
+            return () => clearTimeout(timer);
+        }
+    }, [currentFilteredOptions, isOpen, applyOpenStyles, calculateDropdownPosition]);
 
     useEffect(() => {
         if (isOpen) {
@@ -286,7 +330,7 @@ export const Dropdown = ({
                     (dropdownMenuRef.current &&
                         !dropdownMenuRef.current.contains(target)))
             ) {
-                closeDropdown();
+                actualCloseDropdown();
             }
         };
 
@@ -294,7 +338,35 @@ export const Dropdown = ({
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [isOpen, isClosing, closeDropdown, dropdownRef, dropdownMenuRef]);
+    }, [isOpen, isClosing, actualCloseDropdown, dropdownRef, dropdownMenuRef]);
+
+    useEffect(() => {
+        return () => {
+            if (activeDropdownId === instanceId) {
+                activeDropdownCloseCallback = null;
+                activeDropdownId = null;
+            }
+        };
+    }, [instanceId]);
+
+    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value;
+        setSearchTerm(newValue);
+        setIsSearching(true);
+        
+        if (leaveTimeoutRef.current) {
+            clearTimeout(leaveTimeoutRef.current);
+            leaveTimeoutRef.current = null;
+        }
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+        
+        setTimeout(() => {
+            setIsSearching(false);
+        }, 500);
+    }, []);
 
     return (
         <div
@@ -397,9 +469,11 @@ export const Dropdown = ({
                                                         className="flex-grow py-2 px-2 pl-8 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-teal-100 focus:border-primary transition duration-200 ease-in-out"
                                                         placeholder="Cari..."
                                                         value={searchTerm}
-                                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                                        onChange={handleSearchChange}
                                                         onKeyDown={handleDropdownKeyDown}
                                                         onClick={(e) => e.stopPropagation()}
+                                                        onFocus={() => setIsSearching(true)}
+                                                        onBlur={() => setTimeout(() => setIsSearching(false), 100)}
                                                         aria-autocomplete="list"
                                                         aria-expanded={isOpen}
                                                         aria-controls="dropdown-options-list"
@@ -416,7 +490,7 @@ export const Dropdown = ({
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 onAddNew();
-                                                                closeDropdown();
+                                                                actualCloseDropdown();
                                                             }}
                                                         >
                                                             +
