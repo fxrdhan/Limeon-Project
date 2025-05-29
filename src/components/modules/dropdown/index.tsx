@@ -236,6 +236,22 @@ export const Dropdown = ({
         }, 150);
     }, [hoverTimeoutRef, leaveTimeoutRef, actualCloseDropdown, isSearching]);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const handleFocusOut = useCallback((_e: FocusEvent) => {
+        setTimeout(() => {
+            const activeElement = document.activeElement;
+            const dropdownContainer = dropdownRef.current;
+            const dropdownMenu = dropdownMenuRef.current;
+            
+            const isFocusInDropdown = dropdownContainer?.contains(activeElement) || 
+                                    dropdownMenu?.contains(activeElement);
+            
+            if (!isFocusInDropdown && isOpen) {
+                actualCloseDropdown();
+            }
+        }, 0);
+    }, [isOpen, actualCloseDropdown]);
+
     const toggleDropdown = useCallback(
         (e: React.MouseEvent) => {
             e.preventDefault();
@@ -277,6 +293,7 @@ export const Dropdown = ({
 
             window.addEventListener("scroll", calculateDropdownPosition, true);
             window.addEventListener("resize", calculateDropdownPosition);
+            document.addEventListener("focusout", handleFocusOut);
         } else {
             setApplyOpenStyles(false);
             document.body.style.overflow = '';
@@ -288,9 +305,10 @@ export const Dropdown = ({
             if (isOpen) {
                 window.removeEventListener("scroll", calculateDropdownPosition, true);
                 window.removeEventListener("resize", calculateDropdownPosition);
+                document.removeEventListener("focusout", handleFocusOut);
             }
         };
-    }, [isOpen, calculateDropdownPosition, manageFocusOnOpen]);
+    }, [isOpen, calculateDropdownPosition, manageFocusOnOpen, handleFocusOut]);
 
     useEffect(() => {
         if (isOpen && applyOpenStyles) {
