@@ -49,6 +49,14 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
     const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
 
+    const focusPortal = useCallback(() => {
+        setTimeout(() => {
+            if (portalContentRef.current) {
+                portalContentRef.current.focus();
+            }
+        }, 0);
+    }, []);
+
     const calculatePosition = useCallback(() => {
         if (!triggerInputRef.current) return;
         const buttonRect = triggerInputRef.current.getBoundingClientRect();
@@ -295,9 +303,19 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             if (currentView === 'years') {
                 setCurrentView('months');
                 setHighlightedDate(null); 
+                focusPortal();
             } else if (currentView === 'months') {
                 setCurrentView('days');
-                setHighlightedDate(value || new Date(displayDate.getFullYear(), displayDate.getMonth(), 1));
+                const currentDisplayMonth = displayDate.getMonth();
+                const currentDisplayYear = displayDate.getFullYear();
+                let newHighlight: Date;
+                if (value && value.getFullYear() === currentDisplayYear && value.getMonth() === currentDisplayMonth) {
+                    newHighlight = new Date(value);
+                } else {
+                    newHighlight = new Date(currentDisplayYear, currentDisplayMonth, 1);
+                }
+                setHighlightedDate(newHighlight);
+                focusPortal();
             } else {
                 closeCalendar();
             }
@@ -437,21 +455,32 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const handleHeaderClick = () => {
         if (currentView === "days") {
             setCurrentView("months");
+            setHighlightedDate(null);
         } else if (currentView === "months") {
             setCurrentView("years");
+            setHighlightedDate(null);
         }
         calculatePosition();
+        focusPortal();
     };
 
     const handleMonthSelect = (selectedMonth: number) => {
-        setDisplayDate((prev) => {
-            const newDate = new Date(prev);
-            newDate.setMonth(selectedMonth);
-            newDate.setDate(1);
-            return newDate;
-        });
+        const currentDisplayYear = displayDate.getFullYear();
+        const newDisplayDateForDaysView = new Date(currentDisplayYear, selectedMonth, 1);
+        
+        setDisplayDate(newDisplayDateForDaysView);
         setCurrentView("days");
+
+        let newHighlight: Date;
+        if (value && value.getFullYear() === currentDisplayYear && value.getMonth() === selectedMonth) {
+            newHighlight = new Date(value);
+        } else {
+            newHighlight = new Date(currentDisplayYear, selectedMonth, 1);
+        }
+        setHighlightedDate(newHighlight);
+        
         calculatePosition();
+        focusPortal();
     };
 
     const handleYearSelect = (selectedYear: number) => {
@@ -461,7 +490,9 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             return newDate;
         });
         setCurrentView("months");
+        setHighlightedDate(null);
         calculatePosition();
+        focusPortal();
     };
 
     const renderHeaderContent = () => {
@@ -675,7 +706,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                                     onClick={handleHeaderClick}
                                     className={classNames(
                                         "font-semibold text-sm hover:bg-gray-100 p-1.5 rounded focus:outline-none min-w-[120px] text-center transition-colors",
-                                        "focus:ring-2 focus:ring-primary/50 focus:bg-primary/10" // Example CSS focus style
+                                        "focus:ring-2 focus:ring-primary/50 focus:bg-primary/10"
                                     )}
                                     aria-live="polite"
                                 >
