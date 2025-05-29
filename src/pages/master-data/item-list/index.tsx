@@ -150,7 +150,7 @@ function ItemList() {
         setIsAddItemModalOpen(false);
         setEditingItemId(undefined);
         setCurrentSearchQueryForModal(undefined);
-        fetchData(); // Re-fetch data after modal closes
+        fetchData(); 
     };
 
     useEffect(() => {
@@ -159,9 +159,19 @@ function ItemList() {
             .on<ItemDataType>(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'items' },
-                () => setTimeout(fetchData, 250)
+                (payload) => {
+                    console.log('Realtime item list change received!', payload);
+                    setTimeout(fetchData, 250);
+                }
             )
-            .subscribe();
+            .subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Subscribed to realtime updates for items');
+                }
+                if (err) {
+                    console.error('Realtime subscription error for items:', err);
+                }
+            });
         return () => {
             supabase.removeChannel(channel);
         };
