@@ -17,7 +17,7 @@ export const useItemSelection = () => {
             const { data, error } = await supabase
                 .from('items')
                 .select(`
-                    id, name, code, base_price, sell_price, stock, unit_id, base_unit, unit_conversions,
+                    id, name, code, barcode, base_price, sell_price, stock, unit_id, base_unit, unit_conversions,
                     item_categories (name),
                     item_types (name),
                     item_units (name)
@@ -83,9 +83,33 @@ export const useItemSelection = () => {
 
     const filteredItems = items.filter(item => {
         const searchTermLower = searchItem.toLowerCase();
-        return fuzzyMatch(item.name, searchTermLower) || 
+        if (searchTermLower === "") return true;
+        return fuzzyMatch(item.name, searchTermLower) ||
                 (item.code && fuzzyMatch(item.code, searchTermLower)) ||
                 (item.barcode && fuzzyMatch(item.barcode, searchTermLower));
+    }).sort((a, b) => {
+        const searchTermLower = searchItem.toLowerCase();
+        if (searchTermLower === "") return 0;
+
+        const getScore = (item: Item): number => {
+            const nameLower = item.name.toLowerCase();
+            const codeLower = item.code?.toLowerCase();
+            const barcodeLower = item.barcode?.toLowerCase();
+
+            if (nameLower.includes(searchTermLower)) return 3;
+            if (codeLower?.includes(searchTermLower)) return 2;
+            if (barcodeLower?.includes(searchTermLower)) return 1;
+            return 0;
+        };
+
+        const scoreA = getScore(a);
+        const scoreB = getScore(b);
+
+        if (scoreA !== scoreB) {
+            return scoreB - scoreA;
+        }
+
+        return a.name.localeCompare(b.name);
     });
 
     return {
