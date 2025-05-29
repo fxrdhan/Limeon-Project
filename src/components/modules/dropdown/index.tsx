@@ -354,12 +354,9 @@ export const Dropdown = ({
         }
     }, [highlightedIndex, isOpen, currentFilteredOptions]);
 
-    // Add new useEffect to scroll to top when dropdown opens
     useEffect(() => {
         if (isOpen && applyOpenStyles && optionsContainerRef.current && currentFilteredOptions.length > 0) {
-            // Reset scroll position to top when dropdown opens
             optionsContainerRef.current.scrollTop = 0;
-            // Ensure first item is highlighted and visible
             setTimeout(() => {
                 if (highlightedIndex === 0 && optionsContainerRef.current) {
                     const firstOption = optionsContainerRef.current.querySelector('[role="option"]');
