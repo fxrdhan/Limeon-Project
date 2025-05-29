@@ -94,6 +94,11 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
         handleMinStockKeyDown,
         deleteItemMutation,
         resetForm,
+        currentSearchTermForModal,
+        handleAddNewCategory,
+        handleAddNewType,
+        handleAddNewUnit,
+        closeModalAndClearSearch,
         isDirty,
     } = useAddItemPageHandlers({
         itemId,
@@ -305,7 +310,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                                 options={categories}
                                                                 placeholder="-- Pilih Kategori --"
                                                                 required
-                                                                onAddNew={() => setIsAddEditModalOpen(true)}
+                                                                onAddNew={handleAddNewCategory}
                                                             />
                                                         )}
                                                     </FormField>
@@ -324,7 +329,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                                 options={types}
                                                                 placeholder="-- Pilih Jenis --"
                                                                 required
-                                                                onAddNew={() => setIsAddTypeModalOpen(true)}
+                                                                onAddNew={handleAddNewType}
                                                             />
                                                         )}
                                                     </FormField>
@@ -343,7 +348,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                                 options={units}
                                                                 placeholder="-- Pilih Satuan --"
                                                                 required
-                                                                onAddNew={() => setIsAddUnitModalOpen(true)}
+                                                                onAddNew={handleAddNewUnit}
                                                             />
                                                         )}
                                                     </FormField>
@@ -635,25 +640,28 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                         <AddEditModal
                             entityName="Kategori"
                             isOpen={isAddEditModalOpen}
-                            onClose={() => setIsAddEditModalOpen(false)}
+                            onClose={() => closeModalAndClearSearch(setIsAddEditModalOpen)}
                             onSubmit={handleSaveCategory}
                             isLoading={addCategoryMutation.isPending}
+                            initialNameFromSearch={currentSearchTermForModal}
                         />
 
                         <AddEditModal
                             isOpen={isAddTypeModalOpen}
-                            onClose={() => setIsAddTypeModalOpen(false)}
+                            onClose={() => closeModalAndClearSearch(setIsAddTypeModalOpen)}                                    
                             onSubmit={handleSaveType}
                             isLoading={addTypeMutation.isPending}
                             entityName="Jenis Item"
+                            initialNameFromSearch={currentSearchTermForModal}
                         />
 
                         <AddEditModal
                             isOpen={isAddUnitModalOpen}
-                            onClose={() => setIsAddUnitModalOpen(false)}
+                            onClose={() => closeModalAndClearSearch(setIsAddUnitModalOpen)}
                             onSubmit={handleSaveUnit}
                             isLoading={addUnitMutation.isPending}
                             entityName="Satuan"
+                            initialNameFromSearch={currentSearchTermForModal}
                         />
                     </motion.div>
                 </motion.div>
