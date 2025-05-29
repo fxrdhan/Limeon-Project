@@ -89,7 +89,7 @@ export const useMasterDataManagement = (
                 );
             }
 
-            const [itemsResult, countResult] = await Promise.all([
+            const [itemsResult, countResult, allUnitsForConversionRes] = await Promise.all([
                 itemsQuery.order("name").range(from, to),
                 countQuery,
                 supabase.from("item_units").select("id, name")
@@ -97,7 +97,10 @@ export const useMasterDataManagement = (
 
             if (itemsResult.error) throw itemsResult.error;
             if (countResult.error) throw countResult.error;
-            const allUnitsForConversion: UnitData[] = (await supabase.from("item_units").select("id, name")).data || [];
+            if (allUnitsForConversionRes.error) throw allUnitsForConversionRes.error;
+
+            const allUnitsForConversion: UnitData[] = allUnitsForConversionRes.data || [];
+
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const completedData = (itemsResult.data || []).map((item: any) => {
                 let parsedConversions: UnitConversion[] = [];
@@ -110,19 +113,22 @@ export const useMasterDataManagement = (
                 } else if (Array.isArray(item.unit_conversions)) {
                     parsedConversions = item.unit_conversions;
                 }
-                const mappedConversions: UnitConversion[] = parsedConversions.map((conv) => {
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const mappedConversions: UnitConversion[] = parsedConversions.map((conv: any) => {
                     const unitDetail = allUnitsForConversion.find(u => u.name === conv.unit_name);
                     return {
                         id: conv.id || Date.now().toString() + Math.random(),
-                        conversion_rate: conv.conversion_rate || conv.conversion,
-                        unit_name: conv.unit_name,
+                        conversion_rate: conv.conversion_rate || conv.conversion || 0,
+                        unit_name: conv.unit_name || 'Unknown',
                         to_unit_id: unitDetail ? unitDetail.id : '',
                         unit: unitDetail ? { id: unitDetail.id, name: unitDetail.name } : { id: '', name: conv.unit_name || 'Unknown Unit' },
-                        conversion: conv.conversion_rate || conv.conversion,
+                        conversion: conv.conversion_rate || conv.conversion || 0,
                         basePrice: conv.basePrice ?? 0,
                         sellPrice: conv.sellPrice ?? 0,
                     };
                 });
+
                 return {
                     id: item.id,
                     name: item.name,
