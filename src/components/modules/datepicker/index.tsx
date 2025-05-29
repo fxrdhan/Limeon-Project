@@ -175,6 +175,10 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
         onChange(selectedDate);
         closeCalendar();
+
+        setTimeout(() => {
+            triggerInputRef.current?.focus();
+        }, 250);
     };
 
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
