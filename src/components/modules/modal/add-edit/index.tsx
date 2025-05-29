@@ -14,6 +14,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
     isLoading = false,
     isDeleting = false,
     entityName = "Kategori",
+    initialNameFromSearch,
 }) => {
     useConfirmDialog();
     const [name, setName] = useState("");
@@ -26,15 +27,18 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
             if (initialData) {
                 setName(initialData.name);
                 setDescription(initialData.description || "");
+            } else if (initialNameFromSearch) {
+                setName(initialNameFromSearch);
+                setDescription("");
             } else {
                 setName("");
                 setDescription("");
             }
             setTimeout(() => {
                 nameInputRef.current?.focus();
-            }, 50);
+            }, 100);
         }
-    }, [isOpen, initialData]);
+    }, [isOpen, initialData, initialNameFromSearch]);
 
     const handleSave = async () => {
         if (!name.trim()) {
