@@ -14,6 +14,7 @@ import {
     AddEditModal
 } from "@/components/modules";
 import { useMasterDataManagement } from "@/handlers";
+import { useRef, useEffect } from 'react';
 
 const CategoryList = () => {
     const {
@@ -44,6 +45,12 @@ const CategoryList = () => {
         debouncedSearch,
     } = useMasterDataManagement("item_categories", "Kategori Item", true);
 
+    const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+
+    useEffect(() => {
+        searchInputRef.current?.focus();
+    }, [currentPage, itemsPerPage, debouncedSearch]);
+
     return (
         <>
             <Card
@@ -57,6 +64,7 @@ const CategoryList = () => {
 
                 <div className="flex items-center">
                     <SearchBar
+                        inputRef={searchInputRef}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Cari kategori..."
