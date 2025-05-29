@@ -1,5 +1,5 @@
 // import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
     Card,
     Button,
@@ -110,6 +110,8 @@ function ItemList() {
     const [editingItemId, setEditingItemId] = useState<string | undefined>(undefined);
     const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<string | undefined>(undefined);
 
+    const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(search);
@@ -117,6 +119,10 @@ function ItemList() {
         }, 500);
         return () => clearTimeout(timer);
     }, [search]);
+
+    useEffect(() => {
+        searchInputRef.current?.focus();
+    }, [currentPage, itemsPerPage, debouncedSearch]);
 
     const fetchData = useCallback(async () => {
         setIsLoadingState(true);
@@ -197,6 +203,7 @@ function ItemList() {
                 </div>
                 <div className="flex items-center">
                     <SearchBar
+                        inputRef={searchInputRef}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Cari nama atau kode item..."
