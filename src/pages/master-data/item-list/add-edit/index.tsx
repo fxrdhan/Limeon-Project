@@ -1,4 +1,3 @@
-import UnitConversionManager from "@/components/tools/unit-converter";
 import React, { useRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -23,16 +22,17 @@ import {
     CardFooter,
     FormAction,
     Checkbox,
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    TableHeader,
 } from "@/components/modules";
 import { useAddItemPageHandlers } from "@/handlers";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface AddItemPortalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    itemId?: string;
-    initialSearchQuery?: string;
-}
+import { FaTrash } from "react-icons/fa";
+import type { AddItemPortalProps } from "@/types";
 
 const AddItemPortal: React.FC<AddItemPortalProps> = ({
     isOpen,
@@ -612,10 +612,235 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                         </div>
 
                                         <div className="w-full md:w-3/4">
-                                            <UnitConversionManager
-                                                tabIndex={15}
-                                                unitConversionHook={unitConversionHook}
-                                            />
+                                            <FormSection title="Satuan dan Konversi">
+                                                <div className="flex flex-col md:flex-row gap-4">
+                                                    <div className="flex-1 md:w-1/3 lg:w-1/4">
+                                                        <h3 className="text-lg font-medium mb-3">Tambah Konversi Satuan</h3>
+                                                        <p className="text-sm text-gray-600 mb-2">
+                                                            1 {unitConversionHook.baseUnit || "Satuan Dasar"} setara berapa satuan turunan?
+                                                        </p>
+                                                        <div className="flex flex-row gap-4 mb-4">
+                                                            <FormField label="Satuan Turunan" className="flex-1">
+                                                                <Dropdown
+                                                                    name="unit"
+                                                                    tabIndex={15}
+                                                                    value={
+                                                                        unitConversionHook.availableUnits.find(
+                                                                            (u) => u.name === unitConversionHook.unitConversionFormData.unit
+                                                                        )?.id || ""
+                                                                    }
+                                                                    onChange={(unitId) => {
+                                                                        const selectedUnit = unitConversionHook.availableUnits.find((u) => u.id === unitId);
+                                                                        if (selectedUnit) {
+                                                                            unitConversionHook.setUnitConversionFormData({
+                                                                                ...unitConversionHook.unitConversionFormData,
+                                                                                unit: selectedUnit.name,
+                                                                            });
+                                                                        }
+                                                                    }}
+                                                                    options={unitConversionHook.availableUnits
+                                                                        .filter((unit) => unit.name !== unitConversionHook.baseUnit)
+                                                                        .filter(
+                                                                            (unit) =>
+                                                                                !unitConversionHook.conversions.some((uc) => uc.unit.name === unit.name)
+                                                                        )
+                                                                        .map((unit) => ({ id: unit.id, name: unit.name }))}
+                                                                    placeholder="-- Pilih Satuan --"
+                                                                />
+                                                            </FormField>
+                                                            <FormField
+                                                                label={
+                                                                    unitConversionHook.unitConversionFormData.unit
+                                                                        ? `1 ${unitConversionHook.baseUnit || "Satuan Dasar"} = ? ${unitConversionHook.unitConversionFormData.unit}`
+                                                                        : "Nilai Konversi"
+                                                                }
+                                                                className="flex-1"
+                                                            >
+                                                                <div className="relative w-full">
+                                                                    <Input
+                                                                        name="conversion"
+                                                                        tabIndex={16}
+                                                                        value={unitConversionHook.unitConversionFormData.conversion || ""}
+                                                                        onChange={(e) => {
+                                                                            const { name, value } = e.target;
+                                                                            unitConversionHook.setUnitConversionFormData({
+                                                                                ...unitConversionHook.unitConversionFormData,
+                                                                                [name]: name === "conversion" ? parseFloat(value) || 0 : value,
+                                                                            });
+                                                                        }}
+                                                                        type="number"
+                                                                        min="1"
+                                                                        className="w-full pr-10"
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === "Enter") {
+                                                                                e.preventDefault();
+                                                                                if (
+                                                                                    !unitConversionHook.unitConversionFormData.unit ||
+                                                                                    unitConversionHook.unitConversionFormData.conversion <= 0
+                                                                                ) {
+                                                                                    alert("Satuan dan konversi harus diisi dengan benar!");
+                                                                                    return;
+                                                                                }
+                                                                                const existingUnit = unitConversionHook.conversions.find(
+                                                                                    (uc) => uc.unit.name === unitConversionHook.unitConversionFormData.unit
+                                                                                );
+                                                                                if (existingUnit) {
+                                                                                    alert("Satuan tersebut sudah ada dalam daftar!");
+                                                                                    return;
+                                                                                }
+                                                                                const selectedUnit = unitConversionHook.availableUnits.find(
+                                                                                    (u) => u.name === unitConversionHook.unitConversionFormData.unit
+                                                                                );
+                                                                                if (!selectedUnit) {
+                                                                                    alert("Satuan tidak valid!");
+                                                                                    return;
+                                                                                }
+                                                                                unitConversionHook.addUnitConversion({
+                                                                                    unit: selectedUnit,
+                                                                                    unit_name: selectedUnit.name,
+                                                                                    to_unit_id: selectedUnit.id,
+                                                                                    conversion: unitConversionHook.unitConversionFormData.conversion,
+                                                                                    basePrice: 0,
+                                                                                    sellPrice: 0,
+                                                                                    conversion_rate: unitConversionHook.unitConversionFormData.conversion
+                                                                                });
+                                                                                unitConversionHook.setUnitConversionFormData({
+                                                                                    unit: "",
+                                                                                    conversion: 0,
+                                                                                });
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <div
+                                                                        className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 focus:outline-none ${
+                                                                            unitConversionHook.unitConversionFormData.unit && unitConversionHook.unitConversionFormData.conversion > 0 && unitConversionHook.baseUnit
+                                                                                ? "text-primary"
+                                                                                : "text-gray-300"
+                                                                        }`}
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            if (
+                                                                                !unitConversionHook.unitConversionFormData.unit ||
+                                                                                unitConversionHook.unitConversionFormData.conversion <= 0
+                                                                            ) {
+                                                                                alert("Satuan dan konversi harus diisi dengan benar!");
+                                                                                return;
+                                                                            }
+                                                                            const existingUnit = unitConversionHook.conversions.find(
+                                                                                (uc) => uc.unit.name === unitConversionHook.unitConversionFormData.unit
+                                                                            );
+                                                                            if (existingUnit) {
+                                                                                alert("Satuan tersebut sudah ada dalam daftar!");
+                                                                                return;
+                                                                            }
+                                                                            const selectedUnit = unitConversionHook.availableUnits.find(
+                                                                                (u) => u.name === unitConversionHook.unitConversionFormData.unit
+                                                                            );
+                                                                            if (!selectedUnit) {
+                                                                                alert("Satuan tidak valid!");
+                                                                                return;
+                                                                            }
+                                                                            unitConversionHook.addUnitConversion({
+                                                                                unit: selectedUnit,
+                                                                                unit_name: selectedUnit.name,
+                                                                                to_unit_id: selectedUnit.id,
+                                                                                conversion: unitConversionHook.unitConversionFormData.conversion,
+                                                                                basePrice: 0,
+                                                                                sellPrice: 0,
+                                                                                conversion_rate: unitConversionHook.unitConversionFormData.conversion
+                                                                            });
+                                                                            unitConversionHook.setUnitConversionFormData({
+                                                                                unit: "",
+                                                                                conversion: 0,
+                                                                            });
+                                                                        }}
+                                                                        title="Tekan Enter atau klik untuk menambah"
+                                                                    >
+                                                                        ENTER
+                                                                    </div>
+                                                                </div>
+                                                            </FormField>
+                                                        </div>
+                                                    </div>
+                                                    <div className="md:w-2/3 lg:w-3/5 flex flex-col h-full">
+                                                        <div className="border rounded-lg overflow-hidden flex-grow h-full">
+                                                            <Table className="w-full h-full">
+                                                                <TableHead>
+                                                                    <TableRow>
+                                                                        <TableHeader className="w-[20%]">Turunan</TableHeader>
+                                                                        <TableHeader className="w-[30%] text-left">
+                                                                            Konversi
+                                                                        </TableHeader>
+                                                                        <TableHeader className="w-[20%] text-right">
+                                                                            Harga Pokok
+                                                                        </TableHeader>
+                                                                        <TableHeader className="w-[20%] text-right">
+                                                                            Harga Jual
+                                                                        </TableHeader>
+                                                                        <TableHeader className="w-[10%] text-center">
+                                                                            Aksi
+                                                                        </TableHeader>
+                                                                    </TableRow>
+                                                                </TableHead>
+                                                                <TableBody className="h-[100px]">
+                                                                    {unitConversionHook.conversions.length === 0 ? (
+                                                                        <TableRow className="h-full">
+                                                                            <TableCell
+                                                                                colSpan={5}
+                                                                                className="text-center text-gray-500 py-4 align-middle"
+                                                                            >
+                                                                                Belum ada data konversi
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    ) : (
+                                                                        unitConversionHook.conversions
+                                                                            .filter(
+                                                                                (uc, index, self) =>
+                                                                                    index ===
+                                                                                    self.findIndex((u) => u.unit.name === uc.unit.name) &&
+                                                                                    uc.unit
+                                                                            )
+                                                                            .map((uc) => (
+                                                                                <TableRow key={uc.id}>
+                                                                                    <TableCell>{uc.unit.name}</TableCell>
+                                                                                    <TableCell>
+                                                                                        1 {unitConversionHook.baseUnit} = {uc.conversion} {uc.unit.name}
+                                                                                    </TableCell>
+                                                                                    <TableCell className="text-right">
+                                                                                        {(uc.basePrice || 0).toLocaleString("id-ID", {
+                                                                                            style: "currency",
+                                                                                            currency: "IDR",
+                                                                                            minimumFractionDigits: 0,
+                                                                                            maximumFractionDigits: 2,
+                                                                                        })}
+                                                                                    </TableCell>
+                                                                                    <TableCell className="text-right">
+                                                                                        {(uc.sellPrice || 0).toLocaleString("id-ID", {
+                                                                                            style: "currency",
+                                                                                            currency: "IDR",
+                                                                                            minimumFractionDigits: 0,
+                                                                                            maximumFractionDigits: 2,
+                                                                                        })}
+                                                                                    </TableCell>
+                                                                                    <TableCell className="text-center">
+                                                                                        <Button
+                                                                                            variant="danger"
+                                                                                            size="sm"
+                                                                                            tabIndex={18}
+                                                                                            onClick={() => unitConversionHook.removeUnitConversion(uc.id)}
+                                                                                        >
+                                                                                            <FaTrash />
+                                                                                        </Button>
+                                                                                    </TableCell>
+                                                                                </TableRow>
+                                                                            ))
+                                                                    )}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </FormSection>
                                         </div>
                                     </div>
                                 </div>
