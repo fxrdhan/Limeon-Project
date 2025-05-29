@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import {
     Card,
@@ -44,6 +44,7 @@ const PurchaseList = () => {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const queryClient = useQueryClient();
     const { openConfirmDialog } = useConfirmDialog();
+    const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -53,6 +54,10 @@ const PurchaseList = () => {
 
         return () => clearTimeout(timer);
     }, [search]);
+
+    useEffect(() => {
+        searchInputRef.current?.focus();
+    }, [currentPage, itemsPerPage, debouncedSearch]);
 
     const fetchPurchases = async (
         page: number,
@@ -288,6 +293,7 @@ const PurchaseList = () => {
                 </div>
             </div>
             <SearchBar
+                inputRef={searchInputRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari nomor faktur..."
