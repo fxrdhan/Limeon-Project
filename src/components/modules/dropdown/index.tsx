@@ -53,6 +53,20 @@ export const Dropdown = ({
         }
     }, [options, searchTerm, searchList, setCurrentFilteredOptions]);
 
+    useEffect(() => {
+        if (isOpen && currentFilteredOptions.length > 0) {
+            setHighlightedIndex(0);
+        }
+    }, [currentFilteredOptions.length, isOpen]);
+
+    useEffect(() => {
+        if (isOpen && currentFilteredOptions.length > 0) {
+            setHighlightedIndex(0);
+        } else if (currentFilteredOptions.length === 0) {
+            setHighlightedIndex(-1);
+        }
+    }, [currentFilteredOptions, isOpen]);
+
     const calculateDropdownPosition = useCallback(() => {
         if (!isOpen || !dropdownMenuRef.current || !buttonRef.current) {
             if (isOpen && !dropdownMenuRef.current) {
@@ -314,40 +328,6 @@ export const Dropdown = ({
             }
         }
     }, [highlightedIndex, isOpen]);
-
-    useEffect(() => {
-        setHighlightedIndex(-1);
-    }, [currentFilteredOptions]);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Node;
-            if (
-                (isOpen || isClosing) &&
-                dropdownRef.current &&
-                !dropdownRef.current.contains(target) &&
-                (!dropdownMenuRef.current ||
-                    (dropdownMenuRef.current &&
-                        !dropdownMenuRef.current.contains(target)))
-            ) {
-                actualCloseDropdown();
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [isOpen, isClosing, actualCloseDropdown, dropdownRef, dropdownMenuRef]);
-
-    useEffect(() => {
-        return () => {
-            if (activeDropdownId === instanceId) {
-                activeDropdownCloseCallback = null;
-                activeDropdownId = null;
-            }
-        };
-    }, [instanceId]);
 
     const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
