@@ -144,7 +144,7 @@ export const Dropdown = ({
             if (!isOpen) return;
 
             const items = currentFilteredOptions;
-            if (!items.length && !['Escape'].includes(e.key)) return;
+            if (!items.length && !['Escape', 'Tab'].includes(e.key)) return;
 
             let newIndex = highlightedIndex;
 
@@ -158,6 +158,17 @@ export const Dropdown = ({
                     e.preventDefault();
                     newIndex = items.length ? (highlightedIndex - 1 + items.length) % items.length : -1;
                     setHighlightedIndex(newIndex);
+                    break;
+                case 'Tab':
+                    e.preventDefault();
+                    if (items.length) {
+                        if (e.shiftKey) {
+                            newIndex = highlightedIndex <= 0 ? items.length - 1 : highlightedIndex - 1;
+                        } else {
+                            newIndex = highlightedIndex >= items.length - 1 ? 0 : highlightedIndex + 1;
+                        }
+                        setHighlightedIndex(newIndex);
+                    }
                     break;
                 case 'PageDown':
                     e.preventDefault();
@@ -515,11 +526,21 @@ export const Dropdown = ({
                                                             role="option"
                                                             aria-selected={highlightedIndex === index}
                                                             type="button"
-                                                            className={`flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none ${
+                                                            className={`flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 ${
                                                                 highlightedIndex === index ? 'bg-gray-100' : ''
                                                             }`}
                                                             onClick={() => handleSelect(option.id)}
                                                             onMouseEnter={() => setHighlightedIndex(index)}
+                                                            onFocus={() => setHighlightedIndex(index)}
+                                                            onBlur={() => {
+                                                                setTimeout(() => {
+                                                                    const activeElement = document.activeElement;
+                                                                    const isStillInDropdown = dropdownMenuRef.current?.contains(activeElement);
+                                                                    if (!isStillInDropdown) {
+                                                                        setHighlightedIndex(-1);
+                                                                    }
+                                                                }, 0);
+                                                            }}
                                                         >
                                                             {withRadio && (
                                                                 <div className="mr-2 flex items-center">
