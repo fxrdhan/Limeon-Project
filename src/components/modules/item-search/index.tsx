@@ -136,22 +136,20 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
             return;
         }
 
+        const inputElement = inputRef.current;
         const observer = new ResizeObserver(() => {
             if (itemDropdownRef.current) {
                 calculateDropdownPosition();
             }
         });
 
-        observer.observe(inputRef.current);
+        observer.observe(inputElement);
 
         return () => {
-            if (inputRef.current) {
-                // eslint-disable-next-line react-hooks/exhaustive-deps
-                observer.unobserve(inputRef.current);
-            }
+            observer.unobserve(inputElement);
             observer.disconnect();
         };
-    }, [isOpen, calculateDropdownPosition, inputRef]);
+    }, [isOpen, calculateDropdownPosition]);
 
     useEffect(() => {
         const currentOpenTimeout = openTimeoutRef.current;
@@ -180,10 +178,13 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         }
     }, [searchItem, isOpen, isClosing, openDropdown, closeDropdown]);
 
-    // Reset highlighted index when filtered items change
     useEffect(() => {
-        setHighlightedIndex(-1);
-    }, [filteredItems]);
+        if (isOpen && filteredItems.length > 0) {
+            setHighlightedIndex(0);
+        } else {
+            setHighlightedIndex(-1);
+        }
+    }, [filteredItems, isOpen]);
 
     const handleItemSelect = (item: Item) => {
         if (!item) return;
@@ -211,11 +212,8 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            
-            // If there's a highlighted item, select it
             if (highlightedIndex >= 0 && highlightedIndex < filteredItems.length) {
                 const highlightedItem = filteredItems[highlightedIndex];
-                
                 const newItem: PurchaseItem = {
                     id: Date.now().toString(),
                     item_id: highlightedItem.id,
@@ -230,8 +228,8 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                     batch_no: null,
                     expiry_date: null,
                     item: {
-                        name: "",
-                        code: "",
+                        name: highlightedItem.name,
+                        code: highlightedItem.code || "",
                     },
                 };
 
@@ -239,42 +237,8 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                 setSelectedItem(null);
                 setSearchItem("");
                 closeDropdown();
-                return;
-            }
-            
-            // If an item is already selected, add it to the purchase
-            if (selectedItem) {
+            } else if (!isOpen && selectedItem) {
                 addItemToPurchase();
-                return;
-            }
-            
-            // Directly add the first filtered item to the purchase table
-            if (isOpen && filteredItems.length > 0) {
-                const firstItem = filteredItems[0];
-                
-                const newItem: PurchaseItem = {
-                    id: Date.now().toString(),
-                    item_id: firstItem.id,
-                    item_name: firstItem.name,
-                    quantity: 1,
-                    price: firstItem.base_price,
-                    discount: 0,
-                    subtotal: firstItem.base_price,
-                    unit: firstItem.base_unit || "Unit",
-                    unit_conversion_rate: 1,
-                    vat_percentage: 0,
-                    batch_no: null,
-                    expiry_date: null,
-                    item: {
-                        name: "",
-                        code: "",
-                    },
-                };
-
-                onAddItem(newItem);
-                setSelectedItem(null);
-                setSearchItem("");
-                closeDropdown();
             }
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
@@ -301,7 +265,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         } else if (e.key === 'PageUp') {
             e.preventDefault();
             if (isOpen && filteredItems.length > 0) {
-                const pageSize = 5; // Show 5 items per page
+                const pageSize = 5; 
                 const newIndex = Math.max(highlightedIndex - pageSize, 0);
                 setHighlightedIndex(newIndex);
                 scrollToHighlightedItem(newIndex);
@@ -326,7 +290,6 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                         onChange={(e) => {
                             const value = e.target.value;
                             setSearchItem(value);
-                            // Clear selected item when user starts typing again
                             if (selectedItem && value !== selectedItem.name) {
                                 setSelectedItem(null);
                             }
