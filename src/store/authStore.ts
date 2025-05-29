@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
-import { StorageService } from '../lib/storageUtils';
-import type {AuthState } from '../types';
+import { supabase } from '@/lib/supabase';
+import { StorageService } from '@/utils/storage';
+import type {AuthState } from '@/types';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
     session: null,
