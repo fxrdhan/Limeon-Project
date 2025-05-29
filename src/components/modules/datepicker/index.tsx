@@ -182,6 +182,11 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     };
 
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Tab' && isOpen) {
+            e.preventDefault();
+            return;
+        }
+        
         if (e.key === 'Enter') {
             e.preventDefault();
             if (isOpen && !isClosing) {
@@ -358,6 +363,11 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     };
 
     const handleCalendarKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            return;
+        }
+        
         if (e.ctrlKey && currentView === "days") {
             let navigated = false;
             switch (e.key) {
