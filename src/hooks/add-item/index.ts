@@ -48,6 +48,7 @@ export const useAddItemForm = ({
     const [editingMargin, setEditingMargin] = useState(false);
     const [marginPercentage, setMarginPercentage] = useState<string>("0");
     const [editingMinStock, setEditingMinStock] = useState(false);
+    const [currentSearchTermForModal, setCurrentSearchTermForModal] = useState<string | undefined>();
     const [minStockValue, setMinStockValue] = useState<string>("0");
     const unitConversionHook = useUnitConversion();
     const [formData, setFormData] = useState<FormData>({
@@ -454,6 +455,21 @@ export const useAddItemForm = ({
         }));
     };
 
+    const handleAddNewCategory = (searchTerm?: string) => {
+        setCurrentSearchTermForModal(searchTerm);
+        setIsAddEditModalOpen(true);
+    };
+
+    const handleAddNewType = (searchTerm?: string) => {
+        setCurrentSearchTermForModal(searchTerm);
+        setIsAddTypeModalOpen(true);
+    };
+
+    const handleAddNewUnit = (searchTerm?: string) => {
+        setCurrentSearchTermForModal(searchTerm);
+        setIsAddUnitModalOpen(true);
+    };
+
     const addCategoryMutation = useMutation({
         mutationFn: async (newCategory: { name: string; description: string }) => {
             const { data, error } = await supabase
@@ -681,7 +697,8 @@ export const useAddItemForm = ({
             if (updatedCategories) setCategories(updatedCategories);
             if (newCategory?.id) updateFormData({ category_id: newCategory.id });
             setIsAddEditModalOpen(false);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            clearSearchTerm();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             alert("Gagal menyimpan kategori baru.");
         }
@@ -700,7 +717,8 @@ export const useAddItemForm = ({
             if (updatedTypes) setTypes(updatedTypes);
             if (newType?.id) updateFormData({ type_id: newType.id });
             setIsAddTypeModalOpen(false);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            clearSearchTerm();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             alert("Gagal menyimpan jenis item baru.");
         }
@@ -719,7 +737,8 @@ export const useAddItemForm = ({
             if (updatedUnits) setUnits(updatedUnits);
             if (newUnit?.id) updateFormData({ unit_id: newUnit.id });
             setIsAddUnitModalOpen(false);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            clearSearchTerm();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             alert("Gagal menyimpan satuan baru.");
         }
@@ -792,6 +811,15 @@ export const useAddItemForm = ({
         ? formatDateTime(formData.updated_at)
         : "-";
 
+    const clearSearchTerm = () => {
+        setCurrentSearchTermForModal(undefined);
+    };
+
+    const closeModalAndClearSearch = (modalSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
+        modalSetter(false);
+        clearSearchTerm();
+    };
+
     return {
         formData,
         displayBasePrice,
@@ -832,6 +860,11 @@ export const useAddItemForm = ({
         handleSaveType,
         handleSaveUnit,
         handleDeleteItem,
+        currentSearchTermForModal,
+        handleAddNewCategory,
+        handleAddNewType,
+        handleAddNewUnit,
+        closeModalAndClearSearch: closeModalAndClearSearch,
         calculateSellPriceFromMargin,
         handleCancel,
         calculateProfitPercentage,
