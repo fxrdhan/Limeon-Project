@@ -90,7 +90,7 @@ export interface DropdownProps {
     placeholder?: string;
     name: string;
     required?: boolean;
-    onAddNew?: () => void;
+    onAddNew?: (searchTerm?: string) => void;
     withRadio?: boolean;
     searchList?: boolean;
 }
@@ -136,6 +136,7 @@ export interface AddEditModalProps {
     isLoading?: boolean;
     isDeleting?: boolean;
     entityName?: string;
+    initialNameFromSearch?: string;
 }
 
 export type BadgeVariant =
