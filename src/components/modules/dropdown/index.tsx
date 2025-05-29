@@ -379,9 +379,10 @@ export const Dropdown = ({
     }, []);
 
     const handleSearchBarKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "ArrowRight" && onAddNew && addNewButtonRef.current) {
+        if (onAddNew && addNewButtonRef.current && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
             e.preventDefault();
             addNewButtonRef.current.focus();
+            return;
         }
         if (["ArrowDown", "ArrowUp", "Tab", "PageDown", "PageUp", "Enter", "Escape"].includes(e.key)) {
             handleDropdownKeyDown(e as never);
@@ -389,9 +390,10 @@ export const Dropdown = ({
     }, [onAddNew, addNewButtonRef, handleDropdownKeyDown]);
 
     const handleAddNewKeyDown = useCallback((e: React.KeyboardEvent<HTMLButtonElement>) => {
-        if (e.key === "ArrowLeft" && searchInputRef.current) {
+        if (searchInputRef.current && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
             e.preventDefault();
             searchInputRef.current.focus();
+            return;
         }
     }, [searchInputRef]);
 
