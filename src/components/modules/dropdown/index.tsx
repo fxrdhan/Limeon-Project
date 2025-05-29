@@ -536,7 +536,7 @@ export const Dropdown = ({
                                                         <button
                                                             ref={addNewButtonRef}
                                                             type="button"
-                                                            className="bg-primary text-white p-1.5 rounded-lg hover:bg-secondary flex-shrink-0 focus:outline-none focus:ring focus:ring-teal-100 transition duration-200 ease-in-out min-w-[32px]"
+                                                            className="bg-primary text-white p-1.5 rounded-lg flex-shrink-0 hover:ring hover:ring-teal-100 focus:outline-none focus:ring focus:ring-teal-100 transition duration-200 ease-in-out min-w-[16px]"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 onAddNew();
@@ -544,7 +544,7 @@ export const Dropdown = ({
                                                             }}
                                                             onKeyDown={handleAddNewKeyDown}
                                                         >
-                                                            +
+                                                            <span className="font-bold text-xl">+</span>
                                                         </button>
                                                     )}
                                                 </div>
