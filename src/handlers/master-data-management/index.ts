@@ -12,12 +12,12 @@ import type {
     ItemType,
     Unit,
     Item as ItemDataType,
-    Supplier,           // added
+    Supplier,
     UnitConversion,
     UnitData
 } from "@/types";
 
-type MasterDataItem = Category | ItemType | Unit | ItemDataType | Supplier; // include Supplier
+type MasterDataItem = Category | ItemType | Unit | ItemDataType | Supplier;
 
 export const useMasterDataManagement = (
     tableName: string,
@@ -54,6 +54,31 @@ export const useMasterDataManagement = (
 
         return () => clearTimeout(timer);
     }, [search]);
+
+    const fuzzyMatch = (text: string, pattern: string): boolean => {
+        const lowerText = text?.toLowerCase?.() ?? "";
+        const lowerPattern = pattern?.toLowerCase?.() ?? "";
+        let tIdx = 0;
+        let pIdx = 0;
+        while (tIdx < lowerText.length && pIdx < lowerPattern.length) {
+            if (lowerText[tIdx] === lowerPattern[pIdx]) {
+                pIdx++;
+            }
+            tIdx++;
+        }
+        return pIdx === lowerPattern.length;
+    };
+
+    const getScore = (item: ItemDataType, searchTermLower: string): number => {
+        const nameLower = item.name?.toLowerCase?.() ?? "";
+        const codeLower = item.code?.toLowerCase?.() ?? "";
+        const barcodeLower = item.barcode?.toLowerCase?.() ?? "";
+
+        if (nameLower.includes(searchTermLower)) return 3;
+        if (codeLower.includes(searchTermLower)) return 2;
+        if (barcodeLower.includes(searchTermLower)) return 1;
+        return 0;
+    };
 
     const fetchData = async (page: number, searchTerm: string, limit: number) => {
         const from = (page - 1) * limit;
@@ -143,19 +168,36 @@ export const useMasterDataManagement = (
                     unit: { name: item.item_units?.name || "" },
                 } as ItemDataType;
             });
-            return { data: completedData, totalItems: countResult.count || 0 };
+
+            // Terapkan filter dan sort fuzzy jika searchTerm ada
+            let filteredData = completedData;
+            if (searchTerm) {
+                const searchTermLower = searchTerm.toLowerCase();
+                filteredData = completedData.filter(item =>
+                    fuzzyMatch(item.name, searchTermLower) ||
+                    (item.code && fuzzyMatch(item.code, searchTermLower)) ||
+                    (item.barcode && fuzzyMatch(item.barcode, searchTermLower))
+                ).sort((a, b) => {
+                    const scoreA = getScore(a, searchTermLower);
+                    const scoreB = getScore(b, searchTermLower);
+                    if (scoreA !== scoreB) return scoreB - scoreA;
+                    return a.name.localeCompare(b.name);
+                });
+            }
+
+            return { data: filteredData, totalItems: countResult.count || 0 };
         } else {
             const to = from + limit - 1;
             let query = supabase
                 .from(tableName)
-                .select("*", { count: "exact" });               // select all columns
+                .select("*", { count: "exact" });
 
             if (searchTerm) {
                 const fuzzySearchPattern = `%${searchTerm
                     .toLowerCase()
                     .split("")
                     .join("%")}%`;
-                query = query.ilike("name", fuzzySearchPattern); // only filter on name
+                query = query.ilike("name", fuzzySearchPattern);
             }
 
             const { data, error, count } = await query
