@@ -145,14 +145,6 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     }, [isOpen, closeDropdown, searchBarRef, itemDropdownRef]);
 
     useEffect(() => {
-        if (searchItem && !isOpen && !isClosing) {
-            openDropdown();
-        } else if (!searchItem && isOpen && !isClosing) {
-            closeDropdown();
-        }
-    }, [searchItem, isOpen, isClosing, openDropdown, closeDropdown]);
-
-    useEffect(() => {
         if (isOpen && filteredItems.length > 0) {
             setHighlightedIndex(0);
         } else {
@@ -165,17 +157,21 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     };
 
     const handleInputFocus = () => {
-        if (inputRef.current?.value) {
+        if (searchItem && !isOpen && !isClosing) {
             openDropdown();
         }
     };
 
     const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
         setTimeout(() => {
-            if (itemDropdownRef.current && !itemDropdownRef.current.contains(e.relatedTarget as Node)) {
-                closeDropdown();
-            } else if (!e.relatedTarget && itemDropdownRef.current && !itemDropdownRef.current.contains(document.activeElement)) {
-                closeDropdown();
+            const newFocusedElement = e.relatedTarget as Node | null;
+            const isFocusInsideDropdown = itemDropdownRef.current && itemDropdownRef.current.contains(newFocusedElement);
+            const isFocusStillOnInput = newFocusedElement === inputRef.current;
+
+            if (!isFocusInsideDropdown && !isFocusStillOnInput) {
+                if (!itemDropdownRef.current || (itemDropdownRef.current && !itemDropdownRef.current.contains(newFocusedElement))) {
+                    closeDropdown();
+                }
             }
         }, 150);
     };
@@ -238,6 +234,11 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                         onChange={(e) => {
                             const value = e.target.value;
                             setSearchItem(value);
+                            if (value && !isOpen && !isClosing && document.activeElement === inputRef.current) {
+                                openDropdown();
+                            } else if (!value && isOpen && !isClosing) {
+                                closeDropdown();
+                            }
                             if (selectedItem && value !== selectedItem.name) {
                                 setSelectedItem(null);
                             }
