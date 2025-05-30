@@ -284,7 +284,7 @@ const PurchaseList = () => {
                             Upload Faktur
                         </Button>
                     </Link>
-                    <Link to="/purchases/create">
+                    <Link to="/purchases/create" state={{ initialInvoiceNumber: debouncedSearch }}>
                         <Button variant="primary">
                             <FaPlus className="mr-2" />
                             Tambah Pembelian Baru
