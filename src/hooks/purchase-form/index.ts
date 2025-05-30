@@ -1,29 +1,40 @@
-import { supabase } from '@/lib/supabase';
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { Item, Supplier, CompanyProfile, PurchaseFormData, PurchaseItem, UnitConversion } from '@/types';
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import type {
+    Item,
+    Supplier,
+    CompanyProfile,
+    PurchaseFormData,
+    PurchaseItem,
+    UnitConversion,
+} from "@/types";
 
 interface UsePurchaseFormProps {
     initialInvoiceNumber?: string;
 }
 
-export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormProps = {}) => {
+export const usePurchaseForm = ({
+    initialInvoiceNumber = "",
+}: UsePurchaseFormProps = {}) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+    const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
+        null
+    );
     const [purchaseItems, setPurchaseItems] = useState<PurchaseItem[]>([]);
 
     const [formData, setFormData] = useState<PurchaseFormData>({
-        supplier_id: '',
+        supplier_id: "",
         invoice_number: initialInvoiceNumber,
         date: new Date().toISOString().slice(0, 10),
-        due_date: '',
-        payment_status: 'unpaid',
-        payment_method: 'cash',
+        due_date: "",
+        payment_status: "unpaid",
+        payment_method: "cash",
         vat_percentage: 11.0,
         is_vat_included: true,
-        notes: ''
+        notes: "",
     });
 
     const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
@@ -36,12 +47,12 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
     const fetchCompanyProfile = async () => {
         try {
             const { data, error } = await supabase
-                .from('company_profiles')
-                .select('*')
+                .from("company_profiles")
+                .select("*")
                 .single();
 
             if (error) {
-                console.error('Error fetching company profile:', error);
+                console.error("Error fetching company profile:", error);
                 return;
             }
 
@@ -49,51 +60,62 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
                 setCompanyProfile(data);
             }
         } catch (error) {
-            console.error('Error fetching company profile:', error);
+            console.error("Error fetching company profile:", error);
         }
     };
 
     const fetchSuppliers = async () => {
         try {
             const { data, error } = await supabase
-                .from('suppliers')
-                .select('id, name, address')
-                .order('name');
+                .from("suppliers")
+                .select("id, name, address")
+                .order("name");
 
             if (error) throw error;
             setSuppliers(data || []);
         } catch (error) {
-            console.error('Error fetching suppliers:', error);
+            console.error("Error fetching suppliers:", error);
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (
+        e: React.ChangeEvent<
+            HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >
+    ) => {
         const { name, value, type, checked } = e.target as HTMLInputElement;
         setFormData({
             ...formData,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: type === "checkbox" ? checked : value,
         });
     };
 
     const addItem = (newItem: PurchaseItem) => {
-        const itemsWithNewOne = [...purchaseItems, {
-            ...newItem,
-            vat_percentage: newItem.vat_percentage ?? 0, // Gunakan nilai dari newItem jika ada, atau default
-            batch_no: newItem.batch_no ?? null,
-            expiry_date: newItem.expiry_date ?? null,
-            unit: newItem.unit || 'Unit', // Pastikan unit memiliki fallback
-            unit_conversion_rate: newItem.unit_conversion_rate ?? 1 // Pastikan default conversion rate
-        }];
+        const itemsWithNewOne = [
+            ...purchaseItems,
+            {
+                ...newItem,
+                vat_percentage: newItem.vat_percentage ?? 0,
+                batch_no: newItem.batch_no ?? null,
+                expiry_date: newItem.expiry_date ?? null,
+                unit: newItem.unit || "Unit",
+                unit_conversion_rate: newItem.unit_conversion_rate ?? 1,
+            },
+        ];
         const recalculatedItems = recalculateSubtotal(itemsWithNewOne);
         setPurchaseItems(recalculatedItems);
     };
 
-    const updateItem = (id: string, field: 'quantity' | 'price' | 'discount', value: number) => {
-        const updatedItems = purchaseItems.map(item => {
+    const updateItem = (
+        id: string,
+        field: "quantity" | "price" | "discount",
+        value: number
+    ) => {
+        const updatedItems = purchaseItems.map((item) => {
             if (item.id === id) {
-                const quantity = field === 'quantity' ? value : item.quantity;
-                const price = field === 'price' ? value : item.price;
-                const discount = field === 'discount' ? value : item.discount;
+                const quantity = field === "quantity" ? value : item.quantity;
+                const price = field === "price" ? value : item.price;
+                const discount = field === "discount" ? value : item.discount;
 
                 let subtotal = quantity * price;
                 if (discount > 0) {
@@ -108,7 +130,7 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
                 return {
                     ...item,
                     [field]: value,
-                    subtotal: subtotal
+                    subtotal: subtotal,
                 };
             }
             return item;
@@ -118,7 +140,7 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
     };
 
     const updateItemVat = (id: string, vatPercentage: number) => {
-        const updatedItems = purchaseItems.map(item => {
+        const updatedItems = purchaseItems.map((item) => {
             if (item.id === id) {
                 let subtotal = item.quantity * item.price;
                 if (item.discount > 0) {
@@ -134,7 +156,7 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
                 return {
                     ...item,
                     vat_percentage: vatPercentage,
-                    subtotal: subtotal
+                    subtotal: subtotal,
                 };
             }
             return item;
@@ -144,19 +166,23 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
     };
 
     const updateItemExpiry = (id: string, expiryDate: string) => {
-        setPurchaseItems(purchaseItems.map(item =>
-            item.id === id ? { ...item, expiry_date: expiryDate } : item
-        ));
+        setPurchaseItems(
+            purchaseItems.map((item) =>
+                item.id === id ? { ...item, expiry_date: expiryDate } : item
+            )
+        );
     };
 
     const updateItemBatchNo = (id: string, batchNo: string) => {
-        setPurchaseItems(purchaseItems.map(item =>
-            item.id === id ? { ...item, batch_no: batchNo } : item
-        ));
+        setPurchaseItems(
+            purchaseItems.map((item) =>
+                item.id === id ? { ...item, batch_no: batchNo } : item
+            )
+        );
     };
 
     const recalculateSubtotal = (items = purchaseItems) => {
-        return items.map(item => {
+        return items.map((item) => {
             let subtotal = item.quantity * item.price;
             if (item.discount > 0) {
                 const discountAmount = subtotal * (item.discount / 100);
@@ -170,12 +196,16 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
 
             return {
                 ...item,
-                subtotal: subtotal
+                subtotal: subtotal,
             };
         });
     };
 
-    const handleUnitChange = (id: string, unitName: string, getItemByID: (itemId: string) => Item | undefined) => {
+    const handleUnitChange = (
+        id: string,
+        unitName: string,
+        getItemByID: (itemId: string) => Item | undefined
+    ) => {
         const updatedItems = purchaseItems.map((item) => {
             if (item.id === id) {
                 const itemData = getItemByID(item.item_id);
@@ -185,10 +215,16 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
                 let conversionRate = 1;
 
                 if (unitName !== itemData.base_unit) {
-                    const unitConversionsArray = Array.isArray(itemData.unit_conversions) ? itemData.unit_conversions : [];
-                    const unitConversion = unitConversionsArray.find((uc: UnitConversion) => uc.unit.name === unitName);
+                    const unitConversionsArray = Array.isArray(itemData.unit_conversions)
+                        ? itemData.unit_conversions
+                        : [];
+                    const unitConversion = unitConversionsArray.find(
+                        (uc: UnitConversion) => uc.unit.name === unitName
+                    );
                     if (unitConversion) {
-                        price = unitConversion.basePrice || itemData.base_price / unitConversion.conversion;
+                        price =
+                            unitConversion.basePrice ||
+                            itemData.base_price / unitConversion.conversion;
                         conversionRate = unitConversion.conversion;
                     }
                 }
@@ -200,7 +236,7 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
                     unit: unitName,
                     price: price,
                     subtotal: price * item.quantity - discountAmount,
-                    unit_conversion_rate: conversionRate
+                    unit_conversion_rate: conversionRate,
                 };
             }
             return item;
@@ -210,13 +246,14 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
     };
 
     const removeItem = (id: string) => {
-        setPurchaseItems(purchaseItems.filter(item => item.id !== id));
+        setPurchaseItems(purchaseItems.filter((item) => item.id !== id));
     };
 
     const calculateTotalVat = () => {
         return purchaseItems.reduce((total, item) => {
             if (item.vat_percentage > 0) {
-                const subtotalBeforeVat = item.subtotal / (1 + item.vat_percentage / 100);
+                const subtotalBeforeVat =
+                    item.subtotal / (1 + item.vat_percentage / 100);
                 const vatAmount = item.subtotal - subtotalBeforeVat;
                 return total + vatAmount;
             }
@@ -228,7 +265,7 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
         e.preventDefault();
 
         if (purchaseItems.length === 0) {
-            alert('Silakan tambahkan minimal satu item');
+            alert("Silakan tambahkan minimal satu item");
             return;
         }
 
@@ -236,7 +273,7 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
             setLoading(true);
 
             const { data: purchaseData, error: purchaseError } = await supabase
-                .from('purchases')
+                .from("purchases")
                 .insert({
                     supplier_id: formData.supplier_id || null,
                     customer_name: companyProfile?.name || null,
@@ -250,14 +287,14 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
                     vat_percentage: formData.vat_percentage,
                     is_vat_included: formData.is_vat_included,
                     vat_amount: calculateTotalVat(),
-                    notes: formData.notes || null
+                    notes: formData.notes || null,
                 })
-                .select('id')
+                .select("id")
                 .single();
 
             if (purchaseError) throw purchaseError;
 
-            const purchaseItemsData = purchaseItems.map(item => ({
+            const purchaseItemsData = purchaseItems.map((item) => ({
                 purchase_id: purchaseData.id,
                 item_id: item.item_id,
                 quantity: item.quantity,
@@ -267,20 +304,20 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
                 unit: item.unit,
                 vat_percentage: item.vat_percentage,
                 batch_no: item.batch_no,
-                expiry_date: item.expiry_date
+                expiry_date: item.expiry_date,
             }));
 
             const { error: itemsError } = await supabase
-                .from('purchase_items')
+                .from("purchase_items")
                 .insert(purchaseItemsData);
 
             if (itemsError) throw itemsError;
 
             for (const item of purchaseItems) {
                 const { data: itemData } = await supabase
-                    .from('items')
-                    .select('stock, base_unit, unit_conversions')
-                    .eq('id', item.item_id)
+                    .from("items")
+                    .select("stock, base_unit, unit_conversions")
+                    .eq("id", item.item_id)
                     .single();
 
                 if (itemData) {
@@ -288,24 +325,27 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
 
                     if (item.unit !== itemData.base_unit) {
                         const unitConversion = itemData.unit_conversions.find(
-                            (uc: { unit_name: string; }) => uc.unit_name === item.unit
+                            (uc: { unit_name: string }) => uc.unit_name === item.unit
                         );
 
                         if (unitConversion) {
-                            quantityInBaseUnit = item.quantity / unitConversion.conversion_rate;
+                            quantityInBaseUnit =
+                                item.quantity / unitConversion.conversion_rate;
                         }
                     }
 
                     const newStock = (itemData.stock || 0) + quantityInBaseUnit;
                     await supabase
-                        .from('items').update({ stock: newStock }).eq('id', item.item_id);
+                        .from("items")
+                        .update({ stock: newStock })
+                        .eq("id", item.item_id);
                 }
             }
 
-            navigate('/purchases');
+            navigate("/purchases");
         } catch (error) {
-            console.error('Error creating purchase:', error);
-            alert('Gagal menyimpan pembelian. Silakan coba lagi.');
+            console.error("Error creating purchase:", error);
+            alert("Gagal menyimpan pembelian. Silakan coba lagi.");
         } finally {
             setLoading(false);
         }
@@ -325,6 +365,6 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
         updateItemBatchNo,
         handleUnitChange,
         removeItem,
-        handleSubmit
+        handleSubmit,
     };
 };
