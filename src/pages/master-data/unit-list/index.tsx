@@ -147,6 +147,7 @@ const UnitList = () => {
                 onSubmit={handleModalSubmit}
                 isLoading={addUnitMutation.isPending}
                 entityName="Satuan"
+                initialNameFromSearch={debouncedSearch}
             />
 
             <AddEditModal
