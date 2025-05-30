@@ -657,3 +657,14 @@ export interface RawUnitConversion {
 export interface ItemSearchBarRef {
     focus: () => void;
 }
+
+export interface UseFieldFocusOptions {
+    searchInputRef?: React.RefObject<HTMLInputElement>;
+    isModalOpen?: boolean;
+    isLoading?: boolean;
+    isFetching?: boolean;
+    debouncedSearch?: string;
+    currentPage?: number;
+    itemsPerPage?: number;
+    locationKey?: string;
+}

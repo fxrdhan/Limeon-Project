@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useConfirmDialog } from "@/components/modules";
 import { fuzzyMatch, getScore } from "@/utils/search";
+import { useFieldFocus } from "@/hooks";
 import {
     useQuery,
     useMutation,
@@ -53,7 +54,6 @@ export const useMasterDataManagement = (
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    // Determine the actual modal state considering both hook-managed and custom modals
     const actualIsModalOpen = isCustomModalOpen ?? (isAddModalOpen || isEditModalOpen);
 
     useEffect(() => {
@@ -365,54 +365,16 @@ export const useMasterDataManagement = (
         };
     }, [tableName, queryClient, realtime]);
 
-    useEffect(() => {
-        if (
-            searchInputRef?.current &&
-            !actualIsModalOpen &&
-            !isLoading &&
-            !isFetching
-        ) {
-            searchInputRef.current.focus();
-        }
-    }, [
-        actualIsModalOpen,
+    useFieldFocus({
+        searchInputRef,
+        isModalOpen: actualIsModalOpen,
         isLoading,
         isFetching,
         debouncedSearch,
         currentPage,
         itemsPerPage,
-        searchInputRef,
         locationKey,
-    ]);
-
-    useEffect(() => {
-        const handlePageClick = (event: MouseEvent) => {
-            if (actualIsModalOpen || !searchInputRef?.current) return;
-
-            const target = event.target as HTMLElement;
-
-            if (searchInputRef.current.contains(target)) {
-                return;
-            }
-
-            if (
-                target.closest(
-                    'button, a, input, select, textarea, [role="button"], [role="link"], [role="menuitem"], [tabindex="0"]'
-                )
-            ) {
-                return;
-            }
-
-            if (document.activeElement !== searchInputRef.current) {
-                searchInputRef.current?.focus();
-            }
-        };
-
-        document.addEventListener("click", handlePageClick);
-        return () => {
-            document.removeEventListener("click", handlePageClick);
-        };
-    }, [actualIsModalOpen, searchInputRef]);
+    });
 
     return {
         isAddModalOpen,
