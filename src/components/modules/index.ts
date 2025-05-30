@@ -17,3 +17,4 @@ export * from './page-title';
 export * from './descriptive-textarea';
 export * from './checkbox';
 export * from './datepicker';
+export * from './item-search';
