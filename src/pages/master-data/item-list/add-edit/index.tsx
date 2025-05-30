@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
     FaHistory,
     FaPen,
@@ -30,7 +31,6 @@ import {
     TableHeader,
 } from "@/components/modules";
 import { useAddItemPageHandlers } from "@/handlers/addItem";
-import { motion, AnimatePresence } from "framer-motion";
 import { FaTrash } from "react-icons/fa";
 import type { AddItemPortalProps } from "@/types";
 
@@ -41,6 +41,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     initialSearchQuery,
 }) => {
     const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
     const fefoIconRef = useRef<HTMLDivElement>(null);
     const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
     const {
@@ -127,12 +128,17 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
 
     useEffect(() => {
         if (isOpen) {
+            setIsMounted(true);
             if (
                 nameInputRef.current &&
                 (isEditMode ? formData.name || !loading : !isEditMode)
             ) {
                 setTimeout(() => nameInputRef.current?.focus(), 50);
             }
+        } else {
+            // Delay unmounting to allow exit animation
+            const timer = setTimeout(() => setIsMounted(false), 300);
+            return () => clearTimeout(timer);
         }
     }, [isOpen, isEditMode, formData.name, loading]);
 
@@ -149,7 +155,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
         }
     }
 
-    if (!isOpen) return null;
+    if (!isMounted) return null;
 
     const formIsInvalid =
         !formData.name.trim() ||
@@ -175,63 +181,141 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
         }
     };
 
+    const backdropVariants = {
+        hidden: { 
+            opacity: 0,
+            transition: {
+                duration: 0.2,
+                ease: "easeInOut"
+            }
+        },
+        visible: { 
+            opacity: 1,
+            transition: {
+                duration: 0.3,
+                ease: "easeInOut"
+            }
+        }
+    };
+
+    const modalVariants = {
+        hidden: {
+            scale: 0.8,
+            opacity: 0,
+            y: 20,
+            transition: {
+                duration: 0.2,
+                ease: "easeInOut"
+            }
+        },
+        visible: {
+            scale: 1,
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.3,
+                ease: "easeOut",
+                type: "spring",
+                damping: 25,
+                stiffness: 300
+            }
+        },
+        exit: {
+            scale: 0.9,
+            opacity: 0,
+            y: -10,
+            transition: {
+                duration: 0.2,
+                ease: "easeIn"
+            }
+        }
+    };
+
+    const contentVariants = {
+        hidden: { 
+            opacity: 0,
+            y: 10
+        },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                delay: 0.1,
+                duration: 0.2,
+                ease: "easeOut"
+            }
+        }
+    };
+
     return createPortal(
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
             {isOpen && (
                 <motion.div
+                    variants={backdropVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
                     className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            onClose();
+                        }
+                    }}
                 >
                     <motion.div
+                        variants={modalVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
                         className="bg-white rounded-lg shadow-xl w-[90vw] max-h-[90vh] flex flex-col"
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.5, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        <CardHeader className="flex items-center justify-between sticky top-0 bg-white z-10 !py-6 !px-4 !border-b rounded-t-lg">
-                            <div className="flex items-center"></div>
+                        <motion.div variants={contentVariants}>
+                            <CardHeader className="flex items-center justify-between sticky top-0 bg-white z-10 !py-6 !px-4 !border-b rounded-t-lg">
+                                <div className="flex items-center"></div>
 
-                            <div className="absolute left-1/2 transform -translate-x-1/2">
-                                <CardTitle>
-                                    {isEditMode ? "Edit Data Item" : "Tambah Data Item Baru"}
-                                </CardTitle>
-                            </div>
+                                <div className="absolute left-1/2 transform -translate-x-1/2">
+                                    <CardTitle>
+                                        {isEditMode ? "Edit Data Item" : "Tambah Data Item Baru"}
+                                    </CardTitle>
+                                </div>
 
-                            <div className="flex items-center space-x-1 flex-shrink-0">
-                                {isEditMode && formattedUpdateAt !== "-" && (
-                                    <span className="text-sm text-gray-500 italic whitespace-nowrap flex items-center">
-                                        <FaHistory className="mr-1" size={12} />
-                                        {formattedUpdateAt}
-                                    </span>
-                                )}
-                                {!isEditMode && (
+                                <div className="flex items-center space-x-1 flex-shrink-0">
+                                    {isEditMode && formattedUpdateAt !== "-" && (
+                                        <span className="text-sm text-gray-500 italic whitespace-nowrap flex items-center">
+                                            <FaHistory className="mr-1" size={12} />
+                                            {formattedUpdateAt}
+                                        </span>
+                                    )}
+                                    {!isEditMode && (
+                                        <Button
+                                            variant="text"
+                                            size="md"
+                                            onClick={handleReset}
+                                            className="text-gray-600 hover:text-orange-600 flex items-center"
+                                            title="Reset Form"
+                                        >
+                                            <FaUndoAlt className="mr-1.5" size={12} /> Reset All
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="text"
-                                        size="md"
-                                        onClick={handleReset}
-                                        className="text-gray-600 hover:text-orange-600 flex items-center"
-                                        title="Reset Form"
+                                        size="sm"
+                                        onClick={onClose}
+                                        className="text-gray-500 p-2 rounded-full hover:bg-gray-100"
+                                        title="Tutup"
                                     >
-                                        <FaUndoAlt className="mr-1.5" size={12} /> Reset All
+                                        <FaTimes size={18} />
                                     </Button>
-                                )}
-                                <Button
-                                    variant="text"
-                                    size="sm"
-                                    onClick={onClose}
-                                    className="text-gray-500 p-2 rounded-full hover:bg-gray-100"
-                                    title="Tutup"
-                                >
-                                    <FaTimes size={18} />
-                                </Button>
-                            </div>
-                        </CardHeader>
+                                </div>
+                            </CardHeader>
+                        </motion.div>
 
-                        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+                        <motion.form 
+                            variants={contentVariants}
+                            onSubmit={handleSubmit} 
+                            className="flex-1 flex flex-col min-h-0"
+                        >
                             <div className="flex-1 overflow-y-auto">
                                 <div className="p-4">
                                     <div className="flex flex-col md:flex-row gap-6">
@@ -861,7 +945,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                     deleteText={"Hapus"}
                                 />
                             </CardFooter>
-                        </form>
+                        </motion.form>
                         <AddEditModal
                             entityName="Kategori"
                             isOpen={isAddEditModalOpen}
