@@ -309,7 +309,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                             className="flex-1 flex flex-col min-h-0"
                         >
                             <div className="flex-1 overflow-y-auto">
-                                <div className="p-4">
+                                <div className="p-3 mx-4">
                                     <div className="flex flex-col md:flex-row gap-6">
                                         <div className="w-full md:w-4/5">
                                             <FormSection title="Data Umum">
