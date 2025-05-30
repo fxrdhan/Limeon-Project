@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from 'react-dom';
 import { FaPlus } from "react-icons/fa";
 import { Button } from "@/components/modules";
-import type { PurchaseItem, ItemSearchBarProps, Item } from "@/types";
+import type { ItemSearchBarProps, Item } from "@/types";
 import { classNames } from "@/lib/classNames";
 
 const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
@@ -11,7 +11,8 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     filteredItems,
     selectedItem,
     setSelectedItem,
-    onAddItem,
+    onOpenAddItemPortal,
+    isAddItemButtonDisabled = true,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -25,33 +26,6 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     const itemDropdownRef = useRef<HTMLDivElement>(null);
     const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const highlightedItemRef = useRef<HTMLDivElement>(null);
-
-    const addItemToPurchase = () => {
-        if (!selectedItem) return;
-
-        const newItem: PurchaseItem = {
-            id: Date.now().toString(),
-            item_id: selectedItem.id,
-            item_name: selectedItem.name,
-            quantity: 1,
-            price: selectedItem.base_price,
-            discount: 0,
-            subtotal: selectedItem.base_price,
-            unit: selectedItem.base_unit || "Unit",
-            unit_conversion_rate: 1,
-            vat_percentage: 0,
-            batch_no: null,
-            expiry_date: null,
-            item: {
-                name: "",
-                code: "",
-            },
-        };
-
-        onAddItem(newItem);
-        setSelectedItem(null);
-        setSearchItem("");
-    };
 
     const calculateDropdownPosition = useCallback(() => {
         if (!inputRef.current || !itemDropdownRef.current) return;
@@ -81,7 +55,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         if (!itemDropdownRef.current) return;
         
         const dropdown = itemDropdownRef.current;
-        const itemHeight = 60; // Approximate height of each item
+        const itemHeight = 60;
         const itemTop = index * itemHeight;
         const itemBottom = itemTop + itemHeight;
         const dropdownScrollTop = dropdown.scrollTop;
@@ -214,31 +188,10 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
             e.preventDefault();
             if (highlightedIndex >= 0 && highlightedIndex < filteredItems.length) {
                 const highlightedItem = filteredItems[highlightedIndex];
-                const newItem: PurchaseItem = {
-                    id: Date.now().toString(),
-                    item_id: highlightedItem.id,
-                    item_name: highlightedItem.name,
-                    quantity: 1,
-                    price: highlightedItem.base_price,
-                    discount: 0,
-                    subtotal: highlightedItem.base_price,
-                    unit: highlightedItem.base_unit || "Unit",
-                    unit_conversion_rate: 1,
-                    vat_percentage: 0,
-                    batch_no: null,
-                    expiry_date: null,
-                    item: {
-                        name: highlightedItem.name,
-                        code: highlightedItem.code || "",
-                    },
-                };
-
-                onAddItem(newItem);
+                handleItemSelect(highlightedItem); // Pilih item
                 setSelectedItem(null);
                 setSearchItem("");
                 closeDropdown();
-            } else if (!isOpen && selectedItem) {
-                addItemToPurchase();
             }
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
@@ -284,6 +237,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                     <input
                         ref={inputRef}
                         type="text"
+                        aria-haspopup="listbox"
                         placeholder="Cari nama atau kode item..."
                         className="w-full text-sm p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
                         value={searchItem}
@@ -348,12 +302,12 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                 </div>
                 <Button
                     type="button"
-                    onClick={addItemToPurchase}
-                    disabled={!selectedItem}
+                    onClick={onOpenAddItemPortal}
+                    disabled={isAddItemButtonDisabled}
                     className="flex items-center whitespace-nowrap"
                 >
                     <FaPlus className="mr-2" />
-                    Tambah Item
+                    Tambah Item Baru
                 </Button>
             </div>
         </div>
