@@ -66,7 +66,9 @@ function App() {
           <Route path="master-data">
             <Route path="items" element={
               <Suspense fallback={<div>Loading...</div>}>
-                <ItemList />
+                <Suspense fallback={null}>
+                  <ItemList />
+                </Suspense>
               </Suspense>
             } />
             <Route path="categories" element={
