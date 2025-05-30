@@ -70,7 +70,7 @@ export const useMasterDataManagement = (
         const timer = setTimeout(() => {
             setDebouncedSearch(search);
             setCurrentPage(1);
-        }, 100);
+        }, 250);
 
         return () => clearTimeout(timer);
     }, [search]);

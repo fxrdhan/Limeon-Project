@@ -60,7 +60,7 @@ const PurchaseList = () => {
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(search);
-        }, 100);
+        }, 250);
         return () => clearTimeout(timer);
     }, [search]);
 
