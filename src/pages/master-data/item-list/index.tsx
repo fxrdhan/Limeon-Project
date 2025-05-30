@@ -86,14 +86,9 @@ function ItemList() {
             }
         };
 
-        const wrapper = pageWrapperRef.current;
-        if (wrapper) {
-            wrapper.addEventListener("click", handlePageClick);
-        }
+        document.addEventListener("click", handlePageClick);
         return () => {
-            if (wrapper) {
-                wrapper.removeEventListener("click", handlePageClick);
-            }
+            document.removeEventListener("click", handlePageClick);
         };
     }, [isAddItemModalOpen]);
 
