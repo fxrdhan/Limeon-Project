@@ -76,16 +76,16 @@ export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormPr
     };
 
     const addItem = (newItem: PurchaseItem) => {
-        const newItems = [...purchaseItems, {
+        const itemsWithNewOne = [...purchaseItems, {
             ...newItem,
-            vat_percentage: 0,
-            batch_no: null,
-            expiry_date: null,
-            unit: newItem.unit || 'Unit',
-            unit_conversion_rate: 1
+            vat_percentage: newItem.vat_percentage ?? 0, // Gunakan nilai dari newItem jika ada, atau default
+            batch_no: newItem.batch_no ?? null,
+            expiry_date: newItem.expiry_date ?? null,
+            unit: newItem.unit || 'Unit', // Pastikan unit memiliki fallback
+            unit_conversion_rate: newItem.unit_conversion_rate ?? 1 // Pastikan default conversion rate
         }];
-        recalculateSubtotal(newItems);
-        setPurchaseItems(newItems);
+        const recalculatedItems = recalculateSubtotal(itemsWithNewOne);
+        setPurchaseItems(recalculatedItems);
     };
 
     const updateItem = (id: string, field: 'quantity' | 'price' | 'discount', value: number) => {
