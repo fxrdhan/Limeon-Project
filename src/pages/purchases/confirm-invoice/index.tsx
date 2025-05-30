@@ -19,7 +19,7 @@ import { FaArrowLeft, FaCheck, FaClock, FaRedo } from "react-icons/fa";
 import {
     saveInvoiceToDatabase,
     regenerateInvoiceData,
-} from "@/services/invoiceService";
+} from "@/services/invoiceExtractor";
 import type { ExtractedInvoiceData } from "@/types";
 
 const ConfirmInvoicePage = () => {
