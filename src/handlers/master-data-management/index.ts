@@ -18,17 +18,11 @@ import type {
     UnitConversion,
     UnitData,
     DBItem,
-    RawUnitConversion
+    RawUnitConversion,
+    UseMasterDataManagementOptions
 } from "@/types";
 
 type MasterDataItem = Category | ItemType | Unit | ItemDataType | Supplier;
-
-export interface UseMasterDataManagementOptions {
-    realtime?: boolean;
-    searchInputRef?: React.RefObject<HTMLInputElement>;
-    isCustomModalOpen?: boolean;
-    locationKey?: string;
-}
 
 export const useMasterDataManagement = (
     tableName: string,
