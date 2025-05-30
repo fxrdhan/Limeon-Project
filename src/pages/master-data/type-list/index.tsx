@@ -137,6 +137,7 @@ const TypeList = () => {
                 onSubmit={handleModalSubmit}
                 isLoading={addTypeMutation.isPending}
                 entityName="Jenis Item"
+                initialNameFromSearch={debouncedSearch}
             />
 
             <AddEditModal
