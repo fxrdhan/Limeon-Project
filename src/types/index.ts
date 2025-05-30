@@ -493,7 +493,8 @@ export interface ItemSearchBarProps {
     filteredItems: Item[];
     selectedItem: Item | null;
     setSelectedItem: (item: Item | null) => void;
-    onAddItem: (item: PurchaseItem) => void;
+    onOpenAddItemPortal: () => void;
+    isAddItemButtonDisabled?: boolean;
 }
 
 export interface SaleFormData {
