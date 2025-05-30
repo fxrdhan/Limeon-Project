@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
-import type { CustomDateValueType, PurchaseItem } from '@/types';
+import type { CustomDateValueType, PurchaseItem, ItemSearchBarRef } from '@/types';
 
 import {
     Input,
@@ -23,9 +23,10 @@ import {
     DescriptiveTextarea,
     Dropdown,
     Datepicker,
+    ItemSearchBar
 } from '@/components/modules';
-import ItemSearchBar from '@/components/modules/item-search';
 import AddItemPortal from '@/pages/master-data/item-list/add-edit';
+import type {  } from '@/components/modules/item-search';
 
 import { usePurchaseForm, useItemSelection } from '@/hooks';
 import { extractNumericValue, formatRupiah } from '@/lib/formatters';
@@ -57,6 +58,7 @@ const CreatePurchase: React.FC = () => {
     const [vatPercentageValue, setVatPercentageValue] = useState(formData.vat_percentage.toString());
     const vatPercentageInputRef = useRef<HTMLInputElement>(null);
     const invoiceNumberInputRef = useRef<HTMLInputElement>(null);
+    const itemSearchBarRef = useRef<ItemSearchBarRef>(null);
 
     const {
         searchItem,
@@ -148,11 +150,19 @@ const CreatePurchase: React.FC = () => {
         }
     };
 
+    const handleCloseAddItemPortal = () => {
+        setIsAddItemPortalOpen(false);
+        // Focus the item search input after portal closes
+        setTimeout(() => {
+            itemSearchBarRef.current?.focus();
+        }, 100);
+    };
+
     return (
         <>
             <AddItemPortal
                 isOpen={isAddItemPortalOpen}
-                onClose={() => setIsAddItemPortalOpen(false)}
+                onClose={handleCloseAddItemPortal}
                 initialSearchQuery={searchItem}
             />
 
@@ -263,6 +273,7 @@ const CreatePurchase: React.FC = () => {
 
                     <FormSection title="Daftar Item">
                         <ItemSearchBar
+                            ref={itemSearchBarRef}
                             searchItem={searchItem}
                             setSearchItem={setSearchItem}
                             filteredItems={filteredItems}
