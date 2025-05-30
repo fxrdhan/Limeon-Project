@@ -26,6 +26,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     const itemDropdownRef = useRef<HTMLDivElement>(null);
     const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const highlightedItemRef = useRef<HTMLDivElement>(null);
+    const addItemButtonRef = useRef<HTMLButtonElement>(null);
 
     const calculateDropdownPosition = useCallback(() => {
         if (!inputRef.current || !itemDropdownRef.current) return;
@@ -182,6 +183,9 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
             if (highlightedIndex >= 0 && highlightedIndex < filteredItems.length) {
                 handleItemSelect(filteredItems[highlightedIndex]);
                 closeDropdown();
+            } else if (filteredItems.length === 0 && searchItem.trim() !== '' && !isAddItemButtonDisabled) {
+                // Focus the add item button when no items found and Enter is pressed
+                addItemButtonRef.current?.focus();
             }
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
@@ -217,6 +221,16 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
             if (isOpen) {
                 closeDropdown();
             }
+        }
+    };
+
+    const handleAddItemButtonKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+        if (e.key === 'Enter' && !isAddItemButtonDisabled) {
+            e.preventDefault();
+            onOpenAddItemPortal();
+        } else if (e.key === 'Escape') {
+            // Return focus to input when Escape is pressed
+            inputRef.current?.focus();
         }
     };
 
@@ -296,8 +310,10 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
                     )}
                 </div>
                 <Button
+                    ref={addItemButtonRef}
                     type="button"
                     onClick={onOpenAddItemPortal}
+                    onKeyDown={handleAddItemButtonKeyDown}
                     disabled={isAddItemButtonDisabled}
                     className="flex items-center whitespace-nowrap"
                 >
