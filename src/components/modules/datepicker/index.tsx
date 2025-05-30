@@ -40,6 +40,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
+    const [isPositionReady, setIsPositionReady] = useState(false);
     const triggerInputRef = useRef<HTMLInputElement>(null);
     const portalContentRef = useRef<HTMLDivElement>(null);
     const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -84,10 +85,12 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
         }
         setPortalStyle(newMenuStyle);
+        setIsPositionReady(true);
     }, [portalWidth]);
 
     useEffect(() => {
         if (isOpen) {
+            setIsPositionReady(false);
             setDisplayDate(value || new Date());
             setCurrentView("days");
             setHighlightedDate(value || new Date());
@@ -105,6 +108,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             setHighlightedDate(null);
             setHighlightedMonth(null);
             setHighlightedYear(null);
+            setIsPositionReady(false);
         }
         return () => {
             window.removeEventListener("scroll", calculatePosition, true);
@@ -117,11 +121,6 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
         setIsOpen(true);
         setIsClosing(false);
-        setTimeout(() => {
-            if (portalContentRef.current) {
-                portalContentRef.current.focus();
-            }
-        }, 0);
     }, []);
 
     const closeCalendar = useCallback(() => {
@@ -879,7 +878,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     onMouseLeave={handleTriggerMouseLeave}
                     onChange={e => e.preventDefault()}
                 />
-                {(isOpen || isClosing) &&
+                {(isOpen || isClosing) && isPositionReady &&
                     createPortal(
                         <div
                             ref={portalContentRef}
