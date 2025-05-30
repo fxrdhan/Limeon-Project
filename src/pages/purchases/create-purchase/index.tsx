@@ -25,6 +25,7 @@ import {
     Datepicker,
 } from '@/components/modules';
 import ItemSearchBar from '@/components/modules/item-search';
+import AddItemPortal from '@/pages/master-data/item-list/add-edit';
 
 import { usePurchaseForm, useItemSelection } from '@/hooks';
 import { extractNumericValue, formatRupiah } from '@/lib/formatters';
@@ -41,7 +42,6 @@ const CreatePurchase: React.FC = () => {
         total,
         loading,
         handleChange,
-        addItem,
         updateItem,
         handleUnitChange,
         updateItemVat,
@@ -50,6 +50,7 @@ const CreatePurchase: React.FC = () => {
         removeItem,
         handleSubmit
     } = usePurchaseForm({ initialInvoiceNumber: initialInvoiceNumberFromState });
+    const [isAddItemPortalOpen, setIsAddItemPortalOpen] = useState(false);
 
     const [editingVatPercentage, setEditingVatPercentage] = useState(false);
     const [vatPercentageValue, setVatPercentageValue] = useState(formData.vat_percentage.toString());
@@ -64,6 +65,8 @@ const CreatePurchase: React.FC = () => {
         filteredItems,
         getItemByID
     } = useItemSelection();
+
+    const isTambahItemBaruDisabled = !(searchItem.trim() !== '' && filteredItems.length === 0);
 
     const onHandleSubmit = (e: React.FormEvent) => {
         handleSubmit(e);
@@ -116,11 +119,17 @@ const CreatePurchase: React.FC = () => {
     };
 
     return (
+        <>
+            <AddItemPortal
+                isOpen={isAddItemPortalOpen}
+                onClose={() => setIsAddItemPortalOpen(false)}
+                initialSearchQuery={searchItem}
+            />
+
         <Card>
             <CardHeader>
                 <CardTitle className="text-center flex-grow">Tambah Pembelian Baru</CardTitle>
             </CardHeader>
-
             <form onSubmit={onHandleSubmit}>
                 <CardContent className="space-y-6">
                     <FormSection title="Informasi Pembelian">
@@ -226,14 +235,12 @@ const CreatePurchase: React.FC = () => {
                         <ItemSearchBar
                             searchItem={searchItem}
                             setSearchItem={setSearchItem}
-                            // showItemDropdown={showItemDropdown}
-                            // setShowItemDropdown={setShowItemDropdown}
                             filteredItems={filteredItems}
                             selectedItem={selectedItem}
                             setSelectedItem={setSelectedItem}
-                            onAddItem={addItem}
+                            isAddItemButtonDisabled={isTambahItemBaruDisabled}
+                            onOpenAddItemPortal={() => setIsAddItemPortalOpen(true)}
                         />
-
                         <>
                             <Table>
                                 <TableHead>
@@ -423,7 +430,6 @@ const CreatePurchase: React.FC = () => {
                                 <div className="flex items-center gap-6">
                                     <Checkbox
                                         id="is_vat_included_checkbox"
-                                        // name="is_vat_included"
                                         label="PPN Termasuk Harga"
                                         checked={formData.is_vat_included}
                                         onChange={(isChecked) => {
@@ -483,7 +489,8 @@ const CreatePurchase: React.FC = () => {
                     />
                 </CardFooter>
             </form>
-        </Card>
+        </Card>    
+        </>
     );
 };
 
