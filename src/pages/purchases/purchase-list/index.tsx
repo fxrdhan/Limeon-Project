@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import {
     Card,
@@ -24,6 +24,7 @@ import {
     useQueryClient,
     keepPreviousData,
 } from "@tanstack/react-query";
+import { useFieldFocus } from '@/hooks';
 
 interface Purchase {
     id: string;
@@ -47,18 +48,31 @@ const PurchaseList = () => {
     const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
     const location = useLocation();
 
+    const { data, isLoading, isFetching } = useQuery({
+        queryKey: ["purchases", currentPage, debouncedSearch, itemsPerPage],
+        queryFn: () => fetchPurchases(currentPage, debouncedSearch, itemsPerPage),
+        placeholderData: keepPreviousData,
+        staleTime: 0,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
+    });
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(search);
-            setCurrentPage(1);
-        }, 500);
-
+        }, 100);
         return () => clearTimeout(timer);
     }, [search]);
 
-    useEffect(() => {
-        searchInputRef.current?.focus();
-    }, [currentPage, itemsPerPage, debouncedSearch, location.key]);
+    useFieldFocus({
+        searchInputRef,
+        isLoading,
+        isFetching,
+        debouncedSearch,
+        currentPage,
+        itemsPerPage,
+        locationKey: location.key,
+    });
 
     const fetchPurchases = async (
         page: number,
@@ -111,15 +125,6 @@ const PurchaseList = () => {
             throw error;
         }
     };
-
-    const { data, isLoading, isFetching } = useQuery({
-        queryKey: ["purchases", currentPage, debouncedSearch, itemsPerPage],
-        queryFn: () => fetchPurchases(currentPage, debouncedSearch, itemsPerPage),
-        placeholderData: keepPreviousData,
-        staleTime: 0,
-        refetchOnMount: "always",
-        refetchOnWindowFocus: true,
-    });
 
     useEffect(() => {
         const channel = supabase
