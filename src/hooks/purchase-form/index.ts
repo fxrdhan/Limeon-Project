@@ -3,7 +3,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Item, Supplier, CompanyProfile, PurchaseFormData, PurchaseItem, UnitConversion } from '@/types';
 
-export const usePurchaseForm = () => {
+interface UsePurchaseFormProps {
+    initialInvoiceNumber?: string;
+}
+
+export const usePurchaseForm = ({ initialInvoiceNumber = '' }: UsePurchaseFormProps = {}) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -12,7 +16,7 @@ export const usePurchaseForm = () => {
 
     const [formData, setFormData] = useState<PurchaseFormData>({
         supplier_id: '',
-        invoice_number: '',
+        invoice_number: initialInvoiceNumber,
         date: new Date().toISOString().slice(0, 10),
         due_date: '',
         payment_status: 'unpaid',
