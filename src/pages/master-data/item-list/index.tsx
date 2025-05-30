@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import {
     Card,
@@ -20,6 +20,10 @@ import { useMasterDataManagement } from "@/handlers/master-data-management";
 
 function ItemList() {
     const location = useLocation();
+    const searchInputRef = useRef<HTMLInputElement>(
+        null
+    ) as React.RefObject<HTMLInputElement>;
+    const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
 
     const {
         search,
@@ -35,9 +39,13 @@ function ItemList() {
         queryError: errorState,
         handlePageChange,
         handleItemsPerPageChange,
-    } = useMasterDataManagement("items", "Item", true);
+    } = useMasterDataManagement("items", "Item", {
+        realtime: true,
+        searchInputRef,
+        isCustomModalOpen: isAddItemModalOpen,
+        locationKey: location.key,
+    });
 
-    const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
     const [editingItemId, setEditingItemId] = useState<string | undefined>(
         undefined
     );
@@ -45,52 +53,6 @@ function ItemList() {
         string | undefined
     >(undefined);
     const pageWrapperRef = useRef<HTMLDivElement>(null);
-
-    const searchInputRef = useRef<HTMLInputElement>(
-        null
-    ) as React.RefObject<HTMLInputElement>;
-
-    useEffect(() => {
-        if (!isAddItemModalOpen && !isLoadingState) {
-            searchInputRef.current?.focus();
-        }
-    }, [
-        location.key,
-        currentPage,
-        itemsPerPage,
-        debouncedSearch,
-        isLoadingState,
-        isAddItemModalOpen,
-    ]);
-
-    useEffect(() => {
-        const handlePageClick = (event: MouseEvent) => {
-            if (isAddItemModalOpen || !searchInputRef.current) return;
-
-            const target = event.target as HTMLElement;
-
-            if (searchInputRef.current.contains(target)) {
-                return;
-            }
-
-            if (
-                target.closest(
-                    'button, a, input, select, textarea, [role="button"], [role="link"], [role="menuitem"], [tabindex="0"]'
-                )
-            ) {
-                return;
-            }
-
-            if (document.activeElement !== searchInputRef.current) {
-                searchInputRef.current?.focus();
-            }
-        };
-
-        document.addEventListener("click", handlePageClick);
-        return () => {
-            document.removeEventListener("click", handlePageClick);
-        };
-    }, [isAddItemModalOpen]);
 
     const openAddItemModal = (itemId?: string, searchQuery?: string) => {
         setEditingItemId(itemId);
@@ -102,7 +64,6 @@ function ItemList() {
         setIsAddItemModalOpen(false);
         setEditingItemId(undefined);
         setCurrentSearchQueryForModal(undefined);
-        setTimeout(() => searchInputRef.current?.focus(), 0);
     };
 
     return (
