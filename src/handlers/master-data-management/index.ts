@@ -193,7 +193,11 @@ export const useMasterDataManagement = (
                     .toLowerCase()
                     .split("")
                     .join("%")}%`;
-                query = query.ilike("name", fuzzySearchPattern);
+                if (tableName === 'item_categories' || tableName === 'item_types' || tableName === 'item_units') {
+                    query = query.or(`name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`);
+                } else {
+                    query = query.ilike("name", fuzzySearchPattern);
+                }
             }
 
             const { data, error, count } = await query
