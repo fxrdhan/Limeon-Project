@@ -22,13 +22,27 @@ import type {
 
 type MasterDataItem = Category | ItemType | Unit | ItemDataType | Supplier;
 
+export interface UseMasterDataManagementOptions {
+    realtime?: boolean;
+    searchInputRef?: React.RefObject<HTMLInputElement>;
+    isCustomModalOpen?: boolean;
+    locationKey?: string;
+}
+
 export const useMasterDataManagement = (
     tableName: string,
     entityNameLabel: string,
-    realtime: boolean = false
+    options?: UseMasterDataManagementOptions
 ) => {
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
+
+    const {
+        realtime = false,
+        searchInputRef,
+        isCustomModalOpen,
+        locationKey,
+    } = options || {};
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -38,6 +52,9 @@ export const useMasterDataManagement = (
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // Determine the actual modal state considering both hook-managed and custom modals
+    const actualIsModalOpen = isCustomModalOpen ?? (isAddModalOpen || isEditModalOpen);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -347,6 +364,55 @@ export const useMasterDataManagement = (
             supabase.removeChannel(channel);
         };
     }, [tableName, queryClient, realtime]);
+
+    useEffect(() => {
+        if (
+            searchInputRef?.current &&
+            !actualIsModalOpen &&
+            !isLoading &&
+            !isFetching
+        ) {
+            searchInputRef.current.focus();
+        }
+    }, [
+        actualIsModalOpen,
+        isLoading,
+        isFetching,
+        debouncedSearch,
+        currentPage,
+        itemsPerPage,
+        searchInputRef,
+        locationKey,
+    ]);
+
+    useEffect(() => {
+        const handlePageClick = (event: MouseEvent) => {
+            if (actualIsModalOpen || !searchInputRef?.current) return;
+
+            const target = event.target as HTMLElement;
+
+            if (searchInputRef.current.contains(target)) {
+                return;
+            }
+
+            if (
+                target.closest(
+                    'button, a, input, select, textarea, [role="button"], [role="link"], [role="menuitem"], [tabindex="0"]'
+                )
+            ) {
+                return;
+            }
+
+            if (document.activeElement !== searchInputRef.current) {
+                searchInputRef.current?.focus();
+            }
+        };
+
+        document.addEventListener("click", handlePageClick);
+        return () => {
+            document.removeEventListener("click", handlePageClick);
+        };
+    }, [actualIsModalOpen, searchInputRef]);
 
     return {
         isAddModalOpen,

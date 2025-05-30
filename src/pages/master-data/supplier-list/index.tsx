@@ -14,7 +14,7 @@ import {
     PageTitle,
 } from "@/components/modules";
 import DetailEditModal from "./add-edit";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useMutation } from "@tanstack/react-query";
@@ -30,6 +30,8 @@ const SupplierList = () => {
         null
     );
     const [, setNewSupplierImage] = useState<string | null>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+    const location = useLocation();
 
     const {
         handlePageChange,
@@ -42,9 +44,7 @@ const SupplierList = () => {
         search,
         setSearch,
         debouncedSearch,
-        setDebouncedSearch,
         currentPage,
-        setCurrentPage,
         queryClient,
         openConfirmDialog,
         totalItems,
@@ -53,63 +53,12 @@ const SupplierList = () => {
         isLoading,
         isError,
         isFetching
-    } = useMasterDataManagement("suppliers", "Supplier", true);
-
-    const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
-    const location = useLocation();
+    } = useMasterDataManagement("suppliers", "Supplier", {
+        realtime: true,
+        searchInputRef,
+        locationKey: location.key,
+    });
     
-    const isAnyModalOpen = isAddModalOpen || isEditModalOpen;
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-            setCurrentPage(1);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [search, setCurrentPage, setDebouncedSearch]);
-
-    useEffect(() => {
-        if (!isAnyModalOpen && !isLoading) {
-            searchInputRef.current?.focus();
-        }
-    }, [
-        location.key,
-        currentPage,
-        itemsPerPage,
-        debouncedSearch,
-        isLoading,
-        isAnyModalOpen,
-    ]);
-
-    useEffect(() => {
-        const handlePageClick = (event: MouseEvent) => {
-            if (isAnyModalOpen || !searchInputRef.current) return;
-
-            const target = event.target as HTMLElement;
-
-            if (searchInputRef.current.contains(target)) {
-                return;
-            }
-
-            if (
-                target.closest(
-                    'button, a, input, select, textarea, [role="button"], [role="link"], [role="menuitem"], [tabindex="0"]'
-                )
-            ) {
-                return;
-            }
-
-            if (document.activeElement !== searchInputRef.current) {
-                searchInputRef.current?.focus();
-            }
-        };
-
-        document.addEventListener("click", handlePageClick);
-        return () => {
-            document.removeEventListener("click", handlePageClick);
-        };
-    }, [isAnyModalOpen]);
-
     const suppliers = suppliersData || [];
     const currentTotalItems = totalItems || 0;
     const updateSupplier = async (updatedData: Partial<SupplierType>) => {
@@ -255,13 +204,11 @@ const SupplierList = () => {
 
     const closeEditModal = () => {
         setIsEditModalOpen(false);
-        setTimeout(() => searchInputRef.current?.focus(), 0);
     };
 
     const closeAddModal = () => {
         setIsAddModalOpen(false);
         setNewSupplierImage(null);
-        setTimeout(() => searchInputRef.current?.focus(), 0);
     };
 
     const handleDelete = (supplier: SupplierType) => {
