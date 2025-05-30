@@ -77,7 +77,7 @@ const CategoryList = () => {
                         inputRef={searchInputRef}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Cari kategori..."
+                        placeholder="Cari nama atau deskripsi kategori item..."
                         className="flex-grow"
                     />
                     <Button
