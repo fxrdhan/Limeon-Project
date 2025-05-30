@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
 import type { CustomDateValueType } from '@/types';
 
@@ -30,6 +30,9 @@ import { usePurchaseForm, useItemSelection } from '@/hooks';
 import { extractNumericValue, formatRupiah } from '@/lib/formatters';
 
 const CreatePurchase: React.FC = () => {
+    const location = useLocation();
+    const initialInvoiceNumberFromState = location.state?.initialInvoiceNumber as string | undefined;
+
     const navigate = useNavigate();
     const {
         formData,
@@ -46,7 +49,7 @@ const CreatePurchase: React.FC = () => {
         updateItemBatchNo,
         removeItem,
         handleSubmit
-    } = usePurchaseForm();
+    } = usePurchaseForm({ initialInvoiceNumber: initialInvoiceNumberFromState });
 
     const [editingVatPercentage, setEditingVatPercentage] = useState(false);
     const [vatPercentageValue, setVatPercentageValue] = useState(formData.vat_percentage.toString());
@@ -56,8 +59,6 @@ const CreatePurchase: React.FC = () => {
     const {
         searchItem,
         setSearchItem,
-        // showItemDropdown,
-        // setShowItemDropdown,
         selectedItem,
         setSelectedItem,
         filteredItems,
