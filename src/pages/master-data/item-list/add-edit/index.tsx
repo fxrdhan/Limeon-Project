@@ -29,7 +29,7 @@ import {
     TableCell,
     TableHeader,
 } from "@/components/modules";
-import { useAddItemPageHandlers } from "@/handlers";
+import { useAddItemPageHandlers } from "@/handlers/addItem";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTrash } from "react-icons/fa";
 import type { AddItemPortalProps } from "@/types";

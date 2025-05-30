@@ -13,7 +13,7 @@ import {
     PageTitle
 } from "@/components/modules";
 import { AddEditModal } from "@/components/modules";
-import { useMasterDataManagement } from "@/handlers";
+import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef } from 'react';
 import { useLocation } from "react-router-dom";
 
