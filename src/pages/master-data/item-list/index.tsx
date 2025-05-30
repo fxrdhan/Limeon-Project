@@ -28,7 +28,6 @@ function ItemList() {
     const {
         search,
         setSearch,
-        
         debouncedSearch,
         currentPage,
         itemsPerPage,
