@@ -22,7 +22,7 @@ import type {
     FieldConfig as FieldConfigSupplier,
 } from "@/types";
 import { useMasterDataManagement } from "@/handlers";
-import { StorageService } from "@/lib/storageUtils";
+import { StorageService } from "@/utils/storage";
 
 const SupplierList = () => {
     const [selectedSupplier, setSelectedSupplier] = useState<SupplierType | null>(
