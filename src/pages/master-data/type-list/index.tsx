@@ -53,6 +53,16 @@ const TypeList = () => {
         searchInputRef.current?.focus();
     }, [currentPage, itemsPerPage, debouncedSearch, location.key]);
 
+    const handleCloseAddModal = () => {
+        setIsAddModalOpen(false);
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+    };
+
+    const handleCloseEditModal = () => {
+        setIsEditModalOpen(false);
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+    };
+
     return (
         <>
             <Card>
@@ -135,7 +145,7 @@ const TypeList = () => {
 
             <AddEditModal
                 isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
+                onClose={handleCloseAddModal}
                 onSubmit={handleModalSubmit}
                 isLoading={addTypeMutation.isPending}
                 entityName="Jenis Item"
@@ -144,7 +154,7 @@ const TypeList = () => {
 
             <AddEditModal
                 isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
+                onClose={handleCloseEditModal}
                 onSubmit={handleModalSubmit}
                 initialData={editingType || undefined}
                 onDelete={
