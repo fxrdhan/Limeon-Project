@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaTrash } from 'react-icons/fa';
-import type { CustomDateValueType } from '@/types';
+import type { CustomDateValueType, PurchaseItem } from '@/types';
 
 import {
     Input,
@@ -42,6 +42,7 @@ const CreatePurchase: React.FC = () => {
         total,
         loading,
         handleChange,
+        addItem,
         updateItem,
         handleUnitChange,
         updateItemVat,
@@ -71,6 +72,35 @@ const CreatePurchase: React.FC = () => {
     const onHandleSubmit = (e: React.FormEvent) => {
         handleSubmit(e);
     };
+
+    useEffect(() => {
+        if (selectedItem) {
+            const itemData = getItemByID(selectedItem.id);
+            if (itemData) {
+                const newPurchaseItem: PurchaseItem = {
+                    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                    item_id: itemData.id,
+                    item_name: itemData.name,
+                    quantity: 1,
+                    price: itemData.base_price,
+                    discount: 0,
+                    subtotal: itemData.base_price, // (1 * base_price) - 0
+                    unit: itemData.unit?.name || itemData.base_unit || 'Unit',
+                    vat_percentage: 0,
+                    batch_no: null,
+                    expiry_date: null,
+                    unit_conversion_rate: 1,
+                    item: {
+                        name: itemData.name,
+                        code: itemData.code || ''
+                    }
+                };
+                addItem(newPurchaseItem);
+                setSelectedItem(null);
+                setSearchItem('');
+            }
+        }
+    }, [selectedItem, addItem, setSelectedItem, setSearchItem, getItemByID]);
 
     useEffect(() => {
         if (invoiceNumberInputRef.current) {
