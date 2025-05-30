@@ -147,6 +147,7 @@ const CategoryList = () => {
                 onSubmit={handleModalSubmit}
                 isLoading={addMutation.isPending}
                 entityName="Kategori"
+                initialNameFromSearch={debouncedSearch}
             />
 
             <AddEditModal
@@ -164,7 +165,6 @@ const CategoryList = () => {
                                 confirmText: "Ya, Hapus",
                                 onConfirm: async () => {
                                     await deleteMutation.mutateAsync(categoryId);
-                                    // setIsEditModalOpen(false);
                                 },
                             });
                         }
