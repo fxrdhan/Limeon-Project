@@ -22,7 +22,7 @@ import type {
     Supplier as SupplierType,
     FieldConfig as FieldConfigSupplier,
 } from "@/types";
-import { useMasterDataManagement } from "@/handlers";
+import { useMasterDataManagement } from "@/handlers/masterData";
 import { StorageService } from "@/utils/storage";
 
 const SupplierList = () => {
