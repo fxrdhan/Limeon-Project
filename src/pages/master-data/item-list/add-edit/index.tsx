@@ -202,7 +202,6 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
         hidden: {
             scale: 0.95,
             opacity: 0,
-            y: 20,
             transition: {
                 duration: 0.2,
                 ease: "easeInOut"
@@ -211,7 +210,6 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
         visible: {
             scale: 1,
             opacity: 1,
-            y: 0,
             transition: {
                 duration: 0.3,
                 ease: "easeOut"
@@ -220,7 +218,6 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
         exit: {
             scale: 0.9,
             opacity: 0,
-            y: -10,
             transition: {
                 duration: 0.2,
                 ease: "easeIn"
@@ -230,12 +227,10 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
 
     const contentVariants = {
         hidden: { 
-            opacity: 0,
-            y: 10
+            opacity: 0
         },
         visible: {
             opacity: 1,
-            y: 0,
             transition: {
                 delay: 0.1,
                 duration: 0.2,
