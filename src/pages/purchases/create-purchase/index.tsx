@@ -28,7 +28,7 @@ import {
     Datepicker,
     ItemSearchBar,
 } from "@/components/modules";
-import AddItemPortal from "@/pages/master-data/item-list/add-edit";
+import AddItemPortal from "@/components/modules/add-edit/v2";
 import type { } from "@/components/modules/item-search";
 import { usePurchaseForm } from "@/hooks/purchaseForm";
 import { useItemSelection } from "@/hooks/itemSelection";

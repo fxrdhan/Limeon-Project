@@ -15,7 +15,7 @@ import {
 } from "@/components/modules";
 import { FaPlus } from "react-icons/fa";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
-import AddItemPortal from "./add-edit";
+import { AddItemPortal } from "@/components/modules";
 import { useMasterDataManagement } from "@/handlers/masterData";
 
 function ItemList() {

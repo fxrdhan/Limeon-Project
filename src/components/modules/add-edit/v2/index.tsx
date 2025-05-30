@@ -34,7 +34,7 @@ import { useAddItemPageHandlers } from "@/handlers/addItem";
 import { FaTrash } from "react-icons/fa";
 import type { AddItemPortalProps } from "@/types";
 
-const AddItemPortal: React.FC<AddItemPortalProps> = ({
+export const AddItemPortal: React.FC<AddItemPortalProps> = ({
     isOpen,
     onClose,
     itemId,
@@ -971,5 +971,3 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
         document.body
     );
 };
-
-export default AddItemPortal;
