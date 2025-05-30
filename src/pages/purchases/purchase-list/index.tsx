@@ -24,7 +24,7 @@ import {
     useQueryClient,
     keepPreviousData,
 } from "@tanstack/react-query";
-import { useFieldFocus } from '@/hooks';
+import { useFieldFocus } from '@/hooks/fieldFocus';
 
 interface Purchase {
     id: string;

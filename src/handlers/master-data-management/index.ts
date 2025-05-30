@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useConfirmDialog } from "@/components/modules";
 import { fuzzyMatch, getScore } from "@/utils/search";
-import { useFieldFocus } from "@/hooks";
+import { useFieldFocus } from "@/hooks/fieldFocus";
 import {
     useQuery,
     useMutation,
