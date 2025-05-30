@@ -13,7 +13,7 @@ import {
     Pagination,
     PageTitle,
 } from "@/components/modules";
-import DetailEditModal from "./add-edit";
+import { DetailEditModal } from "@/components/modules/";
 import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";

@@ -6,7 +6,7 @@ import type { DetailEditModalProps } from "@/types";
 import { FaPencilAlt, FaSpinner, FaSave, FaBan } from "react-icons/fa";
 import { useSupplierDetailForm } from "@/hooks/supplierDetail";
 
-const DetailEditModal: React.FC<DetailEditModalProps> = ({
+export const DetailEditModal: React.FC<DetailEditModalProps> = ({
     title,
     data,
     fields,
@@ -338,5 +338,3 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         document.body
     );
 };
-
-export default DetailEditModal;
