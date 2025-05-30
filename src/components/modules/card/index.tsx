@@ -35,7 +35,7 @@ export const CardContent = ({ children, className }: CardProps) => {
 
 export const CardFooter = ({ children, className }: CardProps) => {
     return (
-        <div className={classNames('mt-4 pt-4 border-t', className)}>
+        <div className={classNames('mt-0 pt-4 border-t', className)}>
             {children}
         </div>
     );
