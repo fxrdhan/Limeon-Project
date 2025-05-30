@@ -141,6 +141,14 @@ export const useMasterDataManagement = (
                     };
                 });
 
+                const getName = (field: { name: string }[] | { name: string } | null | undefined): string => {
+                    if (!field) return "";
+                    if (Array.isArray(field)) {
+                        return field.length > 0 && field[0]?.name ? field[0].name : "";
+                    }
+                    return field.name || "";
+                };
+
                 return {
                     id: item.id,
                     name: item.name,
@@ -150,9 +158,9 @@ export const useMasterDataManagement = (
                     sell_price: item.sell_price,
                     stock: item.stock,
                     unit_conversions: mappedConversions,
-                    category: { name: item.item_categories?.[0]?.name || "" },
-                    type: { name: item.item_types?.[0]?.name || "" },
-                    unit: { name: item.item_units?.[0]?.name || "" },
+                    category: { name: getName(item.item_categories) },
+                    type: { name: getName(item.item_types) },
+                    unit: { name: getName(item.item_units) },
                 } as ItemDataType;
             });
 
