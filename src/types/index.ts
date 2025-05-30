@@ -653,3 +653,7 @@ export interface RawUnitConversion {
     basePrice?: number;
     sellPrice?: number;
 }
+
+export interface ItemSearchBarRef {
+    focus: () => void;
+}
