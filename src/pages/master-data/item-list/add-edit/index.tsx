@@ -200,7 +200,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
 
     const modalVariants = {
         hidden: {
-            scale: 0.8,
+            scale: 0.95,
             opacity: 0,
             y: 20,
             transition: {
@@ -214,10 +214,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
             y: 0,
             transition: {
                 duration: 0.3,
-                ease: "easeOut",
-                type: "spring",
-                damping: 25,
-                stiffness: 300
+                ease: "easeOut"
             }
         },
         exit: {
