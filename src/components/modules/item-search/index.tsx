@@ -161,10 +161,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
     }, [filteredItems, isOpen]);
 
     const handleItemSelect = (item: Item) => {
-        if (!item) return;
         setSelectedItem(item);
-        setSearchItem(item.name);
-        closeDropdown();
     };
 
     const handleInputFocus = () => {
@@ -187,10 +184,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         if (e.key === 'Enter') {
             e.preventDefault();
             if (highlightedIndex >= 0 && highlightedIndex < filteredItems.length) {
-                const highlightedItem = filteredItems[highlightedIndex];
-                handleItemSelect(highlightedItem); // Pilih item
-                setSelectedItem(null);
-                setSearchItem("");
+                handleItemSelect(filteredItems[highlightedIndex]);
                 closeDropdown();
             }
         } else if (e.key === 'ArrowDown') {
@@ -210,7 +204,7 @@ const ItemSearchBar: React.FC<ItemSearchBarProps> = ({
         } else if (e.key === 'PageDown') {
             e.preventDefault();
             if (isOpen && filteredItems.length > 0) {
-                const pageSize = 5; // Show 5 items per page
+                const pageSize = 5;
                 const newIndex = Math.min(highlightedIndex + pageSize, filteredItems.length - 1);
                 setHighlightedIndex(newIndex);
                 scrollToHighlightedItem(newIndex);
