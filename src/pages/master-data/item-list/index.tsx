@@ -57,6 +57,7 @@ function ItemList() {
         setIsAddItemModalOpen(false);
         setEditingItemId(undefined);
         setCurrentSearchQueryForModal(undefined);
+        setTimeout(() => searchInputRef.current?.focus(), 0);
     };
 
     return (
