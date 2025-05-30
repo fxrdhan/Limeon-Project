@@ -1,13 +1,7 @@
 import { useRef, useState, ChangeEvent } from "react";
 import { useAddItemForm } from "@/hooks/addItem";
 import { useBeforeUnload } from "@/handlers/beforeUnload";
-
-interface AddItemPageHandlersProps {
-    itemId?: string;
-    initialSearchQuery?: string;
-    onClose: () => void;
-    expiryCheckboxRef?: React.RefObject<HTMLLabelElement | null>;
-}
+import { AddItemPageHandlersProps } from "@/types";
 
 export const useAddItemPageHandlers = ({
     itemId,

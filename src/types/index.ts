@@ -675,3 +675,10 @@ export interface UseMasterDataManagementOptions {
     isCustomModalOpen?: boolean;
     locationKey?: string;
 }
+
+export interface AddItemPageHandlersProps {
+    itemId?: string;
+    initialSearchQuery?: string;
+    onClose: () => void;
+    expiryCheckboxRef?: React.RefObject<HTMLLabelElement | null>;
+}
