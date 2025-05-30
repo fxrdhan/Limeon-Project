@@ -877,7 +877,7 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     onKeyDown={handleInputKeyDown}
                     onMouseEnter={handleTriggerMouseEnter}
                     onMouseLeave={handleTriggerMouseLeave}
-                    readOnly={false}
+                    onChange={e => e.preventDefault()}
                 />
                 {(isOpen || isClosing) &&
                     createPortal(
