@@ -668,3 +668,10 @@ export interface UseFieldFocusOptions {
     itemsPerPage?: number;
     locationKey?: string;
 }
+
+export interface UseMasterDataManagementOptions {
+    realtime?: boolean;
+    searchInputRef?: React.RefObject<HTMLInputElement>;
+    isCustomModalOpen?: boolean;
+    locationKey?: string;
+}
