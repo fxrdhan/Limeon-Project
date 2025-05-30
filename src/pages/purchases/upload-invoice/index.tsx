@@ -16,7 +16,7 @@ import {
     FaSearchPlus,
     FaSearchMinus,
 } from "react-icons/fa";
-import { uploadAndExtractInvoice } from "@/services/invoiceService";
+import { uploadAndExtractInvoice } from "@/services/invoiceExtractor";
 
 const UploadInvoice = () => {
     const navigate = useNavigate();
