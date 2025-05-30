@@ -220,7 +220,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                 <textarea
                                                     ref={el => setInputRef(field.key, el as HTMLTextAreaElement)}
                                                     id={field.key}
-                                                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
+                                                    className="text-sm w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
                                                     value={String(editValues[field.key] ?? '')}
                                                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange(field.key, e.target.value)}
                                                     rows={3}
