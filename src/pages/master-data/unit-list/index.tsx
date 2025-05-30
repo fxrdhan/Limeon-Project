@@ -15,6 +15,7 @@ import {
 } from "@/components/modules";
 import { useMasterDataManagement } from "@/handlers";
 import { useRef, useEffect } from 'react';
+import { useLocation } from "react-router-dom";
 
 const UnitList = () => {
     const {
@@ -46,10 +47,11 @@ const UnitList = () => {
     } = useMasterDataManagement("item_units", "Satuan", true);
 
     const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+    const location = useLocation();
 
     useEffect(() => {
         searchInputRef.current?.focus();
-    }, [currentPage, itemsPerPage, debouncedSearch]);
+    }, [currentPage, itemsPerPage, debouncedSearch, location.key]);
 
     return (
         <>

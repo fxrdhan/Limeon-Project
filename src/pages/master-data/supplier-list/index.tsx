@@ -15,6 +15,7 @@ import {
 } from "@/components/modules";
 import DetailEditModal from "./add-edit";
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useMutation } from "@tanstack/react-query";
 import type {
@@ -55,6 +56,7 @@ const SupplierList = () => {
     } = useMasterDataManagement("suppliers", "Supplier", true);
 
     const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+    const location = useLocation();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -66,7 +68,7 @@ const SupplierList = () => {
 
     useEffect(() => {
         searchInputRef.current?.focus();
-    }, [currentPage, itemsPerPage, debouncedSearch]);
+    }, [currentPage, itemsPerPage, debouncedSearch, location.key]);
 
     const suppliers = suppliersData || [];
     const currentTotalItems = totalItems || 0;

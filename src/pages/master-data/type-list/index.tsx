@@ -15,6 +15,7 @@ import {
 import { AddEditModal } from "@/components/modules";
 import { useMasterDataManagement } from "@/handlers";
 import { useRef, useEffect } from 'react';
+import { useLocation } from "react-router-dom";
 
 const TypeList = () => {
     const {
@@ -45,11 +46,12 @@ const TypeList = () => {
         debouncedSearch
     } = useMasterDataManagement("item_types", "Jenis Item", true);
 
+    const location = useLocation();
     const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
 
     useEffect(() => {
         searchInputRef.current?.focus();
-    }, [currentPage, itemsPerPage, debouncedSearch]);
+    }, [currentPage, itemsPerPage, debouncedSearch, location.key]);
 
     return (
         <>
@@ -155,7 +157,6 @@ const TypeList = () => {
                                 confirmText: "Ya, Hapus",
                                 onConfirm: async () => {
                                     await deleteTypeMutation.mutateAsync(typeId);
-                                    // setIsEditModalOpen(false); // Dihandle oleh hook
                                 },
                             });
                         }
