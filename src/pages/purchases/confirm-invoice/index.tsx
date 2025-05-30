@@ -156,7 +156,7 @@ const ConfirmInvoicePage = () => {
         title: string;
     }) => (
         <h4 className="font-medium text-gray-700 mb-2 flex items-center">
-            <span className="inline-block w-6 h-6 text-xs flex items-center justify-center bg-blue-100 text-blue-800 rounded-full mr-2">
+            <span className="inline-block w-6 h-6 text-xs items-center justify-center bg-blue-100 text-blue-800 rounded-full mr-2">
                 {number}
             </span>
             {title}
