@@ -88,6 +88,24 @@ export const useItemSelection = () => {
         return a.name.localeCompare(b.name);
     });
 
+    useEffect(() => {
+        const channel = supabase
+            .channel('public:items:item-selection')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'items' },
+                (payload) => {
+                    console.log('Realtime item change received in item-selection!', payload);
+                    fetchItems();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
+
     return {
         items,
         searchItem,
