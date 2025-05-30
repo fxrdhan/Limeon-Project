@@ -48,10 +48,50 @@ const TypeList = () => {
 
     const location = useLocation();
     const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+    
+    const isAnyModalOpen = isAddModalOpen || isEditModalOpen;
 
     useEffect(() => {
-        searchInputRef.current?.focus();
-    }, [currentPage, itemsPerPage, debouncedSearch, location.key]);
+        if (!isAnyModalOpen && !isLoading) {
+            searchInputRef.current?.focus();
+        }
+    }, [
+        location.key,
+        currentPage,
+        itemsPerPage,
+        debouncedSearch,
+        isLoading,
+        isAnyModalOpen,
+    ]);
+
+    useEffect(() => {
+        const handlePageClick = (event: MouseEvent) => {
+            if (isAnyModalOpen || !searchInputRef.current) return;
+
+            const target = event.target as HTMLElement;
+
+            if (searchInputRef.current.contains(target)) {
+                return;
+            }
+
+            if (
+                target.closest(
+                    'button, a, input, select, textarea, [role="button"], [role="link"], [role="menuitem"], [tabindex="0"]'
+                )
+            ) {
+                return;
+            }
+
+            if (document.activeElement !== searchInputRef.current) {
+                searchInputRef.current?.focus();
+            }
+        };
+
+        document.addEventListener("click", handlePageClick);
+        return () => {
+            document.removeEventListener("click", handlePageClick);
+        };
+    }, [isAnyModalOpen]);
 
     const handleCloseAddModal = () => {
         setIsAddModalOpen(false);
@@ -65,7 +105,11 @@ const TypeList = () => {
 
     return (
         <>
-            <Card>
+            <Card
+                className={
+                    isFetching ? "opacity-75 transition-opacity duration-300" : ""
+                }
+            >
                 <div className="mb-6">
                     <PageTitle title="Daftar Jenis Item" />
                 </div>
