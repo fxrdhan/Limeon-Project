@@ -1,5 +1,5 @@
-// import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import {
     Card,
     Button,
@@ -19,6 +19,8 @@ import AddItemPortal from "./add-edit";
 import { useMasterDataManagement } from "@/handlers/master-data-management";
 
 function ItemList() {
+    const location = useLocation();
+
     const {
         search,
         setSearch,
@@ -43,7 +45,7 @@ function ItemList() {
 
     useEffect(() => {
         searchInputRef.current?.focus();
-    }, [currentPage, itemsPerPage, debouncedSearch]);
+    }, [location.key, currentPage, itemsPerPage, debouncedSearch]);
 
     const openAddItemModal = (itemId?: string, searchQuery?: string) => {
         setEditingItemId(itemId);

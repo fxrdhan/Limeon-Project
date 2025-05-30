@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -45,6 +45,7 @@ const PurchaseList = () => {
     const queryClient = useQueryClient();
     const { openConfirmDialog } = useConfirmDialog();
     const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+    const location = useLocation();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -57,7 +58,7 @@ const PurchaseList = () => {
 
     useEffect(() => {
         searchInputRef.current?.focus();
-    }, [currentPage, itemsPerPage, debouncedSearch]);
+    }, [currentPage, itemsPerPage, debouncedSearch, location.key]);
 
     const fetchPurchases = async (
         page: number,
