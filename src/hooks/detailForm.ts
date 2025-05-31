@@ -6,7 +6,7 @@ interface UseDetailFormProps {
     fields: FieldConfig[];
     onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
     onFieldSave?: (key: string, value: unknown) => Promise<void>;
-    onImageSave?: (data: { supplierId?: string; file: File }) => Promise<void>;
+    onImageSave?: (data: { entityId?: string; file: File }) => Promise<void>;
     onImageDelete?: (supplierId?: string) => Promise<void>;
     initialImageUrl?: string;
     mode?: 'edit' | 'add';
@@ -171,7 +171,7 @@ export const useDetailForm = ({
                 const tempUrl = URL.createObjectURL(file);
                 setCurrentImageUrl(tempUrl);
             } else if (onImageSaveProp && initialData?.id) {
-                await onImageSaveProp({ supplierId: String(initialData.id), file });
+                await onImageSaveProp({ entityId: String(initialData.id), file });
             }
         } catch (error) {
             console.error("Error pada handleImageUpload:", error);
