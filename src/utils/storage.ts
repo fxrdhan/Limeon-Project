@@ -73,6 +73,21 @@ export class StorageService {
         return this.deleteFile("suppliers", path);
     }
 
+    static async uploadPatientImage(
+        patientId: string,
+        file: File
+    ): Promise<UploadResult> {
+        const timestamp = Date.now();
+        const extension = file.name.split(".").pop() || "jpg";
+        const path = `${patientId}/image_${timestamp}.${extension}`;
+
+        return this.uploadFile("patients", file, path);
+    }
+
+    static async deletePatientImage(path: string): Promise<void> {
+        return this.deleteFile("patients", path);
+    }
+
     static extractPathFromUrl(url: string, bucket: string): string | null {
         try {
             const urlParts = url.split(`/storage/v1/object/public/${bucket}/`);
