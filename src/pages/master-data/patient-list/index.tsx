@@ -1,4 +1,4 @@
-import DetailEditModal from "@/components/modules/add-edit/v3";
+import GenericDetailModal from "@/components/modules/add-edit/v3";
 import SearchBar from "@/components/modules/search-bar";
 import Button from "@/components/modules/button";
 import Pagination from "@/components/modules/pagination";
@@ -320,8 +320,8 @@ const PatientList = () => {
                 )}
             </div>
 
-            <DetailEditModal
-                title={selectedPatient?.name || ""}
+            <GenericDetailModal
+                title={selectedPatient ? `Detail Pasien: ${selectedPatient.name}` : "Detail Pasien"}
                 data={transformPatientForModal(selectedPatient)}
                 fields={patientFields}
                 isOpen={isEditModalOpen}
@@ -350,7 +350,7 @@ const PatientList = () => {
                 mode="edit"
             />
 
-            <DetailEditModal
+            <GenericDetailModal
                 title="Tambah Pasien Baru"
                 data={emptyPatientData}
                 fields={patientFields}
@@ -361,6 +361,8 @@ const PatientList = () => {
                     return Promise.resolve();
                 }}
                 initialNameFromSearch={debouncedSearch}
+                imageUploadText="Unggah Foto Pasien (Opsional)"
+                imageNotAvailableText="Foto pasien belum diunggah"
                 mode="add"
             />
         </Card>
