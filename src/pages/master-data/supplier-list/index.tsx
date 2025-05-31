@@ -169,14 +169,11 @@ const SupplierList = () => {
                     "suppliers"
                 );
                 if (oldPath) {
-                    await StorageService.deleteSupplierImage(oldPath);
+                    await StorageService.deleteEntityImage("suppliers", oldPath);
                 }
             }
 
-            const { publicUrl } = await StorageService.uploadSupplierImage(
-                entityId,
-                file
-            );
+            const { publicUrl } = await StorageService.uploadEntityImage("suppliers", entityId, file);
 
             const { error } = await supabase
                 .from("suppliers")
