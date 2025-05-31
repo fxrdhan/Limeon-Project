@@ -410,6 +410,7 @@ const PatientList = () => {
                 imageUploadText="Unggah Foto Pasien"
                 imageNotAvailableText="Foto pasien belum diunggah"
                 mode="edit"
+                imageAspectRatio="square"
             />
 
             <GenericDetailModal
@@ -424,18 +425,19 @@ const PatientList = () => {
                 }}
                 initialNameFromSearch={debouncedSearch}
                 onImageSave={async (data: { entityId?: string; file: File }) => {
-                    if (data.entityId) { // Ini akan terpanggil jika ID sudah ada (setelah create)
+                    if (data.entityId) {
                         await updatePatientImageMutation.mutateAsync({
                             entityId: data.entityId,
                             file: data.file,
                         });
-                    } else { // Untuk mode add, simpan file sementara
+                    } else {
                         setNewPatientImage(URL.createObjectURL(data.file));
                     }
                 }}
                 imageUploadText="Unggah Foto Pasien (Opsional)"
                 imageNotAvailableText="Foto pasien belum diunggah"
                 mode="add"
+                imageAspectRatio="square"
             />
         </Card>
     );
