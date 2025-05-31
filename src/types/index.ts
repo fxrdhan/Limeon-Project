@@ -268,7 +268,9 @@ export interface PaginationProps {
 export interface FieldConfig {
     key: string;
     label: string;
-    type?: "text" | "email" | "tel" | "textarea";
+    type?: "text" | "email" | "tel" | "textarea" | "date";
+    options?: { id: string; name: string }[];
+    isRadioDropdown?: boolean;
     editable?: boolean;
 }
 export interface DetailEditModalProps {
