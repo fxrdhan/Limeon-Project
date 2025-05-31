@@ -1,18 +1,19 @@
-import { FaPlus } from "react-icons/fa";
+import Button from "@/components/modules/button";
+import Pagination from "@/components/modules/pagination";
+import SearchBar from "@/components/modules/search-bar";
+import PageTitle from "@/components/modules/page-title";
+import AddEditModal from "@/components/modules/add-edit/v1";
+
+import { Card } from "@/components/modules/card";
 import {
-    Card,
-    Button,
     Table,
     TableHead,
     TableBody,
     TableRow,
     TableCell,
     TableHeader,
-    Pagination,
-    SearchBar,
-    PageTitle,
-    AddEditModal
-} from "@/components/modules";
+} from "@/components/modules/table";
+import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef } from 'react';
 import { useLocation } from "react-router-dom";

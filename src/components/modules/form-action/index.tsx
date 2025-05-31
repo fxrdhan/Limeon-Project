@@ -1,7 +1,7 @@
-import { Button } from '@/components/modules';
+import Button from '@/components/modules/button';
 import type { FormActionProps } from '@/types';
 
-export const FormAction: React.FC<FormActionProps> = ({
+const FormAction: React.FC<FormActionProps> = ({
     onCancel,
     onDelete,
     isSaving,
@@ -55,3 +55,5 @@ export const FormAction: React.FC<FormActionProps> = ({
         </div>
     );
 };
+
+export default FormAction;

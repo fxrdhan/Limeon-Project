@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import type { ImageUploaderProps } from '@/types';
 import { FaSpinner, FaPencilAlt, FaTrash, FaUpload } from 'react-icons/fa';
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({
+const ImageUploader: React.FC<ImageUploaderProps> = ({
     id,
     onImageUpload,
     onImageDelete,
@@ -118,3 +118,5 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         </div>
     );
 };
+
+export default ImageUploader;

@@ -1,4 +1,4 @@
-import { Button } from "@/components/modules";
+import Button from "@/components/modules/button";
 import { createPortal } from "react-dom";
 import { Transition, TransitionChild } from "@headlessui/react";
 import type { ConfirmDialogContextType, ConfirmDialogOptions } from "@/types";
@@ -81,7 +81,7 @@ export const useConfirmDialog = () => {
     return context;
 };
 
-const ConfirmDialogComponent: React.FC = () => {
+export const ConfirmDialogComponent: React.FC = () => {
     const {
         isOpen,
         title,
@@ -204,5 +204,3 @@ const ConfirmDialogComponent: React.FC = () => {
         document.body
     );
 };
-
-export default ConfirmDialogProvider;

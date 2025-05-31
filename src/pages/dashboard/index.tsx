@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+import PageTitle from "@/components/modules/page-title";
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { RegularDashboardProps, TopSellingMedicine } from '../../types';
@@ -16,7 +16,6 @@ import {
 } from 'chart.js';
 import { Line, Pie, Bar, Doughnut } from 'react-chartjs-2';
 import { FaShoppingBag, FaShoppingCart, FaBoxes, FaExclamationTriangle } from 'react-icons/fa';
-import { PageTitle } from "@/components/modules";
 
 ChartJS.register(
     CategoryScale,
@@ -73,7 +72,7 @@ const Dashboard = () => {
             fetchSalesData();
             fetchTopMedicines();
         }
-    }, []);
+    }, [demoMode]);
 
     const fetchStats = async () => {
         const { data: salesData } = await supabase

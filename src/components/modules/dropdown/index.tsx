@@ -5,7 +5,7 @@ import type { DropdownProps } from "@/types";
 let activeDropdownCloseCallback: (() => void) | null = null;
 let activeDropdownId: string | null = null;
 
-export const Dropdown = ({
+const Dropdown = ({
     options,
     value,
     onChange,
@@ -628,3 +628,5 @@ export const Dropdown = ({
         </div>
     );
 };
+
+export default Dropdown;

@@ -1,25 +1,28 @@
-import { FaPlus } from "react-icons/fa";
+import Button from "@/components/modules/button";
+import Pagination from "@/components/modules/pagination";
+import SearchBar from "@/components/modules/search-bar";
+import PageTitle from "@/components/modules/page-title";
+import AddEditModal from "@/components/modules/add-edit/v1";
+
+import { Card } from "@/components/modules/card";
 import {
-    Card,
-    Button,
-    Pagination,
-    SearchBar,
     Table,
     TableHead,
     TableBody,
     TableRow,
     TableCell,
     TableHeader,
-    PageTitle
-} from "@/components/modules";
-import { AddEditModal } from "@/components/modules";
+} from "@/components/modules/table";
+import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef } from 'react';
+import { useRef } from "react";
 import { useLocation } from "react-router-dom";
 
 const TypeList = () => {
     const location = useLocation();
-    const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+    const searchInputRef = useRef<HTMLInputElement>(
+        null
+    ) as React.RefObject<HTMLInputElement>;
 
     const {
         isAddModalOpen,
@@ -46,13 +49,13 @@ const TypeList = () => {
         handleItemsPerPageChange,
         addMutation: addTypeMutation,
         updateMutation: updateTypeMutation,
-        debouncedSearch
+        debouncedSearch,
     } = useMasterDataManagement("item_types", "Jenis Item", {
         realtime: true,
         searchInputRef,
         locationKey: location.key,
     });
-    
+
     const handleCloseAddModal = () => {
         setIsAddModalOpen(false);
     };
@@ -95,7 +98,11 @@ const TypeList = () => {
                         Error: {queryError?.message || "Gagal memuat data"}
                     </div>
                 ) : (
-                    <div className={isFetching ? "opacity-50 transition-opacity duration-300" : ""}>
+                    <div
+                        className={
+                            isFetching ? "opacity-50 transition-opacity duration-300" : ""
+                        }
+                    >
                         <Table>
                             <TableHead>
                                 <TableRow>
@@ -106,7 +113,10 @@ const TypeList = () => {
                             <TableBody>
                                 {isLoading && (!types || types.length === 0) ? (
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center text-gray-500 py-10">
+                                        <TableCell
+                                            colSpan={2}
+                                            className="text-center text-gray-500 py-10"
+                                        >
                                             Memuat data jenis item...
                                         </TableCell>
                                     </TableRow>
@@ -118,12 +128,19 @@ const TypeList = () => {
                                             className="cursor-pointer hover:bg-blue-50"
                                         >
                                             <TableCell>{type.name}</TableCell>
-                                            <TableCell>{("description" in type && type.description) ? type.description : "-"}</TableCell>
+                                            <TableCell>
+                                                {"description" in type && type.description
+                                                    ? type.description
+                                                    : "-"}
+                                            </TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center text-gray-500 py-10">
+                                        <TableCell
+                                            colSpan={2}
+                                            className="text-center text-gray-500 py-10"
+                                        >
                                             {debouncedSearch
                                                 ? `Tidak ada jenis item dengan kata kunci "${debouncedSearch}"`
                                                 : "Tidak ada data jenis item yang ditemukan"}

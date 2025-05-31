@@ -8,39 +8,45 @@ import {
     FaQuestionCircle,
     FaTimes,
 } from "react-icons/fa";
+import Input from "@/components/modules/input";
+import Button from "@/components/modules/button";
+import Dropdown from "@/components/modules/dropdown";
+import FormSection from "@/components/modules/form-section";
+import FormField from "@/components/modules/form-field";
+import FormAction from "@/components/modules/form-action";
+import DescriptiveTextarea from "@/components/modules/descriptive-textarea";
+import Checkbox from "@/components/modules/checkbox";
+import AddEditModal from "@/components/modules/add-edit/v1";
+
 import {
-    Input,
-    Button,
-    Dropdown,
-    AddEditModal,
-    FormSection,
-    FormField,
     Card,
     CardHeader,
     CardTitle,
     CardContent,
-    DescriptiveTextarea,
     CardFooter,
-    FormAction,
-    Checkbox,
+} from "@/components/modules/card";
+import {
     Table,
     TableHead,
     TableBody,
     TableRow,
     TableCell,
     TableHeader,
-} from "@/components/modules";
+} from "@/components/modules/table";
 import { useAddItemPageHandlers } from "@/handlers/addItem";
 import { FaTrash } from "react-icons/fa";
 import type { AddItemPortalProps } from "@/types";
 
-export const AddItemPortal: React.FC<AddItemPortalProps> = ({
+const AddItemPortal: React.FC<AddItemPortalProps> = ({
     isOpen,
     onClose,
     itemId,
     initialSearchQuery,
 }) => {
-    const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+    const [tooltipPosition, setTooltipPosition] = useState<{
+        top: number;
+        left: number;
+    } | null>(null);
     const [isMounted, setIsMounted] = useState(false);
     const fefoIconRef = useRef<HTMLDivElement>(null);
     const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
@@ -164,16 +170,18 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
         !formData.unit_id ||
         formData.base_price <= 0 ||
         formData.sell_price < 0;
-    
+
     const operationsPending =
         addTypeMutation.isPending ||
         addUnitMutation.isPending ||
         addCategoryMutation.isPending ||
         deleteItemMutation.isPending;
-    
+
     const disableCondition = formIsInvalid || operationsPending;
-    const finalDisabledState = isEditMode ? (disableCondition || !isDirty()) : disableCondition;
-    
+    const finalDisabledState = isEditMode
+        ? disableCondition || !isDirty()
+        : disableCondition;
+
     const handleReset = () => {
         resetForm();
         if (nameInputRef.current) {
@@ -182,20 +190,20 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
     };
 
     const backdropVariants = {
-        hidden: { 
+        hidden: {
             opacity: 0,
             transition: {
                 duration: 0.2,
-                ease: "easeInOut"
-            }
+                ease: "easeInOut",
+            },
         },
-        visible: { 
+        visible: {
             opacity: 1,
             transition: {
                 duration: 0.3,
-                ease: "easeInOut"
-            }
-        }
+                ease: "easeInOut",
+            },
+        },
     };
 
     const modalVariants = {
@@ -204,39 +212,39 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
             opacity: 0,
             transition: {
                 duration: 0.2,
-                ease: "easeInOut"
-            }
+                ease: "easeInOut",
+            },
         },
         visible: {
             scale: 1,
             opacity: 1,
             transition: {
                 duration: 0.3,
-                ease: "easeOut"
-            }
+                ease: "easeOut",
+            },
         },
         exit: {
             scale: 0.9,
             opacity: 0,
             transition: {
                 duration: 0.2,
-                ease: "easeIn"
-            }
-        }
+                ease: "easeIn",
+            },
+        },
     };
 
     const contentVariants = {
-        hidden: { 
-            opacity: 0
+        hidden: {
+            opacity: 0,
         },
         visible: {
             opacity: 1,
             transition: {
                 delay: 0.1,
                 duration: 0.2,
-                ease: "easeOut"
-            }
-        }
+                ease: "easeOut",
+            },
+        },
     };
 
     return createPortal(
@@ -303,9 +311,9 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                             </CardHeader>
                         </motion.div>
 
-                        <motion.form 
+                        <motion.form
                             variants={contentVariants}
-                            onSubmit={handleSubmit} 
+                            onSubmit={handleSubmit}
                             className="flex-1 flex flex-col min-h-0"
                         >
                             <div className="flex-1 overflow-y-auto">
@@ -314,7 +322,10 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                         <div className="w-full md:w-4/5">
                                             <FormSection title="Data Umum">
                                                 <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                                                    <FormField label="Kode Item" className="md:col-span-1">
+                                                    <FormField
+                                                        label="Kode Item"
+                                                        className="md:col-span-1"
+                                                    >
                                                         <Input
                                                             name="code"
                                                             value={formData.code}
@@ -323,7 +334,10 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                         />
                                                     </FormField>
 
-                                                    <FormField label="Nama Item" className="md:col-span-2">
+                                                    <FormField
+                                                        label="Nama Item"
+                                                        className="md:col-span-2"
+                                                    >
                                                         <Input
                                                             name="name"
                                                             ref={nameInputRef}
@@ -346,7 +360,10 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                         />
                                                     </FormField>
 
-                                                    <FormField label="Jenis Produk" className="md:col-span-1">
+                                                    <FormField
+                                                        label="Jenis Produk"
+                                                        className="md:col-span-1"
+                                                    >
                                                         <Dropdown
                                                             name="is_medicine"
                                                             tabIndex={3}
@@ -374,7 +391,11 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                                     <FormField label="Kategori">
                                                         {loading && categories.length === 0 ? (
-                                                            <Input value="Memuat kategori..." readOnly disabled />
+                                                            <Input
+                                                                value="Memuat kategori..."
+                                                                readOnly
+                                                                disabled
+                                                            />
                                                         ) : (
                                                             <Dropdown
                                                                 name="category_id"
@@ -393,7 +414,11 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
 
                                                     <FormField label="Jenis">
                                                         {loading && types.length === 0 ? (
-                                                            <Input value="Memuat jenis..." readOnly disabled />
+                                                            <Input
+                                                                value="Memuat jenis..."
+                                                                readOnly
+                                                                disabled
+                                                            />
                                                         ) : (
                                                             <Dropdown
                                                                 name="type_id"
@@ -412,7 +437,11 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
 
                                                     <FormField label="Satuan">
                                                         {loading && units.length === 0 ? (
-                                                            <Input value="Memuat satuan..." readOnly disabled />
+                                                            <Input
+                                                                value="Memuat satuan..."
+                                                                readOnly
+                                                                disabled
+                                                            />
                                                         ) : (
                                                             <Dropdown
                                                                 name="unit_id"
@@ -549,23 +578,29 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                                     size={14}
                                                                 />
                                                             </div>
-                                                            {showFefoTooltip && tooltipPosition && createPortal(
-                                                                <div
-                                                                    style={{
-                                                                        position: 'fixed',
-                                                                        top: `${tooltipPosition.top}px`,
-                                                                        left: `${tooltipPosition.left}px`,
-                                                                        transform: 'translate(-50%, -100%)',
-                                                                        zIndex: 1000,
-                                                                    }}
-                                                                    className="w-max max-w-xs p-2 bg-zinc-500 text-white text-xs rounded-md shadow-lg"
-                                                                    onMouseEnter={() => setShowFefoTooltip(true)}
-                                                                    onMouseLeave={handleFefoTooltipMouseLeave}
-                                                                >
-                                                                    First Expired First Out: Barang dengan tanggal kadaluarsa terdekat akan dikeluarkan lebih dulu saat penjualan.
-                                                                </div>,
-                                                                document.body
-                                                            )}
+                                                            {showFefoTooltip &&
+                                                                tooltipPosition &&
+                                                                createPortal(
+                                                                    <div
+                                                                        style={{
+                                                                            position: "fixed",
+                                                                            top: `${tooltipPosition.top}px`,
+                                                                            left: `${tooltipPosition.left}px`,
+                                                                            transform: "translate(-50%, -100%)",
+                                                                            zIndex: 1000,
+                                                                        }}
+                                                                        className="w-max max-w-xs p-2 bg-zinc-500 text-white text-xs rounded-md shadow-lg"
+                                                                        onMouseEnter={() =>
+                                                                            setShowFefoTooltip(true)
+                                                                        }
+                                                                        onMouseLeave={handleFefoTooltipMouseLeave}
+                                                                    >
+                                                                        First Expired First Out: Barang dengan
+                                                                        tanggal kadaluarsa terdekat akan dikeluarkan
+                                                                        lebih dulu saat penjualan.
+                                                                    </div>,
+                                                                    document.body
+                                                                )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -691,43 +726,70 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                             <FormSection title="Satuan dan Konversi">
                                                 <div className="flex flex-col md:flex-row gap-4">
                                                     <div className="flex-1 md:w-1/3 lg:w-1/4">
-                                                        <h3 className="text-lg font-medium mb-3">Tambah Konversi Satuan</h3>
+                                                        <h3 className="text-lg font-medium mb-3">
+                                                            Tambah Konversi Satuan
+                                                        </h3>
                                                         <p className="text-sm text-gray-600 mb-2">
-                                                            1 {unitConversionHook.baseUnit || "Satuan Dasar"} setara berapa satuan turunan?
+                                                            1 {unitConversionHook.baseUnit || "Satuan Dasar"}{" "}
+                                                            setara berapa satuan turunan?
                                                         </p>
                                                         <div className="flex flex-row gap-4 mb-4">
-                                                            <FormField label="Satuan Turunan" className="flex-1">
+                                                            <FormField
+                                                                label="Satuan Turunan"
+                                                                className="flex-1"
+                                                            >
                                                                 <Dropdown
                                                                     name="unit"
                                                                     tabIndex={15}
                                                                     value={
                                                                         unitConversionHook.availableUnits.find(
-                                                                            (u) => u.name === unitConversionHook.unitConversionFormData.unit
+                                                                            (u) =>
+                                                                                u.name ===
+                                                                                unitConversionHook
+                                                                                    .unitConversionFormData.unit
                                                                         )?.id || ""
                                                                     }
                                                                     onChange={(unitId) => {
-                                                                        const selectedUnit = unitConversionHook.availableUnits.find((u) => u.id === unitId);
+                                                                        const selectedUnit =
+                                                                            unitConversionHook.availableUnits.find(
+                                                                                (u) => u.id === unitId
+                                                                            );
                                                                         if (selectedUnit) {
-                                                                            unitConversionHook.setUnitConversionFormData({
-                                                                                ...unitConversionHook.unitConversionFormData,
-                                                                                unit: selectedUnit.name,
-                                                                            });
+                                                                            unitConversionHook.setUnitConversionFormData(
+                                                                                {
+                                                                                    ...unitConversionHook.unitConversionFormData,
+                                                                                    unit: selectedUnit.name,
+                                                                                }
+                                                                            );
                                                                         }
                                                                     }}
                                                                     options={unitConversionHook.availableUnits
-                                                                        .filter((unit) => unit.name !== unitConversionHook.baseUnit)
                                                                         .filter(
                                                                             (unit) =>
-                                                                                !unitConversionHook.conversions.some((uc) => uc.unit.name === unit.name)
+                                                                                unit.name !==
+                                                                                unitConversionHook.baseUnit
                                                                         )
-                                                                        .map((unit) => ({ id: unit.id, name: unit.name }))}
+                                                                        .filter(
+                                                                            (unit) =>
+                                                                                !unitConversionHook.conversions.some(
+                                                                                    (uc) => uc.unit.name === unit.name
+                                                                                )
+                                                                        )
+                                                                        .map((unit) => ({
+                                                                            id: unit.id,
+                                                                            name: unit.name,
+                                                                        }))}
                                                                     placeholder="-- Pilih Satuan --"
                                                                 />
                                                             </FormField>
                                                             <FormField
                                                                 label={
                                                                     unitConversionHook.unitConversionFormData.unit
-                                                                        ? `1 ${unitConversionHook.baseUnit || "Satuan Dasar"} = ? ${unitConversionHook.unitConversionFormData.unit}`
+                                                                        ? `1 ${unitConversionHook.baseUnit ||
+                                                                        "Satuan Dasar"
+                                                                        } = ? ${unitConversionHook
+                                                                            .unitConversionFormData.unit
+                                                                        }`
                                                                         : "Nilai Konversi"
                                                                 }
                                                                 className="flex-1"
@@ -736,13 +798,21 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                                     <Input
                                                                         name="conversion"
                                                                         tabIndex={16}
-                                                                        value={unitConversionHook.unitConversionFormData.conversion || ""}
+                                                                        value={
+                                                                            unitConversionHook.unitConversionFormData
+                                                                                .conversion || ""
+                                                                        }
                                                                         onChange={(e) => {
                                                                             const { name, value } = e.target;
-                                                                            unitConversionHook.setUnitConversionFormData({
-                                                                                ...unitConversionHook.unitConversionFormData,
-                                                                                [name]: name === "conversion" ? parseFloat(value) || 0 : value,
-                                                                            });
+                                                                            unitConversionHook.setUnitConversionFormData(
+                                                                                {
+                                                                                    ...unitConversionHook.unitConversionFormData,
+                                                                                    [name]:
+                                                                                        name === "conversion"
+                                                                                            ? parseFloat(value) || 0
+                                                                                            : value,
+                                                                                }
+                                                                            );
                                                                         }}
                                                                         type="number"
                                                                         min="1"
@@ -751,22 +821,37 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                                             if (e.key === "Enter") {
                                                                                 e.preventDefault();
                                                                                 if (
-                                                                                    !unitConversionHook.unitConversionFormData.unit ||
-                                                                                    unitConversionHook.unitConversionFormData.conversion <= 0
+                                                                                    !unitConversionHook
+                                                                                        .unitConversionFormData.unit ||
+                                                                                    unitConversionHook
+                                                                                        .unitConversionFormData
+                                                                                        .conversion <= 0
                                                                                 ) {
-                                                                                    alert("Satuan dan konversi harus diisi dengan benar!");
+                                                                                    alert(
+                                                                                        "Satuan dan konversi harus diisi dengan benar!"
+                                                                                    );
                                                                                     return;
                                                                                 }
-                                                                                const existingUnit = unitConversionHook.conversions.find(
-                                                                                    (uc) => uc.unit.name === unitConversionHook.unitConversionFormData.unit
-                                                                                );
+                                                                                const existingUnit =
+                                                                                    unitConversionHook.conversions.find(
+                                                                                        (uc) =>
+                                                                                            uc.unit.name ===
+                                                                                            unitConversionHook
+                                                                                                .unitConversionFormData.unit
+                                                                                    );
                                                                                 if (existingUnit) {
-                                                                                    alert("Satuan tersebut sudah ada dalam daftar!");
+                                                                                    alert(
+                                                                                        "Satuan tersebut sudah ada dalam daftar!"
+                                                                                    );
                                                                                     return;
                                                                                 }
-                                                                                const selectedUnit = unitConversionHook.availableUnits.find(
-                                                                                    (u) => u.name === unitConversionHook.unitConversionFormData.unit
-                                                                                );
+                                                                                const selectedUnit =
+                                                                                    unitConversionHook.availableUnits.find(
+                                                                                        (u) =>
+                                                                                            u.name ===
+                                                                                            unitConversionHook
+                                                                                                .unitConversionFormData.unit
+                                                                                    );
                                                                                 if (!selectedUnit) {
                                                                                     alert("Satuan tidak valid!");
                                                                                     return;
@@ -775,43 +860,69 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                                                     unit: selectedUnit,
                                                                                     unit_name: selectedUnit.name,
                                                                                     to_unit_id: selectedUnit.id,
-                                                                                    conversion: unitConversionHook.unitConversionFormData.conversion,
+                                                                                    conversion:
+                                                                                        unitConversionHook
+                                                                                            .unitConversionFormData
+                                                                                            .conversion,
                                                                                     basePrice: 0,
                                                                                     sellPrice: 0,
-                                                                                    conversion_rate: unitConversionHook.unitConversionFormData.conversion
+                                                                                    conversion_rate:
+                                                                                        unitConversionHook
+                                                                                            .unitConversionFormData
+                                                                                            .conversion,
                                                                                 });
-                                                                                unitConversionHook.setUnitConversionFormData({
-                                                                                    unit: "",
-                                                                                    conversion: 0,
-                                                                                });
+                                                                                unitConversionHook.setUnitConversionFormData(
+                                                                                    {
+                                                                                        unit: "",
+                                                                                        conversion: 0,
+                                                                                    }
+                                                                                );
                                                                             }
                                                                         }}
                                                                     />
                                                                     <div
-                                                                        className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 focus:outline-none ${
-                                                                            unitConversionHook.unitConversionFormData.unit && unitConversionHook.unitConversionFormData.conversion > 0 && unitConversionHook.baseUnit
+                                                                        className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 focus:outline-none ${unitConversionHook.unitConversionFormData
+                                                                                .unit &&
+                                                                                unitConversionHook.unitConversionFormData
+                                                                                    .conversion > 0 &&
+                                                                                unitConversionHook.baseUnit
                                                                                 ? "text-primary"
                                                                                 : "text-gray-300"
-                                                                        }`}
+                                                                            }`}
                                                                         onClick={(e) => {
                                                                             e.preventDefault();
                                                                             if (
-                                                                                !unitConversionHook.unitConversionFormData.unit ||
-                                                                                unitConversionHook.unitConversionFormData.conversion <= 0
+                                                                                !unitConversionHook
+                                                                                    .unitConversionFormData.unit ||
+                                                                                unitConversionHook
+                                                                                    .unitConversionFormData.conversion <=
+                                                                                0
                                                                             ) {
-                                                                                alert("Satuan dan konversi harus diisi dengan benar!");
+                                                                                alert(
+                                                                                    "Satuan dan konversi harus diisi dengan benar!"
+                                                                                );
                                                                                 return;
                                                                             }
-                                                                            const existingUnit = unitConversionHook.conversions.find(
-                                                                                (uc) => uc.unit.name === unitConversionHook.unitConversionFormData.unit
-                                                                            );
+                                                                            const existingUnit =
+                                                                                unitConversionHook.conversions.find(
+                                                                                    (uc) =>
+                                                                                        uc.unit.name ===
+                                                                                        unitConversionHook
+                                                                                            .unitConversionFormData.unit
+                                                                                );
                                                                             if (existingUnit) {
-                                                                                alert("Satuan tersebut sudah ada dalam daftar!");
+                                                                                alert(
+                                                                                    "Satuan tersebut sudah ada dalam daftar!"
+                                                                                );
                                                                                 return;
                                                                             }
-                                                                            const selectedUnit = unitConversionHook.availableUnits.find(
-                                                                                (u) => u.name === unitConversionHook.unitConversionFormData.unit
-                                                                            );
+                                                                            const selectedUnit =
+                                                                                unitConversionHook.availableUnits.find(
+                                                                                    (u) =>
+                                                                                        u.name ===
+                                                                                        unitConversionHook
+                                                                                            .unitConversionFormData.unit
+                                                                                );
                                                                             if (!selectedUnit) {
                                                                                 alert("Satuan tidak valid!");
                                                                                 return;
@@ -820,15 +931,21 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                                                 unit: selectedUnit,
                                                                                 unit_name: selectedUnit.name,
                                                                                 to_unit_id: selectedUnit.id,
-                                                                                conversion: unitConversionHook.unitConversionFormData.conversion,
+                                                                                conversion:
+                                                                                    unitConversionHook
+                                                                                        .unitConversionFormData.conversion,
                                                                                 basePrice: 0,
                                                                                 sellPrice: 0,
-                                                                                conversion_rate: unitConversionHook.unitConversionFormData.conversion
+                                                                                conversion_rate:
+                                                                                    unitConversionHook
+                                                                                        .unitConversionFormData.conversion,
                                                                             });
-                                                                            unitConversionHook.setUnitConversionFormData({
-                                                                                unit: "",
-                                                                                conversion: 0,
-                                                                            });
+                                                                            unitConversionHook.setUnitConversionFormData(
+                                                                                {
+                                                                                    unit: "",
+                                                                                    conversion: 0,
+                                                                                }
+                                                                            );
                                                                         }}
                                                                         title="Tekan Enter atau klik untuk menambah"
                                                                     >
@@ -843,7 +960,9 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                             <Table className="w-full h-full">
                                                                 <TableHead>
                                                                     <TableRow>
-                                                                        <TableHeader className="w-[20%]">Turunan</TableHeader>
+                                                                        <TableHeader className="w-[20%]">
+                                                                            Turunan
+                                                                        </TableHeader>
                                                                         <TableHeader className="w-[30%] text-left">
                                                                             Konversi
                                                                         </TableHeader>
@@ -859,7 +978,8 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                                     </TableRow>
                                                                 </TableHead>
                                                                 <TableBody className="h-[100px]">
-                                                                    {unitConversionHook.conversions.length === 0 ? (
+                                                                    {unitConversionHook.conversions.length ===
+                                                                        0 ? (
                                                                         <TableRow className="h-full">
                                                                             <TableCell
                                                                                 colSpan={5}
@@ -873,37 +993,50 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                                                             .filter(
                                                                                 (uc, index, self) =>
                                                                                     index ===
-                                                                                    self.findIndex((u) => u.unit.name === uc.unit.name) &&
-                                                                                    uc.unit
+                                                                                    self.findIndex(
+                                                                                        (u) =>
+                                                                                            u.unit.name === uc.unit.name
+                                                                                    ) && uc.unit
                                                                             )
                                                                             .map((uc) => (
                                                                                 <TableRow key={uc.id}>
                                                                                     <TableCell>{uc.unit.name}</TableCell>
                                                                                     <TableCell>
-                                                                                        1 {unitConversionHook.baseUnit} = {uc.conversion} {uc.unit.name}
+                                                                                        1 {unitConversionHook.baseUnit} ={" "}
+                                                                                        {uc.conversion} {uc.unit.name}
                                                                                     </TableCell>
                                                                                     <TableCell className="text-right">
-                                                                                        {(uc.basePrice || 0).toLocaleString("id-ID", {
-                                                                                            style: "currency",
-                                                                                            currency: "IDR",
-                                                                                            minimumFractionDigits: 0,
-                                                                                            maximumFractionDigits: 2,
-                                                                                        })}
+                                                                                        {(uc.basePrice || 0).toLocaleString(
+                                                                                            "id-ID",
+                                                                                            {
+                                                                                                style: "currency",
+                                                                                                currency: "IDR",
+                                                                                                minimumFractionDigits: 0,
+                                                                                                maximumFractionDigits: 2,
+                                                                                            }
+                                                                                        )}
                                                                                     </TableCell>
                                                                                     <TableCell className="text-right">
-                                                                                        {(uc.sellPrice || 0).toLocaleString("id-ID", {
-                                                                                            style: "currency",
-                                                                                            currency: "IDR",
-                                                                                            minimumFractionDigits: 0,
-                                                                                            maximumFractionDigits: 2,
-                                                                                        })}
+                                                                                        {(uc.sellPrice || 0).toLocaleString(
+                                                                                            "id-ID",
+                                                                                            {
+                                                                                                style: "currency",
+                                                                                                currency: "IDR",
+                                                                                                minimumFractionDigits: 0,
+                                                                                                maximumFractionDigits: 2,
+                                                                                            }
+                                                                                        )}
                                                                                     </TableCell>
                                                                                     <TableCell className="text-center">
                                                                                         <Button
                                                                                             variant="danger"
                                                                                             size="sm"
                                                                                             tabIndex={18}
-                                                                                            onClick={() => unitConversionHook.removeUnitConversion(uc.id)}
+                                                                                            onClick={() =>
+                                                                                                unitConversionHook.removeUnitConversion(
+                                                                                                    uc.id
+                                                                                                )
+                                                                                            }
                                                                                         >
                                                                                             <FaTrash />
                                                                                         </Button>
@@ -949,7 +1082,7 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
 
                         <AddEditModal
                             isOpen={isAddTypeModalOpen}
-                            onClose={() => closeModalAndClearSearch(setIsAddTypeModalOpen)}                                    
+                            onClose={() => closeModalAndClearSearch(setIsAddTypeModalOpen)}
                             onSubmit={handleSaveType}
                             isLoading={addTypeMutation.isPending}
                             entityName="Jenis Item"
@@ -971,3 +1104,5 @@ export const AddItemPortal: React.FC<AddItemPortalProps> = ({
         document.body
     );
 };
+
+export default AddItemPortal;

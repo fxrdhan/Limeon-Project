@@ -15,7 +15,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import type { SidebarProps, MenuItem } from '@/types';
 
-// Custom SVG Lock Icons
 const LockIcon = ({ className }: { className?: string }) => (
     <motion.svg
         key="lock-closed"

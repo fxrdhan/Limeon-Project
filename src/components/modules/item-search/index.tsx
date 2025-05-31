@@ -8,11 +8,11 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { FaPlus } from "react-icons/fa";
-import { Button } from "@/components/modules";
+import Button from "@/components/modules/button";
 import type { ItemSearchBarProps, Item, ItemSearchBarRef } from "@/types";
 import { classNames } from "@/lib/classNames";
 
-export const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
+const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
     (
         {
             searchItem,
@@ -393,4 +393,4 @@ export const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
     }
 );
 
-ItemSearchBar.displayName = "ItemSearchBar";
+export default ItemSearchBar;

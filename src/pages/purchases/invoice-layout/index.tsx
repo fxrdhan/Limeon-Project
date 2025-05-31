@@ -1,7 +1,7 @@
 import React from 'react';
 import type { InvoiceLayoutProps } from '@/types';
 
-export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
+const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
     purchase,
     items,
     subtotals,
@@ -181,3 +181,5 @@ export const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
         </div>
     );
 };
+
+export default InvoiceLayout;

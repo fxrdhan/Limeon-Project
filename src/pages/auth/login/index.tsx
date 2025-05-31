@@ -1,6 +1,7 @@
 // src/pages/auth/Login.tsx
 import { useState } from "react";
-import { Button, Input } from "@/components/modules";
+import Button from "@/components/modules/button";
+import Input from "@/components/modules/input";
 import { useAuthStore } from "@/store/authStore";
 
 const Login = () => {

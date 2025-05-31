@@ -2,7 +2,7 @@ import { classNames } from "@/lib/classNames";
 import type { ButtonProps, ButtonVariant } from '@/types';
 import React from 'react';
 
-const ButtonComponent = React.forwardRef<HTMLButtonElement, ButtonProps>(({
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
     children,
     className,
     variant = "primary",
@@ -73,6 +73,6 @@ const ButtonComponent = React.forwardRef<HTMLButtonElement, ButtonProps>(({
     );
 });
 
-ButtonComponent.displayName = 'Button';
-
-export const Button = ButtonComponent;
+// ButtonComponent.displayName = 'Button';
+// export const Button = ButtonComponent;
+export default Button;

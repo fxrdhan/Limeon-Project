@@ -1,19 +1,19 @@
+import DetailEditModal from "@/components/modules/add-edit/v3";
+import SearchBar from "@/components/modules/search-bar";
+import Button from "@/components/modules/button";
+import Pagination from "@/components/modules/pagination";
+import PageTitle from "@/components/modules/page-title";
+
 import { FaPlus } from "react-icons/fa";
+import { Card, CardHeader } from "@/components/modules/card";
 import {
-    Button,
-    Card,
-    CardHeader,
     Table,
-    SearchBar,
     TableHead,
     TableBody,
     TableRow,
     TableCell,
     TableHeader,
-    Pagination,
-    PageTitle,
-} from "@/components/modules";
-import { DetailEditModal } from "@/components/modules/";
+} from "@/components/modules/table";
 import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -30,7 +30,9 @@ const SupplierList = () => {
         null
     );
     const [, setNewSupplierImage] = useState<string | null>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+    const searchInputRef = useRef<HTMLInputElement>(
+        null
+    ) as React.RefObject<HTMLInputElement>;
     const location = useLocation();
 
     const {
@@ -52,18 +54,20 @@ const SupplierList = () => {
         data: suppliersData,
         isLoading,
         isError,
-        isFetching
+        isFetching,
     } = useMasterDataManagement("suppliers", "Supplier", {
         realtime: true,
         searchInputRef,
         locationKey: location.key,
     });
-    
+
     const suppliers = suppliersData || [];
     const currentTotalItems = totalItems || 0;
     const updateSupplier = async (updatedData: Partial<SupplierType>) => {
         if (!selectedSupplier || !selectedSupplier.id) {
-            console.error("Tidak dapat memperbarui: selectedSupplier atau ID-nya hilang.");
+            console.error(
+                "Tidak dapat memperbarui: selectedSupplier atau ID-nya hilang."
+            );
             return;
         }
         const { ...dataToUpdate } = updatedData;
@@ -160,13 +164,19 @@ const SupplierList = () => {
                 .single();
 
             if (supplierData?.image_url) {
-                const oldPath = StorageService.extractPathFromUrl(supplierData.image_url, 'suppliers');
+                const oldPath = StorageService.extractPathFromUrl(
+                    supplierData.image_url,
+                    "suppliers"
+                );
                 if (oldPath) {
                     await StorageService.deleteSupplierImage(oldPath);
                 }
             }
 
-            const { publicUrl } = await StorageService.uploadSupplierImage(supplierId, file);
+            const { publicUrl } = await StorageService.uploadSupplierImage(
+                supplierId,
+                file
+            );
 
             const { error } = await supabase
                 .from("suppliers")
@@ -181,7 +191,7 @@ const SupplierList = () => {
         onSuccess: (newImageUrl) => {
             queryClient.invalidateQueries({ queryKey: ["suppliers"] });
             if (newImageUrl && selectedSupplier) {
-                setSelectedSupplier(prev => {
+                setSelectedSupplier((prev) => {
                     if (!prev) return null;
                     return { ...prev, image_url: newImageUrl };
                 });
@@ -379,14 +389,14 @@ const SupplierList = () => {
                 }}
                 onFieldSave={async (key: string, value: unknown) => {
                     if (selectedSupplier && selectedSupplier.id) {
-                        const dataToUpdate: Partial<SupplierType> = { id: selectedSupplier.id, [key]: value };
+                        const dataToUpdate: Partial<SupplierType> = {
+                            id: selectedSupplier.id,
+                            [key]: value,
+                        };
                         await updateSupplierMutation.mutateAsync(dataToUpdate);
                     }
                 }}
-                onImageSave={async (data: {
-                    supplierId?: string;
-                    file: File;
-                }) => {
+                onImageSave={async (data: { supplierId?: string; file: File }) => {
                     const idToUse = data.supplierId || selectedSupplier?.id;
                     if (idToUse) {
                         await updateSupplierImageMutation.mutateAsync({

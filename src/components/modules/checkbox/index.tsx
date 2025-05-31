@@ -76,3 +76,5 @@ const CheckboxComponent: React.ForwardRefRenderFunction<HTMLLabelElement, Checkb
 
 export const Checkbox = React.forwardRef(CheckboxComponent);
 Checkbox.displayName = 'Checkbox';
+
+export default Checkbox;

@@ -1,7 +1,7 @@
 import { classNames } from "@/lib/classNames";
 import type { BadgeProps } from '@/types';
 
-export const Badge = ({
+const Badge = ({
     children,
     variant = "primary",
     className,
@@ -27,3 +27,5 @@ export const Badge = ({
         </span>
     );
 };
+
+export default Badge;

@@ -1,19 +1,22 @@
-import { useState, useEffect } from "react";
+import Button from "@/components/modules/button";
+import Loading from "@/components/modules/loading";
+
 import {
-    Button,
-    Loading,
     Card,
     CardHeader,
     CardTitle,
     CardContent,
     CardFooter,
+} from "@/components/modules/card";
+import {
     Table,
     TableHead,
     TableBody,
     TableRow,
     TableCell,
     TableHeader,
-} from "@/components/modules";
+} from "@/components/modules/table";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaCheck, FaClock, FaRedo } from "react-icons/fa";
 import {
