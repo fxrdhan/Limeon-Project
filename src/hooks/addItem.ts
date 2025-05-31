@@ -197,8 +197,11 @@ export const useAddItemForm = ({
     };
 
     useEffect(() => {
-        fetchMasterData();
-
+        // fetchMasterData will now be handled by React Query and realtime updates
+        // but we still need to trigger the initial form setup or item data fetching
+        if (!itemId) { // Only call for new item mode, edit mode will be triggered by itemId change
+            setInitialDataForForm();
+        }
         if (itemId) {
             setIsEditMode(true);
             fetchItemData(itemId);
@@ -206,7 +209,7 @@ export const useAddItemForm = ({
             setIsEditMode(false);
             const pristineDefaultState: FormData = {
                 code: "",
-                name: "",
+                name: initialSearchQuery || "",
                 type_id: "",
                 category_id: "",
                 unit_id: "",
@@ -223,10 +226,7 @@ export const useAddItemForm = ({
             };
             setInitialFormData(pristineDefaultState);
 
-            const formDataForAddMode: FormData = {
-                ...pristineDefaultState,
-                name: initialSearchQuery || "",
-            };
+            const formDataForAddMode: FormData = { ...pristineDefaultState };
             setFormData(formDataForAddMode);
             setDisplayBasePrice(formatRupiah(formDataForAddMode.base_price));
             setDisplaySellPrice(formatRupiah(formDataForAddMode.sell_price));
@@ -238,6 +238,19 @@ export const useAddItemForm = ({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [itemId, initialSearchQuery]);
+
+    const setInitialDataForForm = () => {
+        const pristineDefaultState: FormData = {
+            code: "", name: initialSearchQuery || "", type_id: "", category_id: "", unit_id: "",
+            rack: "", barcode: "", description: "", base_price: 0, sell_price: 0,
+            min_stock: 10, is_active: true, is_medicine: true, has_expiry_date: false, updated_at: null,
+        };
+        setInitialFormData(pristineDefaultState);
+        setFormData(pristineDefaultState);
+        setDisplayBasePrice(formatRupiah(0));
+        setDisplaySellPrice(formatRupiah(0));
+        setMarginPercentage("0");
+    };
 
     useEffect(() => {
         const generateItemCode = async () => {
@@ -310,31 +323,6 @@ export const useAddItemForm = ({
     useEffect(() => {
         unitConversionHook.setSellPrice(formData.sell_price || 0);
     }, [formData.sell_price, unitConversionHook]);
-
-    const fetchMasterData = async () => {
-        setLoading(true);
-        try {
-            const { data: categoriesData } = await supabase
-                .from("item_categories")
-                .select("id, name, description")
-                .order("name");
-            const { data: typesData } = await supabase
-                .from("item_types")
-                .select("id, name")
-                .order("name");
-            const { data: unitsData } = await supabase
-                .from("item_units")
-                .select("id, name, description")
-                .order("name");
-            if (categoriesData) setCategories(categoriesData);
-            if (typesData) setTypes(typesData as MedicineType[]);
-            if (unitsData) setUnits(unitsData);
-        } catch (error: unknown) {
-            console.error("Error fetching master data:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const fetchItemData = async (id: string) => {
         try {
