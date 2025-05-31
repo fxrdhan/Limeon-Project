@@ -84,11 +84,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             if (user.profilephoto) {
                 const oldPath = StorageService.extractPathFromUrl(user.profilephoto, 'profiles');
                 if (oldPath) {
-                    await StorageService.deleteProfilePhoto(oldPath);
+                    await StorageService.deleteEntityImage("profiles", oldPath);
                 }
             }
 
-            const { publicUrl } = await StorageService.uploadProfilePhoto(user.id, file);
+            const { publicUrl } = await StorageService.uploadEntityImage("profiles", user.id, file);
 
             const { error: updateError } = await supabase
                 .from('users')
