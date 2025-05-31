@@ -21,6 +21,7 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
     onImageSave: onImageSaveProp,
     onImageDelete: onImageDeleteProp,
     imageUrl,
+    defaultImageUrl,
     imagePlaceholder,
     imageUploadText = "Unggah gambar",
     imageNotAvailableText = "Gambar belum tersedia",
@@ -54,10 +55,15 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
     } = useDetailForm({
         initialData: data,
         fields,
-        onSave,
+        onSave: onSave || (() => Promise.resolve()),
         onFieldSave,
         onImageSave: onImageSaveProp,
-        onImageDelete: onImageDeleteProp,
+        onImageDelete: onImageDeleteProp ? (entityId?: string) => {
+            if (entityId) {
+                return onImageDeleteProp(entityId);
+            }
+            return Promise.resolve();
+        } : undefined,
         initialImageUrl: imageUrl,
         mode,
         isOpen,
@@ -190,6 +196,12 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
                                                     <p className="text-xs text-gray-400 mt-1">{imageFormatHint}</p>
                                                 </div>
                                             </div>
+                                        ) : defaultImageUrl ? (
+                                            <img
+                                                src={defaultImageUrl}
+                                                alt={String(localData?.name ?? "Detail")}
+                                                className={`w-full h-auto ${aspectRatioClass} object-cover rounded-md border border-gray-200`}
+                                            />
                                         ) : imagePlaceholder ? (
                                             <img
                                                 src={imagePlaceholder}
