@@ -15,6 +15,7 @@ import {
     TableHeader,
 } from "@/components/modules/table";
 import { useState, useRef } from "react";
+import { StorageService } from "@/utils/storage";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useMutation } from "@tanstack/react-query";
@@ -28,6 +29,7 @@ const PatientList = () => {
     const [selectedPatient, setSelectedPatient] = useState<PatientType | null>(
         null
     );
+    const [, setNewPatientImage] = useState<string | null>(null);
     const searchInputRef = useRef<HTMLInputElement>(
         null
     ) as React.RefObject<HTMLInputElement>;
@@ -143,6 +145,52 @@ const PatientList = () => {
         },
     });
 
+    const updatePatientImageMutation = useMutation<
+        string | undefined,
+        Error,
+        { entityId: string; file: File }
+    >({
+        mutationFn: async ({
+            entityId,
+            file,
+        }: {
+            entityId: string;
+            file: File;
+        }) => {
+            const { data: patientData } = await supabase
+                .from("patients")
+                .select("image_url")
+                .eq("id", entityId)
+                .single();
+
+            if (patientData?.image_url) {
+                const oldPath = StorageService.extractPathFromUrl(
+                    patientData.image_url,
+                    "patients"
+                );
+                if (oldPath) {
+                    await StorageService.deletePatientImage(oldPath);
+                }
+            }
+
+            const { publicUrl } = await StorageService.uploadPatientImage(entityId, file);
+
+            const { error } = await supabase
+                .from("patients")
+                .update({ image_url: publicUrl, updated_at: new Date().toISOString() })
+                .eq("id", entityId);
+            if (error) throw error;
+            return publicUrl;
+        },
+        onSuccess: (newImageUrl) => {
+            queryClient.invalidateQueries({ queryKey: ["patients"] });
+            if (newImageUrl && selectedPatient) {
+                setSelectedPatient((prev) => prev ? { ...prev, image_url: newImageUrl } : null);
+            }
+        },
+        onError: (error) => console.error("Error updating patient image:", error),
+    });
+
     const openPatientDetail = (patient: PatientType) => {
         setSelectedPatient(patient);
         setIsEditModalOpen(true);
@@ -200,6 +248,7 @@ const PatientList = () => {
             address: patient.address ?? "",
             phone: patient.phone ?? "",
             email: patient.email ?? "",
+            image_url: patient.image_url ?? null,
         };
     };
 
@@ -210,6 +259,7 @@ const PatientList = () => {
         address: "",
         phone: "",
         email: "",
+        image_url: null,
     };
 
     const totalPages = Math.ceil(currentTotalItems / itemsPerPage);
@@ -347,6 +397,18 @@ const PatientList = () => {
                     if (selectedPatient) handleDelete(selectedPatient);
                 }}
                 deleteButtonLabel="Hapus Pasien"
+                imageUrl={selectedPatient?.image_url || undefined}
+                onImageSave={async (data: { entityId?: string; file: File }) => {
+                    const idToUse = data.entityId || selectedPatient?.id;
+                    if (idToUse) {
+                        await updatePatientImageMutation.mutateAsync({
+                            entityId: idToUse,
+                            file: data.file,
+                        });
+                    }
+                }}
+                imageUploadText="Unggah Foto Pasien"
+                imageNotAvailableText="Foto pasien belum diunggah"
                 mode="edit"
             />
 
@@ -361,6 +423,16 @@ const PatientList = () => {
                     return Promise.resolve();
                 }}
                 initialNameFromSearch={debouncedSearch}
+                onImageSave={async (data: { entityId?: string; file: File }) => {
+                    if (data.entityId) { // Ini akan terpanggil jika ID sudah ada (setelah create)
+                        await updatePatientImageMutation.mutateAsync({
+                            entityId: data.entityId,
+                            file: data.file,
+                        });
+                    } else { // Untuk mode add, simpan file sementara
+                        setNewPatientImage(URL.createObjectURL(data.file));
+                    }
+                }}
                 imageUploadText="Unggah Foto Pasien (Opsional)"
                 imageNotAvailableText="Foto pasien belum diunggah"
                 mode="add"
