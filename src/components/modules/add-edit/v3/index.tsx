@@ -114,14 +114,14 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                 >
                     <Dialog.Panel
                         ref={modalRef}
-                        className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden relative mx-4"
+                        className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden relative mx-4 flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex justify-between items-center p-4 border-b">
                             <h2 className="text-xl font-semibold">{title}</h2>
                         </div>
 
-                        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                        <div className="p-6 overflow-y-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                             <div className="flex justify-center mb-6">
                                 <div className="relative group w-48">
                                     <ImageUploader
@@ -288,7 +288,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                             </div>
                         </div>
 
-                        <div className="p-4 border-t flex justify-between items-center">
+                        <div className="p-4 border-t flex justify-between items-center bg-white">
                             {mode === "edit" ? (
                                 <>
                                     {onDeleteRequest && (
