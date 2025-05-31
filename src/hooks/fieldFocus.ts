@@ -20,7 +20,11 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
             !isLoading &&
             !isFetching
         ) {
-            searchInputRef.current.focus();
+            requestAnimationFrame(() => {
+                if (searchInputRef.current && !isModalOpen) {
+                    searchInputRef.current.focus();
+                }
+            });
         }
     }, [
         isModalOpen,
@@ -56,9 +60,24 @@ export const useFieldFocus = (options: UseFieldFocusOptions = {}) => {
             }
         };
 
+        const handleFocusOut = () => {
+            if (!isModalOpen && searchInputRef?.current) {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        if (searchInputRef.current && !isModalOpen) {
+                            searchInputRef.current.focus();
+                        }
+                    });
+                });
+            }
+        };
+
         document.addEventListener("click", handlePageClick);
+        document.addEventListener("focusout", handleFocusOut);
+
         return () => {
             document.removeEventListener("click", handlePageClick);
+            document.removeEventListener("focusout", handleFocusOut);
         };
     }, [isModalOpen, searchInputRef]);
 };
