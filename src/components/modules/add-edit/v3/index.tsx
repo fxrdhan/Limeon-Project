@@ -1,10 +1,12 @@
 import ImageUploader from "@/components/modules/image-uploader";
 import Input from "@/components/modules/input";
+import Dropdown from "@/components/modules/dropdown";
+import Datepicker from "@/components/modules/datepicker";
 import Button from "@/components/modules/button";
 import { createPortal } from "react-dom";
 import { Transition, TransitionChild, Dialog } from "@headlessui/react";
 import React, { Fragment, useRef, useState, useEffect } from "react";
-import type { DetailEditModalProps } from "@/types";
+import type { DetailEditModalProps, CustomDateValueType } from "@/types";
 import { FaPencilAlt, FaSpinner, FaSave, FaBan } from "react-icons/fa";
 import { useSupplierDetailForm } from "@/hooks/supplierDetail";
 
@@ -246,7 +248,28 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                         </div>
 
                                         {editMode[field.key] || mode === "add" ? (
-                                            field.type === "textarea" ? (
+                                            field.isRadioDropdown && field.options ? (
+                                                <Dropdown
+                                                    name={field.key}
+                                                    options={field.options}
+                                                    value={String(editValues[field.key] ?? "")}
+                                                    onChange={(selectedValue) => handleChange(field.key, selectedValue)}
+                                                    placeholder={`Pilih ${field.label.toLowerCase()}`}
+                                                    withRadio={true}
+                                                    searchList={false}
+                                                />
+                                            ) : field.type === "date" ? (
+                                                <Datepicker
+                                                    value={editValues[field.key] ? new Date(String(editValues[field.key])) : null}
+                                                    onChange={(date: CustomDateValueType) => {
+                                                        const formattedDate = date ? date.toISOString().split('T')[0] : null;
+                                                        handleChange(field.key, formattedDate as string | number | boolean);
+                                                    }}
+                                                    placeholder={`Pilih ${field.label.toLowerCase()}`}
+                                                    inputClassName="w-full p-2.5 border rounded-lg text-sm"
+                                                    portalWidth="300px"
+                                                />
+                                            ) : field.type === "textarea" ? (
                                                 <textarea
                                                     ref={(el) =>
                                                         setInputRef(field.key, el as HTMLTextAreaElement)
@@ -275,7 +298,9 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                             )
                                         ) : (
                                             <div className="p-2 bg-gray-50 rounded-md min-h-[40px] text-sm">
-                                                {String(localData[field.key] ?? "") || (
+                                                {field.type === "date" && localData[field.key]
+                                                    ? new Date(String(localData[field.key])).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+                                                    : String(localData[field.key] ?? "") || (
                                                     <span className="text-gray-400 italic">
                                                         Tidak ada data
                                                     </span>
