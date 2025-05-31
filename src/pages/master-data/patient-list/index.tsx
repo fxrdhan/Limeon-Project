@@ -3,6 +3,7 @@ import SearchBar from "@/components/modules/search-bar";
 import Button from "@/components/modules/button";
 import Pagination from "@/components/modules/pagination";
 import PageTitle from "@/components/modules/page-title";
+import blankProfilePicture from "@/assets/blank-profile-picture.png";
 
 import { FaPlus } from "react-icons/fa";
 import { Card, CardHeader } from "@/components/modules/card";
@@ -408,6 +409,7 @@ const PatientList = () => {
                 }}
                 deleteButtonLabel="Hapus Pasien"
                 imageUrl={selectedPatient?.image_url || undefined}
+                defaultImageUrl={blankProfilePicture}
                 onImageSave={async (data: { entityId?: string; file: File }) => {
                     const idToUse = data.entityId || selectedPatient?.id;
                     if (idToUse) {

@@ -280,27 +280,21 @@ export interface GenericDetailModalProps {
     fields: FieldConfig[];
     isOpen: boolean;
     onClose: () => void;
-    onSave: (
-        updatedData: Record<string, string | number | boolean | null>
-    ) => Promise<void>;
+    onSave?: (data: Record<string, string | number | boolean | null>) => Promise<void>;
     onFieldSave?: (key: string, value: unknown) => Promise<void>;
-    onImageSave?: (data: {
-        entityId?: string;
-        file: File;
-    }) => Promise<void>;
-    onImageDelete?: (entityId?: string) => Promise<void>;
-    onDeleteRequest?: (
-        data: Record<string, string | number | boolean | null>
-    ) => void;
-    deleteButtonLabel?: string;
+    onImageSave?: (data: { entityId?: string; file: File }) => Promise<void>;
+    onImageDelete?: (entityId: string) => Promise<void>;
     imageUrl?: string;
+    defaultImageUrl?: string;
     imagePlaceholder?: string;
     imageUploadText?: string;
     imageNotAvailableText?: string;
     imageFormatHint?: string;
+    onDeleteRequest?: (data: Record<string, string | number | boolean | null>) => void;
+    deleteButtonLabel?: string;
     mode?: "edit" | "add";
-    imageAspectRatio?: 'default' | 'square';
     initialNameFromSearch?: string;
+    imageAspectRatio?: 'default' | 'square';
 }
 
 export interface TableSearchProps {
