@@ -1,4 +1,3 @@
-// import { Button, ImageUploader, Input } from "@/components/modules";
 import ImageUploader from "@/components/modules/image-uploader";
 import Input from "@/components/modules/input";
 import Button from "@/components/modules/button";
