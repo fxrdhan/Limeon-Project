@@ -295,6 +295,7 @@ export interface DetailEditModalProps {
     imageUrl?: string;
     imagePlaceholder?: string;
     mode?: "edit" | "add";
+    initialNameFromSearch?: string;
 }
 
 export interface TableSearchProps {
