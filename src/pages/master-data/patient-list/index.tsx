@@ -169,11 +169,11 @@ const PatientList = () => {
                     "patients"
                 );
                 if (oldPath) {
-                    await StorageService.deletePatientImage(oldPath);
+                    await StorageService.deleteEntityImage("patients", oldPath);
                 }
             }
 
-            const { publicUrl } = await StorageService.uploadPatientImage(entityId, file);
+            const { publicUrl } = await StorageService.uploadEntityImage("patients", entityId, file);
 
             const { error } = await supabase
                 .from("patients")
