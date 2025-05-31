@@ -15,7 +15,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
         primary: "rounded-lg ring-0 outline-none shadow-md bg-primary flex items-center text-white hover:text-white hover:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)] focus:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)]",
         secondary: "rounded-lg bg-secondary bg-secondary ring-0 outline-none flex items-center hover:bg-blue-700 text-white hover:text-white",
         accent: "bg-accent hover:bg-rose-600 text-white outline-none ring-0",
-        outline: "border border-primary text-primary hover:bg-teal-50 ring-0 outline-none",
+        outline: "border border-primary text-primary hover:bg-teal-50 ring-0 outline-none focus:bg-teal-100",
         text: "bg-transparent hover:bg-opacity-10 outline-none ring-0 focus:shadow-none",
         danger: "bg-accent outline-none ring-0 text-white focus:shadow-[0_0_5px_theme(colors.accent),0_0_15px_theme(colors.accent),0_0_30px_theme(colors.accent)] hover:shadow-[0_0_5px_theme(colors.accent),0_0_15px_theme(colors.accent),0_0_30px_theme(colors.accent)]",
     };
