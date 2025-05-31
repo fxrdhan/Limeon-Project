@@ -360,6 +360,7 @@ const PatientList = () => {
                     await createPatientMutation.mutateAsync(newPatientData);
                     return Promise.resolve();
                 }}
+                initialNameFromSearch={debouncedSearch}
                 mode="add"
             />
         </Card>
