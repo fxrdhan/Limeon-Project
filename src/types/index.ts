@@ -75,6 +75,7 @@ export interface Patient {
     address?: string | null;
     phone?: string | null;
     email?: string | null;
+    image_url?: string | null;
 }
 
 export interface Doctor {
