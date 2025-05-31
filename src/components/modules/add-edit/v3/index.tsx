@@ -6,11 +6,11 @@ import Button from "@/components/modules/button";
 import { createPortal } from "react-dom";
 import { Transition, TransitionChild, Dialog } from "@headlessui/react";
 import React, { Fragment, useRef, useState, useEffect } from "react";
-import type { DetailEditModalProps, CustomDateValueType } from "@/types";
+import type { GenericDetailModalProps, CustomDateValueType } from "@/types";
 import { FaPencilAlt, FaSpinner, FaSave, FaBan } from "react-icons/fa";
 import { useDetailForm } from "@/hooks/detailForm";
 
-const DetailEditModal: React.FC<DetailEditModalProps> = ({
+const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
     title,
     data,
     fields,
@@ -22,12 +22,15 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     onImageDelete: onImageDeleteProp,
     imageUrl,
     imagePlaceholder,
+    imageUploadText = "Unggah gambar",
+    imageNotAvailableText = "Gambar belum tersedia",
+    imageFormatHint = "Format: JPG, PNG",
     onDeleteRequest,
     deleteButtonLabel = "Hapus",
     mode = "edit",
     initialNameFromSearch,
 }) => {
-    const modalRef = useRef<HTMLDivElement>(null);
+    const dialogPanelRef = useRef<HTMLDivElement>(null);
     const [, setIsClosing] = useState(false);
 
     const {
@@ -66,12 +69,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         }
     }, [isOpen]);
 
-    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-            handleCloseModal();
-        }
-    };
-
     const handleCloseModal = () => {
         setIsClosing(true);
         onClose();
@@ -88,7 +85,6 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         >
             <Dialog
                 className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
-                onClick={handleBackdropClick}
                 onClose={handleCloseModal}
             >
                 <TransitionChild
@@ -116,7 +112,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                     leaveTo="opacity-0 scale-95"
                 >
                     <Dialog.Panel
-                        ref={modalRef}
+                        ref={dialogPanelRef}
                         className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden relative mx-4 flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -139,7 +135,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                         loadingIcon={
                                             <FaSpinner className="text-white text-xl animate-spin" />
                                         }
-                                        defaultIcon={<FaPencilAlt className="text-white text-xl" />}
+                                        defaultIcon={<FaPencilAlt className="text-white text-lg" />}
                                     >
                                         {currentImageUrl ? (
                                             <img
@@ -151,11 +147,9 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                             <div className="w-full aspect-video flex items-center justify-center border border-dashed border-gray-300 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors">
                                                 <div className="text-center p-4">
                                                     <p className="text-sm font-medium text-gray-600">
-                                                        Unggah logo supplier
+                                                        {imageUploadText}
                                                     </p>
-                                                    <p className="text-xs text-gray-400 mt-1">
-                                                        Format: JPG, PNG
-                                                    </p>
+                                                    <p className="text-xs text-gray-400 mt-1">{imageFormatHint}</p>
                                                 </div>
                                             </div>
                                         ) : imagePlaceholder ? (
@@ -184,10 +178,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
                                                         </svg>
                                                     </div>
                                                     <p className="text-gray-500 font-medium">
-                                                        Tidak ada gambar
-                                                    </p>
-                                                    <p className="text-xs text-gray-400 mt-1">
-                                                        Logo supplier belum tersedia
+                                                        {imageNotAvailableText}
                                                     </p>
                                                 </div>
                                             </div>
@@ -368,4 +359,4 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     );
 };
 
-export default DetailEditModal;
+export default GenericDetailModal;
