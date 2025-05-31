@@ -26,6 +26,7 @@ import {
     keepPreviousData,
 } from "@tanstack/react-query";
 import { useFieldFocus } from '@/hooks/fieldFocus';
+import { useSupabaseRealtime } from '@/hooks/supabaseRealtime';
 
 interface Purchase {
     id: string;
@@ -74,6 +75,8 @@ const PurchaseList = () => {
         itemsPerPage,
         locationKey: location.key,
     });
+
+    useSupabaseRealtime('purchases', ['purchases']);
 
     const fetchPurchases = async (
         page: number,
@@ -126,31 +129,6 @@ const PurchaseList = () => {
             throw error;
         }
     };
-
-    useEffect(() => {
-        const channel = supabase
-            .channel('custom-purchase-list-channel')
-            .on<Purchase>(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'purchases' },
-                (payload) => {
-                    console.log('Realtime purchase change received!', payload);
-                    queryClient.invalidateQueries({ queryKey: ['purchases'] });
-                }
-            )
-            .subscribe((status, err) => {
-                if (status === 'SUBSCRIBED') {
-                    console.log('Subscribed to realtime purchase updates');
-                }
-                if (err) {
-                    console.error('Error subscribing to purchase changes:', err);
-                }
-            });
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [queryClient]);
 
     useEffect(() => {
         queryClient.invalidateQueries({ queryKey: ['purchases'] });
