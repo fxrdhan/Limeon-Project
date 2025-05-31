@@ -1,4 +1,4 @@
-import DetailEditModal from "@/components/modules/add-edit/v3";
+import GenericDetailModal from "@/components/modules/add-edit/v3";
 import SearchBar from "@/components/modules/search-bar";
 import Button from "@/components/modules/button";
 import Pagination from "@/components/modules/pagination";
@@ -148,19 +148,19 @@ const SupplierList = () => {
     const updateSupplierImageMutation = useMutation<
         string | undefined,
         Error,
-        { supplierId: string; file: File }
+        { entityId: string; file: File }
     >({
         mutationFn: async ({
-            supplierId,
+            entityId,
             file,
         }: {
-            supplierId: string;
+            entityId: string;
             file: File;
         }) => {
             const { data: supplierData } = await supabase
                 .from("suppliers")
                 .select("image_url")
-                .eq("id", supplierId)
+                .eq("id", entityId)
                 .single();
 
             if (supplierData?.image_url) {
@@ -174,7 +174,7 @@ const SupplierList = () => {
             }
 
             const { publicUrl } = await StorageService.uploadSupplierImage(
-                supplierId,
+                entityId,
                 file
             );
 
@@ -184,7 +184,7 @@ const SupplierList = () => {
                     image_url: publicUrl,
                     updated_at: new Date().toISOString(),
                 })
-                .eq("id", supplierId);
+                .eq("id", entityId);
             if (error) throw error;
             return publicUrl;
         },
@@ -373,8 +373,8 @@ const SupplierList = () => {
                 )}
             </div>
 
-            <DetailEditModal
-                title={selectedSupplier?.name || ""}
+            <GenericDetailModal
+                title={selectedSupplier ? `Detail Supplier: ${selectedSupplier.name}` : "Detail Supplier"}
                 data={transformSupplierForModal(selectedSupplier)}
                 fields={supplierFields}
                 isOpen={isEditModalOpen}
@@ -396,11 +396,11 @@ const SupplierList = () => {
                         await updateSupplierMutation.mutateAsync(dataToUpdate);
                     }
                 }}
-                onImageSave={async (data: { supplierId?: string; file: File }) => {
-                    const idToUse = data.supplierId || selectedSupplier?.id;
+                onImageSave={async (data: { entityId?: string; file: File }) => {
+                    const idToUse = data.entityId || selectedSupplier?.id;
                     if (idToUse) {
                         await updateSupplierImageMutation.mutateAsync({
-                            supplierId: idToUse,
+                            entityId: idToUse,
                             file: data.file,
                         });
                     }
@@ -410,15 +410,12 @@ const SupplierList = () => {
                 }}
                 deleteButtonLabel="Hapus Supplier"
                 imageUrl={selectedSupplier?.image_url || undefined}
-                imagePlaceholder={
-                    selectedSupplier
-                        ? `https://picsum.photos/seed/${selectedSupplier.id}/400/300`
-                        : undefined
-                }
+                imageUploadText="Unggah Logo Supplier"
+                imageNotAvailableText="Logo supplier belum diunggah"
                 mode="edit"
             />
 
-            <DetailEditModal
+            <GenericDetailModal
                 title="Tambah Supplier Baru"
                 data={emptySupplierData}
                 fields={supplierFields}
@@ -429,11 +426,12 @@ const SupplierList = () => {
                     return Promise.resolve();
                 }}
                 initialNameFromSearch={debouncedSearch}
-                onImageSave={(data: { file: File }) => {
-                    console.log("Image uploaded for new supplier:", data.file);
+                onImageSave={(data: { entityId?: string; file: File }) => {
+                    console.log("Image uploaded for new supplier (ID to be assigned upon save):", data.file, data.entityId);
                     return Promise.resolve();
                 }}
-                imagePlaceholder="https://via.placeholder.com/400x300?text=Foto+Supplier"
+                imageUploadText="Unggah Logo Supplier"
+                imageNotAvailableText="Logo supplier belum diunggah"
                 mode="add"
             />
         </Card>
