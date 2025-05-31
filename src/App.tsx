@@ -12,6 +12,7 @@ const ItemList = lazy(() => import('@/pages/master-data/item-list'));
 const CategoryList = lazy(() => import('@/pages/master-data/category-list'));
 const UnitList = lazy(() => import('@/pages/master-data/unit-list'));
 const TypeList = lazy(() => import('@/pages/master-data/type-list'));
+const PatientList = lazy(() => import('@/pages/master-data/patient-list'));
 const SupplierList = lazy(() => import('@/pages/master-data/supplier-list'));
 const UploadInvoice = lazy(() => import('@/pages/purchases/upload-invoice'));
 const ConfirmInvoicePage = lazy(() => import('@/pages/purchases/confirm-invoice'));
@@ -91,6 +92,11 @@ function App() {
             <Route path="suppliers" element={
               <Suspense fallback={<div>Loading...</div>}>
                 <SupplierList />
+              </Suspense>
+            } />
+            <Route path="patients" element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <PatientList />
               </Suspense>
             } />
           </Route>
