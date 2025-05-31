@@ -8,7 +8,7 @@ import { Transition, TransitionChild, Dialog } from "@headlessui/react";
 import React, { Fragment, useRef, useState, useEffect } from "react";
 import type { DetailEditModalProps, CustomDateValueType } from "@/types";
 import { FaPencilAlt, FaSpinner, FaSave, FaBan } from "react-icons/fa";
-import { useSupplierDetailForm } from "@/hooks/supplierDetail";
+import { useDetailForm } from "@/hooks/detailForm";
 
 const DetailEditModal: React.FC<DetailEditModalProps> = ({
     title,
@@ -47,7 +47,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         handleImageDeleteInternal,
         resetInternalState,
         setInputRef,
-    } = useSupplierDetailForm({
+    } = useDetailForm({
         initialData: data,
         fields,
         onSave,
