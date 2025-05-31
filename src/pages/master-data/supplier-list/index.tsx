@@ -428,6 +428,7 @@ const SupplierList = () => {
                     await createSupplierMutation.mutateAsync(newSupplierData);
                     return Promise.resolve();
                 }}
+                initialNameFromSearch={debouncedSearch}
                 onImageSave={(data: { file: File }) => {
                     console.log("Image uploaded for new supplier:", data.file);
                     return Promise.resolve();
