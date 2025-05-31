@@ -299,6 +299,7 @@ export interface GenericDetailModalProps {
     imageNotAvailableText?: string;
     imageFormatHint?: string;
     mode?: "edit" | "add";
+    imageAspectRatio?: 'default' | 'square';
     initialNameFromSearch?: string;
 }
 
