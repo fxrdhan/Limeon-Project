@@ -66,6 +66,21 @@ export const useSupplierDetailForm = ({
             setEditValues(initialFormValues);
             setLocalData(initialData);
             setCurrentImageUrl(initialImageUrl);
+
+            if (mode === 'add' && initialNameFromSearch) {
+                const nameFieldKey = fields.find(f => f.key === 'name')?.key || fields.find(f => f.editable)?.key;
+                if (nameFieldKey) {
+                    setTimeout(() => {
+                        const refData = inputRefs.current[nameFieldKey];
+                        if (refData && refData.el) {
+                            refData.el.focus();
+                            if (typeof (refData.el as HTMLInputElement | HTMLTextAreaElement).select === 'function') {
+                                (refData.el as HTMLInputElement | HTMLTextAreaElement).select();
+                            }
+                        }
+                    }, 100);
+                }
+            }
         }
     }, [isOpen, initialData, fields, initialImageUrl, mode, initialNameFromSearch]);
 
