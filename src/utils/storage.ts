@@ -7,7 +7,7 @@ export interface UploadResult {
 }
 
 export class StorageService {
-    private static async uploadFile(
+    public static async uploadFile(
         bucket: string,
         file: File,
         path: string
@@ -35,7 +35,7 @@ export class StorageService {
         };
     }
 
-    private static async deleteFile(bucket: string, path: string): Promise<void> {
+    public static async deleteFile(bucket: string, path: string): Promise<void> {
         const { error } = await supabase.storage.from(bucket).remove([path]);
 
         if (error) {
@@ -43,54 +43,32 @@ export class StorageService {
         }
     }
 
-    static async uploadProfilePhoto(
+    static async uploadEntityImage(
+        bucket: string,
         userId: string,
         file: File
     ): Promise<UploadResult> {
         const timestamp = Date.now();
         const extension = file.name.split(".").pop() || "jpg";
-        const path = `${userId}/profile_${timestamp}.${extension}`;
-
-        return this.uploadFile("profiles", file, path);
+        const path = `${userId}/image_${timestamp}.${extension}`;
+        return this.uploadFile(bucket, file, path);
     }
 
-    static async deleteProfilePhoto(path: string): Promise<void> {
-        return this.deleteFile("profiles", path);
-    }
-
-    static async uploadSupplierImage(
-        supplierId: string,
-        file: File
-    ): Promise<UploadResult> {
-        const timestamp = Date.now();
-        const extension = file.name.split(".").pop() || "jpg";
-        const path = `${supplierId}/image_${timestamp}.${extension}`;
-
-        return this.uploadFile("suppliers", file, path);
-    }
-
-    static async deleteSupplierImage(path: string): Promise<void> {
-        return this.deleteFile("suppliers", path);
-    }
-
-    static async uploadPatientImage(
-        patientId: string,
-        file: File
-    ): Promise<UploadResult> {
-        const timestamp = Date.now();
-        const extension = file.name.split(".").pop() || "jpg";
-        const path = `${patientId}/image_${timestamp}.${extension}`;
-
-        return this.uploadFile("patients", file, path);
-    }
-
-    static async deletePatientImage(path: string): Promise<void> {
-        return this.deleteFile("patients", path);
+    static async deleteEntityImage(bucket: string, path: string): Promise<void> {
+        return this.deleteFile(bucket, path);
     }
 
     static extractPathFromUrl(url: string, bucket: string): string | null {
         try {
-            const urlParts = url.split(`/storage/v1/object/public/${bucket}/`);
+            // Pastikan bucket name diapit oleh garis miring jika belum
+            const safeBucket = bucket.startsWith('/') ? bucket : `/${bucket}/`;
+            const regex = new RegExp(`/storage/v1/object/public${safeBucket.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(.+)`);
+            const match = url.match(regex);
+            if (match && match[1]) {
+                return match[1];
+            }
+            // Fallback ke metode split jika regex tidak cocok (misalnya URL tidak standar)
+            const urlParts = url.split(`/storage/v1/object/public${safeBucket}`);
             return urlParts[1] || null;
         } catch {
             return null;
