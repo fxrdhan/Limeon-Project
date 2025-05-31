@@ -25,6 +25,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
     onDeleteRequest,
     deleteButtonLabel = "Hapus",
     mode = "edit",
+    initialNameFromSearch,
 }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     const [, setIsClosing] = useState(false);
@@ -56,6 +57,7 @@ const DetailEditModal: React.FC<DetailEditModalProps> = ({
         initialImageUrl: imageUrl,
         mode,
         isOpen,
+        initialNameFromSearch,
     });
 
     useEffect(() => {
