@@ -427,7 +427,7 @@ const SupplierList = () => {
                     console.log("Image uploaded for new supplier (ID to be assigned upon save):", data.file, data.entityId);
                     return Promise.resolve();
                 }}
-                imageUploadText="Unggah Logo Supplier"
+                imageUploadText="Unggah Logo Supplier (Opsional)"
                 imageNotAvailableText="Logo supplier belum diunggah"
                 mode="add"
             />
