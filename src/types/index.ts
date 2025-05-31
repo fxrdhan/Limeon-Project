@@ -273,7 +273,7 @@ export interface FieldConfig {
     isRadioDropdown?: boolean;
     editable?: boolean;
 }
-export interface DetailEditModalProps {
+export interface GenericDetailModalProps {
     title: string;
     data: Record<string, string | number | boolean | null>;
     fields: FieldConfig[];
@@ -284,16 +284,19 @@ export interface DetailEditModalProps {
     ) => Promise<void>;
     onFieldSave?: (key: string, value: unknown) => Promise<void>;
     onImageSave?: (data: {
-        supplierId?: string;
+        entityId?: string;
         file: File;
     }) => Promise<void>;
-    onImageDelete?: (supplierId?: string) => Promise<void>;
+    onImageDelete?: (entityId?: string) => Promise<void>;
     onDeleteRequest?: (
         data: Record<string, string | number | boolean | null>
     ) => void;
     deleteButtonLabel?: string;
     imageUrl?: string;
     imagePlaceholder?: string;
+    imageUploadText?: string;
+    imageNotAvailableText?: string;
+    imageFormatHint?: string;
     mode?: "edit" | "add";
     initialNameFromSearch?: string;
 }
