@@ -29,6 +29,7 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
     deleteButtonLabel = "Hapus",
     mode = "edit",
     initialNameFromSearch,
+    imageAspectRatio = 'default',
 }) => {
     const dialogPanelRef = useRef<HTMLDivElement>(null);
     const [, setIsClosing] = useState(false);
@@ -93,6 +94,8 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
         setIsClosing(true);
         onClose();
     };
+
+    const aspectRatioClass = imageAspectRatio === 'square' ? 'aspect-square' : 'aspect-video';
 
     return createPortal(
         <Transition
@@ -161,10 +164,10 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
                                             <img
                                                 src={currentImageUrl}
                                                 alt={String(localData?.name ?? "Detail")}
-                                                className="w-full h-auto aspect-video object-cover rounded-md border border-gray-200"
+                                                className={`w-full h-auto ${aspectRatioClass} object-cover rounded-md border border-gray-200`}
                                             />
                                         ) : mode === "add" ? (
-                                            <div className="w-full aspect-video flex items-center justify-center border border-dashed border-gray-300 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors">
+                                            <div className={`w-full ${aspectRatioClass} flex items-center justify-center border border-dashed border-gray-300 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors`}>
                                                 <div className="text-center p-4">
                                                     <p className="text-sm font-medium text-gray-600">
                                                         {imageUploadText}
@@ -176,10 +179,10 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
                                             <img
                                                 src={imagePlaceholder}
                                                 alt={String(localData?.name ?? "Detail")}
-                                                className="w-full h-auto aspect-video object-cover rounded-md border border-gray-200"
+                                                className={`w-full h-auto ${aspectRatioClass} object-cover rounded-md border border-gray-200`}
                                             />
                                         ) : (
-                                            <div className="w-full aspect-video flex items-center justify-center border border-gray-200 rounded-md bg-gray-50">
+                                            <div className={`w-full ${aspectRatioClass} flex items-center justify-center border border-gray-200 rounded-md bg-gray-50`}>
                                                 <div className="text-center p-4">
                                                     <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
                                                         <svg
