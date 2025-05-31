@@ -69,6 +69,26 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
         }
     }, [isOpen]);
 
+    // Auto-focus on name field when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            const nameField = fields.find(field => 
+                field.key === 'name' || 
+                field.key === 'nama' || 
+                field.label.toLowerCase().includes('nama')
+            );
+            
+            if (nameField && (mode === 'add' || editMode[nameField.key])) {
+                setTimeout(() => {
+                    const inputElement = document.getElementById(nameField.key) as HTMLInputElement | HTMLTextAreaElement;
+                    if (inputElement) {
+                        inputElement.focus();
+                    }
+                }, 100);
+            }
+        }
+    }, [isOpen, mode, editMode, fields]);
+
     const handleCloseModal = () => {
         setIsClosing(true);
         onClose();
