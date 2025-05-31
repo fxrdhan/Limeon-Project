@@ -172,8 +172,17 @@ const PatientList = () => {
 
     const patientFields: FieldConfigPatient[] = [
         { key: "name", label: "Nama Pasien", type: "text", editable: true },
-        { key: "gender", label: "Jenis Kelamin", type: "text", editable: true },
-        { key: "birth_date", label: "Tanggal Lahir (YYYY-MM-DD)", type: "text", editable: true },
+        { 
+            key: "gender", 
+            label: "Jenis Kelamin", 
+            type: "text",
+            editable: true,
+            isRadioDropdown: true,
+            options: [
+                { id: "Laki-laki", name: "Laki-laki" },
+                { id: "Perempuan", name: "Perempuan" },
+            ]},
+        { key: "birth_date", label: "Tanggal Lahir", type: "date", editable: true },
         { key: "address", label: "Alamat", type: "textarea", editable: true },
         { key: "phone", label: "Telepon", type: "tel", editable: true },
         { key: "email", label: "Email", type: "email", editable: true },
