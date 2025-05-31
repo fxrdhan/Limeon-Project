@@ -1,7 +1,10 @@
-import { useRef, useState, ChangeEvent } from "react";
+import { useRef, useState, ChangeEvent, useEffect } from "react";
 import { useAddItemForm } from "@/hooks/addItem";
 import { useBeforeUnload } from "@/handlers/beforeUnload";
-import { AddItemPageHandlersProps } from "@/types";
+import { AddItemPageHandlersProps, Category, MedicineType, Unit } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 
 export const useAddItemPageHandlers = ({
     itemId,
@@ -17,6 +20,42 @@ export const useAddItemPageHandlers = ({
     const [showDescription, setShowDescription] = useState(false);
     const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
     const [showFefoTooltip, setShowFefoTooltip] = useState(false);
+
+    const { data: categoriesData } = useQuery<Category[]>({
+        queryKey: ['categories'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from("item_categories")
+                .select("id, name, description")
+                .order("name");
+            if (error) throw error;
+            return data || [];
+        },
+    });
+    useSupabaseRealtime('item_categories', ['categories']);
+
+    const { data: typesData } = useQuery<MedicineType[]>({
+        queryKey: ['types'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from("item_types")
+                .select("id, name, description")
+                .order("name");
+            if (error) throw error;
+            return data || [];
+        }
+    });
+    useSupabaseRealtime('item_types', ['types']);
+
+    const { data: unitsData } = useQuery<Unit[]>({
+        queryKey: ['units'],
+        queryFn: async () => {
+            const { data, error } = await supabase.from("item_units").select("id, name, description").order("name");
+            if (error) throw error;
+            return data || [];
+        }
+    });
+    useSupabaseRealtime('item_units', ['units']);
 
     const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -125,7 +164,7 @@ export const useAddItemPageHandlers = ({
         }
     };
 
-    const isDirty = addItemForm.isDirty; // Assuming isDirty is exposed from useAddItemForm
+    const isDirty = addItemForm.isDirty;
     useBeforeUnload(isDirty);
 
     const handleActualCancel = () => {
@@ -142,6 +181,20 @@ export const useAddItemPageHandlers = ({
             onClose();
         }
     };
+
+    useEffect(() => {
+        if (categoriesData) addItemForm.setCategories(categoriesData);
+    }, [categoriesData, addItemForm.setCategories, addItemForm]);
+
+    useEffect(() => {
+        if (typesData) addItemForm.setTypes(typesData as MedicineType[]);
+    }, [typesData, addItemForm.setTypes, addItemForm]);
+
+    useEffect(() => {
+        if (unitsData) {
+            addItemForm.setUnits(unitsData);
+        }
+    }, [unitsData, addItemForm.setUnits, addItemForm]);
 
     return {
         ...addItemForm,
