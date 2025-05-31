@@ -22,7 +22,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
         }
         hoverTimeoutRef.current = setTimeout(() => {
             setPortalOpen(true);
-        }, 250);
+        }, 200);
     };
 
     const handleMouseLeave = () => {
@@ -176,116 +176,127 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
                         <AnimatePresence>
                             {portalOpen && (
-                                <motion.div
-                                    ref={portalRef}
-                                    initial={{
-                                        opacity: 0,
-                                        scale: 0.8,
-                                        transformOrigin: "top right",
-                                    }}
-                                    animate={{
-                                        opacity: 1,
-                                        scale: [0.8, 1.05, 1],
-                                        transformOrigin: "top right",
-                                    }}
-                                    exit={{
-                                        opacity: 0,
-                                        scale: 0.8,
-                                        transformOrigin: "top right",
-                                    }}
-                                    transition={{
-                                        duration: 0.3,
-                                        ease: "easeOut",
-                                        scale: {
-                                            times: [0, 0.6, 1],
+                                <>
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                                    />
+                                    <motion.div
+                                        ref={portalRef}
+                                        onMouseEnter={handleMouseEnter}
+                                        onMouseLeave={handleMouseLeave}
+                                        initial={{
+                                            opacity: 0,
+                                            scale: 0.8,
+                                            transformOrigin: "top right",
+                                        }}
+                                        animate={{
+                                            opacity: 1,
+                                            scale: [0.8, 1.05, 1],
+                                            transformOrigin: "top right",
+                                        }}
+                                        exit={{
+                                            opacity: 0,
+                                            scale: 0.8,
+                                            transformOrigin: "top right",
+                                        }}
+                                        transition={{
                                             duration: 0.3,
-                                        },
-                                    }}
-                                    className="fixed top-0 right-0 w-80 bg-white rounded-bl-2xl shadow-xl z-50 border border-gray-100 overflow-hidden backdrop-blur-sm"
-                                    style={{ marginTop: "0px" }}
-                                >
-                                    <div className="p-4">
-                                        <div className="flex flex-col items-center mb-4">
-                                            <div className="relative group/upload">
-                                                <ImageUploader
-                                                    id="profile-upload"
-                                                    className="w-24 h-24"
-                                                    shape="full"
-                                                    onImageUpload={async (file: File) => {
-                                                        setIsUploading(true);
-                                                        try {
-                                                            await useAuthStore
-                                                                .getState()
-                                                                .updateProfilePhoto(file);
-                                                        } finally {
-                                                            setIsUploading(false);
+                                            ease: "easeOut",
+                                            scale: {
+                                                times: [0, 0.6, 1],
+                                                duration: 0.3,
+                                            },
+                                        }}
+                                        className="fixed top-0 right-0 w-80 bg-white rounded-bl-2xl shadow-xl z-50 border border-gray-100 overflow-hidden backdrop-blur-sm"
+                                        style={{ marginTop: "0px" }}
+                                    >
+                                        <div className="p-4">
+                                            <div className="flex flex-col items-center mb-4">
+                                                <div className="relative group/upload">
+                                                    <ImageUploader
+                                                        id="profile-upload"
+                                                        className="w-24 h-24"
+                                                        shape="full"
+                                                        onImageUpload={async (file: File) => {
+                                                            setIsUploading(true);
+                                                            try {
+                                                                await useAuthStore
+                                                                    .getState()
+                                                                    .updateProfilePhoto(file);
+                                                            } finally {
+                                                                setIsUploading(false);
+                                                            }
+                                                        }}
+                                                        disabled={isUploading}
+                                                        defaultIcon={
+                                                            <FaPencilAlt className="text-white text-sm" />
                                                         }
-                                                    }}
-                                                    disabled={isUploading}
-                                                    defaultIcon={
-                                                        <FaPencilAlt className="text-white text-sm" />
-                                                    }
-                                                >
-                                                    {user?.profilephoto ? (
-                                                        <img
-                                                            src={user.profilephoto}
-                                                            alt="Profile"
-                                                            className="w-24 h-24 rounded-full object-cover border-4 border-gray-100 group-hover/upload:border-primary/30 transition-all duration-200"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center text-2xl border-4 border-gray-100 group-hover/upload:border-primary/30 transition-all duration-200">
-                                                            {user?.name ? (
-                                                                user.name.charAt(0).toUpperCase()
-                                                            ) : (
-                                                                <FaUserCircle />
-                                                            )}
+                                                    >
+                                                        {user?.profilephoto ? (
+                                                            <img
+                                                                src={user.profilephoto}
+                                                                alt="Profile"
+                                                                className="w-24 h-24 rounded-full object-cover border-4 border-gray-100 group-hover/upload:border-primary/30 transition-all duration-200"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center text-2xl border-4 border-gray-100 group-hover/upload:border-primary/30 transition-all duration-200">
+                                                                {user?.name ? (
+                                                                    user.name.charAt(0).toUpperCase()
+                                                                ) : (
+                                                                    <FaUserCircle />
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </ImageUploader>
+                                                    {isUploading && (
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full">
+                                                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                                         </div>
                                                     )}
-                                                </ImageUploader>
-                                                {isUploading && (
-                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full">
-                                                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="mt-3 text-center">
-                                                <h3 className="font-semibold text-gray-800 text-lg">
-                                                    {user?.name || "User"}
-                                                </h3>
-                                                <p className="text-sm text-gray-500 mb-1">
-                                                    {user?.role || "Staff"}
-                                                </p>
-                                                <p
-                                                    className="text-xs text-gray-400 truncate max-w-[200px]"
-                                                    title={user?.email || ""}
-                                                >
-                                                    {user?.email || "Email tidak tersedia"}
-                                                </p>
+                                                </div>
+                                                <div className="mt-3 text-center">
+                                                    <h3 className="font-semibold text-gray-800 text-lg">
+                                                        {user?.name || "User"}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-500 mb-1">
+                                                        {user?.role || "Staff"}
+                                                    </p>
+                                                    <p
+                                                        className="text-xs text-gray-400 truncate max-w-[200px]"
+                                                        title={user?.email || ""}
+                                                    >
+                                                        {user?.email || "Email tidak tersedia"}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div className="border-t border-gray-100"></div>
+                                        <div className="border-t border-gray-100"></div>
 
-                                    <div className="p-2">
-                                        <button
-                                            onClick={() => {
-                                                setPortalOpen(false);
-                                            }}
-                                            className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150 group"
-                                        >
-                                            <FaCog className="text-gray-400 group-hover:text-gray-600 transition-colors" />
-                                            <span>Pengaturan Profil</span>
-                                        </button>
-                                        <button
-                                            onClick={handleLogout}
-                                            className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 group"
-                                        >
-                                            <FaSignOutAlt className="text-red-500 group-hover:text-red-600 transition-colors" />
-                                            <span>Logout</span>
-                                        </button>
-                                    </div>
-                                </motion.div>
+                                        <div className="p-2">
+                                            <button
+                                                onClick={() => {
+                                                    setPortalOpen(false);
+                                                }}
+                                                className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150 group"
+                                            >
+                                                <FaCog className="text-gray-400 group-hover:text-gray-600 transition-colors" />
+                                                <span>Pengaturan Profil</span>
+                                            </button>
+                                            <button
+                                                onClick={handleLogout}
+                                                className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 group"
+                                            >
+                                                <FaSignOutAlt className="text-red-500 group-hover:text-red-600 transition-colors" />
+                                                <span>Logout</span>
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </>
                             )}
                         </AnimatePresence>
                     </div>
