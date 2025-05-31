@@ -92,6 +92,14 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
 
     const handleCloseModal = () => {
         setIsClosing(true);
+        
+        requestAnimationFrame(() => {
+            const searchInput = document.querySelector('input[placeholder*="Cari"]') as HTMLInputElement;
+            if (searchInput) {
+                searchInput.focus();
+            }
+        });
+        
         onClose();
     };
 
@@ -104,6 +112,13 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
             afterLeave={() => {
                 setIsClosing(false);
                 if (resetInternalState) resetInternalState();
+                
+                setTimeout(() => {
+                    const searchInput = document.querySelector('input[placeholder*="Cari"]') as HTMLInputElement;
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }, 50);
             }}
         >
             <Dialog
