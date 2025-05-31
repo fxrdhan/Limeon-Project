@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { fuzzyMatch, getScore } from "@/utils/search";
+import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import { useFieldFocus } from "@/hooks/fieldFocus";
 import {
     useQuery,
@@ -344,32 +345,7 @@ export const useMasterDataManagement = (
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-    useEffect(() => {
-        if (!realtime) return;
-
-        const channel = supabase
-            .channel(`public:${tableName}`)
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: tableName },
-                (payload) => {
-                    console.log(`Realtime update on ${tableName}:`, payload);
-                    queryClient.invalidateQueries({ queryKey: [tableName] });
-                }
-            )
-            .subscribe((status, err) => {
-                if (status === 'SUBSCRIBED') {
-                    console.log(`Subscribed to realtime updates for ${tableName}`);
-                }
-                if (err) {
-                    console.error(`Realtime subscription error for ${tableName}:`, err);
-                }
-            });
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [tableName, queryClient, realtime]);
+    useSupabaseRealtime(tableName, [tableName], { enabled: realtime });
 
     useFieldFocus({
         searchInputRef,
