@@ -11,6 +11,7 @@ interface UseSupplierDetailFormProps {
     initialImageUrl?: string;
     mode?: 'edit' | 'add';
     isOpen?: boolean;
+    initialNameFromSearch?: string;
 }
 
 export const useSupplierDetailForm = ({
@@ -22,7 +23,8 @@ export const useSupplierDetailForm = ({
     onImageDelete: onImageDeleteProp,
     initialImageUrl,
     mode = 'edit',
-    isOpen
+    isOpen,
+    initialNameFromSearch
 }: UseSupplierDetailFormProps) => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
     const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({});
@@ -53,14 +55,19 @@ export const useSupplierDetailForm = ({
 
             fields.forEach(field => {
                 initialEditState[field.key] = mode === 'add';
-                initialFormValues[field.key] = initialData[field.key] ?? (field.type === 'textarea' || field.type === 'text' || field.type === 'email' || field.type === 'tel' ? '' : null);
+                let value = initialData[field.key] ?? (field.type === 'textarea' || field.type === 'text' || field.type === 'email' || field.type === 'tel' ? '' : null);
+                
+                if (mode === 'add' && field.key === 'name' && initialNameFromSearch) {
+                    value = initialNameFromSearch;
+                }
+                initialFormValues[field.key] = value;
             });
             setEditMode(initialEditState);
             setEditValues(initialFormValues);
             setLocalData(initialData);
             setCurrentImageUrl(initialImageUrl);
         }
-    }, [isOpen, initialData, fields, initialImageUrl, mode]);
+    }, [isOpen, initialData, fields, initialImageUrl, mode, initialNameFromSearch]);
 
     const setInputRef = useCallback((key: string, el: HTMLInputElement | HTMLTextAreaElement | null) => {
         if (el) {
