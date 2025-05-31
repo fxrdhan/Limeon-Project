@@ -4,7 +4,7 @@ import { FaChevronDown } from "react-icons/fa";
 import { classNames } from "@/lib/classNames";
 import type { DescriptiveTextareaProps } from "@/types";
 
-export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
+const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
     label,
     value,
     onChange,
@@ -89,3 +89,5 @@ export const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
         </div>
     );
 };
+
+export default DescriptiveTextarea;

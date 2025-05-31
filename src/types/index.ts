@@ -682,3 +682,7 @@ export interface AddItemPageHandlersProps {
     onClose: () => void;
     expiryCheckboxRef?: React.RefObject<HTMLLabelElement | null>;
 }
+
+export interface PageTitleProps {
+    title: string;
+}

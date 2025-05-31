@@ -1,11 +1,14 @@
-import { Input, Button, useConfirmDialog, DescriptiveTextarea } from "@/components/modules";
+import Input from "@/components/modules/input";
+import Button from "@/components/modules/button";
+import DescriptiveTextarea from "@/components/modules/descriptive-textarea";
+import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { createPortal } from "react-dom";
 import { FaTimes } from "react-icons/fa";
 import type { AddEditModalProps } from "@/types";
 import { Transition, TransitionChild } from "@headlessui/react";
 import React, { useState, useEffect, Fragment, useRef } from "react";
 
-export const AddEditModal: React.FC<AddEditModalProps> = ({
+const AddEditModal: React.FC<AddEditModalProps> = ({
     isOpen,
     onClose,
     onSubmit,
@@ -163,3 +166,5 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
         document.body
     );
 };
+
+export default AddEditModal;

@@ -1,9 +1,11 @@
+import Login from '@/pages/auth/login';
+import MainLayout from '@/components/layout/main';
+import OfflineAlert from '@/components/modules/offline-alert';
+
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
-import MainLayout from '@/components/layout/main';
-import Login from '@/pages/auth/login';
 import { useAuthStore } from '@/store/authStore';
-import { ConfirmDialogProvider, OfflineAlert } from '@/components/modules';
+import { ConfirmDialogProvider } from '@/components/modules/dialog-box';
 
 const Dashboard = lazy(() => import('@/pages/dashboard'));
 const ItemList = lazy(() => import('@/pages/master-data/item-list'));

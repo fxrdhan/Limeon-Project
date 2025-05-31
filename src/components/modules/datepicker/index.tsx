@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Input } from "@/components/modules";
+import Input from "@/components/modules/input";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { classNames } from "@/lib/classNames";
 import type { DatepickerProps } from "@/types";
@@ -27,7 +27,7 @@ const getYearsToDisplay = (year: number) => {
     return Array.from({ length: 12 }, (_, i) => startYear + i - 1);
 };
 
-export const Datepicker: React.FC<DatepickerProps> = ({
+const Datepicker: React.FC<DatepickerProps> = ({
     value,
     onChange,
     label,
@@ -67,20 +67,24 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         const viewportHeight = window.innerHeight;
         const spaceBelow = viewportHeight - buttonRect.bottom;
         const shouldDropUp =
-            spaceBelow < calendarHeight + 10 &&
-            buttonRect.top > calendarHeight + 10;
+            spaceBelow < calendarHeight + 10 && buttonRect.top > calendarHeight + 10;
 
         setDropDirection(shouldDropUp ? "up" : "down");
 
         const newMenuStyle: React.CSSProperties = {
             position: "fixed",
             left: `${buttonRect.left + window.scrollX}px`,
-            width: portalWidth ? (typeof portalWidth === 'number' ? `${portalWidth}px` : portalWidth) : `${buttonRect.width}px`,
+            width: portalWidth
+                ? typeof portalWidth === "number"
+                    ? `${portalWidth}px`
+                    : portalWidth
+                : `${buttonRect.width}px`,
             zIndex: 1050,
         };
         const margin = 5;
         if (shouldDropUp) {
-            newMenuStyle.top = `${buttonRect.top + window.scrollY - calendarHeight - margin}px`;
+            newMenuStyle.top = `${buttonRect.top + window.scrollY - calendarHeight - margin
+                }px`;
         } else {
             newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
         }
@@ -171,7 +175,14 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     };
 
     const handleDateSelect = (date: Date) => {
-        const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+        const selectedDate = new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            12,
+            0,
+            0
+        );
         onChange(selectedDate);
         closeCalendar();
 
@@ -181,12 +192,12 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     };
 
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Tab' && isOpen) {
+        if (e.key === "Tab" && isOpen) {
             e.preventDefault();
             return;
         }
-        
-        if (e.key === 'Enter') {
+
+        if (e.key === "Enter") {
             e.preventDefault();
             if (isOpen && !isClosing) {
                 if (currentView === "days" && highlightedDate) {
@@ -201,60 +212,60 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             } else {
                 openCalendar();
             }
-        } else if (e.key === 'Escape' && isOpen) {
+        } else if (e.key === "Escape" && isOpen) {
             e.preventDefault();
             closeCalendar();
         } else if (isOpen) {
             if (e.ctrlKey && currentView === "days") {
                 let navigated = false;
                 switch (e.key) {
-                    case 'ArrowLeft':
+                    case "ArrowLeft":
                         navigateViewDate("prev");
                         navigated = true;
                         break;
-                    case 'ArrowRight':
+                    case "ArrowRight":
                         navigateViewDate("next");
                         navigated = true;
                         break;
-                    case 'ArrowUp':
+                    case "ArrowUp":
                         navigateYear("prev");
                         navigated = true;
                         break;
-                    case 'ArrowDown':
+                    case "ArrowDown":
                         navigateYear("next");
                         navigated = true;
                         break;
                 }
                 if (navigated) {
                     e.preventDefault();
-                    return; 
+                    return;
                 }
             }
-            
+
             if (currentView === "days" && !e.ctrlKey) {
                 const currentHighlight = highlightedDate || value || new Date();
                 const newHighlight = new Date(currentHighlight);
                 let navigated = false;
-                
+
                 switch (e.key) {
-                    case 'ArrowLeft':
+                    case "ArrowLeft":
                         newHighlight.setDate(newHighlight.getDate() - 1);
                         navigated = true;
                         break;
-                    case 'ArrowRight':
+                    case "ArrowRight":
                         newHighlight.setDate(newHighlight.getDate() + 1);
                         navigated = true;
                         break;
-                    case 'ArrowUp':
+                    case "ArrowUp":
                         newHighlight.setDate(newHighlight.getDate() - 7);
                         navigated = true;
                         break;
-                    case 'ArrowDown':
+                    case "ArrowDown":
                         newHighlight.setDate(newHighlight.getDate() + 7);
                         navigated = true;
                         break;
                 }
-                
+
                 if (navigated) {
                     e.preventDefault();
                     let isValidDate = true;
@@ -268,39 +279,44 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         max.setHours(0, 0, 0, 0);
                         if (newHighlight > max) isValidDate = false;
                     }
-                    
+
                     if (isValidDate) {
                         setHighlightedDate(newHighlight);
-                        if (newHighlight.getMonth() !== displayDate.getMonth() || 
-                            newHighlight.getFullYear() !== displayDate.getFullYear()) {
-                            setDisplayDate(new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1));
+                        if (
+                            newHighlight.getMonth() !== displayDate.getMonth() ||
+                            newHighlight.getFullYear() !== displayDate.getFullYear()
+                        ) {
+                            setDisplayDate(
+                                new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1)
+                            );
                         }
                     }
                 }
             } else if (currentView === "months") {
-                const currentHighlight = highlightedMonth ?? (value ? value.getMonth() : 0);
+                const currentHighlight =
+                    highlightedMonth ?? (value ? value.getMonth() : 0);
                 let newHighlight = currentHighlight;
                 let navigated = false;
-                
+
                 switch (e.key) {
-                    case 'ArrowLeft':
+                    case "ArrowLeft":
                         newHighlight = Math.max(0, currentHighlight - 1);
                         navigated = true;
                         break;
-                    case 'ArrowRight':
+                    case "ArrowRight":
                         newHighlight = Math.min(11, currentHighlight + 1);
                         navigated = true;
                         break;
-                    case 'ArrowUp':
+                    case "ArrowUp":
                         newHighlight = Math.max(0, currentHighlight - 3);
                         navigated = true;
                         break;
-                    case 'ArrowDown':
+                    case "ArrowDown":
                         newHighlight = Math.min(11, currentHighlight + 3);
                         navigated = true;
                         break;
                 }
-                
+
                 if (navigated) {
                     e.preventDefault();
                     const currentYear = displayDate.getFullYear();
@@ -315,44 +331,47 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         const firstDayOfMonth = new Date(currentYear, newHighlight, 1);
                         if (firstDayOfMonth > maxD) isValidMonth = false;
                     }
-                    
+
                     if (isValidMonth) {
                         setHighlightedMonth(newHighlight);
                     }
                 }
             } else if (currentView === "years") {
                 const yearsToDisplay = getYearsToDisplay(displayDate.getFullYear());
-                const currentHighlight = highlightedYear ?? (value ? value.getFullYear() : yearsToDisplay[5]);
+                const currentHighlight =
+                    highlightedYear ?? (value ? value.getFullYear() : yearsToDisplay[5]);
                 const currentIndex = yearsToDisplay.indexOf(currentHighlight);
                 let newIndex = currentIndex;
                 let navigated = false;
-                
+
                 switch (e.key) {
-                    case 'ArrowLeft':
+                    case "ArrowLeft":
                         newIndex = Math.max(0, currentIndex - 1);
                         navigated = true;
                         break;
-                    case 'ArrowRight':
+                    case "ArrowRight":
                         newIndex = Math.min(yearsToDisplay.length - 1, currentIndex + 1);
                         navigated = true;
                         break;
-                    case 'ArrowUp':
+                    case "ArrowUp":
                         newIndex = Math.max(0, currentIndex - 3);
                         navigated = true;
                         break;
-                    case 'ArrowDown':
+                    case "ArrowDown":
                         newIndex = Math.min(yearsToDisplay.length - 1, currentIndex + 3);
                         navigated = true;
                         break;
                 }
-                
+
                 if (navigated) {
                     e.preventDefault();
                     const newYear = yearsToDisplay[newIndex];
                     let isValidYear = true;
-                    if (minDate && newYear < new Date(minDate).getFullYear()) isValidYear = false;
-                    if (maxDate && newYear > new Date(maxDate).getFullYear()) isValidYear = false;
-                    
+                    if (minDate && newYear < new Date(minDate).getFullYear())
+                        isValidYear = false;
+                    if (maxDate && newYear > new Date(maxDate).getFullYear())
+                        isValidYear = false;
+
                     if (isValidYear) {
                         setHighlightedYear(newYear);
                     }
@@ -362,27 +381,27 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     };
 
     const handleCalendarKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === 'Tab') {
+        if (e.key === "Tab") {
             e.preventDefault();
             return;
         }
-        
+
         if (e.ctrlKey && currentView === "days") {
             let navigated = false;
             switch (e.key) {
-                case 'ArrowLeft':
+                case "ArrowLeft":
                     navigateViewDate("prev");
                     navigated = true;
                     break;
-                case 'ArrowRight':
+                case "ArrowRight":
                     navigateViewDate("next");
                     navigated = true;
                     break;
-                case 'ArrowUp':
+                case "ArrowUp":
                     navigateYear("prev");
                     navigated = true;
                     break;
-                case 'ArrowDown':
+                case "ArrowDown":
                     navigateYear("next");
                     navigated = true;
                     break;
@@ -392,8 +411,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                 return;
             }
         }
-        
-        if (e.key === 'Enter') {
+
+        if (e.key === "Enter") {
             if (e.target === portalContentRef.current) {
                 e.preventDefault();
                 if (currentView === "days" && highlightedDate) {
@@ -404,23 +423,31 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     handleYearSelect(highlightedYear);
                 }
             }
-            return; 
+            return;
         }
-        
-        if (e.key === 'Escape') {
+
+        if (e.key === "Escape") {
             e.preventDefault();
-            if (currentView === 'years') {
-                setCurrentView('months');
+            if (currentView === "years") {
+                setCurrentView("months");
                 setHighlightedYear(null);
                 const currentDisplayYear = displayDate.getFullYear();
-                setHighlightedMonth(value && value.getFullYear() === currentDisplayYear ? value.getMonth() : 0);
+                setHighlightedMonth(
+                    value && value.getFullYear() === currentDisplayYear
+                        ? value.getMonth()
+                        : 0
+                );
                 focusPortal();
-            } else if (currentView === 'months') {
-                setCurrentView('days');
+            } else if (currentView === "months") {
+                setCurrentView("days");
                 const currentDisplayMonth = displayDate.getMonth();
                 const currentDisplayYear = displayDate.getFullYear();
                 let newHighlight: Date;
-                if (value && value.getFullYear() === currentDisplayYear && value.getMonth() === currentDisplayMonth) {
+                if (
+                    value &&
+                    value.getFullYear() === currentDisplayYear &&
+                    value.getMonth() === currentDisplayMonth
+                ) {
                     newHighlight = new Date(value);
                 } else {
                     newHighlight = new Date(currentDisplayYear, currentDisplayMonth, 1);
@@ -438,26 +465,26 @@ export const Datepicker: React.FC<DatepickerProps> = ({
             const currentHighlight = highlightedDate || value || new Date();
             const newHighlight = new Date(currentHighlight);
             let navigated = false;
-            
+
             switch (e.key) {
-                case 'ArrowLeft':
+                case "ArrowLeft":
                     newHighlight.setDate(newHighlight.getDate() - 1);
                     navigated = true;
                     break;
-                case 'ArrowRight':
+                case "ArrowRight":
                     newHighlight.setDate(newHighlight.getDate() + 1);
                     navigated = true;
                     break;
-                case 'ArrowUp':
+                case "ArrowUp":
                     newHighlight.setDate(newHighlight.getDate() - 7);
                     navigated = true;
                     break;
-                case 'ArrowDown':
+                case "ArrowDown":
                     newHighlight.setDate(newHighlight.getDate() + 7);
                     navigated = true;
                     break;
             }
-            
+
             if (navigated) {
                 e.preventDefault();
                 let isValidDate = true;
@@ -471,39 +498,44 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     max.setHours(0, 0, 0, 0);
                     if (newHighlight > max) isValidDate = false;
                 }
-                
+
                 if (isValidDate) {
                     setHighlightedDate(newHighlight);
-                    if (newHighlight.getMonth() !== displayDate.getMonth() || 
-                        newHighlight.getFullYear() !== displayDate.getFullYear()) {
-                        setDisplayDate(new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1));
+                    if (
+                        newHighlight.getMonth() !== displayDate.getMonth() ||
+                        newHighlight.getFullYear() !== displayDate.getFullYear()
+                    ) {
+                        setDisplayDate(
+                            new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1)
+                        );
                     }
                 }
             }
         } else if (currentView === "months") {
-            const currentHighlight = highlightedMonth ?? (value ? value.getMonth() : 0);
+            const currentHighlight =
+                highlightedMonth ?? (value ? value.getMonth() : 0);
             let newHighlight = currentHighlight;
             let navigated = false;
-            
+
             switch (e.key) {
-                case 'ArrowLeft':
+                case "ArrowLeft":
                     newHighlight = Math.max(0, currentHighlight - 1);
                     navigated = true;
                     break;
-                case 'ArrowRight':
+                case "ArrowRight":
                     newHighlight = Math.min(11, currentHighlight + 1);
                     navigated = true;
                     break;
-                case 'ArrowUp':
+                case "ArrowUp":
                     newHighlight = Math.max(0, currentHighlight - 3);
                     navigated = true;
                     break;
-                case 'ArrowDown':
+                case "ArrowDown":
                     newHighlight = Math.min(11, currentHighlight + 3);
                     navigated = true;
                     break;
             }
-            
+
             if (navigated) {
                 e.preventDefault();
                 const currentYear = displayDate.getFullYear();
@@ -518,44 +550,47 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     const firstDayOfMonth = new Date(currentYear, newHighlight, 1);
                     if (firstDayOfMonth > maxD) isValidMonth = false;
                 }
-                
+
                 if (isValidMonth) {
                     setHighlightedMonth(newHighlight);
                 }
             }
         } else if (currentView === "years") {
             const yearsToDisplay = getYearsToDisplay(displayDate.getFullYear());
-            const currentHighlight = highlightedYear ?? (value ? value.getFullYear() : yearsToDisplay[5]);
+            const currentHighlight =
+                highlightedYear ?? (value ? value.getFullYear() : yearsToDisplay[5]);
             const currentIndex = yearsToDisplay.indexOf(currentHighlight);
             let newIndex = currentIndex;
             let navigated = false;
-            
+
             switch (e.key) {
-                case 'ArrowLeft':
+                case "ArrowLeft":
                     newIndex = Math.max(0, currentIndex - 1);
                     navigated = true;
                     break;
-                case 'ArrowRight':
+                case "ArrowRight":
                     newIndex = Math.min(yearsToDisplay.length - 1, currentIndex + 1);
                     navigated = true;
                     break;
-                case 'ArrowUp':
+                case "ArrowUp":
                     newIndex = Math.max(0, currentIndex - 3);
                     navigated = true;
                     break;
-                case 'ArrowDown':
+                case "ArrowDown":
                     newIndex = Math.min(yearsToDisplay.length - 1, currentIndex + 3);
                     navigated = true;
                     break;
             }
-            
+
             if (navigated) {
                 e.preventDefault();
                 const newYear = yearsToDisplay[newIndex];
                 let isValidYear = true;
-                if (minDate && newYear < new Date(minDate).getFullYear()) isValidYear = false;
-                if (maxDate && newYear > new Date(maxDate).getFullYear()) isValidYear = false;
-                
+                if (minDate && newYear < new Date(minDate).getFullYear())
+                    isValidYear = false;
+                if (maxDate && newYear > new Date(maxDate).getFullYear())
+                    isValidYear = false;
+
                 if (isValidYear) {
                     setHighlightedYear(newYear);
                 }
@@ -618,7 +653,9 @@ export const Datepicker: React.FC<DatepickerProps> = ({
     const navigateYear = (direction: "prev" | "next") => {
         setDisplayDate((prev) => {
             const newDate = new Date(prev);
-            newDate.setFullYear(newDate.getFullYear() + (direction === "prev" ? -1 : 1));
+            newDate.setFullYear(
+                newDate.getFullYear() + (direction === "prev" ? -1 : 1)
+            );
             return newDate;
         });
     };
@@ -652,7 +689,9 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         } else if (currentView === "months") {
             setCurrentView("years");
             setHighlightedMonth(null);
-            setHighlightedYear(value ? value.getFullYear() : displayDate.getFullYear());
+            setHighlightedYear(
+                value ? value.getFullYear() : displayDate.getFullYear()
+            );
         }
         calculatePosition();
         focusPortal();
@@ -660,20 +699,28 @@ export const Datepicker: React.FC<DatepickerProps> = ({
 
     const handleMonthSelect = (selectedMonth: number) => {
         const currentDisplayYear = displayDate.getFullYear();
-        const newDisplayDateForDaysView = new Date(currentDisplayYear, selectedMonth, 1);
-        
+        const newDisplayDateForDaysView = new Date(
+            currentDisplayYear,
+            selectedMonth,
+            1
+        );
+
         setDisplayDate(newDisplayDateForDaysView);
         setCurrentView("days");
 
         let newHighlight: Date;
-        if (value && value.getFullYear() === currentDisplayYear && value.getMonth() === selectedMonth) {
+        if (
+            value &&
+            value.getFullYear() === currentDisplayYear &&
+            value.getMonth() === selectedMonth
+        ) {
             newHighlight = new Date(value);
         } else {
             newHighlight = new Date(currentDisplayYear, selectedMonth, 1);
         }
         setHighlightedDate(newHighlight);
         setHighlightedMonth(null);
-        
+
         calculatePosition();
         focusPortal();
     };
@@ -686,7 +733,9 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         });
         setCurrentView("months");
         setHighlightedYear(null);
-        setHighlightedMonth(value && value.getFullYear() === selectedYear ? value.getMonth() : 0);
+        setHighlightedMonth(
+            value && value.getFullYear() === selectedYear ? value.getMonth() : 0
+        );
         calculatePosition();
         focusPortal();
     };
@@ -720,8 +769,9 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     const currentDate = new Date(year, month, day);
                     const isSelected =
                         value && currentDate.toDateString() === value.toDateString();
-                    const isHighlighted = 
-                        highlightedDate && currentDate.toDateString() === highlightedDate.toDateString();
+                    const isHighlighted =
+                        highlightedDate &&
+                        currentDate.toDateString() === highlightedDate.toDateString();
 
                     let isDisabled = false;
                     if (minDate) {
@@ -739,17 +789,23 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         <button
                             key={day}
                             onClick={() => !isDisabled && handleDateSelect(currentDate)}
-                            onMouseEnter={() => !isDisabled && setHighlightedDate(currentDate)}
+                            onMouseEnter={() =>
+                                !isDisabled && setHighlightedDate(currentDate)
+                            }
                             onMouseLeave={() => setHighlightedDate(null)}
                             disabled={isDisabled}
                             className={classNames(
                                 "py-1.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
-                                isDisabled ? "text-gray-300 cursor-not-allowed" : "hover:bg-teal-100",
-                                !isDisabled && (isSelected
+                                isDisabled
+                                    ? "text-gray-300 cursor-not-allowed"
+                                    : "hover:bg-teal-100",
+                                !isDisabled &&
+                                (isSelected
                                     ? "bg-primary text-white hover:text-primary hover:bg-primary"
                                     : isHighlighted
                                         ? "bg-primary/30 text-primary-dark ring-2 ring-primary/50"
-                                        : new Date(year, month, day).toDateString() === new Date().toDateString()
+                                        : new Date(year, month, day).toDateString() ===
+                                            new Date().toDateString()
                                             ? "border border-primary text-primary"
                                             : "text-gray-700")
                             )}
@@ -782,10 +838,13 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         const firstDayOfMonth = new Date(currentYear, index, 1);
                         if (firstDayOfMonth > maxD) isDisabled = true;
                     }
-                    
-                    const isSelected = value && value.getFullYear() === currentYear && value.getMonth() === index;
+
+                    const isSelected =
+                        value &&
+                        value.getFullYear() === currentYear &&
+                        value.getMonth() === index;
                     const isHighlighted = highlightedMonth === index;
-                    
+
                     return (
                         <button
                             key={monthName}
@@ -798,7 +857,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                                 isDisabled
                                     ? "text-gray-300 cursor-not-allowed"
                                     : "hover:bg-teal-100 text-gray-700",
-                                !isDisabled && (isSelected
+                                !isDisabled &&
+                                (isSelected
                                     ? "bg-primary text-white hover:text-primary"
                                     : isHighlighted
                                         ? "bg-primary/30 text-primary-dark ring-2 ring-primary/50"
@@ -827,10 +887,10 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                         const maxD = new Date(maxDate);
                         if (yearVal > maxD.getFullYear()) isDisabled = true;
                     }
-                    
+
                     const isSelected = value && value.getFullYear() === yearVal;
                     const isHighlighted = highlightedYear === yearVal;
-                    
+
                     return (
                         <button
                             key={yearVal}
@@ -843,7 +903,8 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                                 isDisabled
                                     ? "text-gray-300 cursor-not-allowed"
                                     : "hover:bg-teal-100 text-gray-700",
-                                !isDisabled && (isSelected
+                                !isDisabled &&
+                                (isSelected
                                     ? "bg-primary text-white hover:text-primary"
                                     : isHighlighted
                                         ? "bg-primary/30 text-primary-dark ring-2 ring-primary/50"
@@ -876,24 +937,23 @@ export const Datepicker: React.FC<DatepickerProps> = ({
                     onKeyDown={handleInputKeyDown}
                     onMouseEnter={handleTriggerMouseEnter}
                     onMouseLeave={handleTriggerMouseLeave}
-                    onChange={e => e.preventDefault()}
+                    onChange={(e) => e.preventDefault()}
                 />
-                {(isOpen || isClosing) && isPositionReady &&
+                {(isOpen || isClosing) &&
+                    isPositionReady &&
                     createPortal(
                         <div
                             ref={portalContentRef}
                             tabIndex={0}
                             style={{
                                 ...portalStyle,
-                                outline: "none"
+                                outline: "none",
                             }}
                             className={classNames(
                                 "bg-white shadow-lg rounded-lg border border-gray-200 p-4 w-[280px]",
                                 dropDirection === "down" ? "origin-top" : "origin-bottom",
                                 "transition-all duration-150 ease-out focus:outline-none",
-                                isClosing
-                                    ? "opacity-0 scale-95"
-                                    : "opacity-100 scale-100"
+                                isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100"
                             )}
                             onMouseEnter={handleCalendarMouseEnter}
                             onMouseLeave={handleCalendarMouseLeave}
@@ -948,3 +1008,5 @@ export const Datepicker: React.FC<DatepickerProps> = ({
         </div>
     );
 };
+
+export default Datepicker;

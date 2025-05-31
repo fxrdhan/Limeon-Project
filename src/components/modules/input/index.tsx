@@ -2,7 +2,7 @@ import { forwardRef } from 'react';
 import type { InputProps } from '@/types';
 import { classNames } from '@/lib/classNames';
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(({
+const Input = forwardRef<HTMLInputElement, InputProps>(({
     label,
     error,
     className,
@@ -37,3 +37,5 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
 });
 
 Input.displayName = 'Input';
+
+export default Input;

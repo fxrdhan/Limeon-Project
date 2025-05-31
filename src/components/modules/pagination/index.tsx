@@ -3,7 +3,7 @@ import type { PaginationProps } from "@/types";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import React, { useRef, useEffect } from "react";
 
-export const Pagination = ({
+const Pagination = ({
     currentPage,
     totalPages,
     itemsPerPage,
@@ -172,3 +172,5 @@ export const Pagination = ({
         </div>
     );
 };
+
+export default Pagination;

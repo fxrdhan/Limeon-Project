@@ -1,22 +1,23 @@
-import { Link, useLocation } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import Button from "@/components/modules/button";
+import Pagination from "@/components/modules/pagination";
+import SearchBar from "@/components/modules/search-bar";
+import PageTitle from "@/components/modules/page-title";
+import Badge from "@/components/modules/badge";
+import Loading from "@/components/modules/loading";
+
 import {
-    Card,
-    Badge,
-    Button,
-    Loading,
-    Pagination,
-    SearchBar,
-    useConfirmDialog,
     Table,
     TableHead,
     TableBody,
     TableRow,
     TableCell,
     TableHeader,
-    PageTitle
-} from "@/components/modules";
+} from "@/components/modules/table";
+import { useConfirmDialog } from "@/components/modules/dialog-box";
+import { Card } from "@/components/modules/card";
+import { Link, useLocation } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
 import {
     useQuery,

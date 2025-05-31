@@ -1,4 +1,7 @@
-import { Button, ImageUploader, Input } from "@/components/modules";
+// import { Button, ImageUploader, Input } from "@/components/modules";
+import ImageUploader from "@/components/modules/image-uploader";
+import Input from "@/components/modules/input";
+import Button from "@/components/modules/button";
 import { createPortal } from "react-dom";
 import { Transition, TransitionChild, Dialog } from "@headlessui/react";
 import React, { Fragment, useRef, useState, useEffect } from "react";
@@ -6,7 +9,7 @@ import type { DetailEditModalProps } from "@/types";
 import { FaPencilAlt, FaSpinner, FaSave, FaBan } from "react-icons/fa";
 import { useSupplierDetailForm } from "@/hooks/supplierDetail";
 
-export const DetailEditModal: React.FC<DetailEditModalProps> = ({
+const DetailEditModal: React.FC<DetailEditModalProps> = ({
     title,
     data,
     fields,
@@ -338,3 +341,5 @@ export const DetailEditModal: React.FC<DetailEditModalProps> = ({
         document.body
     );
 };
+
+export default DetailEditModal;

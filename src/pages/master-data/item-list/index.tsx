@@ -1,21 +1,22 @@
+import Button from "@/components/modules/button";
+import SearchBar from "@/components/modules/search-bar";
+import PageTitle from "@/components/modules/page-title";
+import Pagination from "@/components/modules/pagination";
+
 import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import {
-    Card,
-    Button,
-    SearchBar,
     Table,
     TableHead,
     TableBody,
     TableRow,
     TableCell,
     TableHeader,
-    Pagination,
-    PageTitle,
-} from "@/components/modules";
+} from "@/components/modules/table";
 import { FaPlus } from "react-icons/fa";
+import { Card } from "@/components/modules/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
-import { AddItemPortal } from "@/components/modules";
+import AddItemPortal from "@/components/modules/add-edit/v2";
 import { useMasterDataManagement } from "@/handlers/masterData";
 
 function ItemList() {
@@ -113,18 +114,14 @@ function ItemList() {
                                     <TableHeader className="w-[8%]">Kategori</TableHeader>
                                     <TableHeader className="w-[14%]">Jenis</TableHeader>
                                     <TableHeader className="w-[6%]">Satuan</TableHeader>
-                                    <TableHeader className="w-[10%]">
-                                        Satuan Turunan
-                                    </TableHeader>
+                                    <TableHeader className="w-[10%]">Satuan Turunan</TableHeader>
                                     <TableHeader className="w-[10%] text-right">
                                         Harga Pokok
                                     </TableHeader>
                                     <TableHeader className="w-[10%] text-right">
                                         Harga Jual
                                     </TableHeader>
-                                    <TableHeader className="w-[5%] text-center">
-                                        Stok
-                                    </TableHeader>
+                                    <TableHeader className="w-[5%] text-center">Stok</TableHeader>
                                 </TableRow>
                             </TableHead>
                             <TableBody>

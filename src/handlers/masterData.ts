@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { useConfirmDialog } from "@/components/modules";
+import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { fuzzyMatch, getScore } from "@/utils/search";
 import { useFieldFocus } from "@/hooks/fieldFocus";
 import {

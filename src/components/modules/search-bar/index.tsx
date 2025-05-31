@@ -2,7 +2,7 @@ import React from 'react';
 import { FaSearch } from 'react-icons/fa';
 import type { TableSearchProps } from '@/types';
 
-export const SearchBar: React.FC<TableSearchProps> = ({
+const SearchBar: React.FC<TableSearchProps> = ({
     value,
     onChange,
     placeholder = "Cari...",
@@ -22,3 +22,5 @@ export const SearchBar: React.FC<TableSearchProps> = ({
         </div>
     );
 };
+
+export default SearchBar;

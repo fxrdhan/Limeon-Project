@@ -1,24 +1,27 @@
+import Button from "@/components/modules/button";
+import Pagination from "@/components/modules/pagination";
+import SearchBar from "@/components/modules/search-bar";
+import PageTitle from "@/components/modules/page-title";
+import AddEditModal from "@/components/modules/add-edit/v1";
+
 import { FaPlus } from "react-icons/fa";
+import { Card } from "@/components/modules/card";
 import {
-    Card,
-    Button,
-    Pagination,
-    SearchBar,
     Table,
     TableHead,
     TableBody,
     TableRow,
     TableCell,
     TableHeader,
-    PageTitle,
-    AddEditModal
-} from "@/components/modules";
+} from "@/components/modules/table";
 import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useRef } from "react";
+import { useLocation } from "react-router-dom";
 
 const CategoryList = () => {
-    const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+    const searchInputRef = useRef<HTMLInputElement>(
+        null
+    ) as React.RefObject<HTMLInputElement>;
     const location = useLocation();
 
     const {
@@ -52,7 +55,7 @@ const CategoryList = () => {
         searchInputRef,
         locationKey: location.key,
     });
-    
+
     const handleCloseAddModal = () => {
         setIsAddModalOpen(false);
     };
@@ -121,7 +124,11 @@ const CategoryList = () => {
                                             className="cursor-pointer hover:bg-blue-50"
                                         >
                                             <TableCell>{category.name}</TableCell>
-                                            <TableCell>{("description" in category && category.description) ? category.description : "-"}</TableCell>
+                                            <TableCell>
+                                                {"description" in category && category.description
+                                                    ? category.description
+                                                    : "-"}
+                                            </TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
