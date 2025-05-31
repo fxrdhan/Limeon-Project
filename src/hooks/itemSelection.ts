@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { fuzzyMatch, getScore } from '@/utils/search';
 import type { Item, UnitConversion } from '@/types';
+import { useSupabaseRealtime } from './supabaseRealtime';
 
 export const useItemSelection = () => {
     const [items, setItems] = useState<Item[]>([]);
@@ -88,24 +89,10 @@ export const useItemSelection = () => {
         return a.name.localeCompare(b.name);
     });
 
-    useEffect(() => {
-        const channel = supabase
-            .channel('public:items:item-selection')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'items' },
-                (payload) => {
-                    console.log('Realtime item change received in item-selection!', payload);
-                    fetchItems();
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, []);
-
+    useSupabaseRealtime('items', null, { 
+        onRealtimeEvent: () => fetchItems()
+    });
+    
     return {
         items,
         searchItem,
