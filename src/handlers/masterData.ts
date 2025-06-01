@@ -14,7 +14,7 @@ import type {
     Category,
     ItemType,
     Unit,
-    Item as ItemDataType,
+    Item,
     Supplier,
     UnitConversion,
     UnitData,
@@ -23,7 +23,7 @@ import type {
     UseMasterDataManagementOptions
 } from "@/types";
 
-type MasterDataItem = Category | ItemType | Unit | ItemDataType | Supplier;
+type MasterDataItem = Category | ItemType | Unit | Item | Supplier;
 
 export const useMasterDataManagement = (
     tableName: string,
@@ -162,7 +162,7 @@ export const useMasterDataManagement = (
                     category: { name: getName(item.item_categories) },
                     type: { name: getName(item.item_types) },
                     unit: { name: getName(item.item_units) },
-                } as ItemDataType;
+                } as Item;
             });
 
             let filteredData = completedData;
@@ -344,12 +344,20 @@ export const useMasterDataManagement = (
     };
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && currentData.length > 0) {
+        if (e.key === "Enter") {
             e.preventDefault();
-            const firstItem = currentData[0] as MasterDataItem;
-            handleEdit(firstItem);
+            
+            // If there are results, edit the first item (existing functionality)
+            if (currentData.length > 0) {
+                const firstItem = currentData[0] as MasterDataItem;
+                handleEdit(firstItem);
+            } 
+            // If no results and there's a search term, trigger add modal with search term
+            else if (debouncedSearch.trim() !== "") {
+                setIsAddModalOpen(true);
+            }
         }
-    }, [currentData, handleEdit]);
+    }, [currentData, handleEdit, debouncedSearch]);
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
