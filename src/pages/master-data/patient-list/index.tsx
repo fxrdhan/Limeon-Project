@@ -27,9 +27,6 @@ import type {
 import { useMasterDataManagement } from "@/handlers/masterData";
 
 const PatientList = () => {
-    const [selectedPatient, setSelectedPatient] = useState<PatientType | null>(
-        null
-    );
     const [, setNewPatientImage] = useState<string | null>(null);
     const searchInputRef = useRef<HTMLInputElement>(
         null
@@ -43,6 +40,8 @@ const PatientList = () => {
         isEditModalOpen,
         setIsEditModalOpen,
         setIsAddModalOpen,
+        editingItem,
+        setEditingItem,
         handleItemsPerPageChange,
         search,
         setSearch,
@@ -57,6 +56,7 @@ const PatientList = () => {
         isError,
         isFetching,
         handleKeyDown,
+        handleEdit,
     } = useMasterDataManagement("patients", "Pasien", {
         realtime: true,
         searchInputRef,
@@ -65,6 +65,7 @@ const PatientList = () => {
 
     const patients = patientsData || [];
     const currentTotalItems = totalItems || 0;
+    const selectedPatient = editingItem as PatientType | null;
 
     const updatePatient = async (updatedData: Partial<PatientType>) => {
         if (!selectedPatient || !selectedPatient.id) {
@@ -101,7 +102,7 @@ const PatientList = () => {
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ["patients"] });
             if (selectedPatient) {
-                setSelectedPatient((prev) =>
+                setEditingItem((prev) =>
                     prev ? { ...prev, ...variables } : null
                 );
             }
@@ -139,7 +140,7 @@ const PatientList = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["patients"] });
             setIsEditModalOpen(false);
-            setSelectedPatient(null);
+            setEditingItem(null);
         },
         onError: (error: Error) => {
             console.error("Error deleting patient:", error);
@@ -187,15 +188,14 @@ const PatientList = () => {
         onSuccess: (newImageUrl) => {
             queryClient.invalidateQueries({ queryKey: ["patients"] });
             if (newImageUrl && selectedPatient) {
-                setSelectedPatient((prev) => prev ? { ...prev, image_url: newImageUrl } : null);
+                setEditingItem((prev) => prev ? { ...prev, image_url: newImageUrl } : null);
             }
         },
         onError: (error) => console.error("Error updating patient image:", error),
     });
 
     const openPatientDetail = (patient: PatientType) => {
-        setSelectedPatient(patient);
-        setIsEditModalOpen(true);
+        handleEdit(patient);
     };
 
     const openAddPatientModal = () => {
