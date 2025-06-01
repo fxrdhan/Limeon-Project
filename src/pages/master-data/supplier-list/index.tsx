@@ -343,11 +343,15 @@ const SupplierList = () => {
                                                 "name" in supplier &&
                                                 "id" in supplier
                                         )
-                                        .map((supplier) => (
+                                        .map((supplier, index) => (
                                             <TableRow
                                                 key={supplier.id}
                                                 onClick={() => openSupplierDetail(supplier)}
-                                                className="cursor-pointer hover:bg-blue-50"
+                                                className={`cursor-pointer hover:bg-blue-50 ${
+                                                    index === 0 && debouncedSearch
+                                                        ? "bg-teal-100/50"
+                                                        : ""
+                                                }`}
                                             >
                                                 <TableCell>{supplier.name}</TableCell>
                                                 <TableCell>{supplier.address || "-"}</TableCell>
