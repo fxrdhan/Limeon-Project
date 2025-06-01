@@ -50,6 +50,7 @@ const TypeList = () => {
         addMutation: addTypeMutation,
         updateMutation: updateTypeMutation,
         debouncedSearch,
+        handleKeyDown,
     } = useMasterDataManagement("item_types", "Jenis Item", {
         realtime: true,
         searchInputRef,
@@ -80,6 +81,7 @@ const TypeList = () => {
                         inputRef={searchInputRef}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         placeholder="Cari nama atau deskripsi jenis item..."
                         className="flex-grow"
                     />
@@ -121,11 +123,15 @@ const TypeList = () => {
                                         </TableCell>
                                     </TableRow>
                                 ) : types && types.length > 0 ? (
-                                    types.map((type) => (
+                                    types.map((type, index) => (
                                         <TableRow
                                             key={type.id}
                                             onClick={() => handleEdit(type)}
-                                            className="cursor-pointer hover:bg-blue-50"
+                                            className={`cursor-pointer hover:bg-blue-50 ${
+                                                index === 0 && debouncedSearch
+                                                    ? "bg-teal-100/50"
+                                                    : ""
+                                            }`}
                                         >
                                             <TableCell>{type.name}</TableCell>
                                             <TableCell>
