@@ -66,6 +66,14 @@ function ItemList() {
         setCurrentSearchQueryForModal(undefined);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && items.length > 0) {
+            e.preventDefault();
+            const firstItem = items[0] as ItemDataType;
+            openAddItemModal(firstItem.id);
+        }
+    };
+
     return (
         <>
             <Card
@@ -83,6 +91,7 @@ function ItemList() {
                         inputRef={searchInputRef}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         placeholder="Cari nama atau kode item..."
                         className="flex-grow"
                     />
@@ -146,11 +155,15 @@ function ItemList() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    (items as ItemDataType[]).map((item) => (
+                                    (items as ItemDataType[]).map((item, index) => (
                                         <TableRow
                                             key={item.id}
                                             onClick={() => openAddItemModal(item.id)}
-                                            className="cursor-pointer hover:bg-blue-50"
+                                            className={`cursor-pointer hover:bg-blue-50 ${
+                                                index === 0 && debouncedSearch
+                                                    ? "bg-teal-100/50"
+                                                    : ""
+                                            }`}
                                         >
                                             <TableCell>{item.name}</TableCell>
                                             <TableCell>{item.code}</TableCell>

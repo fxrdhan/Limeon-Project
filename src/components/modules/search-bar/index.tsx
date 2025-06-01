@@ -5,6 +5,7 @@ import type { TableSearchProps } from '@/types';
 const SearchBar: React.FC<TableSearchProps> = ({
     value,
     onChange,
+    onKeyDown,
     placeholder = "Cari...",
     className = "",
     inputRef
@@ -17,7 +18,8 @@ const SearchBar: React.FC<TableSearchProps> = ({
                 placeholder={placeholder}
                 className="text-sm tracking-normal w-full p-2.5 border rounded-lg pl-10 focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
                 value={value}
-                onChange={onChange} />
+                onChange={onChange}
+                onKeyDown={onKeyDown} />
             <FaSearch className="absolute left-3 top-3.5 text-gray-400" />
         </div>
     );
