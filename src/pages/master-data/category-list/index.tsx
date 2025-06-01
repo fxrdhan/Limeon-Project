@@ -50,6 +50,7 @@ const CategoryList = () => {
         deleteMutation,
         openConfirmDialog,
         debouncedSearch,
+        handleKeyDown,
     } = useMasterDataManagement("item_categories", "Kategori Item", {
         realtime: true,
         searchInputRef,
@@ -80,6 +81,7 @@ const CategoryList = () => {
                         inputRef={searchInputRef}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         placeholder="Cari nama atau deskripsi kategori item..."
                         className="flex-grow"
                     />
@@ -117,11 +119,15 @@ const CategoryList = () => {
                                         </TableCell>
                                     </TableRow>
                                 ) : categories && categories.length > 0 ? (
-                                    categories.map((category) => (
+                                    categories.map((category, index) => (
                                         <TableRow
                                             key={category.id}
                                             onClick={() => handleEdit(category)}
-                                            className="cursor-pointer hover:bg-blue-50"
+                                            className={`cursor-pointer hover:bg-blue-50 ${
+                                                index === 0 && debouncedSearch
+                                                    ? "bg-teal-100/50"
+                                                    : ""
+                                            }`}
                                         >
                                             <TableCell>{category.name}</TableCell>
                                             <TableCell>

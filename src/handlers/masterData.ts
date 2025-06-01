@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { fuzzyMatch, getScore } from "@/utils/search";
@@ -258,7 +258,7 @@ export const useMasterDataManagement = (
         refetchOnMount: true,
     });
 
-    const currentData = queryData?.data || [];
+    const currentData = useMemo(() => queryData?.data || [], [queryData?.data]);
     const totalItems = queryData?.totalItems || 0;
     const queryError = error instanceof Error ? error : null;
 
@@ -317,10 +317,10 @@ export const useMasterDataManagement = (
         },
     });
 
-    const handleEdit = (item: MasterDataItem) => {
+    const handleEdit = useCallback((item: MasterDataItem) => {
         setEditingItem(item);
         setIsEditModalOpen(true);
-    };
+    }, []);
 
     const handleModalSubmit = useCallback(
         async (itemData: { id?: string; name: string; description?: string }) => {
@@ -342,6 +342,14 @@ export const useMasterDataManagement = (
         setItemsPerPage(Number(e.target.value));
         setCurrentPage(1);
     };
+
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && currentData.length > 0) {
+            e.preventDefault();
+            const firstItem = currentData[0] as MasterDataItem;
+            handleEdit(firstItem);
+        }
+    }, [currentData, handleEdit]);
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -387,6 +395,7 @@ export const useMasterDataManagement = (
         handleModalSubmit,
         handlePageChange,
         handleItemsPerPageChange,
+        handleKeyDown,
         openConfirmDialog,
         queryClient
     };

@@ -66,7 +66,12 @@ function ItemList() {
         setCurrentSearchQueryForModal(undefined);
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleItemEdit = (item: ItemDataType) => {
+        openAddItemModal(item.id);
+    };
+
+    // Override the default handleEdit for items
+    const handleItemKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && items.length > 0) {
             e.preventDefault();
             const firstItem = items[0] as ItemDataType;
@@ -91,7 +96,7 @@ function ItemList() {
                         inputRef={searchInputRef}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        onKeyDown={handleKeyDown}
+                        onKeyDown={handleItemKeyDown}
                         placeholder="Cari nama atau kode item..."
                         className="flex-grow"
                     />
@@ -158,7 +163,7 @@ function ItemList() {
                                     (items as ItemDataType[]).map((item, index) => (
                                         <TableRow
                                             key={item.id}
-                                            onClick={() => openAddItemModal(item.id)}
+                                            onClick={() => handleItemEdit(item)}
                                             className={`cursor-pointer hover:bg-blue-50 ${
                                                 index === 0 && debouncedSearch
                                                     ? "bg-teal-100/50"
