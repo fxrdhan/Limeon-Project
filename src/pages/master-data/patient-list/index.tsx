@@ -342,11 +342,15 @@ const PatientList = () => {
                                                 "name" in patient &&
                                                 "id" in patient
                                         )
-                                        .map((patient) => (
+                                        .map((patient, index) => (
                                             <TableRow
                                                 key={patient.id}
                                                 onClick={() => openPatientDetail(patient)}
-                                                className="cursor-pointer hover:bg-blue-50"
+                                                className={`cursor-pointer hover:bg-blue-50 ${
+                                                    index === 0 && debouncedSearch
+                                                        ? "bg-teal-100/50"
+                                                        : ""
+                                                }`}
                                             >
                                                 <TableCell>{patient.name}</TableCell>
                                                 <TableCell>{patient.gender || "-"}</TableCell>
