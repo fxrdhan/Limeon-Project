@@ -260,9 +260,18 @@ const PurchaseList = () => {
         <Card
             className={isFetching ? "opacity-75 transition-opacity duration-300" : ""}
         >
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-6">
                 <PageTitle title="Daftar Pembelian" />
-                <div className="flex space-x-2">
+            </div>
+            <div className="flex justify-between items-center">
+                <SearchBar
+                    inputRef={searchInputRef}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Cari nomor faktur..."
+                    className="flex-grow"
+                />
+                <div className="flex space-x-2 ml-4 mb-4">
                     <Link to="/purchases/upload-invoice">
                         <Button variant="primary">
                             <FaFileUpload className="mr-2" />
@@ -277,12 +286,6 @@ const PurchaseList = () => {
                     </Link>
                 </div>
             </div>
-            <SearchBar
-                inputRef={searchInputRef}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nomor faktur..."
-            />
             {isLoading ? (
                 <Loading message="Memuat data pembelian..." />
             ) : (
