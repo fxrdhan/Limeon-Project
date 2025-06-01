@@ -47,7 +47,8 @@ const UnitList = () => {
         updateMutation: updateUnitMutation,
         deleteMutation: deleteUnitMutation,
         openConfirmDialog,
-        debouncedSearch
+        debouncedSearch,
+        handleKeyDown,
     } = useMasterDataManagement("item_units", "Satuan", {
         realtime: true,
         searchInputRef,
@@ -78,6 +79,7 @@ const UnitList = () => {
                         inputRef={searchInputRef}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         placeholder="Cari nama atau deskripsi satuan..."
                         className="flex-grow"
                     />
@@ -115,11 +117,15 @@ const UnitList = () => {
                                         </TableCell>
                                     </TableRow>
                                 ) : units && units.length > 0 ? (
-                                    units.map((unit) => (
+                                    units.map((unit, index) => (
                                         <TableRow
                                             key={unit.id}
                                             onClick={() => handleEdit(unit)}
-                                            className="cursor-pointer hover:bg-blue-50"
+                                            className={`cursor-pointer hover:bg-blue-50 ${
+                                                index === 0 && debouncedSearch
+                                                    ? "bg-teal-100/50"
+                                                    : ""
+                                            }`}
                                         >
                                             <TableCell>{unit.name}</TableCell>
                                             <TableCell>{("description" in unit && unit.description) ? unit.description : "-"}</TableCell>
