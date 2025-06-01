@@ -4,6 +4,7 @@ import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { fuzzyMatch, getScore } from "@/utils/search";
 import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import { useFieldFocus } from "@/hooks/fieldFocus";
+import { useAlert } from "@/components/modules/alert/hooks"; // Tambahkan import useAlert
 import {
     useQuery,
     useMutation,
@@ -32,6 +33,7 @@ export const useMasterDataManagement = (
 ) => {
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
+    const alert = useAlert(); // Inisialisasi hook alert
 
     const {
         realtime = false,
@@ -272,7 +274,7 @@ export const useMasterDataManagement = (
             setIsAddModalOpen(false);
         },
         onError: (error: Error) => {
-            alert(`Gagal menambahkan ${entityNameLabel}: ${error.message}`);
+            alert.error(`Gagal menambahkan ${entityNameLabel}: ${error.message}`);
         },
     });
 
@@ -295,7 +297,7 @@ export const useMasterDataManagement = (
             setEditingItem(null);
         },
         onError: (error: Error) => {
-            alert(`Gagal memperbarui ${entityNameLabel}: ${error.message}`);
+            alert.error(`Gagal memperbarui ${entityNameLabel}: ${error.message}`);
         },
     });
 
@@ -313,7 +315,7 @@ export const useMasterDataManagement = (
             setEditingItem(null);
         },
         onError: (error: Error) => {
-            alert(`Gagal menghapus ${entityNameLabel}: ${error.message}`);
+            alert.error(`Gagal menghapus ${entityNameLabel}: ${error.message}`);
         },
     });
 
@@ -361,7 +363,16 @@ export const useMasterDataManagement = (
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-    useSupabaseRealtime(tableName, [tableName], { enabled: realtime });
+    // Modifikasi pemanggilan useSupabaseRealtime
+    useSupabaseRealtime(tableName, null, { // queryKeyToInvalidate sekarang null karena kita handle sendiri
+        enabled: realtime,
+        onRealtimeEvent: () => { // Tambahkan callback onRealtimeEvent
+            const tableNameFormatted = tableName.replace(/_/g, ' ');
+            alert.info(`Data ${tableNameFormatted} telah diperbarui dari server.`);
+            // Invalidate query dengan key yang benar
+            queryClient.invalidateQueries({ queryKey: [tableName, currentPage, debouncedSearch, itemsPerPage] });
+        }
+    });
 
     useFieldFocus({
         searchInputRef,
