@@ -135,14 +135,15 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     useEffect(() => {
         if (isOpen) {
             setIsMounted(true);
-            if (
-                nameInputRef.current &&
-                (isEditMode ? formData.name || !loading : !isEditMode)
-            ) {
-                setTimeout(() => nameInputRef.current?.focus(), 50);
-            }
+            const focusInput = () => {
+                if (nameInputRef.current) {
+                    nameInputRef.current.focus();
+                }
+            };
+
+            const timer = setTimeout(focusInput, 150);
+            return () => clearTimeout(timer);
         } else {
-            // Delay unmounting to allow exit animation
             const timer = setTimeout(() => setIsMounted(false), 300);
             return () => clearTimeout(timer);
         }
