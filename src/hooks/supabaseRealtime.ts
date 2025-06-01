@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQueryClient, QueryKey } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useAlert } from '@/components/modules/alert/hooks';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 interface SupabaseRealtimeOptions {
@@ -14,6 +15,7 @@ export const useSupabaseRealtime = (
     options: SupabaseRealtimeOptions = {}
 ) => {
     const { enabled = true, onRealtimeEvent } = options;
+    const alert = useAlert();
     const queryClient = useQueryClient();
 
     useEffect(() => {
@@ -37,6 +39,8 @@ export const useSupabaseRealtime = (
                     if (onRealtimeEvent) {
                         onRealtimeEvent(payload);
                     } else if (queryKeyToInvalidate) { 
+                        const tableNameFormatted = tableName.replace(/_/g, ' ');
+                        alert.info(`Data ${tableNameFormatted} telah diperbarui dari server.`);
                         queryClient.invalidateQueries({ queryKey: Array.isArray(queryKeyToInvalidate) ? queryKeyToInvalidate : [queryKeyToInvalidate] });
                     }
                 }
@@ -53,5 +57,5 @@ export const useSupabaseRealtime = (
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [tableName, queryKeyToInvalidate, queryClient, enabled, onRealtimeEvent]);
+    }, [tableName, queryKeyToInvalidate, queryClient, enabled, onRealtimeEvent, alert]);
 };
