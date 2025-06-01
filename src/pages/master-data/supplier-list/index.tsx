@@ -26,9 +26,6 @@ import { useMasterDataManagement } from "@/handlers/masterData";
 import { StorageService } from "@/utils/storage";
 
 const SupplierList = () => {
-    const [selectedSupplier, setSelectedSupplier] = useState<SupplierType | null>(
-        null
-    );
     const [, setNewSupplierImage] = useState<string | null>(null);
     const searchInputRef = useRef<HTMLInputElement>(
         null
@@ -42,6 +39,8 @@ const SupplierList = () => {
         isEditModalOpen,
         setIsEditModalOpen,
         setIsAddModalOpen,
+        editingItem,
+        setEditingItem,
         handleItemsPerPageChange,
         search,
         setSearch,
@@ -56,6 +55,7 @@ const SupplierList = () => {
         isError,
         isFetching,
         handleKeyDown,
+        handleEdit,
     } = useMasterDataManagement("suppliers", "Supplier", {
         realtime: true,
         searchInputRef,
@@ -64,6 +64,8 @@ const SupplierList = () => {
 
     const suppliers = suppliersData || [];
     const currentTotalItems = totalItems || 0;
+    const selectedSupplier = editingItem as SupplierType | null;
+
     const updateSupplier = async (updatedData: Partial<SupplierType>) => {
         if (!selectedSupplier || !selectedSupplier.id) {
             console.error(
@@ -99,7 +101,7 @@ const SupplierList = () => {
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ["suppliers"] });
             if (selectedSupplier) {
-                setSelectedSupplier((prev) =>
+                setEditingItem((prev) =>
                     prev ? { ...prev, ...variables } : null
                 );
             }
@@ -138,7 +140,7 @@ const SupplierList = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["suppliers"] });
             setIsEditModalOpen(false);
-            setSelectedSupplier(null);
+            setEditingItem(null);
         },
         onError: (error: Error) => {
             console.error("Error deleting supplier:", error);
@@ -189,7 +191,7 @@ const SupplierList = () => {
         onSuccess: (newImageUrl) => {
             queryClient.invalidateQueries({ queryKey: ["suppliers"] });
             if (newImageUrl && selectedSupplier) {
-                setSelectedSupplier((prev) => {
+                setEditingItem((prev) => {
                     if (!prev) return null;
                     return { ...prev, image_url: newImageUrl };
                 });
@@ -202,8 +204,7 @@ const SupplierList = () => {
     });
 
     const openSupplierDetail = (supplier: SupplierType) => {
-        setSelectedSupplier(supplier);
-        setIsEditModalOpen(true);
+        handleEdit(supplier);
     };
 
     const openAddSupplierModal = () => {

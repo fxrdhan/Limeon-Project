@@ -347,19 +347,9 @@ export const useMasterDataManagement = (
         if (e.key === "Enter" && currentData.length > 0) {
             e.preventDefault();
             const firstItem = currentData[0] as MasterDataItem;
-            if (tableName === "patients") {
-                const patient = firstItem as never;
-                setEditingItem(patient);
-                setIsEditModalOpen(true);
-            } else if (tableName === "suppliers") {
-                const supplier = firstItem as never;
-                setEditingItem(supplier);
-                setIsEditModalOpen(true);
-            } else {
-                handleEdit(firstItem);
-            }
+            handleEdit(firstItem);
         }
-    }, [currentData, handleEdit, tableName, setEditingItem, setIsEditModalOpen]);
+    }, [currentData, handleEdit]);
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
