@@ -56,6 +56,7 @@ const PatientList = () => {
         isLoading,
         isError,
         isFetching,
+        handleKeyDown,
     } = useMasterDataManagement("patients", "Pasien", {
         realtime: true,
         searchInputRef,
@@ -286,6 +287,7 @@ const PatientList = () => {
                     inputRef={searchInputRef}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder="Cari nama pasien..."
                     className="flex-grow"
                 />

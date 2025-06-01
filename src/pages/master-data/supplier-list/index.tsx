@@ -55,6 +55,7 @@ const SupplierList = () => {
         isLoading,
         isError,
         isFetching,
+        handleKeyDown,
     } = useMasterDataManagement("suppliers", "Supplier", {
         realtime: true,
         searchInputRef,
@@ -286,6 +287,7 @@ const SupplierList = () => {
                     inputRef={searchInputRef}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder="Cari supplier..."
                     className="flex-grow"
                 />
