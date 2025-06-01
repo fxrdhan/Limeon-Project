@@ -70,12 +70,17 @@ function ItemList() {
         openAddItemModal(item.id);
     };
 
-    // Override the default handleEdit for items
     const handleItemKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && items.length > 0) {
+        if (e.key === "Enter") {
             e.preventDefault();
-            const firstItem = items[0] as ItemDataType;
-            openAddItemModal(firstItem.id);
+
+            if (items.length > 0) {
+                const firstItem = items[0] as ItemDataType;
+                openAddItemModal(firstItem.id);
+            }
+            else if (debouncedSearch.trim() !== "") {
+                openAddItemModal(undefined, debouncedSearch);
+            }
         }
     };
 
