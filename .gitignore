@@ -14,6 +14,7 @@ src/output.css
 node_modules
 supabase_data
 project_files.txt
+project_files.md
 get-all
 get-database
 .env
