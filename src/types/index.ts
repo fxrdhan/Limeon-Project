@@ -695,13 +695,14 @@ export interface PageTitleProps {
     title: string;
 }
 
-export type AlertType = 'success' | 'error' | 'warning' | 'info';
+export type AlertType = 'success' | 'error' | 'warning' | 'info' | 'offline' | 'online';
 
 export interface AlertMessage {
     id: string;
     message: string;
     type: AlertType;
     duration?: number;
+    persistent?: boolean;
     icon?: React.ReactNode;
 }
 
