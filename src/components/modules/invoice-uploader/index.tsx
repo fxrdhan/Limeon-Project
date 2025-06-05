@@ -16,6 +16,7 @@ import {
     FaSearchMinus,
 } from "react-icons/fa";
 import { uploadAndExtractInvoice } from "@/services/invoiceExtractor";
+import { useInvoiceUploadStore } from "@/store/invoiceUploadStore";
 
 interface UploadInvoicePortalProps {
     isOpen: boolean;
@@ -23,6 +24,8 @@ interface UploadInvoicePortalProps {
 }
 
 const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
+    const { cachedInvoiceFile, setCachedInvoiceFile, clearCachedInvoiceFile } =
+        useInvoiceUploadStore();
     const navigate = useNavigate();
     const [file, setFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -60,6 +63,23 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        if (isOpen) {
+            // Restore cached file when portal opens
+            if (cachedInvoiceFile) {
+                setFile(cachedInvoiceFile);
+            }
+        } else {
+            // Reset local state but not the global cache on close
+            setError(null);
+            setLoading(false);
+            setIsDragging(false);
+            setShowFullPreview(false);
+            setZoomLevel(1);
+            setPosition({ x: 0, y: 0 });
+        }
+    }, [isOpen, cachedInvoiceFile]);
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
         setError(null);
@@ -77,6 +97,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
             return;
         }
         setFile(selectedFile);
+        setCachedInvoiceFile(selectedFile);
     };
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -106,6 +127,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
             return;
         }
         setFile(droppedFile);
+        setCachedInvoiceFile(droppedFile);
     };
 
     const handleUpload = async () => {
@@ -120,6 +142,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
             const data = await uploadAndExtractInvoice(file);
             const imageIdentifier = data.imageIdentifier;
             const processingTime = (Date.now() - startTime) / 1000;
+            clearCachedInvoiceFile(); // Clear cache on successful upload
             onClose();
             navigate("/purchases/confirm-invoice", {
                 state: {
@@ -146,6 +169,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
         setFileInputKey((prev) => prev + 1);
         setError(null);
         setShowFullPreview(false);
+        clearCachedInvoiceFile();
     };
 
     const toggleFullPreview = (e?: React.MouseEvent) => {
