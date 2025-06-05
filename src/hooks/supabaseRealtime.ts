@@ -2,10 +2,11 @@ import { useEffect } from 'react';
 import { useQueryClient, QueryKey } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { useAlert } from '@/components/modules/alert/hooks';
 
 interface SupabaseRealtimeOptions {
     enabled?: boolean;
-    onRealtimeEvent?: (payload: RealtimePostgresChangesPayload<{[key: string]: unknown;}>) => void;
+    onRealtimeEvent?: (payload: RealtimePostgresChangesPayload<{ [key: string]: unknown; }>) => void;
 }
 
 export const useSupabaseRealtime = (
@@ -15,6 +16,7 @@ export const useSupabaseRealtime = (
 ) => {
     const { enabled = true, onRealtimeEvent } = options;
     const queryClient = useQueryClient();
+    const alert = useAlert();
 
     useEffect(() => {
         if (!enabled) {
@@ -33,17 +35,20 @@ export const useSupabaseRealtime = (
                 'postgres_changes',
                 { event: '*', schema: 'public', table: tableName },
                 (payload) => {
-                    console.log(`Realtime update on ${tableName} (hook via ${onRealtimeEvent ? 'callback' : 'query-invalidation'}):`, payload);
-                    if (onRealtimeEvent) { // Selalu panggil onRealtimeEvent jika disediakan
+                    console.log(`Realtime update on ${tableName} (hook via ${onRealtimeEvent ? 'callback' : 'query-invalidation'}):`, payload.commit_timestamp);
+                    if (onRealtimeEvent) {
                         onRealtimeEvent(payload);
-                    } else if (queryKeyToInvalidate) { 
+                    } else if (queryKeyToInvalidate) {
+                        const tableNameFormatted = tableName.replace(/_/g, ' ')
+                            .replace(/\b\w/g, l => l.toUpperCase());
+                        alert.info(`Data ${tableNameFormatted} telah diperbarui.`);
                         queryClient.invalidateQueries({ queryKey: Array.isArray(queryKeyToInvalidate) ? queryKeyToInvalidate : [queryKeyToInvalidate] });
                     }
                 }
             )
             .subscribe((status, err) => {
                 if (status === 'SUBSCRIBED') {
-                    console.log(`Subscribed to realtime updates for ${tableName} (${onRealtimeEvent ? 'callback' : 'query-invalidation'})`);
+                    console.log(`Successfully subscribed to realtime updates for table: ${tableName}`);
                 }
                 if (err) {
                     console.error(`Realtime subscription error for ${tableName}:`, err);
@@ -53,5 +58,5 @@ export const useSupabaseRealtime = (
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [tableName, queryKeyToInvalidate, queryClient, enabled, onRealtimeEvent]);
+    }, [tableName, queryKeyToInvalidate, queryClient, enabled, onRealtimeEvent, alert]);
 };

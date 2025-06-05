@@ -4,7 +4,7 @@ import { useConfirmDialog } from "@/components/modules/dialog-box";
 import { fuzzyMatch, getScore } from "@/utils/search";
 import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import { useFieldFocus } from "@/hooks/fieldFocus";
-import { useAlert } from "@/components/modules/alert/hooks"; // Tambahkan import useAlert
+import { useAlert } from "@/components/modules/alert/hooks";
 import {
     useQuery,
     useMutation,
@@ -33,7 +33,7 @@ export const useMasterDataManagement = (
 ) => {
     const { openConfirmDialog } = useConfirmDialog();
     const queryClient = useQueryClient();
-    const alert = useAlert(); // Inisialisasi hook alert
+    const alert = useAlert();
 
     const {
         realtime = false,
@@ -349,12 +349,10 @@ export const useMasterDataManagement = (
         if (e.key === "Enter") {
             e.preventDefault();
             
-            // If there are results, edit the first item (existing functionality)
             if (currentData.length > 0) {
                 const firstItem = currentData[0] as MasterDataItem;
                 handleEdit(firstItem);
             } 
-            // If no results and there's a search term, trigger add modal with search term
             else if (debouncedSearch.trim() !== "") {
                 setIsAddModalOpen(true);
             }
@@ -363,15 +361,8 @@ export const useMasterDataManagement = (
 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-    // Modifikasi pemanggilan useSupabaseRealtime
-    useSupabaseRealtime(tableName, null, { // queryKeyToInvalidate sekarang null karena kita handle sendiri
+    useSupabaseRealtime(tableName, [tableName], {
         enabled: realtime,
-        onRealtimeEvent: () => { // Tambahkan callback onRealtimeEvent
-            const tableNameFormatted = tableName.replace(/_/g, ' ');
-            alert.info(`Data ${tableNameFormatted} telah diperbarui dari server.`);
-            // Invalidate query dengan key yang benar
-            queryClient.invalidateQueries({ queryKey: [tableName, currentPage, debouncedSearch, itemsPerPage] });
-        }
     });
 
     useFieldFocus({
