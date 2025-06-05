@@ -12,6 +12,7 @@ import {
     FaExclamationTriangle,
     FaInfoCircle,
     FaTimes,
+    FaWifi,
 } from "react-icons/fa";
 import { classNames } from "@/lib/classNames";
 import type {
@@ -27,6 +28,8 @@ const typeIcons: Record<AlertMessage["type"], ReactNode> = {
     error: <FaExclamationCircle className="text-red-500" />,
     warning: <FaExclamationTriangle className="text-yellow-500" />,
     info: <FaInfoCircle className="text-blue-500" />,
+    online: <FaWifi className="text-green-500" />,
+    offline: <FaWifi className="text-white" />,
 };
 
 const typeStyles: Record<AlertMessage["type"], string> = {
@@ -34,6 +37,8 @@ const typeStyles: Record<AlertMessage["type"], string> = {
     error: "bg-red-50 border-red-300 text-red-700",
     warning: "bg-yellow-50 border-yellow-300 text-yellow-700",
     info: "bg-blue-50 border-blue-300 text-blue-700",
+    online: "bg-green-50 border-green-300 text-green-800",
+    offline: "bg-gradient-to-r from-red-500 to-orange-500 text-white border-red-600 animate-pulse",
 };
 
 const AlertItem: React.FC<AlertItemProps> = ({
@@ -42,14 +47,17 @@ const AlertItem: React.FC<AlertItemProps> = ({
     type,
     duration = DEFAULT_DURATION,
     icon,
+    persistent = false,
     onClose,
 }) => {
     useEffect(() => {
+        if (persistent) return;
+
         const timer = setTimeout(() => {
             onClose();
         }, duration);
         return () => clearTimeout(timer);
-    }, [id, duration, onClose]);
+    }, [id, duration, onClose, persistent]);
 
     const alertIcon = icon || typeIcons[type];
 
@@ -88,17 +96,56 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
     const [alerts, setAlerts] = useState<AlertMessage[]>([]);
 
+    useEffect(() => {
+        const handleOffline = () => {
+            addAlert(
+                "Koneksi terputus. Anda sedang offline.",
+                "offline",
+                { persistent: true, id: "network-status" }
+            );
+        };
+
+        const handleOnline = () => {
+            // First, remove the persistent offline alert
+            removeAlert("network-status");
+            // Then, show a temporary online notification
+            addAlert("Koneksi tersambung kembali. Anda sedang online.", "online", {
+                duration: 3000,
+            });
+        };
+
+        window.addEventListener("offline", handleOffline);
+        window.addEventListener("online", handleOnline);
+
+        if (!navigator.onLine) {
+            handleOffline();
+        }
+
+        return () => {
+            window.removeEventListener("offline", handleOffline);
+            window.removeEventListener("online", handleOnline);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     const addAlert = useCallback(
         (
             message: string,
             type: AlertMessage["type"],
-            options: { duration?: number; icon?: ReactNode } = {}
+            options: { duration?: number; icon?: ReactNode, persistent?: boolean, id?: string } = {}
         ) => {
-            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-            setAlerts((prevAlerts) => [
-                { id, message, type, ...options },
-                ...prevAlerts,
-            ]);
+            const newId = options.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+            const newAlert: AlertMessage = { id: newId, message, type, ...options };
+
+            setAlerts((prevAlerts) => {
+                const existingIndex = options.id ? prevAlerts.findIndex(a => a.id === options.id) : -1;
+                if (existingIndex > -1) {
+                    const updatedAlerts = [...prevAlerts];
+                    updatedAlerts[existingIndex] = newAlert;
+                    return updatedAlerts;
+                }
+                return [newAlert, ...prevAlerts];
+            });
         },
         []
     );
