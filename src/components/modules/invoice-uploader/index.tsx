@@ -49,7 +49,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
 
     useEffect(() => {
         if (!isOpen) {
-            // Reset state when portal closes
             setFile(null);
             setError(null);
             setLoading(false);
@@ -316,7 +315,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                         onClick={handleUpload}
                                         disabled={!file || loading}
                                         isLoading={loading}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                                        className="bg-primary text-white"
                                         aria-live="polite"
                                     >
                                         <FaUpload className="mr-2" /> Ekspor Data
