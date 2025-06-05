@@ -4,7 +4,7 @@ import SearchBar from "@/components/modules/search-bar";
 import PageTitle from "@/components/modules/page-title";
 import Badge from "@/components/modules/badge";
 import Loading from "@/components/modules/loading";
-import UploadInvoicePortal from "@/components/modules/uploader";
+import UploadInvoicePortal from "@/components/modules/invoice-uploader";
 
 import {
     Table,
