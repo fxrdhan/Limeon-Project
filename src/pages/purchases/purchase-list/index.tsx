@@ -4,6 +4,7 @@ import SearchBar from "@/components/modules/search-bar";
 import PageTitle from "@/components/modules/page-title";
 import Badge from "@/components/modules/badge";
 import Loading from "@/components/modules/loading";
+import UploadInvoicePortal from "@/components/modules/uploader";
 
 import {
     Table,
@@ -45,6 +46,7 @@ const PurchaseList = () => {
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [showUploadPortal, setShowUploadPortal] = useState(false);
     const queryClient = useQueryClient();
     const { openConfirmDialog } = useConfirmDialog();
     const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
@@ -257,141 +259,149 @@ const PurchaseList = () => {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <Card
-            className={isFetching ? "opacity-75 transition-opacity duration-300" : ""}
-        >
-            <div className="mb-6">
-                <PageTitle title="Daftar Pembelian" />
-            </div>
-            <div className="flex justify-between items-center">
-                <SearchBar
-                    inputRef={searchInputRef}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Cari nomor faktur..."
-                    className="flex-grow"
-                />
-                <div className="flex space-x-2 ml-4 mb-4">
-                    <Link to="/purchases/upload-invoice">
-                        <Button variant="primary">
+        <>
+            <Card
+                className={isFetching ? "opacity-75 transition-opacity duration-300" : ""}
+            >
+                <div className="mb-6">
+                    <PageTitle title="Daftar Pembelian" />
+                </div>
+                <div className="flex justify-between items-center">
+                    <SearchBar
+                        inputRef={searchInputRef}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Cari nomor faktur..."
+                        className="flex-grow"
+                    />
+                    <div className="flex space-x-2 ml-4 mb-4">
+                        <Button
+                            variant="primary"
+                            onClick={() => setShowUploadPortal(true)}
+                        >
                             <FaFileUpload className="mr-2" />
                             Upload Faktur
                         </Button>
-                    </Link>
-                    <Link to="/purchases/create" state={{ initialInvoiceNumber: debouncedSearch }}>
-                        <Button variant="primary">
-                            <FaPlus className="mr-2" />
-                            Tambah Pembelian Baru
-                        </Button>
-                    </Link>
+                        <Link to="/purchases/create" state={{ initialInvoiceNumber: debouncedSearch }}>
+                            <Button variant="primary">
+                                <FaPlus className="mr-2" />
+                                Tambah Pembelian Baru
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
-            </div>
-            {isLoading ? (
-                <Loading message="Memuat data pembelian..." />
-            ) : (
-                <>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableHeader>No. Faktur</TableHeader>
-                                <TableHeader>Tanggal</TableHeader>
-                                <TableHeader>Supplier</TableHeader>
-                                <TableHeader className="text-right">Total</TableHeader>
-                                <TableHeader className="text-center">
-                                    Status Pembayaran
-                                </TableHeader>
-                                <TableHeader className="text-center">
-                                    Metode Pembayaran
-                                </TableHeader>
-                                <TableHeader className="text-center">Aksi</TableHeader>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {purchases.length === 0 ? (
+                {isLoading ? (
+                    <Loading message="Memuat data pembelian..." />
+                ) : (
+                    <>
+                        <Table>
+                            <TableHead>
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center text-gray-600">
-                                        {debouncedSearch
-                                            ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"`
-                                            : "Tidak ada data pembelian yang ditemukan"}
-                                    </TableCell>
+                                    <TableHeader>No. Faktur</TableHeader>
+                                    <TableHeader>Tanggal</TableHeader>
+                                    <TableHeader>Supplier</TableHeader>
+                                    <TableHeader className="text-right">Total</TableHeader>
+                                    <TableHeader className="text-center">
+                                        Status Pembayaran
+                                    </TableHeader>
+                                    <TableHeader className="text-center">
+                                        Metode Pembayaran
+                                    </TableHeader>
+                                    <TableHeader className="text-center">Aksi</TableHeader>
                                 </TableRow>
-                            ) : (
-                                purchases.map((purchase) => (
-                                    <TableRow key={purchase.id}>
-                                        <TableCell>{purchase.invoice_number}</TableCell>
-                                        <TableCell>
-                                            {new Date(purchase.date).toLocaleDateString("id-ID", {
-                                                day: "2-digit",
-                                                month: "short",
-                                                year: "numeric",
-                                            })}
-                                        </TableCell>
-                                        <TableCell>
-                                            {purchase.supplier?.name || "Tidak ada supplier"}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            {purchase.total.toLocaleString("id-ID", {
-                                                style: "currency",
-                                                currency: "IDR",
-                                            })}
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            <Badge
-                                                variant={getStatusBadgeVariant(purchase.payment_status)}
-                                            >
-                                                {getStatusLabel(purchase.payment_status)}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            {getPaymentMethodLabel(purchase.payment_method)}
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex justify-center space-x-2">
-                                                <Link to={`/purchases/view/${purchase.id}`}>
-                                                    <Button variant="primary" size="sm">
-                                                        <FaEye />
-                                                    </Button>
-                                                </Link>
-                                                <Link to={`/purchases/edit/${purchase.id}`}>
-                                                    <Button variant="secondary" size="sm">
-                                                        <FaEdit />
-                                                    </Button>
-                                                </Link>
-                                                <Button
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(purchase)}
-                                                    disabled={
-                                                        deletePurchaseMutation.isPending &&
-                                                        deletePurchaseMutation.variables === purchase.id
-                                                    }
-                                                >
-                                                    {deletePurchaseMutation.isPending &&
-                                                        deletePurchaseMutation.variables === purchase.id ? (
-                                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
-                                                    ) : (
-                                                        <FaTrash />
-                                                    )}
-                                                </Button>
-                                            </div>
+                            </TableHead>
+                            <TableBody>
+                                {purchases.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center text-gray-600">
+                                            {debouncedSearch
+                                                ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"`
+                                                : "Tidak ada data pembelian yang ditemukan"}
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalItems}
-                        itemsPerPage={itemsPerPage}
-                        itemsCount={purchases.length}
-                        onPageChange={handlePageChange}
-                        onItemsPerPageChange={handleItemsPerPageChange}
-                    />
-                </>
-            )}
-        </Card>
+                                ) : (
+                                    purchases.map((purchase) => (
+                                        <TableRow key={purchase.id}>
+                                            <TableCell>{purchase.invoice_number}</TableCell>
+                                            <TableCell>
+                                                {new Date(purchase.date).toLocaleDateString("id-ID", {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                    year: "numeric",
+                                                })}
+                                            </TableCell>
+                                            <TableCell>
+                                                {purchase.supplier?.name || "Tidak ada supplier"}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {purchase.total.toLocaleString("id-ID", {
+                                                    style: "currency",
+                                                    currency: "IDR",
+                                                })}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge
+                                                    variant={getStatusBadgeVariant(purchase.payment_status)}
+                                                >
+                                                    {getStatusLabel(purchase.payment_status)}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                {getPaymentMethodLabel(purchase.payment_method)}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="flex justify-center space-x-2">
+                                                    <Link to={`/purchases/view/${purchase.id}`}>
+                                                        <Button variant="primary" size="sm">
+                                                            <FaEye />
+                                                        </Button>
+                                                    </Link>
+                                                    <Link to={`/purchases/edit/${purchase.id}`}>
+                                                        <Button variant="secondary" size="sm">
+                                                            <FaEdit />
+                                                        </Button>
+                                                    </Link>
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
+                                                        onClick={() => handleDelete(purchase)}
+                                                        disabled={
+                                                            deletePurchaseMutation.isPending &&
+                                                            deletePurchaseMutation.variables === purchase.id
+                                                        }
+                                                    >
+                                                        {deletePurchaseMutation.isPending &&
+                                                            deletePurchaseMutation.variables === purchase.id ? (
+                                                            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
+                                                        ) : (
+                                                            <FaTrash />
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            itemsPerPage={itemsPerPage}
+                            itemsCount={purchases.length}
+                            onPageChange={handlePageChange}
+                            onItemsPerPageChange={handleItemsPerPageChange}
+                        />
+                    </>
+                )}
+            </Card>
+
+            <UploadInvoicePortal
+                isOpen={showUploadPortal}
+                onClose={() => setShowUploadPortal(false)}
+            />
+        </>
     );
 };
 

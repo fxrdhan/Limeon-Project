@@ -13,7 +13,6 @@ const UnitList = lazy(() => import('@/pages/master-data/unit-list'));
 const TypeList = lazy(() => import('@/pages/master-data/type-list'));
 const PatientList = lazy(() => import('@/pages/master-data/patient-list'));
 const SupplierList = lazy(() => import('@/pages/master-data/supplier-list'));
-const UploadInvoice = lazy(() => import('@/pages/purchases/upload-invoice'));
 const ConfirmInvoicePage = lazy(() => import('@/pages/purchases/confirm-invoice'));
 const PurchaseList = lazy(() => import('@/pages/purchases/purchase-list'));
 const CreatePurchase = lazy(() => import('@/pages/purchases/create-purchase'));
@@ -113,14 +112,6 @@ function App() {
                 element={
                   <Suspense fallback={<div>Loading...</div>}>
                     <CreatePurchase />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="upload-invoice"
-                element={
-                  <Suspense fallback={<div>Loading...</div>}>
-                    <UploadInvoice />
                   </Suspense>
                 }
               />

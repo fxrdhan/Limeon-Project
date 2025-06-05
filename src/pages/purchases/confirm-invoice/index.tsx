@@ -48,9 +48,9 @@ const ConfirmInvoicePage = () => {
             }
         } else {
             console.warn(
-                "Tidak ada data faktur yang diterima. Kembali ke halaman upload."
+                "Tidak ada data faktur yang diterima. Kembali ke halaman purchase list."
             );
-            navigate("/purchases/upload-invoice");
+            navigate("/purchases");
         }
     }, [location.state, navigate]);
 
@@ -378,11 +378,11 @@ const ConfirmInvoicePage = () => {
                 <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate("/purchases/upload-invoice")}
+                    onClick={() => navigate("/purchases")}
                 >
                     <span className="flex items-center">
                         <FaArrowLeft className="mr-2" />
-                        <span>Unggah Ulang</span>
+                        <span>Kembali</span>
                     </span>
                 </Button>
                 <Button
