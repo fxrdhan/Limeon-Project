@@ -27,9 +27,7 @@ const Dropdown = ({
     const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
     const [applyOpenStyles, setApplyOpenStyles] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
-
     const instanceId = useId();
-
     const dropdownRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownMenuRef = useRef<HTMLDivElement>(null);
@@ -38,7 +36,6 @@ const Dropdown = ({
     const optionsContainerRef = useRef<HTMLDivElement>(null);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
     const selectedOption = options.find((option) => option?.id === value);
 
     useEffect(() => {
@@ -81,12 +78,10 @@ const Dropdown = ({
         
         setDropDirection(shouldDropUp ? "up" : "down");
         
-        // Calculate width with minimum constraints
-        const minWidth = Math.min(250, viewportWidth - 32); // 32px for margins
+        const minWidth = Math.min(250, viewportWidth - 32);
         const maxWidth = Math.min(buttonRect.width, viewportWidth - 32);
         const dropdownWidth = Math.max(minWidth, maxWidth);
         
-        // Calculate left position to ensure dropdown stays within viewport
         let leftPosition = buttonRect.left;
         if (leftPosition + dropdownWidth > viewportWidth - 16) {
             leftPosition = viewportWidth - dropdownWidth - 16;
@@ -316,13 +311,13 @@ const Dropdown = ({
             window.addEventListener("resize", calculateDropdownPosition);
             document.addEventListener("focusout", handleFocusOut);
         } else {
-            setApplyOpenStyles(false);
             document.body.style.overflow = '';
+            setApplyOpenStyles(false);
         }
 
         return () => {
-            if (openStyleTimerId) clearTimeout(openStyleTimerId);
             document.body.style.overflow = '';
+            if (openStyleTimerId) clearTimeout(openStyleTimerId);
             if (isOpen) {
                 window.removeEventListener("scroll", calculateDropdownPosition, true);
                 window.removeEventListener("resize", calculateDropdownPosition);
