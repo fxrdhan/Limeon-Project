@@ -1,8 +1,6 @@
 import Login from '@/pages/auth/login';
 import MainLayout from '@/components/layout/main';
-import OfflineAlert from '@/components/modules/offline-alert';
 import { AlertProvider } from '@/components/modules/alert';
-
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
@@ -44,11 +42,9 @@ function App() {
     initialize();
   }, [initialize]);
 
-
   return (
     <AlertProvider>
       <ConfirmDialogProvider>
-        <OfflineAlert />
         <Routes>
           <Route path="/login" element={!session ? <Login /> : <Navigate to="/" />} />
 
