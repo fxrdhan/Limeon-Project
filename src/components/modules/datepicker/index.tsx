@@ -103,11 +103,6 @@ const Datepicker: React.FC<DatepickerProps> = ({
             calculatePosition();
             window.addEventListener("scroll", calculatePosition, true);
             window.addEventListener("resize", calculatePosition);
-            setTimeout(() => {
-                if (portalContentRef.current) {
-                    portalContentRef.current.focus();
-                }
-            }, 0);
         } else {
             setHighlightedDate(null);
             setHighlightedMonth(null);
@@ -125,6 +120,11 @@ const Datepicker: React.FC<DatepickerProps> = ({
         if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
         setIsOpen(true);
         setIsClosing(false);
+        setTimeout(() => {
+            if (portalContentRef.current) {
+                portalContentRef.current.focus();
+            }
+        }, 0);
     }, []);
 
     const closeCalendar = useCallback(() => {
@@ -149,6 +149,11 @@ const Datepicker: React.FC<DatepickerProps> = ({
         if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
         openTimeoutRef.current = setTimeout(() => {
             openCalendar();
+            setTimeout(() => {
+                if (portalContentRef.current) {
+                    portalContentRef.current.focus();
+                }
+            }, 100);
         }, 150);
     };
 
