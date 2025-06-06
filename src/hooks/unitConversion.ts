@@ -105,6 +105,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         recalculateBasePrices,
         skipNextRecalculation,
         availableUnits,
-        resetConversions
+        resetConversions,
+        setConversions: setUnitConversions,
     };
 };
