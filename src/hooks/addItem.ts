@@ -315,6 +315,7 @@ export const useAddItemForm = ({
             }
         };
         if (
+            !isEditMode &&
             formData.type_id &&
             formData.category_id &&
             formData.unit_id &&
@@ -325,6 +326,7 @@ export const useAddItemForm = ({
             generateItemCode();
         }
     }, [
+        isEditMode,
         formData.type_id,
         formData.category_id,
         formData.unit_id,
