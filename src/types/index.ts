@@ -414,6 +414,7 @@ export interface UseUnitConversionReturn {
     skipNextRecalculation: () => void;
     availableUnits: UnitData[];
     resetConversions: () => void;
+    setConversions: React.Dispatch<React.SetStateAction<UnitConversion[]>>;
 }
 export interface UnitData {
     id: string;

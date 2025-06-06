@@ -1,6 +1,5 @@
 import { useRef, useState, ChangeEvent, useEffect } from "react";
 import { useAddItemForm } from "@/hooks/addItem";
-import { useBeforeUnload } from "@/handlers/beforeUnload";
 import { AddItemPageHandlersProps, Category, MedicineType, Unit } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -164,22 +163,8 @@ export const useAddItemPageHandlers = ({
         }
     };
 
-    const isDirty = addItemForm.isDirty;
-    useBeforeUnload(isDirty);
-
     const handleActualCancel = () => {
-        if (addItemForm.isDirty()) {
-            addItemForm.confirmDialog.openConfirmDialog({
-                title: "Konfirmasi Keluar",
-                message: "Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.",
-                confirmText: "Tinggalkan",
-                cancelText: "Batal",
-                onConfirm: onClose,
-                variant: "danger",
-            });
-        } else {
-            onClose();
-        }
+        onClose();
     };
 
     useEffect(() => {

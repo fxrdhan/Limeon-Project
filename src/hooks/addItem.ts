@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUnitConversion } from "@/hooks/unitConversion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +18,8 @@ import type {
     UseAddItemFormProps,
     DBUnitConversion,
 } from "@/types";
+
+const CACHE_KEY = 'addItemFormCache';
 
 export const generateTypeCode = (typeId: string, types: MedicineType[]): string => {
     const selectedType = types.find(type => type.id === typeId);
@@ -135,10 +137,63 @@ export const useAddItemForm = ({
         return null;
     };
 
-    const setFormToPristineAddState = () => {
-        const pristineState: FormData = {
+    const updateFormData = (newData: Partial<FormData>) => {
+        if (newData.sell_price !== undefined) {
+            setDisplaySellPrice(formatRupiah(newData.sell_price));
+        }
+        if (newData.base_price !== undefined) {
+            setDisplayBasePrice(formatRupiah(newData.base_price));
+        }
+        setFormData((prev) => ({ ...prev, ...newData }));
+    };
+
+    const isDirty = () => {
+        if (!initialFormData) return false;
+        const formDataChanged =
+            JSON.stringify(formData) !== JSON.stringify(initialFormData);
+
+        type ConversionForCompare = {
+            to_unit_id: string;
+            conversion_rate: number;
+            basePrice: number;
+            sellPrice: number;
+        };
+
+        const mapConversionForComparison = (conv: UnitConversion): ConversionForCompare | null => {
+            if (!conv || !conv.unit || !conv.unit.id) return null;
+            return {
+                to_unit_id: conv.unit.id,
+                conversion_rate: conv.conversion_rate,
+                basePrice: conv.basePrice,
+                sellPrice: conv.sellPrice,
+            };
+        };
+
+        const currentConversionsForCompare = unitConversionHook.conversions
+            .map(mapConversionForComparison)
+            .filter(Boolean) as ConversionForCompare[];
+
+        const initialConversionsForCompare = Array.isArray(initialUnitConversions)
+            ? initialUnitConversions
+                .map(mapConversionForComparison)
+                .filter(Boolean) as ConversionForCompare[]
+            : [];
+
+        const safeSortByUnitId = (arr: ConversionForCompare[]) => {
+            return [...arr].sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id));
+        };
+
+        const sortedCurrent = safeSortByUnitId(currentConversionsForCompare);
+        const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
+
+        const conversionsChanged = JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
+        return formDataChanged || conversionsChanged;
+    };
+
+    const setInitialDataForForm = (data?: FormData) => {
+        const initialState = data || {
             code: "",
-            name: "",
+            name: initialSearchQuery || "",
             type_id: "",
             category_id: "",
             unit_id: "",
@@ -153,104 +208,76 @@ export const useAddItemForm = ({
             has_expiry_date: false,
             updated_at: null,
         };
-        setFormData({ ...pristineState });
-        setDisplayBasePrice(formatRupiah(0));
-        setDisplaySellPrice(formatRupiah(0));
-        setMarginPercentage("0");
-        setMinStockValue("10");
-        unitConversionHook.resetConversions();
-        unitConversionHook.setBaseUnit(
-            units.find((u) => u.id === pristineState.unit_id)?.name || ""
-        );
-        unitConversionHook.setBasePrice(pristineState.base_price);
-        unitConversionHook.setSellPrice(pristineState.sell_price);
-        setInitialUnitConversions([]);
+
+        setFormData(initialState);
+        setInitialFormData(initialState);
+
+        setDisplayBasePrice(formatRupiah(initialState.base_price || 0));
+        setDisplaySellPrice(formatRupiah(initialState.sell_price || 0));
+        const profit = calculateProfitPercentage(initialState.base_price, initialState.sell_price);
+        setMarginPercentage(profit !== null ? profit.toFixed(1) : "0");
+        setMinStockValue(String(initialState.min_stock || 10));
+
+        const baseUnitName = units.find(u => u.id === initialState.unit_id)?.name || "";
+        unitConversionHook.setBaseUnit(baseUnitName);
+        unitConversionHook.setBasePrice(initialState.base_price || 0);
+        unitConversionHook.setSellPrice(initialState.sell_price || 0);
     };
 
-    const updateFormData = (newData: Partial<FormData>) => {
-        if (newData.sell_price !== undefined) {
-            setDisplaySellPrice(formatRupiah(newData.sell_price));
-        }
-        if (newData.base_price !== undefined) {
-            setDisplayBasePrice(formatRupiah(newData.base_price));
-        }
-        setFormData((prev) => {
-            const merged = { ...prev, ...newData };
-            return {
-                code: merged.code ?? "",
-                name: merged.name ?? "",
-                type_id: merged.type_id ?? "",
-                category_id: merged.category_id ?? "",
-                unit_id: merged.unit_id ?? "",
-                rack: merged.rack ?? "",
-                barcode: merged.barcode ?? "",
-                description: merged.description ?? "",
-                base_price: merged.base_price ?? 0,
-                sell_price: merged.sell_price ?? 0,
-                min_stock: merged.min_stock ?? 10,
-                is_active: merged.is_active ?? true,
-                is_medicine: merged.is_medicine ?? true,
-                has_expiry_date: merged.has_expiry_date ?? false,
-                updated_at: merged.updated_at ?? null,
-            };
-        });
-    };
+    const hasInitialized = useRef(false);
 
     useEffect(() => {
-        // fetchMasterData will now be handled by React Query and realtime updates
-        // but we still need to trigger the initial form setup or item data fetching
-        if (!itemId) { // Only call for new item mode, edit mode will be triggered by itemId change
-            setInitialDataForForm();
-        }
+        if (hasInitialized.current) return;
+        hasInitialized.current = true;
+
         if (itemId) {
             setIsEditMode(true);
             fetchItemData(itemId);
+            sessionStorage.removeItem(CACHE_KEY);
         } else {
-            setIsEditMode(false);
-            const pristineDefaultState: FormData = {
-                code: "",
-                name: initialSearchQuery || "",
-                type_id: "",
-                category_id: "",
-                unit_id: "",
-                rack: "",
-                barcode: "",
-                description: "",
-                base_price: 0,
-                sell_price: 0,
-                min_stock: 10,
-                is_active: true,
-                is_medicine: true,
-                has_expiry_date: false,
-                updated_at: null,
-            };
-            setInitialFormData(pristineDefaultState);
-
-            const formDataForAddMode: FormData = { ...pristineDefaultState };
-            setFormData(formDataForAddMode);
-            setDisplayBasePrice(formatRupiah(formDataForAddMode.base_price));
-            setDisplaySellPrice(formatRupiah(formDataForAddMode.sell_price));
-            setMarginPercentage("0");
-            unitConversionHook.resetConversions();
-            unitConversionHook.setBaseUnit("");
-            unitConversionHook.setBasePrice(0);
-            unitConversionHook.setSellPrice(0);
+            const cachedData = sessionStorage.getItem(CACHE_KEY);
+            if (cachedData) {
+                try {
+                    const { formData: cachedFormData, conversions: cachedConversions } = JSON.parse(cachedData);
+                    setInitialDataForForm(cachedFormData);
+                    unitConversionHook.setConversions(cachedConversions || []);
+                    setInitialUnitConversions(cachedConversions || []);
+                } catch (e) {
+                    console.error("Failed to parse item form cache, starting fresh.", e);
+                    setInitialDataForForm();
+                }
+            } else {
+                setInitialDataForForm();
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [itemId, initialSearchQuery]);
+    }, [itemId, initialSearchQuery, units]);
 
-    const setInitialDataForForm = () => {
-        const pristineDefaultState: FormData = {
-            code: "", name: initialSearchQuery || "", type_id: "", category_id: "", unit_id: "",
-            rack: "", barcode: "", description: "", base_price: 0, sell_price: 0,
-            min_stock: 10, is_active: true, is_medicine: true, has_expiry_date: false, updated_at: null,
+    const latestIsEditMode = useRef(isEditMode);
+    const latestIsDirty = useRef(isDirty());
+    const latestFormData = useRef(formData);
+    const latestConversions = useRef(unitConversionHook.conversions);
+    const latestSavingState = useRef(saving);
+
+    useEffect(() => {
+        latestIsEditMode.current = isEditMode;
+        latestIsDirty.current = isDirty();
+        latestFormData.current = formData;
+        latestConversions.current = unitConversionHook.conversions;
+        latestSavingState.current = saving;
+    });
+
+    useEffect(() => {
+        return () => {
+            if (!latestIsEditMode.current && latestIsDirty.current && !latestSavingState.current) {
+                const cacheData = {
+                    formData: latestFormData.current,
+                    conversions: latestConversions.current,
+                };
+                sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            }
         };
-        setInitialFormData(pristineDefaultState);
-        setFormData(pristineDefaultState);
-        setDisplayBasePrice(formatRupiah(0));
-        setDisplaySellPrice(formatRupiah(0));
-        setMarginPercentage("0");
-    };
+    }, []);
 
     useEffect(() => {
         const generateItemCode = async () => {
@@ -658,6 +685,7 @@ export const useAddItemForm = ({
                 queryKey: ["items"],
                 refetchType: "all",
             });
+            sessionStorage.removeItem(CACHE_KEY);
             onClose();
         } catch (error) {
             console.error("Error saving item:", error);
@@ -665,49 +693,6 @@ export const useAddItemForm = ({
         } finally {
             setSaving(false);
         }
-    };
-
-    const isDirty = () => {
-        if (!initialFormData) return false;
-        const formDataChanged =
-            JSON.stringify(formData) !== JSON.stringify(initialFormData);
-
-        type ConversionForCompare = {
-            to_unit_id: string;
-            conversion_rate: number;
-            basePrice: number;
-            sellPrice: number;
-        };
-
-        const mapConversionForComparison = (conv: UnitConversion): ConversionForCompare | null => {
-            if (!conv || !conv.unit || !conv.unit.id) return null;
-            return {
-                to_unit_id: conv.unit.id,
-                conversion_rate: conv.conversion_rate,
-                basePrice: conv.basePrice,
-                sellPrice: conv.sellPrice,
-            };
-        };
-
-        const currentConversionsForCompare = unitConversionHook.conversions
-            .map(mapConversionForComparison)
-            .filter(Boolean) as ConversionForCompare[];
-
-        const initialConversionsForCompare = Array.isArray(initialUnitConversions)
-            ? initialUnitConversions
-                .map(mapConversionForComparison)
-                .filter(Boolean) as ConversionForCompare[]
-            : [];
-
-        const safeSortByUnitId = (arr: ConversionForCompare[]) => {
-            return [...arr].sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id));
-        };
-
-        const sortedCurrent = safeSortByUnitId(currentConversionsForCompare);
-        const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
-
-        const conversionsChanged = JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
-        return formDataChanged || conversionsChanged;
     };
 
     const handleCancel = () => {
@@ -795,6 +780,7 @@ export const useAddItemForm = ({
             confirmText: "Hapus",
             onConfirm: () => {
                 deleteItemMutation.mutate(itemId);
+                sessionStorage.removeItem(CACHE_KEY);
             },
         });
     };
@@ -817,7 +803,7 @@ export const useAddItemForm = ({
                 initialFormData.base_price || 0,
                 initialFormData.sell_price || 0
             );
-            setMarginPercentage(profit !== null ? profit.toFixed(1) : "0");
+            setMarginPercentage(profit ? profit.toFixed(1) : "0");
             setMinStockValue(String(initialFormData.min_stock || 10));
 
             unitConversionHook.resetConversions();
@@ -845,7 +831,8 @@ export const useAddItemForm = ({
                 }
             });
         } else {
-            setFormToPristineAddState();
+            setInitialDataForForm();
+            sessionStorage.removeItem(CACHE_KEY);
         }
     };
 
