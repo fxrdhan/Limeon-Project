@@ -226,6 +226,7 @@ function ItemList() {
                 )}
             </Card>
             <AddItemPortal
+                key={`${editingItemId ?? 'new'}-${currentSearchQueryForModal ?? ''}`}
                 isOpen={isAddItemModalOpen}
                 onClose={closeAddItemModal}
                 itemId={editingItemId}
