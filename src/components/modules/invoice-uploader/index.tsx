@@ -248,7 +248,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                 {!file ? (
                                     <div
                                         className={`border-2 ${isDragging
-                                                ? "border-blue-500 bg-blue-50"
+                                                ? "border-primary bg-teal-50"
                                                 : "border-dashed border-gray-300"
                                             } 
                                             rounded-lg p-10 text-center transition-all cursor-pointer hover:bg-gray-50`}
@@ -258,8 +258,8 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                         onClick={() => document.getElementById("fileInput")?.click()}
                                     >
                                         <div className="flex flex-col items-center">
-                                            <div className="rounded-full bg-blue-100 p-4 inline-flex mb-3">
-                                                <FaUpload className="mx-auto h-8 w-8 text-blue-500" />
+                                            <div className="rounded-full bg-teal-100 p-4 inline-flex mb-3">
+                                                <FaUpload className="mx-auto h-8 w-8 text-primary" />
                                             </div>
                                             <p className="text-sm font-medium text-gray-700">
                                                 Klik atau seret untuk mengunggah gambar faktur
