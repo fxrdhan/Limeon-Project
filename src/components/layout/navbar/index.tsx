@@ -16,11 +16,14 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const navigate = useNavigate();
 
+    const [animatingPortal, setAnimatingPortal] = useState(false);
+
     const handleMouseEnter = () => {
         if (hoverTimeoutRef.current) {
             clearTimeout(hoverTimeoutRef.current);
         }
         hoverTimeoutRef.current = setTimeout(() => {
+            setAnimatingPortal(true);
             setPortalOpen(true);
         }, 200);
     };
@@ -29,6 +32,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
         if (hoverTimeoutRef.current) {
             clearTimeout(hoverTimeoutRef.current);
         }
+        setAnimatingPortal(true);
         setPortalOpen(false);
     };
 
@@ -37,11 +41,21 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     };
 
     useEffect(() => {
+        if (animatingPortal) {
+            const timer = setTimeout(() => {
+                setAnimatingPortal(false);
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [animatingPortal]);
+
+    useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 portalRef.current &&
                 !portalRef.current.contains(event.target as Node)
             ) {
+                setAnimatingPortal(true);
                 setPortalOpen(false);
             }
         };
@@ -57,6 +71,27 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             }
         };
     }, [portalOpen, portalRef]);
+
+    const ProfileImage = ({ size = "small", className = "" }) => {
+        const sizeClass = size === "small" ? "w-9 h-9" : size === "large" ? "w-32 h-32" : "w-24 h-24";
+        const textSizeClass = size === "small" ? "text-sm" : size === "large" ? "text-3xl" : "text-2xl";
+        
+        return user?.profilephoto ? (
+            <img
+                src={user.profilephoto}
+                alt="Profile"
+                className={`${sizeClass} rounded-full object-cover ${className}`}
+            />
+        ) : (
+            <div className={`${sizeClass} rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center ${textSizeClass} ${className}`}>
+                {user?.name ? (
+                    user.name.charAt(0).toUpperCase()
+                ) : (
+                    <FaUserCircle className={size === "small" ? "text-base" : size === "large" ? "text-3xl" : ""} />
+                )}
+            </div>
+        );
+    };
 
     return (
         <nav className="bg-white border-b px-6 py-3 sticky top-0 z-20">
@@ -148,29 +183,34 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     </button>
                 </div>
                 <div className="relative flex justify-end">
-                    <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+                    <div 
+                        onMouseEnter={handleMouseEnter} 
+                        onMouseLeave={handleMouseLeave}
+                        className="relative w-12 h-12 flex items-center justify-center"
+                    >
                         <button
-                            className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-50 transition-all duration-200 group"
+                            className="flex items-center space-x-3 p-1 rounded-xl hover:bg-gray-50 transition-all duration-200 group"
                             aria-expanded={portalOpen}
                             aria-haspopup="true"
                         >
                             <div className="relative">
-                                {user?.profilephoto ? (
-                                    <img
-                                        src={user.profilephoto}
-                                        alt="Profile"
-                                        className="w-9 h-9 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-primary/30 transition-all duration-200"
-                                    />
-                                ) : (
-                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center ring-2 ring-gray-200 group-hover:ring-primary/30 transition-all duration-200">
-                                        {user?.name ? (
-                                            user.name.charAt(0).toUpperCase()
-                                        ) : (
-                                            <FaUserCircle size={20} />
-                                        )}
-                                    </div>
-                                )}
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                                <AnimatePresence>
+                                    {!portalOpen && (
+                                        <motion.div 
+                                            initial={animatingPortal ? { opacity: 0, scale: 1.5 } : { opacity: 1 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 2.5, y: -20, x: 20 }}
+                                            transition={{ duration: 0.25 }}
+                                            className="relative"
+                                        >
+                                            <ProfileImage 
+                                                size="small" 
+                                                className="ring-2 ring-gray-200 group-hover:ring-primary/30 transition-all duration-200"
+                                            />
+                                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </button>
 
@@ -211,47 +251,68 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                                 duration: 0.3,
                                             },
                                         }}
-                                        className="fixed top-0 right-0 w-80 bg-white rounded-bl-2xl shadow-xl z-50 border border-gray-100 overflow-hidden backdrop-blur-sm"
+                                        className="fixed top-0 right-0 w-60 bg-white rounded-bl-2xl shadow-xl z-50 border border-gray-100 overflow-hidden backdrop-blur-sm"
                                         style={{ marginTop: "0px" }}
                                     >
                                         <div className="p-4">
                                             <div className="flex flex-col items-center mb-4">
+                                                <div className="mb-3">
+                                                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-1.5 rounded-full text-xs font-medium shadow-lg">
+                                                        <span className="flex items-center space-x-1.5">
+                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                                                            </svg>
+                                                            <span>Pro Plan</span>
+                                                        </span>
+                                                    </div>
+                                                </div>
                                                 <div className="relative group/upload">
-                                                    <ImageUploader
-                                                        id="profile-upload"
-                                                        className="w-24 h-24"
-                                                        shape="full"
-                                                        onImageUpload={async (file: File) => {
-                                                            setIsUploading(true);
-                                                            try {
-                                                                await useAuthStore
-                                                                    .getState()
-                                                                    .updateProfilePhoto(file);
-                                                            } finally {
-                                                                setIsUploading(false);
-                                                            }
+                                                    <motion.div
+                                                        initial={{ 
+                                                            scale: 0.4, 
+                                                            y: -40, 
+                                                            x: 40, 
+                                                            opacity: animatingPortal ? 0 : 1 
                                                         }}
-                                                        disabled={isUploading}
-                                                        defaultIcon={
-                                                            <FaPencilAlt className="text-white text-sm" />
-                                                        }
+                                                        animate={{ 
+                                                            scale: 1, 
+                                                            y: 0, 
+                                                            x: 0, 
+                                                            opacity: 1 
+                                                        }}
+                                                        exit={{ 
+                                                            scale: 0.4, 
+                                                            y: -40, 
+                                                            x: 40, 
+                                                            opacity: 0 
+                                                        }}
+                                                        transition={{ duration: 0.25 }}
                                                     >
-                                                        {user?.profilephoto ? (
-                                                            <img
-                                                                src={user.profilephoto}
-                                                                alt="Profile"
-                                                                className="w-24 h-24 rounded-full object-cover border-4 border-gray-100 group-hover/upload:border-primary/30 transition-all duration-200"
+                                                        <ImageUploader
+                                                            id="profile-upload"
+                                                            className="w-32 h-32"
+                                                            shape="full"
+                                                            onImageUpload={async (file: File) => {
+                                                                setIsUploading(true);
+                                                                try {
+                                                                    await useAuthStore
+                                                                        .getState()
+                                                                        .updateProfilePhoto(file);
+                                                                } finally {
+                                                                    setIsUploading(false);
+                                                                }
+                                                            }}
+                                                            disabled={isUploading}
+                                                            defaultIcon={
+                                                                <FaPencilAlt className="text-white text-sm" />
+                                                            }
+                                                        >
+                                                            <ProfileImage 
+                                                                size="large" 
+                                                                className="border-4 border-gray-100 group-hover/upload:border-primary/30 transition-all duration-200" 
                                                             />
-                                                        ) : (
-                                                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center text-2xl border-4 border-gray-100 group-hover/upload:border-primary/30 transition-all duration-200">
-                                                                {user?.name ? (
-                                                                    user.name.charAt(0).toUpperCase()
-                                                                ) : (
-                                                                    <FaUserCircle />
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </ImageUploader>
+                                                        </ImageUploader>
+                                                    </motion.div>
                                                     {isUploading && (
                                                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full">
                                                             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
