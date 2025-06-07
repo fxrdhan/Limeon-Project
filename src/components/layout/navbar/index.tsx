@@ -5,7 +5,7 @@ import ImageUploader from "@/components/modules/image-uploader";
 import { useAuthStore } from "@/store/authStore";
 import { usePresenceStore } from "@/store/presenceStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaUserCircle, FaPencilAlt, FaSignOutAlt, FaCog, FaUsers } from "react-icons/fa";
+import { FaUserCircle, FaPencilAlt, FaSignOutAlt, FaCog } from "react-icons/fa";
 import DateTimeDisplay from "./live-datetime";
 
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
@@ -75,9 +75,15 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     }, [portalOpen, portalRef]);
 
     const ProfileImage = ({ size = "small", className = "" }) => {
-        const sizeClass = size === "small" ? "w-9 h-9" : size === "large" ? "w-32 h-32" : "w-24 h-24";
-        const textSizeClass = size === "small" ? "text-sm" : size === "large" ? "text-3xl" : "text-2xl";
-        
+        const sizeClass =
+            size === "small"
+                ? "w-9 h-9"
+                : size === "large"
+                    ? "w-32 h-32"
+                    : "w-24 h-24";
+        const textSizeClass =
+            size === "small" ? "text-sm" : size === "large" ? "text-3xl" : "text-2xl";
+
         return user?.profilephoto ? (
             <img
                 src={user.profilephoto}
@@ -85,11 +91,21 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                 className={`${sizeClass} rounded-full object-cover ${className}`}
             />
         ) : (
-            <div className={`${sizeClass} rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center ${textSizeClass} ${className}`}>
+            <div
+                className={`${sizeClass} rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center ${textSizeClass} ${className}`}
+            >
                 {user?.name ? (
                     user.name.charAt(0).toUpperCase()
                 ) : (
-                    <FaUserCircle className={size === "small" ? "text-base" : size === "large" ? "text-3xl" : ""} />
+                    <FaUserCircle
+                        className={
+                            size === "small"
+                                ? "text-base"
+                                : size === "large"
+                                    ? "text-3xl"
+                                    : ""
+                        }
+                    />
                 )}
             </div>
         );
@@ -185,16 +201,15 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     </button>
                 </div>
                 <div className="relative flex justify-end items-center space-x-3">
-                    <div 
-                        className="flex items-center space-x-1.5 bg-gray-100/80 px-2.5 py-1.5 rounded-full text-sm text-gray-700 hover:bg-gray-200 transition-colors cursor-default" 
+                    <div
+                        className="flex items-center space-x-1.5 bg-primary/10 px-3 py-1.5 rounded-full text-sm text-primary transition-colors cursor-default ring-2 ring-primary/50"
                         title={`${onlineUsers} pengguna aktif`}
                     >
-                        <FaUsers className="text-gray-500"/>
-                        <span className="font-medium">{onlineUsers}</span>
+                        <span className="font-semibold">{onlineUsers} Online</span>
                     </div>
 
-                    <div 
-                        onMouseEnter={handleMouseEnter} 
+                    <div
+                        onMouseEnter={handleMouseEnter}
                         onMouseLeave={handleMouseLeave}
                         className="relative w-12 h-12 flex items-center justify-center"
                     >
@@ -206,15 +221,19 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                             <div className="relative">
                                 <AnimatePresence>
                                     {!portalOpen && (
-                                        <motion.div 
-                                            initial={animatingPortal ? { opacity: 0, scale: 1.5 } : { opacity: 1 }}
+                                        <motion.div
+                                            initial={
+                                                animatingPortal
+                                                    ? { opacity: 0, scale: 1.5 }
+                                                    : { opacity: 1 }
+                                            }
                                             animate={{ opacity: 1, scale: 1 }}
                                             exit={{ opacity: 0, scale: 2.5, y: -20, x: 20 }}
                                             transition={{ duration: 0.25 }}
                                             className="relative"
                                         >
-                                            <ProfileImage 
-                                                size="small" 
+                                            <ProfileImage
+                                                size="small"
                                                 className="ring-2 ring-gray-200 group-hover:ring-primary/30 transition-all duration-200"
                                             />
                                             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
@@ -267,56 +286,70 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                         <div className="p-4 pt-6">
                                             <div className="flex flex-col items-center">
                                                 <div className="mb-4">
-                                                    <motion.div 
+                                                    <motion.div
                                                         className="text-white px-4 py-1.5 rounded-full text-xs font-medium relative overflow-hidden"
-                                                        initial={{ 
+                                                        initial={{
                                                             y: -20,
                                                             opacity: 0,
-                                                            backgroundImage: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
-                                                            boxShadow: '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)'
+                                                            backgroundImage:
+                                                                "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)",
+                                                            boxShadow:
+                                                                "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
                                                         }}
-                                                        animate={{ 
+                                                        animate={{
                                                             y: 0,
                                                             opacity: 1,
                                                             backgroundImage: [
-                                                                'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
-                                                                'linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%)', 
-                                                                'linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%)',
-                                                                'linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #f59e0b 100%)',
-                                                                'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)'
+                                                                "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)",
+                                                                "linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%)",
+                                                                "linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%)",
+                                                                "linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #f59e0b 100%)",
+                                                                "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)",
                                                             ],
                                                             boxShadow: [
-                                                                '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
-                                                                '0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(239, 68, 68, 0.6), 0 0 60px rgba(236, 72, 153, 0.4)',
-                                                                '0 0 18px rgba(16, 185, 129, 0.8), 0 0 35px rgba(6, 182, 212, 0.6), 0 0 55px rgba(59, 130, 246, 0.4)',
-                                                                '0 0 22px rgba(139, 92, 246, 0.9), 0 0 45px rgba(217, 70, 239, 0.7), 0 0 65px rgba(245, 158, 11, 0.5)',
-                                                                '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)'
-                                                            ]
+                                                                "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
+                                                                "0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(239, 68, 68, 0.6), 0 0 60px rgba(236, 72, 153, 0.4)",
+                                                                "0 0 18px rgba(16, 185, 129, 0.8), 0 0 35px rgba(6, 182, 212, 0.6), 0 0 55px rgba(59, 130, 246, 0.4)",
+                                                                "0 0 22px rgba(139, 92, 246, 0.9), 0 0 45px rgba(217, 70, 239, 0.7), 0 0 65px rgba(245, 158, 11, 0.5)",
+                                                                "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
+                                                            ],
                                                         }}
                                                         exit={{
                                                             y: -20,
-                                                            opacity: 0
+                                                            opacity: 0,
                                                         }}
-                                                        transition={{ 
+                                                        transition={{
                                                             y: { duration: 0.3, delay: 0.1, ease: "easeOut" },
-                                                            opacity: { duration: 0.3, delay: 0.1, ease: "easeOut" },
-                                                            backgroundImage: { 
+                                                            opacity: {
+                                                                duration: 0.3,
+                                                                delay: 0.1,
+                                                                ease: "easeOut",
+                                                            },
+                                                            backgroundImage: {
                                                                 repeat: Infinity,
-                                                                duration: 5, 
+                                                                duration: 5,
                                                                 ease: "easeInOut",
-                                                                delay: 0.4
+                                                                delay: 0.4,
                                                             },
                                                             boxShadow: {
                                                                 repeat: Infinity,
-                                                                duration: 5, 
+                                                                duration: 5,
                                                                 ease: "easeInOut",
-                                                                delay: 0.4
-                                                            }
+                                                                delay: 0.4,
+                                                            },
                                                         }}
                                                     >
                                                         <span className="flex items-center space-x-1.5">
-                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                                                            <svg
+                                                                className="w-3 h-3"
+                                                                fill="currentColor"
+                                                                viewBox="0 0 20 20"
+                                                            >
+                                                                <path
+                                                                    fillRule="evenodd"
+                                                                    d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                                                                    clipRule="evenodd"
+                                                                />
                                                             </svg>
                                                             <span className="font-bold">Pro Plan</span>
                                                         </span>
@@ -324,23 +357,23 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                                 </div>
                                                 <div className="relative group/upload">
                                                     <motion.div
-                                                        initial={{ 
-                                                            scale: 0.4, 
-                                                            y: -40, 
-                                                            x: 40, 
-                                                            opacity: animatingPortal ? 0 : 1 
+                                                        initial={{
+                                                            scale: 0.4,
+                                                            y: -40,
+                                                            x: 40,
+                                                            opacity: animatingPortal ? 0 : 1,
                                                         }}
-                                                        animate={{ 
-                                                            scale: 1, 
-                                                            y: 0, 
-                                                            x: 0, 
-                                                            opacity: 1 
+                                                        animate={{
+                                                            scale: 1,
+                                                            y: 0,
+                                                            x: 0,
+                                                            opacity: 1,
                                                         }}
-                                                        exit={{ 
-                                                            scale: 0.4, 
-                                                            y: -40, 
-                                                            x: 40, 
-                                                            opacity: 0 
+                                                        exit={{
+                                                            scale: 0.4,
+                                                            y: -40,
+                                                            x: 40,
+                                                            opacity: 0,
                                                         }}
                                                         transition={{ duration: 0.25 }}
                                                     >
@@ -363,9 +396,9 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                                                 <FaPencilAlt className="text-white text-sm" />
                                                             }
                                                         >
-                                                            <ProfileImage 
-                                                                size="large" 
-                                                                className="border-4 border-gray-100 group-hover/upload:border-gray/30 transition-all duration-200" 
+                                                            <ProfileImage
+                                                                size="large"
+                                                                className="border-4 border-gray-100 group-hover/upload:border-gray/30 transition-all duration-200"
                                                             />
                                                         </ImageUploader>
                                                     </motion.div>
