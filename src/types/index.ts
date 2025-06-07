@@ -1,4 +1,4 @@
-import { Session } from "@supabase/supabase-js";
+import { RealtimeChannel, Session } from "@supabase/supabase-js";
 
 export interface Category {
     id: string;
@@ -722,4 +722,11 @@ export interface AlertHook {
     error: (message: string, options?: { duration?: number; icon?: React.ReactNode }) => void;
     warning: (message: string, options?: { duration?: number; icon?: React.ReactNode }) => void;
     info: (message: string, options?: { duration?: number; icon?: React.ReactNode }) => void;
+}
+
+export interface PresenceState {
+    channel: RealtimeChannel | null;
+    onlineUsers: number;
+    setChannel: (channel: RealtimeChannel | null) => void;
+    setOnlineUsers: (count: number) => void;
 }
