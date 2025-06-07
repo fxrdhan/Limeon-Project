@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "@/components/layout/navbar";
 import Sidebar from "@/components/layout/sidebar";
+import { usePresence } from "@/hooks/usePresence";
 
 const MainLayout = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [isLocked, setIsLocked] = useState(false);
+    usePresence();
     const isLockedRef = useRef(isLocked);
 
     useEffect(() => {
