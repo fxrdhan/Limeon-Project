@@ -10,10 +10,12 @@ export const usePresence = () => {
     const setupPresence = useCallback(async () => {
         if (!user || channel) return;
 
-        const newChannel = supabase.channel('online-users', {
+        const presenceKey = `${user.id}:${Math.random().toString(36).slice(2, 9)}`;
+
+        const newChannel = supabase.channel('browser-active', {
             config: {
                 presence: {
-                    key: user.id,
+                    key: presenceKey,
                 },
             },
         });
