@@ -3,12 +3,14 @@ import type { NavbarProps } from "@/types";
 import { useState, useRef, useEffect } from "react";
 import ImageUploader from "@/components/modules/image-uploader";
 import { useAuthStore } from "@/store/authStore";
+import { usePresenceStore } from "@/store/presenceStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaUserCircle, FaPencilAlt, FaSignOutAlt, FaCog } from "react-icons/fa";
+import { FaUserCircle, FaPencilAlt, FaSignOutAlt, FaCog, FaUsers } from "react-icons/fa";
 import DateTimeDisplay from "./live-datetime";
 
 const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     const { user, logout } = useAuthStore();
+    const { onlineUsers } = usePresenceStore();
     const [portalOpen, setPortalOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
 
@@ -182,7 +184,15 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                         </span>
                     </button>
                 </div>
-                <div className="relative flex justify-end">
+                <div className="relative flex justify-end items-center space-x-3">
+                    <div 
+                        className="flex items-center space-x-1.5 bg-gray-100/80 px-2.5 py-1.5 rounded-full text-sm text-gray-700 hover:bg-gray-200 transition-colors cursor-default" 
+                        title={`${onlineUsers} pengguna aktif`}
+                    >
+                        <FaUsers className="text-gray-500"/>
+                        <span className="font-medium">{onlineUsers}</span>
+                    </div>
+
                     <div 
                         onMouseEnter={handleMouseEnter} 
                         onMouseLeave={handleMouseLeave}
