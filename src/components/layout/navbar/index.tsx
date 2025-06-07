@@ -254,17 +254,63 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                         className="fixed top-0 right-0 w-60 bg-white rounded-bl-2xl shadow-xl z-50 border border-gray-100 overflow-hidden backdrop-blur-sm"
                                         style={{ marginTop: "0px" }}
                                     >
-                                        <div className="p-4">
-                                            <div className="flex flex-col items-center mb-4">
-                                                <div className="mb-3">
-                                                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-1.5 rounded-full text-xs font-medium shadow-lg">
+                                        <div className="p-4 pt-6">
+                                            <div className="flex flex-col items-center">
+                                                <div className="mb-4">
+                                                    <motion.div 
+                                                        className="text-white px-4 py-1.5 rounded-full text-xs font-medium relative overflow-hidden"
+                                                        initial={{ 
+                                                            y: -20,
+                                                            opacity: 0,
+                                                            backgroundImage: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
+                                                            boxShadow: '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)'
+                                                        }}
+                                                        animate={{ 
+                                                            y: 0,
+                                                            opacity: 1,
+                                                            backgroundImage: [
+                                                                'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
+                                                                'linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%)', 
+                                                                'linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%)',
+                                                                'linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #f59e0b 100%)',
+                                                                'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)'
+                                                            ],
+                                                            boxShadow: [
+                                                                '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
+                                                                '0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(239, 68, 68, 0.6), 0 0 60px rgba(236, 72, 153, 0.4)',
+                                                                '0 0 18px rgba(16, 185, 129, 0.8), 0 0 35px rgba(6, 182, 212, 0.6), 0 0 55px rgba(59, 130, 246, 0.4)',
+                                                                '0 0 22px rgba(139, 92, 246, 0.9), 0 0 45px rgba(217, 70, 239, 0.7), 0 0 65px rgba(245, 158, 11, 0.5)',
+                                                                '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)'
+                                                            ]
+                                                        }}
+                                                        exit={{
+                                                            y: -20,
+                                                            opacity: 0
+                                                        }}
+                                                        transition={{ 
+                                                            y: { duration: 0.3, delay: 0.1, ease: "easeOut" },
+                                                            opacity: { duration: 0.3, delay: 0.1, ease: "easeOut" },
+                                                            backgroundImage: { 
+                                                                repeat: Infinity,
+                                                                duration: 5, 
+                                                                ease: "easeInOut",
+                                                                delay: 0.4
+                                                            },
+                                                            boxShadow: {
+                                                                repeat: Infinity,
+                                                                duration: 5, 
+                                                                ease: "easeInOut",
+                                                                delay: 0.4
+                                                            }
+                                                        }}
+                                                    >
                                                         <span className="flex items-center space-x-1.5">
                                                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
                                                             </svg>
-                                                            <span>Pro Plan</span>
+                                                            <span className="font-bold">Pro Plan</span>
                                                         </span>
-                                                    </div>
+                                                    </motion.div>
                                                 </div>
                                                 <div className="relative group/upload">
                                                     <motion.div
@@ -309,7 +355,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                                         >
                                                             <ProfileImage 
                                                                 size="large" 
-                                                                className="border-4 border-gray-100 group-hover/upload:border-primary/30 transition-all duration-200" 
+                                                                className="border-4 border-gray-100 group-hover/upload:border-gray/30 transition-all duration-200" 
                                                             />
                                                         </ImageUploader>
                                                     </motion.div>
