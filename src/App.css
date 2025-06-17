@@ -86,13 +86,20 @@
     color: #888;
 }
 
-a {
+/* Hanya apply styling untuk link di luar sidebar */
+a:not(.sidebar a) {
     /* font-weight: 500; */
     color: #646cff;
     text-decoration: inherit;
 }
-a:hover {
+a:not(.sidebar a):hover {
     color: #1a73e8;
+}
+
+/* Pastikan link di sidebar menggunakan warna dari Tailwind */
+.sidebar a {
+    color: inherit;
+    text-decoration: inherit;
 }
 
 body {
