@@ -118,11 +118,18 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     <nav className="bg-white border-b px-6 py-3 sticky top-0 z-20">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center">
         <div className="flex items-center h-8">
-          <h1
-            className="text-lg font-semibold text-gray-800 flex items-baseline"
-            style={{ minHeight: "1.5em" }}
-          >
-            <span>Pharma</span>
+          <h1 className="flex items-center" style={{ minHeight: "2em" }}>
+            <span
+              className="text-2xl font-semibold text-gray-800"
+              style={{
+                display: "inline-block",
+                verticalAlign: "top",
+                lineHeight: "2em",
+                height: "2em",
+              }}
+            >
+              Pharma
+            </span>
             <AnimatePresence>
               {sidebarCollapsed ? (
                 <motion.span
@@ -131,10 +138,14 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                   animate={{ opacity: 1, width: "auto" }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2 }}
+                  className="text-2xl font-semibold text-gray-800"
                   style={{
                     display: "inline-block",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
+                    verticalAlign: "top",
+                    lineHeight: "2em",
+                    height: "2em",
                   }}
                 >
                   Sys
@@ -151,6 +162,9 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                       display: "inline-block",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
+                      verticalAlign: "top",
+                      lineHeight: "2em",
+                      height: "2em",
                     }}
                   >
                     &nbsp;
@@ -161,10 +175,14 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     animate={{ opacity: 1, width: "auto" }}
                     exit={{ opacity: 0, width: 0 }}
                     transition={{ duration: 0.2 }}
+                    className="text-2xl font-semibold text-gray-800"
                     style={{
                       display: "inline-block",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
+                      verticalAlign: "top",
+                      lineHeight: "2em",
+                      height: "2em",
                     }}
                   >
                     System
@@ -180,10 +198,14 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                   animate={{ opacity: 1, width: "auto" }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2, delay: 0.05 }}
+                  className="text-2xl font-semibold text-gray-800"
                   style={{
                     display: "inline-block",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
+                    verticalAlign: "top",
+                    lineHeight: "2em",
+                    height: "2em",
                   }}
                 >
                   &nbsp;App
