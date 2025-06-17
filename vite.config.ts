@@ -7,13 +7,13 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
   server: {
     fs: {
       // Allow serving files from one level up from the project root
-      allow: ['..']
-    }
-  }
-})
+      allow: [".."],
+    },
+  },
+});
