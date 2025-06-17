@@ -224,14 +224,14 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
         <aside
             onMouseEnter={handleMouseEnterSidebar}
             onMouseLeave={handleMouseLeaveSidebar}
-            className={`bg-gradient-to-b from-teal-600 to-teal-800 text-white 
+            className={`bg-linear-to-b from-teal-600 to-teal-800 text-white 
                         transition-all duration-500 ease-in-out h-screen 
                         ${collapsed ? 'w-16' : 'w-64'} relative group z-10`}
         >
             <div className="flex flex-col h-full">
                 <div className="p-4 border-b border-primary/30 flex items-center justify-between">
                     <div className="flex items-center">
-                        <div className="h-8 w-8 min-w-[2rem] bg-white rounded-md flex items-center justify-center flex-shrink-0">
+                        <div className="h-8 w-8 min-w-8 bg-white rounded-md flex items-center justify-center shrink-0">
                             <span className="text-teal-600 text-xl font-bold">P</span>
                         </div>
                         <h2 className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'} text-white`}>
@@ -241,7 +241,7 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
                     {!collapsed && (
                         <motion.button
                             onClick={toggleLock}
-                            className="p-2 rounded-full text-teal-100 hover:bg-teal-700 focus:outline-none transition-colors duration-150 relative overflow-hidden"
+                            className="p-2 rounded-full text-teal-100 hover:bg-teal-700 focus:outline-hidden transition-colors duration-150 relative overflow-hidden"
                             title={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
                             aria-label={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
                             whileHover={{ scale: 1.05 }}
@@ -258,15 +258,15 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
                     )}
                 </div>
 
-                <nav className="flex-grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <nav className="grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                     {menuItems.map((item) => (
                         <div key={item.name} className="mb-1">
                             {item.children ? (
                                 <>
                                     <button
                                         onClick={() => toggleMenu(item.name.toLowerCase().replace(' ', ''))}
-                                        className={`w-full text-left flex items-center px-4 py-3 h-10 justify-between focus-visible:outline-none outline-none border-0
-                                                [&:focus]:outline-none [&:active]:outline-none
+                                        className={`w-full text-left flex items-center px-4 py-3 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
+                                                focus:outline-hidden active:outline-hidden
                                                 ${isActive(item.path) || hasActiveChild(item.children)
                                                 ? 'bg-teal-500/40 font-medium border-l-4 border-teal-100'
                                                 : 'border-l-4 border-transparent hover:bg-teal-700/60'}
@@ -274,7 +274,7 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
                                         style={{ outline: 'none', border: 'none', borderLeft: '4px solid transparent' }}
                                     >
                                         <div className="flex items-center overflow-hidden">
-                                            <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-teal-50' : 'text-teal-100'} transition-colors duration-200`}>
+                                            <div className={`shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? 'text-teal-50' : 'text-teal-100'} transition-colors duration-200`}>
                                                 {item.icon}
                                             </div>
                                             <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>
@@ -300,8 +300,8 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
                                                     key={child.name}
                                                     to={child.path}
                                                     className={`block px-3 py-2 my-0.5 text-sm rounded-md transition duration-300 ease-in-out 
-                                                            focus-visible:outline-none outline-none
-                                                            [&:focus]:outline-none [&:active]:outline-none
+                                                            focus-visible:outline-hidden outline-hidden
+                                                            focus:outline-hidden active:outline-hidden
                                                             ${
                                                         isActive(child.path)
                                                         ? 'bg-teal-500/40 text-white font-medium hover:bg-teal-500/50 hover:text-white'
@@ -319,8 +319,8 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
                                 <Link
                                     to={item.path}
                                     className={`w-full text-left flex items-center px-4 py-3 h-12 
-                                            focus-visible:outline-none outline-none
-                                            [&:focus]:outline-none [&:active]:outline-none
+                                            focus-visible:outline-hidden outline-hidden
+                                            focus:outline-hidden active:outline-hidden
                                             ${isActive(item.path)
                                         ? 'bg-teal-500/40 font-medium border-l-4 border-teal-100'
                                         : 'border-l-4 border-transparent hover:bg-teal-700/60'}
@@ -328,7 +328,7 @@ const Sidebar = ({ collapsed, isLocked, toggleLock, expandSidebar, collapseSideb
                                     style={{ outline: 'none' }}
                                 >
                                     <div className="flex items-center overflow-hidden">
-                                        <div className={`flex-shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-teal-50' : 'text-teal-100'} transition-colors duration-200`}>
+                                        <div className={`shrink-0 flex items-center justify-center ${isActive(item.path) ? 'text-teal-50' : 'text-teal-100'} transition-colors duration-200`}>
                                             {item.icon}
                                         </div>
                                         <span className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}>{item.name}</span>

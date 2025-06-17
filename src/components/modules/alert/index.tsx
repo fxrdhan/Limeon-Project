@@ -38,7 +38,7 @@ const typeStyles: Record<AlertMessage["type"], string> = {
     warning: "bg-yellow-50 border-yellow-300 text-yellow-700",
     info: "bg-blue-50 border-blue-300 text-blue-700",
     online: "bg-green-50 border-green-300 text-green-800",
-    offline: "bg-gradient-to-r from-red-500 to-orange-500 text-white border-red-600 animate-pulse",
+    offline: "bg-linear-to-r from-red-500 to-orange-500 text-white border-red-600 animate-pulse",
 };
 
 const AlertItem: React.FC<AlertItemProps> = ({
@@ -78,11 +78,11 @@ const AlertItem: React.FC<AlertItemProps> = ({
                 typeStyles[type]
             )}
         >
-            <div className="flex-shrink-0 mr-3 mt-0.5 text-xl">{alertIcon}</div>
-            <div className="flex-grow text-sm break-words">{message}</div>
+            <div className="shrink-0 mr-3 mt-0.5 text-xl">{alertIcon}</div>
+            <div className="grow text-sm break-words">{message}</div>
             <button
                 onClick={onClose}
-                className="ml-4 p-1 rounded-md hover:bg-black/10 focus:outline-none focus:ring-2 focus:ring-current transition-colors text-inherit"
+                className="ml-4 p-1 rounded-md hover:bg-black/10 focus:outline-hidden focus:ring-2 focus:ring-current transition-colors text-inherit"
                 aria-label="Tutup notifikasi"
             >
                 <FaTimes size={14} />
@@ -159,7 +159,7 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({
             {children}
             {typeof document !== "undefined" &&
                 createPortal(
-                    <div className="fixed top-5 left-1/2 transform -translate-x-1/2 z-[9999] flex flex-col items-center space-y-2 w-full max-w-md px-4 pointer-events-none">
+                    <div className="fixed top-5 left-1/2 transform -translate-x-1/2 z-9999 flex flex-col items-center space-y-2 w-full max-w-md px-4 pointer-events-none">
                         <AnimatePresence initial={false}>
                             {alerts.map((alert) => (
                                 <div key={alert.id} className="pointer-events-auto w-full">

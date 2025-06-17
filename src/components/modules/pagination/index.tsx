@@ -64,7 +64,7 @@ const Pagination = ({
                             key={size}
                             layout
                             className={classNames(
-                                "group px-3 py-1.5 rounded-full focus:outline-none select-none relative transition-colors duration-300",
+                                "group px-3 py-1.5 rounded-full focus:outline-hidden select-none relative transition-colors duration-300",
                                 itemsPerPage !== size
                                     ? "hover:bg-teal-100"
                                     : ""
@@ -79,7 +79,7 @@ const Pagination = ({
                             {itemsPerPage === size && (
                                 <motion.div
                                     layoutId="activeItemsPerPageIndicator"
-                                    className="absolute inset-0 bg-primary rounded-full shadow-sm"
+                                    className="absolute inset-0 bg-primary rounded-full shadow-xs"
                                     style={{ borderRadius: "9999px" }}
                                     transition={{ type: "spring", stiffness: 700, damping: 35 }}
                                 />
@@ -103,7 +103,7 @@ const Pagination = ({
                 <div
                     onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
                     className={classNames(
-                        "p-2 rounded-full focus:outline-none transition-colors duration-150 cursor-pointer select-none",
+                        "p-2 rounded-full focus:outline-hidden transition-colors duration-150 cursor-pointer select-none",
                         currentPage === 1
                             ? "opacity-50 cursor-not-allowed"
                             : "hover:bg-teal-100 hover:text-secondary transition-all duration-300 ease-in-out"
@@ -124,7 +124,7 @@ const Pagination = ({
                     </svg>
                 </div>
 
-                <div className="flex items-center justify-center min-w-[2rem] h-8 rounded-full bg-primary text-white font-medium shadow-sm px-3 mx-1 overflow-hidden select-none">
+                <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-primary text-white font-medium shadow-xs px-3 mx-1 overflow-hidden select-none">
                     <AnimatePresence initial={false} custom={direction} mode="popLayout">
                         <motion.span
                             key={currentPage}
@@ -148,7 +148,7 @@ const Pagination = ({
                         onPageChange(currentPage + 1)
                     }
                     className={classNames(
-                        "p-2 rounded-full focus:outline-none transition-colors duration-150 cursor-pointer select-none",
+                        "p-2 rounded-full focus:outline-hidden transition-colors duration-150 cursor-pointer select-none",
                         currentPage === totalPages || totalPages === 0
                             ? "opacity-50 cursor-not-allowed"
                             : "hover:bg-teal-100 hover:text-secondary transition-all duration-300 ease-in-out"

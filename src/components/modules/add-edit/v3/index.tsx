@@ -141,7 +141,7 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
                     leaveTo="opacity-0"
                 >
                     <div
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                        className="fixed inset-0 bg-black/50 backdrop-blur-xs"
                         aria-hidden="true"
                     />
                 </TransitionChild>
@@ -164,7 +164,7 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
                             <h2 className="text-xl font-semibold">{title}</h2>
                         </div>
 
-                        <div className="p-6 overflow-y-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                        <div className="p-6 overflow-y-auto grow scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                             <div className="flex justify-center mb-6">
                                 <div className="relative group w-48">
                                     <ImageUploader
@@ -318,7 +318,7 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
                                                         setInputRef(field.key, el as HTMLTextAreaElement)
                                                     }
                                                     id={field.key}
-                                                    className="text-sm w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100 transition duration-200 ease-in-out"
+                                                    className="text-sm w-full p-2 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-teal-100 transition duration-200 ease-in-out"
                                                     value={String(editValues[field.key] ?? "")}
                                                     onChange={(
                                                         e: React.ChangeEvent<HTMLTextAreaElement>

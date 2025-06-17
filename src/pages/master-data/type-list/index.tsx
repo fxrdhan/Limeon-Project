@@ -83,7 +83,7 @@ const TypeList = () => {
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Cari nama atau deskripsi jenis item..."
-                        className="flex-grow"
+                        className="grow"
                     />
                     <Button
                         variant="primary"

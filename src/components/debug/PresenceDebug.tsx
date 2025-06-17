@@ -137,13 +137,13 @@ const PresenceDebug: React.FC = () => {
       <div className="mt-3 space-y-2">
         <button
           onClick={testPresence}
-          className="w-full bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+          className="w-full bg-blue-500 text-white px-2 py-1 rounded-sm text-xs hover:bg-blue-600"
         >
           Test Presence
         </button>
         <button
           onClick={forceReconnect}
-          className="w-full bg-orange-500 text-white px-2 py-1 rounded text-xs hover:bg-orange-600"
+          className="w-full bg-orange-500 text-white px-2 py-1 rounded-sm text-xs hover:bg-orange-600"
         >
           Force Reconnect
         </button>

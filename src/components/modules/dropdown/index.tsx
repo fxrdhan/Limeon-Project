@@ -427,7 +427,7 @@ const Dropdown = ({
                         ref={buttonRef}
                         type="button"
                         tabIndex={tabIndex}
-                        className="py-2.5 px-3 w-full inline-flex justify-between items-center text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring focus:ring-teal-100 focus:border-primary transition duration-200 ease-in-out"
+                        className="py-2.5 px-3 w-full inline-flex justify-between items-center text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-teal-100 focus:border-primary transition duration-200 ease-in-out"
                         aria-haspopup="menu"
                         aria-expanded={isOpen || isClosing}
                         onClick={toggleDropdown}
@@ -513,7 +513,7 @@ const Dropdown = ({
                                                         <input
                                                             ref={searchInputRef}
                                                             type="text"
-                                                            className="w-full py-2 px-2 pl-8 pr-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring focus:ring-teal-100 focus:border-primary transition duration-200 ease-in-out min-w-0"
+                                                            className="w-full py-2 px-2 pl-8 pr-2 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-3 focus:ring-teal-100 focus:border-primary transition duration-200 ease-in-out min-w-0"
                                                             placeholder="Cari..."
                                                             value={searchTerm}
                                                             onChange={handleSearchChange}
@@ -535,7 +535,7 @@ const Dropdown = ({
                                                         <button
                                                             ref={addNewButtonRef}
                                                             type="button"
-                                                            className="bg-primary text-white p-1.5 rounded-lg flex-shrink-0 hover:ring hover:ring-teal-100 focus:outline-none focus:ring focus:ring-teal-100 transition duration-200 ease-in-out min-w-[16px]"
+                                                            className="bg-primary text-white p-1.5 rounded-lg shrink-0 hover:ring-3 hover:ring-teal-100 focus:outline-hidden focus:ring-3 focus:ring-teal-100 transition duration-200 ease-in-out min-w-[16px]"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 if (onAddNew) onAddNew(searchTerm);
@@ -555,7 +555,7 @@ const Dropdown = ({
                                                 ref={optionsContainerRef}
                                                 role="listbox"
                                                 tabIndex={-1}
-                                                className="p-1 max-h-60 overflow-y-auto focus:outline-none"
+                                                className="p-1 max-h-60 overflow-y-auto focus:outline-hidden"
                                                 onScroll={checkScroll}
                                                 onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
                                             >
@@ -567,7 +567,7 @@ const Dropdown = ({
                                                             role="option"
                                                             aria-selected={highlightedIndex === index}
                                                             type="button"
-                                                            className={`flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 ${
+                                                            className={`flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100 ${
                                                                 highlightedIndex === index ? 'bg-gray-100' : ''
                                                             }`}
                                                             onClick={() => handleSelect(option.id)}
