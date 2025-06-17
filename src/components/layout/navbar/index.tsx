@@ -126,7 +126,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             <AnimatePresence>
               {!sidebarCollapsed && (
                 <motion.span
-                  key="sys_part"
+                  key="space_after_pharma_part"
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: "auto" }}
                   exit={{ opacity: 0, width: 0 }}
@@ -137,7 +137,26 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     overflow: "hidden",
                   }}
                 >
-                  Sys
+                  &nbsp;
+                </motion.span>
+              )}
+            </AnimatePresence>
+            <span>System</span>
+            <AnimatePresence>
+              {!sidebarCollapsed && (
+                <motion.span
+                  key="app_part"
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2, delay: 0.1 }}
+                  style={{
+                    display: "inline-block",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                  }}
+                >
+                  &nbsp;App
                 </motion.span>
               )}
             </AnimatePresence>
