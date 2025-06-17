@@ -9,7 +9,6 @@ lerna-debug.log*
 
 # Build artifacts (Tailwind CSS output)
 src/output.css
-output.css
 
 # Dependency directories
 node_modules
