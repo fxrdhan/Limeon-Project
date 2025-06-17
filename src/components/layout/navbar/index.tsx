@@ -153,24 +153,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
               ) : (
                 <>
                   <motion.span
-                    key="space_before_system"
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: "auto" }}
-                    exit={{ opacity: 0, width: 0 }}
-                    transition={{ duration: 0.2 }}
-                    style={{
-                      display: "inline-block",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      verticalAlign: "top",
-                      lineHeight: "2em",
-                      height: "2em",
-                    }}
-                  >
-                    &nbsp;
-                  </motion.span>
-                  <motion.span
-                    key="system_part"
+                    key="cy_part"
                     initial={{ opacity: 0, width: 0 }}
                     animate={{ opacity: 1, width: "auto" }}
                     exit={{ opacity: 0, width: 0 }}
@@ -185,7 +168,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                       height: "2em",
                     }}
                   >
-                    System
+                    cy
                   </motion.span>
                 </>
               )}
@@ -193,11 +176,11 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             <AnimatePresence>
               {!sidebarCollapsed && (
                 <motion.span
-                  key="app_part"
+                  key="management_system_part"
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: "auto" }}
                   exit={{ opacity: 0, width: 0 }}
-                  transition={{ duration: 0.2, delay: 0.05 }}
+                  transition={{ duration: 0.2, delay: 0.1 }}
                   className="text-2xl font-semibold text-gray-800"
                   style={{
                     display: "inline-block",
@@ -208,7 +191,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     height: "2em",
                   }}
                 >
-                  &nbsp;App
+                  &nbsp;Management System
                 </motion.span>
               )}
             </AnimatePresence>
