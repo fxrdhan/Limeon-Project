@@ -4,7 +4,14 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["system-ui", "Avenir", "Helvetica", "Arial", "sans-serif"],
+        sans: [
+          "Open Sans",
+          "system-ui",
+          "Avenir",
+          "Helvetica",
+          "Arial",
+          "sans-serif",
+        ],
       },
       colors: {
         primary: "#14b8a6", // teal-500
