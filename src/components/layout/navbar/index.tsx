@@ -236,7 +236,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                                 size="small"
                                                 className="ring-2 ring-gray-200 group-hover:ring-primary/30 transition-all duration-200"
                                             />
-                                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                                            {/* <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div> */}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
