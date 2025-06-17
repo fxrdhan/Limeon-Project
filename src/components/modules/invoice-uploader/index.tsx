@@ -205,7 +205,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     return createPortal(
         <>
             <div
-                className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
+                className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-xs flex items-center justify-center z-50"
                 onClick={onClose}
             >
                 <div onClick={(e) => e.stopPropagation()}>
@@ -217,7 +217,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                 </CardTitle>
                                 <button
                                     onClick={onClose}
-                                    className="p-1.5 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                    className="p-1.5 text-gray-500 hover:text-gray-700 focus:outline-hidden"
                                     aria-label="Tutup"
                                 >
                                     <FaTimes className="h-5 w-5" />
@@ -229,7 +229,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                         </CardHeader>
                         <CardContent className="pt-6">
                             {error && (
-                                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-sm mb-4 flex items-center">
                                     <svg
                                         className="h-5 w-5 mr-2 text-red-500"
                                         fill="currentColor"
@@ -287,7 +287,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                             }}
                                         >
                                             {previewUrl ? (
-                                                <div className="h-16 w-16 mr-3 overflow-hidden rounded-md border border-gray-200 flex-shrink-0">
+                                                <div className="h-16 w-16 mr-3 overflow-hidden rounded-md border border-gray-200 shrink-0">
                                                     <img
                                                         src={previewUrl}
                                                         alt="Thumbnail"
@@ -295,11 +295,11 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="h-16 w-16 mr-3 rounded-md bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                                <div className="h-16 w-16 mr-3 rounded-md bg-gray-200 flex items-center justify-center shrink-0">
                                                     <FaImage className="h-8 w-8 text-gray-400" />
                                                 </div>
                                             )}
-                                            <div className="text-left flex-grow">
+                                            <div className="text-left grow">
                                                 <p className="text-sm font-medium text-gray-700 truncate">
                                                     {file.name}
                                                 </p>
@@ -310,7 +310,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                             </div>
                                             <button
                                                 onClick={(e) => handleRemoveFile(e)}
-                                                className="p-1.5 ml-2 text-red-500 hover:text-red-700 focus:outline-none"
+                                                className="p-1.5 ml-2 text-red-500 hover:text-red-700 focus:outline-hidden"
                                                 aria-label="Hapus file"
                                             >
                                                 <FaTimes className="h-4 w-4" />

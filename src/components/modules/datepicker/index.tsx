@@ -800,7 +800,7 @@ const Datepicker: React.FC<DatepickerProps> = ({
                             onMouseLeave={() => setHighlightedDate(null)}
                             disabled={isDisabled}
                             className={classNames(
-                                "py-1.5 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
+                                "py-1.5 rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
                                 isDisabled
                                     ? "text-gray-300 cursor-not-allowed"
                                     : "hover:bg-teal-100",
@@ -858,7 +858,7 @@ const Datepicker: React.FC<DatepickerProps> = ({
                             onMouseLeave={() => setHighlightedMonth(null)}
                             disabled={isDisabled}
                             className={classNames(
-                                "p-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
+                                "p-2 rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
                                 isDisabled
                                     ? "text-gray-300 cursor-not-allowed"
                                     : "hover:bg-teal-100 text-gray-700",
@@ -904,7 +904,7 @@ const Datepicker: React.FC<DatepickerProps> = ({
                             onMouseLeave={() => setHighlightedYear(null)}
                             disabled={isDisabled}
                             className={classNames(
-                                "p-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
+                                "p-2 rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
                                 isDisabled
                                     ? "text-gray-300 cursor-not-allowed"
                                     : "hover:bg-teal-100 text-gray-700",
@@ -957,7 +957,7 @@ const Datepicker: React.FC<DatepickerProps> = ({
                             className={classNames(
                                 "bg-white shadow-lg rounded-lg border border-gray-200 p-4 w-[280px]",
                                 dropDirection === "down" ? "origin-top" : "origin-bottom",
-                                "transition-all duration-150 ease-out focus:outline-none",
+                                "transition-all duration-150 ease-out focus:outline-hidden",
                                 isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100"
                             )}
                             onMouseEnter={handleCalendarMouseEnter}
@@ -967,7 +967,7 @@ const Datepicker: React.FC<DatepickerProps> = ({
                             <div className="flex justify-between items-center mb-3">
                                 <button
                                     onClick={() => navigateViewDate("prev")}
-                                    className="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-none transition-colors"
+                                    className="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-hidden transition-colors"
                                     aria-label={
                                         currentView === "days"
                                             ? "Previous month"
@@ -981,7 +981,7 @@ const Datepicker: React.FC<DatepickerProps> = ({
                                 <button
                                     onClick={handleHeaderClick}
                                     className={classNames(
-                                        "font-semibold text-sm hover:bg-gray-100 p-1.5 rounded focus:outline-none min-w-[120px] text-center transition-colors",
+                                        "font-semibold text-sm hover:bg-gray-100 p-1.5 rounded-sm focus:outline-hidden min-w-[120px] text-center transition-colors",
                                         "focus:ring-2 focus:ring-primary/50 focus:bg-primary/10"
                                     )}
                                     aria-live="polite"
@@ -990,7 +990,7 @@ const Datepicker: React.FC<DatepickerProps> = ({
                                 </button>
                                 <button
                                     onClick={() => navigateViewDate("next")}
-                                    className="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-none transition-colors"
+                                    className="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-hidden transition-colors"
                                     aria-label={
                                         currentView === "days"
                                             ? "Next month"

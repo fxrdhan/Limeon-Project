@@ -9,7 +9,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
     title = "FAKTUR PEMBELIAN"
 }) => {
     return (
-        <div ref={printRef} className="faktur-a4 bg-white p-6 shadow print:shadow-none">
+        <div ref={printRef} className="faktur-a4 bg-white p-6 shadow-sm print:shadow-none">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-center mb-2">{title}</h1>
                 <div className="border-b-2 border-gray-400 mb-4"></div>
@@ -33,18 +33,18 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                     </div>
 
                     <div className="w-1/2">
-                        <div className="bg-gray-50 p-3 rounded text-sm">
-                            <div className="grid grid-cols-[auto,auto,1fr] mb-1">
+                        <div className="bg-gray-50 p-3 rounded-sm text-sm">
+                            <div className="grid grid-cols-[auto_auto_1fr] mb-1">
                                 <span className="text-left font-bold w-[100px]">No. Faktur</span>
                                 <span className="px-2">:</span>
                                 <span>{purchase.invoice_number}</span>
                             </div>
-                            <div className="grid grid-cols-[auto,auto,1fr] mb-1">
+                            <div className="grid grid-cols-[auto_auto_1fr] mb-1">
                                 <span className="text-left w-[100px]">Tanggal</span>
                                 <span className="px-2">:</span>
                                 <span>{new Date(purchase.date).toLocaleDateString('id-ID')}</span>
                             </div>
-                            <div className="grid grid-cols-[auto,auto,1fr] mb-1">
+                            <div className="grid grid-cols-[auto_auto_1fr] mb-1">
                                 <span className="text-left w-[100px]">Jatuh Tempo</span>
                                 <span className="px-2">:</span>
                                 <span>{purchase.due_date ? new Date(purchase.due_date).toLocaleDateString('id-ID') : '-'}</span>
@@ -107,13 +107,13 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
 
             <div className="flex justify-between mt-8">
                 <div className="max-w-md">
-                    <div className="grid grid-cols-[auto,auto,1fr] mb-1 text-sm">
+                    <div className="grid grid-cols-[auto_auto_1fr] mb-1 text-sm">
                         <span className="text-left w-[120px]">Diperiksa oleh</span>
                         <span className="px-2">:</span>
                         <span>{purchase.supplier?.contact_person || purchase.checked_by || '-'}</span>
                     </div>
 
-                    <div className="grid grid-cols-[auto,auto,1fr] mb-1 text-sm">
+                    <div className="grid grid-cols-[auto_auto_1fr] mb-1 text-sm">
                         <span className="text-left w-[120px]">Status Pembayaran</span>
                         <span className="px-2">:</span>
                         <span className={`${purchase.payment_status === 'paid' ? 'text-green-600' :
@@ -124,19 +124,19 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-[auto,auto,1fr] mb-1 text-sm">
+                    <div className="grid grid-cols-[auto_auto_1fr] mb-1 text-sm">
                         <span className="text-left w-[120px]">Metode Pembayaran</span>
                         <span className="px-2">:</span>
                         <span>{purchase.payment_method === 'cash' ? 'Tunai' : purchase.payment_method === 'transfer' ? 'Transfer' : purchase.payment_method === 'credit' ? 'Kredit' : purchase.payment_method}</span>
                     </div>
 
-                    <div className="grid grid-cols-[auto,auto,1fr] mb-1 text-sm">
+                    <div className="grid grid-cols-[auto_auto_1fr] mb-1 text-sm">
                         <span className="text-left w-[120px]">Catatan</span>
                         <span className="px-2">:</span>
                         <span>{purchase.notes || '-'}</span>
                     </div>
                     {purchase.is_vat_included && (
-                        <div className="grid grid-cols-[auto,auto,1fr] mt-2">
+                        <div className="grid grid-cols-[auto_auto_1fr] mt-2">
                             <span className="text-left w-[120px]"></span>
                             <span className="px-2"></span>
                             <span className="text-sm italic">* PPN sudah termasuk dalam harga</span>
@@ -145,33 +145,33 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                 </div>
 
                 <div className="border p-4 min-w-[250px] text-sm">
-                    <div className="grid grid-cols-[1fr,auto,auto] mb-1">
+                    <div className="grid grid-cols-[1fr_auto_auto] mb-1">
                         <span className="text-left">Subtotal</span>
                         <span className="px-2">:</span>
                         <span className="text-right">{subtotals.baseTotal.toLocaleString('id-ID')}</span>
                     </div>
 
-                    <div className="grid grid-cols-[1fr,auto,auto] mb-1">
+                    <div className="grid grid-cols-[1fr_auto_auto] mb-1">
                         <span className="text-left">Diskon</span>
                         <span className="px-2">:</span>
                         <span className="text-right">-{subtotals.discountTotal.toLocaleString('id-ID')}</span>
                     </div>
 
-                    <div className="grid grid-cols-[1fr,auto,auto] mb-1">
+                    <div className="grid grid-cols-[1fr_auto_auto] mb-1">
                         <span className="text-left">Setelah Diskon</span>
                         <span className="px-2">:</span>
                         <span className="text-right">{subtotals.afterDiscountTotal.toLocaleString('id-ID')}</span>
                     </div>
 
                     {!purchase.is_vat_included && (
-                        <div className="grid grid-cols-[1fr,auto,auto] mb-1">
+                        <div className="grid grid-cols-[1fr_auto_auto] mb-1">
                             <span className="text-left">PPN</span>
                             <span className="px-2">:</span>
                             <span className="text-right">+{subtotals.vatTotal.toLocaleString('id-ID')}</span>
                         </div>
                     )}
 
-                    <div className="border-t pt-2 grid grid-cols-[1fr,auto,auto] font-bold">
+                    <div className="border-t pt-2 grid grid-cols-[1fr_auto_auto] font-bold">
                         <span className="text-left">TOTAL</span>
                         <span className="px-2">:</span>
                         <span className="text-right">{subtotals.grandTotal.toLocaleString('id-ID')}</span>

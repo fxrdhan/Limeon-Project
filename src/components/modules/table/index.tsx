@@ -3,7 +3,7 @@ import type { TableProps, TableCellProps, TableRowProps } from '@/types';
 
 export const Table = ({ children, className }: TableProps) => {
     return (
-        <div className={classNames('overflow-x-auto rounded-lg shadow', className)}>
+        <div className={classNames('overflow-x-auto rounded-lg shadow-sm', className)}>
             <table className="min-w-full w-full table-fixed bg-white rounded-lg overflow-hidden">
                 {children}
             </table>

@@ -81,7 +81,7 @@ const UnitList = () => {
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Cari nama atau deskripsi satuan..."
-                        className="flex-grow"
+                        className="grow"
                     />
                     <Button
                         variant="primary"

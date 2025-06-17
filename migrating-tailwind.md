@@ -106,14 +106,14 @@ module.exports = {
 
 | Kelas v3 | Kelas v4 | Alasan Perubahan |
 |----------|----------|------------------|
-| `shadow` | `shadow-sm` | Konsistensi penamaan |
 | `shadow-sm` | `shadow-xs` | Konsistensi penamaan |
-| `rounded` | `rounded-sm` | Konsistensi penamaan |
+| `shadow-xs` | `shadow-2xs` | Konsistensi penamaan |
 | `rounded-sm` | `rounded-xs` | Konsistensi penamaan |
-| `blur` | `blur-sm` | Konsistensi penamaan |
+| `rounded-xs` | `rounded-xs` | Konsistensi penamaan |
 | `blur-sm` | `blur-xs` | Konsistensi penamaan |
-| `ring` | `ring-3` | Membuat default eksplisit |
-| `outline-none` | `outline-hidden` | Terminology yang lebih jelas |
+| `blur-xs` | `blur-xs` | Konsistensi penamaan |
+| `ring-3` | `ring-3` | Membuat default eksplisit |
+| `outline-hidden` | `outline-hidden` | Terminology yang lebih jelas |
 
 ### Utility Classes yang Dihapus
 
@@ -122,9 +122,9 @@ module.exports = {
 | `bg-opacity-50` | `bg-black/50` | `<div class="bg-black/50">` |
 | `text-opacity-75` | `text-black/75` | `<div class="text-black/75">` |
 | `border-opacity-25` | `border-black/25` | `<div class="border-black/25">` |
-| `flex-shrink-0` | `shrink-0` | `<div class="shrink-0">` |
-| `flex-grow` | `grow` | `<div class="grow">` |
-| `overflow-ellipsis` | `text-ellipsis` | `<div class="text-ellipsis">` |
+| `shrink-0` | `shrink-0` | `<div class="shrink-0">` |
+| `grow` | `grow` | `<div class="grow">` |
+| `text-ellipsis` | `text-ellipsis` | `<div class="text-ellipsis">` |
 
 ## 3. Langkah-langkah Migrasi Step-by-Step
 
@@ -372,8 +372,8 @@ module.exports = {
 
 **v3:**
 ```html
-<div class="bg-[--brand-color]">
-<div class="w-[--sidebar-width]">
+<div class="bg-(--brand-color)">
+<div class="w-(--sidebar-width)">
 ```
 
 **v4:**
@@ -396,7 +396,7 @@ module.exports = {
 **Ring Utilities:**
 ```html
 <!-- v3 - Default ring-3 ring-blue-500 -->
-<button class="focus:ring">
+<button class="focus:ring-3">
 
 <!-- v4 - Default ring-1 ring-currentColor -->
 <button class="focus:ring-3 focus:ring-blue-500">
@@ -777,7 +777,7 @@ Mixing CSS dan JavaScript configuration
 import { cva } from 'class-variance-authority';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background',
+  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background',
   {
     variants: {
       variant: {
@@ -851,8 +851,8 @@ const buttonVariants = cva(
       },
       size: {
         default: 'h-10 py-2 px-4',
-        sm: 'h-9 px-3 rounded-sm',
-        lg: 'h-11 px-8 rounded-sm'
+        sm: 'h-9 px-3 rounded-xs',
+        lg: 'h-11 px-8 rounded-xs'
       }
     }
   }

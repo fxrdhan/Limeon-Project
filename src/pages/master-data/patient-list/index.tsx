@@ -289,7 +289,7 @@ const PatientList = () => {
                     onChange={(e) => setSearch(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Cari nama pasien..."
-                    className="flex-grow"
+                    className="grow"
                 />
                 <Button
                     variant="primary"

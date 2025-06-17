@@ -95,7 +95,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
       />
     ) : (
       <div
-        className={`${sizeClass} rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center ${textSizeClass} ${className}`}
+        className={`${sizeClass} rounded-full bg-linear-to-br from-primary to-primary/80 text-white flex items-center justify-center ${textSizeClass} ${className}`}
       >
         {user?.name ? (
           user.name.charAt(0).toUpperCase()
@@ -116,7 +116,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
   return (
     <nav className="bg-white border-b px-6 py-3 sticky top-0 z-20">
-      <div className="grid grid-cols-[1fr,auto,1fr] items-center">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center">
         <div className="flex items-center h-8">
           <h1
             className="text-xl font-semibold text-gray-800 flex items-baseline"
@@ -254,7 +254,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                    className="fixed inset-0 bg-black/20 backdrop-blur-xs z-40"
                   />
                   <motion.div
                     ref={portalRef}
@@ -283,7 +283,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                         duration: 0.3,
                       },
                     }}
-                    className="fixed top-0 right-0 w-60 bg-white rounded-bl-2xl shadow-xl z-50 border border-gray-100 overflow-hidden backdrop-blur-sm"
+                    className="fixed top-0 right-0 w-60 bg-white rounded-bl-2xl shadow-xl z-50 border border-gray-100 overflow-hidden backdrop-blur-xs"
                     style={{ marginTop: "0px" }}
                   >
                     <div className="p-4 pt-6">

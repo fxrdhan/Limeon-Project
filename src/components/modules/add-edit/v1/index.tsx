@@ -76,7 +76,7 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
                     leaveTo="opacity-0"
                 >
                     <div
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                        className="fixed inset-0 bg-black/50 backdrop-blur-xs"
                         aria-hidden="true"
                         onClick={handleBackdropClick}
                     />

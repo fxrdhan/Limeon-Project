@@ -3,7 +3,7 @@ import { classNames } from '@/lib/classNames';
 
 export const Card = ({ children, className }: CardProps) => {
     return (
-        <div className={classNames('bg-white p-6 rounded-lg shadow', className)}>
+        <div className={classNames('bg-white p-6 rounded-lg shadow-sm', className)}>
             {children}
         </div>
     );

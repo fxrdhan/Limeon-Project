@@ -36,12 +36,12 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 className={classNames(
-                    "group flex items-center text-primary transition-colors focus:outline-none focus:text-teal-600",
+                    "group flex items-center text-primary transition-colors focus:outline-hidden focus:text-teal-600",
                     labelClassName
                 )}
                 onClick={() => setShowTextarea(!showTextarea)}
             >
-                <span className="mr-2 text-md text-primary focus:outline-none group-focus:text-teal-600">
+                <span className="mr-2 text-md text-primary focus:outline-hidden group-focus:text-teal-600">
                     {label}
                 </span>
                 <motion.div
@@ -74,7 +74,7 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
                                 onChange={onChange}
                                 placeholder={placeholder}
                                 className={classNames(
-                                    "text-sm w-full h-full min-h-[100px] max-h-[200px] p-2 pl-3 border border-gray-300 rounded-lg focus:outline-none focus:border-primary focus:ring focus:ring-teal-100",
+                                    "text-sm w-full h-full min-h-[100px] max-h-[200px] p-2 pl-3 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-teal-100",
                                     textareaClassName
                                 )}
                                 rows={rows}

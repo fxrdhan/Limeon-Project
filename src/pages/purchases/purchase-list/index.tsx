@@ -272,7 +272,7 @@ const PurchaseList = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Cari nomor faktur..."
-                        className="flex-grow"
+                        className="grow"
                     />
                     <div className="flex space-x-2 ml-4 mb-4">
                         <Button

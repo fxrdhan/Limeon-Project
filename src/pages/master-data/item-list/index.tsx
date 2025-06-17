@@ -103,11 +103,11 @@ function ItemList() {
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={handleItemKeyDown}
                         placeholder="Cari nama atau kode item..."
-                        className="flex-grow"
+                        className="grow"
                     />
                     <Button
                         variant="primary"
-                        className="flex items-center ml-4 mb-4 focus:outline-none focus:border-none focus:shadow-[0_0_5px_theme(colors.primary),0_0_15px_theme(colors.primary),0_0_30px_theme(colors.primary)] rounded-lg transition-shadow duration-300"
+                        className="flex items-center ml-4 mb-4 focus:outline-hidden focus:border-none focus:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)] rounded-lg transition-shadow duration-300"
                         onClick={() => openAddItemModal(undefined, debouncedSearch)}
                     >
                         <FaPlus className="mr-2" />

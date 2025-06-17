@@ -290,7 +290,7 @@ const SupplierList = () => {
                     onChange={(e) => setSearch(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Cari supplier..."
-                    className="flex-grow"
+                    className="grow"
                 />
                 <Button
                     variant="primary"

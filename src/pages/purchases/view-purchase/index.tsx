@@ -197,7 +197,7 @@ const ViewPurchase = () => {
             <div className="overflow-auto" style={{ maxHeight: "85vh" }}>
                 <div
                     ref={printRef}
-                    className="bg-white p-6 shadow print:shadow-none transition-transform duration-200"
+                    className="bg-white p-6 shadow-sm print:shadow-none transition-transform duration-200"
                     style={{
                         width: "215mm",
                         minHeight: "330mm",
@@ -237,20 +237,20 @@ const ViewPurchase = () => {
                             </div>
 
                             <div className="w-1/2">
-                                <div className="bg-gray-50 p-3 rounded text-sm">
-                                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                                <div className="bg-gray-50 p-3 rounded-sm text-sm">
+                                    <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                                         <span className="text-left font-bold">No. Faktur</span>
                                         <span className="px-2">:</span>
                                         <span>{purchase.invoice_number}</span>
                                     </div>
-                                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                                    <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                                         <span className="text-left">Tanggal</span>
                                         <span className="px-2">:</span>
                                         <span>
                                             {new Date(purchase.date).toLocaleDateString("id-ID")}
                                         </span>
                                     </div>
-                                    <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                                    <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                                         <span className="text-left">Jatuh Tempo</span>
                                         <span className="px-2">:</span>
                                         <span>
@@ -347,7 +347,7 @@ const ViewPurchase = () => {
 
                     <div className="flex justify-between mt-8">
                         <div className="max-w-md">
-                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+                            <div className="grid grid-cols-[1fr_auto_1fr] mb-1 text-sm">
                                 <span className="text-left">Diperiksa oleh</span>
                                 <span className="px-2">:</span>
                                 <span>
@@ -357,7 +357,7 @@ const ViewPurchase = () => {
                                 </span>
                             </div>
 
-                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+                            <div className="grid grid-cols-[1fr_auto_1fr] mb-1 text-sm">
                                 <span className="text-left">Status Pembayaran</span>
                                 <span className="px-2">:</span>
                                 <span
@@ -376,7 +376,7 @@ const ViewPurchase = () => {
                                 </span>
                             </div>
 
-                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+                            <div className="grid grid-cols-[1fr_auto_1fr] mb-1 text-sm">
                                 <span className="text-left">Metode Pembayaran</span>
                                 <span className="px-2">:</span>
                                 <span>
@@ -390,13 +390,13 @@ const ViewPurchase = () => {
                                 </span>
                             </div>
 
-                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1 text-sm">
+                            <div className="grid grid-cols-[1fr_auto_1fr] mb-1 text-sm">
                                 <span className="text-left">Catatan</span>
                                 <span className="px-2">:</span>
                                 <span>{purchase.notes || "-"}</span>
                             </div>
                             {purchase.is_vat_included && (
-                                <div className="grid grid-cols-[1fr,auto,1fr] mt-2">
+                                <div className="grid grid-cols-[1fr_auto_1fr] mt-2">
                                     <span className="text-left"></span>
                                     <span className="px-2"></span>
                                     <span className="text-sm">
@@ -407,7 +407,7 @@ const ViewPurchase = () => {
                         </div>
 
                         <div className="border p-4 min-w-[250px] text-sm">
-                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                            <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                                 <span className="text-left">Subtotal</span>
                                 <span className="px-2">:</span>
                                 <span className="font-mono text-right">
@@ -415,7 +415,7 @@ const ViewPurchase = () => {
                                 </span>
                             </div>
 
-                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                            <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                                 <span className="text-left">Diskon</span>
                                 <span className="px-2">:</span>
                                 <span className="font-mono text-right">
@@ -423,7 +423,7 @@ const ViewPurchase = () => {
                                 </span>
                             </div>
 
-                            <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                            <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                                 <span className="text-left">Setelah Diskon</span>
                                 <span className="px-2">:</span>
                                 <span className="font-mono text-right">
@@ -432,7 +432,7 @@ const ViewPurchase = () => {
                             </div>
 
                             {!purchase.is_vat_included && (
-                                <div className="grid grid-cols-[1fr,auto,1fr] mb-1">
+                                <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                                     <span className="text-left">PPN</span>
                                     <span className="px-2">:</span>
                                     <span className="font-mono text-right">
@@ -441,7 +441,7 @@ const ViewPurchase = () => {
                                 </div>
                             )}
 
-                            <div className="border-t pt-2 grid grid-cols-[1fr,auto,1fr] font-bold">
+                            <div className="border-t pt-2 grid grid-cols-[1fr_auto_1fr] font-bold">
                                 <span className="text-left">TOTAL</span>
                                 <span className="px-2">:</span>
                                 <span className="font-mono text-right">

@@ -83,7 +83,7 @@ const CategoryList = () => {
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Cari nama atau deskripsi kategori item..."
-                        className="flex-grow"
+                        className="grow"
                     />
                     <Button
                         variant="primary"

@@ -182,7 +182,7 @@ const CreatePurchase: React.FC = () => {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-center flex-grow">
+                    <CardTitle className="text-center grow">
                         Tambah Pembelian Baru
                     </CardTitle>
                 </CardHeader>
@@ -324,7 +324,7 @@ const CreatePurchase: React.FC = () => {
                                     value={formData.notes}
                                     onChange={handleChange}
                                     placeholder="Tambahkan catatan untuk pembelian ini..."
-                                    containerClassName="!pt-0"
+                                    containerClassName="pt-0!"
                                 />
                             </div>
                         </FormSection>
@@ -407,7 +407,7 @@ const CreatePurchase: React.FC = () => {
                                                             onChange={(e) =>
                                                                 updateItemBatchNo(item.id, e.target.value)
                                                             }
-                                                            className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+                                                            className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-center"
                                                             placeholder="No. Batch"
                                                         />
                                                     </TableCell>
@@ -426,7 +426,7 @@ const CreatePurchase: React.FC = () => {
                                                                         : ""
                                                                 );
                                                             }}
-                                                            inputClassName="w-full text-center text-sm !py-[3px] !px-1 bg-transparent !border-0 border-b !border-gray-300 focus:!border-primary focus:!ring-0 !rounded-none"
+                                                            inputClassName="w-full text-center text-sm py-[3px]! px-1! bg-transparent border-0! border-b border-gray-300! focus:border-primary! focus:ring-0! rounded-none!"
                                                             placeholder="Pilih ED"
                                                             minDate={new Date()}
                                                             portalWidth="280px"
@@ -464,7 +464,7 @@ const CreatePurchase: React.FC = () => {
                                                                     numericValue < 1 ? 1 : numericValue
                                                                 );
                                                             }}
-                                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center"
+                                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-center"
                                                         />
                                                     </TableCell>
                                                     <TableCell className="text-center">
@@ -473,7 +473,7 @@ const CreatePurchase: React.FC = () => {
                                                             onChange={(e) =>
                                                                 onHandleUnitChange(item.id, e.target.value)
                                                             }
-                                                            className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-center appearance-none cursor-pointer"
+                                                            className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-center appearance-none cursor-pointer"
                                                         >
                                                             <option
                                                                 value={
@@ -521,7 +521,7 @@ const CreatePurchase: React.FC = () => {
                                                                 );
                                                                 updateItem(item.id, "price", numericValue);
                                                             }}
-                                                            className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+                                                            className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
                                                             placeholder="Rp 0"
                                                         />
                                                     </TableCell>
@@ -546,7 +546,7 @@ const CreatePurchase: React.FC = () => {
                                                                     Math.min(numericValue, 100)
                                                                 );
                                                             }}
-                                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+                                                            className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
                                                             placeholder="0%"
                                                             onKeyDown={(e) => {
                                                                 if (
@@ -588,7 +588,7 @@ const CreatePurchase: React.FC = () => {
                                                                         Math.min(numericValue, 100)
                                                                     );
                                                                 }}
-                                                                className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-none px-1 py-0.5 text-right"
+                                                                className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
                                                                 placeholder="0%"
                                                                 onKeyDown={(e) => {
                                                                     if (
@@ -660,7 +660,7 @@ const CreatePurchase: React.FC = () => {
                                                             onChange={handleVatPercentageChange}
                                                             onBlur={stopEditingVatPercentage}
                                                             onKeyDown={handleVatPercentageKeyDown}
-                                                            className="w-16 p-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent "
+                                                            className="w-16 p-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-primary focus:border-transparent "
                                                             min="0"
                                                             max="100"
                                                         />

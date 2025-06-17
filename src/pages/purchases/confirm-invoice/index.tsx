@@ -185,7 +185,7 @@ const ConfirmInvoicePage = () => {
             </CardHeader>
             <CardContent className="pt-6">
                 {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-sm mb-4 flex items-center">
                         <svg
                             className="h-5 w-5 mr-2 text-red-500"
                             fill="currentColor"

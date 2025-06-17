@@ -217,7 +217,7 @@ const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, t
     return (
         <div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <div className="bg-white p-6 rounded-lg shadow">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
                     <div className="flex items-center">
                         <div className="p-3 rounded-full bg-blue-100 mr-4">
                             <FaShoppingBag className="text-blue-500 text-xl" />
@@ -231,7 +231,7 @@ const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, t
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
                     <div className="flex items-center">
                         <div className="p-3 rounded-full bg-green-100 mr-4">
                             <FaShoppingCart className="text-green-500 text-xl" />
@@ -245,7 +245,7 @@ const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, t
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
                     <div className="flex items-center">
                         <div className="p-3 rounded-full bg-purple-100 mr-4">
                             <FaBoxes className="text-purple-500 text-xl" />
@@ -257,7 +257,7 @@ const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, t
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
                     <div className="flex items-center">
                         <div className="p-3 rounded-full bg-red-100 mr-4">
                             <FaExclamationTriangle className="text-red-500 text-xl" />
@@ -271,7 +271,7 @@ const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, t
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
                     <h2 className="text-lg font-semibold mb-4">Penjualan 7 Hari Terakhir</h2>
                     <div className="h-64">
                         <Line
@@ -289,7 +289,7 @@ const RegularDashboard: React.FC<RegularDashboardProps> = ({ stats, salesData, t
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
                     <h2 className="text-lg font-semibold mb-4">Obat Terlaris</h2>
                     <div className="h-64">
                         <Pie
@@ -393,7 +393,7 @@ const ModernDashboard = () => {
     return (
         <div className="bg-gray-50 p-6 rounded-xl">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+                <div className="bg-white p-4 rounded-xl shadow-xs flex items-start justify-between">
                     <div>
                         <p className="text-sm text-gray-500 mb-1">Total Customer</p>
                         <p className="text-2xl font-bold">{demoData.totalCustomer}</p>
@@ -404,7 +404,7 @@ const ModernDashboard = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+                <div className="bg-white p-4 rounded-xl shadow-xs flex items-start justify-between">
                     <div>
                         <p className="text-sm text-gray-500 mb-1">Total Sale</p>
                         <p className="text-2xl font-bold">{demoData.totalSales}</p>
@@ -415,7 +415,7 @@ const ModernDashboard = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+                <div className="bg-white p-4 rounded-xl shadow-xs flex items-start justify-between">
                     <div>
                         <p className="text-sm text-gray-500 mb-1">Total Profit</p>
                         <p className="text-2xl font-bold">${demoData.totalProfit}</p>
@@ -426,7 +426,7 @@ const ModernDashboard = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-xl shadow-sm flex items-start justify-between">
+                <div className="bg-white p-4 rounded-xl shadow-xs flex items-start justify-between">
                     <div>
                         <p className="text-sm text-gray-500 mb-1">Out of Stock</p>
                         <p className="text-2xl font-bold">{demoData.outOfStock}</p>
@@ -439,7 +439,7 @@ const ModernDashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="bg-white p-4 rounded-xl shadow-sm">
+                <div className="bg-white p-4 rounded-xl shadow-xs">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-semibold">Expiring List</h2>
                         <button className="text-xs text-primary">Lihat Semua</button>
@@ -475,7 +475,7 @@ const ModernDashboard = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-xl shadow-sm">
+                <div className="bg-white p-4 rounded-xl shadow-xs">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-semibold">Recent Order's</h2>
                         <button className="text-xs text-primary">Lihat Semua</button>
@@ -516,10 +516,10 @@ const ModernDashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white p-4 rounded-xl shadow-sm">
+                <div className="bg-white p-4 rounded-xl shadow-xs">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-semibold">Monthly Progress</h2>
-                        <select className="text-sm border rounded px-2 py-1">
+                        <select className="text-sm border rounded-sm px-2 py-1">
                             <option>Monthly</option>
                             <option>Weekly</option>
                             <option>Daily</option>
@@ -569,7 +569,7 @@ const ModernDashboard = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-xl shadow-sm">
+                <div className="bg-white p-4 rounded-xl shadow-xs">
                     <h2 className="text-lg font-semibold mb-4">Today's Report</h2>
 
                     <div className="flex items-center justify-center">

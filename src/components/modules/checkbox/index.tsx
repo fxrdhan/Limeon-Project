@@ -33,7 +33,7 @@ const CheckboxComponent: React.ForwardRefRenderFunction<HTMLLabelElement, Checkb
             tabIndex={tabIndex}
             onKeyDown={handleKeyDown}
             className={classNames(
-                "inline-flex items-center group focus:outline-none",
+                "inline-flex items-center group focus:outline-hidden",
                 disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
                 className
             )}
@@ -48,7 +48,7 @@ const CheckboxComponent: React.ForwardRefRenderFunction<HTMLLabelElement, Checkb
             />
             <motion.div
                 className={classNames(
-                    "relative w-5 h-5 border-2 rounded flex items-center justify-center mr-2 flex-shrink-0 transition-colors duration-200 group-focus:border-teal-400",
+                    "relative w-5 h-5 border-2 rounded-sm flex items-center justify-center mr-2 shrink-0 transition-colors duration-200 group-focus:border-teal-400",
                     checked ? "bg-primary border-primary" : "bg-white border-gray-300",
                     !disabled && !checked ? "group-hover:border-teal-400" : ""
                 )}

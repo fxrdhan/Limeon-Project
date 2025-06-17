@@ -167,7 +167,7 @@ export const ConfirmDialogComponent: React.FC = () => {
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs" aria-hidden="true" />
                 </TransitionChild>
 
                 <TransitionChild

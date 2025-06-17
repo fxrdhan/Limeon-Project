@@ -231,7 +231,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
           initial="hidden"
           animate="visible"
           exit="hidden"
-          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               onClose();
@@ -247,7 +247,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <motion.div variants={contentVariants}>
-              <CardHeader className="flex items-center justify-between sticky top-0 bg-white z-10 !py-6 !px-4 !border-b rounded-t-lg">
+              <CardHeader className="flex items-center justify-between sticky top-0 bg-white z-10 py-6! px-4! border-b! rounded-t-lg">
                 <div className="flex items-center"></div>
 
                 <div className="absolute left-1/2 transform -translate-x-1/2">
@@ -256,7 +256,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                   </CardTitle>
                 </div>
 
-                <div className="flex items-center space-x-1 flex-shrink-0">
+                <div className="flex items-center space-x-1 shrink-0">
                   {isEditMode && formattedUpdateAt !== "-" && (
                     <span className="text-sm text-gray-500 italic whitespace-nowrap flex items-center">
                       <FaHistory className="mr-1" size={12} />
@@ -482,7 +482,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                             label="Stok Minimal:"
                             className="flex items-center"
                           >
-                            <div className="ml-2 flex-grow flex items-center">
+                            <div className="ml-2 grow flex items-center">
                               {editingMinStock ? (
                                 <Input
                                   className="max-w-20"
@@ -497,7 +497,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                               ) : (
                                 <div
                                   tabIndex={10}
-                                  className="group w-full pb-1 cursor-pointer flex items-center focus:outline-none"
+                                  className="group w-full pb-1 cursor-pointer flex items-center focus:outline-hidden"
                                   onClick={startEditingMinStock}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter" || e.key === " ") {
@@ -624,13 +624,13 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                             </FormField>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-6 focus:outline-none">
+                          <div className="grid grid-cols-2 gap-6 focus:outline-hidden">
                             <FormField label="Margin">
-                              <div className="flex items-center focus:outline-none">
+                              <div className="flex items-center focus:outline-hidden">
                                 {editingMargin ? (
-                                  <div className="flex items-center focus:outline-none">
+                                  <div className="flex items-center focus:outline-hidden">
                                     <Input
-                                      className="max-w-20 focus:outline-none"
+                                      className="max-w-20 focus:outline-hidden"
                                       ref={marginInputRef}
                                       type="number"
                                       value={marginPercentage}
@@ -652,7 +652,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                           ? "text-green-600"
                                           : "text-red-600"
                                         : "text-gray-500"
-                                    } focus:outline-none`}
+                                    } focus:outline-hidden`}
                                     onClick={startEditingMargin}
                                     title="Klik untuk mengubah margin"
                                     onKeyDown={(e) => {
@@ -860,7 +860,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                     }}
                                   />
                                   <div
-                                    className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 focus:outline-none ${
+                                    className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 focus:outline-hidden ${
                                       unitConversionHook.unitConversionFormData
                                         .unit &&
                                       unitConversionHook.unitConversionFormData
@@ -936,7 +936,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                             </div>
                           </div>
                           <div className="md:w-2/3 lg:w-3/5 flex flex-col h-full">
-                            <div className="border rounded-lg overflow-hidden flex-grow h-full">
+                            <div className="border rounded-lg overflow-hidden grow h-full">
                               <Table className="w-full h-full">
                                 <TableHead>
                                   <TableRow>
@@ -1035,7 +1035,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                 </div>
               </div>
 
-              <CardFooter className="sticky bottom-0 bg-white z-10 !py-3 !px-4 !border-t rounded-b-lg">
+              <CardFooter className="sticky bottom-0 bg-white z-10 py-3! px-4! border-t! rounded-b-lg">
                 <FormAction
                   onCancel={handleCancel}
                   onDelete={isEditMode ? handleDeleteItem : undefined}
