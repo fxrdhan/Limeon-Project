@@ -8,9 +8,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "tailwind": "npx @tailwindcss/cli -i src/App.css -o output.css",
-    "tailwind:watch": "npx @tailwindcss/cli -i src/App.css -o output.css --watch"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
