@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import type { NavbarProps } from "@/types";
 import { useState, useRef, useEffect } from "react";
 import ImageUploader from "@/components/modules/image-uploader";
 import { useAuthStore } from "@/store/authStore";
@@ -7,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaUserCircle, FaPencilAlt, FaSignOutAlt, FaCog } from "react-icons/fa";
 import DateTimeDisplay from "./live-datetime";
 
-const Navbar = () => {
+const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const { user, logout } = useAuthStore();
   const { onlineUsers } = usePresenceStore();
 
@@ -117,7 +118,30 @@ const Navbar = () => {
     <nav className="bg-white border-b px-6 py-3 sticky top-0 z-20">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center">
         <div className="flex items-center h-8">
-          <h1 className="text-lg font-semibold text-gray-800">PharmaSys</h1>
+          <h1
+            className="text-lg font-semibold text-gray-800 flex items-baseline"
+            style={{ minHeight: "1.5em" }}
+          >
+            <span>Pharma</span>
+            <AnimatePresence>
+              {!sidebarCollapsed && (
+                <motion.span
+                  key="sys_part"
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{
+                    display: "inline-block",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                  }}
+                >
+                  Sys
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </h1>
         </div>
         <div className="flex items-center justify-center space-x-3">
           <button
