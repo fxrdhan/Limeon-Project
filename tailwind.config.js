@@ -1,19 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
-        sans: [
-          'system-ui',
-          'Avenir',
-          'Helvetica',
-          'Arial',
-          'sans-serif',
-        ],
+        sans: ["system-ui", "Avenir", "Helvetica", "Arial", "sans-serif"],
       },
       colors: {
         primary: "#14b8a6", // teal-500
@@ -26,4 +17,4 @@ module.exports = {
     },
   },
   plugins: [],
-}
+};
