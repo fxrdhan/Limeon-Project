@@ -17,17 +17,17 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const variants: Record<ButtonVariant, string> = {
       primary:
-        "rounded-lg ring-0 outline-none shadow-md bg-primary flex items-center text-white hover:text-white hover:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)] focus:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)]",
+        "rounded-lg ring-0 outline-hidden shadow-md bg-primary flex items-center text-white hover:text-white hover:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)] focus:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)]",
       secondary:
-        "rounded-lg bg-secondary bg-secondary ring-0 outline-none flex items-center hover:bg-blue-700 text-white hover:text-white",
-      accent: "bg-accent hover:bg-rose-600 text-white outline-none ring-0",
+        "rounded-lg bg-secondary bg-secondary ring-0 outline-hidden flex items-center hover:bg-blue-700 text-white hover:text-white",
+      accent: "bg-accent hover:bg-rose-600 text-white outline-hidden ring-0",
       outline:
-        "border border-primary text-primary hover:bg-teal-50 ring-0 outline-none focus:bg-teal-100",
+        "border border-primary text-primary hover:bg-teal-50 ring-0 outline-hidden focus:bg-teal-100",
       "outline-solid":
-        "border border-primary text-primary hover:bg-primary hover:text-white ring-0 outline-none focus:bg-primary focus:text-white",
-      text: "bg-transparent hover:bg-opacity-10 outline-none ring-0 focus:shadow-none",
+        "border border-primary text-primary hover:bg-primary hover:text-white ring-0 outline-hidden focus:bg-primary focus:text-white",
+      text: "bg-transparent hover:bg-black/10 outline-hidden ring-0 focus:shadow-none",
       danger:
-        "bg-accent outline-none ring-0 text-white focus:shadow-[0_0_5px_var(--color-accent),0_0_15px_var(--color-accent),0_0_30px_var(--color-accent)] hover:shadow-[0_0_5px_var(--color-accent),0_0_15px_var(--color-accent),0_0_30px_var(--color-accent)]",
+        "bg-accent outline-hidden ring-0 text-white focus:shadow-[0_0_5px_var(--color-accent),0_0_15px_var(--color-accent),0_0_30px_var(--color-accent)] hover:shadow-[0_0_5px_var(--color-accent),0_0_15px_var(--color-accent),0_0_30px_var(--color-accent)]",
     };
 
     const sizes = {
