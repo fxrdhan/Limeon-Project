@@ -11,11 +11,12 @@ const Pagination = ({
   onItemsPerPageChange,
   className,
 }: PaginationProps) => {
-  const handleItemsPerPageClick = (value: number) => {
-    const event = {
+  const handleItemsPerPageClick = (value: number, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onItemsPerPageChange({
       target: { value: value.toString() },
-    } as React.ChangeEvent<HTMLSelectElement>;
-    onItemsPerPageChange(event);
+    } as React.ChangeEvent<HTMLSelectElement>);
   };
 
   const prevPageRef = useRef(currentPage);
@@ -67,7 +68,7 @@ const Pagination = ({
                 "group px-3 py-1.5 rounded-full focus:outline-hidden select-none relative transition-colors duration-300 cursor-pointer",
                 itemsPerPage !== size ? "hover:bg-teal-100" : "",
               )}
-              onClick={() => handleItemsPerPageClick(size)}
+              onClick={(event) => handleItemsPerPageClick(size, event)}
               animate={{
                 scale: itemsPerPage === size ? 1.05 : 1,
                 zIndex: itemsPerPage === size ? 10 : 1,
@@ -99,7 +100,13 @@ const Pagination = ({
 
       <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
         <div
-          onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (currentPage > 1) {
+              onPageChange(currentPage - 1);
+            }
+          }}
           className={classNames(
             "p-2 rounded-full focus:outline-hidden transition-colors duration-150 cursor-pointer select-none",
             currentPage === 1
@@ -140,11 +147,13 @@ const Pagination = ({
         </div>
 
         <div
-          onClick={() =>
-            currentPage < totalPages &&
-            totalPages !== 0 &&
-            onPageChange(currentPage + 1)
-          }
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (currentPage < totalPages && totalPages !== 0) {
+              onPageChange(currentPage + 1);
+            }
+          }}
           className={classNames(
             "p-2 rounded-full focus:outline-hidden transition-colors duration-150 cursor-pointer select-none",
             currentPage === totalPages || totalPages === 0
