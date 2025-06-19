@@ -1,5 +1,5 @@
 import Login from "@/pages/auth/login";
-import MainLayout from "@/components/layout/main";
+import MainLayout from "@/layout/main";
 import { AlertProvider } from "@/components/modules/alert";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
