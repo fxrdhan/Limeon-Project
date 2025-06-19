@@ -6,6 +6,7 @@ import { Suspense, lazy, useEffect } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary.tsx";
 import { useAuthStore } from "@/store/authStore";
 import { ConfirmDialogProvider } from "@/components/modules/dialog-box";
+import ComingSoon from "@/pages/blank-page";
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const ItemList = lazy(() => import("@/pages/master-data/item-list"));
@@ -22,20 +23,6 @@ const CreatePurchase = lazy(() => import("@/pages/purchases/create-purchase"));
 const Profile = lazy(() => import("@/pages/settings/profile"));
 const PrintPurchase = lazy(() => import("@/pages/purchases/print-purchase"));
 const ViewPurchase = lazy(() => import("@/pages/purchases/view-purchase"));
-
-const ComingSoon = ({ title }: { title: string }) => {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
-      <h2 className="text-2xl font-bold mb-4">{title}</h2>
-      <p className="text-xl">Fitur ini akan segera hadir!</p>
-      <div className="mt-8 p-4 border border-blue-300 rounded-lg bg-blue-50 max-w-md">
-        <p className="text-blue-600 text-center">
-          Halaman ini sedang dalam pengembangan.
-        </p>
-      </div>
-    </div>
-  );
-};
 
 function App() {
   const { session, initialize } = useAuthStore();
