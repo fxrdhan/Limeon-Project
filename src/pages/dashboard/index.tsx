@@ -1,4 +1,4 @@
-import PageTitle from "@/components/modules/page-title";
+import PageTitle from "@/components/page-title";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import type { RegularDashboardProps, TopSellingMedicine } from "../../types";
