@@ -13,6 +13,7 @@ import {
   TableRow,
   TableCell,
   TableHeader,
+  SupplierListSkeleton,
 } from "@/components/table";
 import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
@@ -316,65 +317,64 @@ const SupplierList = () => {
       >
         {!isError && (
           <>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeader className="w-[15%]">Nama Supplier</TableHeader>
-                  <TableHeader className="w-[50%]">Alamat</TableHeader>
-                  <TableHeader className="w-[10%]">Telepon</TableHeader>
-                  <TableHeader className="w-[15%]">Email</TableHeader>
-                  <TableHeader className="w-[10%]">Kontak Person</TableHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoading && (!suppliers || suppliers.length === 0) ? (
+            {isLoading && (!suppliers || suppliers.length === 0) ? (
+              <SupplierListSkeleton rows={8} />
+            ) : (
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      Memuat data supplier...
-                    </TableCell>
+                    <TableHeader className="w-[15%]">Nama Supplier</TableHeader>
+                    <TableHeader className="w-[50%]">Alamat</TableHeader>
+                    <TableHeader className="w-[10%]">Telepon</TableHeader>
+                    <TableHeader className="w-[15%]">Email</TableHeader>
+                    <TableHeader className="w-[10%]">Kontak Person</TableHeader>
                   </TableRow>
-                ) : suppliers && suppliers.length > 0 ? (
-                  suppliers
-                    .filter(
-                      (supplier): supplier is SupplierType =>
-                        typeof supplier === "object" &&
-                        supplier !== null &&
-                        "address" in supplier &&
-                        "name" in supplier &&
-                        "id" in supplier,
-                    )
-                    .map((supplier, index) => (
-                      <TableRow
-                        key={supplier.id}
-                        onClick={() => openSupplierDetail(supplier)}
-                        className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
-                        }`}
+                </TableHead>
+                <TableBody>
+                  {suppliers && suppliers.length > 0 ? (
+                    suppliers
+                      .filter(
+                        (supplier): supplier is SupplierType =>
+                          typeof supplier === "object" &&
+                          supplier !== null &&
+                          "address" in supplier &&
+                          "name" in supplier &&
+                          "id" in supplier,
+                      )
+                      .map((supplier, index) => (
+                        <TableRow
+                          key={supplier.id}
+                          onClick={() => openSupplierDetail(supplier)}
+                          className={`cursor-pointer hover:bg-blue-50 ${
+                            index === 0 && debouncedSearch
+                              ? "bg-teal-100/50"
+                              : ""
+                          }`}
+                        >
+                          <TableCell>{supplier.name}</TableCell>
+                          <TableCell>{supplier.address || "-"}</TableCell>
+                          <TableCell>{supplier.phone || "-"}</TableCell>
+                          <TableCell>{supplier.email || "-"}</TableCell>
+                          <TableCell>
+                            {supplier.contact_person || "-"}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center text-gray-500 py-10"
                       >
-                        <TableCell>{supplier.name}</TableCell>
-                        <TableCell>{supplier.address || "-"}</TableCell>
-                        <TableCell>{supplier.phone || "-"}</TableCell>
-                        <TableCell>{supplier.email || "-"}</TableCell>
-                        <TableCell>{supplier.contact_person || "-"}</TableCell>
-                      </TableRow>
-                    ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      {debouncedSearch
-                        ? `Tidak ada supplier dengan kata kunci "${debouncedSearch}"`
-                        : "Belum ada data supplier."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                        {debouncedSearch
+                          ? `Tidak ada supplier dengan kata kunci "${debouncedSearch}"`
+                          : "Belum ada data supplier."}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
