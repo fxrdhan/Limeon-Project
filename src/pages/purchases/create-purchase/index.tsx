@@ -1,13 +1,13 @@
-import AddItemPortal from "@/components/modules/add-edit/v2";
-import Button from "@/components/modules/button";
-import Input from "@/components/modules/input";
-import FormSection from "@/components/modules/form-section";
-import Dropdown from "@/components/modules/dropdown";
-import Datepicker from "@/components/modules/datepicker";
-import ItemSearchBar from "@/components/modules/item-search";
-import DescriptiveTextarea from "@/components/modules/descriptive-textarea";
-import Checkbox from "@/components/modules/checkbox";
-import FormAction from "@/components/modules/form-action";
+import AddItemPortal from "@/components/add-edit/v2";
+import Button from "@/components/button";
+import Input from "@/components/input";
+import FormSection from "@/components/form-section";
+import Dropdown from "@/components/dropdown";
+import Datepicker from "@/components/datepicker";
+import ItemSearchBar from "@/components/item-search";
+import DescriptiveTextarea from "@/components/descriptive-textarea";
+import Checkbox from "@/components/checkbox";
+import FormAction from "@/components/form-action";
 
 import {
     Card,
@@ -15,7 +15,7 @@ import {
     CardTitle,
     CardContent,
     CardFooter,
-} from "@/components/modules/card";
+} from "@/components/card";
 import {
     Table,
     TableHead,
@@ -23,7 +23,7 @@ import {
     TableRow,
     TableCell,
     TableHeader,
-} from "@/components/modules/table";
+} from "@/components/table";
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaTrash } from "react-icons/fa";
@@ -32,7 +32,7 @@ import type {
     PurchaseItem,
     ItemSearchBarRef,
 } from "@/types";
-import type { } from "@/components/modules/item-search";
+import type { } from "@/components/item-search";
 import { usePurchaseForm } from "@/hooks/purchaseForm";
 import { useItemSelection } from "@/hooks/itemSelection";
 import { extractNumericValue, formatRupiah } from "@/lib/formatters";

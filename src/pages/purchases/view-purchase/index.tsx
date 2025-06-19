@@ -1,6 +1,6 @@
-import Button from "@/components/modules/button";
-import Loading from "@/components/modules/loading";
-import { Card } from "@/components/modules/card";
+import Button from "@/components/button";
+import Loading from "@/components/loading";
+import { Card } from "@/components/card";
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
