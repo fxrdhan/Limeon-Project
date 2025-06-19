@@ -205,7 +205,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             title="Go Back"
           >
             <span className="text-gray-600 font-bold text-lg inline-block group-hover:text-primary group-hover:scale-120 transition duration-150">
-              &lt;
+              ←
             </span>
           </button>
 
@@ -218,7 +218,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             title="Go Forward"
           >
             <span className="text-gray-600 font-bold text-lg inline-block group-hover:text-primary group-hover:scale-120 transition duration-150">
-              &gt;
+              →
             </span>
           </button>
         </div>
