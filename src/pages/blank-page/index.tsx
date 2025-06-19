@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaClock, FaTools } from "react-icons/fa";
+import { Badge } from "@/components/badge";
 
 interface ComingSoonProps {
   title: string;
@@ -50,16 +51,21 @@ const ComingSoon = ({
           <p className="text-gray-600 leading-relaxed">{description}</p>
         )}
 
-        {/* Status Card */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 space-y-2">
-          <div className="flex items-center justify-center space-x-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            <span className="text-blue-700 font-medium text-sm">
-              {statusText}
-            </span>
-          </div>
-          <p className="text-blue-600 text-sm">{statusDescription}</p>
+        {/* Status Badge */}
+        <div className="flex justify-center">
+          <Badge
+            variant="info"
+            size="md"
+            icon={
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            }
+          >
+            {statusText}
+          </Badge>
         </div>
+
+        {/* Status Description */}
+        <p className="text-gray-600 text-sm">{statusDescription}</p>
 
         {/* Back Button */}
         {showBackButton && (
