@@ -5,7 +5,7 @@ import {
   TableRow,
   TableCell,
   TableHeader,
-} from "./index";
+} from "./table";
 
 interface SkeletonTableCellProps {
   className?: string;

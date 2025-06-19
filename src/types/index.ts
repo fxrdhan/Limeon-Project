@@ -169,8 +169,6 @@ export type ButtonVariant =
   | "primary"
   | "secondary"
   | "accent"
-  | "outline"
-  | "outline-solid"
   | "text"
   | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
