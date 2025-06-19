@@ -12,6 +12,7 @@ import {
   TableRow,
   TableCell,
   TableHeader,
+  TypeListSkeleton,
 } from "@/components/table";
 import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
@@ -100,59 +101,50 @@ const TypeList = () => {
             Error: {queryError?.message || "Gagal memuat data"}
           </div>
         ) : (
-          <div
-            className={
-              isFetching ? "opacity-50 transition-opacity duration-300" : ""
-            }
-          >
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeader className="w-[15%]">Nama Jenis</TableHeader>
-                  <TableHeader className="w-[85%]">Deskripsi</TableHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoading && (!types || types.length === 0) ? (
+          <>
+            {isLoading && (!types || types.length === 0) ? (
+              <TypeListSkeleton rows={8} />
+            ) : (
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell
-                      colSpan={2}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      Memuat data jenis item...
-                    </TableCell>
+                    <TableHeader className="w-[15%]">Nama Jenis</TableHeader>
+                    <TableHeader className="w-[85%]">Deskripsi</TableHeader>
                   </TableRow>
-                ) : types && types.length > 0 ? (
-                  types.map((type, index) => (
-                    <TableRow
-                      key={type.id}
-                      onClick={() => handleEdit(type)}
-                      className={`cursor-pointer hover:bg-blue-50 ${
-                        index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
-                      }`}
-                    >
-                      <TableCell>{type.name}</TableCell>
-                      <TableCell>
-                        {"description" in type && type.description
-                          ? type.description
-                          : "-"}
+                </TableHead>
+                <TableBody>
+                  {types && types.length > 0 ? (
+                    types.map((type, index) => (
+                      <TableRow
+                        key={type.id}
+                        onClick={() => handleEdit(type)}
+                        className={`cursor-pointer hover:bg-blue-50 ${
+                          index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
+                        }`}
+                      >
+                        <TableCell>{type.name}</TableCell>
+                        <TableCell>
+                          {"description" in type && type.description
+                            ? type.description
+                            : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={2}
+                        className="text-center text-gray-500 py-10"
+                      >
+                        {debouncedSearch
+                          ? `Tidak ada jenis item dengan kata kunci "${debouncedSearch}"`
+                          : "Tidak ada data jenis item yang ditemukan"}
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={2}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      {debouncedSearch
-                        ? `Tidak ada jenis item dengan kata kunci "${debouncedSearch}"`
-                        : "Tidak ada data jenis item yang ditemukan"}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            )}
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -162,7 +154,7 @@ const TypeList = () => {
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
-          </div>
+          </>
         )}
       </Card>
 
