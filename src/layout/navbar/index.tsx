@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import type { NavbarProps } from "@/types";
 import { useState, useRef, useEffect } from "react";
-import ImageUploader from "@/components/modules/image-uploader";
+import ImageUploader from "@/components/image-uploader";
 import { useAuthStore } from "@/store/authStore";
 import { usePresenceStore } from "@/store/presenceStore";
 import { motion, AnimatePresence } from "framer-motion";
