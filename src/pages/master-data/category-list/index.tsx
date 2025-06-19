@@ -13,6 +13,7 @@ import {
   TableRow,
   TableCell,
   TableHeader,
+  CategoryListSkeleton,
 } from "@/components/table";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef } from "react";
@@ -101,54 +102,49 @@ const CategoryList = () => {
           </div>
         ) : (
           <>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeader className="w-[15%]">Nama Kategori</TableHeader>
-                  <TableHeader className="w-[85%]">Deskripsi</TableHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoading && (!categories || categories.length === 0) ? (
+            {isLoading && (!categories || categories.length === 0) ? (
+              <CategoryListSkeleton rows={8} />
+            ) : (
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell
-                      colSpan={2}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      Memuat data kategori...
-                    </TableCell>
+                    <TableHeader className="w-[15%]">Nama Kategori</TableHeader>
+                    <TableHeader className="w-[85%]">Deskripsi</TableHeader>
                   </TableRow>
-                ) : categories && categories.length > 0 ? (
-                  categories.map((category, index) => (
-                    <TableRow
-                      key={category.id}
-                      onClick={() => handleEdit(category)}
-                      className={`cursor-pointer hover:bg-blue-50 ${
-                        index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
-                      }`}
-                    >
-                      <TableCell>{category.name}</TableCell>
-                      <TableCell>
-                        {"description" in category && category.description
-                          ? category.description
-                          : "-"}
+                </TableHead>
+                <TableBody>
+                  {categories && categories.length > 0 ? (
+                    categories.map((category, index) => (
+                      <TableRow
+                        key={category.id}
+                        onClick={() => handleEdit(category)}
+                        className={`cursor-pointer hover:bg-blue-50 ${
+                          index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
+                        }`}
+                      >
+                        <TableCell>{category.name}</TableCell>
+                        <TableCell>
+                          {"description" in category && category.description
+                            ? category.description
+                            : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={2}
+                        className="text-center text-gray-500 py-10"
+                      >
+                        {debouncedSearch
+                          ? `Tidak ada kategori dengan kata kunci "${debouncedSearch}"`
+                          : "Tidak ada data kategori yang ditemukan"}
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={2}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      {debouncedSearch
-                        ? `Tidak ada kategori dengan kata kunci "${debouncedSearch}"`
-                        : "Tidak ada data kategori yang ditemukan"}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            )}
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
