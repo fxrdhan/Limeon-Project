@@ -12,6 +12,7 @@ import {
   TableRow,
   TableCell,
   TableHeader,
+  ItemListSkeleton,
 } from "@/components/table";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
@@ -123,93 +124,93 @@ function ItemList() {
         )}
         {!isErrorState && (
           <>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeader className="w-[23%]">Nama Item</TableHeader>
-                  <TableHeader className="w-[6%]">Kode</TableHeader>
-                  <TableHeader className="w-[8%]">Barcode</TableHeader>
-                  <TableHeader className="w-[8%]">Kategori</TableHeader>
-                  <TableHeader className="w-[14%]">Jenis</TableHeader>
-                  <TableHeader className="w-[6%]">Satuan</TableHeader>
-                  <TableHeader className="w-[10%]">Satuan Turunan</TableHeader>
-                  <TableHeader className="w-[10%] text-right">
-                    Harga Pokok
-                  </TableHeader>
-                  <TableHeader className="w-[10%] text-right">
-                    Harga Jual
-                  </TableHeader>
-                  <TableHeader className="w-[5%] text-center">Stok</TableHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoadingState && items.length === 0 ? (
+            {isLoadingState && items.length === 0 ? (
+              <ItemListSkeleton rows={8} />
+            ) : (
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell
-                      colSpan={10}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      Memuat data item...
-                    </TableCell>
+                    <TableHeader className="w-[23%]">Nama Item</TableHeader>
+                    <TableHeader className="w-[6%]">Kode</TableHeader>
+                    <TableHeader className="w-[8%]">Barcode</TableHeader>
+                    <TableHeader className="w-[8%]">Kategori</TableHeader>
+                    <TableHeader className="w-[14%]">Jenis</TableHeader>
+                    <TableHeader className="w-[6%]">Satuan</TableHeader>
+                    <TableHeader className="w-[10%]">
+                      Satuan Turunan
+                    </TableHeader>
+                    <TableHeader className="w-[10%] text-right">
+                      Harga Pokok
+                    </TableHeader>
+                    <TableHeader className="w-[10%] text-right">
+                      Harga Jual
+                    </TableHeader>
+                    <TableHeader className="w-[5%] text-center">
+                      Stok
+                    </TableHeader>
                   </TableRow>
-                ) : items.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={10}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      {debouncedSearch
-                        ? `Tidak ada item dengan nama "${debouncedSearch}"`
-                        : "Tidak ada data item yang ditemukan"}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  (items as ItemDataType[]).map((item, index) => (
-                    <TableRow
-                      key={item.id}
-                      onClick={() => handleItemEdit(item)}
-                      className={`cursor-pointer hover:bg-blue-50 ${
-                        index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
-                      }`}
-                    >
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell>{item.code}</TableCell>
-                      <TableCell>{item.barcode || "-"}</TableCell>
-                      <TableCell>{item.category.name}</TableCell>
-                      <TableCell>{item.type.name}</TableCell>
-                      <TableCell>{item.unit.name}</TableCell>
-                      <TableCell>
-                        {item.unit_conversions &&
-                        item.unit_conversions.length > 0
-                          ? item.unit_conversions
-                              .map(
-                                (uc: UnitConversion) => uc.unit?.name || "N/A",
-                              )
-                              .join(", ")
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.base_price.toLocaleString("id-ID", {
-                          style: "currency",
-                          currency: "IDR",
-                        })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.sell_price.toLocaleString("id-ID", {
-                          style: "currency",
-                          currency: "IDR",
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {item.stock}
+                </TableHead>
+                <TableBody>
+                  {items.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={10}
+                        className="text-center text-gray-500 py-10"
+                      >
+                        {debouncedSearch
+                          ? `Tidak ada item dengan nama "${debouncedSearch}"`
+                          : "Tidak ada data item yang ditemukan"}
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    (items as ItemDataType[]).map((item, index) => (
+                      <TableRow
+                        key={item.id}
+                        onClick={() => handleItemEdit(item)}
+                        className={`cursor-pointer hover:bg-blue-50 ${
+                          index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
+                        }`}
+                      >
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell>{item.code}</TableCell>
+                        <TableCell>{item.barcode || "-"}</TableCell>
+                        <TableCell>{item.category.name}</TableCell>
+                        <TableCell>{item.type.name}</TableCell>
+                        <TableCell>{item.unit.name}</TableCell>
+                        <TableCell>
+                          {item.unit_conversions &&
+                          item.unit_conversions.length > 0
+                            ? item.unit_conversions
+                                .map(
+                                  (uc: UnitConversion) =>
+                                    uc.unit?.name || "N/A",
+                                )
+                                .join(", ")
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.base_price.toLocaleString("id-ID", {
+                            style: "currency",
+                            currency: "IDR",
+                          })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.sell_price.toLocaleString("id-ID", {
+                            style: "currency",
+                            currency: "IDR",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {item.stock}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
