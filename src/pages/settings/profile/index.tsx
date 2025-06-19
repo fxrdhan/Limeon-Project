@@ -1,4 +1,4 @@
-import Button from "@/components/modules/button";
+import Button from "@/components/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -6,7 +6,7 @@ import {
     CardHeader,
     CardTitle,
     CardContent,
-} from "@/components/modules/card";
+} from "@/components/card";
 import { FaEdit, FaCheck, FaTimes } from "react-icons/fa";
 import type { CompanyProfile, ProfileKey } from "@/types";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
