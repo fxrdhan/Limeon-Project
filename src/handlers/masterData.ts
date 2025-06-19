@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { useConfirmDialog } from "@/components/modules/dialog-box";
+import { useConfirmDialog } from "@/components/dialog-box";
 import { fuzzyMatch, getScore } from "@/utils/search";
 import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import { useFieldFocus } from "@/hooks/fieldFocus";
-import { useAlert } from "@/components/modules/alert/hooks";
+import { useAlert } from "@/components/alert/hooks";
 import {
   useQuery,
   useMutation,
