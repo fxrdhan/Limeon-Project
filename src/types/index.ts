@@ -153,11 +153,16 @@ export type BadgeVariant =
   | "accent"
   | "success"
   | "warning"
-  | "danger";
+  | "danger"
+  | "info"
+  | "default";
 export interface BadgeProps {
   children: React.ReactNode;
   variant?: BadgeVariant;
+  size?: "sm" | "md" | "lg";
   className?: string;
+  icon?: React.ReactNode;
+  animate?: boolean;
 }
 
 export type ButtonVariant =
