@@ -5,7 +5,7 @@ import Pagination from "@/components/pagination";
 import PageTitle from "@/components/page-title";
 
 import { FaPlus } from "react-icons/fa";
-import { Card, CardHeader } from "@/components/card";
+import { Card } from "@/components/card";
 import {
   Table,
   TableHead,
@@ -282,11 +282,9 @@ const SupplierList = () => {
 
   return (
     <Card>
-      <CardHeader className="mb-6 px-0">
-        <PageTitle title="Daftar Supplier" />
-      </CardHeader>
+      <PageTitle title="Daftar Supplier" />
 
-      <div className="flex items-center">
+      <div className="mt-6 flex items-center">
         <SearchBar
           inputRef={searchInputRef}
           value={search}
