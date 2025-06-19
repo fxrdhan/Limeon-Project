@@ -1,4 +1,4 @@
-import Button from '@/components/modules/button';
+import Button from '@/components/button';
 import type { FormActionProps } from '@/types';
 
 const FormAction: React.FC<FormActionProps> = ({

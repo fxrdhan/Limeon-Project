@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { FaPlus } from "react-icons/fa";
-import Button from "@/components/modules/button";
+import Button from "@/components/button";
 import type { ItemSearchBarProps, Item, ItemSearchBarRef } from "@/types";
 import { classNames } from "@/lib/classNames";
 
