@@ -47,7 +47,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     top: number;
     left: number;
   } | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
+
   const fefoIconRef = useRef<HTMLDivElement>(null);
   const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
   const {
@@ -134,7 +134,6 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setIsMounted(true);
       const focusInput = () => {
         if (nameInputRef.current) {
           nameInputRef.current.focus();
@@ -142,9 +141,6 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
       };
 
       const timer = setTimeout(focusInput, 150);
-      return () => clearTimeout(timer);
-    } else {
-      const timer = setTimeout(() => setIsMounted(false), 300);
       return () => clearTimeout(timer);
     }
   }, [isOpen, isEditMode, formData.name, loading]);
@@ -161,8 +157,6 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
       );
     }
   }
-
-  if (!isMounted) return null;
 
   const formIsInvalid =
     !formData.name.trim() ||
@@ -197,6 +191,9 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     visible: {
       opacity: 1,
     },
+    exit: {
+      opacity: 0,
+    },
   };
 
   const modalVariants = {
@@ -209,7 +206,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
       opacity: 1,
     },
     exit: {
-      scale: 0.9,
+      scale: 0.95,
       opacity: 0,
     },
   };
@@ -221,16 +218,20 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     visible: {
       opacity: 1,
     },
+    exit: {
+      opacity: 0,
+    },
   };
 
   return createPortal(
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       {isOpen && (
         <motion.div
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
-          exit="hidden"
+          exit="exit"
+          transition={{ duration: 0.2 }}
           className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -243,10 +244,17 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
             initial="hidden"
             animate="visible"
             exit="exit"
+            transition={{ duration: 0.3 }}
             className="bg-white rounded-lg shadow-xl w-[90vw] max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <motion.div variants={contentVariants}>
+            <motion.div
+              variants={contentVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
               <CardHeader className="flex items-center justify-between sticky top-0 bg-white z-10 py-6! px-4! border-b! rounded-t-lg">
                 <div className="flex items-center"></div>
 
