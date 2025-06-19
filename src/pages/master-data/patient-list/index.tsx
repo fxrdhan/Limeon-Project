@@ -14,6 +14,7 @@ import {
   TableRow,
   TableCell,
   TableHeader,
+  PatientListSkeleton,
 } from "@/components/table";
 import { useState, useRef } from "react";
 import { StorageService } from "@/utils/storage";
@@ -314,72 +315,69 @@ const PatientList = () => {
       >
         {!isError && (
           <>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeader className="w-[20%]">Nama Pasien</TableHeader>
-                  <TableHeader className="w-[10%]">Jenis Kelamin</TableHeader>
-                  <TableHeader className="w-[15%]">Tanggal Lahir</TableHeader>
-                  <TableHeader className="w-[30%]">Alamat</TableHeader>
-                  <TableHeader className="w-[15%]">Telepon</TableHeader>
-                  <TableHeader className="w-[10%]">Email</TableHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoading && (!patients || patients.length === 0) ? (
+            {isLoading && (!patients || patients.length === 0) ? (
+              <PatientListSkeleton rows={8} />
+            ) : (
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      Memuat data pasien...
-                    </TableCell>
+                    <TableHeader className="w-[20%]">Nama Pasien</TableHeader>
+                    <TableHeader className="w-[10%]">Jenis Kelamin</TableHeader>
+                    <TableHeader className="w-[15%]">Tanggal Lahir</TableHeader>
+                    <TableHeader className="w-[30%]">Alamat</TableHeader>
+                    <TableHeader className="w-[15%]">Telepon</TableHeader>
+                    <TableHeader className="w-[10%]">Email</TableHeader>
                   </TableRow>
-                ) : patients && patients.length > 0 ? (
-                  patients
-                    .filter(
-                      (patient): patient is PatientType =>
-                        typeof patient === "object" &&
-                        patient !== null &&
-                        "name" in patient &&
-                        "id" in patient,
-                    )
-                    .map((patient, index) => (
-                      <TableRow
-                        key={patient.id}
-                        onClick={() => openPatientDetail(patient)}
-                        className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
-                        }`}
+                </TableHead>
+                <TableBody>
+                  {patients && patients.length > 0 ? (
+                    patients
+                      .filter(
+                        (patient): patient is PatientType =>
+                          typeof patient === "object" &&
+                          patient !== null &&
+                          "name" in patient &&
+                          "id" in patient,
+                      )
+                      .map((patient, index) => (
+                        <TableRow
+                          key={patient.id}
+                          onClick={() => openPatientDetail(patient)}
+                          className={`cursor-pointer hover:bg-blue-50 ${
+                            index === 0 && debouncedSearch
+                              ? "bg-teal-100/50"
+                              : ""
+                          }`}
+                        >
+                          <TableCell>{patient.name}</TableCell>
+                          <TableCell>{patient.gender || "-"}</TableCell>
+                          <TableCell>
+                            {patient.birth_date
+                              ? new Date(patient.birth_date).toLocaleDateString(
+                                  "id-ID",
+                                )
+                              : "-"}
+                          </TableCell>
+                          <TableCell>{patient.address || "-"}</TableCell>
+                          <TableCell>{patient.phone || "-"}</TableCell>
+                          <TableCell>{patient.email || "-"}</TableCell>
+                        </TableRow>
+                      ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-gray-500 py-10"
                       >
-                        <TableCell>{patient.name}</TableCell>
-                        <TableCell>{patient.gender || "-"}</TableCell>
-                        <TableCell>
-                          {patient.birth_date
-                            ? new Date(patient.birth_date).toLocaleDateString(
-                                "id-ID",
-                              )
-                            : "-"}
-                        </TableCell>
-                        <TableCell>{patient.address || "-"}</TableCell>
-                        <TableCell>{patient.phone || "-"}</TableCell>
-                        <TableCell>{patient.email || "-"}</TableCell>
-                      </TableRow>
-                    ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      {debouncedSearch
-                        ? `Tidak ada pasien dengan kata kunci "${debouncedSearch}"`
-                        : "Belum ada data pasien."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                        {debouncedSearch
+                          ? `Tidak ada pasien dengan kata kunci "${debouncedSearch}"`
+                          : "Belum ada data pasien."}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
