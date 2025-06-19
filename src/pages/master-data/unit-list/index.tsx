@@ -12,6 +12,7 @@ import {
   TableRow,
   TableCell,
   TableHeader,
+  UnitListSkeleton,
 } from "@/components/table";
 import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
@@ -101,54 +102,49 @@ const UnitList = () => {
           </div>
         ) : (
           <>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeader className="w-[15%]">Nama Satuan</TableHeader>
-                  <TableHeader className="w-[85%]">Deskripsi</TableHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoading && (!units || units.length === 0) ? (
+            {isLoading && (!units || units.length === 0) ? (
+              <UnitListSkeleton rows={8} />
+            ) : (
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell
-                      colSpan={2}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      Memuat data satuan...
-                    </TableCell>
+                    <TableHeader className="w-[15%]">Nama Satuan</TableHeader>
+                    <TableHeader className="w-[85%]">Deskripsi</TableHeader>
                   </TableRow>
-                ) : units && units.length > 0 ? (
-                  units.map((unit, index) => (
-                    <TableRow
-                      key={unit.id}
-                      onClick={() => handleEdit(unit)}
-                      className={`cursor-pointer hover:bg-blue-50 ${
-                        index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
-                      }`}
-                    >
-                      <TableCell>{unit.name}</TableCell>
-                      <TableCell>
-                        {"description" in unit && unit.description
-                          ? unit.description
-                          : "-"}
+                </TableHead>
+                <TableBody>
+                  {units && units.length > 0 ? (
+                    units.map((unit, index) => (
+                      <TableRow
+                        key={unit.id}
+                        onClick={() => handleEdit(unit)}
+                        className={`cursor-pointer hover:bg-blue-50 ${
+                          index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
+                        }`}
+                      >
+                        <TableCell>{unit.name}</TableCell>
+                        <TableCell>
+                          {"description" in unit && unit.description
+                            ? unit.description
+                            : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={2}
+                        className="text-center text-gray-500 py-10"
+                      >
+                        {debouncedSearch
+                          ? `Tidak ada satuan dengan kata kunci "${debouncedSearch}"`
+                          : "Tidak ada data satuan yang ditemukan"}
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={2}
-                      className="text-center text-gray-500 py-10"
-                    >
-                      {debouncedSearch
-                        ? `Tidak ada satuan dengan kata kunci "${debouncedSearch}"`
-                        : "Tidak ada data satuan yang ditemukan"}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            )}
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
