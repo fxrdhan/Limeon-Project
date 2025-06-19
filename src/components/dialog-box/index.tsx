@@ -1,4 +1,4 @@
-import Button from "@/components/modules/button";
+import Button from "@/components/button";
 import { createPortal } from "react-dom";
 import { Transition, TransitionChild } from "@headlessui/react";
 import type { ConfirmDialogContextType, ConfirmDialogOptions } from "@/types";

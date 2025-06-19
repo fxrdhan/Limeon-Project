@@ -8,15 +8,15 @@ import {
   FaQuestionCircle,
   FaTimes,
 } from "react-icons/fa";
-import Input from "@/components/modules/input";
-import Button from "@/components/modules/button";
-import Dropdown from "@/components/modules/dropdown";
-import FormSection from "@/components/modules/form-section";
-import FormField from "@/components/modules/form-field";
-import FormAction from "@/components/modules/form-action";
-import DescriptiveTextarea from "@/components/modules/descriptive-textarea";
-import Checkbox from "@/components/modules/checkbox";
-import AddEditModal from "@/components/modules/add-edit/v1";
+import Input from "@/components/input";
+import Button from "@/components/button";
+import Dropdown from "@/components/dropdown";
+import FormSection from "@/components/form-section";
+import FormField from "@/components/form-field";
+import FormAction from "@/components/form-action";
+import DescriptiveTextarea from "@/components/descriptive-textarea";
+import Checkbox from "@/components/checkbox";
+import AddEditModal from "@/components/add-edit/v1";
 
 import {
   Card,
@@ -24,7 +24,7 @@ import {
   CardTitle,
   CardContent,
   CardFooter,
-} from "@/components/modules/card";
+} from "@/components/card";
 import {
   Table,
   TableHead,
@@ -32,7 +32,7 @@ import {
   TableRow,
   TableCell,
   TableHeader,
-} from "@/components/modules/table";
+} from "@/components/table";
 import { useAddItemPageHandlers } from "@/handlers/addItem";
 import { FaTrash } from "react-icons/fa";
 import type { AddItemPortalProps } from "@/types";

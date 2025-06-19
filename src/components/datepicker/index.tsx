@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import Input from "@/components/modules/input";
+import Input from "@/components/input";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { classNames } from "@/lib/classNames";
 import type { DatepickerProps } from "@/types";

@@ -1,4 +1,4 @@
-import Button from "@/components/modules/button";
+import Button from "@/components/button";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-} from "@/components/modules/card";
+} from "@/components/card";
 import {
   FaUpload,
   FaTimes,
