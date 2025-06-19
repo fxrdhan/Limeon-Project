@@ -92,17 +92,13 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
           leaveTo="opacity-0 scale-95"
         >
           <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="flex justify-between items-center p-4 border-b">
+            <div className="flex justify-between items-center p-4 border-b-2 border-gray-200 bg-gray-100 rounded-t-lg">
               <h2 className="text-xl font-semibold">
                 {isEditMode
                   ? `Edit ${entityName}`
                   : `Tambah ${entityName} Baru`}
               </h2>
-              <Button
-                variant="text"
-                onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 p-1"
-              >
+              <Button variant="text" onClick={onClose}>
                 <FaTimes size={20} />
               </Button>
             </div>
@@ -129,7 +125,7 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
                 showInitially={!!(initialData?.description || description)}
               />
             </div>
-            <div className="flex justify-between p-4 border-t">
+            <div className="flex justify-between p-4 border-t-2 border-gray-200 rounded-b-lg">
               <div>
                 {isEditMode && onDelete ? (
                   <Button
@@ -142,7 +138,7 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
                     Hapus
                   </Button>
                 ) : (
-                  <Button type="button" variant="outline" onClick={onClose}>
+                  <Button type="button" variant="text" onClick={onClose}>
                     Batal
                   </Button>
                 )}

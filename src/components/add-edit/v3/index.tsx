@@ -401,7 +401,7 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
                   )}
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="text"
                     onClick={handleCloseModal}
                   >
                     Tutup
@@ -411,7 +411,7 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
                 <>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="text"
                     onClick={handleCloseModal}
                   >
                     Batal

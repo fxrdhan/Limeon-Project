@@ -43,10 +43,21 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
   itemId,
   initialSearchQuery,
 }) => {
+  const [isClosing, setIsClosing] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{
     top: number;
     left: number;
   } | null>(null);
+
+  useEffect(() => {
+    if (isClosing) {
+      const timer = setTimeout(() => {
+        setIsClosing(false);
+        onClose();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isClosing, onClose]);
 
   const fefoIconRef = useRef<HTMLDivElement>(null);
   const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
@@ -184,6 +195,47 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     }
   };
 
+  const handleAddConversion = () => {
+    if (
+      !unitConversionHook.unitConversionFormData.unit ||
+      unitConversionHook.unitConversionFormData.conversion <= 0
+    ) {
+      alert("Satuan dan konversi harus diisi dengan benar!");
+      return;
+    }
+
+    const existingUnit = unitConversionHook.conversions.find(
+      (uc) => uc.unit.name === unitConversionHook.unitConversionFormData.unit,
+    );
+    if (existingUnit) {
+      alert("Satuan tersebut sudah ada dalam daftar!");
+      return;
+    }
+
+    const selectedUnit = unitConversionHook.availableUnits.find(
+      (u) => u.name === unitConversionHook.unitConversionFormData.unit,
+    );
+    if (!selectedUnit) {
+      alert("Satuan tidak valid!");
+      return;
+    }
+
+    unitConversionHook.addUnitConversion({
+      unit: selectedUnit,
+      unit_name: selectedUnit.name,
+      to_unit_id: selectedUnit.id,
+      conversion: unitConversionHook.unitConversionFormData.conversion,
+      basePrice: 0,
+      sellPrice: 0,
+      conversion_rate: unitConversionHook.unitConversionFormData.conversion,
+    });
+
+    unitConversionHook.setUnitConversionFormData({
+      unit: "",
+      conversion: 0,
+    });
+  };
+
   const backdropVariants = {
     hidden: {
       opacity: 0,
@@ -224,38 +276,41 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
   };
 
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
         <motion.div
+          key="modal-backdrop"
           variants={backdropVariants}
           initial="hidden"
-          animate="visible"
+          animate={isClosing ? "exit" : "visible"}
           exit="exit"
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
           onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              onClose();
+            if (e.target === e.currentTarget && !isClosing) {
+              setIsClosing(true);
             }
           }}
         >
           <motion.div
+            key="modal-content"
             variants={modalVariants}
             initial="hidden"
-            animate="visible"
+            animate={isClosing ? "exit" : "visible"}
             exit="exit"
             transition={{ duration: 0.3 }}
-            className="bg-white rounded-lg shadow-xl w-[90vw] max-h-[90vh] flex flex-col"
+            className="rounded-xl bg-white shadow-xl w-[90vw] max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <motion.div
+              key="modal-header"
               variants={contentVariants}
               initial="hidden"
-              animate="visible"
+              animate={isClosing ? "exit" : "visible"}
               exit="exit"
               transition={{ duration: 0.3, delay: 0.1 }}
             >
-              <CardHeader className="flex items-center justify-between sticky top-0 bg-white z-10 py-6! px-4! border-b! rounded-t-lg">
+              <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4!">
                 <div className="flex items-center"></div>
 
                 <div className="absolute left-1/2 transform -translate-x-1/2">
@@ -285,7 +340,11 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                   <Button
                     variant="text"
                     size="sm"
-                    onClick={onClose}
+                    onClick={() => {
+                      if (!isClosing) {
+                        setIsClosing(true);
+                      }
+                    }}
                     className="text-gray-500 p-2 rounded-full hover:bg-gray-100"
                     title="Tutup"
                   >
@@ -296,7 +355,12 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
             </motion.div>
 
             <motion.form
+              key="modal-form"
               variants={contentVariants}
+              initial="hidden"
+              animate={isClosing ? "exit" : "visible"}
+              exit="exit"
+              transition={{ duration: 0.3, delay: 0.05 }}
               onSubmit={handleSubmit}
               className="flex-1 flex flex-col min-h-0"
             >
@@ -807,63 +871,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                     onKeyDown={(e) => {
                                       if (e.key === "Enter") {
                                         e.preventDefault();
-                                        if (
-                                          !unitConversionHook
-                                            .unitConversionFormData.unit ||
-                                          unitConversionHook
-                                            .unitConversionFormData
-                                            .conversion <= 0
-                                        ) {
-                                          alert(
-                                            "Satuan dan konversi harus diisi dengan benar!",
-                                          );
-                                          return;
-                                        }
-                                        const existingUnit =
-                                          unitConversionHook.conversions.find(
-                                            (uc) =>
-                                              uc.unit.name ===
-                                              unitConversionHook
-                                                .unitConversionFormData.unit,
-                                          );
-                                        if (existingUnit) {
-                                          alert(
-                                            "Satuan tersebut sudah ada dalam daftar!",
-                                          );
-                                          return;
-                                        }
-                                        const selectedUnit =
-                                          unitConversionHook.availableUnits.find(
-                                            (u) =>
-                                              u.name ===
-                                              unitConversionHook
-                                                .unitConversionFormData.unit,
-                                          );
-                                        if (!selectedUnit) {
-                                          alert("Satuan tidak valid!");
-                                          return;
-                                        }
-                                        unitConversionHook.addUnitConversion({
-                                          unit: selectedUnit,
-                                          unit_name: selectedUnit.name,
-                                          to_unit_id: selectedUnit.id,
-                                          conversion:
-                                            unitConversionHook
-                                              .unitConversionFormData
-                                              .conversion,
-                                          basePrice: 0,
-                                          sellPrice: 0,
-                                          conversion_rate:
-                                            unitConversionHook
-                                              .unitConversionFormData
-                                              .conversion,
-                                        });
-                                        unitConversionHook.setUnitConversionFormData(
-                                          {
-                                            unit: "",
-                                            conversion: 0,
-                                          },
-                                        );
+                                        handleAddConversion();
                                       }
                                     }}
                                   />
@@ -879,61 +887,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                     }`}
                                     onClick={(e) => {
                                       e.preventDefault();
-                                      if (
-                                        !unitConversionHook
-                                          .unitConversionFormData.unit ||
-                                        unitConversionHook
-                                          .unitConversionFormData.conversion <=
-                                          0
-                                      ) {
-                                        alert(
-                                          "Satuan dan konversi harus diisi dengan benar!",
-                                        );
-                                        return;
-                                      }
-                                      const existingUnit =
-                                        unitConversionHook.conversions.find(
-                                          (uc) =>
-                                            uc.unit.name ===
-                                            unitConversionHook
-                                              .unitConversionFormData.unit,
-                                        );
-                                      if (existingUnit) {
-                                        alert(
-                                          "Satuan tersebut sudah ada dalam daftar!",
-                                        );
-                                        return;
-                                      }
-                                      const selectedUnit =
-                                        unitConversionHook.availableUnits.find(
-                                          (u) =>
-                                            u.name ===
-                                            unitConversionHook
-                                              .unitConversionFormData.unit,
-                                        );
-                                      if (!selectedUnit) {
-                                        alert("Satuan tidak valid!");
-                                        return;
-                                      }
-                                      unitConversionHook.addUnitConversion({
-                                        unit: selectedUnit,
-                                        unit_name: selectedUnit.name,
-                                        to_unit_id: selectedUnit.id,
-                                        conversion:
-                                          unitConversionHook
-                                            .unitConversionFormData.conversion,
-                                        basePrice: 0,
-                                        sellPrice: 0,
-                                        conversion_rate:
-                                          unitConversionHook
-                                            .unitConversionFormData.conversion,
-                                      });
-                                      unitConversionHook.setUnitConversionFormData(
-                                        {
-                                          unit: "",
-                                          conversion: 0,
-                                        },
-                                      );
+                                      handleAddConversion();
                                     }}
                                     title="Tekan Enter atau klik untuk menambah"
                                   >
@@ -944,14 +898,14 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                             </div>
                           </div>
                           <div className="md:w-2/3 lg:w-3/5 flex flex-col h-full">
-                            <div className="border rounded-lg overflow-hidden grow h-full">
+                            <div className="overflow-hidden grow h-full">
                               <Table className="w-full h-full">
                                 <TableHead>
                                   <TableRow>
                                     <TableHeader className="w-[20%]">
                                       Turunan
                                     </TableHeader>
-                                    <TableHeader className="w-[30%] text-left">
+                                    <TableHeader className="w-[30%] text-center">
                                       Konversi
                                     </TableHeader>
                                     <TableHeader className="w-[20%] text-right">
@@ -1043,9 +997,9 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                 </div>
               </div>
 
-              <CardFooter className="sticky bottom-0 bg-white z-10 py-3! px-4! border-t! rounded-b-lg">
+              <CardFooter className="sticky bottom-0 z-10 py-3! px-4!">
                 <FormAction
-                  onCancel={handleCancel}
+                  onCancel={() => handleCancel(setIsClosing)}
                   onDelete={isEditMode ? handleDeleteItem : undefined}
                   isSaving={saving}
                   isDeleting={deleteItemMutation?.isPending}
