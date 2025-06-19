@@ -16,18 +16,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const variants: Record<ButtonVariant, string> = {
+      text: "text-gray-700 hover:text-gray-400",
       primary:
         "rounded-lg ring-0 outline-hidden shadow-md bg-primary flex items-center text-white hover:text-white hover:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)] focus:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)]",
       secondary:
         "rounded-lg bg-secondary bg-secondary ring-0 outline-hidden flex items-center hover:bg-blue-700 text-white hover:text-white",
-      accent: "bg-accent hover:bg-rose-600 text-white outline-hidden ring-0",
-      outline:
-        "border border-primary text-primary hover:bg-teal-50 ring-0 outline-hidden focus:bg-teal-100",
-      "outline-solid":
-        "border border-primary text-primary hover:bg-primary hover:text-white ring-0 outline-hidden focus:bg-primary focus:text-white",
-      text: "bg-transparent hover:bg-black/10 outline-hidden ring-0 focus:shadow-none",
+      accent: "bg-accent hover:bg-rose-600 text-white",
       danger:
-        "bg-accent outline-hidden ring-0 text-white focus:shadow-[0_0_5px_var(--color-accent),0_0_15px_var(--color-accent),0_0_30px_var(--color-accent)] hover:shadow-[0_0_5px_var(--color-accent),0_0_15px_var(--color-accent),0_0_30px_var(--color-accent)]",
+        "bg-accent outline-hidden text-white focus:shadow-[0_0_5px_var(--color-accent),0_0_15px_var(--color-accent),0_0_30px_var(--color-accent)] hover:shadow-[0_0_5px_var(--color-accent),0_0_15px_var(--color-accent),0_0_30px_var(--color-accent)]",
     };
 
     const sizes = {
@@ -37,19 +33,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const baseClasses =
-      "font-medium rounded-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden focus:outline-none";
+      "cursor-pointer font-medium rounded-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden";
     return (
       <button
         ref={ref}
         className={classNames(
           baseClasses,
-          variants[variant],
           sizes[size],
-          variant !== "outline-solid" && variant !== "text"
-            ? "hover:text-white"
-            : "",
-          "focus:outline-none active:scale-95",
           fullWidth ? "w-full" : "",
+          variants[variant],
           className,
         )}
         disabled={isLoading || props.disabled}
@@ -87,6 +79,4 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   },
 );
 
-// ButtonComponent.displayName = 'Button';
-// export const Button = ButtonComponent;
 export default Button;
