@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaClock, FaTools } from "react-icons/fa";
-import Badge from "@/components/modules/badge";
+import Badge from "@/components/badge";
 
 interface ComingSoonProps {
   title: string;
