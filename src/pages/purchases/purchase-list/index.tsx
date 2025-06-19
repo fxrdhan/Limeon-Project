@@ -3,7 +3,7 @@ import Pagination from "@/components/pagination";
 import SearchBar from "@/components/search-bar";
 import PageTitle from "@/components/page-title";
 import Badge from "@/components/badge";
-import Loading from "@/components/loading";
+
 import UploadInvoicePortal from "@/components/invoice-uploader";
 
 import {
@@ -13,6 +13,7 @@ import {
   TableRow,
   TableCell,
   TableHeader,
+  PurchaseListSkeleton,
 } from "@/components/table";
 import { useConfirmDialog } from "@/components/dialog-box";
 import { Card } from "@/components/card";
@@ -294,8 +295,8 @@ const PurchaseList = () => {
             </Link>
           </div>
         </div>
-        {isLoading ? (
-          <Loading message="Memuat data pembelian..." />
+        {isLoading && purchases.length === 0 ? (
+          <PurchaseListSkeleton rows={8} />
         ) : (
           <>
             <Table>
