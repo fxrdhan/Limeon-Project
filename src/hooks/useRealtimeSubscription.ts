@@ -24,6 +24,7 @@ const subscriptionRegistry = new Map<
     channel: RealtimeChannel;
     subscribers: number;
     lastActivity: number;
+    isActive: boolean;
   }
 >();
 
@@ -34,7 +35,7 @@ setInterval(() => {
 
   for (const [key, subscription] of subscriptionRegistry.entries()) {
     if (
-      subscription.subscribers === 0 &&
+      subscription.subscribers <= 0 &&
       now - subscription.lastActivity > staleThreshold
     ) {
       console.log(`Cleaning up stale subscription: ${key}`);
@@ -47,7 +48,7 @@ setInterval(() => {
       }
     }
   }
-}, 60000); // Check every minute
+}, 30000); // Check every 30 seconds
 
 export const useRealtimeSubscription = (
   tableName: string,
@@ -135,14 +136,20 @@ export const useRealtimeSubscription = (
     }
 
     // Check if subscription already exists
-    const subscription = subscriptionRegistry.get(subscriptionKey);
+    const existingSubscription = subscriptionRegistry.get(subscriptionKey);
 
-    if (subscription) {
+    if (existingSubscription && existingSubscription.isActive) {
       // Increment subscriber count
-      subscription.subscribers++;
-      subscription.lastActivity = Date.now();
+      existingSubscription.subscribers++;
+      existingSubscription.lastActivity = Date.now();
       isSubscribedRef.current = true;
       console.log(`Reusing existing subscription for ${subscriptionKey}`);
+      return;
+    }
+
+    // Prevent multiple simultaneous subscription attempts
+    if (existingSubscription && !existingSubscription.isActive) {
+      console.log(`Subscription already in progress for ${subscriptionKey}`);
       return;
     }
 
@@ -164,9 +171,19 @@ export const useRealtimeSubscription = (
         handleRealtimeEvent,
       );
 
+    // Reserve the subscription slot to prevent duplicates
+    subscriptionRegistry.set(subscriptionKey, {
+      channel,
+      subscribers: 1,
+      lastActivity: Date.now(),
+      isActive: false,
+    });
+
     // Subscribe with retry logic
     const subscribe = () => {
       channel.subscribe((status, err) => {
+        const subscription = subscriptionRegistry.get(subscriptionKey);
+
         if (status === "SUBSCRIBED") {
           console.log(
             `Successfully subscribed to ${tableName} realtime updates`,
@@ -174,12 +191,10 @@ export const useRealtimeSubscription = (
           isSubscribedRef.current = true;
           retryCountRef.current = 0;
 
-          // Register the subscription
-          subscriptionRegistry.set(subscriptionKey, {
-            channel,
-            subscribers: 1,
-            lastActivity: Date.now(),
-          });
+          // Mark subscription as active
+          if (subscription) {
+            subscription.isActive = true;
+          }
         } else if (status === "CHANNEL_ERROR") {
           console.error(`Subscription error for ${tableName}:`, err);
           isSubscribedRef.current = false;
@@ -195,10 +210,15 @@ export const useRealtimeSubscription = (
             console.error(
               `Max retry attempts reached for ${tableName} subscription`,
             );
+            // Remove failed subscription
+            subscriptionRegistry.delete(subscriptionKey);
           }
         } else if (status === "TIMED_OUT") {
           console.warn(`Subscription timed out for ${tableName}`);
           isSubscribedRef.current = false;
+          if (subscription) {
+            subscription.isActive = false;
+          }
         } else if (status === "CLOSED") {
           console.log(`Subscription closed for ${tableName}`);
           isSubscribedRef.current = false;
