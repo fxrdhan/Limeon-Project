@@ -43,7 +43,7 @@ function App() {
           <Route
             path="/purchases/print-view"
             element={
-              <Suspense fallback={<div>Loading...</div>}>
+              <Suspense>
                 <PrintPurchase />
               </Suspense>
             }
@@ -57,7 +57,7 @@ function App() {
               index
               element={
                 <div className="text-gray-800">
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense>
                     <Dashboard />
                   </Suspense>
                 </div>
@@ -68,8 +68,8 @@ function App() {
               <Route
                 path="items"
                 element={
-                  <Suspense fallback={<div>Loading...</div>}>
-                    <Suspense fallback={null}>
+                  <Suspense>
+                    <Suspense>
                       <ItemList />
                     </Suspense>
                   </Suspense>
@@ -78,7 +78,7 @@ function App() {
               <Route
                 path="categories"
                 element={
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense>
                     <CategoryList />
                   </Suspense>
                 }
@@ -87,7 +87,7 @@ function App() {
                 path="types"
                 element={
                   <ErrorBoundary>
-                    <Suspense fallback={<div>Loading...</div>}>
+                    <Suspense>
                       <TypeList />
                     </Suspense>
                   </ErrorBoundary>
@@ -96,7 +96,7 @@ function App() {
               <Route
                 path="units"
                 element={
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense>
                     <UnitList />
                   </Suspense>
                 }
@@ -104,7 +104,7 @@ function App() {
               <Route
                 path="suppliers"
                 element={
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense>
                     <SupplierList />
                   </Suspense>
                 }
@@ -112,7 +112,7 @@ function App() {
               <Route
                 path="patients"
                 element={
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense>
                     <PatientList />
                   </Suspense>
                 }
@@ -123,7 +123,7 @@ function App() {
               <Route
                 index
                 element={
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense>
                     <PurchaseList />
                   </Suspense>
                 }
@@ -131,7 +131,7 @@ function App() {
               <Route
                 path="create"
                 element={
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense>
                     <CreatePurchase />
                   </Suspense>
                 }
@@ -139,7 +139,7 @@ function App() {
               <Route
                 path="confirm-invoice"
                 element={
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense>
                     <ConfirmInvoicePage />
                   </Suspense>
                 }
@@ -147,7 +147,7 @@ function App() {
               <Route
                 path="view/:id"
                 element={
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense>
                     <ViewPurchase />
                   </Suspense>
                 }
@@ -216,7 +216,7 @@ function App() {
               <Route
                 path="profile"
                 element={
-                  <Suspense fallback={<div>Loading...</div>}>
+                  <Suspense>
                     <Profile />
                   </Suspense>
                 }
