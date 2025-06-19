@@ -7,6 +7,11 @@ import ErrorBoundary from "@/components/ErrorBoundary.tsx";
 import { useAuthStore } from "@/store/authStore";
 import { ConfirmDialogProvider } from "@/components/dialog-box";
 import ComingSoon from "@/pages/blank-page";
+import {
+  TableLoadingFallback,
+  DashboardLoadingFallback,
+  FormLoadingFallback,
+} from "@/components/loading-fallback";
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const ItemList = lazy(() => import("@/pages/master-data/item-list"));
@@ -43,7 +48,11 @@ function App() {
           <Route
             path="/purchases/print-view"
             element={
-              <Suspense>
+              <Suspense
+                fallback={
+                  <div className="p-8 text-center">Memuat halaman print...</div>
+                }
+              >
                 <PrintPurchase />
               </Suspense>
             }
@@ -57,7 +66,7 @@ function App() {
               index
               element={
                 <div className="text-gray-800">
-                  <Suspense>
+                  <Suspense fallback={<DashboardLoadingFallback />}>
                     <Dashboard />
                   </Suspense>
                 </div>
@@ -68,17 +77,29 @@ function App() {
               <Route
                 path="items"
                 element={
-                  <Suspense>
-                    <Suspense>
-                      <ItemList />
-                    </Suspense>
+                  <Suspense
+                    fallback={
+                      <TableLoadingFallback
+                        title="Daftar Item"
+                        tableColumns={10}
+                      />
+                    }
+                  >
+                    <ItemList />
                   </Suspense>
                 }
               />
               <Route
                 path="categories"
                 element={
-                  <Suspense>
+                  <Suspense
+                    fallback={
+                      <TableLoadingFallback
+                        title="Daftar Kategori Item"
+                        tableColumns={2}
+                      />
+                    }
+                  >
                     <CategoryList />
                   </Suspense>
                 }
@@ -87,7 +108,14 @@ function App() {
                 path="types"
                 element={
                   <ErrorBoundary>
-                    <Suspense>
+                    <Suspense
+                      fallback={
+                        <TableLoadingFallback
+                          title="Daftar Jenis Item"
+                          tableColumns={2}
+                        />
+                      }
+                    >
                       <TypeList />
                     </Suspense>
                   </ErrorBoundary>
@@ -96,7 +124,14 @@ function App() {
               <Route
                 path="units"
                 element={
-                  <Suspense>
+                  <Suspense
+                    fallback={
+                      <TableLoadingFallback
+                        title="Daftar Satuan Item"
+                        tableColumns={2}
+                      />
+                    }
+                  >
                     <UnitList />
                   </Suspense>
                 }
@@ -104,7 +139,14 @@ function App() {
               <Route
                 path="suppliers"
                 element={
-                  <Suspense>
+                  <Suspense
+                    fallback={
+                      <TableLoadingFallback
+                        title="Daftar Supplier"
+                        tableColumns={5}
+                      />
+                    }
+                  >
                     <SupplierList />
                   </Suspense>
                 }
@@ -112,7 +154,14 @@ function App() {
               <Route
                 path="patients"
                 element={
-                  <Suspense>
+                  <Suspense
+                    fallback={
+                      <TableLoadingFallback
+                        title="Daftar Pasien"
+                        tableColumns={6}
+                      />
+                    }
+                  >
                     <PatientList />
                   </Suspense>
                 }
@@ -123,7 +172,14 @@ function App() {
               <Route
                 index
                 element={
-                  <Suspense>
+                  <Suspense
+                    fallback={
+                      <TableLoadingFallback
+                        title="Daftar Pembelian"
+                        tableColumns={7}
+                      />
+                    }
+                  >
                     <PurchaseList />
                   </Suspense>
                 }
@@ -131,7 +187,7 @@ function App() {
               <Route
                 path="create"
                 element={
-                  <Suspense>
+                  <Suspense fallback={<FormLoadingFallback />}>
                     <CreatePurchase />
                   </Suspense>
                 }
@@ -139,7 +195,7 @@ function App() {
               <Route
                 path="confirm-invoice"
                 element={
-                  <Suspense>
+                  <Suspense fallback={<FormLoadingFallback />}>
                     <ConfirmInvoicePage />
                   </Suspense>
                 }
@@ -147,7 +203,7 @@ function App() {
               <Route
                 path="view/:id"
                 element={
-                  <Suspense>
+                  <Suspense fallback={<FormLoadingFallback />}>
                     <ViewPurchase />
                   </Suspense>
                 }
@@ -216,7 +272,7 @@ function App() {
               <Route
                 path="profile"
                 element={
-                  <Suspense>
+                  <Suspense fallback={<FormLoadingFallback />}>
                     <Profile />
                   </Suspense>
                 }
