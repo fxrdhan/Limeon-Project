@@ -33,7 +33,7 @@ const Dropdown = ({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
   const [applyOpenStyles, setApplyOpenStyles] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
+
   const instanceId = useId();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -273,25 +273,21 @@ const Dropdown = ({
     }, 200);
   }, [hoverTimeoutRef, leaveTimeoutRef, actualCloseDropdown]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleFocusOut = useCallback(
-    (_e: FocusEvent) => {
-      setTimeout(() => {
-        const activeElement = document.activeElement;
-        const dropdownContainer = dropdownRef.current;
-        const dropdownMenu = dropdownMenuRef.current;
+  const handleFocusOut = useCallback(() => {
+    setTimeout(() => {
+      const activeElement = document.activeElement;
+      const dropdownContainer = dropdownRef.current;
+      const dropdownMenu = dropdownMenuRef.current;
 
-        const isFocusInDropdown =
-          dropdownContainer?.contains(activeElement) ||
-          dropdownMenu?.contains(activeElement);
+      const isFocusInDropdown =
+        dropdownContainer?.contains(activeElement) ||
+        dropdownMenu?.contains(activeElement);
 
-        if (!isFocusInDropdown && isOpen) {
-          actualCloseDropdown();
-        }
-      }, 0);
-    },
-    [isOpen, actualCloseDropdown],
-  );
+      if (!isFocusInDropdown && isOpen) {
+        actualCloseDropdown();
+      }
+    }, 0);
+  }, [isOpen, actualCloseDropdown]);
 
   const toggleDropdown = useCallback(
     (e: React.MouseEvent) => {
@@ -422,11 +418,6 @@ const Dropdown = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
       setSearchTerm(newValue);
-      setIsSearching(true);
-
-      setTimeout(() => {
-        setIsSearching(false);
-      }, 500);
     },
     [],
   );
@@ -583,15 +574,12 @@ const Dropdown = ({
                               onKeyDown={handleSearchBarKeyDown}
                               onClick={(e) => e.stopPropagation()}
                               onFocus={() => {
-                                setIsSearching(true);
                                 if (leaveTimeoutRef.current) {
                                   clearTimeout(leaveTimeoutRef.current);
                                   leaveTimeoutRef.current = null;
                                 }
                               }}
-                              onBlur={() =>
-                                setTimeout(() => setIsSearching(false), 100)
-                              }
+                              onBlur={() => {}}
                               aria-autocomplete="list"
                               aria-expanded={isOpen}
                               aria-controls="dropdown-options-list"
