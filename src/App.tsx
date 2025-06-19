@@ -1,11 +1,11 @@
 import Login from "@/pages/auth/login";
 import MainLayout from "@/layout/main";
-import { AlertProvider } from "@/components/modules/alert";
+import { AlertProvider } from "@/components/alert";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary.tsx";
 import { useAuthStore } from "@/store/authStore";
-import { ConfirmDialogProvider } from "@/components/modules/dialog-box";
+import { ConfirmDialogProvider } from "@/components/dialog-box";
 import ComingSoon from "@/pages/blank-page";
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
