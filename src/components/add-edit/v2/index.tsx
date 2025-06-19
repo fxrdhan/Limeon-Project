@@ -915,7 +915,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                       Harga Jual
                                     </TableHeader>
                                     <TableHeader className="w-[10%] text-center">
-                                      Aksi
+                                      ‎
                                     </TableHeader>
                                   </TableRow>
                                 </TableHead>
