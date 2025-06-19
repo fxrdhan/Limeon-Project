@@ -5,7 +5,7 @@ import type {
   RealtimePostgresChangesPayload,
   RealtimeChannel,
 } from "@supabase/supabase-js";
-import { useAlert } from "@/components/modules/alert/hooks";
+import { useAlert } from "@/components/alert/hooks";
 
 interface RealtimeSubscriptionOptions {
   enabled?: boolean;

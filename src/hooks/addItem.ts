@@ -7,7 +7,7 @@ import {
     extractNumericValue,
     formatDateTime,
 } from "@/lib/formatters";
-import { useConfirmDialog } from "@/components/modules/dialog-box";
+import { useConfirmDialog } from "@/components/dialog-box";
 import type {
     UnitConversion,
     Category,
