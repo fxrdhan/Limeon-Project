@@ -19,6 +19,7 @@ export const useAddItemPageHandlers = ({
   const marginInputRef = useRef<HTMLInputElement>(null);
   const minStockInputRef = useRef<HTMLInputElement>(null);
   const addItemForm = useAddItemForm({ itemId, initialSearchQuery, onClose });
+  const [isClosing, setIsClosing] = useState(false);
 
   const [showDescription, setShowDescription] = useState(false);
   const [isDescriptionHovered, setIsDescriptionHovered] = useState(false);
@@ -176,8 +177,10 @@ export const useAddItemPageHandlers = ({
     }
   };
 
-  const handleActualCancel = () => {
-    onClose();
+  const handleActualCancel = (
+    closingStateSetter?: React.Dispatch<React.SetStateAction<boolean>>,
+  ) => {
+    addItemForm.handleCancel(closingStateSetter || setIsClosing);
   };
 
   useEffect(() => {
@@ -224,5 +227,7 @@ export const useAddItemPageHandlers = ({
     handleAddNewUnit: addItemForm.handleAddNewUnit,
     closeModalAndClearSearch: addItemForm.closeModalAndClearSearch,
     handleCancel: handleActualCancel,
+    isClosing,
+    setIsClosing,
   };
 };
