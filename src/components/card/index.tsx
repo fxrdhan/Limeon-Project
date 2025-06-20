@@ -17,10 +17,9 @@ export const Card = ({ children, className }: CardProps) => {
 export const CardHeader = ({ children, className }: CardProps) => {
   return (
     <div
-      className={classNames(
-        "mb-4 bg-gray-100! rounded-t-xl border-b-2 border-gray-200",
-        className,
-      )}
+      className={
+        className || "mb-4 bg-gray-100! rounded-t-xl border-b-2 border-gray-200"
+      }
     >
       {children}
     </div>
@@ -30,10 +29,9 @@ export const CardHeader = ({ children, className }: CardProps) => {
 export const CardTitle = ({ children, className }: CardProps) => {
   return (
     <h2
-      className={classNames(
-        "text-2xl font-semibold text-gray-800 outline-none",
-        className,
-      )}
+      className={
+        className || "text-2xl font-semibold text-gray-800 outline-none"
+      }
     >
       {children}
     </h2>
