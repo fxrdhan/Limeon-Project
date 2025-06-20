@@ -33,20 +33,16 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [shouldShowGlow, setShouldShowGlow] = useState(false);
+  const [glowIntensity, setGlowIntensity] = useState(0);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const glowAnimationRef = useRef<NodeJS.Timeout | null>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
-  const glowShadows = [
-    "0 0 15px rgba(16, 185, 129, 0.7), 0 0 30px rgba(16, 185, 129, 0.5), 0 0 45px rgba(16, 185, 129, 0.3)",
-    "0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.6), 0 0 60px rgba(34, 197, 94, 0.4)",
-    "0 0 18px rgba(6, 182, 212, 0.8), 0 0 35px rgba(6, 182, 212, 0.6), 0 0 55px rgba(6, 182, 212, 0.4)",
-    "0 0 22px rgba(20, 184, 166, 0.9), 0 0 45px rgba(20, 184, 166, 0.7), 0 0 65px rgba(20, 184, 166, 0.5)",
-    "0 0 15px rgba(16, 185, 129, 0.7), 0 0 30px rgba(16, 185, 129, 0.5), 0 0 45px rgba(16, 185, 129, 0.3)",
-  ];
-
-  const glowTransition = {
-    repeat: Infinity,
-    duration: 4,
-    ease: "easeInOut" as const,
+  const getGlowEffect = (intensity: number) => {
+    const baseIntensity = 0.3 + intensity * 0.4;
+    const outerIntensity = 0.2 + intensity * 0.3;
+    return `0 0 ${15 + intensity * 10}px rgba(16, 185, 129, ${baseIntensity}), 0 0 ${30 + intensity * 20}px rgba(16, 185, 129, ${outerIntensity})`;
   };
 
   useEffect(() => {
@@ -62,6 +58,9 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
   }, [file]);
 
   useEffect(() => {
+    const hoverTimeout = hoverTimeoutRef.current;
+    const glowTimeout = glowAnimationRef.current;
+
     if (!isOpen) {
       setFile(null);
       setError(null);
@@ -72,7 +71,24 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
       setZoomLevel(1);
       setPosition({ x: 0, y: 0 });
       setIsHovering(false);
+      setShouldShowGlow(false);
+      setGlowIntensity(0);
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+      if (glowTimeout) {
+        clearTimeout(glowTimeout);
+      }
     }
+
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+      if (glowTimeout) {
+        clearTimeout(glowTimeout);
+      }
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -90,6 +106,14 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
       setZoomLevel(1);
       setPosition({ x: 0, y: 0 });
       setIsHovering(false);
+      setShouldShowGlow(false);
+      setGlowIntensity(0);
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+      if (glowAnimationRef.current) {
+        clearTimeout(glowAnimationRef.current);
+      }
     }
   }, [isOpen, cachedInvoiceFile]);
 
@@ -184,6 +208,14 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     setError(null);
     setShowFullPreview(false);
     setIsHovering(false);
+    setShouldShowGlow(false);
+    setGlowIntensity(0);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    if (glowAnimationRef.current) {
+      clearTimeout(glowAnimationRef.current);
+    }
     clearCachedInvoiceFile();
   };
 
@@ -235,12 +267,18 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                 animate={{ scale: 1, opacity: 1, y: 0, rotateX: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20, rotateX: -10 }}
                 transition={{
-                  duration: 0.4,
+                  duration: 0.5,
                   type: "spring",
-                  damping: 20,
-                  stiffness: 300,
+                  damping: 25,
+                  stiffness: 280,
+                  ease: "easeOut",
                 }}
-                style={{ perspective: "1000px" }}
+                style={{
+                  perspective: "1000px",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
+                  willChange: "transform, opacity",
+                }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <Card className="shadow-lg w-[600px] max-w-[90vw] m-6 !bg-white">
@@ -284,28 +322,104 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                           animate={{
                             opacity: 1,
                             y: 0,
-                            boxShadow: isHovering ? glowShadows : "none",
+                            boxShadow: shouldShowGlow
+                              ? getGlowEffect(glowIntensity)
+                              : "none",
                           }}
                           transition={{
                             delay: 0.1,
-                            duration: 0.3,
-                            boxShadow: isHovering
-                              ? glowTransition
-                              : { duration: 0.3 },
+                            duration: 0.4,
+                            ease: "easeOut",
+                            boxShadow: {
+                              duration: 0.3,
+                              ease: "easeInOut",
+                            },
                           }}
                           className={`border-2 ${
                             isDragging
                               ? "border-primary bg-teal-50"
                               : isHovering
-                                ? "border-dashed border-primary"
+                                ? "border-dashed border-primary bg-teal-25"
                                 : "border-dashed border-gray-300"
                           }
-                                                  rounded-xl p-10 text-center transition-all cursor-pointer hover:bg-gray-50 w-full min-h-[160px] flex items-center justify-center`}
+                                                  rounded-xl p-10 text-center cursor-pointer w-full min-h-[160px] flex items-center justify-center`}
+                          style={{
+                            backfaceVisibility: "hidden",
+                            WebkitBackfaceVisibility: "hidden",
+                            transform: "translateZ(0)",
+                            WebkitTransform: "translateZ(0)",
+                            willChange:
+                              "transform, opacity, border-color, background-color",
+                            WebkitFontSmoothing: "antialiased",
+                            MozOsxFontSmoothing: "grayscale",
+                            contain: "layout style paint",
+                            isolation: "isolate",
+                            backgroundColor: isHovering
+                              ? "rgba(240, 253, 250, 0.5)"
+                              : "transparent",
+                            borderColor: isHovering
+                              ? "rgb(20, 184, 166)"
+                              : isDragging
+                                ? "rgb(20, 184, 166)"
+                                : "rgb(209, 213, 219)",
+                            transition:
+                              "border-color 400ms cubic-bezier(0.4, 0, 0.2, 1), background-color 400ms cubic-bezier(0.4, 0, 0.2, 1)",
+                          }}
                           onDragOver={handleDragOver}
                           onDragLeave={handleDragLeave}
                           onDrop={handleDrop}
-                          onMouseEnter={() => setIsHovering(true)}
-                          onMouseLeave={() => setIsHovering(false)}
+                          onMouseEnter={() => {
+                            setIsHovering(true);
+                            if (hoverTimeoutRef.current) {
+                              clearTimeout(hoverTimeoutRef.current);
+                            }
+                            if (glowAnimationRef.current) {
+                              clearTimeout(glowAnimationRef.current);
+                            }
+
+                            // Start glow immediately but gradually
+                            setShouldShowGlow(true);
+
+                            // Animate glow intensity gradually
+                            let currentIntensity = 0;
+                            const animateGlow = () => {
+                              currentIntensity += 0.05;
+                              if (currentIntensity <= 1) {
+                                setGlowIntensity(currentIntensity);
+                                glowAnimationRef.current = setTimeout(
+                                  animateGlow,
+                                  16,
+                                ); // ~60fps
+                              }
+                            };
+                            animateGlow();
+                          }}
+                          onMouseLeave={() => {
+                            setIsHovering(false);
+                            if (hoverTimeoutRef.current) {
+                              clearTimeout(hoverTimeoutRef.current);
+                            }
+                            if (glowAnimationRef.current) {
+                              clearTimeout(glowAnimationRef.current);
+                            }
+
+                            // Gradually fade out glow
+                            let currentIntensity = glowIntensity;
+                            const fadeGlow = () => {
+                              currentIntensity -= 0.08;
+                              if (currentIntensity > 0) {
+                                setGlowIntensity(currentIntensity);
+                                glowAnimationRef.current = setTimeout(
+                                  fadeGlow,
+                                  16,
+                                ); // ~60fps
+                              } else {
+                                setGlowIntensity(0);
+                                setShouldShowGlow(false);
+                              }
+                            };
+                            fadeGlow();
+                          }}
                           onClick={() =>
                             document.getElementById("fileInput")?.click()
                           }
@@ -314,12 +428,13 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             <motion.div
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.95 }}
-                              className={`rounded-full ${isHovering ? "bg-teal-100" : "bg-gray-200"} p-4 inline-flex mb-3 transition-colors duration-500 ease-out outline-none focus:outline-none border-0 ring-0 focus:ring-0`}
+                              className={`rounded-full ${isHovering ? "bg-teal-100" : "bg-gray-200"} p-4 inline-flex mb-3 transition-all duration-300 ease-out outline-none focus:outline-none border-0 ring-0 focus:ring-0`}
                               style={{
                                 backfaceVisibility: "hidden",
                                 WebkitBackfaceVisibility: "hidden",
                                 transform: "translateZ(0)",
                                 WebkitTransform: "translateZ(0)",
+                                willChange: "transform",
                                 isolation: "isolate",
                                 WebkitFontSmoothing: "antialiased",
                                 MozOsxFontSmoothing: "grayscale",
@@ -329,19 +444,27 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                 animate={isHovering ? { y: [-2, 2, -2] } : {}}
                                 transition={
                                   isHovering
-                                    ? { duration: 1.5, repeat: Infinity }
+                                    ? {
+                                        duration: 2.0,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                      }
                                     : {}
                                 }
                               >
                                 <FaUpload
-                                  className={`mx-auto h-8 w-8 ${isHovering ? "text-teal-600" : "text-gray-600"} transition-colors duration-500 ease-out`}
+                                  className={`mx-auto h-8 w-8 ${isHovering ? "text-teal-600" : "text-gray-600"} transition-all duration-300 ease-out`}
                                 />
                               </motion.div>
                             </motion.div>
-                            <p className="text-sm font-medium text-gray-700">
+                            <p
+                              className={`text-sm font-medium transition-colors duration-300 ease-out ${isHovering ? "text-teal-700" : "text-gray-700"}`}
+                            >
                               Klik atau seret untuk mengunggah gambar faktur
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p
+                              className={`text-xs mt-1 transition-colors duration-300 ease-out ${isHovering ? "text-teal-500" : "text-gray-500"}`}
+                            >
                               PNG, JPG (Maks. 5MB)
                             </p>
                           </div>
