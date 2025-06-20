@@ -379,7 +379,7 @@ const ConfirmInvoicePage = () => {
       <CardFooter className="border-t pt-4 flex justify-between">
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           onClick={() => navigate("/purchases")}
         >
           <span className="flex items-center">
