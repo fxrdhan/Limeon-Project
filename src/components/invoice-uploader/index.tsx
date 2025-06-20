@@ -40,9 +40,9 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const getGlowEffect = (intensity: number) => {
-    const baseIntensity = 0.3 + intensity * 0.4;
-    const outerIntensity = 0.2 + intensity * 0.3;
-    return `0 0 ${15 + intensity * 10}px rgba(16, 185, 129, ${baseIntensity}), 0 0 ${30 + intensity * 20}px rgba(16, 185, 129, ${outerIntensity})`;
+    const baseIntensity = 0.4 + intensity * 0.5;
+    const outerIntensity = 0.25 + intensity * 0.4;
+    return `0 0 ${12 + intensity * 12}px rgba(16, 185, 129, ${baseIntensity}), 0 0 ${25 + intensity * 25}px rgba(16, 185, 129, ${outerIntensity})`;
   };
 
   useEffect(() => {
@@ -331,8 +331,8 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             duration: 0.4,
                             ease: "easeOut",
                             boxShadow: {
-                              duration: 0.3,
-                              ease: "easeInOut",
+                              duration: 0.15,
+                              ease: "easeOut",
                             },
                           }}
                           className={`border-2 ${
@@ -363,7 +363,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                 ? "rgb(20, 184, 166)"
                                 : "rgb(209, 213, 219)",
                             transition:
-                              "border-color 400ms cubic-bezier(0.4, 0, 0.2, 1), background-color 400ms cubic-bezier(0.4, 0, 0.2, 1)",
+                              "border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), background-color 200ms cubic-bezier(0.4, 0, 0.2, 1)",
                           }}
                           onDragOver={handleDragOver}
                           onDragLeave={handleDragLeave}
@@ -377,19 +377,20 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                               clearTimeout(glowAnimationRef.current);
                             }
 
-                            // Start glow immediately but gradually
+                            // Start glow immediately with visible intensity
                             setShouldShowGlow(true);
+                            setGlowIntensity(0.3); // Immediate visible glow
 
                             // Animate glow intensity gradually
-                            let currentIntensity = 0;
+                            let currentIntensity = 0.3;
                             const animateGlow = () => {
-                              currentIntensity += 0.05;
+                              currentIntensity += 0.15; // Even faster increment
                               if (currentIntensity <= 1) {
                                 setGlowIntensity(currentIntensity);
                                 glowAnimationRef.current = setTimeout(
                                   animateGlow,
-                                  16,
-                                ); // ~60fps
+                                  8,
+                                ); // Even faster frame rate
                               }
                             };
                             animateGlow();
@@ -406,13 +407,13 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             // Gradually fade out glow
                             let currentIntensity = glowIntensity;
                             const fadeGlow = () => {
-                              currentIntensity -= 0.08;
+                              currentIntensity -= 0.2; // Even faster fade out
                               if (currentIntensity > 0) {
                                 setGlowIntensity(currentIntensity);
                                 glowAnimationRef.current = setTimeout(
                                   fadeGlow,
-                                  16,
-                                ); // ~60fps
+                                  8,
+                                ); // Even faster frame rate
                               } else {
                                 setGlowIntensity(0);
                                 setShouldShowGlow(false);
