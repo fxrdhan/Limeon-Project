@@ -98,14 +98,13 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      // Reduced throttling for better responsiveness
       if (throttleTimeoutRef.current) return;
 
       mousePositionRef.current = { x: e.clientX, y: e.clientY };
 
       throttleTimeoutRef.current = setTimeout(() => {
         throttleTimeoutRef.current = null;
-      }, 8); // Faster update rate for better responsiveness
+      }, 8);
     };
 
     document.addEventListener("mousemove", handleMouseMove, { passive: true });
@@ -120,24 +119,20 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
 
   useEffect(() => {
     if (isOpen) {
-      // Force focus and immediate state update
       document.body.style.pointerEvents = "auto";
 
       if (cachedInvoiceFile) {
         setFile(cachedInvoiceFile);
       }
 
-      // Simplified hover detection for better responsiveness
       const checkInitialHover = () => {
         if (!file && uploaderContainerRef.current) {
           const rect = uploaderContainerRef.current.getBoundingClientRect();
           const mouseX = mousePositionRef.current.x;
           const mouseY = mousePositionRef.current.y;
 
-          // Skip if no valid mouse position recorded yet
           if (mouseX === 0 && mouseY === 0) return;
 
-          // Simple bounds check for immediate responsiveness
           const isWithinBounds =
             mouseX >= rect.left &&
             mouseX <= rect.right &&
@@ -147,13 +142,12 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
           if (isWithinBounds) {
             setIsHovering(true);
             setShouldShowGlow(true);
-            setGlowIntensity(0.7); // Higher initial intensity for immediate feedback
+            setGlowIntensity(0.7);
 
             if (glowAnimationRef.current) {
               clearTimeout(glowAnimationRef.current);
             }
 
-            // Faster, smoother animation
             let currentIntensity = 0.7;
             const animateGlow = () => {
               currentIntensity += 0.1;
@@ -167,11 +161,9 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
         }
       };
 
-      // Immediate check, then delayed check for safety
       checkInitialHover();
       const timeoutId = setTimeout(checkInitialHover, 16);
 
-      // Add immediate hover detection on portal open
       const handlePortalMouseMove = (e: MouseEvent) => {
         mousePositionRef.current = { x: e.clientX, y: e.clientY };
         checkInitialHover();
@@ -187,7 +179,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
         document.removeEventListener("mousemove", handlePortalMouseMove);
       };
     } else {
-      // Immediate and aggressive state reset for better responsiveness
       document.body.style.pointerEvents = "auto";
 
       setError(null);
@@ -200,7 +191,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
       setShouldShowGlow(false);
       setGlowIntensity(0);
 
-      // Aggressive timeout cleanup
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
         hoverTimeoutRef.current = null;
@@ -214,7 +204,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
         throttleTimeoutRef.current = null;
       }
 
-      // Force immediate repaint for faster UI response
       requestAnimationFrame(() => {
         if (uploaderContainerRef.current) {
           uploaderContainerRef.current.style.transform = "translateZ(0)";
@@ -312,7 +301,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
       e.stopPropagation();
     }
 
-    // Immediate state reset for maximum responsiveness
     setFile(null);
     setPreviewUrl(null);
     setFileInputKey((prev) => prev + 1);
@@ -325,7 +313,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     setZoomLevel(1);
     setPosition({ x: 0, y: 0 });
 
-    // Clear all timeouts immediately
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
@@ -341,10 +328,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
 
     clearCachedInvoiceFile();
 
-    // Force immediate DOM update
-    requestAnimationFrame(() => {
-      // Additional cleanup after frame render
-    });
+    requestAnimationFrame(() => {});
   };
 
   const toggleFullPreview = (e?: React.MouseEvent | React.TouchEvent) => {
@@ -395,18 +379,15 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
               transition={{ duration: 0.2, ease: "easeInOut" }}
               className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
               onClick={() => {
-                // Reset any pending image preview animations
                 if (showFullPreview) {
                   setShowFullPreview(false);
                 }
 
-                // Immediate and aggressive state reset
                 setIsHovering(false);
                 setShouldShowGlow(false);
                 setGlowIntensity(0);
                 setIsDragging(false);
 
-                // Clear all timeouts for immediate responsiveness
                 if (hoverTimeoutRef.current) {
                   clearTimeout(hoverTimeoutRef.current);
                   hoverTimeoutRef.current = null;
@@ -420,10 +401,8 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                   throttleTimeoutRef.current = null;
                 }
 
-                // Reset pointer events and force immediate close
                 document.body.style.pointerEvents = "auto";
 
-                // Immediate close without waiting for animation
                 onClose();
               }}
             >
@@ -446,7 +425,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Ensure hover state is properly maintained when clicking inside
                   if (!file && uploaderContainerRef.current) {
                     const rect =
                       uploaderContainerRef.current.getBoundingClientRect();
@@ -565,9 +543,8 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                 clearTimeout(glowAnimationRef.current);
                               }
                               setShouldShowGlow(true);
-                              setGlowIntensity(0.8); // High initial intensity for immediate feedback
+                              setGlowIntensity(0.8);
 
-                              // Faster animation with immediate response
                               let currentIntensity = 0.8;
                               const animateGlow = () => {
                                 currentIntensity += 0.1;
@@ -575,16 +552,14 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                   setGlowIntensity(currentIntensity);
                                   glowAnimationRef.current = setTimeout(
                                     animateGlow,
-                                    3, // Very fast animation
+                                    3,
                                   );
                                 }
                               };
-                              // Start animation immediately
                               requestAnimationFrame(animateGlow);
                             }
                           }}
                           onMouseLeave={(e) => {
-                            // Immediate leave detection for maximum responsiveness
                             const rect =
                               uploaderContainerRef.current?.getBoundingClientRect();
                             if (rect) {
@@ -603,22 +578,20 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                   clearTimeout(glowAnimationRef.current);
                                 }
 
-                                // Immediate fade for instant response
                                 let currentIntensity = glowIntensity;
                                 const fadeGlow = () => {
-                                  currentIntensity -= 0.4; // Very fast fade
+                                  currentIntensity -= 0.4;
                                   if (currentIntensity > 0) {
                                     setGlowIntensity(currentIntensity);
                                     glowAnimationRef.current = setTimeout(
                                       fadeGlow,
-                                      2, // Ultra-fast fade animation
+                                      2,
                                     );
                                   } else {
                                     setGlowIntensity(0);
                                     setShouldShowGlow(false);
                                   }
                                 };
-                                // Start fade immediately
                                 requestAnimationFrame(fadeGlow);
                               }
                             }
@@ -850,14 +823,12 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
               transition={{ duration: 0.15, ease: "easeInOut" }}
               className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
               onClick={() => {
-                // Immediate state reset for faster responsiveness
                 setShowFullPreview(false);
                 resetZoom();
                 setIsHovering(false);
                 setShouldShowGlow(false);
                 setGlowIntensity(0);
 
-                // Clear any pending timeouts
                 if (hoverTimeoutRef.current) {
                   clearTimeout(hoverTimeoutRef.current);
                   hoverTimeoutRef.current = null;
