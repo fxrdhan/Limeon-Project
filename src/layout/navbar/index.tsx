@@ -23,6 +23,29 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
   const [animatingPortal, setAnimatingPortal] = useState(false);
 
+  // Reusable glow animation constants
+  const glowShadows = [
+    "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
+    "0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(239, 68, 68, 0.6), 0 0 60px rgba(236, 72, 153, 0.4)",
+    "0 0 18px rgba(16, 185, 129, 0.8), 0 0 35px rgba(6, 182, 212, 0.6), 0 0 55px rgba(59, 130, 246, 0.4)",
+    "0 0 22px rgba(139, 92, 246, 0.9), 0 0 45px rgba(217, 70, 239, 0.7), 0 0 65px rgba(245, 158, 11, 0.5)",
+    "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
+  ];
+
+  const glowTransition = {
+    repeat: Infinity,
+    duration: 4,
+    ease: "easeInOut" as const,
+  };
+
+  const backgroundGradients = [
+    "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)",
+    "linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%)",
+    "linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%)",
+    "linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #f59e0b 100%)",
+    "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)",
+  ];
+
   const handleMouseEnter = () => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -115,7 +138,7 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   };
 
   return (
-    <nav className="bg-white border-b px-6 py-3 sticky top-0 z-20">
+    <nav className="bg-white px-6 py-3 sticky top-0 z-20">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center">
         <div className="flex items-center h-8">
           <h1 className="flex items-center" style={{ minHeight: "2em" }}>
@@ -254,10 +277,23 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                       transition={{ duration: 0.25 }}
                       className="relative"
                     >
-                      <ProfileImage
-                        size="small"
-                        className="ring-2 ring-gray-200 group-hover:ring-primary/30 transition-all duration-200"
-                      />
+                      <motion.div
+                        className="relative"
+                        animate={{
+                          boxShadow: glowShadows,
+                        }}
+                        transition={{
+                          boxShadow: glowTransition,
+                        }}
+                        style={{
+                          borderRadius: "50%",
+                        }}
+                      >
+                        <ProfileImage
+                          size="small"
+                          className="transition-all duration-200"
+                        />
+                      </motion.div>
                       {/* <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div> */}
                     </motion.div>
                   )}
@@ -321,20 +357,8 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                             animate={{
                               y: 0,
                               opacity: 1,
-                              backgroundImage: [
-                                "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)",
-                                "linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%)",
-                                "linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%)",
-                                "linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #f59e0b 100%)",
-                                "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)",
-                              ],
-                              boxShadow: [
-                                "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
-                                "0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(239, 68, 68, 0.6), 0 0 60px rgba(236, 72, 153, 0.4)",
-                                "0 0 18px rgba(16, 185, 129, 0.8), 0 0 35px rgba(6, 182, 212, 0.6), 0 0 55px rgba(59, 130, 246, 0.4)",
-                                "0 0 22px rgba(139, 92, 246, 0.9), 0 0 45px rgba(217, 70, 239, 0.7), 0 0 65px rgba(245, 158, 11, 0.5)",
-                                "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
-                              ],
+                              backgroundImage: backgroundGradients,
+                              boxShadow: glowShadows,
                             }}
                             exit={{
                               y: -20,
@@ -354,9 +378,8 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                                 delay: 0.4,
                               },
                               boxShadow: {
-                                repeat: Infinity,
+                                ...glowTransition,
                                 duration: 5,
-                                ease: "easeInOut",
                                 delay: 0.4,
                               },
                             }}
