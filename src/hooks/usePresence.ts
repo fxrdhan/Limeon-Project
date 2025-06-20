@@ -4,6 +4,35 @@ import { useAuthStore } from "@/store/authStore";
 import { usePresenceStore } from "@/store/presenceStore";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
+// Helper function to count unique users from presence state
+const countUniqueUsers = (presenceState: Record<string, unknown>) => {
+  const uniqueUsers = new Set<string>();
+  console.log("Presence state:", presenceState);
+  Object.values(presenceState).forEach((presence: unknown) => {
+    if (Array.isArray(presence)) {
+      presence.forEach((p: unknown) => {
+        if (
+          p &&
+          typeof p === "object" &&
+          "user_id" in p &&
+          typeof p.user_id === "string"
+        ) {
+          uniqueUsers.add(p.user_id);
+          console.log("Added user to count:", p.user_id);
+        }
+      });
+    }
+  });
+  const count = uniqueUsers.size;
+  console.log(
+    "Total unique users:",
+    count,
+    "Unique user IDs:",
+    Array.from(uniqueUsers),
+  );
+  return count;
+};
+
 export const usePresence = () => {
   const { user } = useAuthStore();
   const { setChannel, setOnlineUsers } = usePresenceStore();
@@ -81,20 +110,26 @@ export const usePresence = () => {
       newChannel
         .on("presence", { event: "sync" }, () => {
           if (!isConnectedRef.current) return;
+          console.log("Presence sync event triggered");
           const presenceState = newChannel.presenceState();
-          const userCount = Object.keys(presenceState).length;
+          const userCount = countUniqueUsers(presenceState);
+          console.log("Setting online users to:", userCount);
           setOnlineUsers(userCount);
         })
         .on("presence", { event: "join" }, () => {
           if (!isConnectedRef.current) return;
+          console.log("Presence join event triggered");
           const presenceState = newChannel.presenceState();
-          const userCount = Object.keys(presenceState).length;
+          const userCount = countUniqueUsers(presenceState);
+          console.log("Setting online users to:", userCount);
           setOnlineUsers(userCount);
         })
         .on("presence", { event: "leave" }, () => {
           if (!isConnectedRef.current) return;
+          console.log("Presence leave event triggered");
           const presenceState = newChannel.presenceState();
-          const userCount = Object.keys(presenceState).length;
+          const userCount = countUniqueUsers(presenceState);
+          console.log("Setting online users to:", userCount);
           setOnlineUsers(userCount);
         });
 
@@ -107,6 +142,7 @@ export const usePresence = () => {
         if (status === "SUBSCRIBED") {
           isConnectedRef.current = true;
           try {
+            console.log("Tracking presence for user:", user.id);
             await newChannel.track({
               online_at: new Date().toISOString(),
               user_id: user.id,
@@ -116,7 +152,7 @@ export const usePresence = () => {
             setTimeout(() => {
               if (!isConnectedRef.current) return;
               const presenceState = newChannel.presenceState();
-              const userCount = Object.keys(presenceState).length;
+              const userCount = countUniqueUsers(presenceState);
               if (userCount === 0) {
                 setOnlineUsers(1);
               } else {
