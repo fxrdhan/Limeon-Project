@@ -200,8 +200,11 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     }
   };
 
-  const handleRemoveFile = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const handleRemoveFile = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setFile(null);
     setPreviewUrl(null);
     setFileInputKey((prev) => prev + 1);
@@ -219,8 +222,11 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     clearCachedInvoiceFile();
   };
 
-  const toggleFullPreview = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const toggleFullPreview = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setShowFullPreview((prev) => !prev);
   };
 
@@ -496,8 +502,27 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             whileTap={{ scale: 0.98 }}
                             className="flex items-center p-3 pr-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
                             onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFullPreview();
+                              // Only trigger preview if the click is not on the remove button
+                              const target = e.target as HTMLElement;
+                              const isRemoveButton = target.closest(
+                                '[aria-label="Hapus file"]',
+                              );
+                              if (!isRemoveButton) {
+                                e.stopPropagation();
+                                toggleFullPreview();
+                              }
+                            }}
+                            onTouchEnd={(e) => {
+                              // Only trigger preview if the touch is not on the remove button
+                              const target = e.target as HTMLElement;
+                              const isRemoveButton = target.closest(
+                                '[aria-label="Hapus file"]',
+                              );
+                              if (!isRemoveButton) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleFullPreview();
+                              }
                             }}
                           >
                             {previewUrl ? (
@@ -526,13 +551,29 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
                                 handleRemoveFile(e);
                               }}
-                              className="hover:text-black pl-8 text-gray-500 cursor-pointer relative z-30"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              onTouchStart={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              onTouchEnd={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleRemoveFile(e);
+                              }}
+                              className="hover:text-red-600 hover:bg-red-50 text-gray-500 cursor-pointer relative z-30 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-all duration-200 -mr-2"
                               aria-label="Hapus file"
+                              type="button"
+                              title="Hapus file"
                             >
-                              <FaTimes className="h-4 w-4" />
+                              <FaTimes className="h-5 w-5 pointer-events-none" />
                             </motion.button>
                           </motion.div>
                           <input
