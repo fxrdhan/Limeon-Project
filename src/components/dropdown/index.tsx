@@ -539,7 +539,7 @@ const Dropdown = ({
                 {(isOpen || isClosing) && (
                   <div>
                     {searchList && (
-                      <div className="p-2 border-b sticky top-0 z-10">
+                      <div className="p-2 border-b border-gray-200 sticky top-0 z-10">
                         <div className="relative flex items-center gap-2 min-w-0">
                           <div className="relative flex-1 min-w-0">
                             <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
