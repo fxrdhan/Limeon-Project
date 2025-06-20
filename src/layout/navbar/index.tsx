@@ -23,7 +23,6 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
   const [animatingPortal, setAnimatingPortal] = useState(false);
 
-  // Reusable glow animation constants
   const glowShadows = [
     "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
     "0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(239, 68, 68, 0.6), 0 0 60px rgba(236, 72, 153, 0.4)",
