@@ -253,8 +253,6 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     setPosition({ x: 0, y: 0 });
   };
 
-  if (!isOpen) return null;
-
   return (
     <>
       {createPortal(
@@ -646,10 +644,9 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
         document.body,
       )}
 
-      {showFullPreview &&
-        previewUrl &&
-        createPortal(
-          <AnimatePresence mode="wait">
+      {createPortal(
+        <AnimatePresence mode="wait">
+          {showFullPreview && previewUrl && (
             <motion.div
               initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
               animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
@@ -714,9 +711,10 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                 </motion.div>
               </motion.div>
             </motion.div>
-          </AnimatePresence>,
-          document.body,
-        )}
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </>
   );
 };
