@@ -163,7 +163,7 @@ const ViewPurchase = () => {
       <div className="flex justify-between items-center mb-4 print:hidden">
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           onClick={() => navigate("/purchases")}
         >
           <div className="flex items-center">
@@ -173,7 +173,7 @@ const ViewPurchase = () => {
         <div className="flex items-center gap-2">
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={decreaseScale}
             title="Perkecil"
           >
@@ -182,7 +182,7 @@ const ViewPurchase = () => {
           <span className="mx-1 text-sm">{Math.round(scale * 100)}%</span>
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             onClick={increaseScale}
             title="Perbesar"
           >
