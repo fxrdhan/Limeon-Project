@@ -211,9 +211,10 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                     verticalAlign: "top",
                     lineHeight: "2em",
                     height: "2em",
+                    marginLeft: "0.4rem",
                   }}
                 >
-                  &nbsp;Management System
+                  Management System
                 </motion.span>
               )}
             </AnimatePresence>
