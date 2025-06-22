@@ -416,7 +416,7 @@ const Sidebar = ({
 
         <nav className="grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {menuItems.map((item) => (
-            <div key={item.name} className="mb-1">
+            <div key={item.name}>
               {item.children ? (
                 <>
                   <button
@@ -606,18 +606,27 @@ const Sidebar = ({
                   </AnimatePresence>
                 </>
               ) : (
-                <Link
-                  to={item.path}
-                  className={`w-full text-left flex items-center pl-2 pr-4 py-3 h-12 mx-2 rounded-lg
-                                            focus-visible:outline-hidden outline-hidden
-                                            focus:outline-hidden active:outline-hidden
-                                            ${
-                                              isActive(item.path)
-                                                ? "bg-primary text-white font-medium"
-                                                : "!text-gray-800 hover:bg-gray-100"
-                                            }
-                                            transition-all duration-150 group relative`}
-                  style={{ outline: "none" }}
+                <button
+                  onClick={() => {
+                    if (location.pathname !== item.path) {
+                      window.history.pushState({}, "", item.path);
+                      const navEvent = new PopStateEvent("popstate");
+                      window.dispatchEvent(navEvent);
+                    }
+                  }}
+                  className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
+                                                focus:outline-hidden active:outline-hidden mx-4 rounded-lg
+                                                ${
+                                                  isActive(item.path)
+                                                    ? "bg-primary text-white font-medium"
+                                                    : "text-gray-600 hover:bg-gray-100"
+                                                }
+                                                transition-all duration-150 group relative`}
+                  style={{
+                    outline: "none",
+                    border: "none",
+                    borderLeft: "4px solid transparent",
+                  }}
                 >
                   <div className="flex items-center overflow-hidden">
                     <div
@@ -631,7 +640,7 @@ const Sidebar = ({
                       {item.name}
                     </span>
                   </div>
-                </Link>
+                </button>
               )}
             </div>
           ))}
