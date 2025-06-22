@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import {
   FaDatabase,
@@ -92,88 +92,95 @@ const Sidebar = ({
     settings: false,
   });
 
+  const [manuallyClosedMenus, setManuallyClosedMenus] = useState<Set<string>>(
+    new Set(),
+  );
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const menuHoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const menuItems: MenuItem[] = [
-    {
-      name: "Dashboard",
-      path: "/",
-      icon: <FaHome className="text-lg" />,
-    },
-    {
-      name: "Master Data",
-      path: "/master-data",
-      icon: <FaDatabase className="text-lg" />,
-      children: [
-        { name: "Daftar Item", path: "/master-data/items" },
-        { name: "Kategori Item", path: "/master-data/categories" },
-        { name: "Jenis Item", path: "/master-data/types" },
-        { name: "Satuan", path: "/master-data/units" },
-        { name: "Supplier", path: "/master-data/suppliers" },
-        { name: "Pasien", path: "/master-data/patients" },
-        { name: "Dokter", path: "/master-data/doctors" },
-      ],
-    },
-    {
-      name: "Persediaan",
-      path: "/inventory",
-      icon: <FaBoxes className="text-lg" />,
-      children: [
-        { name: "Stok Obat", path: "/inventory/stock" },
-        { name: "Stok Opname", path: "/inventory/stock-opname" },
-        { name: "Obat Kadaluarsa", path: "/inventory/expired" },
-      ],
-    },
-    {
-      name: "Pembelian",
-      path: "/purchases",
-      icon: <FaShoppingCart className="text-lg" />,
-      children: [
-        { name: "Daftar Pesanan Beli", path: "/purchases/orders" },
-        { name: "Daftar Pembelian", path: "/purchases" },
-        { name: "Riwayat Harga Beli", path: "/purchases/price-history" },
-      ],
-    },
-    {
-      name: "Penjualan",
-      path: "/sales",
-      icon: <FaShoppingBag className="text-lg" />,
-      children: [
-        { name: "Daftar Penjualan", path: "/sales" },
-        { name: "Tambah Penjualan", path: "/sales/create" },
-      ],
-    },
-    {
-      name: "Klinik",
-      path: "/clinic",
-      icon: <FaHospital className="text-lg" />,
-      children: [
-        { name: "Daftar Pasien", path: "/clinic/patients" },
-        { name: "Antrian", path: "/clinic/queue" },
-        { name: "Rekam Medis", path: "/clinic/medical-records" },
-      ],
-    },
-    {
-      name: "Laporan",
-      path: "/reports",
-      icon: <FaChartBar className="text-lg" />,
-      children: [
-        { name: "Penjualan", path: "/reports/sales" },
-        { name: "Pembelian", path: "/reports/purchases" },
-        { name: "Stok", path: "/reports/stock" },
-      ],
-    },
-    {
-      name: "Pengaturan",
-      path: "/settings",
-      icon: <FaCog className="text-lg" />,
-      children: [
-        { name: "Profil", path: "/settings/profile" },
-        { name: "Pengguna", path: "/settings/users" },
-        { name: "Aplikasi", path: "/settings/app" },
-      ],
-    },
-  ];
+  const menuItems: MenuItem[] = useMemo(
+    () => [
+      {
+        name: "Dashboard",
+        path: "/",
+        icon: <FaHome className="text-lg" />,
+      },
+      {
+        name: "Master Data",
+        path: "/master-data",
+        icon: <FaDatabase className="text-lg" />,
+        children: [
+          { name: "Daftar Item", path: "/master-data/items" },
+          { name: "Kategori Item", path: "/master-data/categories" },
+          { name: "Jenis Item", path: "/master-data/types" },
+          { name: "Satuan", path: "/master-data/units" },
+          { name: "Supplier", path: "/master-data/suppliers" },
+          { name: "Pasien", path: "/master-data/patients" },
+          { name: "Dokter", path: "/master-data/doctors" },
+        ],
+      },
+      {
+        name: "Persediaan",
+        path: "/inventory",
+        icon: <FaBoxes className="text-lg" />,
+        children: [
+          { name: "Stok Obat", path: "/inventory/stock" },
+          { name: "Stok Opname", path: "/inventory/stock-opname" },
+          { name: "Obat Kadaluarsa", path: "/inventory/expired" },
+        ],
+      },
+      {
+        name: "Pembelian",
+        path: "/purchases",
+        icon: <FaShoppingCart className="text-lg" />,
+        children: [
+          { name: "Daftar Pesanan Beli", path: "/purchases/orders" },
+          { name: "Daftar Pembelian", path: "/purchases" },
+          { name: "Riwayat Harga Beli", path: "/purchases/price-history" },
+        ],
+      },
+      {
+        name: "Penjualan",
+        path: "/sales",
+        icon: <FaShoppingBag className="text-lg" />,
+        children: [
+          { name: "Daftar Penjualan", path: "/sales" },
+          { name: "Tambah Penjualan", path: "/sales/create" },
+        ],
+      },
+      {
+        name: "Klinik",
+        path: "/clinic",
+        icon: <FaHospital className="text-lg" />,
+        children: [
+          { name: "Daftar Pasien", path: "/clinic/patients" },
+          { name: "Antrian", path: "/clinic/queue" },
+          { name: "Rekam Medis", path: "/clinic/medical-records" },
+        ],
+      },
+      {
+        name: "Laporan",
+        path: "/reports",
+        icon: <FaChartBar className="text-lg" />,
+        children: [
+          { name: "Penjualan", path: "/reports/sales" },
+          { name: "Pembelian", path: "/reports/purchases" },
+          { name: "Stok", path: "/reports/stock" },
+        ],
+      },
+      {
+        name: "Pengaturan",
+        path: "/settings",
+        icon: <FaCog className="text-lg" />,
+        children: [
+          { name: "Profil", path: "/settings/profile" },
+          { name: "Pengguna", path: "/settings/users" },
+          { name: "Aplikasi", path: "/settings/app" },
+        ],
+      },
+    ],
+    [],
+  );
 
   const isActive = useCallback(
     (path: string) => {
@@ -196,14 +203,64 @@ const Sidebar = ({
   const toggleMenu = useCallback(
     (menu: string) => {
       if (!collapsed) {
-        setOpenMenus((prev) => ({
-          ...prev,
-          [menu]: !prev[menu],
-        }));
+        const isCurrentlyOpen = openMenus[menu];
+        setOpenMenus((prev) => ({ ...prev, [menu]: !isCurrentlyOpen }));
+        setManuallyClosedMenus((prevSet) => {
+          const newSet = new Set(prevSet);
+          if (isCurrentlyOpen) {
+            newSet.add(menu);
+          } else {
+            newSet.delete(menu);
+          }
+          return newSet;
+        });
       }
     },
-    [collapsed],
+    [collapsed, openMenus],
   );
+
+  const handleMenuMouseEnter = useCallback(
+    (menuKey: string) => {
+      if (!collapsed) {
+        if (menuHoverTimeoutRef.current) {
+          clearTimeout(menuHoverTimeoutRef.current);
+          menuHoverTimeoutRef.current = null;
+        }
+
+        const newManuallyClosed = new Set(manuallyClosedMenus);
+        newManuallyClosed.delete(menuKey);
+        setManuallyClosedMenus(newManuallyClosed);
+
+        setOpenMenus((prev) => {
+          const newState = { ...prev };
+          Object.keys(newState).forEach((key) => {
+            const menuItem = menuItems.find(
+              (item) => item.name.toLowerCase().replace(" ", "") === key,
+            );
+            const isMenuActive =
+              menuItem &&
+              (isActive(menuItem.path) || hasActiveChild(menuItem.children));
+            newState[key] =
+              key === menuKey ||
+              (Boolean(isMenuActive) && !newManuallyClosed.has(key));
+          });
+          return newState;
+        });
+      }
+    },
+    [collapsed, menuItems, isActive, hasActiveChild, manuallyClosedMenus],
+  );
+
+  const handleMenuMouseLeave = useCallback(() => {}, []);
+
+  const handleSubmenuMouseEnter = useCallback(() => {
+    if (menuHoverTimeoutRef.current) {
+      clearTimeout(menuHoverTimeoutRef.current);
+      menuHoverTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleSubmenuMouseLeave = useCallback(() => {}, []);
 
   const handleMouseEnterSidebar = useCallback(() => {
     if (hoverTimeoutRef.current) {
@@ -225,15 +282,69 @@ const Sidebar = ({
     if (!isLocked && !collapsed) {
       collapseSidebar();
     }
-  }, [collapsed, isLocked, collapseSidebar]);
+    if (!collapsed) {
+      menuHoverTimeoutRef.current = setTimeout(() => {
+        setOpenMenus((prev) => {
+          const newState = { ...prev };
+          Object.keys(newState).forEach((key) => {
+            const menuItem = menuItems.find(
+              (item) => item.name.toLowerCase().replace(" ", "") === key,
+            );
+            const isMenuActive =
+              menuItem &&
+              (isActive(menuItem.path) || hasActiveChild(menuItem.children));
+            newState[key] =
+              Boolean(isMenuActive) && !manuallyClosedMenus.has(key);
+          });
+          return newState;
+        });
+      }, 200);
+    }
+  }, [
+    collapsed,
+    isLocked,
+    collapseSidebar,
+    menuItems,
+    isActive,
+    hasActiveChild,
+    manuallyClosedMenus,
+  ]);
 
   useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
+      if (menuHoverTimeoutRef.current) {
+        clearTimeout(menuHoverTimeoutRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    setManuallyClosedMenus(new Set());
+
+    if (!collapsed) {
+      setOpenMenus((prev) => {
+        const newOpenMenus = { ...prev };
+        let hasChanges = false;
+
+        menuItems.forEach((item) => {
+          if (item.children) {
+            const menuKey = item.name.toLowerCase().replace(" ", "");
+            const shouldBeOpen =
+              isActive(item.path) || hasActiveChild(item.children);
+            if (newOpenMenus[menuKey] !== shouldBeOpen) {
+              newOpenMenus[menuKey] = shouldBeOpen;
+              hasChanges = true;
+            }
+          }
+        });
+
+        return hasChanges ? newOpenMenus : prev;
+      });
+    }
+  }, [location.pathname, collapsed, isActive, hasActiveChild, menuItems]);
 
   return (
     <aside
@@ -280,6 +391,12 @@ const Sidebar = ({
                     onClick={() =>
                       toggleMenu(item.name.toLowerCase().replace(" ", ""))
                     }
+                    onMouseEnter={() =>
+                      handleMenuMouseEnter(
+                        item.name.toLowerCase().replace(" ", ""),
+                      )
+                    }
+                    onMouseLeave={handleMenuMouseLeave}
                     className={`w-full text-left flex items-center px-4 py-3 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
                                                 focus:outline-hidden active:outline-hidden mx-2 rounded-lg
                                                 ${
@@ -319,6 +436,13 @@ const Sidebar = ({
                   </button>
 
                   <div
+                    onMouseEnter={() => {
+                      handleSubmenuMouseEnter();
+                      handleMenuMouseEnter(
+                        item.name.toLowerCase().replace(" ", ""),
+                      );
+                    }}
+                    onMouseLeave={handleSubmenuMouseLeave}
                     className={`overflow-hidden transition-all duration-500 ease-in-out ${
                       !collapsed &&
                       openMenus[item.name.toLowerCase().replace(" ", "")]
@@ -338,10 +462,15 @@ const Sidebar = ({
                                                               isActive(
                                                                 child.path,
                                                               )
-                                                                ? "bg-emerald-100 text-emerald-800 font-medium hover:bg-emerald-200"
-                                                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
+                                                                ? "bg-emerald-100 font-medium"
+                                                                : "hover:bg-gray-100"
                                                             } whitespace-nowrap overflow-hidden text-ellipsis`}
-                          style={{ outline: "none" }}
+                          style={{
+                            outline: "none",
+                            color: isActive(child.path)
+                              ? "oklch(50.8% 0.118 165.612)"
+                              : "oklch(44.6% 0.043 257.281)",
+                          }}
                         >
                           {child.name}
                         </Link>
