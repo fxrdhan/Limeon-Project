@@ -1327,7 +1327,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tailwindcss/postcss@latest":
+"@tailwindcss/postcss@npm:^4.1.10":
   version: 4.1.10
   resolution: "@tailwindcss/postcss@npm:4.1.10"
   dependencies:
@@ -1354,7 +1354,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tanstack/react-query-devtools@npm:^5.80.7":
+"@tanstack/react-query-devtools@npm:^5.81.2":
   version: 5.81.2
   resolution: "@tanstack/react-query-devtools@npm:5.81.2"
   dependencies:
@@ -1366,7 +1366,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tanstack/react-query@npm:^5.80.7":
+"@tanstack/react-query@npm:^5.81.2":
   version: 5.81.2
   resolution: "@tanstack/react-query@npm:5.81.2"
   dependencies:
@@ -1692,9 +1692,9 @@ __metadata:
     "@headlessui/react": ^2.2.4
     "@supabase/supabase-js": ^2.50.0
     "@tailwindcss/cli": ^4.1.10
-    "@tailwindcss/postcss": latest
-    "@tanstack/react-query": ^5.80.7
-    "@tanstack/react-query-devtools": ^5.80.7
+    "@tailwindcss/postcss": ^4.1.10
+    "@tanstack/react-query": ^5.81.2
+    "@tanstack/react-query-devtools": ^5.81.2
     "@types/node": ^24.0.3
     "@types/react": ^19.1.8
     "@types/react-dom": ^19.1.6
@@ -1702,7 +1702,7 @@ __metadata:
     axios: ^1.10.0
     browser-image-compression: ^2.0.2
     chart.js: ^4.5.0
-    concurrently: ^9.1.2
+    concurrently: ^9.2.0
     dayjs: ^1.11.13
     dotenv: ^16.5.0
     eslint: ^9.29.0
@@ -1716,7 +1716,7 @@ __metadata:
     react-dom: ^19.1.0
     react-icons: ^5.5.0
     react-router-dom: ^7.6.2
-    supabase: ^2.26.9
+    supabase: ^2.28.1
     tailwindcss: ^4.1.10
     tsx: ^4.20.3
     typescript: ^5.8.3
@@ -1928,7 +1928,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"concurrently@npm:^9.1.2":
+"concurrently@npm:^9.2.0":
   version: 9.2.0
   resolution: "concurrently@npm:9.2.0"
   dependencies:
@@ -3874,7 +3874,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"supabase@npm:^2.26.9":
+"supabase@npm:^2.28.1":
   version: 2.28.1
   resolution: "supabase@npm:2.28.1"
   dependencies:
