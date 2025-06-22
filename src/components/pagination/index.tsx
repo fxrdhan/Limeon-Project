@@ -66,7 +66,7 @@ const Pagination = ({
               layout
               className={classNames(
                 "group px-3 py-1.5 rounded-full focus:outline-hidden select-none relative transition-colors duration-300 cursor-pointer",
-                itemsPerPage !== size ? "hover:bg-teal-100" : "",
+                itemsPerPage !== size ? "hover:bg-emerald-100" : "",
               )}
               onClick={(event) => handleItemsPerPageClick(size, event)}
               animate={{
@@ -88,7 +88,7 @@ const Pagination = ({
                   "relative z-10 select-none transition-colors duration-300 ease-in-out",
                   itemsPerPage === size
                     ? "text-white font-medium"
-                    : "text-gray-700 group-hover:text-teal-700",
+                    : "text-gray-700 group-hover:text-emerald-700",
                 )}
               >
                 {itemsPerPage === size ? `${size} items` : size.toString()}
@@ -111,7 +111,7 @@ const Pagination = ({
             "p-2 rounded-full focus:outline-hidden transition-colors duration-150 cursor-pointer select-none",
             currentPage === 1
               ? "opacity-50 cursor-not-allowed"
-              : "hover:bg-teal-100 hover:text-secondary transition-all duration-300 ease-in-out",
+              : "hover:bg-emerald-100 hover:text-secondary transition-all duration-300 ease-in-out",
           )}
           aria-label="Halaman sebelumnya"
         >
@@ -158,7 +158,7 @@ const Pagination = ({
             "p-2 rounded-full focus:outline-hidden transition-colors duration-150 cursor-pointer select-none",
             currentPage === totalPages || totalPages === 0
               ? "opacity-50 cursor-not-allowed"
-              : "hover:bg-teal-100 hover:text-secondary transition-all duration-300 ease-in-out",
+              : "hover:bg-emerald-100 hover:text-secondary transition-all duration-300 ease-in-out",
           )}
           aria-label="Halaman berikutnya"
         >
