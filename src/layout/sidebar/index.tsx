@@ -239,18 +239,18 @@ const Sidebar = ({
     <aside
       onMouseEnter={handleMouseEnterSidebar}
       onMouseLeave={handleMouseLeaveSidebar}
-      className={`sidebar bg-linear-to-b from-teal-600 to-teal-800 text-white
+      className={`sidebar bg-white text-gray-800 border-r border-gray-200
                         transition-all duration-500 ease-in-out h-screen
                         ${collapsed ? "w-16" : "w-64"} relative group z-10`}
     >
       <div className="flex flex-col h-full">
-        <div className="p-4 border-b border-primary/30 flex items-center justify-between">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="h-8 w-8 min-w-8 bg-white rounded-md flex items-center justify-center shrink-0">
-              <span className="text-teal-600 text-xl font-bold">P</span>
+            <div className="h-10 w-10 min-w-8 bg-primary rounded-md flex items-center justify-center shrink-0">
+              <span className="text-white text-xl font-bold">P</span>
             </div>
             <h2
-              className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? "opacity-0 scale-0 w-0" : "opacity-100 scale-100 w-auto"} text-white`}
+              className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? "opacity-0 scale-0 w-0" : "opacity-100 scale-100 w-auto"} text-gray-800`}
             >
               PharmaSys
             </h2>
@@ -258,7 +258,7 @@ const Sidebar = ({
           {!collapsed && (
             <motion.button
               onClick={toggleLock}
-              className="p-2 rounded-full text-teal-100 hover:bg-teal-700 focus:outline-hidden transition-colors duration-150 relative overflow-hidden"
+              className="p-2 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-hidden transition-colors duration-150 relative overflow-hidden"
               title={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
               aria-label={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
               whileHover={{ scale: 1.05 }}
@@ -281,12 +281,12 @@ const Sidebar = ({
                       toggleMenu(item.name.toLowerCase().replace(" ", ""))
                     }
                     className={`w-full text-left flex items-center px-4 py-3 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
-                                                focus:outline-hidden active:outline-hidden
+                                                focus:outline-hidden active:outline-hidden mx-2 rounded-lg
                                                 ${
                                                   isActive(item.path) ||
                                                   hasActiveChild(item.children)
-                                                    ? "bg-teal-500/40 font-medium border-l-4 border-teal-100"
-                                                    : "border-l-4 border-transparent hover:bg-teal-700/60"
+                                                    ? "bg-primary text-white font-medium"
+                                                    : "text-gray-800 hover:bg-gray-100"
                                                 }
                                                 transition-all duration-150 group relative`}
                     style={{
@@ -297,19 +297,19 @@ const Sidebar = ({
                   >
                     <div className="flex items-center overflow-hidden">
                       <div
-                        className={`shrink-0 flex items-center justify-center ${isActive(item.path) || hasActiveChild(item.children) ? "text-teal-50" : "text-teal-100"} transition-colors duration-200`}
+                        className={`shrink-0 flex items-center justify-center transition-colors duration-200`}
                       >
                         {item.icon}
                       </div>
                       <span
-                        className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full"}`}
+                        className={`ml-3 truncate transition-all duration-300 ease-in-out ${collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full"}`}
                       >
                         {item.name}
                       </span>
                     </div>
                     {!collapsed && item.children && (
                       <FaAngleDown
-                        className={`text-sm text-teal-100/80 transition-transform duration-300 ease-in-out ${
+                        className={`text-sm transition-transform duration-300 ease-in-out ${
                           openMenus[item.name.toLowerCase().replace(" ", "")]
                             ? "rotate-180"
                             : "rotate-0"
@@ -326,7 +326,7 @@ const Sidebar = ({
                         : "max-h-0 opacity-0"
                     }`}
                   >
-                    <div className="pl-10 pr-1 py-0.5 bg-teal-900/50">
+                    <div className="pl-10 pr-1 py-0.5">
                       {item.children.map((child) => (
                         <Link
                           key={child.name}
@@ -338,8 +338,8 @@ const Sidebar = ({
                                                               isActive(
                                                                 child.path,
                                                               )
-                                                                ? "bg-teal-500/40 text-white font-medium hover:bg-teal-500/50 hover:text-white"
-                                                                : "text-teal-100 hover:bg-teal-600/40 hover:text-white"
+                                                                ? "bg-emerald-100 text-emerald-800 font-medium hover:bg-emerald-200"
+                                                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
                                                             } whitespace-nowrap overflow-hidden text-ellipsis`}
                           style={{ outline: "none" }}
                         >
@@ -352,25 +352,25 @@ const Sidebar = ({
               ) : (
                 <Link
                   to={item.path}
-                  className={`w-full text-left flex items-center px-4 py-3 h-12
+                  className={`w-full text-left flex items-center px-4 py-3 h-12 mx-2 rounded-lg
                                             focus-visible:outline-hidden outline-hidden
                                             focus:outline-hidden active:outline-hidden
                                             ${
                                               isActive(item.path)
-                                                ? "bg-teal-500/40 font-medium border-l-4 border-teal-100"
-                                                : "border-l-4 border-transparent hover:bg-teal-700/60"
+                                                ? "bg-primary text-white font-medium"
+                                                : "text-gray-800 hover:bg-gray-100"
                                             }
                                             transition-all duration-150 group relative`}
                   style={{ outline: "none" }}
                 >
                   <div className="flex items-center overflow-hidden">
                     <div
-                      className={`shrink-0 flex items-center justify-center ${isActive(item.path) ? "text-teal-50" : "text-teal-100"} transition-colors duration-200`}
+                      className={`shrink-0 flex items-center justify-center transition-colors duration-200`}
                     >
                       {item.icon}
                     </div>
                     <span
-                      className={`ml-3 truncate text-white transition-all duration-300 ease-in-out ${collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full"}`}
+                      className={`ml-3 truncate transition-all duration-300 ease-in-out ${collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full"}`}
                     >
                       {item.name}
                     </span>
@@ -382,7 +382,7 @@ const Sidebar = ({
         </nav>
 
         <div
-          className={`p-4 text-xs text-teal-200/70 border-t border-teal-500/30 mt-auto`}
+          className={`p-4 text-xs text-gray-500 border-t border-gray-200 mt-auto`}
         >
           <div className="h-4">
             <div

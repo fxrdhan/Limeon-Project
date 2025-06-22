@@ -42,7 +42,7 @@ const DateTimeDisplay = () => {
     }, []);
 
     return (
-        <div className="text-md font-mono text-teal-700 tracking-tight flex items-baseline tabular-nums">
+        <div className="text-md font-mono text-emerald-700 tracking-tight flex items-baseline tabular-nums">
             {datePart && <span className="mr-1">{datePart} -</span>}
             {hours ? (
                 <>
