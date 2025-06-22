@@ -363,6 +363,21 @@ const Sidebar = ({
     }
   }, [location.pathname, collapsed, isActive, hasActiveChild, menuItems]);
 
+  // Get active submenu item for smooth indicator positioning
+  const getActiveSubmenuItem = useCallback(
+    (children: { name: string; path: string }[]) => {
+      return children.find((child) => location.pathname === child.path);
+    },
+    [location.pathname],
+  );
+
+  const activeSubmenuIndex = useCallback(
+    (children: { name: string; path: string }[]) => {
+      return children.findIndex((child) => location.pathname === child.path);
+    },
+    [location.pathname],
+  );
+
   return (
     <aside
       onMouseEnter={handleMouseEnterSidebar}
@@ -386,7 +401,7 @@ const Sidebar = ({
           {!collapsed && (
             <motion.button
               onClick={toggleLock}
-              className="p-2 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-hidden transition-colors duration-150 relative overflow-hidden"
+              className="p-2 rounded-full text-gray-400 hover:bg-gray-100 focus:outline-hidden transition-colors duration-150 relative overflow-hidden"
               title={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
               aria-label={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
               whileHover={{ scale: 1.05 }}
@@ -420,7 +435,7 @@ const Sidebar = ({
                                                   isActive(item.path) ||
                                                   hasActiveChild(item.children)
                                                     ? "bg-primary text-white font-medium"
-                                                    : "text-gray-800 hover:bg-gray-100"
+                                                    : "text-gray-600 hover:bg-gray-100"
                                                 }
                                                 transition-all duration-150 group relative`}
                     style={{
@@ -486,42 +501,97 @@ const Sidebar = ({
                             variants={submenuContainerVariants}
                             className="pl-12 pr-2 py-4 relative"
                           >
+                            {/* Static background line */}
                             <div className="absolute left-9 top-4 bottom-4 w-0.5 bg-gray-300"></div>
+
+                            {/* Animated active indicator */}
+                            <AnimatePresence>
+                              {item.children &&
+                                getActiveSubmenuItem(item.children) && (
+                                  <motion.div
+                                    layoutId={`active-submenu-indicator-${item.name}`}
+                                    className="absolute left-9 w-0.5 bg-primary z-20"
+                                    initial={{
+                                      y: activeSubmenuIndex(item.children) * 48,
+                                      height: 48,
+                                      opacity: 0,
+                                      scale: 0.8,
+                                    }}
+                                    animate={{
+                                      y: activeSubmenuIndex(item.children) * 48,
+                                      height: 48,
+                                      opacity: 1,
+                                      scale: 1,
+                                    }}
+                                    exit={{
+                                      opacity: 0,
+                                      scale: 0.8,
+                                      transition: { duration: 0.2 },
+                                    }}
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 300,
+                                      damping: 30,
+                                      mass: 0.8,
+                                    }}
+                                  />
+                                )}
+                            </AnimatePresence>
+
                             {item.children &&
                               item.children.map((child) => {
                                 const isActiveChild =
                                   location.pathname === child.path;
                                 return (
-                                  <div key={child.name} className="relative">
-                                    {isActiveChild && (
-                                      <span
-                                        className="absolute left-[-10px] top-0 w-1 h-full -translate-x-1/2"
-                                        style={{
-                                          borderLeft:
-                                            "2px solid oklch(59.6% 0.145 163.225)",
-                                          zIndex: 0,
-                                        }}
-                                      />
-                                    )}
-                                    {isActiveChild && (
-                                      <span className="absolute left-[-15px] top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-secondary z-10"></span>
-                                    )}
+                                  <div
+                                    key={child.name}
+                                    className="relative"
+                                    style={{ height: "48px" }}
+                                  >
+                                    {/* Active dot indicator */}
+                                    <AnimatePresence>
+                                      {isActiveChild && (
+                                        <motion.div
+                                          className="absolute left-[-15px] top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-primary z-30"
+                                          initial={{
+                                            scale: 0,
+                                            opacity: 0,
+                                          }}
+                                          animate={{
+                                            scale: 1,
+                                            opacity: 1,
+                                          }}
+                                          exit={{
+                                            scale: 0,
+                                            opacity: 0,
+                                          }}
+                                          transition={{
+                                            type: "spring",
+                                            stiffness: 400,
+                                            damping: 25,
+                                            delay: 0.1,
+                                          }}
+                                        />
+                                      )}
+                                    </AnimatePresence>
+
                                     <motion.div variants={submenuItemVariants}>
                                       <Link
                                         to={child.path}
-                                        className={`block px-3 py-3 text-sm rounded-md transition duration-300 ease-in-out
+                                        className={`block px-3 py-3 text-sm rounded-md transition-all duration-300 ease-in-out
                                                                 focus-visible:outline-hidden outline-hidden
                                                                 focus:outline-hidden active:outline-hidden
+                                                                transform hover:translate-x-1
                                                                 ${
                                                                   isActiveChild
-                                                                    ? "bg-emerald-100 font-medium"
-                                                                    : "hover:bg-gray-100"
+                                                                    ? "font-medium scale-[1.02] bg-emerald-50"
+                                                                    : "hover:bg-gray-100 hover:shadow-sm"
                                                                 } whitespace-nowrap overflow-hidden text-ellipsis`}
                                         style={{
                                           outline: "none",
                                           color: isActiveChild
                                             ? "oklch(50.8% 0.118 165.612)"
-                                            : "oklch(44.6% 0.043 257.281)",
+                                            : "oklch(55.1% 0.027 264.364)",
                                         }}
                                       >
                                         {child.name}
@@ -544,7 +614,7 @@ const Sidebar = ({
                                             ${
                                               isActive(item.path)
                                                 ? "bg-primary text-white font-medium"
-                                                : "text-gray-800 hover:bg-gray-100"
+                                                : "!text-gray-800 hover:bg-gray-100"
                                             }
                                             transition-all duration-150 group relative`}
                   style={{ outline: "none" }}
