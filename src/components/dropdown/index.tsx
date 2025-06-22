@@ -477,7 +477,7 @@ const Dropdown = ({
             ref={buttonRef}
             type="button"
             tabIndex={tabIndex}
-            className="py-2.5 px-3 w-full inline-flex justify-between items-center text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-teal-100 focus:border-primary transition duration-200 ease-in-out"
+            className="py-2.5 px-3 w-full inline-flex justify-between items-center text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-emerald-100 focus:border-primary transition duration-200 ease-in-out"
             aria-haspopup="menu"
             aria-expanded={isOpen || isClosing}
             onClick={toggleDropdown}
@@ -567,7 +567,7 @@ const Dropdown = ({
                             <input
                               ref={searchInputRef}
                               type="text"
-                              className="w-full py-2 px-2 pl-8 pr-2 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-3 focus:ring-teal-100 focus:border-primary transition duration-200 ease-in-out min-w-0"
+                              className="w-full py-2 px-2 pl-8 pr-2 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-3 focus:ring-emerald-100 focus:border-primary transition duration-200 ease-in-out min-w-0"
                               placeholder="Cari..."
                               value={searchTerm}
                               onChange={handleSearchChange}
@@ -595,7 +595,7 @@ const Dropdown = ({
                             <button
                               ref={addNewButtonRef}
                               type="button"
-                              className="bg-primary text-white p-1.5 rounded-lg shrink-0 hover:ring-3 hover:ring-teal-100 focus:outline-hidden focus:ring-3 focus:ring-teal-100 transition duration-200 ease-in-out min-w-[16px]"
+                              className="bg-primary text-white p-1.5 rounded-lg shrink-0 hover:ring-3 hover:ring-emerald-100 focus:outline-hidden focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out min-w-[16px]"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (onAddNew) onAddNew(searchTerm);
