@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
-import "../output.css";
+import "./output.css";
 
 // Import development console filter to reduce WebSocket error noise
 import "./utils/devConsoleFilter";
