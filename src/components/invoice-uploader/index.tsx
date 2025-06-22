@@ -502,9 +502,9 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                           }}
                           className={`border-2 ${
                             isDragging
-                              ? "border-primary bg-teal-50"
+                              ? "border-primary bg-emerald-50"
                               : isHovering
-                                ? "border-dashed border-primary bg-teal-25"
+                                ? "border-dashed border-primary bg-emerald-25"
                                 : "border-dashed border-gray-300"
                           }
                                                   rounded-xl p-10 text-center cursor-pointer w-full min-h-[160px] flex items-center justify-center`}
@@ -604,7 +604,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             <motion.div
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.95 }}
-                              className={`rounded-full ${isHovering ? "bg-teal-100" : "bg-gray-200"} p-4 inline-flex mb-3 transition-all duration-300 ease-out outline-none focus:outline-none border-0 ring-0 focus:ring-0`}
+                              className={`rounded-full ${isHovering ? "bg-emerald-100" : "bg-gray-200"} p-4 inline-flex mb-3 transition-all duration-300 ease-out outline-none focus:outline-none border-0 ring-0 focus:ring-0`}
                               style={{
                                 backfaceVisibility: "hidden",
                                 WebkitBackfaceVisibility: "hidden",
@@ -629,17 +629,17 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                 }
                               >
                                 <FaUpload
-                                  className={`mx-auto h-8 w-8 ${isHovering ? "text-teal-600" : "text-gray-600"} transition-all duration-300 ease-out`}
+                                  className={`mx-auto h-8 w-8 ${isHovering ? "text-primary" : "text-gray-600"} transition-all duration-300 ease-out`}
                                 />
                               </motion.div>
                             </motion.div>
                             <p
-                              className={`text-sm font-medium transition-colors duration-300 ease-out ${isHovering ? "text-teal-700" : "text-gray-700"}`}
+                              className={`text-sm font-medium transition-colors duration-300 ease-out ${isHovering ? "text-emerald-700" : "text-gray-700"}`}
                             >
                               Klik atau seret untuk mengunggah gambar faktur
                             </p>
                             <p
-                              className={`text-xs mt-1 transition-colors duration-300 ease-out ${isHovering ? "text-teal-500" : "text-gray-500"}`}
+                              className={`text-xs mt-1 transition-colors duration-300 ease-out ${isHovering ? "text-emerald-500" : "text-gray-500"}`}
                             >
                               PNG, JPG (Maks. 5MB)
                             </p>

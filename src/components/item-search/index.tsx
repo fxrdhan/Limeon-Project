@@ -290,7 +290,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                             type="text"
                             aria-haspopup="listbox"
                             placeholder="Cari nama atau kode item..."
-                            className="w-full text-sm p-3 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-teal-100 transition duration-200 ease-in-out"
+                            className="w-full text-sm p-3 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"
                             value={searchItem}
                             onChange={(e) => {
                                 const value = e.target.value;
