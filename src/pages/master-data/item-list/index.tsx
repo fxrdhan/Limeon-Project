@@ -168,7 +168,7 @@ function ItemList() {
                         key={item.id}
                         onClick={() => handleItemEdit(item)}
                         className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch ? "bg-teal-100/50" : ""
+                          index === 0 && debouncedSearch ? "bg-emerald-100/50" : ""
                         }`}
                       >
                         <TableCell>{item.name}</TableCell>
