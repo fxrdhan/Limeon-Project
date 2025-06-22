@@ -187,7 +187,9 @@ const Sidebar = ({
       if (path === "/") {
         return location.pathname === "/";
       }
-      return location.pathname.startsWith(path);
+      return (
+        location.pathname === path || location.pathname.startsWith(path + "/")
+      );
     },
     [location],
   );
@@ -195,9 +197,15 @@ const Sidebar = ({
   const hasActiveChild = useCallback(
     (children?: { path: string }[]) => {
       if (!children) return false;
-      return children.some((child) => isActive(child.path));
+      const exactMatch = children.find(
+        (child) => location.pathname === child.path,
+      );
+      if (exactMatch) return true;
+
+      const matches = children.filter((child) => isActive(child.path));
+      return matches.length === 1;
     },
-    [isActive],
+    [isActive, location.pathname],
   );
 
   const toggleMenu = useCallback(
@@ -459,17 +467,17 @@ const Sidebar = ({
                                                             focus-visible:outline-hidden outline-hidden
                                                             focus:outline-hidden active:outline-hidden
                                                             ${
-                                                              isActive(
-                                                                child.path,
-                                                              )
+                                                              location.pathname ===
+                                                              child.path
                                                                 ? "bg-emerald-100 font-medium"
                                                                 : "hover:bg-gray-100"
                                                             } whitespace-nowrap overflow-hidden text-ellipsis`}
                           style={{
                             outline: "none",
-                            color: isActive(child.path)
-                              ? "oklch(50.8% 0.118 165.612)"
-                              : "oklch(44.6% 0.043 257.281)",
+                            color:
+                              location.pathname === child.path
+                                ? "oklch(50.8% 0.118 165.612)"
+                                : "oklch(44.6% 0.043 257.281)",
                           }}
                         >
                           {child.name}
