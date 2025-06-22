@@ -1,76 +1,59 @@
-import { Link } from "react-router-dom";
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useLocation } from "react-router-dom";
 import {
+  FaHome,
   FaDatabase,
   FaBoxes,
   FaShoppingCart,
-  FaHome,
-  FaChartBar,
-  FaHospital,
   FaShoppingBag,
+  FaHospital,
+  FaChartBar,
   FaCog,
   FaAngleDown,
+  FaLock,
+  FaUnlock,
 } from "react-icons/fa";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import type { SidebarProps, MenuItem } from "@/types";
+import { useState, useMemo, useCallback, useEffect, useRef, JSX } from "react";
 
-const LockIcon = ({ className }: { className?: string }) => (
-  <motion.svg
-    key="lock-closed"
-    initial={{ scale: 0.7, opacity: 0, rotate: -10 }}
-    animate={{ scale: 1, opacity: 1, rotate: 0 }}
-    exit={{ scale: 0.7, opacity: 0, rotate: 10 }}
-    transition={{
-      duration: 0.4,
-      type: "spring",
-      stiffness: 300,
-      damping: 20,
-      ease: [0.25, 0.46, 0.45, 0.94],
-    }}
-    className={className}
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ transformOrigin: "center" }}
+interface MenuItem {
+  name: string;
+  path: string;
+  icon: JSX.Element;
+  children?: { name: string; path: string }[];
+}
+
+interface SidebarProps {
+  collapsed: boolean;
+  isLocked: boolean;
+  toggleLock: () => void;
+  expandSidebar: () => void;
+  collapseSidebar: () => void;
+}
+
+const LockIcon = () => (
+  <motion.div
+    key="lock"
+    initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+    exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+    transition={{ duration: 0.2 }}
+    className="absolute inset-0 flex items-center justify-center"
   >
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </motion.svg>
+    <FaLock />
+  </motion.div>
 );
 
-const UnlockIcon = ({ className }: { className?: string }) => (
-  <motion.svg
-    key="lock-open"
-    initial={{ scale: 0.7, opacity: 0, rotate: 10 }}
-    animate={{ scale: 1, opacity: 1, rotate: 0 }}
-    exit={{ scale: 0.7, opacity: 0, rotate: -10 }}
-    transition={{
-      duration: 0.4,
-      type: "spring",
-      stiffness: 300,
-      damping: 20,
-      ease: [0.25, 0.46, 0.45, 0.94],
-    }}
-    className={className}
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{ transformOrigin: "center" }}
+const UnlockIcon = () => (
+  <motion.div
+    key="unlock"
+    initial={{ opacity: 0, rotate: 90, scale: 0.5 }}
+    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+    exit={{ opacity: 0, rotate: -90, scale: 0.5 }}
+    transition={{ duration: 0.2 }}
+    className="absolute inset-0 flex items-center justify-center"
   >
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-    <path d="M7 11V7a5 5 0 0 1 9.9-1" />
-  </motion.svg>
+    <FaUnlock />
+  </motion.div>
 );
 
 const Sidebar = ({
@@ -181,6 +164,32 @@ const Sidebar = ({
     ],
     [],
   );
+
+  const submenuContainerVariants = {
+    open: {
+      transition: { staggerChildren: 0.05, delayChildren: 0.1 },
+    },
+    collapsed: {
+      transition: { staggerChildren: 0.03, staggerDirection: -1 },
+    },
+  };
+
+  const submenuItemVariants = {
+    open: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        x: { stiffness: 1000, velocity: -100 },
+      },
+    },
+    collapsed: {
+      x: -10,
+      opacity: 0,
+      transition: {
+        x: { stiffness: 1000 },
+      },
+    },
+  };
 
   const isActive = useCallback(
     (path: string) => {
@@ -360,7 +369,7 @@ const Sidebar = ({
       onMouseLeave={handleMouseLeaveSidebar}
       className={`sidebar bg-white text-gray-800 border-r border-gray-200
                         transition-all duration-500 ease-in-out h-screen
-                        ${collapsed ? "w-16" : "w-64"} relative group z-10`}
+                        ${collapsed ? "w-20" : "w-64"} relative group z-10`}
     >
       <div className="flex flex-col h-full">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
@@ -405,8 +414,8 @@ const Sidebar = ({
                       )
                     }
                     onMouseLeave={handleMenuMouseLeave}
-                    className={`w-full text-left flex items-center px-4 py-3 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
-                                                focus:outline-hidden active:outline-hidden mx-2 rounded-lg
+                    className={`w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0
+                                                focus:outline-hidden active:outline-hidden mx-4 rounded-lg
                                                 ${
                                                   isActive(item.path) ||
                                                   hasActiveChild(item.children)
@@ -433,63 +442,103 @@ const Sidebar = ({
                       </span>
                     </div>
                     {!collapsed && item.children && (
-                      <FaAngleDown
-                        className={`text-sm transition-transform duration-300 ease-in-out ${
-                          openMenus[item.name.toLowerCase().replace(" ", "")]
-                            ? "rotate-180"
-                            : "rotate-0"
-                        }`}
-                      />
+                      <motion.div
+                        className="mr-4"
+                        animate={{
+                          rotate: openMenus[
+                            item.name.toLowerCase().replace(" ", "")
+                          ]
+                            ? 180
+                            : 0,
+                        }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                      >
+                        <FaAngleDown className="text-sm" />
+                      </motion.div>
                     )}
                   </button>
-
-                  <div
-                    onMouseEnter={() => {
-                      handleSubmenuMouseEnter();
-                      handleMenuMouseEnter(
-                        item.name.toLowerCase().replace(" ", ""),
-                      );
-                    }}
-                    onMouseLeave={handleSubmenuMouseLeave}
-                    className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                      !collapsed &&
-                      openMenus[item.name.toLowerCase().replace(" ", "")]
-                        ? "max-h-96 opacity-100"
-                        : "max-h-0 opacity-0"
-                    }`}
-                  >
-                    <div className="pl-10 pr-1 py-0.5">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.name}
-                          to={child.path}
-                          className={`block px-3 py-2 my-0.5 text-sm rounded-md transition duration-300 ease-in-out
-                                                            focus-visible:outline-hidden outline-hidden
-                                                            focus:outline-hidden active:outline-hidden
-                                                            ${
-                                                              location.pathname ===
-                                                              child.path
-                                                                ? "bg-emerald-100 font-medium"
-                                                                : "hover:bg-gray-100"
-                                                            } whitespace-nowrap overflow-hidden text-ellipsis`}
-                          style={{
-                            outline: "none",
-                            color:
-                              location.pathname === child.path
-                                ? "oklch(50.8% 0.118 165.612)"
-                                : "oklch(44.6% 0.043 257.281)",
+                  <AnimatePresence initial={false}>
+                    {!collapsed &&
+                      openMenus[item.name.toLowerCase().replace(" ", "")] && (
+                        <motion.div
+                          key="submenu-content"
+                          initial="collapsed"
+                          animate="open"
+                          exit="collapsed"
+                          variants={{
+                            open: { opacity: 1, height: "auto" },
+                            collapsed: { opacity: 0, height: 0 },
                           }}
+                          transition={{
+                            duration: 0.4,
+                            ease: "easeInOut",
+                          }}
+                          onMouseEnter={() => {
+                            handleSubmenuMouseEnter();
+                            handleMenuMouseEnter(
+                              item.name.toLowerCase().replace(" ", ""),
+                            );
+                          }}
+                          onMouseLeave={handleSubmenuMouseLeave}
+                          className="overflow-hidden"
                         >
-                          {child.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
+                          <motion.div
+                            variants={submenuContainerVariants}
+                            className="pl-12 pr-2 py-4 relative"
+                          >
+                            <div className="absolute left-9 top-4 bottom-4 w-0.5 bg-gray-300"></div>
+                            {item.children &&
+                              item.children.map((child) => {
+                                const isActiveChild =
+                                  location.pathname === child.path;
+                                return (
+                                  <div key={child.name} className="relative">
+                                    {isActiveChild && (
+                                      <span
+                                        className="absolute left-[-10px] top-0 w-1 h-full -translate-x-1/2"
+                                        style={{
+                                          borderLeft:
+                                            "2px solid oklch(59.6% 0.145 163.225)",
+                                          zIndex: 0,
+                                        }}
+                                      />
+                                    )}
+                                    {isActiveChild && (
+                                      <span className="absolute left-[-15px] top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-secondary z-10"></span>
+                                    )}
+                                    <motion.div variants={submenuItemVariants}>
+                                      <Link
+                                        to={child.path}
+                                        className={`block px-3 py-3 text-sm rounded-md transition duration-300 ease-in-out
+                                                                focus-visible:outline-hidden outline-hidden
+                                                                focus:outline-hidden active:outline-hidden
+                                                                ${
+                                                                  isActiveChild
+                                                                    ? "bg-emerald-100 font-medium"
+                                                                    : "hover:bg-gray-100"
+                                                                } whitespace-nowrap overflow-hidden text-ellipsis`}
+                                        style={{
+                                          outline: "none",
+                                          color: isActiveChild
+                                            ? "oklch(50.8% 0.118 165.612)"
+                                            : "oklch(44.6% 0.043 257.281)",
+                                        }}
+                                      >
+                                        {child.name}
+                                      </Link>
+                                    </motion.div>
+                                  </div>
+                                );
+                              })}
+                          </motion.div>
+                        </motion.div>
+                      )}
+                  </AnimatePresence>
                 </>
               ) : (
                 <Link
                   to={item.path}
-                  className={`w-full text-left flex items-center px-4 py-3 h-12 mx-2 rounded-lg
+                  className={`w-full text-left flex items-center pl-2 pr-4 py-3 h-12 mx-2 rounded-lg
                                             focus-visible:outline-hidden outline-hidden
                                             focus:outline-hidden active:outline-hidden
                                             ${
