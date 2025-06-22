@@ -46,9 +46,9 @@ const CheckboxComponent: React.ForwardRefRenderFunction<
       />
       <motion.div
         className={classNames(
-          "relative w-5 h-5 border-2 rounded-xs flex items-center justify-center mr-2 shrink-0 transition-colors duration-200 group-focus:border-teal-400",
+          "relative w-5 h-5 border-2 rounded-xs flex items-center justify-center mr-2 shrink-0 transition-colors duration-200 group-focus:border-emerald-400",
           checked ? "bg-primary border-primary" : "bg-white border-gray-300",
-          !disabled && !checked ? "group-hover:border-teal-400" : "",
+          !disabled && !checked ? "group-hover:border-emerald-400" : "",
         )}
       >
         <AnimatePresence>
