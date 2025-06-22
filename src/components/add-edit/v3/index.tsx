@@ -345,7 +345,7 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
                             setInputRef(field.key, el as HTMLTextAreaElement)
                           }
                           id={field.key}
-                          className="text-sm w-full p-2 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-teal-100 transition duration-200 ease-in-out"
+                          className="text-sm w-full p-2 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"
                           value={String(editValues[field.key] ?? "")}
                           onChange={(
                             e: React.ChangeEvent<HTMLTextAreaElement>,
