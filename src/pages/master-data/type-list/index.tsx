@@ -90,6 +90,7 @@ const TypeList = () => {
             variant="primary"
             className="flex items-center ml-4 mb-4"
             onClick={() => setIsAddModalOpen(true)}
+            withGlow
           >
             <FaPlus className="mr-2" />
             Tambah Jenis Item Baru
