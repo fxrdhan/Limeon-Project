@@ -291,7 +291,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
             animate={isClosing ? "exit" : "visible"}
             exit="exit"
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="rounded-xl bg-white shadow-xl w-[90vw] max-h-[90vh] flex flex-col"
+            className="rounded-xl bg-white shadow-xl max-w-7xl max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <motion.div
@@ -897,16 +897,16 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                                     <TableHeader className="w-[20%]">
                                       Turunan
                                     </TableHeader>
-                                    <TableHeader className="w-[30%] text-center">
+                                    <TableHeader className="w-[28%] text-center">
                                       Konversi
                                     </TableHeader>
                                     <TableHeader className="w-[20%] text-right">
-                                      Harga Pokok
+                                      H. Pokok
                                     </TableHeader>
                                     <TableHeader className="w-[20%] text-right">
-                                      Harga Jual
+                                      H. Jual
                                     </TableHeader>
-                                    <TableHeader className="w-[10%] text-center">
+                                    <TableHeader className="w-[12%] text-center">
                                       ‎
                                     </TableHeader>
                                   </TableRow>
