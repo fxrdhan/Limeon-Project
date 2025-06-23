@@ -36,7 +36,8 @@ const Button = React.forwardRef<
     };
 
     const baseClasses =
-      "cursor-pointer font-medium rounded-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden";
+      "cursor-pointer font-medium rounded-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden" +
+      (withGlow ? "" : " hover:opacity-80");
 
     let glowClass = "";
     if (withGlow) {
