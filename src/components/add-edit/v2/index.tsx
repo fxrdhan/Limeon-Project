@@ -57,7 +57,6 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
 
   useEffect(() => {
     if (isClosing) {
-      // Langsung panggil onClose tanpa delay ketika isClosing true
       onClose();
     }
   }, [isClosing, onClose]);
