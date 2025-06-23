@@ -434,7 +434,9 @@ const Sidebar = ({
                                                 ${
                                                   isActive(item.path) ||
                                                   hasActiveChild(item.children)
-                                                    ? "bg-primary text-white font-medium"
+                                                    ? collapsed
+                                                      ? "text-primary font-medium"
+                                                      : "bg-primary text-white font-medium"
                                                     : "text-gray-600 hover:bg-gray-100"
                                                 }
                                                 transition-all duration-150 group relative`}
@@ -585,7 +587,7 @@ const Sidebar = ({
                                                                 ${
                                                                   isActiveChild
                                                                     ? "font-medium scale-[1.02] bg-emerald-50"
-                                                                    : "hover:bg-gray-100 hover:shadow-sm"
+                                                                    : "hover:bg-gray-100"
                                                                 } whitespace-nowrap overflow-hidden text-ellipsis`}
                                         style={{
                                           outline: "none",
@@ -618,7 +620,9 @@ const Sidebar = ({
                                                 focus:outline-hidden active:outline-hidden mx-4 rounded-lg
                                                 ${
                                                   isActive(item.path)
-                                                    ? "bg-primary text-white font-medium"
+                                                    ? collapsed
+                                                      ? "text-primary font-medium"
+                                                      : "bg-primary text-white font-medium"
                                                     : "text-gray-600 hover:bg-gray-100"
                                                 }
                                                 transition-all duration-150 group relative`}
