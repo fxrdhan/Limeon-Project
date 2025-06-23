@@ -119,7 +119,9 @@ const UnitList = () => {
                         key={unit.id}
                         onClick={() => handleEdit(unit)}
                         className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch ? "bg-emerald-100/50" : ""
+                          index === 0 && debouncedSearch
+                            ? "bg-emerald-100/50"
+                            : ""
                         }`}
                       >
                         <TableCell>{unit.name}</TableCell>

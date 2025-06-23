@@ -120,7 +120,8 @@ function ItemList() {
           />
           <Button
             variant="primary"
-            className="flex items-center ml-4 mb-4 focus:outline-hidden focus:border-none focus:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)] rounded-lg transition-shadow duration-300"
+            withGlow
+            className="flex items-center ml-4 mb-4"
             onClick={() => openAddItemModal(undefined, debouncedSearch)}
           >
             <FaPlus className="mr-2" />

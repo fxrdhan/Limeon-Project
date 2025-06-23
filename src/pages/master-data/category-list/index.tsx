@@ -119,7 +119,9 @@ const CategoryList = () => {
                         key={category.id}
                         onClick={() => handleEdit(category)}
                         className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch ? "bg-emerald-100/50" : ""
+                          index === 0 && debouncedSearch
+                            ? "bg-emerald-100/50"
+                            : ""
                         }`}
                       >
                         <TableCell>{category.name}</TableCell>
