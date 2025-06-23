@@ -37,13 +37,19 @@ import { useAddItemPageHandlers } from "@/handlers/addItem";
 import { FaTrash } from "react-icons/fa";
 import type { AddItemPortalProps } from "@/types";
 
-const AddItemPortal: React.FC<AddItemPortalProps> = ({
+interface AddItemPortalWithClosingProps extends AddItemPortalProps {
+  isClosing: boolean;
+  setIsClosing: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
   isOpen,
   onClose,
   itemId,
   initialSearchQuery,
+  isClosing,
+  setIsClosing,
 }) => {
-  const [isClosing, setIsClosing] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{
     top: number;
     left: number;
@@ -51,11 +57,8 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
 
   useEffect(() => {
     if (isClosing) {
-      const timer = setTimeout(() => {
-        setIsClosing(false);
-        onClose();
-      }, 300);
-      return () => clearTimeout(timer);
+      // Langsung panggil onClose tanpa delay ketika isClosing true
+      onClose();
     }
   }, [isClosing, onClose]);
 
@@ -243,9 +246,6 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     visible: {
       opacity: 1,
     },
-    exit: {
-      opacity: 0,
-    },
   };
 
   const modalVariants = {
@@ -257,10 +257,6 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
       scale: 1,
       opacity: 1,
     },
-    exit: {
-      scale: 0.95,
-      opacity: 0,
-    },
   };
 
   const contentVariants = {
@@ -270,13 +266,10 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     visible: {
       opacity: 1,
     },
-    exit: {
-      opacity: 0,
-    },
   };
 
   return createPortal(
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       {isOpen && (
         <motion.div
           key="modal-backdrop"
@@ -284,7 +277,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
           initial="hidden"
           animate={isClosing ? "exit" : "visible"}
           exit="exit"
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.15 }}
           className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
           onClick={(e) => {
             if (e.target === e.currentTarget && !isClosing) {
@@ -298,7 +291,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
             initial="hidden"
             animate={isClosing ? "exit" : "visible"}
             exit="exit"
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="rounded-xl bg-white shadow-xl w-[90vw] max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
@@ -308,7 +301,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
               initial="hidden"
               animate={isClosing ? "exit" : "visible"}
               exit="exit"
-              transition={{ duration: 0.3, delay: 0.1 }}
+              transition={{ duration: 0.2, delay: 0.05 }}
             >
               <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4!">
                 <div className="flex items-center"></div>
@@ -360,7 +353,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
               initial="hidden"
               animate={isClosing ? "exit" : "visible"}
               exit="exit"
-              transition={{ duration: 0.3, delay: 0.05 }}
+              transition={{ duration: 0.2, delay: 0.1 }}
               onSubmit={handleSubmit}
               className="flex-1 flex flex-col min-h-0"
             >
