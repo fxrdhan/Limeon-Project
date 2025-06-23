@@ -85,9 +85,7 @@ const Dropdown = ({
 
     setDropDirection(shouldDropUp ? "up" : "down");
 
-    const minWidth = Math.min(250, viewportWidth - 32);
-    const maxWidth = Math.min(buttonRect.width, viewportWidth - 32);
-    const dropdownWidth = Math.max(minWidth, maxWidth);
+    const dropdownWidth = buttonRect.width;
 
     let leftPosition = buttonRect.left;
     if (leftPosition + dropdownWidth > viewportWidth - 16) {
