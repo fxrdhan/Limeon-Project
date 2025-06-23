@@ -295,6 +295,7 @@ const SupplierList = () => {
         />
         <Button
           variant="primary"
+          withGlow
           className="flex items-center ml-4 mb-4"
           onClick={openAddSupplierModal}
         >
