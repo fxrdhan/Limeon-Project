@@ -26,6 +26,7 @@ function ItemList() {
     null,
   ) as React.RefObject<HTMLInputElement>;
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   const {
     search,
@@ -54,15 +55,24 @@ function ItemList() {
   const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<
     string | undefined
   >(undefined);
+  const [modalRenderId, setModalRenderId] = useState(0);
 
   const openAddItemModal = (itemId?: string, searchQuery?: string) => {
+    // Set the data for the modal
     setEditingItemId(itemId);
     setCurrentSearchQueryForModal(searchQuery);
+
+    // Ensure the modal is not in a closing state and is open
+    setIsClosing(false);
     setIsAddItemModalOpen(true);
+
+    // Force re-mount of the modal component by updating its key
+    setModalRenderId((prevId) => prevId + 1);
   };
 
   const closeAddItemModal = () => {
     setIsAddItemModalOpen(false);
+    setIsClosing(false);
     setEditingItemId(undefined);
     setCurrentSearchQueryForModal(undefined);
   };
@@ -168,7 +178,9 @@ function ItemList() {
                         key={item.id}
                         onClick={() => handleItemEdit(item)}
                         className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch ? "bg-emerald-100/50" : ""
+                          index === 0 && debouncedSearch
+                            ? "bg-emerald-100/50"
+                            : ""
                         }`}
                       >
                         <TableCell>{item.name}</TableCell>
@@ -224,11 +236,15 @@ function ItemList() {
         )}
       </Card>
       <AddItemPortal
-        key={`${editingItemId ?? "new"}-${currentSearchQueryForModal ?? ""}`}
+        key={`${
+          editingItemId ?? "new"
+        }-${currentSearchQueryForModal ?? ""}-${modalRenderId}`}
         isOpen={isAddItemModalOpen}
         onClose={closeAddItemModal}
         itemId={editingItemId}
         initialSearchQuery={currentSearchQueryForModal}
+        isClosing={isClosing}
+        setIsClosing={setIsClosing}
       />
     </>
   );
