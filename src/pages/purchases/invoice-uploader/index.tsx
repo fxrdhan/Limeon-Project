@@ -783,6 +783,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                               isLoading={loading}
                               className="bg-primary text-white"
                               aria-live="polite"
+                              withGlow
                             >
                               <motion.div
                                 animate={loading ? { rotate: 360 } : {}}
