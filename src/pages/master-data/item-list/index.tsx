@@ -71,10 +71,13 @@ function ItemList() {
   };
 
   const closeAddItemModal = () => {
-    setIsAddItemModalOpen(false);
-    setIsClosing(false);
-    setEditingItemId(undefined);
-    setCurrentSearchQueryForModal(undefined);
+    setIsClosing(true); // Trigger fade-out animation
+    setTimeout(() => {
+      setIsAddItemModalOpen(false); // Close modal after animation
+      setIsClosing(false); // Reset closing state
+      setEditingItemId(undefined);
+      setCurrentSearchQueryForModal(undefined);
+    }, 250); // Adjust timeout to match animation duration
   };
 
   const handleItemEdit = (item: ItemDataType) => {
