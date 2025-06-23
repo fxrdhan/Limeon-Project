@@ -280,7 +280,11 @@ const PurchaseList = () => {
             className="grow"
           />
           <div className="flex space-x-2 ml-4 mb-4">
-            <Button variant="primary" onClick={() => setShowUploadPortal(true)}>
+            <Button
+              variant="primary"
+              onClick={() => setShowUploadPortal(true)}
+              withGlow
+            >
               <FaFileUpload className="mr-2" />
               Upload Faktur
             </Button>
@@ -288,7 +292,7 @@ const PurchaseList = () => {
               to="/purchases/create"
               state={{ initialInvoiceNumber: debouncedSearch }}
             >
-              <Button variant="primary">
+              <Button variant="primary" withGlow>
                 <FaPlus className="mr-2" />
                 Tambah Pembelian Baru
               </Button>
