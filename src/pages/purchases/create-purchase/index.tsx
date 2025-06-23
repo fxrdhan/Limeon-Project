@@ -55,6 +55,7 @@ const CreatePurchase: React.FC = () => {
     handleSubmit,
   } = usePurchaseForm({ initialInvoiceNumber: initialInvoiceNumberFromState });
   const [isAddItemPortalOpen, setIsAddItemPortalOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   const [editingVatPercentage, setEditingVatPercentage] = useState(false);
   const [vatPercentageValue, setVatPercentageValue] = useState(
@@ -159,11 +160,15 @@ const CreatePurchase: React.FC = () => {
   };
 
   const handleCloseAddItemPortal = () => {
-    setIsAddItemPortalOpen(false);
-    // Focus the item search input after portal closes
+    setIsClosing(true);
     setTimeout(() => {
-      itemSearchBarRef.current?.focus();
-    }, 100);
+      setIsAddItemPortalOpen(false);
+      setIsClosing(false);
+      // Focus the item search input after portal closes
+      setTimeout(() => {
+        itemSearchBarRef.current?.focus();
+      }, 100);
+    }, 300); // Corresponds to portal closing animation duration
   };
 
   return (
@@ -172,6 +177,8 @@ const CreatePurchase: React.FC = () => {
         isOpen={isAddItemPortalOpen}
         onClose={handleCloseAddItemPortal}
         initialSearchQuery={searchItem}
+        isClosing={isClosing}
+        setIsClosing={setIsClosing}
       />
 
       <Card>
