@@ -5,7 +5,7 @@ import Sidebar from "@/layout/sidebar";
 import { usePresence } from "@/hooks/usePresence";
 
 const MainLayout = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   usePresence();
   const isLockedRef = useRef(isLocked);
@@ -44,13 +44,22 @@ const MainLayout = () => {
   }, [sidebarCollapsed]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const expandTimer = setTimeout(() => {
       if (!isLockedRef.current) {
-        setSidebarCollapsed(true);
+        setSidebarCollapsed(false); // Expand
       }
-    }, 1000);
+    }, 500); // Expand after 0.5s
 
-    return () => clearTimeout(timer);
+    const collapseTimer = setTimeout(() => {
+      if (!isLockedRef.current) {
+        setSidebarCollapsed(true); // Collapse
+      }
+    }, 1500); // Collapse after 1.5s from start
+
+    return () => {
+      clearTimeout(expandTimer);
+      clearTimeout(collapseTimer);
+    };
   }, []);
 
   useEffect(() => {
