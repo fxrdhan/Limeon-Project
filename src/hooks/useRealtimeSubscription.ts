@@ -28,28 +28,6 @@ const subscriptionRegistry = new Map<
   }
 >();
 
-// Cleanup inactive subscriptions periodically
-setInterval(() => {
-  const now = Date.now();
-  const staleThreshold = 30000; // 30 seconds
-
-  for (const [key, subscription] of subscriptionRegistry.entries()) {
-    if (
-      subscription.subscribers <= 0 &&
-      now - subscription.lastActivity > staleThreshold
-    ) {
-      console.log(`Cleaning up stale subscription: ${key}`);
-      try {
-        supabase.removeChannel(subscription.channel);
-      } catch (error) {
-        console.warn(`Error removing stale channel ${key}:`, error);
-      } finally {
-        subscriptionRegistry.delete(key);
-      }
-    }
-  }
-}, 30000); // Check every 30 seconds
-
 export const useRealtimeSubscription = (
   tableName: string,
   queryKeyToInvalidate: QueryKey | null,
@@ -58,7 +36,7 @@ export const useRealtimeSubscription = (
   const {
     enabled = true,
     onRealtimeEvent,
-    debounceMs = 1000,
+    debounceMs = 300,
     retryAttempts = 3,
     silentMode = false,
   } = options;
@@ -68,6 +46,7 @@ export const useRealtimeSubscription = (
   const isSubscribedRef = useRef(false);
   const retryCountRef = useRef(0);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const connectionReadyRef = useRef(false);
 
   // Create unique subscription key
   const subscriptionKey = `${tableName}:${
@@ -143,25 +122,22 @@ export const useRealtimeSubscription = (
       existingSubscription.subscribers++;
       existingSubscription.lastActivity = Date.now();
       isSubscribedRef.current = true;
+      connectionReadyRef.current = true;
       console.log(`Reusing existing subscription for ${subscriptionKey}`);
       return;
     }
 
-    // Prevent multiple simultaneous subscription attempts
-    if (existingSubscription && !existingSubscription.isActive) {
-      console.log(`Subscription already in progress for ${subscriptionKey}`);
-      return;
-    }
-
-    // Create new subscription
-    const channelName = `realtime_${subscriptionKey}_${Date.now()}`;
+    // Create new subscription (always allow new attempt if not active)
+    const channelName = `realtime_${tableName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const channel = supabase
       .channel(channelName, {
         config: {
           broadcast: {
-            self: true,
+            self: false,
           },
-          presence: { key: subscriptionKey },
+          presence: {
+            key: subscriptionKey,
+          },
         },
       })
       .on(
@@ -186,21 +162,28 @@ export const useRealtimeSubscription = (
     const subscribe = () => {
       channel.subscribe((status, err) => {
         const subscription = subscriptionRegistry.get(subscriptionKey);
+        console.log(`Subscription status for ${tableName}:`, status);
 
         if (status === "SUBSCRIBED") {
           console.log(
             `Successfully subscribed to ${tableName} realtime updates`,
           );
-          isSubscribedRef.current = true;
           retryCountRef.current = 0;
 
           // Mark subscription as active
           if (subscription) {
             subscription.isActive = true;
+            // Wait for channel to be fully ready before marking as subscribed
+            setTimeout(() => {
+              isSubscribedRef.current = true;
+              connectionReadyRef.current = true;
+              console.log(`${tableName} subscription fully ready`);
+            }, 100);
           }
         } else if (status === "CHANNEL_ERROR") {
           console.error(`Subscription error for ${tableName}:`, err);
           isSubscribedRef.current = false;
+          connectionReadyRef.current = false;
 
           // Retry logic
           if (retryCountRef.current < retryAttempts) {
@@ -208,7 +191,7 @@ export const useRealtimeSubscription = (
             console.log(
               `Retrying subscription for ${tableName} (attempt ${retryCountRef.current})`,
             );
-            setTimeout(subscribe, Math.pow(2, retryCountRef.current) * 1000); // Exponential backoff
+            setTimeout(subscribe, 1000 + retryCountRef.current * 500); // Less aggressive backoff
           } else {
             console.error(
               `Max retry attempts reached for ${tableName} subscription`,
@@ -219,12 +202,14 @@ export const useRealtimeSubscription = (
         } else if (status === "TIMED_OUT") {
           console.warn(`Subscription timed out for ${tableName}`);
           isSubscribedRef.current = false;
+          connectionReadyRef.current = false;
           if (subscription) {
             subscription.isActive = false;
           }
         } else if (status === "CLOSED") {
           console.log(`Subscription closed for ${tableName}`);
           isSubscribedRef.current = false;
+          connectionReadyRef.current = false;
           subscriptionRegistry.delete(subscriptionKey);
         }
       });
@@ -244,25 +229,21 @@ export const useRealtimeSubscription = (
 
       // If no more subscribers, remove the channel
       if (subscription.subscribers <= 0) {
-        setTimeout(() => {
-          const currentSubscription = subscriptionRegistry.get(subscriptionKey);
-          if (currentSubscription && currentSubscription.subscribers <= 0) {
-            try {
-              supabase.removeChannel(currentSubscription.channel);
-              subscriptionRegistry.delete(subscriptionKey);
-              console.log(`Removed subscription for ${subscriptionKey}`);
-            } catch (error) {
-              console.warn(
-                `Error removing subscription for ${subscriptionKey}:`,
-                error,
-              );
-            }
-          }
-        }, 1000); // Small delay to prevent race conditions
+        try {
+          supabase.removeChannel(subscription.channel);
+          subscriptionRegistry.delete(subscriptionKey);
+          console.log(`Removed subscription for ${subscriptionKey}`);
+        } catch (error) {
+          console.warn(
+            `Error removing subscription for ${subscriptionKey}:`,
+            error,
+          );
+        }
       }
     }
 
     isSubscribedRef.current = false;
+    connectionReadyRef.current = false;
   }, [subscriptionKey]);
 
   useEffect(() => {
@@ -282,6 +263,7 @@ export const useRealtimeSubscription = (
 
   return {
     isSubscribed: isSubscribedRef.current,
+    isConnectionReady: connectionReadyRef.current,
     retryCount: retryCountRef.current,
   };
 };
