@@ -17,6 +17,7 @@ supabase/
 .env
 test.js
 .yarn/
+.claude/
 dist
 dist-ssr
 *.local
