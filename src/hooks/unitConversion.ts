@@ -19,7 +19,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         const fetchUnits = async () => {
             const { data } = await supabase
                 .from("item_units")
-                .select("id, name")
+                .select("id, name, description, updated_at")
                 .order("name");
             
             if (data) {
