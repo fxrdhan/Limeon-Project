@@ -24,7 +24,7 @@ const Button = React.forwardRef<
       primary:
         "rounded-lg ring-0 outline-hidden shadow-md bg-primary flex items-center text-white hover:text-white",
       secondary:
-        "rounded-lg bg-secondary bg-secondary ring-0 outline-hidden flex items-center hover:bg-blue-700 text-white hover:text-white",
+        "rounded-lg bg-secondary bg-secondary ring-0 outline-hidden flex items-center text-white hover:text-white",
       accent: "bg-accent hover:bg-rose-600 text-white",
       danger: "bg-accent outline-hidden text-white",
     };
