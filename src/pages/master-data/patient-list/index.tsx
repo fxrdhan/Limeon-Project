@@ -7,9 +7,7 @@ import blankProfilePicture from "@/assets/blank-profile-picture.png";
 
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
-import {
-  PatientListSkeleton,
-} from "@/components/table";
+import { PatientListSkeleton } from "@/components/table";
 import { useState, useRef } from "react";
 import { StorageService } from "@/utils/storage";
 import { useLocation } from "react-router-dom";
@@ -338,7 +336,8 @@ const PatientList = () => {
                               alt={`Foto ${patient.name}`}
                               className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = blankProfilePicture;
+                                (e.target as HTMLImageElement).src =
+                                  blankProfilePicture;
                               }}
                             />
                           </div>
@@ -348,22 +347,32 @@ const PatientList = () => {
                             </h3>
                             <div className="mt-1 space-y-1">
                               <p className="text-sm text-gray-600">
-                                <span className="font-medium">Jenis Kelamin:</span> {patient.gender || "-"}
+                                <span className="font-medium">
+                                  Jenis Kelamin:
+                                </span>{" "}
+                                {patient.gender || "-"}
                               </p>
                               <p className="text-sm text-gray-600">
-                                <span className="font-medium">Tanggal Lahir:</span>{" "}
+                                <span className="font-medium">
+                                  Tanggal Lahir:
+                                </span>{" "}
                                 {patient.birth_date
-                                  ? new Date(patient.birth_date).toLocaleDateString("id-ID")
+                                  ? new Date(
+                                      patient.birth_date,
+                                    ).toLocaleDateString("id-ID")
                                   : "-"}
                               </p>
                               <p className="text-sm text-gray-600 truncate">
-                                <span className="font-medium">Alamat:</span> {patient.address || "-"}
+                                <span className="font-medium">Alamat:</span>{" "}
+                                {patient.address || "-"}
                               </p>
                               <p className="text-sm text-gray-600">
-                                <span className="font-medium">Telepon:</span> {patient.phone || "-"}
+                                <span className="font-medium">Telepon:</span>{" "}
+                                {patient.phone || "-"}
                               </p>
                               <p className="text-sm text-gray-600 truncate">
-                                <span className="font-medium">Email:</span> {patient.email || "-"}
+                                <span className="font-medium">Email:</span>{" "}
+                                {patient.email || "-"}
                               </p>
                             </div>
                           </div>
@@ -393,11 +402,7 @@ const PatientList = () => {
       </div>
 
       <GenericDetailModal
-        title={
-          selectedPatient
-            ? `Detail Pasien: ${selectedPatient.name}`
-            : "Detail Pasien"
-        }
+        title={selectedPatient ? `${selectedPatient.name}` : ""}
         data={transformPatientForModal(selectedPatient)}
         fields={patientFields}
         isOpen={isEditModalOpen}
