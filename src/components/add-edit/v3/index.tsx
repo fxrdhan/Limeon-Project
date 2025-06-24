@@ -7,8 +7,9 @@ import { createPortal } from "react-dom";
 import { Transition, TransitionChild, Dialog } from "@headlessui/react";
 import React, { Fragment, useRef, useState, useEffect } from "react";
 import type { GenericDetailModalProps, CustomDateValueType } from "@/types";
-import { FaPencilAlt, FaSpinner, FaSave, FaBan } from "react-icons/fa";
+import { FaPencilAlt, FaSpinner, FaSave, FaBan, FaHistory } from "react-icons/fa";
 import { useDetailForm } from "@/hooks/detailForm";
+import { formatDateTime } from "@/lib/formatters";
 
 const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
   title,
@@ -118,6 +119,7 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
 
   const aspectRatioClass =
     imageAspectRatio === "square" ? "aspect-square" : "aspect-video";
+  const formattedUpdateAt = formatDateTime(typeof data?.updated_at === 'string' ? data.updated_at : null);
 
   return createPortal(
     <Transition
@@ -171,7 +173,15 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center p-4 border-b">
-              <h2 className="text-xl font-semibold">{title}</h2>
+              <div className="flex flex-col">
+                <h2 className="text-xl font-semibold">{title}</h2>
+                {mode === "edit" && formattedUpdateAt !== "-" && (
+                  <span className="text-sm text-gray-500 italic flex items-center mt-1">
+                    <FaHistory className="mr-1" size={12} />
+                    {formattedUpdateAt}
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="p-6 overflow-y-auto grow scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
