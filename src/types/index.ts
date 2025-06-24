@@ -4,17 +4,20 @@ export interface Category {
   id: string;
   name: string;
   description?: string;
+  updated_at?: string | null;
 }
 
 export interface MedicineType {
   id: string;
   name: string;
+  updated_at?: string | null;
 }
 
 export interface Unit {
   id: string;
   name: string;
   description?: string;
+  updated_at?: string | null;
 }
 
 export interface Supplier {
@@ -25,6 +28,7 @@ export interface Supplier {
   email?: string | null;
   contact_person?: string | null;
   image_url?: string | null;
+  updated_at?: string | null;
 }
 
 export interface CompanyProfile {
@@ -76,6 +80,7 @@ export interface Patient {
   phone?: string | null;
   email?: string | null;
   image_url?: string | null;
+  updated_at?: string | null;
 }
 
 export interface Doctor {
@@ -91,6 +96,7 @@ export interface Doctor {
   experience_years?: number | null;
   qualification?: string | null;
   image_url?: string | null;
+  updated_at?: string | null;
 }
 
 export interface DropdownOption {
