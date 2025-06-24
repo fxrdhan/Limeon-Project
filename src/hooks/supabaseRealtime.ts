@@ -17,20 +17,18 @@ export const useSupabaseRealtime = (
   const { enabled = true, onRealtimeEvent } = options;
 
   // Use the improved realtime subscription hook
-  const { isSubscribed, retryCount } = useRealtimeSubscription(
-    tableName,
-    queryKeyToInvalidate,
-    {
+  const { isSubscribed, isConnectionReady, retryCount } =
+    useRealtimeSubscription(tableName, queryKeyToInvalidate, {
       enabled,
       onRealtimeEvent,
-      debounceMs: 500, // Shorter debounce for better responsiveness
+      debounceMs: 300, // Even shorter debounce for immediate updates
       retryAttempts: 3,
       silentMode: false, // Keep showing notifications
-    },
-  );
+    });
 
   return {
     isSubscribed,
+    isConnectionReady,
     retryCount,
   };
 };
