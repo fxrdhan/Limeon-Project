@@ -25,6 +25,14 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
   const nameInputRef = useRef<HTMLInputElement>(null);
   const isEditMode = Boolean(initialData);
 
+  const isDirty = () => {
+    if (!isEditMode) return true;
+    return (
+      name !== (initialData?.name || "") ||
+      description !== (initialData?.description || "")
+    );
+  };
+
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
@@ -149,9 +157,9 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
                   variant="primary"
                   onClick={handleSave}
                   isLoading={isLoading}
-                  disabled={isLoading || !name.trim()}
+                  disabled={isLoading || !name.trim() || (isEditMode && !isDirty())}
                 >
-                  Simpan
+                  {isEditMode ? "Update" : "Simpan"}
                 </Button>
               </div>
             </div>
