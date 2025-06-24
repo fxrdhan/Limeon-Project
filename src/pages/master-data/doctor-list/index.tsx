@@ -7,9 +7,7 @@ import blankProfilePicture from "@/assets/blank-profile-picture.png";
 
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
-import {
-  PatientListSkeleton,
-} from "@/components/table";
+import { PatientListSkeleton } from "@/components/table";
 import { useState, useRef } from "react";
 import { StorageService } from "@/utils/storage";
 import { useLocation } from "react-router-dom";
@@ -238,11 +236,31 @@ const DoctorList = () => {
         { id: "Perempuan", name: "Perempuan" },
       ],
     },
-    { key: "specialization", label: "Spesialisasi", type: "text", editable: true },
-    { key: "license_number", label: "Nomor Lisensi", type: "text", editable: true },
+    {
+      key: "specialization",
+      label: "Spesialisasi",
+      type: "text",
+      editable: true,
+    },
+    {
+      key: "license_number",
+      label: "Nomor Lisensi",
+      type: "text",
+      editable: true,
+    },
     { key: "birth_date", label: "Tanggal Lahir", type: "date", editable: true },
-    { key: "experience_years", label: "Pengalaman (Tahun)", type: "text", editable: true },
-    { key: "qualification", label: "Kualifikasi", type: "textarea", editable: true },
+    {
+      key: "experience_years",
+      label: "Pengalaman (Tahun)",
+      type: "text",
+      editable: true,
+    },
+    {
+      key: "qualification",
+      label: "Kualifikasi",
+      type: "textarea",
+      editable: true,
+    },
     { key: "address", label: "Alamat", type: "textarea", editable: true },
     { key: "phone", label: "Telepon", type: "tel", editable: true },
     { key: "email", label: "Email", type: "email", editable: true },
@@ -350,7 +368,8 @@ const DoctorList = () => {
                               alt={`Foto ${doctor.name}`}
                               className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = blankProfilePicture;
+                                (e.target as HTMLImageElement).src =
+                                  blankProfilePicture;
                               }}
                             />
                           </div>
@@ -360,19 +379,30 @@ const DoctorList = () => {
                             </h3>
                             <div className="mt-1 space-y-1">
                               <p className="text-sm text-gray-600">
-                                <span className="font-medium">Jenis Kelamin:</span> {doctor.gender || "-"}
+                                <span className="font-medium">
+                                  Jenis Kelamin:
+                                </span>{" "}
+                                {doctor.gender || "-"}
                               </p>
                               <p className="text-sm text-gray-600">
-                                <span className="font-medium">Spesialisasi:</span> {doctor.specialization || "-"}
+                                <span className="font-medium">
+                                  Spesialisasi:
+                                </span>{" "}
+                                {doctor.specialization || "-"}
                               </p>
                               <p className="text-sm text-gray-600">
-                                <span className="font-medium">Nomor Lisensi:</span> {doctor.license_number || "-"}
+                                <span className="font-medium">
+                                  Nomor Lisensi:
+                                </span>{" "}
+                                {doctor.license_number || "-"}
                               </p>
                               <p className="text-sm text-gray-600">
-                                <span className="font-medium">Telepon:</span> {doctor.phone || "-"}
+                                <span className="font-medium">Telepon:</span>{" "}
+                                {doctor.phone || "-"}
                               </p>
                               <p className="text-sm text-gray-600 truncate">
-                                <span className="font-medium">Email:</span> {doctor.email || "-"}
+                                <span className="font-medium">Email:</span>{" "}
+                                {doctor.email || "-"}
                               </p>
                             </div>
                           </div>
@@ -402,11 +432,7 @@ const DoctorList = () => {
       </div>
 
       <GenericDetailModal
-        title={
-          selectedDoctor
-            ? `Detail Dokter: ${selectedDoctor.name}`
-            : "Detail Dokter"
-        }
+        title={selectedDoctor ? `${selectedDoctor.name}` : ""}
         data={transformDoctorForModal(selectedDoctor)}
         fields={doctorFields}
         isOpen={isEditModalOpen}
