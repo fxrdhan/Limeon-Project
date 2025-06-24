@@ -6,9 +6,7 @@ import PageTitle from "@/components/page-title";
 
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
-import {
-  SupplierListSkeleton,
-} from "@/components/table";
+import { SupplierListSkeleton } from "@/components/table";
 import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -343,12 +341,19 @@ const SupplierList = () => {
                                   alt={`Logo ${supplier.name}`}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    (e.target as HTMLElement).style.display = 'none';
-                                    (e.target as HTMLElement).nextElementSibling!.classList.remove('hidden');
+                                    (e.target as HTMLElement).style.display =
+                                      "none";
+                                    (
+                                      e.target as HTMLElement
+                                    ).nextElementSibling!.classList.remove(
+                                      "hidden",
+                                    );
                                   }}
                                 />
                               ) : null}
-                              <div className={`text-2xl font-bold text-blue-600 ${supplier.image_url ? 'hidden' : ''}`}>
+                              <div
+                                className={`text-2xl font-bold text-blue-600 ${supplier.image_url ? "hidden" : ""}`}
+                              >
                                 {supplier.name.charAt(0).toUpperCase()}
                               </div>
                             </div>
@@ -360,16 +365,23 @@ const SupplierList = () => {
                             <div className="mt-1 space-y-1">
                               <p className="text-sm text-gray-600">
                                 <span className="font-medium">Alamat:</span>{" "}
-                                <span className="line-clamp-2">{supplier.address || "-"}</span>
+                                <span className="line-clamp-2">
+                                  {supplier.address || "-"}
+                                </span>
                               </p>
                               <p className="text-sm text-gray-600">
-                                <span className="font-medium">Telepon:</span> {supplier.phone || "-"}
+                                <span className="font-medium">Telepon:</span>{" "}
+                                {supplier.phone || "-"}
                               </p>
                               <p className="text-sm text-gray-600 truncate">
-                                <span className="font-medium">Email:</span> {supplier.email || "-"}
+                                <span className="font-medium">Email:</span>{" "}
+                                {supplier.email || "-"}
                               </p>
                               <p className="text-sm text-gray-600">
-                                <span className="font-medium">Kontak Person:</span> {supplier.contact_person || "-"}
+                                <span className="font-medium">
+                                  Kontak Person:
+                                </span>{" "}
+                                {supplier.contact_person || "-"}
                               </p>
                             </div>
                           </div>
@@ -399,11 +411,7 @@ const SupplierList = () => {
       </div>
 
       <GenericDetailModal
-        title={
-          selectedSupplier
-            ? `Detail Supplier: ${selectedSupplier.name}`
-            : "Detail Supplier"
-        }
+        title={selectedSupplier ? `${selectedSupplier.name}` : ""}
         data={transformSupplierForModal(selectedSupplier)}
         fields={supplierFields}
         isOpen={isEditModalOpen}
