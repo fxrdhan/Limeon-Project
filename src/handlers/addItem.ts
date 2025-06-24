@@ -30,7 +30,7 @@ export const useAddItemPageHandlers = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("item_categories")
-        .select("id, name, description")
+        .select("id, name, description, updated_at")
         .order("name");
       if (error) throw error;
       return data || [];
@@ -42,7 +42,7 @@ export const useAddItemPageHandlers = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("item_types")
-        .select("id, name, description")
+        .select("id, name, description, updated_at")
         .order("name");
       if (error) throw error;
       return data || [];
@@ -54,7 +54,7 @@ export const useAddItemPageHandlers = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("item_units")
-        .select("id, name, description")
+        .select("id, name, description, updated_at")
         .order("name");
       if (error) throw error;
       return data || [];
