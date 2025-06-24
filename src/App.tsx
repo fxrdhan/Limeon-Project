@@ -19,6 +19,7 @@ const CategoryList = lazy(() => import("@/pages/master-data/category-list"));
 const UnitList = lazy(() => import("@/pages/master-data/unit-list"));
 const TypeList = lazy(() => import("@/pages/master-data/type-list"));
 const PatientList = lazy(() => import("@/pages/master-data/patient-list"));
+const DoctorList = lazy(() => import("@/pages/master-data/doctor-list"));
 const SupplierList = lazy(() => import("@/pages/master-data/supplier-list"));
 const ConfirmInvoicePage = lazy(
   () => import("@/pages/purchases/confirm-invoice"),
@@ -163,6 +164,21 @@ function App() {
                     }
                   >
                     <PatientList />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="doctors"
+                element={
+                  <Suspense
+                    fallback={
+                      <TableLoadingFallback
+                        title="Daftar Dokter"
+                        tableColumns={6}
+                      />
+                    }
+                  >
+                    <DoctorList />
                   </Suspense>
                 }
               />
