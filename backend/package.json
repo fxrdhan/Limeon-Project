@@ -1,11 +1,16 @@
 {
   "name": "invoice-extractor-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/server.js",
   "license": "MIT",
+  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "concurrently \"tsc --watch\" \"nodemon dist/server.js\"",
+    "dev:ts": "node --loader ts-node/esm server.ts",
+    "clean": "rm -rf dist",
+    "prebuild": "yarn clean"
   },
   "dependencies": {
     "@google/genai": "^0.7.0",
@@ -22,7 +27,9 @@
     "@types/express": "^5.0.1",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.14.1",
-    "nodemon": "^3.1.9"
+    "concurrently": "^9.2.0",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2"
   },
   "packageManager": "yarn@3.2.3+sha512.f26f951f67de0c6a33ee381e5ff364709c87e70eb5e65c694e4facde3512f1fa80b8679e6ba31ce7d340fbb46f08dd683af9457e240f25a204be7427940d767e"
 }
