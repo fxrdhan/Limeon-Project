@@ -7,6 +7,30 @@ import * as dotenv from "dotenv";
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 /**
+ * Creates a logging function for a specific export type.
+ * It ensures the log directory exists and writes detailed logs to a file.
+ * @param outputDir The directory where the 'export.log' file will be created.
+ * @returns A function that takes a message and appends it to the log file.
+ */
+function createLogger(outputDir: string): (message: string) => void {
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  const logFilePath = path.join(outputDir, "export.log");
+
+  // Start with a fresh log file for each run
+  fs.writeFileSync(
+    logFilePath,
+    `-- Export log generated on ${new Date().toISOString()} --\n\n`,
+  );
+
+  return (message: string) => {
+    const timestamp = new Date().toISOString();
+    fs.appendFileSync(logFilePath, `[${timestamp}] ${message}\n`);
+  };
+}
+
+/**
  * Exports database triggers to individual SQL files.
  * @param client - The active PostgreSQL client instance.
  */
@@ -28,16 +52,19 @@ async function exportTriggers(client: Client) {
   const result = await client.query(query);
   const triggers = result.rows;
 
+  const outputDir = path.join(process.cwd(), "supabase", "triggers");
+  const log = createLogger(outputDir);
+  log("Initialized trigger export.");
+
   if (triggers.length === 0) {
-    console.log("ℹ️ No user-defined triggers found to export.");
+    const info = "ℹ️ No user-defined triggers found to export.";
+    console.log(info);
+    log(info);
     return;
   }
 
-  console.log(`🔍 Found ${triggers.length} triggers to export.`);
-  const outputDir = path.join(process.cwd(), "supabase", "triggers");
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
+  console.log(`🔍 Found ${triggers.length} triggers. Exporting...`);
+  log(`Found ${triggers.length} triggers to export.`);
 
   for (const trigger of triggers) {
     const { table_name, trigger_name, trigger_definition } = trigger;
@@ -45,9 +72,12 @@ async function exportTriggers(client: Client) {
     const filePath = path.join(outputDir, fileName);
     const fileHeader = `-- Trigger: ${trigger_name} on table ${table_name}\n-- Exported from Supabase on: ${new Date().toISOString()}\n\n`;
     fs.writeFileSync(filePath, fileHeader + trigger_definition);
-    console.log(`  -> Exported trigger '${trigger_name}' to ${filePath}`);
+    log(`  -> Exported '${trigger_name}' to ${filePath}`);
   }
-  console.log(`✅ Successfully exported all ${triggers.length} triggers.`);
+
+  const successMessage = `✅ Exported ${triggers.length} triggers. See details in ${path.join(outputDir, "export.log")}`;
+  console.log(successMessage);
+  log("Successfully finished exporting triggers.");
 }
 
 /**
@@ -72,16 +102,19 @@ async function exportFunctions(client: Client) {
   const result = await client.query(query);
   const functions = result.rows;
 
+  const outputDir = path.join(process.cwd(), "supabase", "functions");
+  const log = createLogger(outputDir);
+  log("Initialized function export.");
+
   if (functions.length === 0) {
-    console.log("ℹ️ No user-defined SQL functions found to export.");
+    const info = "ℹ️ No user-defined SQL functions found to export.";
+    console.log(info);
+    log(info);
     return;
   }
 
-  console.log(`🔍 Found ${functions.length} functions to export.`);
-  const outputDir = path.join(process.cwd(), "supabase", "functions");
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
+  console.log(`🔍 Found ${functions.length} functions. Exporting...`);
+  log(`Found ${functions.length} functions to export.`);
 
   for (const func of functions) {
     const { function_name, function_definition } = func;
@@ -89,19 +122,19 @@ async function exportFunctions(client: Client) {
     const filePath = path.join(outputDir, fileName);
     const fileHeader = `-- Function: ${function_name}\n-- Exported from Supabase on: ${new Date().toISOString()}\n\n`;
     fs.writeFileSync(filePath, fileHeader + function_definition);
-    console.log(`  -> Exported function '${function_name}' to ${filePath}`);
+    log(`  -> Exported '${function_name}' to ${filePath}`);
   }
-  console.log(`✅ Successfully exported all ${functions.length} functions.`);
+
+  const successMessage = `✅ Exported ${functions.length} functions. See details in ${path.join(outputDir, "export.log")}`;
+  console.log(successMessage);
+  log("Successfully finished exporting functions.");
 }
 
 /**
  * Exports table definitions to individual SQL files.
- * NOTE: This is a best-effort export and may not include all constraints,
- * indexes, or other complex details. It's intended for reference.
  * @param client - The active PostgreSQL client instance.
  */
 async function exportTables(client: Client) {
-  // This query constructs a simplified CREATE TABLE statement for each table.
   const query = `
     SELECT
       c.table_name,
@@ -131,16 +164,19 @@ async function exportTables(client: Client) {
   const result = await client.query(query);
   const tables = result.rows;
 
+  const outputDir = path.join(process.cwd(), "supabase", "tables");
+  const log = createLogger(outputDir);
+  log("Initialized table export.");
+
   if (tables.length === 0) {
-    console.log("ℹ️ No user-defined tables found to export.");
+    const info = "ℹ️ No user-defined tables found to export.";
+    console.log(info);
+    log(info);
     return;
   }
 
-  console.log(`🔍 Found ${tables.length} tables to export.`);
-  const outputDir = path.join(process.cwd(), "supabase", "tables");
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
+  console.log(`🔍 Found ${tables.length} tables. Exporting...`);
+  log(`Found ${tables.length} tables to export.`);
 
   for (const table of tables) {
     const { table_name, table_definition } = table;
@@ -148,11 +184,12 @@ async function exportTables(client: Client) {
     const filePath = path.join(outputDir, fileName);
     const fileHeader = `-- Table Definition: ${table_name}\n-- Exported from Supabase on: ${new Date().toISOString()}\n\n`;
     fs.writeFileSync(filePath, fileHeader + table_definition);
-    console.log(
-      `  -> Exported table definition '${table_name}' to ${filePath}`,
-    );
+    log(`  -> Exported '${table_name}' to ${filePath}`);
   }
-  console.log(`✅ Successfully exported all ${tables.length} tables.`);
+
+  const successMessage = `✅ Exported ${tables.length} tables. See details in ${path.join(outputDir, "export.log")}`;
+  console.log(successMessage);
+  log("Successfully finished exporting tables.");
 }
 
 /**
@@ -183,9 +220,9 @@ async function main() {
     if (exportType === "all") {
       console.log("\n--- Exporting All Database Objects ---");
       await exportTriggers(client);
-      console.log("--------------------------");
+      console.log("------------------------------------");
       await exportFunctions(client);
-      console.log("--------------------------");
+      console.log("------------------------------------");
       await exportTables(client);
     } else {
       switch (exportType) {
