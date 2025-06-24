@@ -8,12 +8,6 @@ import blankProfilePicture from "@/assets/blank-profile-picture.png";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHeader,
   PatientListSkeleton,
 } from "@/components/table";
 import { useState, useRef } from "react";
@@ -329,59 +323,70 @@ const DoctorList = () => {
             {isLoading && (!doctors || doctors.length === 0) ? (
               <PatientListSkeleton rows={8} />
             ) : (
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeader className="w-[20%]">Nama Dokter</TableHeader>
-                    <TableHeader className="w-[10%]">Jenis Kelamin</TableHeader>
-                    <TableHeader className="w-[20%]">Spesialisasi</TableHeader>
-                    <TableHeader className="w-[15%]">Nomor Lisensi</TableHeader>
-                    <TableHeader className="w-[15%]">Telepon</TableHeader>
-                    <TableHeader className="w-[20%]">Email</TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {doctors && doctors.length > 0 ? (
-                    doctors
-                      .filter(
-                        (doctor): doctor is DoctorType =>
-                          typeof doctor === "object" &&
-                          doctor !== null &&
-                          "name" in doctor &&
-                          "id" in doctor,
-                      )
-                      .map((doctor, index) => (
-                        <TableRow
-                          key={doctor.id}
-                          onClick={() => openDoctorDetail(doctor)}
-                          className={`cursor-pointer hover:bg-blue-50 ${
-                            index === 0 && debouncedSearch
-                              ? "bg-emerald-100/50"
-                              : ""
-                          }`}
-                        >
-                          <TableCell>{doctor.name}</TableCell>
-                          <TableCell>{doctor.gender || "-"}</TableCell>
-                          <TableCell>{doctor.specialization || "-"}</TableCell>
-                          <TableCell>{doctor.license_number || "-"}</TableCell>
-                          <TableCell>{doctor.phone || "-"}</TableCell>
-                          <TableCell>{doctor.email || "-"}</TableCell>
-                        </TableRow>
-                      ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-gray-500 py-10"
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {doctors && doctors.length > 0 ? (
+                  doctors
+                    .filter(
+                      (doctor): doctor is DoctorType =>
+                        typeof doctor === "object" &&
+                        doctor !== null &&
+                        "name" in doctor &&
+                        "id" in doctor,
+                    )
+                    .map((doctor, index) => (
+                      <div
+                        key={doctor.id}
+                        onClick={() => openDoctorDetail(doctor)}
+                        className={`bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 ${
+                          index === 0 && debouncedSearch
+                            ? "ring-2 ring-emerald-400 bg-emerald-50"
+                            : "hover:border-blue-300"
+                        }`}
                       >
-                        {debouncedSearch
-                          ? `Tidak ada dokter dengan kata kunci "${debouncedSearch}"`
-                          : "Belum ada data dokter."}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0">
+                            <img
+                              src={doctor.image_url || blankProfilePicture}
+                              alt={`Foto ${doctor.name}`}
+                              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = blankProfilePicture;
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold text-gray-900 truncate">
+                              {doctor.name}
+                            </h3>
+                            <div className="mt-1 space-y-1">
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Jenis Kelamin:</span> {doctor.gender || "-"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Spesialisasi:</span> {doctor.specialization || "-"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Nomor Lisensi:</span> {doctor.license_number || "-"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Telepon:</span> {doctor.phone || "-"}
+                              </p>
+                              <p className="text-sm text-gray-600 truncate">
+                                <span className="font-medium">Email:</span> {doctor.email || "-"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="col-span-full text-center text-gray-500 py-10">
+                    {debouncedSearch
+                      ? `Tidak ada dokter dengan kata kunci "${debouncedSearch}"`
+                      : "Belum ada data dokter."}
+                  </div>
+                )}
+              </div>
             )}
             <Pagination
               currentPage={currentPage}
