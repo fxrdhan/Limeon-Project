@@ -25,7 +25,7 @@ const FormAction: React.FC<FormActionProps> = ({
             onClick={onDelete}
             isLoading={isDeleting}
             tabIndex={cancelTabIndex}
-            disabled={isSaving || isDeleting || isDisabled}
+            disabled={isSaving || isDeleting}
           >
             {deleteText}
           </Button>
