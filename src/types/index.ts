@@ -81,6 +81,16 @@ export interface Patient {
 export interface Doctor {
   id: string;
   name: string;
+  gender?: string | null;
+  specialization?: string | null;
+  license_number?: string | null;
+  phone?: string | null;
+  email?: string | null;  
+  address?: string | null;
+  birth_date?: string | null;
+  experience_years?: number | null;
+  qualification?: string | null;
+  image_url?: string | null;
 }
 
 export interface DropdownOption {
