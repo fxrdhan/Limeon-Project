@@ -266,25 +266,6 @@ const DoctorList = () => {
     { key: "email", label: "Email", type: "email", editable: true },
   ];
 
-  const transformDoctorForModal = (
-    doctor: DoctorType | null,
-  ): Record<string, string | number | boolean | null> => {
-    if (!doctor) return {};
-    return {
-      id: doctor.id,
-      name: doctor.name,
-      gender: doctor.gender ?? "",
-      specialization: doctor.specialization ?? "",
-      license_number: doctor.license_number ?? "",
-      birth_date: doctor.birth_date ?? "",
-      experience_years: doctor.experience_years ?? "",
-      qualification: doctor.qualification ?? "",
-      address: doctor.address ?? "",
-      phone: doctor.phone ?? "",
-      email: doctor.email ?? "",
-      image_url: doctor.image_url ?? null,
-    };
-  };
 
   const emptyDoctorData = {
     name: "",
@@ -433,7 +414,7 @@ const DoctorList = () => {
 
       <GenericDetailModal
         title={selectedDoctor ? `${selectedDoctor.name}` : ""}
-        data={transformDoctorForModal(selectedDoctor)}
+        data={(selectedDoctor as unknown) as Record<string, string | number | boolean | null> || {}}
         fields={doctorFields}
         isOpen={isEditModalOpen}
         onClose={closeEditModal}
