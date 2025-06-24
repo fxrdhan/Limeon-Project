@@ -158,6 +158,9 @@ export const useRealtimeSubscription = (
     const channel = supabase
       .channel(channelName, {
         config: {
+          broadcast: {
+            self: true,
+          },
           presence: { key: subscriptionKey },
         },
       })
