@@ -737,7 +737,7 @@ export const useAddItemForm = ({
       const newCategory = await addCategoryMutation.mutateAsync(categoryData);
       const { data: updatedCategories } = await supabase
         .from("item_categories")
-        .select("id, name")
+        .select("id, name, description, updated_at")
         .order("name");
       if (updatedCategories) setCategories(updatedCategories);
       if (newCategory?.id) updateFormData({ category_id: newCategory.id });
@@ -757,7 +757,7 @@ export const useAddItemForm = ({
       const newType = await addTypeMutation.mutateAsync(typeData);
       const { data: updatedTypes } = await supabase
         .from("item_types")
-        .select("id, name")
+        .select("id, name, description, updated_at")
         .order("name");
       if (updatedTypes) setTypes(updatedTypes);
       if (newType?.id) updateFormData({ type_id: newType.id });
@@ -777,7 +777,7 @@ export const useAddItemForm = ({
       const newUnit = await addUnitMutation.mutateAsync(unitData);
       const { data: updatedUnits } = await supabase
         .from("item_units")
-        .select("id, name")
+        .select("id, name, description, updated_at")
         .order("name");
       if (updatedUnits) setUnits(updatedUnits);
       if (newUnit?.id) updateFormData({ unit_id: newUnit.id });
