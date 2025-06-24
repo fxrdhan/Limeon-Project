@@ -8,12 +8,6 @@ import blankProfilePicture from "@/assets/blank-profile-picture.png";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHeader,
   PatientListSkeleton,
 } from "@/components/table";
 import { useState, useRef } from "react";
@@ -317,65 +311,73 @@ const PatientList = () => {
             {isLoading && (!patients || patients.length === 0) ? (
               <PatientListSkeleton rows={8} />
             ) : (
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeader className="w-[20%]">Nama Pasien</TableHeader>
-                    <TableHeader className="w-[10%]">Jenis Kelamin</TableHeader>
-                    <TableHeader className="w-[15%]">Tanggal Lahir</TableHeader>
-                    <TableHeader className="w-[30%]">Alamat</TableHeader>
-                    <TableHeader className="w-[15%]">Telepon</TableHeader>
-                    <TableHeader className="w-[10%]">Email</TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {patients && patients.length > 0 ? (
-                    patients
-                      .filter(
-                        (patient): patient is PatientType =>
-                          typeof patient === "object" &&
-                          patient !== null &&
-                          "name" in patient &&
-                          "id" in patient,
-                      )
-                      .map((patient, index) => (
-                        <TableRow
-                          key={patient.id}
-                          onClick={() => openPatientDetail(patient)}
-                          className={`cursor-pointer hover:bg-blue-50 ${
-                            index === 0 && debouncedSearch
-                              ? "bg-emerald-100/50"
-                              : ""
-                          }`}
-                        >
-                          <TableCell>{patient.name}</TableCell>
-                          <TableCell>{patient.gender || "-"}</TableCell>
-                          <TableCell>
-                            {patient.birth_date
-                              ? new Date(patient.birth_date).toLocaleDateString(
-                                  "id-ID",
-                                )
-                              : "-"}
-                          </TableCell>
-                          <TableCell>{patient.address || "-"}</TableCell>
-                          <TableCell>{patient.phone || "-"}</TableCell>
-                          <TableCell>{patient.email || "-"}</TableCell>
-                        </TableRow>
-                      ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-gray-500 py-10"
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {patients && patients.length > 0 ? (
+                  patients
+                    .filter(
+                      (patient): patient is PatientType =>
+                        typeof patient === "object" &&
+                        patient !== null &&
+                        "name" in patient &&
+                        "id" in patient,
+                    )
+                    .map((patient, index) => (
+                      <div
+                        key={patient.id}
+                        onClick={() => openPatientDetail(patient)}
+                        className={`bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 ${
+                          index === 0 && debouncedSearch
+                            ? "ring-2 ring-emerald-400 bg-emerald-50"
+                            : "hover:border-blue-300"
+                        }`}
                       >
-                        {debouncedSearch
-                          ? `Tidak ada pasien dengan kata kunci "${debouncedSearch}"`
-                          : "Belum ada data pasien."}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0">
+                            <img
+                              src={patient.image_url || blankProfilePicture}
+                              alt={`Foto ${patient.name}`}
+                              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = blankProfilePicture;
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold text-gray-900 truncate">
+                              {patient.name}
+                            </h3>
+                            <div className="mt-1 space-y-1">
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Jenis Kelamin:</span> {patient.gender || "-"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Tanggal Lahir:</span>{" "}
+                                {patient.birth_date
+                                  ? new Date(patient.birth_date).toLocaleDateString("id-ID")
+                                  : "-"}
+                              </p>
+                              <p className="text-sm text-gray-600 truncate">
+                                <span className="font-medium">Alamat:</span> {patient.address || "-"}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Telepon:</span> {patient.phone || "-"}
+                              </p>
+                              <p className="text-sm text-gray-600 truncate">
+                                <span className="font-medium">Email:</span> {patient.email || "-"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="col-span-full text-center text-gray-500 py-10">
+                    {debouncedSearch
+                      ? `Tidak ada pasien dengan kata kunci "${debouncedSearch}"`
+                      : "Belum ada data pasien."}
+                  </div>
+                )}
+              </div>
             )}
             <Pagination
               currentPage={currentPage}
