@@ -248,19 +248,6 @@ const SupplierList = () => {
     },
   ];
 
-  const transformSupplierForModal = (
-    supplier: SupplierType | null,
-  ): Record<string, string | number | boolean | null> => {
-    if (!supplier) return {};
-    return {
-      id: supplier.id,
-      name: supplier.name,
-      address: supplier.address ?? "",
-      phone: supplier.phone ?? "",
-      email: supplier.email ?? "",
-      contact_person: supplier.contact_person ?? "",
-    };
-  };
 
   const emptySupplierData = {
     name: "",
@@ -412,7 +399,7 @@ const SupplierList = () => {
 
       <GenericDetailModal
         title={selectedSupplier ? `${selectedSupplier.name}` : ""}
-        data={transformSupplierForModal(selectedSupplier)}
+        data={(selectedSupplier as unknown) as Record<string, string | number | boolean | null> || {}}
         fields={supplierFields}
         isOpen={isEditModalOpen}
         onClose={closeEditModal}

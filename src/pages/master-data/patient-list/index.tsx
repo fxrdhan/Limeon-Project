@@ -242,21 +242,6 @@ const PatientList = () => {
     { key: "email", label: "Email", type: "email", editable: true },
   ];
 
-  const transformPatientForModal = (
-    patient: PatientType | null,
-  ): Record<string, string | number | boolean | null> => {
-    if (!patient) return {};
-    return {
-      id: patient.id,
-      name: patient.name,
-      gender: patient.gender ?? "",
-      birth_date: patient.birth_date ?? "",
-      address: patient.address ?? "",
-      phone: patient.phone ?? "",
-      email: patient.email ?? "",
-      image_url: patient.image_url ?? null,
-    };
-  };
 
   const emptyPatientData = {
     name: "",
@@ -403,7 +388,7 @@ const PatientList = () => {
 
       <GenericDetailModal
         title={selectedPatient ? `${selectedPatient.name}` : ""}
-        data={transformPatientForModal(selectedPatient)}
+        data={(selectedPatient as unknown) as Record<string, string | number | boolean | null> || {}}
         fields={patientFields}
         isOpen={isEditModalOpen}
         onClose={closeEditModal}
