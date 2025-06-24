@@ -390,7 +390,7 @@ export const useAddItemForm = ({
         .single();
       if (itemError) throw itemError;
       if (!itemData) throw new Error("Item tidak ditemukan");
-      setFormData({
+      const fetchedFormData = {
         code: itemData.code || "",
         name: itemData.name || "",
         type_id: itemData.type_id || "",
@@ -410,8 +410,9 @@ export const useAddItemForm = ({
             ? itemData.has_expiry_date
             : false,
         updated_at: itemData.updated_at,
-      });
-      setInitialFormData({ ...formData });
+      };
+      setFormData(fetchedFormData);
+      setInitialFormData(fetchedFormData);
 
       let parsedConversionsFromDB = [];
       if (itemData.unit_conversions) {
