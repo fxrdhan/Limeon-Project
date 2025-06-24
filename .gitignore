@@ -13,16 +13,10 @@ output.css
 
 # Dependency directories
 node_modules
-supabase_data
-project_files.txt
-project_files.md
-get-all
-get-database
+supabase/
 .env
 test.js
-
-.yarn
-
+.yarn/
 dist
 dist-ssr
 *.local
