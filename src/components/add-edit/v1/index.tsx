@@ -3,9 +3,10 @@ import Button from "@/components/button";
 import DescriptiveTextarea from "@/components/descriptive-textarea";
 import { useConfirmDialog } from "@/components/dialog-box";
 import { createPortal } from "react-dom";
-import { FaTimes } from "react-icons/fa";
+import { FaTimes, FaHistory } from "react-icons/fa";
 import type { AddEditModalProps } from "@/types";
 import { Transition, TransitionChild } from "@headlessui/react";
+import { formatDateTime } from "@/lib/formatters";
 import React, { useState, useEffect, Fragment, useRef } from "react";
 
 const AddEditModal: React.FC<AddEditModalProps> = ({
@@ -24,6 +25,7 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
   const [description, setDescription] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
   const isEditMode = Boolean(initialData);
+  const formattedUpdateAt = formatDateTime(initialData?.updated_at);
 
   const isDirty = () => {
     if (!isEditMode) return true;
@@ -101,11 +103,19 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
         >
           <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex justify-between items-center p-4 border-b-2 border-gray-200 bg-gray-100 rounded-t-lg">
-              <h2 className="text-xl font-semibold">
-                {isEditMode
-                  ? `Edit ${entityName}`
-                  : `Tambah ${entityName} Baru`}
-              </h2>
+              <div className="flex flex-col">
+                <h2 className="text-xl font-semibold">
+                  {isEditMode
+                    ? `Edit ${entityName}`
+                    : `Tambah ${entityName} Baru`}
+                </h2>
+                {isEditMode && formattedUpdateAt !== "-" && (
+                  <span className="text-sm text-gray-500 italic flex items-center mt-1">
+                    <FaHistory className="mr-1" size={12} />
+                    {formattedUpdateAt}
+                  </span>
+                )}
+              </div>
               <Button variant="text" onClick={onClose}>
                 <FaTimes size={20} />
               </Button>
