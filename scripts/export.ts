@@ -193,14 +193,71 @@ async function exportTables(client: Client) {
 }
 
 /**
+ * Exports all data from each table into individual JSON files.
+ * @param client - The active PostgreSQL client instance.
+ */
+async function exportTableDataAsJson(client: Client) {
+  const getTablesQuery = `
+    SELECT table_name, table_schema
+    FROM information_schema.tables
+    WHERE table_schema NOT IN (
+        'pg_catalog', 'information_schema', 'pg_toast', 'auth', 'extensions',
+        'graphql', 'graphql_public', 'net', 'pgsodium', 'pgsodium_masks',
+        'realtime', 'storage', 'supabase_functions', 'supabase_migrations'
+    ) AND table_type = 'BASE TABLE';
+  `;
+
+  const tablesResult = await client.query(getTablesQuery);
+  const tables = tablesResult.rows;
+
+  const outputDir = path.join(process.cwd(), "supabase", "data");
+  const log = createLogger(outputDir);
+  log("Initialized table data export.");
+
+  if (tables.length === 0) {
+    const info = "ℹ️ No user-defined tables found to export data from.";
+    console.log(info);
+    log(info);
+    return;
+  }
+
+  console.log(`🔍 Found ${tables.length} tables. Exporting data as JSON...`);
+  log(`Found ${tables.length} tables to export data from.`);
+
+  for (const table of tables) {
+    const { table_schema, table_name } = table;
+    const dataQuery = `SELECT * FROM "${table_schema}"."${table_name}";`;
+    try {
+      const dataResult = await client.query(dataQuery);
+      const jsonData = JSON.stringify(dataResult.rows, null, 2);
+      const fileName = `${table_name}.json`;
+      const filePath = path.join(outputDir, fileName);
+
+      fs.writeFileSync(filePath, jsonData);
+      log(
+        `  -> Exported data for table '${table_name}' to ${filePath} (${dataResult.rowCount} rows)`,
+      );
+    } catch (error) {
+      const errorMessage = `  -> Failed to export data for table '${table_name}'. Error: ${error instanceof Error ? error.message : String(error)}`;
+      console.error(errorMessage);
+      log(errorMessage);
+    }
+  }
+
+  const successMessage = `✅ Exported data for ${tables.length} tables. See details in ${path.join(outputDir, "export.log")}`;
+  console.log(successMessage);
+  log("Successfully finished exporting table data.");
+}
+
+/**
  * Main function to orchestrate the export process based on command-line arguments.
  */
 async function main() {
-  const exportType = process.argv[2]; // e.g., 'triggers', 'functions', 'tables', or 'all'
+  const exportType = process.argv[2]; // e.g., 'triggers', 'functions', 'tables', 'data', or 'all'
 
   if (!exportType) {
     console.error(
-      "🔴 Please specify what to export. Usage: yarn export [triggers|functions|tables|all]",
+      "🔴 Please specify what to export. Usage: yarn export [triggers|functions|tables|data|all]",
     );
     process.exit(1);
   }
@@ -224,6 +281,8 @@ async function main() {
       await exportFunctions(client);
       console.log("------------------------------------");
       await exportTables(client);
+      console.log("------------------------------------");
+      await exportTableDataAsJson(client);
     } else {
       switch (exportType) {
         case "triggers":
@@ -241,9 +300,14 @@ async function main() {
           await exportTables(client);
           break;
 
+        case "data":
+          console.log("\n--- Exporting Table Data as JSON ---");
+          await exportTableDataAsJson(client);
+          break;
+
         default:
           console.error(
-            `🔴 Unknown export type '${exportType}'. Please use 'triggers', 'functions', 'tables', or 'all'.`,
+            `🔴 Unknown export type '${exportType}'. Please use 'triggers', 'functions', 'tables', 'data', or 'all'.`,
           );
           process.exit(1);
       }
