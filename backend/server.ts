@@ -5,9 +5,10 @@ import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { getGeminiResponse } from "./geminiService.js";
+import { getGeminiResponse } from "./geminiServiceWithMetrics.js";
 import { parseAndTransformResponse } from "./responseParser.js";
 import { createClient } from "@supabase/supabase-js";
+import { metricsReporter } from "./metricsMiddleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -92,6 +93,11 @@ interface EInvoiceRecord {
   is_processed: boolean;
 }
 
+interface SupabaseResponse {
+  data: EInvoiceRecord[] | null;
+  error: Error | null;
+}
+
 app.post(
   "/api/extract-invoice",
   upload.single("image"),
@@ -112,10 +118,19 @@ app.post(
 
       console.log("Raw response from Gemini:", rawGeminiText);
       try {
-        const transformedData = parseAndTransformResponse(rawGeminiText);
+        const transformedData = await metricsReporter.trackGeminiRequest(
+          "response-parsing",
+          () => Promise.resolve(parseAndTransformResponse(rawGeminiText)),
+          imageIdentifier,
+        );
         res.json({ ...transformedData, imageIdentifier: imageIdentifier });
       } catch (e) {
         console.error("Error parsing JSON:", e);
+        await metricsReporter.trackGeminiRequest(
+          "response-parsing-fallback",
+          () => Promise.resolve({ rawText: rawGeminiText }),
+          imageIdentifier,
+        );
         res.json({ rawText: rawGeminiText, imageIdentifier: imageIdentifier });
       }
     } catch (error: unknown) {
@@ -156,7 +171,11 @@ app.post(
     try {
       const rawGeminiText = await getGeminiResponse(imagePath, prompt);
       console.log("Raw response from Gemini (regenerate):", rawGeminiText);
-      const transformedData = parseAndTransformResponse(rawGeminiText);
+      const transformedData = await metricsReporter.trackGeminiRequest(
+        "response-parsing-regenerate",
+        () => Promise.resolve(parseAndTransformResponse(rawGeminiText)),
+        imageIdentifier,
+      );
       res.json({ ...transformedData, imageIdentifier: imageIdentifier });
     } catch (error: unknown) {
       console.error("Error regenerating invoice:", error);
@@ -226,10 +245,12 @@ app.post(
         return;
       }
 
-      const { data: insertedInvoice, error: insertError } = await supabase
-        .from("e_invoices")
-        .insert([eInvoiceRecord])
-        .select();
+      const supabaseResult = await metricsReporter.trackGeminiRequest(
+        "database-insert",
+        async () => await supabase.from("e_invoices").insert([eInvoiceRecord]).select(),
+        imageIdentifier,
+      );
+      const { data: insertedInvoice, error: insertError } = supabaseResult as SupabaseResponse;
 
       if (insertError) {
         console.error("Supabase insert error:", insertError);
@@ -251,9 +272,10 @@ app.post(
       });
     } catch (error: unknown) {
       console.error("Error confirming invoice:", error);
-      res
-        .status(500)
-        .json({ error: "Gagal mengkonfirmasi faktur", details: error instanceof Error ? error.message : String(error) });
+      res.status(500).json({
+        error: "Gagal mengkonfirmasi faktur",
+        details: error instanceof Error ? error.message : String(error),
+      });
     }
   },
 );
