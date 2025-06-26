@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"yarn tailwind:watch\" \"vite\" --names \"tailwind,vite\" --prefix-colors \"blue,green\"",
+    "dev": "concurrently \"yarn tailwind:watch\" \"vite\" \"cd backend && yarn dev:ts\" --names \"tailwind,vite,server\" --prefix-colors \"blue,green,magenta\"",
     "dev:vite": "vite",
     "build": "yarn tailwind:build && tsc -b && vite build",
     "lint": "eslint .",
