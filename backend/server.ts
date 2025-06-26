@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 import { getGeminiResponse } from "./geminiServiceWithMetrics.js";
 import { parseAndTransformResponse } from "./responseParser.js";
 import { createClient } from "@supabase/supabase-js";
-import { metricsReporter } from "./metricsMiddleware.js";
+import { metricsReporter } from "./middleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -247,10 +247,12 @@ app.post(
 
       const supabaseResult = await metricsReporter.trackGeminiRequest(
         "database-insert",
-        async () => await supabase.from("e_invoices").insert([eInvoiceRecord]).select(),
+        async () =>
+          await supabase.from("e_invoices").insert([eInvoiceRecord]).select(),
         imageIdentifier,
       );
-      const { data: insertedInvoice, error: insertError } = supabaseResult as SupabaseResponse;
+      const { data: insertedInvoice, error: insertError } =
+        supabaseResult as SupabaseResponse;
 
       if (insertError) {
         console.error("Supabase insert error:", insertError);
