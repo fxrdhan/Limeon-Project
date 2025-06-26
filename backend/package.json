@@ -9,12 +9,15 @@
     "start": "node dist/server.js",
     "dev": "concurrently \"tsc --watch\" \"nodemon dist/server.js\"",
     "dev:ts": "tsx server.ts",
+    "metrics": "tsx metricsServer.ts",
+    "dev:metrics": "concurrently \"tsx server.ts\" \"tsx metricsServer.ts\" --names \"server,metrics\" --prefix-colors \"green,blue\"",
     "clean": "rm -rf dist",
     "prebuild": "yarn clean"
   },
   "dependencies": {
     "@google/genai": "^0.7.0",
     "@supabase/supabase-js": "^2.49.4",
+    "axios": "^1.10.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
