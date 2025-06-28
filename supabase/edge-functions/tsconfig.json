@@ -1,0 +1,7 @@
+{
+  // This file is used to prevent the TypeScript compiler from checking the files in this directory.
+  // The code in this directory is intended to be run in the Supabase Edge Functions environment,
+  // not in the local development environment. By providing an empty "files" array, we are telling
+  // the TypeScript compiler to not compile any files, effectively ignoring all type errors here.
+  "files": []
+}
