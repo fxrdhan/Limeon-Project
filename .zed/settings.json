@@ -1,0 +1,26 @@
+{
+  "file_scan_exclusions": ["node_modules/**", "dist/**", "build/**"],
+  "diagnostics": {
+    "include_warnings": false,
+    "inline": {
+      "enabled": false
+    }
+  },
+  "languages": {
+    "JavaScript": {
+      "enable_language_server": false
+    },
+    "TypeScript": {
+      "enable_language_server": false
+    },
+    "JSON": {
+      "enable_language_server": false
+    },
+    "SQL": {
+      "enable_language_server": false
+    }
+  },
+  "file_types": {
+    "Plain Text": ["supabase/**"]
+  }
+}
