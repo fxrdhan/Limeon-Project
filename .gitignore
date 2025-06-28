@@ -13,7 +13,7 @@ output.css
 
 # Dependency directories
 node_modules
-supabase/data/
+supabase/database/data/
 .env
 test.js
 .yarn/
