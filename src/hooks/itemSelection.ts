@@ -1,19 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { fuzzyMatch, getScore } from "@/utils/search";
+import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import type { Item, UnitConversion } from "@/types";
 
-export const useItemSelection = () => {
+interface UseItemSelectionOptions {
+  disableRealtime?: boolean;
+}
+
+export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
+  const { disableRealtime = false } = options;
   const [items, setItems] = useState<Item[]>([]);
   const [searchItem, setSearchItem] = useState("");
   const [showItemDropdown, setShowItemDropdown] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("items")
@@ -56,7 +58,11 @@ export const useItemSelection = () => {
     } catch (error) {
       console.error("Error fetching items:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   const getItemByID = (itemId: string): Item | undefined => {
     const item = items.find((item) => item.id === itemId);
@@ -98,8 +104,14 @@ export const useItemSelection = () => {
       return a.name.localeCompare(b.name);
     });
 
-  // Realtime subscription removed to prevent duplicates
-  // Parent components should handle realtime updates
+  // Add realtime subscription for items
+  useSupabaseRealtime("items", ["items"], {
+    enabled: !disableRealtime,
+    onRealtimeEvent: () => {
+      // Refetch items when realtime events occur to ensure we get complete data with joins
+      fetchItems();
+    },
+  });
 
   return {
     items,
