@@ -72,7 +72,9 @@ const CreatePurchase: React.FC = () => {
     setSelectedItem,
     filteredItems,
     getItemByID,
-  } = useItemSelection();
+  } = useItemSelection({
+    disableRealtime: false, // Always enable realtime for better synchronization
+  });
 
   const isAddNewItemDisabled = !(
     searchItem.trim() !== "" && filteredItems.length === 0
