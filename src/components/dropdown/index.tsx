@@ -8,6 +8,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import type { DropdownProps } from "@/types";
+import { truncateText, shouldTruncateText } from "@/utils/text";
 
 let activeDropdownCloseCallback: (() => void) | null = null;
 let activeDropdownId: string | null = null;
@@ -33,6 +34,7 @@ const Dropdown = ({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
   const [applyOpenStyles, setApplyOpenStyles] = useState(false);
+  const [hoveredOptionId, setHoveredOptionId] = useState<string | null>(null);
 
   const instanceId = useId();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -350,6 +352,7 @@ const Dropdown = ({
     };
   }, [isOpen, calculateDropdownPosition, manageFocusOnOpen, handleFocusOut]);
 
+
   useEffect(() => {
     if (isOpen && applyOpenStyles) {
       const timer = setTimeout(() => {
@@ -419,6 +422,21 @@ const Dropdown = ({
     },
     [],
   );
+
+  const handleOptionHover = useCallback((optionId: string, optionName: string) => {
+    if (!buttonRef.current) return;
+    
+    const buttonWidth = buttonRef.current.getBoundingClientRect().width;
+    const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
+    
+    if (shouldTruncateText(optionName, maxTextWidth)) {
+      setHoveredOptionId(optionId);
+    }
+  }, []);
+
+  const handleOptionLeave = useCallback(() => {
+    setHoveredOptionId(null);
+  }, []);
 
   const handleSearchBarKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -620,50 +638,73 @@ const Dropdown = ({
                         }
                       >
                         {currentFilteredOptions.length > 0 ? (
-                          currentFilteredOptions.map((option, index) => (
-                            <button
-                              key={option.id}
-                              id={`dropdown-option-${option.id}`}
-                              role="option"
-                              aria-selected={highlightedIndex === index}
-                              type="button"
-                              className={`flex items-center w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100 ${
-                                highlightedIndex === index ? "bg-gray-100" : ""
-                              }`}
-                              onClick={() => handleSelect(option.id)}
-                              onMouseEnter={() => setHighlightedIndex(index)}
-                              onFocus={() => setHighlightedIndex(index)}
-                              onBlur={() => {
-                                setTimeout(() => {
-                                  const activeElement = document.activeElement;
-                                  const isStillInDropdown =
-                                    dropdownMenuRef.current?.contains(
-                                      activeElement,
-                                    );
-                                  if (!isStillInDropdown) {
-                                    setHighlightedIndex(-1);
-                                  }
-                                }, 0);
-                              }}
-                            >
-                              {withRadio && (
-                                <div className="mr-2 flex items-center">
-                                  <div
-                                    className={`w-4 h-4 rounded-full border ${
-                                      option.id === value
-                                        ? "border-primary"
-                                        : "border-gray-300"
-                                    } flex items-center justify-center`}
-                                  >
-                                    {option.id === value && (
-                                      <div className="w-2 h-2 rounded-full bg-primary"></div>
-                                    )}
+                          currentFilteredOptions.map((option, index) => {
+                            const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
+                            const maxTextWidth = buttonWidth - (withRadio ? 72 : 48); // Account for padding, chevron, and radio
+                            const shouldTruncate = shouldTruncateText(option.name, maxTextWidth);
+                            const isHovered = hoveredOptionId === option.id;
+                            const truncatedText = shouldTruncate && !isHovered 
+                              ? truncateText(option.name, maxTextWidth)
+                              : option.name;
+
+                            return (
+                              <button
+                                key={option.id}
+                                id={`dropdown-option-${option.id}`}
+                                role="option"
+                                aria-selected={highlightedIndex === index}
+                                type="button"
+                                className={`flex items-start w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100 ${
+                                  highlightedIndex === index ? "bg-gray-100" : ""
+                                } transition-colors duration-150 ${isHovered && shouldTruncate ? 'items-start' : 'items-center'}`}
+                                onClick={() => handleSelect(option.id)}
+                                onMouseEnter={() => {
+                                  setHighlightedIndex(index);
+                                  handleOptionHover(option.id, option.name);
+                                }}
+                                onMouseLeave={handleOptionLeave}
+                                onFocus={() => setHighlightedIndex(index)}
+                                onBlur={() => {
+                                  setTimeout(() => {
+                                    const activeElement = document.activeElement;
+                                    const isStillInDropdown =
+                                      dropdownMenuRef.current?.contains(
+                                        activeElement,
+                                      );
+                                    if (!isStillInDropdown) {
+                                      setHighlightedIndex(-1);
+                                    }
+                                  }, 0);
+                                }}
+                              >
+                                {withRadio && (
+                                  <div className={`mr-2 flex ${isHovered && shouldTruncate ? 'items-start pt-0.5' : 'items-center'} flex-shrink-0`}>
+                                    <div
+                                      className={`w-4 h-4 rounded-full border ${
+                                        option.id === value
+                                          ? "border-primary"
+                                          : "border-gray-300"
+                                      } flex items-center justify-center`}
+                                    >
+                                      {option.id === value && (
+                                        <div className="w-2 h-2 rounded-full bg-primary"></div>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
-                              {option.name}
-                            </button>
-                          ))
+                                )}
+                                <span 
+                                  className={`${
+                                    isHovered && shouldTruncate 
+                                      ? 'whitespace-normal break-words leading-relaxed' 
+                                      : 'truncate'
+                                  } transition-all duration-200 text-left`}
+                                  title={shouldTruncate && !isHovered ? option.name : undefined}
+                                >
+                                  {isHovered && shouldTruncate ? option.name : truncatedText}
+                                </span>
+                              </button>
+                            );
+                          })
                         ) : (
                           <div className="py-2 px-3 text-sm text-gray-500">
                             Tidak ada pilihan yang sesuai
