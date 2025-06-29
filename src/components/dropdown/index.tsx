@@ -9,9 +9,18 @@ import {
 import { createPortal } from "react-dom";
 import type { DropdownProps } from "@/types";
 import { truncateText, shouldTruncateText } from "@/utils/text";
+import { fuzzyMatch } from "@/utils/search";
 
 let activeDropdownCloseCallback: (() => void) | null = null;
 let activeDropdownId: string | null = null;
+
+const getDropdownOptionScore = (option: { name: string; id: string }, searchTermLower: string): number => {
+  const nameLower = option.name?.toLowerCase?.() ?? "";
+  
+  if (nameLower.includes(searchTermLower)) return 3;
+  if (fuzzyMatch(option.name, searchTermLower)) return 1;
+  return 0;
+};
 
 const Dropdown = ({
   options,
@@ -51,9 +60,24 @@ const Dropdown = ({
     if (!searchList && searchTerm.trim() === "") {
       setCurrentFilteredOptions(options);
     } else if (searchTerm.trim() !== "") {
-      const filtered = options.filter((option) =>
-        option.name.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
+      const searchTermLower = searchTerm.toLowerCase();
+      const filtered = options
+        .filter((option) => {
+          return (
+            option.name.toLowerCase().includes(searchTermLower) ||
+            fuzzyMatch(option.name, searchTermLower)
+          );
+        })
+        .sort((a, b) => {
+          const scoreA = getDropdownOptionScore(a, searchTermLower);
+          const scoreB = getDropdownOptionScore(b, searchTermLower);
+
+          if (scoreA !== scoreB) {
+            return scoreB - scoreA;
+          }
+
+          return a.name.localeCompare(b.name);
+        });
       setCurrentFilteredOptions(filtered);
     } else if (searchList && searchTerm.trim() === "") {
       setCurrentFilteredOptions(options);
