@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import type {
     Item,
     Supplier,
@@ -39,11 +40,6 @@ export const usePurchaseForm = ({
 
     const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
 
-    useEffect(() => {
-        fetchSuppliers();
-        fetchCompanyProfile();
-    }, []);
-
     const fetchCompanyProfile = async () => {
         try {
             const { data, error } = await supabase
@@ -64,7 +60,7 @@ export const usePurchaseForm = ({
         }
     };
 
-    const fetchSuppliers = async () => {
+    const fetchSuppliers = useCallback(async () => {
         try {
             const { data, error } = await supabase
                 .from("suppliers")
@@ -76,7 +72,20 @@ export const usePurchaseForm = ({
         } catch (error) {
             console.error("Error fetching suppliers:", error);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchSuppliers();
+        fetchCompanyProfile();
+    }, [fetchSuppliers]);
+
+    // Add realtime subscription for supplier updates
+    useSupabaseRealtime("suppliers", null, {
+        enabled: true,
+        onRealtimeEvent: () => {
+            fetchSuppliers();
+        },
+    });
 
     const handleChange = (
         e: React.ChangeEvent<
