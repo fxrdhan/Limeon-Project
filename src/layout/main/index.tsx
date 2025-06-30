@@ -7,6 +7,7 @@ import { usePresence } from "@/hooks/usePresence";
 const MainLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(true);
   usePresence();
   const isLockedRef = useRef(isLocked);
 
@@ -56,9 +57,14 @@ const MainLayout = () => {
       }
     }, 1500); // Collapse after 1.5s from start
 
+    const animationEndTimer = setTimeout(() => {
+      setIsAnimating(false); // Enable mouse interactions
+    }, 2000); // Animation complete after 2s (1.5s collapse + 0.5s buffer)
+
     return () => {
       clearTimeout(expandTimer);
       clearTimeout(collapseTimer);
+      clearTimeout(animationEndTimer);
     };
   }, []);
 
@@ -79,7 +85,10 @@ const MainLayout = () => {
   }, [setIsLocked, setSidebarCollapsed]);
 
   return (
-    <div className="flex h-screen bg-gray-100 text-gray-800">
+    <div className="flex h-screen bg-gray-100 text-gray-800 relative">
+      {isAnimating && (
+        <div className="fixed inset-0 z-50 pointer-events-auto cursor-wait" />
+      )}
       <Sidebar
         collapsed={sidebarCollapsed}
         isLocked={isLocked}
