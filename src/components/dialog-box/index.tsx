@@ -192,7 +192,7 @@ export const ConfirmDialogComponent: React.FC = () => {
               <div>
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="text"
                   onClick={handleCancel}
                   ref={cancelButtonRef}
                 >
