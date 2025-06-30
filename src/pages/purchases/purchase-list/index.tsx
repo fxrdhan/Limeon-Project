@@ -306,17 +306,21 @@ const PurchaseList = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableHeader>No. Faktur</TableHeader>
-                  <TableHeader>Tanggal</TableHeader>
-                  <TableHeader>Supplier</TableHeader>
-                  <TableHeader className="text-right">Total</TableHeader>
-                  <TableHeader className="text-center">
+                  <TableHeader className="w-[16%]">No. Faktur</TableHeader>
+                  <TableHeader className="w-[10%]">Tanggal</TableHeader>
+                  <TableHeader className="w-[16%]">Supplier</TableHeader>
+                  <TableHeader className="w-[12%] text-right">
+                    Total
+                  </TableHeader>
+                  <TableHeader className="w-[16%] text-center!">
                     Status Pembayaran
                   </TableHeader>
-                  <TableHeader className="text-center">
+                  <TableHeader className="w-[16%] text-center!">
                     Metode Pembayaran
                   </TableHeader>
-                  <TableHeader className="text-center">Aksi</TableHeader>
+                  <TableHeader className="w-[14%] text-center!">
+                    Aksi
+                  </TableHeader>
                 </TableRow>
               </TableHead>
               <TableBody>
