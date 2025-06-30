@@ -257,7 +257,11 @@ export const useAddItemForm = ({
         try {
           const { formData: cachedFormData, conversions: cachedConversions } =
             JSON.parse(cachedData);
-          setInitialDataForForm(cachedFormData);
+          // If we have initialSearchQuery, use it for the name field even if cached data exists
+          const formDataWithSearchQuery = initialSearchQuery
+            ? { ...cachedFormData, name: initialSearchQuery }
+            : cachedFormData;
+          setInitialDataForForm(formDataWithSearchQuery);
           unitConversionHook.setConversions(cachedConversions || []);
           setInitialUnitConversions(cachedConversions || []);
         } catch (e) {
