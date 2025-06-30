@@ -56,6 +56,7 @@ const CreatePurchase: React.FC = () => {
   } = usePurchaseForm({ initialInvoiceNumber: initialInvoiceNumberFromState });
   const [isAddItemPortalOpen, setIsAddItemPortalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [portalRenderId, setPortalRenderId] = useState(0);
 
   const [editingVatPercentage, setEditingVatPercentage] = useState(false);
   const [vatPercentageValue, setVatPercentageValue] = useState(
@@ -176,6 +177,7 @@ const CreatePurchase: React.FC = () => {
   return (
     <>
       <AddItemPortal
+        key={`${searchItem ?? ""}-${portalRenderId}`}
         isOpen={isAddItemPortalOpen}
         onClose={handleCloseAddItemPortal}
         initialSearchQuery={searchItem}
@@ -337,7 +339,10 @@ const CreatePurchase: React.FC = () => {
                 selectedItem={selectedItem}
                 setSelectedItem={setSelectedItem}
                 isAddItemButtonDisabled={isAddNewItemDisabled}
-                onOpenAddItemPortal={() => setIsAddItemPortalOpen(true)}
+                onOpenAddItemPortal={() => {
+                  setIsAddItemPortalOpen(true);
+                  setPortalRenderId(prev => prev + 1);
+                }}
               />
               <>
                 <Table>
