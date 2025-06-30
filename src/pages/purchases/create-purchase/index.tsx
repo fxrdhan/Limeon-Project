@@ -346,9 +346,9 @@ const CreatePurchase: React.FC = () => {
                       <TableHeader className="w-[3%] !text-center">
                         No
                       </TableHeader>
-                      <TableHeader className="w-[8%]">Kode</TableHeader>
+                      <TableHeader className="w-[6%]">Kode</TableHeader>
                       <TableHeader className="w-[30%]">Nama</TableHeader>
-                      <TableHeader className="w-[9%] !text-left">
+                      <TableHeader className="w-[10%] !text-left">
                         Batch No.
                       </TableHeader>
                       <TableHeader className="w-[10%] !text-center">
@@ -406,11 +406,11 @@ const CreatePurchase: React.FC = () => {
                               onChange={(e) =>
                                 updateItemBatchNo(item.id, e.target.value)
                               }
-                              className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-left"
+                              className="w-20 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-left"
                               placeholder="No. Batch"
                             />
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="!text-center">
                             <Datepicker
                               value={
                                 item.expiry_date
@@ -425,7 +425,7 @@ const CreatePurchase: React.FC = () => {
                                     : "",
                                 );
                               }}
-                              inputClassName="w-full !text-center text-sm py-[3px]! px-1! bg-transparent border-0! border-b border-gray-300! focus:border-primary! focus:ring-0! rounded-none!"
+                              inputClassName="w-full text-center text-sm py-[3px]! px-1! bg-transparent border-0! border-b border-gray-300! focus:border-primary! focus:ring-0! rounded-none!"
                               placeholder="Pilih ED"
                               minDate={new Date()}
                               portalWidth="280px"
@@ -463,7 +463,7 @@ const CreatePurchase: React.FC = () => {
                                   numericValue < 1 ? 1 : numericValue,
                                 );
                               }}
-                              className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-center"
+                              className="w-8 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-leeft"
                             />
                           </TableCell>
                           <TableCell className="!text-center">
@@ -472,7 +472,7 @@ const CreatePurchase: React.FC = () => {
                               onChange={(e) =>
                                 onHandleUnitChange(item.id, e.target.value)
                               }
-                              className="bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-center appearance-none cursor-pointer"
+                              className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-left appearance-none cursor-pointer"
                             >
                               <option
                                 value={
@@ -520,7 +520,7 @@ const CreatePurchase: React.FC = () => {
                                 );
                                 updateItem(item.id, "price", numericValue);
                               }}
-                              className="w-28 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
+                              className="w-20 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
                               placeholder="Rp 0"
                             />
                           </TableCell>
@@ -545,7 +545,7 @@ const CreatePurchase: React.FC = () => {
                                   Math.min(numericValue, 100),
                                 );
                               }}
-                              className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
+                              className="w-12 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
                               placeholder="0%"
                               onKeyDown={(e) => {
                                 if (
@@ -587,7 +587,7 @@ const CreatePurchase: React.FC = () => {
                                     Math.min(numericValue, 100),
                                   );
                                 }}
-                                className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
+                                className="w-12 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
                                 placeholder="0%"
                                 onKeyDown={(e) => {
                                   if (
