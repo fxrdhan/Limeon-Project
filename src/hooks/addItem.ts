@@ -724,6 +724,15 @@ export const useAddItemForm = ({
         queryKey: ["items"],
         refetchType: "all",
       });
+      
+      // Force refetch items with a small delay to ensure data consistency
+      setTimeout(() => {
+        queryClient.refetchQueries({
+          queryKey: ["items"],
+          type: "all",
+        });
+      }, 100);
+      
       sessionStorage.removeItem(CACHE_KEY);
       onClose();
     } catch (error) {
