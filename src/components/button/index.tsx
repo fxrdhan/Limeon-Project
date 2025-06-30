@@ -20,13 +20,14 @@ const Button = React.forwardRef<
     ref,
   ) => {
     const variants: Record<ButtonVariant, string> = {
-      text: "text-gray-700 hover:text-gray-400",
+      text: "text-gray-500 hover:text-black hover:underline underline-offset-2 decoration-2",
       primary:
         "rounded-lg ring-0 outline-hidden shadow-md bg-primary flex items-center text-white hover:text-white",
       secondary:
         "rounded-lg bg-secondary bg-secondary ring-0 outline-hidden flex items-center text-white hover:text-white",
       accent: "bg-accent hover:bg-rose-600 text-white",
-      danger: "bg-accent outline-hidden text-white",
+      danger:
+        "text-accent hover:text-white hover:bg-accent outline-hidden hover:opacity-100!",
     };
 
     const sizes = {
