@@ -211,8 +211,8 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
           searchItem.trim() !== "" &&
           !isAddItemButtonDisabled
         ) {
-          // Focus the add item button when no items found and Enter is pressed
-          addItemButtonRef.current?.focus();
+          // Open add item portal directly when no items found and Enter is pressed
+          onOpenAddItemPortal();
         }
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
