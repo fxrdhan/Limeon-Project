@@ -113,6 +113,10 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
     },
   });
 
+  const refetchItems = useCallback(() => {
+    fetchItems();
+  }, [fetchItems]);
+
   return {
     items,
     searchItem,
@@ -123,5 +127,6 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
     setSelectedItem,
     filteredItems,
     getItemByID,
+    refetchItems,
   };
 };
