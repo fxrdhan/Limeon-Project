@@ -73,6 +73,7 @@ const CreatePurchase: React.FC = () => {
     setSelectedItem,
     filteredItems,
     getItemByID,
+    refetchItems,
   } = useItemSelection({
     disableRealtime: false, // Always enable realtime for better synchronization
   });
@@ -167,6 +168,8 @@ const CreatePurchase: React.FC = () => {
     setTimeout(() => {
       setIsAddItemPortalOpen(false);
       setIsClosing(false);
+      // Refresh items data to ensure new items appear in dropdown
+      refetchItems();
       // Focus the item search input after portal closes
       setTimeout(() => {
         itemSearchBarRef.current?.focus();
