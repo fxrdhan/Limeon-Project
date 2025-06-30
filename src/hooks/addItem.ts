@@ -642,6 +642,7 @@ export const useAddItemForm = ({
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["items"] });
       onClose();
     },
     onError: (error) => {
