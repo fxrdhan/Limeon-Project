@@ -139,6 +139,9 @@ const subscriptionRegistry = new Map<
   }
 >();
 
+// Global event tracking for shared subscriptions
+const globalEventHandled = new Map<string, Set<string>>();
+
 export const useRealtimeSubscription = (
   tableName: string,
   queryKeyToInvalidate: QueryKey | null,
@@ -167,33 +170,57 @@ export const useRealtimeSubscription = (
   // Per instance event handled set
   const eventHandledRef = useRef<Set<string>>(new Set());
 
-  // Create unique subscription key (include instance ID)
-  const subscriptionKey = `${tableName}:${
-    queryKeyToInvalidate
-      ? Array.isArray(queryKeyToInvalidate)
-        ? queryKeyToInvalidate.join("-")
-        : String(queryKeyToInvalidate)
-      : "callback"
-  }:${hookInstanceId.current}`;
+  // Create subscription key (shared for critical tables like items)
+  const sharedTables = ['items', 'purchases', 'purchase_items'];
+  const shouldShareSubscription = sharedTables.includes(tableName);
+  
+  // Force shared subscription for items table to ensure cross-browser sync
+  const subscriptionKey = tableName === 'items' 
+    ? `items:shared` // Always use same key for items regardless of query keys
+    : `${tableName}:${
+        queryKeyToInvalidate
+          ? Array.isArray(queryKeyToInvalidate)
+            ? queryKeyToInvalidate.join("-")
+            : String(queryKeyToInvalidate)
+          : "callback"
+      }${shouldShareSubscription ? '' : `:${hookInstanceId.current}`}`;
 
   const handleRealtimeEvent = useCallback(
     (payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>) => {
       // Create unique event ID to prevent duplicates
       const eventId = `${payload.eventType}_${payload.commit_timestamp}_${JSON.stringify((payload.new as { id?: unknown })?.id || (payload.old as { id?: unknown })?.id)}`;
 
+      // Use global event tracking for shared subscriptions, instance-specific for others
+      const useGlobalTracking = tableName === 'items' || shouldShareSubscription;
+      const eventHandledSet = useGlobalTracking 
+        ? (() => {
+            const globalKey = tableName === 'items' ? 'items:shared' : tableName;
+            if (!globalEventHandled.has(globalKey)) {
+              globalEventHandled.set(globalKey, new Set());
+            }
+            return globalEventHandled.get(globalKey)!;
+          })()
+        : eventHandledRef.current;
+
       // Skip if this exact event was already handled
-      if (eventHandledRef.current.has(eventId)) {
-        console.log(`🔄 Skipping duplicate event: ${eventId}`);
+      if (eventHandledSet.has(eventId)) {
+        console.log(`🔄 Skipping duplicate event: ${eventId} (${useGlobalTracking ? 'global' : 'instance'})`);
         return;
       }
 
       // Mark event as handled
-      eventHandledRef.current.add(eventId);
+      eventHandledSet.add(eventId);
 
       // Clean up old events (keep only last 10)
-      if (eventHandledRef.current.size > 10) {
-        const eventsArray = Array.from(eventHandledRef.current);
-        eventHandledRef.current = new Set(eventsArray.slice(-10));
+      if (eventHandledSet.size > 10) {
+        const eventsArray = Array.from(eventHandledSet);
+        const newSet = new Set(eventsArray.slice(-10));
+        if (useGlobalTracking) {
+          const globalKey = tableName === 'items' ? 'items:shared' : tableName;
+          globalEventHandled.set(globalKey, newSet);
+        } else {
+          eventHandledRef.current = newSet;
+        }
       }
 
       // Update last activity
@@ -306,6 +333,7 @@ export const useRealtimeSubscription = (
       debounceMs,
       silentMode,
       subscriptionKey,
+      shouldShareSubscription,
       options.showDiffInConsole,
       options.detailedLogging,
     ],
@@ -462,6 +490,16 @@ export const useRealtimeSubscription = (
 
     // Clear event history
     eventHandledRef.current.clear();
+    
+    // Clear global event history for shared subscriptions when last subscriber
+    const useGlobalTracking = tableName === 'items' || shouldShareSubscription;
+    if (useGlobalTracking) {
+      const subscription = subscriptionRegistry.get(subscriptionKey);
+      if (subscription && subscription.subscribers <= 1) {
+        const globalKey = tableName === 'items' ? 'items:shared' : tableName;
+        globalEventHandled.delete(globalKey);
+      }
+    }
 
     const subscription = subscriptionRegistry.get(subscriptionKey);
     if (subscription && isSubscribedRef.current) {
@@ -487,7 +525,7 @@ export const useRealtimeSubscription = (
 
     isSubscribedRef.current = false;
     connectionReadyRef.current = false;
-  }, [subscriptionKey]);
+  }, [subscriptionKey, shouldShareSubscription, tableName]);
 
   useEffect(() => {
     if (enabled) {
