@@ -416,6 +416,12 @@ export const useMasterDataManagement = (
   // Only enable realtime if explicitly requested and not already handled by parent component
   useSupabaseRealtime(tableName, [tableName], {
     enabled: realtime && !actualIsModalOpen,
+    onRealtimeEvent: (payload) => {
+      console.log(`🔥 MASTER DATA (${tableName}) - Realtime event received:`, payload.eventType, payload);
+      console.log(`🔥 MASTER DATA (${tableName}) - Cache will be invalidated`);
+    },
+    showDiffInConsole: true,
+    detailedLogging: true,
   });
 
   useFieldFocus({
