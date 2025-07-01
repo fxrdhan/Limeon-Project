@@ -306,9 +306,11 @@ export const useMasterDataManagement = (
     queryKey: [tableName, currentPage, debouncedSearch, itemsPerPage],
     queryFn: () => fetchData(currentPage, debouncedSearch, itemsPerPage),
     placeholderData: keepPreviousData,
-    staleTime: 5 * 1000, // Reduced staleTime for faster updates
+    staleTime: 0, // Always consider data stale for instant updates
+    gcTime: 5 * 60 * 1000, // Keep cache for 5 minutes
     refetchOnMount: true,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     refetchInterval: false,
   });
 
@@ -433,19 +435,26 @@ export const useMasterDataManagement = (
   // Only enable realtime if explicitly requested and not already handled by parent component
   useSupabaseRealtime(tableName, [tableName], {
     enabled: realtime && !actualIsModalOpen,
-    onRealtimeEvent: (payload) => {
+    debounceMs: 0, // Instant updates for better responsiveness
+    onRealtimeEvent: async (payload) => {
       console.log(`🔥 MASTER DATA (${tableName}) - Realtime event received:`, payload.eventType, payload);
-      console.log(`🔥 MASTER DATA (${tableName}) - Cache will be invalidated`);
+      console.log(`🔥 MASTER DATA (${tableName}) - Immediate cache invalidation and refetch`);
       
-      // Force immediate refetch for table responsiveness
+      // Immediate cache invalidation
+      await queryClient.invalidateQueries({ queryKey: [tableName] });
+      
+      // Force immediate refetch for maximum responsiveness
       queryClient.refetchQueries({
         queryKey: [tableName],
         type: 'active'
+      }).then(() => {
+        console.log(`🔥 MASTER DATA (${tableName}) - Data refreshed successfully`);
+      }).catch((error) => {
+        console.error(`❌ MASTER DATA (${tableName}) - Error refreshing data:`, error);
       });
     },
     showDiffInConsole: true,
     detailedLogging: true,
-    debounceMs: 50, // Faster response
   });
 
   useFieldFocus({
