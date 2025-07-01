@@ -306,8 +306,10 @@ export const useMasterDataManagement = (
     queryKey: [tableName, currentPage, debouncedSearch, itemsPerPage],
     queryFn: () => fetchData(currentPage, debouncedSearch, itemsPerPage),
     placeholderData: keepPreviousData,
-    staleTime: 30 * 1000,
+    staleTime: 5 * 1000, // Reduced staleTime for faster updates
     refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   const currentData = useMemo(() => queryData?.data || [], [queryData?.data]);
@@ -320,7 +322,12 @@ export const useMasterDataManagement = (
       if (error) throw error;
     },
     onSuccess: () => {
+      // Immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: [tableName] });
+      queryClient.refetchQueries({ 
+        queryKey: [tableName],
+        type: 'active'
+      });
       setIsAddModalOpen(false);
     },
     onError: (error: Error) => {
@@ -342,7 +349,12 @@ export const useMasterDataManagement = (
       if (error) throw error;
     },
     onSuccess: () => {
+      // Immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: [tableName] });
+      queryClient.refetchQueries({ 
+        queryKey: [tableName],
+        type: 'active'
+      });
       setIsEditModalOpen(false);
       setEditingItem(null);
     },
@@ -360,7 +372,12 @@ export const useMasterDataManagement = (
       if (error) throw error;
     },
     onSuccess: () => {
+      // Immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: [tableName] });
+      queryClient.refetchQueries({ 
+        queryKey: [tableName],
+        type: 'active'
+      });
       setIsEditModalOpen(false);
       setEditingItem(null);
     },
@@ -419,9 +436,16 @@ export const useMasterDataManagement = (
     onRealtimeEvent: (payload) => {
       console.log(`🔥 MASTER DATA (${tableName}) - Realtime event received:`, payload.eventType, payload);
       console.log(`🔥 MASTER DATA (${tableName}) - Cache will be invalidated`);
+      
+      // Force immediate refetch for table responsiveness
+      queryClient.refetchQueries({
+        queryKey: [tableName],
+        type: 'active'
+      });
     },
     showDiffInConsole: true,
     detailedLogging: true,
+    debounceMs: 50, // Faster response
   });
 
   useFieldFocus({
