@@ -92,6 +92,7 @@ export const useAddItemForm = ({
   itemId,
   initialSearchQuery,
   onClose,
+  refetchItems,
 }: UseAddItemFormProps) => {
   const queryClient = useQueryClient();
   const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
@@ -732,6 +733,13 @@ export const useAddItemForm = ({
           type: "all",
         });
       }, 100);
+      
+      // Call refetchItems callback if provided
+      if (refetchItems) {
+        setTimeout(() => {
+          refetchItems();
+        }, 150);
+      }
       
       sessionStorage.removeItem(CACHE_KEY);
       onClose();
