@@ -14,11 +14,12 @@ export const useAddItemPageHandlers = ({
   initialSearchQuery,
   onClose,
   expiryCheckboxRef,
+  refetchItems,
 }: AddItemPageHandlersProps) => {
   const descriptionRef = useRef<HTMLDivElement>(null);
   const marginInputRef = useRef<HTMLInputElement>(null);
   const minStockInputRef = useRef<HTMLInputElement>(null);
-  const addItemForm = useAddItemForm({ itemId, initialSearchQuery, onClose });
+  const addItemForm = useAddItemForm({ itemId, initialSearchQuery, onClose, refetchItems });
   const [isClosing, setIsClosing] = useState(false);
 
   const [showDescription, setShowDescription] = useState(false);
