@@ -30,11 +30,14 @@ export function useSupabaseMutation<TData = unknown, TError = Error, TVariables 
   return useMutation({
     mutationFn,
     onSuccess: (data: TData, variables: TVariables, context: TContext | undefined) => {
-      if (Array.isArray(key)) {
-        queryClient.invalidateQueries({ queryKey: key });
-      } else {
-        queryClient.invalidateQueries({ queryKey: [key] });
-      }
+      const keyToInvalidate = Array.isArray(key) ? key : [key];
+      
+      // Immediate cache invalidation and refetch for better responsiveness
+      queryClient.invalidateQueries({ queryKey: keyToInvalidate });
+      queryClient.refetchQueries({ 
+        queryKey: keyToInvalidate,
+        type: 'active'
+      });
 
       if (options?.onSuccess) {
         if (context !== undefined) {
