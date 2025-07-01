@@ -145,6 +145,7 @@ export interface AddItemPortalProps {
   onClose: () => void;
   itemId?: string;
   initialSearchQuery?: string;
+  refetchItems?: () => void;
 }
 
 export interface AddEditModalProps {
@@ -649,6 +650,7 @@ export interface UseAddItemFormProps {
   itemId?: string;
   initialSearchQuery?: string;
   onClose: () => void;
+  refetchItems?: () => void;
 }
 
 export interface DBUnitConversion {
@@ -714,6 +716,7 @@ export interface AddItemPageHandlersProps {
   initialSearchQuery?: string;
   onClose: () => void;
   expiryCheckboxRef?: React.RefObject<HTMLLabelElement | null>;
+  refetchItems?: () => void;
 }
 
 export interface PageTitleProps {
