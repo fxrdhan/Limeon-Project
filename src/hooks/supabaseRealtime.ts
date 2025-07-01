@@ -28,7 +28,7 @@ export const useSupabaseRealtime = (
     onRealtimeEvent,
     detailedLogging = false,
     showDiffInConsole = true,
-    debounceMs = 50,
+    debounceMs = 0, // Default to 0ms for instant updates
   } = options;
 
   // Use the improved realtime subscription hook
