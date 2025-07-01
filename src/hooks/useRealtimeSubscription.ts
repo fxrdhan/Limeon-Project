@@ -150,7 +150,7 @@ export const useRealtimeSubscription = (
   const {
     enabled = true,
     onRealtimeEvent,
-    debounceMs = 300,
+    debounceMs = 50,
     retryAttempts = 3,
     silentMode = false,
   } = options;
@@ -295,34 +295,40 @@ export const useRealtimeSubscription = (
         clearTimeout(debounceTimeoutRef.current);
       }
 
-      // Debounce the event handling
-      debounceTimeoutRef.current = setTimeout(() => {
-        try {
-          if (onRealtimeEvent) {
-            onRealtimeEvent(payload, detailedDiff);
-          } else if (queryKeyToInvalidate) {
-            if (!silentMode) {
-              const tableNameFormatted = tableName
-                .replace(/_/g, " ")
-                .replace(/\b\w/g, (l) => l.toUpperCase());
-              alert.info(
-                `${summary} - Data ${tableNameFormatted} telah diperbarui.`,
-              );
-            }
-
-            queryClient.invalidateQueries({
-              queryKey: Array.isArray(queryKeyToInvalidate)
-                ? queryKeyToInvalidate
-                : [queryKeyToInvalidate],
-            });
+      // Immediate invalidation for better responsiveness
+      try {
+        if (onRealtimeEvent) {
+          onRealtimeEvent(payload, detailedDiff);
+        } else if (queryKeyToInvalidate) {
+          if (!silentMode) {
+            const tableNameFormatted = tableName
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+            alert.info(
+              `${summary} - Data ${tableNameFormatted} telah diperbarui.`,
+            );
           }
-        } catch (error) {
-          console.error(
-            `Error processing realtime event for ${tableName}:`,
-            error,
-          );
+
+          // Immediate cache invalidation
+          queryClient.invalidateQueries({
+            queryKey: Array.isArray(queryKeyToInvalidate)
+              ? queryKeyToInvalidate
+              : [queryKeyToInvalidate],
+          });
+          
+          // Force refetch for better responsiveness
+          queryClient.refetchQueries({
+            queryKey: Array.isArray(queryKeyToInvalidate)
+              ? queryKeyToInvalidate
+              : [queryKeyToInvalidate],
+          });
         }
-      }, debounceMs);
+      } catch (error) {
+        console.error(
+          `Error processing realtime event for ${tableName}:`,
+          error,
+        );
+      }
     },
     [
       tableName,
