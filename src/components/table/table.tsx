@@ -1,7 +1,8 @@
 import { classNames } from "@/lib/classNames";
 import type { TableProps, TableCellProps, TableRowProps } from "@/types";
+import { memo } from "react";
 
-export const Table = ({ children, className }: TableProps) => {
+export const Table = memo(({ children, className }: TableProps) => {
   return (
     <div
       className={classNames(
@@ -14,7 +15,8 @@ export const Table = ({ children, className }: TableProps) => {
       </table>
     </div>
   );
-};
+});
+Table.displayName = 'Table';
 
 export const TableHead = ({ children, className }: TableProps) => {
   return (
@@ -39,7 +41,7 @@ export const TableBody = ({ children, className }: TableProps) => {
   );
 };
 
-export const TableRow = ({ children, className, ...props }: TableRowProps) => {
+export const TableRow = memo(({ children, className, ...props }: TableRowProps) => {
   return (
     <tr
       className={classNames(
@@ -51,9 +53,10 @@ export const TableRow = ({ children, className, ...props }: TableRowProps) => {
       {children}
     </tr>
   );
-};
+});
+TableRow.displayName = 'TableRow';
 
-export const TableCell = ({
+export const TableCell = memo(({
   children,
   className,
   colSpan,
@@ -73,7 +76,8 @@ export const TableCell = ({
       {children}
     </td>
   );
-};
+});
+TableCell.displayName = 'TableCell';
 
 export const TableHeader = ({ children, className }: TableProps) => {
   return (
