@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { fuzzyMatch, getScore } from "@/utils/search";
 import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Item, UnitConversion } from "@/types";
 
 interface UseItemSelectionOptions {
@@ -10,7 +11,7 @@ interface UseItemSelectionOptions {
 
 export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
   const { disableRealtime = false } = options;
-  const [items, setItems] = useState<Item[]>([]);
+  const queryClient = useQueryClient();
   const [searchItem, setSearchItem] = useState("");
   const [showItemDropdown, setShowItemDropdown] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -54,15 +55,20 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
           unit_conversions: parsedConversions,
         };
       });
-      setItems(mappedData as Item[]);
+      return mappedData as Item[];
     } catch (error) {
       console.error("Error fetching items:", error);
+      return [];
     }
   }, []);
 
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+  // Use React Query for consistent caching with item-list page
+  const { data: items = [], refetch: refetchQuery } = useQuery({
+    queryKey: ["items"], // Use same base key as masterData
+    queryFn: fetchItems,
+    staleTime: 30 * 1000,
+    refetchOnMount: true,
+  });
 
   const getItemByID = (itemId: string): Item | undefined => {
     const item = items.find((item) => item.id === itemId);
@@ -107,15 +113,19 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
   // Add realtime subscription for items
   useSupabaseRealtime("items", ["items"], {
     enabled: !disableRealtime,
-    onRealtimeEvent: () => {
-      // Refetch items when realtime events occur to ensure we get complete data with joins
-      fetchItems();
+    onRealtimeEvent: (payload) => {
+      console.log("🔥 ITEM SELECTION - Realtime event received:", payload.eventType, payload);
+      // Invalidate React Query cache when realtime events occur
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      console.log("🔥 ITEM SELECTION - Cache invalidated for items");
     },
+    showDiffInConsole: true,
+    detailedLogging: true,
   });
 
   const refetchItems = useCallback(() => {
-    fetchItems();
-  }, [fetchItems]);
+    refetchQuery();
+  }, [refetchQuery]);
 
   return {
     items,
