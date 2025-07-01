@@ -150,7 +150,6 @@ export const useRealtimeSubscription = (
   const {
     enabled = true,
     onRealtimeEvent,
-    debounceMs = 50,
     retryAttempts = 3,
     silentMode = false,
   } = options;
@@ -336,7 +335,6 @@ export const useRealtimeSubscription = (
       onRealtimeEvent,
       queryClient,
       alert,
-      debounceMs,
       silentMode,
       subscriptionKey,
       shouldShareSubscription,
