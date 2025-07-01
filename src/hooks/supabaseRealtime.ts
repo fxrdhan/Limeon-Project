@@ -15,6 +15,7 @@ interface SupabaseRealtimeOptions {
   ) => void;
   detailedLogging?: boolean;
   showDiffInConsole?: boolean;
+  debounceMs?: number;
 }
 
 export const useSupabaseRealtime = (
@@ -27,6 +28,7 @@ export const useSupabaseRealtime = (
     onRealtimeEvent,
     detailedLogging = false,
     showDiffInConsole = true,
+    debounceMs = 50,
   } = options;
 
   // Use the improved realtime subscription hook
@@ -34,7 +36,7 @@ export const useSupabaseRealtime = (
     useRealtimeSubscription(tableName, queryKeyToInvalidate, {
       enabled,
       onRealtimeEvent,
-      debounceMs: 300, // Even shorter debounce for immediate updates
+      debounceMs, // Use passed debounceMs or default to 50ms
       retryAttempts: 3,
       silentMode: false, // Keep showing notifications
       detailedLogging,
