@@ -49,6 +49,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
   initialSearchQuery,
   isClosing,
   setIsClosing,
+  refetchItems,
 }) => {
   const [tooltipPosition, setTooltipPosition] = useState<{
     top: number;
@@ -125,6 +126,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
     initialSearchQuery,
     onClose,
     expiryCheckboxRef,
+    refetchItems,
   });
 
   const nameInputRef = useRef<HTMLInputElement>(null);
