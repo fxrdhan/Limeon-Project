@@ -66,8 +66,11 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
   const { data: items = [], refetch: refetchQuery } = useQuery({
     queryKey: ["items"], // Use same base key as masterData
     queryFn: fetchItems,
-    staleTime: 30 * 1000,
+    staleTime: 0, // Always consider data stale for faster updates
+    gcTime: 5 * 60 * 1000, // Keep cache for 5 minutes
     refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const getItemByID = (itemId: string): Item | undefined => {
@@ -110,14 +113,24 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
       return a.name.localeCompare(b.name);
     });
 
-  // Add realtime subscription for items
+  // Add realtime subscription for items with optimized performance
   useSupabaseRealtime("items", ["items"], {
     enabled: !disableRealtime,
-    onRealtimeEvent: (payload) => {
+    debounceMs: 0, // No debounce for instant updates
+    onRealtimeEvent: async (payload) => {
       console.log("🔥 ITEM SELECTION - Realtime event received:", payload.eventType, payload);
-      // Invalidate React Query cache when realtime events occur
-      queryClient.invalidateQueries({ queryKey: ["items"] });
-      console.log("🔥 ITEM SELECTION - Cache invalidated for items");
+      
+      // Immediate cache invalidation and refetch for fast response
+      await queryClient.invalidateQueries({ queryKey: ["items"] });
+      
+      // Force immediate refetch instead of waiting for stale check
+      refetchQuery().then(() => {
+        console.log("🔥 ITEM SELECTION - Items refetched immediately after realtime event");
+      }).catch((error) => {
+        console.error("❌ ITEM SELECTION - Error refetching items:", error);
+      });
+      
+      console.log("🔥 ITEM SELECTION - Cache invalidated and refetch triggered");
     },
     showDiffInConsole: true,
     detailedLogging: true,
