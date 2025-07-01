@@ -186,6 +186,7 @@ const CreatePurchase: React.FC = () => {
         initialSearchQuery={searchItem}
         isClosing={isClosing}
         setIsClosing={setIsClosing}
+        refetchItems={refetchItems}
       />
 
       <Card>
