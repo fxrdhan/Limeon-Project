@@ -25,7 +25,6 @@ const ConfirmInvoicePage = lazy(
   () => import("@/pages/purchases/confirm-invoice"),
 );
 const PurchaseList = lazy(() => import("@/pages/purchases/purchase-list"));
-const CreatePurchase = lazy(() => import("@/pages/purchases/create-purchase"));
 const Profile = lazy(() => import("@/pages/settings/profile"));
 const PrintPurchase = lazy(() => import("@/pages/purchases/print-purchase"));
 const ViewPurchase = lazy(() => import("@/pages/purchases/view-purchase"));
@@ -197,14 +196,6 @@ function App() {
                     }
                   >
                     <PurchaseList />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="create"
-                element={
-                  <Suspense fallback={<FormLoadingFallback />}>
-                    <CreatePurchase />
                   </Suspense>
                 }
               />
