@@ -110,32 +110,26 @@ h1 {
     }
 }
 
-/* Custom Scrollbar Styling */
+/* Hide Scrollbars Completely */
 /* Untuk Webkit (Chrome, Safari, Edge baru) */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 0px;
+    height: 0px;
+    display: none;
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.02);
-    border-radius: 10px;
+    display: none;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(26, 115, 232, 0.3);
-    border-radius: 10px;
-    transition: all 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(26, 115, 232, 0.5);
+    display: none;
 }
 
 /* Untuk Firefox */
 * {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(26, 115, 232, 0.5) rgba(0, 0, 0, 0.1);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 /* Kelas untuk menghilangkan scrollbar jika diperlukan */
