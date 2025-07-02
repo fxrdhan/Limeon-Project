@@ -3,7 +3,6 @@ import MainLayout from "@/layout/main";
 import { AlertProvider } from "@/components/alert";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
-import ErrorBoundary from "@/components/ErrorBoundary.tsx";
 import { useAuthStore } from "@/store/authStore";
 import { ConfirmDialogProvider } from "@/components/dialog-box";
 import ComingSoon from "@/pages/blank-page";
@@ -105,18 +104,16 @@ function App() {
               <Route
                 path="types"
                 element={
-                  <ErrorBoundary>
-                    <Suspense
-                      fallback={
-                        <TableLoadingFallback
-                          title="Daftar Jenis Item"
-                          tableColumns={2}
-                        />
-                      }
-                    >
-                      <TypeList />
-                    </Suspense>
-                  </ErrorBoundary>
+                  <Suspense
+                    fallback={
+                      <TableLoadingFallback
+                        title="Daftar Jenis Item"
+                        tableColumns={2}
+                      />
+                    }
+                  >
+                    <TypeList />
+                  </Suspense>
                 }
               />
               <Route
