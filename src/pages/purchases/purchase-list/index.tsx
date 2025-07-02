@@ -5,6 +5,7 @@ import PageTitle from "@/components/page-title";
 import Badge from "@/components/badge";
 
 import UploadInvoicePortal from "@/pages/purchases/invoice-uploader";
+import AddPurchasePortal from "@/components/add-edit/v4";
 
 import {
   Table,
@@ -48,6 +49,8 @@ const PurchaseList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showUploadPortal, setShowUploadPortal] = useState(false);
+  const [showAddPurchasePortal, setShowAddPurchasePortal] = useState(false);
+  const [isAddPurchaseClosing, setIsAddPurchaseClosing] = useState(false);
   const queryClient = useQueryClient();
   const { openConfirmDialog } = useConfirmDialog();
   const searchInputRef = useRef<HTMLInputElement>(
@@ -288,15 +291,14 @@ const PurchaseList = () => {
               <FaFileUpload className="mr-2" />
               Upload Faktur
             </Button>
-            <Link
-              to="/purchases/create"
-              state={{ initialInvoiceNumber: debouncedSearch }}
+            <Button 
+              variant="primary" 
+              withGlow
+              onClick={() => setShowAddPurchasePortal(true)}
             >
-              <Button variant="primary" withGlow>
-                <FaPlus className="mr-2" />
-                Tambah Pembelian Baru
-              </Button>
-            </Link>
+              <FaPlus className="mr-2" />
+              Tambah Pembelian Baru
+            </Button>
           </div>
         </div>
         {isLoading && purchases.length === 0 ? (
@@ -418,6 +420,21 @@ const PurchaseList = () => {
       <UploadInvoicePortal
         isOpen={showUploadPortal}
         onClose={() => setShowUploadPortal(false)}
+      />
+
+      <AddPurchasePortal
+        isOpen={showAddPurchasePortal}
+        onClose={() => {
+          setIsAddPurchaseClosing(true);
+          setTimeout(() => {
+            setShowAddPurchasePortal(false);
+            setIsAddPurchaseClosing(false);
+            queryClient.invalidateQueries({ queryKey: ["purchases"] });
+          }, 300);
+        }}
+        isClosing={isAddPurchaseClosing}
+        setIsClosing={setIsAddPurchaseClosing}
+        initialInvoiceNumber={debouncedSearch}
       />
     </>
   );
