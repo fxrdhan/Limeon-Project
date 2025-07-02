@@ -61,7 +61,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     updateItemBatchNo,
     removeItem,
     handleSubmit,
-  } = usePurchaseForm({ initialInvoiceNumber });
+  } = usePurchaseForm({ initialInvoiceNumber, enabled: isOpen });
 
   const [isAddItemPortalOpen, setIsAddItemPortalOpen] = React.useState(false);
   const [isAddItemClosing, setIsAddItemClosing] = React.useState(false);
@@ -85,6 +85,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     refetchItems,
   } = useItemSelection({
     disableRealtime: false,
+    enabled: isOpen,
   });
 
   const isAddNewItemDisabled = !(
