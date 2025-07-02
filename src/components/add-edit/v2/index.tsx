@@ -339,7 +339,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                         setIsClosing(true);
                       }
                     }}
-                    className="text-gray-500 p-2 rounded-full hover:bg-gray-100"
+                    className="p-2"
                     title="Tutup"
                   >
                     <FaTimes size={18} />
@@ -359,7 +359,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
               className="flex-1 flex flex-col min-h-0"
             >
               <div className="flex-1 overflow-y-auto">
-                <div className="p-3 mx-4">
+                <div className="px-6 py-1">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-4/5">
                       <FormSection title="Data Umum">
@@ -991,7 +991,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                 </div>
               </div>
 
-              <CardFooter className="sticky bottom-0 z-10 py-3! px-4!">
+              <CardFooter className="sticky bottom-0 z-10 py-6! px-6!">
                 <FormAction
                   onCancel={() => handleCancel(setIsClosing)}
                   onDelete={isEditMode ? handleDeleteItem : undefined}
