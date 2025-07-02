@@ -65,11 +65,9 @@ function App() {
             <Route
               index
               element={
-                <div className="text-gray-800">
-                  <Suspense fallback={<DashboardLoadingFallback />}>
-                    <Dashboard />
-                  </Suspense>
-                </div>
+                <Suspense fallback={<DashboardLoadingFallback />}>
+                  <Dashboard />
+                </Suspense>
               }
             />
 
