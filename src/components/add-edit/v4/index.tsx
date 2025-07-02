@@ -41,6 +41,7 @@ interface AddPurchasePortalProps {
 
 const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
   isOpen,
+  onClose,
   isClosing,
   setIsClosing,
   initialInvoiceNumber,
@@ -94,6 +95,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     e.preventDefault();
     handleSubmit(e);
     setIsClosing(true);
+    onClose();
   };
 
   useEffect(() => {
@@ -213,6 +215,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
           onClick={(e) => {
             if (e.target === e.currentTarget && !isClosing) {
               setIsClosing(true);
+              onClose();
             }
           }}
         >
@@ -245,6 +248,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                     onClick={() => {
                       if (!isClosing) {
                         setIsClosing(true);
+                        onClose();
                       }
                     }}
                     className="text-gray-500 p-2 rounded-full hover:bg-gray-100"
@@ -772,7 +776,10 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
 
               <CardFooter className="sticky bottom-0 z-10 py-3! px-4!">
                 <FormAction
-                  onCancel={() => setIsClosing(true)}
+                  onCancel={() => {
+                    setIsClosing(true);
+                    onClose();
+                  }}
                   isSaving={loading}
                   isDisabled={purchaseItems.length === 0}
                 />
