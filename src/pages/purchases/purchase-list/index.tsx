@@ -76,6 +76,7 @@ const PurchaseList = () => {
 
   useFieldFocus({
     searchInputRef,
+    isModalOpen: showAddPurchasePortal || showUploadPortal,
     isLoading,
     isFetching,
     debouncedSearch,
@@ -291,8 +292,8 @@ const PurchaseList = () => {
               <FaFileUpload className="mr-2" />
               Upload Faktur
             </Button>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               withGlow
               onClick={() => setShowAddPurchasePortal(true)}
             >
