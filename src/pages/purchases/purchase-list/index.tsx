@@ -431,6 +431,11 @@ const PurchaseList = () => {
             setShowAddPurchasePortal(false);
             setIsAddPurchaseClosing(false);
             queryClient.invalidateQueries({ queryKey: ["purchases"] });
+            setTimeout(() => {
+              if (searchInputRef.current) {
+                searchInputRef.current.focus();
+              }
+            }, 100);
           }, 300);
         }}
         isClosing={isAddPurchaseClosing}
