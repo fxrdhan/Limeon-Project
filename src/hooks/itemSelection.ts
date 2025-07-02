@@ -7,10 +7,11 @@ import type { Item, UnitConversion } from "@/types";
 
 interface UseItemSelectionOptions {
   disableRealtime?: boolean;
+  enabled?: boolean;
 }
 
 export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
-  const { disableRealtime = false } = options;
+  const { disableRealtime = false, enabled = true } = options;
   const queryClient = useQueryClient();
   const [searchItem, setSearchItem] = useState("");
   const [showItemDropdown, setShowItemDropdown] = useState(false);
@@ -115,7 +116,7 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
 
   // Add realtime subscription for items with optimized performance
   useSupabaseRealtime("items", ["items"], {
-    enabled: !disableRealtime,
+    enabled: !disableRealtime && enabled,
     debounceMs: 0, // No debounce for instant updates
     onRealtimeEvent: async (payload) => {
       console.log("🔥 ITEM SELECTION - Realtime event received:", payload.eventType, payload);
