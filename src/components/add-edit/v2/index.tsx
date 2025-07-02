@@ -155,7 +155,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
         }
       };
 
-      const timer = setTimeout(focusInput, 150);
+      const timer = setTimeout(focusInput, 0);
       return () => clearTimeout(timer);
     }
   }, [isOpen, isEditMode, formData.name, loading]);
