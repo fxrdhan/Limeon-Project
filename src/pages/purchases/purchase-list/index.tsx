@@ -436,7 +436,7 @@ const PurchaseList = () => {
                 searchInputRef.current.focus();
               }
             }, 100);
-          }, 300);
+          }, 100);
         }}
         isClosing={isAddPurchaseClosing}
         setIsClosing={setIsAddPurchaseClosing}
