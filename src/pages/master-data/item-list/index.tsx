@@ -77,7 +77,7 @@ function ItemList() {
       setIsClosing(false); // Reset closing state
       setEditingItemId(undefined);
       setCurrentSearchQueryForModal(undefined);
-    }, 250); // Adjust timeout to match animation duration
+    }, 100); // Adjust timeout to match animation duration
   };
 
   const handleItemEdit = (item: ItemDataType) => {
