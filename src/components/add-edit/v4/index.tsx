@@ -12,7 +12,12 @@ import DescriptiveTextarea from "@/components/descriptive-textarea";
 import Checkbox from "@/components/checkbox";
 import FormAction from "@/components/form-action";
 import AddItemPortal from "@/components/add-edit/v2";
-import { CardContent, CardFooter, CardHeader, CardTitle } from "@/components/card";
+import {
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/card";
 import {
   Table,
   TableHead,
@@ -165,7 +170,9 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     }
   };
 
-  const handleVatPercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVatPercentageChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setVatPercentageValue(e.target.value);
   };
 
@@ -238,7 +245,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
               exit="exit"
               transition={{ duration: 0.2, delay: 0.05 }}
             >
-              <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4!">
+              <CardHeader className="flex items-center justify-between sticky z-10 py-6! px-4!">
                 <div className="absolute left-1/2 transform -translate-x-1/2">
                   <CardTitle>Tambah Pembelian Baru</CardTitle>
                 </div>
@@ -252,7 +259,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                         onClose();
                       }
                     }}
-                    className="text-gray-500 p-2 rounded-full hover:bg-gray-100"
+                    className="p-2"
                     title="Tutup"
                   >
                     <FaTimes size={18} />
@@ -271,8 +278,8 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
               onSubmit={onHandleSubmit}
               className="flex-1 flex flex-col min-h-0"
             >
-              <div className="flex-1 overflow-y-auto">
-                <CardContent className="space-y-6 mt-6">
+              <div className="flex-1 overflow-y-auto px-6 py-1">
+                <CardContent className="space-y-6">
                   <FormSection title="Informasi Pembelian">
                     <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                       <div className="flex flex-col">
@@ -337,7 +344,9 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                         </label>
                         <Datepicker
                           value={
-                            formData.due_date ? new Date(formData.due_date) : null
+                            formData.due_date
+                              ? new Date(formData.due_date)
+                              : null
                           }
                           onChange={(newDate: CustomDateValueType) => {
                             const fakeEvent = {
@@ -425,10 +434,10 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                       isAddItemButtonDisabled={isAddNewItemDisabled}
                       onOpenAddItemPortal={() => {
                         setIsAddItemPortalOpen(true);
-                        setPortalRenderId(prev => prev + 1);
+                        setPortalRenderId((prev) => prev + 1);
                       }}
                     />
-                    
+
                     <Table>
                       <TableHead>
                         <TableRow>
@@ -563,10 +572,12 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                                 >
                                   <option
                                     value={
-                                      getItemByID(item.item_id)?.base_unit || "Unit"
+                                      getItemByID(item.item_id)?.base_unit ||
+                                      "Unit"
                                     }
                                   >
-                                    {getItemByID(item.item_id)?.base_unit || "Unit"}
+                                    {getItemByID(item.item_id)?.base_unit ||
+                                      "Unit"}
                                   </option>
                                   {(() => {
                                     const conversions = getItemByID(
@@ -598,7 +609,9 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                                 <input
                                   type="text"
                                   value={
-                                    item.price === 0 ? "" : formatRupiah(item.price)
+                                    item.price === 0
+                                      ? ""
+                                      : formatRupiah(item.price)
                                   }
                                   onChange={(e) => {
                                     const numericValue = extractNumericValue(
@@ -614,7 +627,9 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                                 <input
                                   type="text"
                                   value={
-                                    item.discount === 0 ? "" : `${item.discount}%`
+                                    item.discount === 0
+                                      ? ""
+                                      : `${item.discount}%`
                                   }
                                   onChange={(e) => {
                                     let inputValue = e.target.value;
@@ -622,8 +637,9 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                                       inputValue = inputValue.slice(0, -1);
                                     }
                                     const numericValue =
-                                      parseInt(inputValue.replace(/[^\d]/g, "")) ||
-                                      0;
+                                      parseInt(
+                                        inputValue.replace(/[^\d]/g, ""),
+                                      ) || 0;
                                     updateItem(
                                       item.id,
                                       "discount",
@@ -775,7 +791,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                 </CardContent>
               </div>
 
-              <CardFooter className="sticky bottom-0 z-10 py-3! px-4!">
+              <CardFooter className="sticky bottom-0 z-10 py-6! px-6!">
                 <FormAction
                   onCancel={() => {
                     setIsClosing(true);
