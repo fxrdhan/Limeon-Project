@@ -13,10 +13,12 @@ import type {
 
 interface UsePurchaseFormProps {
     initialInvoiceNumber?: string;
+    enabled?: boolean;
 }
 
 export const usePurchaseForm = ({
     initialInvoiceNumber = "",
+    enabled = true,
 }: UsePurchaseFormProps = {}) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -81,7 +83,7 @@ export const usePurchaseForm = ({
 
     // Add realtime subscription for supplier updates
     useSupabaseRealtime("suppliers", null, {
-        enabled: true,
+        enabled: enabled,
         onRealtimeEvent: () => {
             fetchSuppliers();
         },
