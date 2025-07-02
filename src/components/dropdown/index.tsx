@@ -44,6 +44,7 @@ const Dropdown = ({
   const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
   const [applyOpenStyles, setApplyOpenStyles] = useState(false);
   const [hoveredOptionId, setHoveredOptionId] = useState<string | null>(null);
+  const [focusedOptionId, setFocusedOptionId] = useState<string | null>(null);
 
   const instanceId = useId();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -87,6 +88,15 @@ const Dropdown = ({
   useEffect(() => {
     if (isOpen && currentFilteredOptions.length > 0) {
       setHighlightedIndex(0);
+      // Auto-expand the first item if it needs truncation
+      const firstOption = currentFilteredOptions[0];
+      if (firstOption && buttonRef.current) {
+        const buttonWidth = buttonRef.current.getBoundingClientRect().width;
+        const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
+        if (shouldTruncateText(firstOption.name, maxTextWidth)) {
+          setFocusedOptionId(firstOption.id);
+        }
+      }
     } else if (!isOpen || currentFilteredOptions.length === 0) {
       setHighlightedIndex(-1);
     }
@@ -150,6 +160,7 @@ const Dropdown = ({
       }
     }, 100);
     setHighlightedIndex(-1);
+    setFocusedOptionId(null);
   }, [instanceId, setIsClosing, setIsOpen, setSearchTerm]);
 
   const openThisDropdown = useCallback(() => {
@@ -192,6 +203,9 @@ const Dropdown = ({
           e.preventDefault();
           newIndex = items.length ? (highlightedIndex + 1) % items.length : -1;
           setHighlightedIndex(newIndex);
+          if (newIndex >= 0 && items[newIndex]) {
+            setFocusedOptionId(items[newIndex].id);
+          }
           break;
         case "ArrowUp":
           e.preventDefault();
@@ -199,6 +213,9 @@ const Dropdown = ({
             ? (highlightedIndex - 1 + items.length) % items.length
             : -1;
           setHighlightedIndex(newIndex);
+          if (newIndex >= 0 && items[newIndex]) {
+            setFocusedOptionId(items[newIndex].id);
+          }
           break;
         case "Tab":
           e.preventDefault();
@@ -211,6 +228,9 @@ const Dropdown = ({
                 highlightedIndex >= items.length - 1 ? 0 : highlightedIndex + 1;
             }
             setHighlightedIndex(newIndex);
+            if (newIndex >= 0 && items[newIndex]) {
+              setFocusedOptionId(items[newIndex].id);
+            }
           }
           break;
         case "PageDown":
@@ -220,6 +240,9 @@ const Dropdown = ({
             if (highlightedIndex === -1)
               newIndex = Math.min(4, items.length - 1);
             setHighlightedIndex(newIndex);
+            if (newIndex >= 0 && items[newIndex]) {
+              setFocusedOptionId(items[newIndex].id);
+            }
           }
           break;
         case "PageUp":
@@ -228,6 +251,9 @@ const Dropdown = ({
             newIndex = Math.max(highlightedIndex - 5, 0);
             if (highlightedIndex === -1) newIndex = 0;
             setHighlightedIndex(newIndex);
+            if (newIndex >= 0 && items[newIndex]) {
+              setFocusedOptionId(items[newIndex].id);
+            }
           }
           break;
         case "Enter":
@@ -239,6 +265,7 @@ const Dropdown = ({
         case "Escape":
           e.preventDefault();
           actualCloseDropdown();
+          setFocusedOptionId(null);
           break;
         default:
           return;
@@ -462,6 +489,21 @@ const Dropdown = ({
     setHoveredOptionId(null);
   }, []);
 
+  const handleOptionFocus = useCallback((optionId: string, optionName: string) => {
+    if (!buttonRef.current) return;
+    
+    const buttonWidth = buttonRef.current.getBoundingClientRect().width;
+    const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
+    
+    if (shouldTruncateText(optionName, maxTextWidth)) {
+      setFocusedOptionId(optionId);
+    }
+  }, []);
+
+  const handleOptionBlur = useCallback(() => {
+    setFocusedOptionId(null);
+  }, []);
+
   const handleSearchBarKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (
@@ -667,7 +709,9 @@ const Dropdown = ({
                             const maxTextWidth = buttonWidth - (withRadio ? 72 : 48); // Account for padding, chevron, and radio
                             const shouldTruncate = shouldTruncateText(option.name, maxTextWidth);
                             const isHovered = hoveredOptionId === option.id;
-                            const truncatedText = shouldTruncate && !isHovered 
+                            const isFocused = focusedOptionId === option.id;
+                            const shouldExpand = (isHovered || isFocused) && shouldTruncate;
+                            const truncatedText = shouldTruncate && !shouldExpand
                               ? truncateText(option.name, maxTextWidth)
                               : option.name;
 
@@ -680,15 +724,19 @@ const Dropdown = ({
                                 type="button"
                                 className={`flex items-start w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100 ${
                                   highlightedIndex === index ? "bg-gray-100" : ""
-                                } transition-colors duration-150 ${isHovered && shouldTruncate ? 'items-start' : 'items-center'}`}
+                                } transition-colors duration-150 ${shouldExpand ? 'items-start' : 'items-center'}`}
                                 onClick={() => handleSelect(option.id)}
                                 onMouseEnter={() => {
                                   setHighlightedIndex(index);
                                   handleOptionHover(option.id, option.name);
                                 }}
                                 onMouseLeave={handleOptionLeave}
-                                onFocus={() => setHighlightedIndex(index)}
+                                onFocus={() => {
+                                  setHighlightedIndex(index);
+                                  handleOptionFocus(option.id, option.name);
+                                }}
                                 onBlur={() => {
+                                  handleOptionBlur();
                                   setTimeout(() => {
                                     const activeElement = document.activeElement;
                                     const isStillInDropdown =
@@ -702,7 +750,7 @@ const Dropdown = ({
                                 }}
                               >
                                 {withRadio && (
-                                  <div className={`mr-2 flex ${isHovered && shouldTruncate ? 'items-start pt-0.5' : 'items-center'} flex-shrink-0`}>
+                                  <div className={`mr-2 flex ${shouldExpand ? 'items-start pt-0.5' : 'items-center'} flex-shrink-0`}>
                                     <div
                                       className={`w-4 h-4 rounded-full border ${
                                         option.id === value
@@ -718,13 +766,13 @@ const Dropdown = ({
                                 )}
                                 <span 
                                   className={`${
-                                    isHovered && shouldTruncate 
+                                    shouldExpand
                                       ? 'whitespace-normal break-words leading-relaxed' 
                                       : 'truncate'
                                   } transition-all duration-200 text-left`}
-                                  title={shouldTruncate && !isHovered ? option.name : undefined}
+                                  title={shouldTruncate && !shouldExpand ? option.name : undefined}
                                 >
-                                  {isHovered && shouldTruncate ? option.name : truncatedText}
+                                  {shouldExpand ? option.name : truncatedText}
                                 </span>
                               </button>
                             );
