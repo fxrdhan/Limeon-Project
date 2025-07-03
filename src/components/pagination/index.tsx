@@ -1,7 +1,7 @@
 import { classNames } from "@/lib/classNames";
 import type { PaginationProps } from "@/types";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 
 const Pagination = ({
   currentPage,
@@ -11,13 +11,18 @@ const Pagination = ({
   onItemsPerPageChange,
   className,
 }: PaginationProps) => {
-  const handleItemsPerPageClick = (value: number, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onItemsPerPageChange({
-      target: { value: value.toString() },
-    } as React.ChangeEvent<HTMLSelectElement>);
-  };
+  const handleItemsPerPageClick = useCallback(
+    (value: number, event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (value !== itemsPerPage) {
+        onItemsPerPageChange({
+          target: { value: value.toString() },
+        } as React.ChangeEvent<HTMLSelectElement>);
+      }
+    },
+    [itemsPerPage, onItemsPerPageChange],
+  );
 
   const prevPageRef = useRef(currentPage);
 
@@ -62,7 +67,7 @@ const Pagination = ({
         <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
           {pageSizes.map((size) => (
             <motion.button
-              key={size}
+              key={`page-size-${size}`}
               layout
               className={classNames(
                 "group px-3 py-1.5 rounded-full focus:outline-hidden select-none relative transition-colors duration-300 cursor-pointer",
@@ -73,16 +78,30 @@ const Pagination = ({
                 scale: itemsPerPage === size ? 1.05 : 1,
                 zIndex: itemsPerPage === size ? 10 : 1,
               }}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              transition={{
+                type: "spring",
+                stiffness: 500,
+                damping: 30,
+              }}
             >
-              {itemsPerPage === size && (
-                <motion.div
-                  layoutId="activeItemsPerPageIndicator"
-                  className="absolute inset-0 bg-primary rounded-full shadow-xs"
-                  style={{ borderRadius: "9999px" }}
-                  transition={{ type: "spring", stiffness: 700, damping: 35 }}
-                />
-              )}
+              <AnimatePresence mode="popLayout">
+                {itemsPerPage === size && (
+                  <motion.div
+                    layoutId="activeItemsPerPageIndicator"
+                    key={`indicator-${itemsPerPage}`}
+                    className="absolute inset-0 bg-primary rounded-full shadow-xs"
+                    style={{ borderRadius: "9999px" }}
+                    initial={false}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 500,
+                      damping: 35,
+                      mass: 0.6,
+                    }}
+                  />
+                )}
+              </AnimatePresence>
               <span
                 className={classNames(
                   "relative z-10 select-none transition-colors duration-300 ease-in-out",
