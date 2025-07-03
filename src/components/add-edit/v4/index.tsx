@@ -245,7 +245,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
               exit="exit"
               transition={{ duration: 0.2, delay: 0.05 }}
             >
-              <CardHeader className="flex items-center justify-between sticky z-10 py-6! px-4!">
+              <CardHeader className="flex items-center justify-between sticky z-10 py-6! px-4! border-b-2 border-gray-200 mb-6">
                 <div className="absolute left-1/2 transform -translate-x-1/2">
                   <CardTitle>Tambah Pembelian Baru</CardTitle>
                 </div>
