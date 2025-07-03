@@ -722,7 +722,7 @@ const Dropdown = ({
                             const isHovered = hoveredOptionId === option.id;
                             const isFocused = focusedOptionId === option.id;
                             // Prioritize keyboard focus over mouse hover to prevent dual expansion
-                            const shouldExpand = (isFocused || (isHovered && !isKeyboardNavigation)) && shouldTruncate;
+                            const shouldExpand = (isFocused && isKeyboardNavigation) || (isHovered && !isKeyboardNavigation) ? shouldTruncate : false;
                             const truncatedText = shouldTruncate && !shouldExpand
                               ? truncateText(option.name, maxTextWidth)
                               : option.name;
