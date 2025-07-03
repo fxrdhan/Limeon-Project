@@ -450,13 +450,13 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                             Batch No.
                           </TableHeader>
                           <TableHeader className="w-[10%] !text-center">
-                            Kadaluarsa
+                            EXP
                           </TableHeader>
                           <TableHeader className="w-[5%] !text-center">
                             Jml.
                           </TableHeader>
                           <TableHeader className="w-[6%] !text-center">
-                            Satuan
+                            Unit
                           </TableHeader>
                           <TableHeader className="w-[8%] text-right">
                             Harga
