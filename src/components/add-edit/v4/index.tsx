@@ -437,15 +437,14 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                         setPortalRenderId((prev) => prev + 1);
                       }}
                     />
-
                     <Table>
                       <TableHead>
                         <TableRow>
                           <TableHeader className="w-[3%] !text-center">
                             No
                           </TableHeader>
-                          <TableHeader className="w-[6%]">Kode</TableHeader>
-                          <TableHeader className="w-[30%]">Nama</TableHeader>
+                          <TableHeader className="w-[7%]">Kode</TableHeader>
+                          <TableHeader className="w-[26%]">Nama</TableHeader>
                           <TableHeader className="w-[10%] !text-left">
                             Batch No.
                           </TableHeader>
@@ -461,7 +460,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                           <TableHeader className="w-[8%] text-right">
                             Harga
                           </TableHeader>
-                          <TableHeader className="w-[5%] text-right">
+                          <TableHeader className="w-[6%] text-right">
                             Disc
                           </TableHeader>
                           {!formData.is_vat_included && (
