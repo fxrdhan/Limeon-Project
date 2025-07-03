@@ -304,7 +304,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
               exit="exit"
               transition={{ duration: 0.2, delay: 0.05 }}
             >
-              <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4!">
+              <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-gray-200 mb-6">
                 <div className="flex items-center"></div>
 
                 <div className="absolute left-1/2 transform -translate-x-1/2">
