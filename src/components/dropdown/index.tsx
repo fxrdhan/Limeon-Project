@@ -45,6 +45,7 @@ const Dropdown = ({
   const [applyOpenStyles, setApplyOpenStyles] = useState(false);
   const [hoveredOptionId, setHoveredOptionId] = useState<string | null>(null);
   const [focusedOptionId, setFocusedOptionId] = useState<string | null>(null);
+  const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
 
   const instanceId = useId();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -201,6 +202,7 @@ const Dropdown = ({
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
+          setIsKeyboardNavigation(true);
           newIndex = items.length ? (highlightedIndex + 1) % items.length : -1;
           setHighlightedIndex(newIndex);
           if (newIndex >= 0 && items[newIndex]) {
@@ -209,6 +211,7 @@ const Dropdown = ({
           break;
         case "ArrowUp":
           e.preventDefault();
+          setIsKeyboardNavigation(true);
           newIndex = items.length
             ? (highlightedIndex - 1 + items.length) % items.length
             : -1;
@@ -219,6 +222,7 @@ const Dropdown = ({
           break;
         case "Tab":
           e.preventDefault();
+          setIsKeyboardNavigation(true);
           if (items.length) {
             if (e.shiftKey) {
               newIndex =
@@ -235,6 +239,7 @@ const Dropdown = ({
           break;
         case "PageDown":
           e.preventDefault();
+          setIsKeyboardNavigation(true);
           if (items.length) {
             newIndex = Math.min(highlightedIndex + 5, items.length - 1);
             if (highlightedIndex === -1)
@@ -247,6 +252,7 @@ const Dropdown = ({
           break;
         case "PageUp":
           e.preventDefault();
+          setIsKeyboardNavigation(true);
           if (items.length) {
             newIndex = Math.max(highlightedIndex - 5, 0);
             if (highlightedIndex === -1) newIndex = 0;
@@ -722,11 +728,14 @@ const Dropdown = ({
                                 role="option"
                                 aria-selected={highlightedIndex === index}
                                 type="button"
-                                className={`flex items-start w-full py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100 ${
+                                className={`flex items-start w-full py-2 px-3 rounded-lg text-sm text-gray-800 ${
+                                  !isKeyboardNavigation ? "hover:bg-gray-100" : ""
+                                } focus:outline-hidden focus:bg-gray-100 ${
                                   highlightedIndex === index ? "bg-gray-100" : ""
                                 } transition-colors duration-150 ${shouldExpand ? 'items-start' : 'items-center'}`}
                                 onClick={() => handleSelect(option.id)}
                                 onMouseEnter={() => {
+                                  setIsKeyboardNavigation(false);
                                   setHighlightedIndex(index);
                                   handleOptionHover(option.id, option.name);
                                 }}
