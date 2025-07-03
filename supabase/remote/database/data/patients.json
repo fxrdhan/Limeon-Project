@@ -1,0 +1,38 @@
+[
+  {
+    "id": "952db52c-e827-4689-98b6-45b016995654",
+    "name": "pasien baruuuu",
+    "gender": "Laki-laki",
+    "birth_date": "1999-12-26T17:00:00.000Z",
+    "address": "apa aja",
+    "phone": "",
+    "email": "",
+    "created_at": "2025-05-31T00:49:09.393Z",
+    "updated_at": "2025-06-01T19:10:25.631Z",
+    "image_url": "https://psqmckbtwqphcteymjil.supabase.co/storage/v1/object/public/patients/952db52c-e827-4689-98b6-45b016995654/image_1748681315698.png"
+  },
+  {
+    "id": "6dbc0ad3-1aab-4ce1-a64e-04defcab357d",
+    "name": "test ajaa",
+    "gender": "Perempuan",
+    "birth_date": "2025-06-25T17:00:00.000Z",
+    "address": "",
+    "phone": "",
+    "email": "",
+    "created_at": "2025-06-01T19:53:16.572Z",
+    "updated_at": "2025-06-24T12:15:06.495Z",
+    "image_url": null
+  },
+  {
+    "id": "5707cace-5f68-4262-9294-3262b004661b",
+    "name": "gabisa jir dokternya",
+    "gender": "Perempuan",
+    "birth_date": "2025-06-18T17:00:00.000Z",
+    "address": "",
+    "phone": "",
+    "email": "",
+    "created_at": "2025-06-01T19:12:22.043Z",
+    "updated_at": "2025-06-24T14:01:43.732Z",
+    "image_url": null
+  }
+]
