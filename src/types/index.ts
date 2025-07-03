@@ -90,7 +90,7 @@ export interface Doctor {
   specialization?: string | null;
   license_number?: string | null;
   phone?: string | null;
-  email?: string | null;  
+  email?: string | null;
   address?: string | null;
   birth_date?: string | null;
   experience_years?: number | null;
@@ -285,6 +285,7 @@ export interface PaginationProps {
   onPageChange: (page: number) => void;
   onItemsPerPageChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   className?: string;
+  enableFloating?: boolean;
 }
 
 export interface FieldConfig {
