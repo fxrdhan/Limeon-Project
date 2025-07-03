@@ -14,9 +14,12 @@ import { fuzzyMatch } from "@/utils/search";
 let activeDropdownCloseCallback: (() => void) | null = null;
 let activeDropdownId: string | null = null;
 
-const getDropdownOptionScore = (option: { name: string; id: string }, searchTermLower: string): number => {
+const getDropdownOptionScore = (
+  option: { name: string; id: string },
+  searchTermLower: string,
+): number => {
   const nameLower = option.name?.toLowerCase?.() ?? "";
-  
+
   if (nameLower.includes(searchTermLower)) return 3;
   if (fuzzyMatch(option.name, searchTermLower)) return 1;
   return 0;
@@ -414,7 +417,6 @@ const Dropdown = ({
     };
   }, [isOpen, calculateDropdownPosition, manageFocusOnOpen, handleFocusOut]);
 
-
   useEffect(() => {
     if (isOpen && applyOpenStyles) {
       const timer = setTimeout(() => {
@@ -485,31 +487,37 @@ const Dropdown = ({
     [],
   );
 
-  const handleOptionHover = useCallback((optionId: string, optionName: string) => {
-    if (!buttonRef.current) return;
-    
-    const buttonWidth = buttonRef.current.getBoundingClientRect().width;
-    const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
-    
-    if (shouldTruncateText(optionName, maxTextWidth)) {
-      setHoveredOptionId(optionId);
-    }
-  }, []);
+  const handleOptionHover = useCallback(
+    (optionId: string, optionName: string) => {
+      if (!buttonRef.current) return;
+
+      const buttonWidth = buttonRef.current.getBoundingClientRect().width;
+      const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
+
+      if (shouldTruncateText(optionName, maxTextWidth)) {
+        setHoveredOptionId(optionId);
+      }
+    },
+    [],
+  );
 
   const handleOptionLeave = useCallback(() => {
     setHoveredOptionId(null);
   }, []);
 
-  const handleOptionFocus = useCallback((optionId: string, optionName: string) => {
-    if (!buttonRef.current) return;
-    
-    const buttonWidth = buttonRef.current.getBoundingClientRect().width;
-    const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
-    
-    if (shouldTruncateText(optionName, maxTextWidth)) {
-      setFocusedOptionId(optionId);
-    }
-  }, []);
+  const handleOptionFocus = useCallback(
+    (optionId: string, optionName: string) => {
+      if (!buttonRef.current) return;
+
+      const buttonWidth = buttonRef.current.getBoundingClientRect().width;
+      const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
+
+      if (shouldTruncateText(optionName, maxTextWidth)) {
+        setFocusedOptionId(optionId);
+      }
+    },
+    [],
+  );
 
   const handleOptionBlur = useCallback(() => {
     setFocusedOptionId(null);
@@ -716,16 +724,27 @@ const Dropdown = ({
                       >
                         {currentFilteredOptions.length > 0 ? (
                           currentFilteredOptions.map((option, index) => {
-                            const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
-                            const maxTextWidth = buttonWidth - (withRadio ? 72 : 48); // Account for padding, chevron, and radio
-                            const shouldTruncate = shouldTruncateText(option.name, maxTextWidth);
+                            const buttonWidth =
+                              buttonRef.current?.getBoundingClientRect()
+                                .width || 200;
+                            const maxTextWidth =
+                              buttonWidth - (withRadio ? 72 : 48); // Account for padding, chevron, and radio
+                            const shouldTruncate = shouldTruncateText(
+                              option.name,
+                              maxTextWidth,
+                            );
                             const isHovered = hoveredOptionId === option.id;
                             const isFocused = focusedOptionId === option.id;
                             // Prioritize keyboard focus over mouse hover to prevent dual expansion
-                            const shouldExpand = (isFocused && isKeyboardNavigation) || (isHovered && !isKeyboardNavigation) ? shouldTruncate : false;
-                            const truncatedText = shouldTruncate && !shouldExpand
-                              ? truncateText(option.name, maxTextWidth)
-                              : option.name;
+                            const shouldExpand =
+                              (isFocused && isKeyboardNavigation) ||
+                              (isHovered && !isKeyboardNavigation)
+                                ? shouldTruncate
+                                : false;
+                            const truncatedText =
+                              shouldTruncate && !shouldExpand
+                                ? truncateText(option.name, maxTextWidth)
+                                : option.name;
 
                             return (
                               <button
@@ -735,10 +754,14 @@ const Dropdown = ({
                                 aria-selected={highlightedIndex === index}
                                 type="button"
                                 className={`flex items-start w-full py-2 px-3 rounded-lg text-sm text-gray-800 ${
-                                  !isKeyboardNavigation ? "hover:bg-gray-100" : ""
+                                  !isKeyboardNavigation
+                                    ? "hover:bg-gray-100"
+                                    : ""
                                 } focus:outline-hidden focus:bg-gray-100 ${
-                                  highlightedIndex === index ? "bg-gray-100" : ""
-                                } transition-colors duration-150 ${shouldExpand ? 'items-start' : 'items-center'}`}
+                                  highlightedIndex === index
+                                    ? "bg-gray-100"
+                                    : ""
+                                } transition-colors duration-150 ${shouldExpand ? "items-start" : "items-center"}`}
                                 onClick={() => handleSelect(option.id)}
                                 onMouseEnter={() => {
                                   setIsKeyboardNavigation(false);
@@ -753,7 +776,8 @@ const Dropdown = ({
                                 onBlur={() => {
                                   handleOptionBlur();
                                   setTimeout(() => {
-                                    const activeElement = document.activeElement;
+                                    const activeElement =
+                                      document.activeElement;
                                     const isStillInDropdown =
                                       dropdownMenuRef.current?.contains(
                                         activeElement,
@@ -765,7 +789,9 @@ const Dropdown = ({
                                 }}
                               >
                                 {withRadio && (
-                                  <div className={`mr-2 flex ${shouldExpand ? 'items-start pt-0.5' : 'items-center'} flex-shrink-0`}>
+                                  <div
+                                    className={`mr-2 flex ${shouldExpand ? "items-start pt-0.5" : "items-center"} flex-shrink-0`}
+                                  >
                                     <div
                                       className={`w-4 h-4 rounded-full border ${
                                         option.id === value
@@ -779,13 +805,17 @@ const Dropdown = ({
                                     </div>
                                   </div>
                                 )}
-                                <span 
+                                <span
                                   className={`${
                                     shouldExpand
-                                      ? 'whitespace-normal break-words leading-relaxed' 
-                                      : 'truncate'
+                                      ? "whitespace-normal break-words leading-relaxed"
+                                      : "truncate"
                                   } transition-all duration-200 text-left`}
-                                  title={shouldTruncate && !shouldExpand ? option.name : undefined}
+                                  title={
+                                    shouldTruncate && !shouldExpand
+                                      ? option.name
+                                      : undefined
+                                  }
                                 >
                                   {shouldExpand ? option.name : truncatedText}
                                 </span>
