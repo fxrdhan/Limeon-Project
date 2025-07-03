@@ -203,6 +203,7 @@ const Dropdown = ({
         case "ArrowDown":
           e.preventDefault();
           setIsKeyboardNavigation(true);
+          setHoveredOptionId(null); // Clear hover state when using keyboard
           newIndex = items.length ? (highlightedIndex + 1) % items.length : -1;
           setHighlightedIndex(newIndex);
           if (newIndex >= 0 && items[newIndex]) {
@@ -212,6 +213,7 @@ const Dropdown = ({
         case "ArrowUp":
           e.preventDefault();
           setIsKeyboardNavigation(true);
+          setHoveredOptionId(null); // Clear hover state when using keyboard
           newIndex = items.length
             ? (highlightedIndex - 1 + items.length) % items.length
             : -1;
@@ -223,6 +225,7 @@ const Dropdown = ({
         case "Tab":
           e.preventDefault();
           setIsKeyboardNavigation(true);
+          setHoveredOptionId(null); // Clear hover state when using keyboard
           if (items.length) {
             if (e.shiftKey) {
               newIndex =
@@ -240,6 +243,7 @@ const Dropdown = ({
         case "PageDown":
           e.preventDefault();
           setIsKeyboardNavigation(true);
+          setHoveredOptionId(null); // Clear hover state when using keyboard
           if (items.length) {
             newIndex = Math.min(highlightedIndex + 5, items.length - 1);
             if (highlightedIndex === -1)
@@ -253,6 +257,7 @@ const Dropdown = ({
         case "PageUp":
           e.preventDefault();
           setIsKeyboardNavigation(true);
+          setHoveredOptionId(null); // Clear hover state when using keyboard
           if (items.length) {
             newIndex = Math.max(highlightedIndex - 5, 0);
             if (highlightedIndex === -1) newIndex = 0;
@@ -716,7 +721,8 @@ const Dropdown = ({
                             const shouldTruncate = shouldTruncateText(option.name, maxTextWidth);
                             const isHovered = hoveredOptionId === option.id;
                             const isFocused = focusedOptionId === option.id;
-                            const shouldExpand = (isHovered || isFocused) && shouldTruncate;
+                            // Prioritize keyboard focus over mouse hover to prevent dual expansion
+                            const shouldExpand = (isFocused || (isHovered && !isKeyboardNavigation)) && shouldTruncate;
                             const truncatedText = shouldTruncate && !shouldExpand
                               ? truncateText(option.name, maxTextWidth)
                               : option.name;
