@@ -17,10 +17,8 @@ const Pagination = ({
   className,
   enableFloating = true,
 }: FloatingPaginationProps) => {
-  const [lastHoverPosition, setLastHoverPosition] = useState({ x: 0, y: 0 });
   const [showFloating, setShowFloating] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleItemsPerPageClick = useCallback(
     (value: number, event: React.MouseEvent) => {
@@ -73,70 +71,17 @@ const Pagination = ({
 
   const pageSizes = [10, 20, 40];
 
-  const handleMouseMove = useCallback(
-    (event: React.MouseEvent) => {
-      if (enableFloating) {
-        setLastHoverPosition({
-          x: event.clientX,
-          y: event.clientY,
-        });
-      }
-    },
-    [enableFloating],
-  );
-
-  const handleMouseEnter = useCallback(() => {
+  const toggleFloating = useCallback(() => {
     if (enableFloating) {
-      // Clear any existing timeout
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      // Show floating component after a short delay
-      hoverTimeoutRef.current = setTimeout(() => {
-        setShowFloating(true);
-      }, 200);
-    }
-  }, [enableFloating]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (enableFloating) {
-      // Clear timeout if leaving before floating shows
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      // Hide floating component after a short delay
-      hoverTimeoutRef.current = setTimeout(() => {
-        setShowFloating(false);
-      }, 150);
-    }
-  }, [enableFloating]);
-
-  const handleFloatingMouseEnter = useCallback(() => {
-    if (enableFloating) {
-      // Keep floating component visible when hovering over it
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      setShowFloating(true);
+      setShowFloating((prev) => !prev);
     }
   }, [enableFloating]);
 
   const handleFloatingMouseLeave = useCallback(() => {
     if (enableFloating) {
-      // Hide floating component when leaving it
-      hoverTimeoutRef.current = setTimeout(() => {
-        setShowFloating(false);
-      }, 150);
+      setShowFloating(false);
     }
   }, [enableFloating]);
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const PaginationContent = ({
     isFloating = false,
@@ -147,24 +92,40 @@ const Pagination = ({
       className={classNames(
         "flex justify-between items-center gap-4 select-none",
         isFloating
-          ? "bg-white rounded-lg shadow-2xl border border-gray-200 p-4 backdrop-blur-sm"
+          ? "bg-white rounded-lg shadow-2xl border border-gray-200 p-4 backdrop-blur-sm relative"
           : "mt-4",
         !isFloating && className,
       )}
       style={
         isFloating
           ? {
-              position: "fixed",
-              top: lastHoverPosition.y - 60,
-              left: lastHoverPosition.x - 200,
-              zIndex: 9999,
               minWidth: "400px",
             }
           : undefined
       }
-      onMouseEnter={isFloating ? handleFloatingMouseEnter : undefined}
       onMouseLeave={isFloating ? handleFloatingMouseLeave : undefined}
     >
+      {/* Close Button for Floating */}
+      {isFloating && (
+        <button
+          onClick={toggleFloating}
+          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+          title="Close Floating Pagination"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-3 w-3"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
+      )}
       <LayoutGroup id={isFloating ? "floating" : "main"}>
         <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
           {pageSizes.map((size) => (
@@ -218,6 +179,24 @@ const Pagination = ({
           ))}
         </div>
       </LayoutGroup>
+
+      {/* Floating Toggle Button */}
+      {enableFloating && !isFloating && (
+        <button
+          onClick={toggleFloating}
+          className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50"
+          title="Toggle Floating Pagination"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
+          </svg>
+        </button>
+      )}
 
       <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
         <div
@@ -304,9 +283,6 @@ const Pagination = ({
     <>
       <div
         ref={containerRef}
-        onMouseMove={handleMouseMove}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
         className={classNames(
           "transition-opacity duration-200",
           enableFloating && showFloating ? "opacity-30" : "opacity-100",
@@ -321,17 +297,26 @@ const Pagination = ({
         createPortal(
           <AnimatePresence>
             <motion.div
-              variants={floatingVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{
-                type: "spring",
-                stiffness: 400,
-                damping: 25,
-              }}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] flex items-center justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={toggleFloating}
             >
-              <PaginationContent isFloating />
+              <motion.div
+                variants={floatingVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 25,
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <PaginationContent isFloating />
+              </motion.div>
             </motion.div>
           </AnimatePresence>,
           document.body,
