@@ -92,20 +92,28 @@ const Dropdown = ({
 
   useEffect(() => {
     if (isOpen && currentFilteredOptions.length > 0) {
-      setHighlightedIndex(0);
-      // Auto-expand the first item if it needs truncation
-      const firstOption = currentFilteredOptions[0];
-      if (firstOption && buttonRef.current) {
+      // Find the index of the currently selected option
+      const selectedIndex = value 
+        ? currentFilteredOptions.findIndex(option => option.id === value)
+        : -1;
+      
+      // If selected option is found in filtered options, highlight it; otherwise highlight first option
+      const initialIndex = selectedIndex >= 0 ? selectedIndex : 0;
+      setHighlightedIndex(initialIndex);
+      
+      // Auto-expand the highlighted item if it needs truncation
+      const highlightedOption = currentFilteredOptions[initialIndex];
+      if (highlightedOption && buttonRef.current) {
         const buttonWidth = buttonRef.current.getBoundingClientRect().width;
         const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
-        if (shouldTruncateText(firstOption.name, maxTextWidth)) {
-          setFocusedOptionId(firstOption.id);
+        if (shouldTruncateText(highlightedOption.name, maxTextWidth)) {
+          setFocusedOptionId(highlightedOption.id);
         }
       }
     } else if (!isOpen || currentFilteredOptions.length === 0) {
       setHighlightedIndex(-1);
     }
-  }, [currentFilteredOptions, isOpen]);
+  }, [currentFilteredOptions, isOpen, value]);
 
   const calculateDropdownPosition = useCallback(() => {
     if (!isOpen || !dropdownMenuRef.current || !buttonRef.current) {
@@ -476,9 +484,22 @@ const Dropdown = ({
       optionsContainerRef.current &&
       currentFilteredOptions.length > 0
     ) {
-      optionsContainerRef.current.scrollTop = 0;
+      // Only reset scroll to top if no option is selected (highlightedIndex is 0)
+      // This prevents overriding the scroll position when a selected option should be visible
+      if (highlightedIndex === 0) {
+        optionsContainerRef.current.scrollTop = 0;
+      } else if (highlightedIndex > 0) {
+        // Scroll to the highlighted option when dropdown opens
+        const optionElements = optionsContainerRef.current.querySelectorAll('[role="option"]');
+        if (optionElements && optionElements[highlightedIndex]) {
+          (optionElements[highlightedIndex] as HTMLElement).scrollIntoView({
+            block: "nearest",
+            behavior: "auto",
+          });
+        }
+      }
     }
-  }, [isOpen, applyOpenStyles, currentFilteredOptions.length]);
+  }, [isOpen, applyOpenStyles, currentFilteredOptions.length, highlightedIndex]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
