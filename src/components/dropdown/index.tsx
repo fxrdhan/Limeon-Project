@@ -49,6 +49,7 @@ const Dropdown = ({
   const [hoveredOptionId, setHoveredOptionId] = useState<string | null>(null);
   const [focusedOptionId, setFocusedOptionId] = useState<string | null>(null);
   const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
+  const [isButtonTextExpanded, setIsButtonTextExpanded] = useState(false);
 
   const instanceId = useId();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -523,6 +524,34 @@ const Dropdown = ({
     setFocusedOptionId(null);
   }, []);
 
+  const handleButtonMouseEnter = useCallback(() => {
+    if (selectedOption && buttonRef.current) {
+      const buttonWidth = buttonRef.current.getBoundingClientRect().width;
+      const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
+      if (shouldTruncateText(selectedOption.name, maxTextWidth)) {
+        setIsButtonTextExpanded(true);
+      }
+    }
+  }, [selectedOption]);
+
+  const handleButtonMouseLeave = useCallback(() => {
+    setIsButtonTextExpanded(false);
+  }, []);
+
+  const handleButtonFocus = useCallback(() => {
+    if (selectedOption && buttonRef.current) {
+      const buttonWidth = buttonRef.current.getBoundingClientRect().width;
+      const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
+      if (shouldTruncateText(selectedOption.name, maxTextWidth)) {
+        setIsButtonTextExpanded(true);
+      }
+    }
+  }, [selectedOption]);
+
+  const handleButtonBlur = useCallback(() => {
+    setIsButtonTextExpanded(false);
+  }, []);
+
   const handleSearchBarKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (
@@ -578,20 +607,54 @@ const Dropdown = ({
             ref={buttonRef}
             type="button"
             tabIndex={tabIndex}
-            className="py-2.5 px-3 w-full inline-flex justify-between items-center text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-emerald-100 focus:border-primary transition duration-200 ease-in-out"
+            className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-emerald-100 focus:border-primary transition duration-200 ease-in-out ${
+              isButtonTextExpanded ? "items-start" : "items-center"
+            }`}
             aria-haspopup="menu"
             aria-expanded={isOpen || isClosing}
             onClick={toggleDropdown}
             onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
+            onMouseEnter={handleButtonMouseEnter}
+            onMouseLeave={handleButtonMouseLeave}
+            onFocus={handleButtonFocus}
+            onBlur={handleButtonBlur}
             aria-controls={isOpen ? "dropdown-options-list" : undefined}
           >
-            {selectedOption
-              ? selectedOption.name
-              : (placeholder ?? "-- Pilih --")}
+            <span
+              className={`${
+                isButtonTextExpanded
+                  ? "whitespace-normal break-words leading-relaxed"
+                  : "truncate"
+              } transition-all duration-200 text-left flex-1 min-w-0`}
+              title={
+                selectedOption && !isButtonTextExpanded
+                  ? (() => {
+                      const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
+                      const maxTextWidth = buttonWidth - 48;
+                      return shouldTruncateText(selectedOption.name, maxTextWidth)
+                        ? selectedOption.name
+                        : undefined;
+                    })()
+                  : undefined
+              }
+            >
+              {selectedOption
+                ? (() => {
+                    if (isButtonTextExpanded) {
+                      return selectedOption.name;
+                    }
+                    const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
+                    const maxTextWidth = buttonWidth - 48;
+                    return shouldTruncateText(selectedOption.name, maxTextWidth)
+                      ? truncateText(selectedOption.name, maxTextWidth)
+                      : selectedOption.name;
+                  })()
+                : (placeholder ?? "-- Pilih --")}
+            </span>
             <svg
               className={`transition-transform duration-200 ${
                 isOpen || isClosing ? "rotate-180" : ""
-              } w-4 h-4 ml-2`}
+              } w-4 h-4 ml-2 flex-shrink-0 ${isButtonTextExpanded ? "mt-0.5" : ""}`}
               xmlns="http://www.w3.org/2000/svg"
               width="24"
               height="24"
