@@ -111,18 +111,6 @@ const Pagination = ({
       switch (event.key) {
         case "ArrowUp": {
           event.preventDefault();
-          const prevIndex =
-            selectedPageSizeIndex > 0
-              ? selectedPageSizeIndex - 1
-              : pageSizes.length - 1;
-          setSelectedPageSizeIndex(prevIndex);
-          onItemsPerPageChange({
-            target: { value: pageSizes[prevIndex].toString() },
-          } as React.ChangeEvent<HTMLSelectElement>);
-          break;
-        }
-        case "ArrowDown": {
-          event.preventDefault();
           const nextIndex =
             selectedPageSizeIndex < pageSizes.length - 1
               ? selectedPageSizeIndex + 1
@@ -130,6 +118,18 @@ const Pagination = ({
           setSelectedPageSizeIndex(nextIndex);
           onItemsPerPageChange({
             target: { value: pageSizes[nextIndex].toString() },
+          } as React.ChangeEvent<HTMLSelectElement>);
+          break;
+        }
+        case "ArrowDown": {
+          event.preventDefault();
+          const prevIndex =
+            selectedPageSizeIndex > 0
+              ? selectedPageSizeIndex - 1
+              : pageSizes.length - 1;
+          setSelectedPageSizeIndex(prevIndex);
+          onItemsPerPageChange({
+            target: { value: pageSizes[prevIndex].toString() },
           } as React.ChangeEvent<HTMLSelectElement>);
           break;
         }
