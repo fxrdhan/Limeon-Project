@@ -251,12 +251,23 @@ export const usePresence = () => {
 
     // Handle page visibility changes
     const handleVisibilityChange = () => {
-      if (
-        document.visibilityState === "visible" &&
-        user &&
-        !isSetupRef.current
-      ) {
-        setupPresence();
+      if (document.visibilityState === "visible" && user) {
+        // Always try to re-establish presence when page becomes visible
+        if (!isConnectedRef.current) {
+          console.log("🔄 Page became visible, re-establishing presence");
+          isSetupRef.current = false;
+          setupPresence();
+        } else if (channelRef.current) {
+          // Re-track presence immediately when page becomes visible
+          try {
+            channelRef.current.track({
+              online_at: new Date().toISOString(),
+              user_id: user.id,
+            });
+          } catch (error) {
+            console.warn("Failed to re-track presence on visibility change:", error);
+          }
+        }
       }
     };
 
@@ -299,11 +310,7 @@ export const usePresence = () => {
     if (!user || !channelRef.current || !isConnectedRef.current) return;
 
     const heartbeat = setInterval(() => {
-      if (
-        channelRef.current &&
-        isConnectedRef.current &&
-        document.visibilityState === "visible"
-      ) {
+      if (channelRef.current && isConnectedRef.current) {
         try {
           channelRef.current.track({
             online_at: new Date().toISOString(),
