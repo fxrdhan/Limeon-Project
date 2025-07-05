@@ -1,7 +1,13 @@
 import { classNames } from "@/lib/classNames";
 import type { PaginationProps } from "@/types";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import React, { useRef, useEffect, useCallback, useState } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useCallback,
+  useState,
+  useMemo,
+} from "react";
 import { createPortal } from "react-dom";
 
 interface FloatingPaginationProps extends PaginationProps {
@@ -18,6 +24,7 @@ const Pagination = ({
   enableFloating = true,
 }: FloatingPaginationProps) => {
   const [showFloating, setShowFloating] = useState(false);
+  const [selectedPageSizeIndex, setSelectedPageSizeIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleItemsPerPageClick = useCallback(
@@ -65,11 +72,25 @@ const Pagination = ({
 
   const floatingVariants = {
     initial: { opacity: 0, scale: 0.8, y: 10 },
-    animate: { opacity: 1, scale: 1, y: 0 },
+    animate: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: {
+        opacity: { duration: 0.2 },
+        scale: { duration: 0.3 },
+        y: { duration: 0.3 },
+      },
+    },
     exit: { opacity: 0, scale: 0.8, y: 10 },
   };
 
-  const pageSizes = [10, 20, 40];
+  const pageSizes = useMemo(() => [10, 20, 40], []);
+
+  useEffect(() => {
+    const currentIndex = pageSizes.indexOf(itemsPerPage);
+    setSelectedPageSizeIndex(currentIndex !== -1 ? currentIndex : 0);
+  }, [itemsPerPage, pageSizes]);
 
   const toggleFloating = useCallback(() => {
     if (enableFloating) {
@@ -83,6 +104,72 @@ const Pagination = ({
     }
   }, [enableFloating]);
 
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!showFloating) return;
+
+      switch (event.key) {
+        case "ArrowUp": {
+          event.preventDefault();
+          const prevIndex =
+            selectedPageSizeIndex > 0
+              ? selectedPageSizeIndex - 1
+              : pageSizes.length - 1;
+          setSelectedPageSizeIndex(prevIndex);
+          onItemsPerPageChange({
+            target: { value: pageSizes[prevIndex].toString() },
+          } as React.ChangeEvent<HTMLSelectElement>);
+          break;
+        }
+        case "ArrowDown": {
+          event.preventDefault();
+          const nextIndex =
+            selectedPageSizeIndex < pageSizes.length - 1
+              ? selectedPageSizeIndex + 1
+              : 0;
+          setSelectedPageSizeIndex(nextIndex);
+          onItemsPerPageChange({
+            target: { value: pageSizes[nextIndex].toString() },
+          } as React.ChangeEvent<HTMLSelectElement>);
+          break;
+        }
+        case "ArrowLeft":
+          event.preventDefault();
+          if (currentPage > 1) {
+            onPageChange(currentPage - 1);
+          }
+          break;
+        case "ArrowRight":
+          event.preventDefault();
+          if (currentPage < totalPages && totalPages !== 0) {
+            onPageChange(currentPage + 1);
+          }
+          break;
+        case "Escape":
+          setShowFloating(false);
+          break;
+      }
+    },
+    [
+      showFloating,
+      selectedPageSizeIndex,
+      pageSizes,
+      currentPage,
+      totalPages,
+      onItemsPerPageChange,
+      onPageChange,
+    ],
+  );
+
+  useEffect(() => {
+    if (showFloating) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+      };
+    }
+  }, [showFloating, handleKeyDown]);
+
   const PaginationContent = ({
     isFloating = false,
   }: {
@@ -92,7 +179,7 @@ const Pagination = ({
       className={classNames(
         "flex justify-between items-center gap-4 select-none",
         isFloating
-          ? "bg-white rounded-lg shadow-2xl border border-gray-200 p-4 backdrop-blur-sm relative"
+          ? "bg-white/20 rounded-full shadow-2xl border border-gray-200 p-4 backdrop-blur-xs relative"
           : "mt-4",
         !isFloating && className,
       )}
@@ -105,27 +192,6 @@ const Pagination = ({
       }
       onMouseLeave={isFloating ? handleFloatingMouseLeave : undefined}
     >
-      {/* Close Button for Floating */}
-      {isFloating && (
-        <button
-          onClick={toggleFloating}
-          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-          title="Close Floating Pagination"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-3 w-3"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
-      )}
       <LayoutGroup id={isFloating ? "floating" : "main"}>
         <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
           {pageSizes.map((size) => (
@@ -297,11 +363,14 @@ const Pagination = ({
         createPortal(
           <AnimatePresence>
             <motion.div
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] flex items-center justify-center"
+              className="fixed inset-0 z-[9998] flex items-center justify-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={toggleFloating}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowFloating(false);
+              }}
             >
               <motion.div
                 variants={floatingVariants}
@@ -312,6 +381,7 @@ const Pagination = ({
                   type: "spring",
                   stiffness: 400,
                   damping: 25,
+                  duration: 0.3,
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
