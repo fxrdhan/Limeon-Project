@@ -71,18 +71,13 @@ const Pagination = ({
   };
 
   const floatingVariants = {
-    initial: { opacity: 0, scale: 0.8, y: 10 },
+    initial: { opacity: 0, scale: 0.8, y: -200 },
     animate: {
       opacity: 1,
       scale: 1,
       y: 0,
-      transition: {
-        opacity: { duration: 0.2 },
-        scale: { duration: 0.3 },
-        y: { duration: 0.3 },
-      },
     },
-    exit: { opacity: 0, scale: 0.8, y: 10 },
+    exit: { opacity: 0, scale: 0.8, y: -200 },
   };
 
   const pageSizes = useMemo(() => [10, 20, 40], []);
@@ -99,10 +94,8 @@ const Pagination = ({
   }, [enableFloating]);
 
   const handleFloatingMouseLeave = useCallback(() => {
-    if (enableFloating) {
-      setShowFloating(false);
-    }
-  }, [enableFloating]);
+    // Portal tidak akan tertutup saat mouse leave
+  }, []);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -336,7 +329,7 @@ const Pagination = ({
         ref={containerRef}
         className={classNames(
           "transition-opacity duration-200",
-          enableFloating && showFloating ? "opacity-30" : "opacity-100",
+          enableFloating && showFloating ? "opacity-30 hidden" : "opacity-100",
         )}
       >
         <PaginationContent />
@@ -354,7 +347,7 @@ const Pagination = ({
               exit={{ opacity: 0 }}
               onClick={(e) => {
                 e.stopPropagation();
-                setShowFloating(false);
+                // Portal tidak akan tertutup saat click backdrop
               }}
             >
               <motion.div
