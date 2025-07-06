@@ -15,7 +15,6 @@ PharmaSys is a modern, web-based application designed to streamline the operatio
 -   **🔐 Authentication:** Secure login for authorized personnel.
 -   **👤 User Profile Management:** Users can manage their own profile information.
 -   **🔄 Real-time Data Synchronization:** Data is automatically updated across all active user sessions. When one user makes a change, others see the update instantly without needing to refresh the page. This is coupled with a user presence feature to show who is currently online.
--   **📱 Responsive Design:** Fully accessible on both desktop and mobile devices.
 -   **⚡ Performance Optimized:** Built with code-splitting and lazy loading to ensure fast load times.
 
 *(Note: Some features like Inventory, Sales, Clinic, and Reports are currently under development as indicated by "Coming Soon" pages.)*
@@ -34,9 +33,6 @@ This project is built with a modern and robust technology stack:
 -   **Routing:** [React Router DOM](https://reactrouter.com/)
 -   **Data Fetching & Caching:** [TanStack Query](https://tanstack.com/query/latest)
 -   **State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
--   **UI Components:** [Headless UI](https://headlessui.com/)
--   **Charting:** [Chart.js](https://www.chartjs.org/) with [react-chartjs-2](https://react-chartjs-2.js.org/)
--   **Icons:** [React Icons](https://react-icons.github.io/react-icons)
 
 ---
 
