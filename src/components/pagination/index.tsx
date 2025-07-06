@@ -71,13 +71,13 @@ const Pagination = ({
   };
 
   const floatingVariants = {
-    initial: { opacity: 0, scale: 0.8, y: -200 },
+    initial: { opacity: 0, scale: 0.8, y: 200 },
     animate: {
       opacity: 1,
       scale: 1,
       y: 0,
     },
-    exit: { opacity: 0, scale: 0.8, y: -200 },
+    exit: { opacity: 0, scale: 0.8, y: 200 },
   };
 
   const pageSizes = useMemo(() => [10, 20, 40], []);
@@ -87,15 +87,24 @@ const Pagination = ({
     setSelectedPageSizeIndex(currentIndex !== -1 ? currentIndex : 0);
   }, [itemsPerPage, pageSizes]);
 
-  const toggleFloating = useCallback(() => {
-    if (enableFloating) {
-      setShowFloating((prev) => !prev);
-    }
-  }, [enableFloating]);
 
-  const handleFloatingMouseLeave = useCallback(() => {
-    // Portal tidak akan tertutup saat mouse leave
-  }, []);
+  useEffect(() => {
+    if (!enableFloating || !containerRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowFloating(!entry.isIntersecting);
+      },
+      {
+        threshold: 0.5,
+        rootMargin: '0px'
+      }
+    );
+
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, [enableFloating]);
 
 
   const handleKeyDown = useCallback(
@@ -139,9 +148,6 @@ const Pagination = ({
             onPageChange(currentPage + 1);
           }
           break;
-        case "Escape":
-          setShowFloating(false);
-          break;
       }
     },
     [
@@ -184,7 +190,6 @@ const Pagination = ({
             }
           : undefined
       }
-      onMouseLeave={isFloating ? handleFloatingMouseLeave : undefined}
     >
       <LayoutGroup id={isFloating ? "floating-selector" : "main-selector"}>
         <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative">
@@ -225,23 +230,6 @@ const Pagination = ({
         </div>
       </LayoutGroup>
 
-      {/* Floating Toggle Button */}
-      {enableFloating && !isFloating && (
-        <button
-          onClick={toggleFloating}
-          className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50"
-          title="Toggle Floating Pagination"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-          </svg>
-        </button>
-      )}
 
       <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
         <div
@@ -328,10 +316,7 @@ const Pagination = ({
     <>
       <div
         ref={containerRef}
-        className={classNames(
-          "transition-opacity duration-200",
-          enableFloating && showFloating ? "opacity-30 hidden" : "opacity-100",
-        )}
+        className="transition-opacity duration-200"
       >
         <PaginationContent />
       </div>
