@@ -7,7 +7,13 @@ import { createPortal } from "react-dom";
 import { Transition, TransitionChild, Dialog } from "@headlessui/react";
 import React, { Fragment, useRef, useState, useEffect } from "react";
 import type { GenericDetailModalProps, CustomDateValueType } from "@/types";
-import { FaPencilAlt, FaSpinner, FaSave, FaBan, FaHistory } from "react-icons/fa";
+import {
+  FaPencilAlt,
+  FaSpinner,
+  FaSave,
+  FaBan,
+  FaHistory,
+} from "react-icons/fa";
 import { useDetailForm } from "@/hooks/detailForm";
 import { formatDateTime } from "@/lib/formatters";
 
@@ -119,7 +125,9 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
 
   const aspectRatioClass =
     imageAspectRatio === "square" ? "aspect-square" : "aspect-video";
-  const formattedUpdateAt = formatDateTime(typeof data?.updated_at === 'string' ? data.updated_at : null);
+  const formattedUpdateAt = formatDateTime(
+    typeof data?.updated_at === "string" ? data.updated_at : null,
+  );
 
   return createPortal(
     <Transition
@@ -169,7 +177,7 @@ const GenericDetailModal: React.FC<GenericDetailModalProps> = ({
         >
           <Dialog.Panel
             ref={dialogPanelRef}
-            className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden relative mx-4 flex flex-col"
+            className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden relative mx-4 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center p-4 border-b">
