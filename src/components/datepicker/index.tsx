@@ -960,7 +960,7 @@ const Datepicker: React.FC<DatepickerProps> = ({
                 outline: "none",
               }}
               className={classNames(
-                "bg-white shadow-lg rounded-lg border border-gray-200 p-4 w-[280px]",
+                "bg-white shadow-lg rounded-xl border border-gray-200 p-4 w-[280px]",
                 dropDirection === "down" ? "origin-top" : "origin-bottom",
                 "transition-all duration-150 ease-out focus:outline-hidden",
                 isClosing ? "opacity-0 scale-95" : "opacity-100 scale-100",

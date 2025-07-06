@@ -101,7 +101,7 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
           leaveFrom="opacity-100 scale-100"
           leaveTo="opacity-0 scale-95"
         >
-          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
             <div className="flex justify-between items-center p-4 border-b-2 border-gray-200 bg-gray-100 rounded-t-lg">
               <div className="flex flex-col">
                 <h2 className="text-xl font-semibold">
@@ -167,7 +167,9 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
                   variant="primary"
                   onClick={handleSave}
                   isLoading={isLoading}
-                  disabled={isLoading || !name.trim() || (isEditMode && !isDirty())}
+                  disabled={
+                    isLoading || !name.trim() || (isEditMode && !isDirty())
+                  }
                 >
                   {isEditMode ? "Update" : "Simpan"}
                 </Button>
