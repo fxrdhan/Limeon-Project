@@ -102,7 +102,7 @@ const AddEditModal: React.FC<AddEditModalProps> = ({
           leaveTo="opacity-0 scale-95"
         >
           <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
-            <div className="flex justify-between items-center p-4 border-b-2 border-gray-200 bg-gray-100 rounded-t-lg">
+            <div className="flex justify-between items-center p-4 border-b-2 border-gray-200 bg-gray-100 rounded-t-xl">
               <div className="flex flex-col">
                 <h2 className="text-xl font-semibold">
                   {isEditMode
