@@ -1,6 +1,6 @@
 import { classNames } from "@/lib/classNames";
 import type { PaginationProps } from "@/types";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import React, {
   useRef,
   useEffect,
@@ -192,35 +192,44 @@ const Pagination = ({
       }
       onMouseLeave={isFloating ? handleFloatingMouseLeave : undefined}
     >
-      <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
-        {pageSizes.map((size) => (
-          <button
-            key={`page-size-${size}-${isFloating ? "floating" : "main"}`}
-            className={classNames(
-              "group px-3 py-1.5 rounded-full focus:outline-hidden select-none relative cursor-pointer",
-              itemsPerPage !== size ? "hover:bg-emerald-100" : "",
-            )}
-            onClick={(event) => handleItemsPerPageClick(size, event)}
-          >
-            {itemsPerPage === size && (
-              <div
-                className="absolute inset-0 bg-primary rounded-full shadow-xs"
-                style={{ borderRadius: "9999px" }}
-              />
-            )}
-            <span
+      <LayoutGroup id={isFloating ? "floating-selector" : "main-selector"}>
+        <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative">
+          {pageSizes.map((size) => (
+            <button
+              key={`page-size-${size}-${isFloating ? "floating" : "main"}`}
               className={classNames(
-                "relative z-10 select-none",
-                itemsPerPage === size
-                  ? "text-white font-medium"
-                  : "text-gray-700 group-hover:text-emerald-700",
+                "group px-3 py-1.5 rounded-full focus:outline-hidden select-none relative cursor-pointer z-10",
+                itemsPerPage !== size ? "hover:bg-emerald-100" : "",
               )}
+              onClick={(event) => handleItemsPerPageClick(size, event)}
             >
-              {itemsPerPage === size ? `${size} items` : size.toString()}
-            </span>
-          </button>
-        ))}
-      </div>
+              {itemsPerPage === size && (
+                <motion.div
+                  layoutId={`selector-bg-${isFloating ? "floating" : "main"}`}
+                  className="absolute inset-0 bg-primary rounded-full shadow-xs"
+                  style={{ borderRadius: "9999px" }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 30,
+                    duration: 0.3,
+                  }}
+                />
+              )}
+              <span
+                className={classNames(
+                  "relative z-10 select-none",
+                  itemsPerPage === size
+                    ? "text-white font-medium"
+                    : "text-gray-700 group-hover:text-emerald-700",
+                )}
+              >
+                {itemsPerPage === size ? `${size} items` : size.toString()}
+              </span>
+            </button>
+          ))}
+        </div>
+      </LayoutGroup>
 
       {/* Floating Toggle Button */}
       {enableFloating && !isFloating && (
