@@ -97,6 +97,7 @@ const Pagination = ({
     // Portal tidak akan tertutup saat mouse leave
   }, []);
 
+
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (!showFloating) return;
@@ -172,7 +173,7 @@ const Pagination = ({
       className={classNames(
         "flex justify-between items-center gap-4 select-none",
         isFloating
-          ? "bg-white/20 rounded-full shadow-2xl border border-gray-200 p-4 backdrop-blur-xs relative"
+          ? "bg-white/30 rounded-full shadow-2xl p-4 backdrop-blur-xs relative"
           : "mt-4",
         !isFloating && className,
       )}
@@ -342,6 +343,7 @@ const Pagination = ({
             {showFloating && (
               <motion.div
                 className="fixed inset-0 z-[9998] flex items-end justify-center pb-8"
+                style={{ pointerEvents: 'none' }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -361,6 +363,7 @@ const Pagination = ({
                     damping: 25,
                     duration: 0.3,
                   }}
+                  style={{ pointerEvents: 'auto' }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <PaginationContent isFloating />
