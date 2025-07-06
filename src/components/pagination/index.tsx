@@ -336,36 +336,37 @@ const Pagination = ({
       </div>
 
       {enableFloating &&
-        showFloating &&
         typeof window !== "undefined" &&
         createPortal(
           <AnimatePresence>
-            <motion.div
-              className="fixed inset-0 z-[9998] flex items-end justify-center pb-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                // Portal tidak akan tertutup saat click backdrop
-              }}
-            >
+            {showFloating && (
               <motion.div
-                variants={floatingVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 25,
-                  duration: 0.3,
+                className="fixed inset-0 z-[9998] flex items-end justify-center pb-8"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Portal tidak akan tertutup saat click backdrop
                 }}
-                onClick={(e) => e.stopPropagation()}
               >
-                <PaginationContent isFloating />
+                <motion.div
+                  variants={floatingVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 25,
+                    duration: 0.3,
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <PaginationContent isFloating />
+                </motion.div>
               </motion.div>
-            </motion.div>
+            )}
           </AnimatePresence>,
           document.body,
         )}
