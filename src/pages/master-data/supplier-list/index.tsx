@@ -55,6 +55,14 @@ const SupplierList = () => {
     locationKey: location.key,
   });
 
+  const getSearchState = () => {
+    if (!search) return 'idle';
+    if (search && !debouncedSearch) return 'typing';
+    if (debouncedSearch && suppliers && suppliers.length > 0) return 'found';
+    if (debouncedSearch && suppliers && suppliers.length === 0) return 'not-found';
+    return 'idle';
+  };
+
   const suppliers = suppliersData || [];
   const currentTotalItems = totalItems || 0;
   const selectedSupplier = editingItem as SupplierType | null;
@@ -271,6 +279,7 @@ const SupplierList = () => {
           onKeyDown={handleKeyDown}
           placeholder="Cari supplier..."
           className="grow"
+          searchState={getSearchState()}
         />
         <Button
           variant="primary"
