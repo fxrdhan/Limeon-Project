@@ -141,6 +141,8 @@ const UnitList = () => {
     <>
       {/* Floating Header Portal */}
       {showFloatingHeader &&
+        !isAddModalOpen &&
+        !isEditModalOpen &&
         typeof window !== "undefined" &&
         createPortal(
           <div className="fixed inset-0 z-[9998] flex items-start justify-center pt-8 pointer-events-none">
@@ -247,15 +249,17 @@ const UnitList = () => {
                 </TableBody>
               </Table>
             )}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalUnits || 0}
-              itemsPerPage={itemsPerPage || 10}
-              itemsCount={units?.length || 0}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
+            {!isAddModalOpen && !isEditModalOpen && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalUnits || 0}
+                itemsPerPage={itemsPerPage || 10}
+                itemsCount={units?.length || 0}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            )}
           </>
         )}
       </Card>
