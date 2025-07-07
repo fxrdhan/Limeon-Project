@@ -17,6 +17,7 @@ import type {
 } from "@/types";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { StorageService } from "@/utils/storage";
+import { getSearchState } from "@/utils/search";
 
 const SupplierList = () => {
   const [, setNewSupplierImage] = useState<string | null>(null);
@@ -55,13 +56,6 @@ const SupplierList = () => {
     locationKey: location.key,
   });
 
-  const getSearchState = () => {
-    if (!search) return 'idle';
-    if (search && !debouncedSearch) return 'typing';
-    if (debouncedSearch && suppliers && suppliers.length > 0) return 'found';
-    if (debouncedSearch && suppliers && suppliers.length === 0) return 'not-found';
-    return 'idle';
-  };
 
   const suppliers = suppliersData || [];
   const currentTotalItems = totalItems || 0;
@@ -279,7 +273,7 @@ const SupplierList = () => {
           onKeyDown={handleKeyDown}
           placeholder="Cari supplier..."
           className="grow"
-          searchState={getSearchState()}
+          searchState={getSearchState(search, debouncedSearch, suppliers)}
         />
         <Button
           variant="primary"

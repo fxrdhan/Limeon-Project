@@ -18,6 +18,7 @@ import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { getSearchState } from "@/utils/search";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 
@@ -63,13 +64,6 @@ const UnitList = () => {
     locationKey: location.key,
   });
 
-  const getSearchState = () => {
-    if (!search) return 'idle';
-    if (search && !debouncedSearch) return 'typing';
-    if (debouncedSearch && units && units.length > 0) return 'found';
-    if (debouncedSearch && units && units.length === 0) return 'not-found';
-    return 'idle';
-  };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
@@ -131,7 +125,7 @@ const UnitList = () => {
             onKeyDown={handleKeyDown}
             placeholder="Cari nama atau deskripsi satuan..."
             className="w-64"
-            searchState={getSearchState()}
+            searchState={getSearchState(search, debouncedSearch, units)}
           />
           <Button
             variant="primary"
@@ -196,7 +190,7 @@ const UnitList = () => {
             onKeyDown={handleKeyDown}
             placeholder="Cari nama atau deskripsi satuan..."
             className="grow"
-            searchState={getSearchState()}
+            searchState={getSearchState(search, debouncedSearch, units)}
           />
           <Button
             variant="primary"
