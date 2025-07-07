@@ -58,6 +58,14 @@ const TypeList = () => {
     locationKey: location.key,
   });
 
+  const getSearchState = () => {
+    if (!search) return 'idle';
+    if (search && !debouncedSearch) return 'typing';
+    if (debouncedSearch && types && types.length > 0) return 'found';
+    if (debouncedSearch && types && types.length === 0) return 'not-found';
+    return 'idle';
+  };
+
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
   };
@@ -85,6 +93,7 @@ const TypeList = () => {
             onKeyDown={handleKeyDown}
             placeholder="Cari nama atau deskripsi jenis item..."
             className="grow"
+            searchState={getSearchState()}
           />
           <Button
             variant="primary"
