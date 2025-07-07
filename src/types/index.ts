@@ -330,6 +330,8 @@ export interface TableSearchProps {
   placeholder?: string;
   className?: string;
   inputRef?: React.RefObject<HTMLInputElement>;
+  searchState?: 'idle' | 'typing' | 'found' | 'not-found';
+  resultsCount?: number;
 }
 
 export interface TableProps {
