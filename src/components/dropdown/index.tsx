@@ -214,7 +214,7 @@ const Dropdown = ({
       if (!isOpen) return;
 
       const items = currentFilteredOptions;
-      if (!items.length && !["Escape", "Tab"].includes(e.key)) return;
+      if (!items.length && !["Escape", "Tab", "Enter"].includes(e.key)) return;
 
       let newIndex = highlightedIndex;
 
@@ -290,6 +290,13 @@ const Dropdown = ({
           e.preventDefault();
           if (highlightedIndex >= 0 && highlightedIndex < items.length) {
             handleSelect(items[highlightedIndex].id);
+          } else if (
+            searchState === "not-found" &&
+            onAddNew &&
+            searchTerm.trim() !== ""
+          ) {
+            onAddNew(searchTerm);
+            actualCloseDropdown();
           }
           break;
         case "Escape":
@@ -307,6 +314,9 @@ const Dropdown = ({
       highlightedIndex,
       handleSelect,
       actualCloseDropdown,
+      onAddNew,
+      searchState,
+      searchTerm,
     ],
   );
 
@@ -779,7 +789,7 @@ const Dropdown = ({
                             />
                             {searchState === "not-found" && onAddNew ? (
                               <FaPlus
-                                className={`absolute top-2.5 right-2 ${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer hover:scale-110 ${
+                                className={`absolute top-2.5 right-2 ${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer ${
                                   searchTerm && searchTerm.length > 0
                                     ? "opacity-0 transform -translate-x-2"
                                     : "opacity-100 transform translate-x-0"
@@ -816,7 +826,7 @@ const Dropdown = ({
                           </div>
                           {searchState === "not-found" && onAddNew ? (
                             <FaPlus
-                              className={`${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer hover:scale-110 mr-3 ml-1 ${
+                              className={`${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer mr-3 ml-1 ${
                                 searchTerm && searchTerm.length > 0
                                   ? "opacity-100 transform translate-x-0 scale-150"
                                   : "opacity-0 transform translate-x-2 scale-150"
