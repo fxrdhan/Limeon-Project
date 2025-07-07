@@ -91,19 +91,18 @@ const UnitList = () => {
 
   // Floating header variants (matching pagination style but from top)
   const floatingHeaderVariants = {
-    initial: { opacity: 0, scale: 0.8, y: -200 },
+    initial: { scale: 0.8, y: -200 },
     animate: {
-      opacity: 1,
       scale: 1,
       y: 0,
     },
-    exit: { opacity: 0, scale: 0.8, y: -200 },
+    exit: { scale: 0.8, y: -200 },
   };
 
   // Floating header component
   const FloatingHeader = () => (
-    <div 
-      className="backdrop-blur-xs rounded-2xl shadow-2xl p-4 relative min-w-[600px] border border-gray-200"
+    <div
+      className="mt-10 backdrop-blur-xs rounded-2xl shadow-2xl p-4 relative min-w-[600px]"
       style={{
         background: "oklch(1 0 57 / 30%)",
         backdropFilter: "blur(4px)",
