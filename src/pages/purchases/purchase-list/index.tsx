@@ -146,6 +146,14 @@ const PurchaseList = () => {
   const purchases = data?.purchases || [];
   const totalItems = data?.totalItems || 0;
 
+  const getSearchState = () => {
+    if (!search) return 'idle';
+    if (search && !debouncedSearch) return 'typing';
+    if (debouncedSearch && purchases && purchases.length > 0) return 'found';
+    if (debouncedSearch && purchases && purchases.length === 0) return 'not-found';
+    return 'idle';
+  };
+
   const deletePurchaseMutation = useMutation({
     mutationFn: async (id: string) => {
       const { data: purchaseItems, error: itemsError } = await supabase
@@ -282,6 +290,7 @@ const PurchaseList = () => {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nomor faktur..."
             className="grow"
+            searchState={getSearchState()}
           />
           <div className="flex space-x-2 ml-4 mb-4">
             <Button
