@@ -56,6 +56,14 @@ const DoctorList = () => {
     locationKey: location.key,
   });
 
+  const getSearchState = () => {
+    if (!search) return 'idle';
+    if (search && !debouncedSearch) return 'typing';
+    if (debouncedSearch && doctors && doctors.length > 0) return 'found';
+    if (debouncedSearch && doctors && doctors.length === 0) return 'not-found';
+    return 'idle';
+  };
+
   const doctors = doctorsData || [];
   const currentTotalItems = totalItems || 0;
   const selectedDoctor = editingItem as DoctorType | null;
@@ -295,6 +303,7 @@ const DoctorList = () => {
           onKeyDown={handleKeyDown}
           placeholder="Cari nama dokter..."
           className="grow"
+          searchState={getSearchState()}
         />
         <Button
           variant="primary"
