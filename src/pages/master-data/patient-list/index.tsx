@@ -56,6 +56,14 @@ const PatientList = () => {
     locationKey: location.key,
   });
 
+  const getSearchState = () => {
+    if (!search) return 'idle';
+    if (search && !debouncedSearch) return 'typing';
+    if (debouncedSearch && patients && patients.length > 0) return 'found';
+    if (debouncedSearch && patients && patients.length === 0) return 'not-found';
+    return 'idle';
+  };
+
   const patients = patientsData || [];
   const currentTotalItems = totalItems || 0;
   const selectedPatient = editingItem as PatientType | null;
@@ -267,6 +275,7 @@ const PatientList = () => {
           onKeyDown={handleKeyDown}
           placeholder="Cari nama pasien..."
           className="grow"
+          searchState={getSearchState()}
         />
         <Button
           variant="primary"
