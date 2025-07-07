@@ -71,13 +71,12 @@ const Pagination = ({
   };
 
   const floatingVariants = {
-    initial: { opacity: 0, scale: 0.8, y: 200 },
+    initial: { scale: 0.8, y: 200 },
     animate: {
-      opacity: 1,
       scale: 1,
       y: 0,
     },
-    exit: { opacity: 0, scale: 0.8, y: 200 },
+    exit: { scale: 0.8, y: 200 },
   };
 
   const pageSizes = useMemo(() => [10, 20, 40], []);
@@ -86,7 +85,6 @@ const Pagination = ({
     const currentIndex = pageSizes.indexOf(itemsPerPage);
     setSelectedPageSizeIndex(currentIndex !== -1 ? currentIndex : 0);
   }, [itemsPerPage, pageSizes]);
-
 
   useEffect(() => {
     if (!enableFloating || !containerRef.current) return;
@@ -97,15 +95,14 @@ const Pagination = ({
       },
       {
         threshold: 0.5,
-        rootMargin: '0px'
-      }
+        rootMargin: "0px",
+      },
     );
 
     observer.observe(containerRef.current);
 
     return () => observer.disconnect();
   }, [enableFloating]);
-
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -178,15 +175,17 @@ const Pagination = ({
     <div
       className={classNames(
         "flex justify-between items-center gap-4 select-none",
-        isFloating
-          ? "bg-white/30 rounded-full shadow-2xl p-4 backdrop-blur-xs relative"
-          : "mt-4",
+        isFloating ? "rounded-full shadow-2xl p-4 relative" : "mt-4",
         !isFloating && className,
       )}
       style={
         isFloating
           ? {
               minWidth: "400px",
+              background: "oklch(1 0 57 / 30%)",
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+              willChange: "transform",
             }
           : undefined
       }
@@ -229,7 +228,6 @@ const Pagination = ({
           ))}
         </div>
       </LayoutGroup>
-
 
       <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none">
         <div
@@ -314,30 +312,18 @@ const Pagination = ({
 
   return (
     <>
-      <div
-        ref={containerRef}
-        className="transition-opacity duration-200"
-      >
+      <div ref={containerRef} className="transition-opacity duration-200">
         <PaginationContent />
       </div>
 
       {enableFloating &&
         typeof window !== "undefined" &&
         createPortal(
-          <AnimatePresence>
-            {showFloating && (
-              <motion.div
-                className="fixed inset-0 z-[9998] flex items-end justify-center pb-8"
-                style={{ pointerEvents: 'none' }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Portal tidak akan tertutup saat click backdrop
-                }}
-              >
+          <div className="fixed inset-0 z-[9998] flex items-end justify-center pb-8 pointer-events-none">
+            <AnimatePresence>
+              {showFloating && (
                 <motion.div
+                  key="floating-pagination"
                   variants={floatingVariants}
                   initial="initial"
                   animate="animate"
@@ -348,14 +334,18 @@ const Pagination = ({
                     damping: 25,
                     duration: 0.3,
                   }}
-                  style={{ pointerEvents: 'auto' }}
+                  className="pointer-events-auto"
                   onClick={(e) => e.stopPropagation()}
+                  style={{
+                    backfaceVisibility: "hidden",
+                    perspective: 1000,
+                  }}
                 >
                   <PaginationContent isFloating />
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>,
+              )}
+            </AnimatePresence>
+          </div>,
           document.body,
         )}
     </>
