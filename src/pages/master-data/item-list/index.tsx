@@ -49,6 +49,14 @@ function ItemList() {
     locationKey: location.key,
   });
 
+  const getSearchState = () => {
+    if (!search) return 'idle';
+    if (search && !debouncedSearch) return 'typing';
+    if (debouncedSearch && items && items.length > 0) return 'found';
+    if (debouncedSearch && items && items.length === 0) return 'not-found';
+    return 'idle';
+  };
+
   const [editingItemId, setEditingItemId] = useState<string | undefined>(
     undefined,
   );
@@ -117,6 +125,7 @@ function ItemList() {
             onKeyDown={handleItemKeyDown}
             placeholder="Cari nama atau kode item..."
             className="grow"
+            searchState={getSearchState()}
           />
           <Button
             variant="primary"
