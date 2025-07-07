@@ -30,6 +30,7 @@ import {
 } from "@tanstack/react-query";
 import { useFieldFocus } from "@/hooks/fieldFocus";
 import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
+import { getSearchState } from "@/utils/search";
 
 interface Purchase {
   id: string;
@@ -146,13 +147,6 @@ const PurchaseList = () => {
   const purchases = data?.purchases || [];
   const totalItems = data?.totalItems || 0;
 
-  const getSearchState = () => {
-    if (!search) return 'idle';
-    if (search && !debouncedSearch) return 'typing';
-    if (debouncedSearch && purchases && purchases.length > 0) return 'found';
-    if (debouncedSearch && purchases && purchases.length === 0) return 'not-found';
-    return 'idle';
-  };
 
   const deletePurchaseMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -290,7 +284,7 @@ const PurchaseList = () => {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nomor faktur..."
             className="grow"
-            searchState={getSearchState()}
+            searchState={getSearchState(search, debouncedSearch, purchases)}
           />
           <div className="flex space-x-2 ml-4 mb-4">
             <Button

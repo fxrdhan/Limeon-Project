@@ -24,3 +24,11 @@ export const getScore = (item: Item, searchTermLower: string): number => {
     if (barcodeLower.includes(searchTermLower)) return 1;
     return 0;
 };
+
+export const getSearchState = (search: string, debouncedSearch: string, dataArray: any[] | null | undefined): 'idle' | 'typing' | 'found' | 'not-found' => {
+    if (!search) return 'idle';
+    if (search && !debouncedSearch) return 'typing';
+    if (debouncedSearch && dataArray && dataArray.length > 0) return 'found';
+    if (debouncedSearch && dataArray && dataArray.length === 0) return 'not-found';
+    return 'idle';
+};

@@ -18,6 +18,7 @@ import {
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { getSearchState } from "@/utils/search";
 
 const CategoryList = () => {
   const searchInputRef = useRef<HTMLInputElement>(
@@ -58,13 +59,6 @@ const CategoryList = () => {
     locationKey: location.key,
   });
 
-  const getSearchState = () => {
-    if (!search) return 'idle';
-    if (search && !debouncedSearch) return 'typing';
-    if (debouncedSearch && categories && categories.length > 0) return 'found';
-    if (debouncedSearch && categories && categories.length === 0) return 'not-found';
-    return 'idle';
-  };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
@@ -93,7 +87,7 @@ const CategoryList = () => {
             onKeyDown={handleKeyDown}
             placeholder="Cari nama atau deskripsi kategori item..."
             className="grow"
-            searchState={getSearchState()}
+            searchState={getSearchState(search, debouncedSearch, categories)}
           />
           <Button
             variant="primary"

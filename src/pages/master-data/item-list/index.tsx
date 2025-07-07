@@ -19,6 +19,7 @@ import { Card } from "@/components/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
 import AddItemPortal from "@/components/add-edit/v2";
 import { useMasterDataManagement } from "@/handlers/masterData";
+import { getSearchState } from "@/utils/search";
 
 function ItemList() {
   const location = useLocation();
@@ -49,13 +50,6 @@ function ItemList() {
     locationKey: location.key,
   });
 
-  const getSearchState = () => {
-    if (!search) return 'idle';
-    if (search && !debouncedSearch) return 'typing';
-    if (debouncedSearch && items && items.length > 0) return 'found';
-    if (debouncedSearch && items && items.length === 0) return 'not-found';
-    return 'idle';
-  };
 
   const [editingItemId, setEditingItemId] = useState<string | undefined>(
     undefined,
@@ -125,7 +119,7 @@ function ItemList() {
             onKeyDown={handleItemKeyDown}
             placeholder="Cari nama atau kode item..."
             className="grow"
-            searchState={getSearchState()}
+            searchState={getSearchState(search, debouncedSearch, items)}
           />
           <Button
             variant="primary"
