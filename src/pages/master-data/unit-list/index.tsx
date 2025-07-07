@@ -16,11 +16,9 @@ import {
 } from "@/components/table";
 import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef, useEffect, useState } from "react";
+import { useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
-import { motion, AnimatePresence } from "framer-motion";
-import { createPortal } from "react-dom";
 
 const UnitList = () => {
   const searchInputRef = useRef<HTMLInputElement>(
@@ -29,7 +27,6 @@ const UnitList = () => {
   const location = useLocation();
   const headerRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
-  const [showFloatingHeader, setShowFloatingHeader] = useState(false);
 
   const {
     isAddModalOpen,
@@ -64,7 +61,6 @@ const UnitList = () => {
     locationKey: location.key,
   });
 
-
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
   };
@@ -73,106 +69,8 @@ const UnitList = () => {
     setIsEditModalOpen(false);
   };
 
-  // Scroll detection for floating header
-  useEffect(() => {
-    if (!searchBarRef.current) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowFloatingHeader(!entry.isIntersecting);
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px",
-      },
-    );
-
-    observer.observe(searchBarRef.current);
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Floating header variants (matching pagination style but from top)
-  const floatingHeaderVariants = {
-    initial: { scale: 0.8, y: -200 },
-    animate: {
-      scale: 1,
-      y: 0,
-    },
-    exit: { scale: 0.8, y: -200 },
-  };
-
-  // Floating header component
-  const FloatingHeader = () => (
-    <div
-      className="mt-10 backdrop-blur-xs rounded-2xl shadow-2xl p-4 relative min-w-[600px]"
-      style={{
-        background: "oklch(1 0 57 / 30%)",
-        backdropFilter: "blur(4px)",
-        WebkitBackdropFilter: "blur(4px)",
-        willChange: "transform",
-      }}
-    >
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center">
-          <PageTitle title="Daftar Satuan Item" />
-        </div>
-        <div className="flex items-center space-x-3">
-          <SearchBar
-            inputRef={searchInputRef}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Cari nama atau deskripsi satuan..."
-            className="w-64"
-            searchState={getSearchState(search, debouncedSearch, units)}
-          />
-          <Button
-            variant="primary"
-            className="flex items-center"
-            onClick={() => setIsAddModalOpen(true)}
-            withGlow
-          >
-            <FaPlus className="mr-2" />
-            Tambah Satuan Baru
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <>
-      {/* Floating Header Portal */}
-      {showFloatingHeader &&
-        !isAddModalOpen &&
-        !isEditModalOpen &&
-        typeof window !== "undefined" &&
-        createPortal(
-          <div className="fixed inset-0 z-[9998] flex items-start justify-center pt-8 pointer-events-none">
-            <AnimatePresence>
-              <motion.div
-                key="floating-header"
-                variants={floatingHeaderVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 25,
-                  duration: 0.3,
-                }}
-                className="pointer-events-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <FloatingHeader />
-              </motion.div>
-            </AnimatePresence>
-          </div>,
-          document.body,
-        )}
-
       <Card
         className={
           isFetching ? "opacity-75 transition-opacity duration-300" : ""
@@ -212,11 +110,11 @@ const UnitList = () => {
             {isLoading && (!units || units.length === 0) ? (
               <UnitListSkeleton rows={8} />
             ) : (
-              <Table>
-                <TableHead>
+              <Table scrollable={true} maxHeight="600px" stickyHeader={true}>
+                <TableHead stickyHeader={true}>
                   <TableRow>
-                    <TableHeader className="w-[15%]">Nama Satuan</TableHeader>
-                    <TableHeader className="w-[85%]">Deskripsi</TableHeader>
+                    <TableHeader className="w-[15%]" stickyHeader={true}>Nama Satuan</TableHeader>
+                    <TableHeader className="w-[85%]" stickyHeader={true}>Deskripsi</TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
