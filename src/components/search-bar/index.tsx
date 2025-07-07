@@ -34,7 +34,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
         <LuSearch
           className={`${getSearchIconColor()} transition-all duration-300 ease-in-out ${
             hasValue
-              ? "opacity-100 transform translate-x-0 scale-180"
+              ? "opacity-100 transform translate-x-0 scale-150"
               : "opacity-0 transform -translate-x-2 scale-100"
           }`}
           style={{
@@ -48,9 +48,13 @@ const SearchBar: React.FC<TableSearchProps> = ({
             ref={inputRef}
             type="text"
             placeholder={placeholder}
-            className={`text-sm outline-none tracking-normal w-full p-2.5 border border-gray-300 focus:outline-none rounded-lg focus:border-primary focus:ring-3 focus:ring-emerald-100 transition-all duration-300 ease-in-out ${
+            className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-300 ease-in-out ${
               hasValue ? "pl-3" : "pl-10"
-            }`}
+            } ${
+              searchState === "not-found"
+                ? "border-accent focus:border-accent focus:ring-3 focus:ring-red-100"
+                : "border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-100"
+            } focus:outline-none rounded-lg`}
             value={value}
             onChange={onChange}
             onKeyDown={onKeyDown}
