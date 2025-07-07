@@ -7,6 +7,7 @@ import {
   useId,
 } from "react";
 import { createPortal } from "react-dom";
+import { LuSearch } from "react-icons/lu";
 import type { DropdownProps } from "@/types";
 import { truncateText, shouldTruncateText } from "@/utils/text";
 import { fuzzyMatch } from "@/utils/search";
@@ -50,6 +51,9 @@ const Dropdown = ({
   const [focusedOptionId, setFocusedOptionId] = useState<string | null>(null);
   const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
   const [isButtonTextExpanded, setIsButtonTextExpanded] = useState(false);
+  const [searchState, setSearchState] = useState<
+    "idle" | "typing" | "found" | "not-found"
+  >("idle");
 
   const instanceId = useId();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -65,6 +69,7 @@ const Dropdown = ({
   useEffect(() => {
     if (!searchList && searchTerm.trim() === "") {
       setCurrentFilteredOptions(options);
+      setSearchState("idle");
     } else if (searchTerm.trim() !== "") {
       const searchTermLower = searchTerm.toLowerCase();
       const filtered = options
@@ -85,22 +90,24 @@ const Dropdown = ({
           return a.name.localeCompare(b.name);
         });
       setCurrentFilteredOptions(filtered);
+      setSearchState(filtered.length > 0 ? "found" : "not-found");
     } else if (searchList && searchTerm.trim() === "") {
       setCurrentFilteredOptions(options);
+      setSearchState("idle");
     }
   }, [options, searchTerm, searchList, setCurrentFilteredOptions]);
 
   useEffect(() => {
     if (isOpen && currentFilteredOptions.length > 0) {
       // Find the index of the currently selected option
-      const selectedIndex = value 
-        ? currentFilteredOptions.findIndex(option => option.id === value)
+      const selectedIndex = value
+        ? currentFilteredOptions.findIndex((option) => option.id === value)
         : -1;
-      
+
       // If selected option is found in filtered options, highlight it; otherwise highlight first option
       const initialIndex = selectedIndex >= 0 ? selectedIndex : 0;
       setHighlightedIndex(initialIndex);
-      
+
       // Auto-expand the highlighted item if it needs truncation
       const highlightedOption = currentFilteredOptions[initialIndex];
       if (highlightedOption && buttonRef.current) {
@@ -490,7 +497,8 @@ const Dropdown = ({
         optionsContainerRef.current.scrollTop = 0;
       } else if (highlightedIndex > 0) {
         // Scroll to the highlighted option when dropdown opens
-        const optionElements = optionsContainerRef.current.querySelectorAll('[role="option"]');
+        const optionElements =
+          optionsContainerRef.current.querySelectorAll('[role="option"]');
         if (optionElements && optionElements[highlightedIndex]) {
           (optionElements[highlightedIndex] as HTMLElement).scrollIntoView({
             block: "nearest",
@@ -499,15 +507,36 @@ const Dropdown = ({
         }
       }
     }
-  }, [isOpen, applyOpenStyles, currentFilteredOptions.length, highlightedIndex]);
+  }, [
+    isOpen,
+    applyOpenStyles,
+    currentFilteredOptions.length,
+    highlightedIndex,
+  ]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
       setSearchTerm(newValue);
+      setSearchState(newValue.trim() !== "" ? "typing" : "idle");
     },
     [],
   );
+
+  const getSearchIconColor = () => {
+    switch (searchState) {
+      case "idle":
+        return "text-gray-400";
+      case "typing":
+        return "text-gray-800";
+      case "found":
+        return "text-primary";
+      case "not-found":
+        return "text-red-500";
+      default:
+        return "text-gray-400";
+    }
+  };
 
   const handleOptionHover = useCallback(
     (optionId: string, optionName: string) => {
@@ -650,9 +679,13 @@ const Dropdown = ({
               title={
                 selectedOption && !isButtonTextExpanded
                   ? (() => {
-                      const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
+                      const buttonWidth =
+                        buttonRef.current?.getBoundingClientRect().width || 200;
                       const maxTextWidth = buttonWidth - 48;
-                      return shouldTruncateText(selectedOption.name, maxTextWidth)
+                      return shouldTruncateText(
+                        selectedOption.name,
+                        maxTextWidth,
+                      )
                         ? selectedOption.name
                         : undefined;
                     })()
@@ -664,7 +697,8 @@ const Dropdown = ({
                     if (isButtonTextExpanded) {
                       return selectedOption.name;
                     }
-                    const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
+                    const buttonWidth =
+                      buttonRef.current?.getBoundingClientRect().width || 200;
                     const maxTextWidth = buttonWidth - 48;
                     return shouldTruncateText(selectedOption.name, maxTextWidth)
                       ? truncateText(selectedOption.name, maxTextWidth)
@@ -697,25 +731,21 @@ const Dropdown = ({
                 ref={dropdownMenuRef}
                 style={portalStyle}
                 className={`
-                                    ${
-                                      dropDirection === "down"
-                                        ? "origin-top"
-                                        : "origin-bottom"
-                                    }
-                                    shadow-lg bg-white rounded-xl border border-gray-200
-                                    transition-all duration-300 ease-out transform
-                                    ${
-                                      isClosing
-                                        ? "opacity-0 scale-y-0 translate-y-0"
-                                        : isOpen && applyOpenStyles
-                                          ? "opacity-100 scale-y-100 translate-y-0"
-                                          : `opacity-0 scale-y-0 ${
-                                              dropDirection === "down"
-                                                ? "translate-y-2"
-                                                : "-translate-y-2"
-                                            } pointer-events-none`
-                                    }
-                                `}
+                  ${dropDirection === "down" ? "origin-top" : "origin-bottom"}
+                  shadow-lg bg-white rounded-xl border border-gray-200
+                  transition-all duration-300 ease-out transform
+                  ${
+                    isClosing
+                      ? "opacity-0 scale-y-0 translate-y-0"
+                      : isOpen && applyOpenStyles
+                        ? "opacity-100 scale-y-100 translate-y-0"
+                        : `opacity-0 scale-y-0 ${
+                            dropDirection === "down"
+                              ? "translate-y-2"
+                              : "-translate-y-2"
+                          } pointer-events-none`
+                  }
+              `}
                 role="menu"
                 onClick={(e) => e.stopPropagation()}
                 onMouseEnter={handleMenuEnter}
@@ -724,35 +754,42 @@ const Dropdown = ({
                 {(isOpen || isClosing) && (
                   <div>
                     {searchList && (
-                      <div className="p-2 border-b border-gray-200 sticky top-0 z-10">
+                      <div className="p-2 pl-0! border-b border-gray-200 sticky top-0 z-10">
                         <div className="relative flex items-center gap-2 min-w-0">
+                          <LuSearch
+                            className={`${getSearchIconColor()} transition-all duration-300 ease-in-out ${
+                              searchTerm && searchTerm.length > 0
+                                ? "pl-2 opacity-100 transform translate-x-0 scale-100"
+                                : "opacity-0 transform -translate-x-2 scale-100"
+                            }`}
+                            style={{
+                              visibility:
+                                searchTerm && searchTerm.length > 0
+                                  ? "visible"
+                                  : "hidden",
+                              width:
+                                searchTerm && searchTerm.length > 0
+                                  ? "auto"
+                                  : "0",
+                              minWidth:
+                                searchTerm && searchTerm.length > 0
+                                  ? "16px"
+                                  : "0",
+                            }}
+                          />
                           <div className="relative flex-1 min-w-0">
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="text-gray-500"
-                              >
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line
-                                  x1="21"
-                                  y1="21"
-                                  x2="16.65"
-                                  y2="16.65"
-                                ></line>
-                              </svg>
-                            </div>
                             <input
                               ref={searchInputRef}
                               type="text"
-                              className="w-full py-2 px-2 pl-8 pr-2 text-sm border border-gray-300 rounded-lg focus:outline-hidden focus:ring-3 focus:ring-emerald-100 focus:border-primary transition duration-200 ease-in-out min-w-0"
+                              className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 ${
+                                searchTerm && searchTerm.length > 0
+                                  ? "pl-2"
+                                  : "pl-8"
+                              } ${
+                                searchState === "not-found"
+                                  ? "border-accent focus:border-accent focus:ring-3 focus:ring-red-100"
+                                  : "border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-100"
+                              }`}
                               placeholder="Cari..."
                               value={searchTerm}
                               onChange={handleSearchChange}
@@ -774,6 +811,20 @@ const Dropdown = ({
                                   ? `dropdown-option-${currentFilteredOptions[highlightedIndex].id}`
                                   : undefined
                               }
+                            />
+                            <LuSearch
+                              className={`absolute top-2.5 left-2 ${getSearchIconColor()} transition-all duration-300 ease-in-out ${
+                                searchTerm && searchTerm.length > 0
+                                  ? "opacity-0 transform translate-x-2"
+                                  : "opacity-100 transform translate-x-0"
+                              }`}
+                              style={{
+                                visibility:
+                                  searchTerm && searchTerm.length > 0
+                                    ? "hidden"
+                                    : "visible",
+                              }}
+                              size={16}
                             />
                           </div>
                           {onAddNew && (
