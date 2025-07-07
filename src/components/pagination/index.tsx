@@ -314,7 +314,13 @@ const Pagination = ({
 
   return (
     <>
-      <div ref={containerRef} className="transition-opacity duration-200">
+      <div 
+        ref={containerRef} 
+        className={classNames(
+          "transition-opacity duration-200",
+          showFloating && !hideFloatingWhenModalOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+        )}
+      >
         <PaginationContent />
       </div>
 
