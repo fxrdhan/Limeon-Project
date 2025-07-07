@@ -249,17 +249,16 @@ const UnitList = () => {
                 </TableBody>
               </Table>
             )}
-            {!isAddModalOpen && !isEditModalOpen && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalUnits || 0}
-                itemsPerPage={itemsPerPage || 10}
-                itemsCount={units?.length || 0}
-                onPageChange={handlePageChange}
-                onItemsPerPageChange={handleItemsPerPageChange}
-              />
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalUnits || 0}
+              itemsPerPage={itemsPerPage || 10}
+              itemsCount={units?.length || 0}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
+            />
           </>
         )}
       </Card>
