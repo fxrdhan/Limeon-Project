@@ -80,8 +80,8 @@ const UnitList = () => {
       },
       {
         threshold: 0.1,
-        rootMargin: '0px'
-      }
+        rootMargin: "0px",
+      },
     );
 
     observer.observe(headerRef.current);
@@ -102,10 +102,10 @@ const UnitList = () => {
 
   // Floating header component
   const FloatingHeader = () => (
-    <div className="bg-white/30 rounded-2xl shadow-2xl p-4 backdrop-blur-xs relative min-w-[600px]">
+    <div className="bg-white backdrop-blur-xs rounded-2xl shadow-2xl p-4 relative min-w-[600px] border border-gray-200">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center">
-          <PageTitle title="Daftar Satuan Item" className="!mb-0 text-lg font-semibold" />
+          <PageTitle title="Daftar Satuan Item" />
         </div>
         <div className="flex items-center space-x-3">
           <SearchBar
@@ -133,38 +133,32 @@ const UnitList = () => {
   return (
     <>
       {/* Floating Header Portal */}
-      {showFloatingHeader && typeof window !== "undefined" && createPortal(
-        <AnimatePresence>
-          <motion.div
-            className="fixed inset-0 z-[9998] flex items-start justify-center pt-8"
-            style={{ pointerEvents: 'none' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-          >
-            <motion.div
-              variants={floatingHeaderVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{
-                type: "spring",
-                stiffness: 400,
-                damping: 25,
-                duration: 0.3,
-              }}
-              style={{ pointerEvents: 'auto' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <FloatingHeader />
-            </motion.div>
-          </motion.div>
-        </AnimatePresence>,
-        document.body
-      )}
+      {showFloatingHeader &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[9998] flex items-start justify-center pt-8 pointer-events-none">
+            <AnimatePresence>
+              <motion.div
+                key="floating-header"
+                variants={floatingHeaderVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 25,
+                  duration: 0.3,
+                }}
+                className="pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <FloatingHeader />
+              </motion.div>
+            </AnimatePresence>
+          </div>,
+          document.body,
+        )}
 
       <Card
         className={
