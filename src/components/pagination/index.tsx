@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 
 interface FloatingPaginationProps extends PaginationProps {
   enableFloating?: boolean;
+  hideFloatingWhenModalOpen?: boolean;
 }
 
 const Pagination = ({
@@ -22,6 +23,7 @@ const Pagination = ({
   onItemsPerPageChange,
   className,
   enableFloating = true,
+  hideFloatingWhenModalOpen = false,
 }: FloatingPaginationProps) => {
   const [showFloating, setShowFloating] = useState(false);
   const [selectedPageSizeIndex, setSelectedPageSizeIndex] = useState(0);
@@ -321,7 +323,7 @@ const Pagination = ({
         createPortal(
           <div className="fixed inset-0 z-[9998] flex items-end justify-center pb-8 pointer-events-none">
             <AnimatePresence>
-              {showFloating && (
+              {showFloating && !hideFloatingWhenModalOpen && (
                 <motion.div
                   key="floating-pagination"
                   variants={floatingVariants}
