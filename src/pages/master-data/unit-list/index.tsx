@@ -102,7 +102,15 @@ const UnitList = () => {
 
   // Floating header component
   const FloatingHeader = () => (
-    <div className="bg-white backdrop-blur-xs rounded-2xl shadow-2xl p-4 relative min-w-[600px] border border-gray-200">
+    <div 
+      className="backdrop-blur-xs rounded-2xl shadow-2xl p-4 relative min-w-[600px] border border-gray-200"
+      style={{
+        background: "oklch(1 0 57 / 30%)",
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
+        willChange: "transform",
+      }}
+    >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center">
           <PageTitle title="Daftar Satuan Item" />
