@@ -63,6 +63,14 @@ const UnitList = () => {
     locationKey: location.key,
   });
 
+  const getSearchState = () => {
+    if (!search) return 'idle';
+    if (search && !debouncedSearch) return 'typing';
+    if (debouncedSearch && units && units.length > 0) return 'found';
+    if (debouncedSearch && units && units.length === 0) return 'not-found';
+    return 'idle';
+  };
+
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
   };
@@ -123,6 +131,7 @@ const UnitList = () => {
             onKeyDown={handleKeyDown}
             placeholder="Cari nama atau deskripsi satuan..."
             className="w-64"
+            searchState={getSearchState()}
           />
           <Button
             variant="primary"
@@ -187,6 +196,7 @@ const UnitList = () => {
             onKeyDown={handleKeyDown}
             placeholder="Cari nama atau deskripsi satuan..."
             className="grow"
+            searchState={getSearchState()}
           />
           <Button
             variant="primary"
