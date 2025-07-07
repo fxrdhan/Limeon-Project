@@ -18,6 +18,7 @@ import type {
   FieldConfig as FieldConfigPatient,
 } from "@/types";
 import { useMasterDataManagement } from "@/handlers/masterData";
+import { getSearchState } from "@/utils/search";
 
 const PatientList = () => {
   const [, setNewPatientImage] = useState<string | null>(null);
@@ -56,13 +57,6 @@ const PatientList = () => {
     locationKey: location.key,
   });
 
-  const getSearchState = () => {
-    if (!search) return 'idle';
-    if (search && !debouncedSearch) return 'typing';
-    if (debouncedSearch && patients && patients.length > 0) return 'found';
-    if (debouncedSearch && patients && patients.length === 0) return 'not-found';
-    return 'idle';
-  };
 
   const patients = patientsData || [];
   const currentTotalItems = totalItems || 0;
@@ -275,7 +269,7 @@ const PatientList = () => {
           onKeyDown={handleKeyDown}
           placeholder="Cari nama pasien..."
           className="grow"
-          searchState={getSearchState()}
+          searchState={getSearchState(search, debouncedSearch, patients)}
         />
         <Button
           variant="primary"
