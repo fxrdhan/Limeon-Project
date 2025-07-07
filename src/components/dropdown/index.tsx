@@ -7,7 +7,7 @@ import {
   useId,
 } from "react";
 import { createPortal } from "react-dom";
-import { LuSearch } from "react-icons/lu";
+import { FaPlus, FaMagnifyingGlass } from "react-icons/fa6";
 import type { DropdownProps } from "@/types";
 import { truncateText, shouldTruncateText } from "@/utils/text";
 import { fuzzyMatch } from "@/utils/search";
@@ -532,7 +532,7 @@ const Dropdown = ({
       case "found":
         return "text-primary";
       case "not-found":
-        return "text-red-500";
+        return "text-primary";
       default:
         return "text-gray-400";
     }
@@ -628,20 +628,6 @@ const Dropdown = ({
       }
     },
     [onAddNew, addNewButtonRef, handleDropdownKeyDown],
-  );
-
-  const handleAddNewKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLButtonElement>) => {
-      if (
-        searchInputRef.current &&
-        (e.key === "ArrowLeft" || e.key === "ArrowRight")
-      ) {
-        e.preventDefault();
-        searchInputRef.current.focus();
-        return;
-      }
-    },
-    [searchInputRef],
   );
 
   return (
@@ -754,29 +740,8 @@ const Dropdown = ({
                 {(isOpen || isClosing) && (
                   <div>
                     {searchList && (
-                      <div className="p-2 pl-0! border-b border-gray-200 sticky top-0 z-10">
+                      <div className="p-2 pr-0! border-b border-gray-200 sticky top-0 z-10">
                         <div className="relative flex items-center gap-2 min-w-0">
-                          <LuSearch
-                            className={`${getSearchIconColor()} transition-all duration-300 ease-in-out ${
-                              searchTerm && searchTerm.length > 0
-                                ? "pl-2 opacity-100 transform translate-x-0 scale-100"
-                                : "opacity-0 transform -translate-x-2 scale-100"
-                            }`}
-                            style={{
-                              visibility:
-                                searchTerm && searchTerm.length > 0
-                                  ? "visible"
-                                  : "hidden",
-                              width:
-                                searchTerm && searchTerm.length > 0
-                                  ? "auto"
-                                  : "0",
-                              minWidth:
-                                searchTerm && searchTerm.length > 0
-                                  ? "16px"
-                                  : "0",
-                            }}
-                          />
                           <div className="relative flex-1 min-w-0">
                             <input
                               ref={searchInputRef}
@@ -784,8 +749,8 @@ const Dropdown = ({
                               className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 ${
                                 searchTerm && searchTerm.length > 0
                                   ? "pl-2"
-                                  : "pl-8"
-                              } ${
+                                  : "pr-8"
+                              } pl-2 ${
                                 searchState === "not-found"
                                   ? "border-accent focus:border-accent focus:ring-3 focus:ring-red-100"
                                   : "border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-100"
@@ -812,35 +777,92 @@ const Dropdown = ({
                                   : undefined
                               }
                             />
-                            <LuSearch
-                              className={`absolute top-2.5 left-2 ${getSearchIconColor()} transition-all duration-300 ease-in-out ${
+                            {searchState === "not-found" && onAddNew ? (
+                              <FaPlus
+                                className={`absolute top-2.5 right-2 ${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer hover:scale-110 ${
+                                  searchTerm && searchTerm.length > 0
+                                    ? "opacity-0 transform -translate-x-2"
+                                    : "opacity-100 transform translate-x-0"
+                                }`}
+                                style={{
+                                  visibility:
+                                    searchTerm && searchTerm.length > 0
+                                      ? "hidden"
+                                      : "visible",
+                                }}
+                                size={16}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onAddNew) onAddNew(searchTerm);
+                                  actualCloseDropdown();
+                                }}
+                              />
+                            ) : (
+                              <FaMagnifyingGlass
+                                className={`absolute top-2.5 right-2 ${getSearchIconColor()} transition-all duration-300 ease-in-out ${
+                                  searchTerm && searchTerm.length > 0
+                                    ? "opacity-0 transform translate-x-2"
+                                    : "opacity-100 transform translate-x-0"
+                                }`}
+                                style={{
+                                  visibility:
+                                    searchTerm && searchTerm.length > 0
+                                      ? "hidden"
+                                      : "visible",
+                                }}
+                                size={16}
+                              />
+                            )}
+                          </div>
+                          {searchState === "not-found" && onAddNew ? (
+                            <FaPlus
+                              className={`${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer hover:scale-110 mr-3 ml-1 ${
                                 searchTerm && searchTerm.length > 0
-                                  ? "opacity-0 transform translate-x-2"
-                                  : "opacity-100 transform translate-x-0"
+                                  ? "opacity-100 transform translate-x-0 scale-150"
+                                  : "opacity-0 transform translate-x-2 scale-150"
                               }`}
                               style={{
                                 visibility:
                                   searchTerm && searchTerm.length > 0
-                                    ? "hidden"
-                                    : "visible",
+                                    ? "visible"
+                                    : "hidden",
+                                width:
+                                  searchTerm && searchTerm.length > 0
+                                    ? "auto"
+                                    : "0",
+                                minWidth:
+                                  searchTerm && searchTerm.length > 0
+                                    ? "16px"
+                                    : "0",
                               }}
-                              size={16}
-                            />
-                          </div>
-                          {onAddNew && (
-                            <button
-                              ref={addNewButtonRef}
-                              type="button"
-                              className="bg-primary text-white p-1.5 rounded-lg shrink-0 hover:ring-3 hover:ring-emerald-100 focus:outline-hidden focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out min-w-[16px]"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (onAddNew) onAddNew(searchTerm);
                                 actualCloseDropdown();
                               }}
-                              onKeyDown={handleAddNewKeyDown}
-                            >
-                              <span className="font-bold text-xl">+</span>
-                            </button>
+                            />
+                          ) : (
+                            <FaMagnifyingGlass
+                              className={`${getSearchIconColor()} transition-all duration-300 ease-in-out ${
+                                searchTerm && searchTerm.length > 0
+                                  ? "opacity-100 transform translate-x-0 scale-125 ml-1 mr-3"
+                                  : "opacity-0 transform -translate-x-2 scale-125"
+                              }`}
+                              style={{
+                                visibility:
+                                  searchTerm && searchTerm.length > 0
+                                    ? "visible"
+                                    : "hidden",
+                                width:
+                                  searchTerm && searchTerm.length > 0
+                                    ? "auto"
+                                    : "0",
+                                minWidth:
+                                  searchTerm && searchTerm.length > 0
+                                    ? "16px"
+                                    : "0",
+                              }}
+                            />
                           )}
                         </div>
                       </div>
