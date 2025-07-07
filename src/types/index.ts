@@ -337,6 +337,9 @@ export interface TableSearchProps {
 export interface TableProps {
   children: React.ReactNode;
   className?: string;
+  scrollable?: boolean;
+  maxHeight?: string;
+  stickyHeader?: boolean;
 }
 export interface TableCellProps
   extends React.TdHTMLAttributes<HTMLTableCellElement> {
