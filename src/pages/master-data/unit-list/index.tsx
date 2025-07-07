@@ -27,6 +27,7 @@ const UnitList = () => {
   ) as React.RefObject<HTMLInputElement>;
   const location = useLocation();
   const headerRef = useRef<HTMLDivElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
   const [showFloatingHeader, setShowFloatingHeader] = useState(false);
 
   const {
@@ -72,7 +73,7 @@ const UnitList = () => {
 
   // Scroll detection for floating header
   useEffect(() => {
-    if (!headerRef.current) return;
+    if (!searchBarRef.current) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -84,7 +85,7 @@ const UnitList = () => {
       },
     );
 
-    observer.observe(headerRef.current);
+    observer.observe(searchBarRef.current);
 
     return () => observer.disconnect();
   }, []);
@@ -178,7 +179,7 @@ const UnitList = () => {
           <PageTitle title="Daftar Satuan Item" />
         </div>
 
-        <div className="flex items-center">
+        <div ref={searchBarRef} className="flex items-center">
           <SearchBar
             inputRef={searchInputRef}
             value={search}
