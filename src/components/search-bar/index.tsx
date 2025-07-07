@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { LuSearch } from "react-icons/lu";
 import type { TableSearchProps } from "@/types";
 
@@ -12,6 +12,14 @@ const SearchBar: React.FC<TableSearchProps> = ({
   searchState = "idle",
 }) => {
   const hasValue = value && value.length > 0;
+  const textMeasureRef = useRef<HTMLSpanElement>(null);
+  const [textWidth, setTextWidth] = useState(0);
+
+  useEffect(() => {
+    if (textMeasureRef.current && value) {
+      setTextWidth(textMeasureRef.current.offsetWidth);
+    }
+  }, [value]);
 
   const getSearchIconColor = () => {
     switch (searchState) {
@@ -69,6 +77,23 @@ const SearchBar: React.FC<TableSearchProps> = ({
               visibility: hasValue ? "hidden" : "visible",
             }}
           />
+          <span
+            ref={textMeasureRef}
+            className="absolute invisible whitespace-nowrap text-sm"
+            style={{ left: hasValue ? "18px" : "10px", padding: "10px" }}
+          >
+            {value}
+          </span>
+          <span
+            className={`absolute top-1/2 transform -translate-y-1/2 text-sm text-white bg-slate-400 rounded px-2 py-1 pointer-events-none ml-1 font-semibold tracking-wide transition-all duration-300 ease-in-out ${
+              searchState === "not-found" && value
+                ? "opacity-100 scale-100 translate-x-0"
+                : "opacity-0 scale-95 translate-x-2"
+            }`}
+            style={{ left: `${textWidth + (hasValue ? 0 : 10)}px` }}
+          >
+            ENTER
+          </span>
         </div>
       </div>
     </div>
