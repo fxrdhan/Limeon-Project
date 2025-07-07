@@ -18,6 +18,7 @@ import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef } from "react";
 import { useLocation } from "react-router-dom";
+import { getSearchState } from "@/utils/search";
 
 const TypeList = () => {
   const location = useLocation();
@@ -58,13 +59,6 @@ const TypeList = () => {
     locationKey: location.key,
   });
 
-  const getSearchState = () => {
-    if (!search) return 'idle';
-    if (search && !debouncedSearch) return 'typing';
-    if (debouncedSearch && types && types.length > 0) return 'found';
-    if (debouncedSearch && types && types.length === 0) return 'not-found';
-    return 'idle';
-  };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
@@ -93,7 +87,7 @@ const TypeList = () => {
             onKeyDown={handleKeyDown}
             placeholder="Cari nama atau deskripsi jenis item..."
             className="grow"
-            searchState={getSearchState()}
+            searchState={getSearchState(search, debouncedSearch, types)}
           />
           <Button
             variant="primary"
