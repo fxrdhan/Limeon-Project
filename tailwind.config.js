@@ -16,10 +16,10 @@ export default {
       colors: {
         primary: "oklch(50.8% 0.118 165.612)",
         secondary: "oklch(59.6% 0.145 163.225)",
-        accent: "#e11d48", // rose-600
-        neutral: "#fbbc05", // yellow-500
-        danger: "#ef4444", // red-500
-        warning: "#f97316", // orange-500
+        accent: "oklch(51.4% 0.222 16.935)",
+        neutral: "oklch(79.5% 0.184 86.047)",
+        danger: "oklch(63.7% 0.237 25.331)",
+        warning: "oklch(70.5% 0.213 47.604)",
       },
     },
   },
