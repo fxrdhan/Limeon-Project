@@ -787,3 +787,8 @@ export interface PresenceState {
   setChannel: (channel: RealtimeChannel | null) => void;
   setOnlineUsers: (count: number) => void;
 }
+
+export interface UseItemSelectionOptions {
+  disableRealtime?: boolean;
+  enabled?: boolean;
+}
