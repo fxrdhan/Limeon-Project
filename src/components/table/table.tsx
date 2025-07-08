@@ -1,14 +1,6 @@
 import { classNames } from "@/lib/classNames";
-import type { TableCellProps, TableRowProps } from "@/types";
+import type { TableCellProps, TableRowProps, TableProps } from "@/types";
 import { memo } from "react";
-
-interface TableComponentProps {
-  children: React.ReactNode;
-  className?: string;
-  scrollable?: boolean;
-  maxHeight?: string;
-  stickyHeader?: boolean;
-}
 
 export const Table = memo(
   ({
@@ -16,12 +8,12 @@ export const Table = memo(
     className,
     scrollable = false,
     maxHeight = "600px",
-  }: TableComponentProps) => {
+  }: TableProps) => {
     if (scrollable) {
       return (
         <div
           className={classNames(
-            "overflow-auto rounded-lg border border-gray-200",
+            "overflow-auto rounded-lg border-2 border-gray-200",
             className,
           )}
           style={{ maxHeight }}
