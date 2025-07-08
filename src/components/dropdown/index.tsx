@@ -20,7 +20,6 @@ const getDropdownOptionScore = (
   searchTermLower: string,
 ): number => {
   const nameLower = option.name?.toLowerCase?.() ?? "";
-
   if (nameLower.includes(searchTermLower)) return 3;
   if (fuzzyMatch(option.name, searchTermLower)) return 1;
   return 0;
@@ -42,14 +41,15 @@ const Dropdown = ({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [currentFilteredOptions, setCurrentFilteredOptions] = useState(options);
   const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
-  const [isScrollable, setIsScrollable] = useState(false);
-  const [reachedBottom, setReachedBottom] = useState(false);
-  const [scrolledFromTop, setScrolledFromTop] = useState(false);
+  const [scrollState, setScrollState] = useState({
+    isScrollable: false,
+    reachedBottom: false,
+    scrolledFromTop: false,
+  });
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
   const [applyOpenStyles, setApplyOpenStyles] = useState(false);
-  const [hoveredOptionId, setHoveredOptionId] = useState<string | null>(null);
-  const [focusedOptionId, setFocusedOptionId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
   const [isButtonTextExpanded, setIsButtonTextExpanded] = useState(false);
   const [searchState, setSearchState] = useState<
@@ -61,21 +61,18 @@ const Dropdown = ({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const addNewButtonRef = useRef<HTMLButtonElement>(null);
   const optionsContainerRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const selectedOption = options.find((option) => option?.id === value);
 
-  // Debounce search term to prevent flickering
+  // Debounce search term
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 150);
-
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 150);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Filter options based on search
   useEffect(() => {
     if (!searchList && debouncedSearchTerm.trim() === "") {
       setCurrentFilteredOptions(options);
@@ -83,59 +80,44 @@ const Dropdown = ({
     } else if (debouncedSearchTerm.trim() !== "") {
       const searchTermLower = debouncedSearchTerm.toLowerCase();
       const filtered = options
-        .filter((option) => {
-          return (
+        .filter(
+          (option) =>
             option.name.toLowerCase().includes(searchTermLower) ||
-            fuzzyMatch(option.name, searchTermLower)
-          );
-        })
+            fuzzyMatch(option.name, searchTermLower),
+        )
         .sort((a, b) => {
           const scoreA = getDropdownOptionScore(a, searchTermLower);
           const scoreB = getDropdownOptionScore(b, searchTermLower);
-
-          if (scoreA !== scoreB) {
-            return scoreB - scoreA;
-          }
-
-          return a.name.localeCompare(b.name);
+          return scoreB !== scoreA
+            ? scoreB - scoreA
+            : a.name.localeCompare(b.name);
         });
       setCurrentFilteredOptions(filtered);
-
-      // Only update state if it's different from current state to prevent flickering
-      const newState = filtered.length > 0 ? "found" : "not-found";
-      setSearchState((prevState) => {
-        if (prevState !== newState) {
-          return newState;
-        }
-        return prevState;
-      });
-    } else if (searchList && debouncedSearchTerm.trim() === "") {
+      setSearchState(filtered.length > 0 ? "found" : "not-found");
+    } else {
       setCurrentFilteredOptions(options);
       setSearchState("idle");
     }
-  }, [options, debouncedSearchTerm, searchList, setCurrentFilteredOptions]);
+  }, [options, debouncedSearchTerm, searchList]);
 
+  // Set initial highlighted index when dropdown opens
   useEffect(() => {
     if (isOpen && currentFilteredOptions.length > 0) {
-      // Find the index of the currently selected option
       const selectedIndex = value
         ? currentFilteredOptions.findIndex((option) => option.id === value)
         : -1;
-
-      // If selected option is found in filtered options, highlight it; otherwise highlight first option
       const initialIndex = selectedIndex >= 0 ? selectedIndex : 0;
       setHighlightedIndex(initialIndex);
 
-      // Auto-expand the highlighted item if it needs truncation
       const highlightedOption = currentFilteredOptions[initialIndex];
       if (highlightedOption && buttonRef.current) {
         const buttonWidth = buttonRef.current.getBoundingClientRect().width;
-        const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
+        const maxTextWidth = buttonWidth - 48;
         if (shouldTruncateText(highlightedOption.name, maxTextWidth)) {
-          setFocusedOptionId(highlightedOption.id);
+          setExpandedId(highlightedOption.id);
         }
       }
-    } else if (!isOpen || currentFilteredOptions.length === 0) {
+    } else {
       setHighlightedIndex(-1);
     }
   }, [currentFilteredOptions, isOpen, value]);
@@ -159,31 +141,20 @@ const Dropdown = ({
 
     setDropDirection(shouldDropUp ? "up" : "down");
 
-    const dropdownWidth = buttonRect.width;
-
     let leftPosition = buttonRect.left;
-    if (leftPosition + dropdownWidth > viewportWidth - 16) {
-      leftPosition = viewportWidth - dropdownWidth - 16;
+    if (leftPosition + buttonRect.width > viewportWidth - 16) {
+      leftPosition = viewportWidth - buttonRect.width - 16;
     }
-    if (leftPosition < 16) {
-      leftPosition = 16;
-    }
-
-    const newMenuStyle: CSSProperties = {
-      position: "fixed",
-      left: `${leftPosition}px`,
-      width: `${dropdownWidth}px`,
-      zIndex: 1050,
-    };
+    if (leftPosition < 16) leftPosition = 16;
 
     const margin = 8;
-    if (shouldDropUp) {
-      newMenuStyle.top = `${buttonRect.top + window.scrollY - dropdownActualHeight - margin}px`;
-    } else {
-      newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
-    }
-
-    setPortalStyle(newMenuStyle);
+    setPortalStyle({
+      position: "fixed",
+      left: `${leftPosition}px`,
+      width: `${buttonRect.width}px`,
+      zIndex: 1050,
+      top: `${buttonRect[shouldDropUp ? "top" : "bottom"] + window.scrollY + (shouldDropUp ? -dropdownActualHeight - margin : margin)}px`,
+    });
   }, [isOpen]);
 
   const actualCloseDropdown = useCallback(() => {
@@ -198,8 +169,8 @@ const Dropdown = ({
       }
     }, 100);
     setHighlightedIndex(-1);
-    setFocusedOptionId(null);
-  }, [instanceId, setIsClosing, setIsOpen, setSearchTerm]);
+    setExpandedId(null);
+  }, [instanceId]);
 
   const openThisDropdown = useCallback(() => {
     if (
@@ -209,22 +180,18 @@ const Dropdown = ({
     ) {
       activeDropdownCloseCallback();
     }
-
     setIsOpen(true);
-
     activeDropdownCloseCallback = actualCloseDropdown;
     activeDropdownId = instanceId;
-  }, [instanceId, actualCloseDropdown, setIsOpen]);
+  }, [instanceId, actualCloseDropdown]);
 
   const handleSelect = useCallback(
     (optionId: string) => {
       onChange(optionId);
       actualCloseDropdown();
-      setTimeout(() => {
-        buttonRef.current?.focus();
-      }, 150);
+      setTimeout(() => buttonRef.current?.focus(), 150);
     },
-    [onChange, actualCloseDropdown, buttonRef],
+    [onChange, actualCloseDropdown],
   );
 
   const handleDropdownKeyDown = useCallback(
@@ -235,77 +202,41 @@ const Dropdown = ({
       if (!items.length && !["Escape", "Tab", "Enter"].includes(e.key)) return;
 
       let newIndex = highlightedIndex;
-
-      switch (e.key) {
-        case "ArrowDown":
-          e.preventDefault();
-          setIsKeyboardNavigation(true);
-          setHoveredOptionId(null); // Clear hover state when using keyboard
+      const keyActions: Record<string, () => void> = {
+        ArrowDown: () => {
           newIndex = items.length ? (highlightedIndex + 1) % items.length : -1;
-          setHighlightedIndex(newIndex);
-          if (newIndex >= 0 && items[newIndex]) {
-            setFocusedOptionId(items[newIndex].id);
-          }
-          break;
-        case "ArrowUp":
-          e.preventDefault();
-          setIsKeyboardNavigation(true);
-          setHoveredOptionId(null); // Clear hover state when using keyboard
+        },
+        ArrowUp: () => {
           newIndex = items.length
             ? (highlightedIndex - 1 + items.length) % items.length
             : -1;
-          setHighlightedIndex(newIndex);
-          if (newIndex >= 0 && items[newIndex]) {
-            setFocusedOptionId(items[newIndex].id);
-          }
-          break;
-        case "Tab":
-          e.preventDefault();
-          setIsKeyboardNavigation(true);
-          setHoveredOptionId(null); // Clear hover state when using keyboard
+        },
+        Tab: () => {
           if (items.length) {
-            if (e.shiftKey) {
-              newIndex =
-                highlightedIndex <= 0 ? items.length - 1 : highlightedIndex - 1;
-            } else {
-              newIndex =
-                highlightedIndex >= items.length - 1 ? 0 : highlightedIndex + 1;
-            }
-            setHighlightedIndex(newIndex);
-            if (newIndex >= 0 && items[newIndex]) {
-              setFocusedOptionId(items[newIndex].id);
-            }
+            newIndex = e.shiftKey
+              ? highlightedIndex <= 0
+                ? items.length - 1
+                : highlightedIndex - 1
+              : highlightedIndex >= items.length - 1
+                ? 0
+                : highlightedIndex + 1;
           }
-          break;
-        case "PageDown":
-          e.preventDefault();
-          setIsKeyboardNavigation(true);
-          setHoveredOptionId(null); // Clear hover state when using keyboard
+        },
+        PageDown: () => {
           if (items.length) {
-            newIndex = Math.min(highlightedIndex + 5, items.length - 1);
-            if (highlightedIndex === -1)
-              newIndex = Math.min(4, items.length - 1);
-            setHighlightedIndex(newIndex);
-            if (newIndex >= 0 && items[newIndex]) {
-              setFocusedOptionId(items[newIndex].id);
-            }
+            newIndex = Math.min(
+              highlightedIndex === -1 ? 4 : highlightedIndex + 5,
+              items.length - 1,
+            );
           }
-          break;
-        case "PageUp":
-          e.preventDefault();
-          setIsKeyboardNavigation(true);
-          setHoveredOptionId(null); // Clear hover state when using keyboard
+        },
+        PageUp: () => {
           if (items.length) {
-            newIndex = Math.max(highlightedIndex - 5, 0);
-            if (highlightedIndex === -1) newIndex = 0;
-            setHighlightedIndex(newIndex);
-            if (newIndex >= 0 && items[newIndex]) {
-              setFocusedOptionId(items[newIndex].id);
-            }
+            newIndex =
+              highlightedIndex === -1 ? 0 : Math.max(highlightedIndex - 5, 0);
           }
-          break;
-        case "Enter":
-          e.preventDefault();
+        },
+        Enter: () => {
           if (highlightedIndex >= 0 && highlightedIndex < items.length) {
             handleSelect(items[highlightedIndex].id);
           } else if (
@@ -318,14 +249,28 @@ const Dropdown = ({
             onAddNew(searchTerm);
             actualCloseDropdown();
           }
-          break;
-        case "Escape":
-          e.preventDefault();
-          actualCloseDropdown();
-          setFocusedOptionId(null);
-          break;
-        default:
           return;
+        },
+        Escape: () => {
+          actualCloseDropdown();
+          setExpandedId(null);
+          return;
+        },
+      };
+
+      if (keyActions[e.key]) {
+        e.preventDefault();
+        if (!["Enter", "Escape"].includes(e.key)) {
+          setIsKeyboardNavigation(true);
+          setExpandedId(null);
+        }
+        keyActions[e.key]();
+        if (!["Enter", "Escape"].includes(e.key)) {
+          setHighlightedIndex(newIndex);
+          if (newIndex >= 0 && items[newIndex]) {
+            setExpandedId(items[newIndex].id);
+          }
+        }
       }
     },
     [
@@ -341,16 +286,15 @@ const Dropdown = ({
   );
 
   const manageFocusOnOpen = useCallback(() => {
-    if (isOpen && searchInputRef.current) {
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 5);
-    } else if (isOpen && !searchList && optionsContainerRef.current) {
-      setTimeout(() => {
-        optionsContainerRef.current?.focus();
-      }, 50);
+    if (isOpen) {
+      setTimeout(
+        () => {
+          (searchList ? searchInputRef : optionsContainerRef).current?.focus();
+        },
+        searchList ? 5 : 50,
+      );
     }
-  }, [isOpen, searchList, searchInputRef, optionsContainerRef]);
+  }, [isOpen, searchList]);
 
   const handleTriggerAreaEnter = useCallback(() => {
     if (leaveTimeoutRef.current) {
@@ -361,38 +305,31 @@ const Dropdown = ({
       openThisDropdown();
       setIsClosing(false);
     }, 100);
-  }, [hoverTimeoutRef, leaveTimeoutRef, openThisDropdown, setIsClosing]);
+  }, [openThisDropdown]);
 
   const handleMenuEnter = useCallback(() => {
-    if (leaveTimeoutRef.current) {
-      clearTimeout(leaveTimeoutRef.current);
-      leaveTimeoutRef.current = null;
-    }
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-  }, [leaveTimeoutRef, hoverTimeoutRef]);
+    [leaveTimeoutRef, hoverTimeoutRef].forEach((ref) => {
+      if (ref.current) {
+        clearTimeout(ref.current);
+        ref.current = null;
+      }
+    });
+  }, []);
 
   const handleMouseLeaveWithCloseIntent = useCallback(() => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
-    leaveTimeoutRef.current = setTimeout(() => {
-      actualCloseDropdown();
-    }, 200);
-  }, [hoverTimeoutRef, leaveTimeoutRef, actualCloseDropdown]);
+    leaveTimeoutRef.current = setTimeout(actualCloseDropdown, 200);
+  }, [actualCloseDropdown]);
 
   const handleFocusOut = useCallback(() => {
     setTimeout(() => {
       const activeElement = document.activeElement;
-      const dropdownContainer = dropdownRef.current;
-      const dropdownMenu = dropdownMenuRef.current;
-
       const isFocusInDropdown =
-        dropdownContainer?.contains(activeElement) ||
-        dropdownMenu?.contains(activeElement);
+        dropdownRef.current?.contains(activeElement) ||
+        dropdownMenuRef.current?.contains(activeElement);
 
       if (!isFocusInDropdown && isOpen) {
         actualCloseDropdown();
@@ -415,20 +352,17 @@ const Dropdown = ({
   const checkScroll = useCallback(() => {
     if (!optionsContainerRef.current) return;
     const container = optionsContainerRef.current;
-    setIsScrollable(container.scrollHeight > container.clientHeight);
-    setReachedBottom(
-      Math.abs(
-        container.scrollHeight - container.scrollTop - container.clientHeight,
-      ) < 2,
-    );
-    setScrolledFromTop(container.scrollTop > 2);
-  }, [
-    optionsContainerRef,
-    setIsScrollable,
-    setReachedBottom,
-    setScrolledFromTop,
-  ]);
+    setScrollState({
+      isScrollable: container.scrollHeight > container.clientHeight,
+      reachedBottom:
+        Math.abs(
+          container.scrollHeight - container.scrollTop - container.clientHeight,
+        ) < 2,
+      scrolledFromTop: container.scrollTop > 2,
+    });
+  }, []);
 
+  // Manage open/close states and event listeners
   useEffect(() => {
     let openStyleTimerId: NodeJS.Timeout | undefined;
 
@@ -444,30 +378,33 @@ const Dropdown = ({
         });
       }, 20);
 
-      window.addEventListener("scroll", calculateDropdownPosition, true);
-      window.addEventListener("resize", calculateDropdownPosition);
-      document.addEventListener("focusout", handleFocusOut);
+      const events = [
+        ["scroll", calculateDropdownPosition, true],
+        ["resize", calculateDropdownPosition, false],
+        ["focusout", handleFocusOut, false],
+      ] as const;
+
+      events.forEach(([event, handler, capture]) =>
+        window.addEventListener(event, handler as EventListener, capture),
+      );
+
+      return () => {
+        document.body.style.overflow = "";
+        if (openStyleTimerId) clearTimeout(openStyleTimerId);
+        events.forEach(([event, handler, capture]) =>
+          window.removeEventListener(event, handler as EventListener, capture),
+        );
+      };
     } else {
       document.body.style.overflow = "";
       setApplyOpenStyles(false);
     }
-
-    return () => {
-      document.body.style.overflow = "";
-      if (openStyleTimerId) clearTimeout(openStyleTimerId);
-      if (isOpen) {
-        window.removeEventListener("scroll", calculateDropdownPosition, true);
-        window.removeEventListener("resize", calculateDropdownPosition);
-        document.removeEventListener("focusout", handleFocusOut);
-      }
-    };
   }, [isOpen, calculateDropdownPosition, manageFocusOnOpen, handleFocusOut]);
 
+  // Position recalculation
   useEffect(() => {
     if (isOpen && applyOpenStyles) {
-      const timer = setTimeout(() => {
-        calculateDropdownPosition();
-      }, 10);
+      const timer = setTimeout(calculateDropdownPosition, 10);
       return () => clearTimeout(timer);
     }
   }, [
@@ -477,6 +414,7 @@ const Dropdown = ({
     calculateDropdownPosition,
   ]);
 
+  // Scroll state management
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(checkScroll, 50);
@@ -488,17 +426,16 @@ const Dropdown = ({
     const optionsContainer = optionsContainerRef.current;
     if (optionsContainer && isOpen) {
       optionsContainer.addEventListener("scroll", checkScroll);
-      return () => {
-        optionsContainer.removeEventListener("scroll", checkScroll);
-      };
+      return () => optionsContainer.removeEventListener("scroll", checkScroll);
     }
-  }, [isOpen, checkScroll, optionsContainerRef]);
+  }, [isOpen, checkScroll]);
 
+  // Scroll to highlighted option
   useEffect(() => {
     if (isOpen && highlightedIndex >= 0 && optionsContainerRef.current) {
       const optionElements =
         optionsContainerRef.current.querySelectorAll('[role="option"]');
-      if (optionElements && optionElements[highlightedIndex]) {
+      if (optionElements[highlightedIndex]) {
         if (highlightedIndex === 0) {
           optionsContainerRef.current.scrollTop = 0;
         } else if (highlightedIndex === currentFilteredOptions.length - 1) {
@@ -514,6 +451,7 @@ const Dropdown = ({
     }
   }, [highlightedIndex, isOpen, currentFilteredOptions]);
 
+  // Reset scroll position when dropdown opens
   useEffect(() => {
     if (
       isOpen &&
@@ -521,15 +459,12 @@ const Dropdown = ({
       optionsContainerRef.current &&
       currentFilteredOptions.length > 0
     ) {
-      // Only reset scroll to top if no option is selected (highlightedIndex is 0)
-      // This prevents overriding the scroll position when a selected option should be visible
       if (highlightedIndex === 0) {
         optionsContainerRef.current.scrollTop = 0;
       } else if (highlightedIndex > 0) {
-        // Scroll to the highlighted option when dropdown opens
         const optionElements =
           optionsContainerRef.current.querySelectorAll('[role="option"]');
-        if (optionElements && optionElements[highlightedIndex]) {
+        if (optionElements[highlightedIndex]) {
           (optionElements[highlightedIndex] as HTMLElement).scrollIntoView({
             block: "nearest",
             behavior: "auto",
@@ -548,106 +483,56 @@ const Dropdown = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
       setSearchTerm(newValue);
-      // Set immediate state for better UX, but let debounced search handle the filtering
-      if (newValue.trim() === "") {
-        setSearchState("idle");
-      } else if (searchState === "idle") {
-        setSearchState("typing");
-      }
+      setSearchState(
+        newValue.trim() === ""
+          ? "idle"
+          : searchState === "idle"
+            ? "typing"
+            : searchState,
+      );
     },
     [searchState],
   );
 
   const getSearchIconColor = () => {
-    switch (searchState) {
-      case "idle":
-        return "text-gray-400";
-      case "typing":
-        return "text-gray-800";
-      case "found":
-        return "text-primary";
-      case "not-found":
-        return "text-primary";
-      default:
-        return "text-gray-400";
-    }
+    const colors = {
+      idle: "text-gray-400",
+      typing: "text-gray-800",
+      found: "text-primary",
+      "not-found": "text-primary",
+    };
+    return colors[searchState] || "text-gray-400";
   };
 
-  const handleOptionHover = useCallback(
-    (optionId: string, optionName: string) => {
+  const handleExpansion = useCallback(
+    (optionId: string, optionName: string, shouldExpand: boolean) => {
       if (!buttonRef.current) return;
-
       const buttonWidth = buttonRef.current.getBoundingClientRect().width;
-      const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
-
-      if (shouldTruncateText(optionName, maxTextWidth)) {
-        setHoveredOptionId(optionId);
+      const maxTextWidth = buttonWidth - 48;
+      if (shouldTruncateText(optionName, maxTextWidth) && shouldExpand) {
+        setExpandedId(optionId);
+      } else if (!shouldExpand) {
+        setExpandedId(null);
       }
     },
     [],
   );
 
-  const handleOptionLeave = useCallback(() => {
-    setHoveredOptionId(null);
-  }, []);
-
-  const handleOptionFocus = useCallback(
-    (optionId: string, optionName: string) => {
-      if (!buttonRef.current) return;
-
-      const buttonWidth = buttonRef.current.getBoundingClientRect().width;
-      const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
-
-      if (shouldTruncateText(optionName, maxTextWidth)) {
-        setFocusedOptionId(optionId);
+  const handleButtonExpansion = useCallback(
+    (shouldExpand: boolean) => {
+      if (selectedOption && buttonRef.current) {
+        const buttonWidth = buttonRef.current.getBoundingClientRect().width;
+        const maxTextWidth = buttonWidth - 48;
+        if (shouldTruncateText(selectedOption.name, maxTextWidth)) {
+          setIsButtonTextExpanded(shouldExpand);
+        }
       }
     },
-    [],
+    [selectedOption],
   );
-
-  const handleOptionBlur = useCallback(() => {
-    setFocusedOptionId(null);
-  }, []);
-
-  const handleButtonMouseEnter = useCallback(() => {
-    if (selectedOption && buttonRef.current) {
-      const buttonWidth = buttonRef.current.getBoundingClientRect().width;
-      const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
-      if (shouldTruncateText(selectedOption.name, maxTextWidth)) {
-        setIsButtonTextExpanded(true);
-      }
-    }
-  }, [selectedOption]);
-
-  const handleButtonMouseLeave = useCallback(() => {
-    setIsButtonTextExpanded(false);
-  }, []);
-
-  const handleButtonFocus = useCallback(() => {
-    if (selectedOption && buttonRef.current) {
-      const buttonWidth = buttonRef.current.getBoundingClientRect().width;
-      const maxTextWidth = buttonWidth - 48; // Account for padding and chevron
-      if (shouldTruncateText(selectedOption.name, maxTextWidth)) {
-        setIsButtonTextExpanded(true);
-      }
-    }
-  }, [selectedOption]);
-
-  const handleButtonBlur = useCallback(() => {
-    setIsButtonTextExpanded(false);
-  }, []);
 
   const handleSearchBarKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (
-        onAddNew &&
-        addNewButtonRef.current &&
-        (e.key === "ArrowRight" || e.key === "ArrowLeft")
-      ) {
-        e.preventDefault();
-        addNewButtonRef.current.focus();
-        return;
-      }
       if (
         [
           "ArrowDown",
@@ -662,8 +547,77 @@ const Dropdown = ({
         handleDropdownKeyDown(e as never);
       }
     },
-    [onAddNew, addNewButtonRef, handleDropdownKeyDown],
+    [handleDropdownKeyDown],
   );
+
+  const renderOption = (
+    option: { id: string; name: string },
+    index: number,
+  ) => {
+    const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
+    const maxTextWidth = buttonWidth - (withRadio ? 72 : 48);
+    const shouldTruncate = shouldTruncateText(option.name, maxTextWidth);
+    const isExpanded = expandedId === option.id;
+    const shouldExpand = isExpanded && shouldTruncate;
+    const truncatedText =
+      shouldTruncate && !shouldExpand
+        ? truncateText(option.name, maxTextWidth)
+        : option.name;
+
+    return (
+      <button
+        key={option.id}
+        id={`dropdown-option-${option.id}`}
+        role="option"
+        aria-selected={highlightedIndex === index}
+        type="button"
+        className={`flex ${shouldExpand ? "items-start" : "items-center"} w-full py-2 px-3 rounded-lg text-sm text-gray-800 ${
+          !isKeyboardNavigation ? "hover:bg-gray-100" : ""
+        } focus:outline-hidden focus:bg-gray-100 ${
+          highlightedIndex === index ? "bg-gray-100" : ""
+        } transition-colors duration-150`}
+        onClick={() => handleSelect(option.id)}
+        onMouseEnter={() => {
+          setIsKeyboardNavigation(false);
+          setHighlightedIndex(index);
+          handleExpansion(option.id, option.name, true);
+        }}
+        onMouseLeave={() => handleExpansion(option.id, option.name, false)}
+        onFocus={() => {
+          setHighlightedIndex(index);
+          handleExpansion(option.id, option.name, true);
+        }}
+        onBlur={() => {
+          handleExpansion(option.id, option.name, false);
+          setTimeout(() => {
+            if (!dropdownMenuRef.current?.contains(document.activeElement)) {
+              setHighlightedIndex(-1);
+            }
+          }, 0);
+        }}
+      >
+        {withRadio && (
+          <div
+            className={`mr-2 flex ${shouldExpand ? "items-start pt-0.5" : "items-center"} flex-shrink-0`}
+          >
+            <div
+              className={`w-4 h-4 rounded-full border ${option.id === value ? "border-primary" : "border-gray-300"} flex items-center justify-center`}
+            >
+              {option.id === value && (
+                <div className="w-2 h-2 rounded-full bg-primary" />
+              )}
+            </div>
+          </div>
+        )}
+        <span
+          className={`${shouldExpand ? "whitespace-normal break-words leading-relaxed" : "truncate"} transition-all duration-200 text-left`}
+          title={shouldTruncate && !shouldExpand ? option.name : undefined}
+        >
+          {shouldExpand ? option.name : truncatedText}
+        </span>
+      </button>
+    );
+  };
 
   return (
     <div
@@ -685,10 +639,10 @@ const Dropdown = ({
             aria-expanded={isOpen || isClosing}
             onClick={toggleDropdown}
             onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
-            onMouseEnter={handleButtonMouseEnter}
-            onMouseLeave={handleButtonMouseLeave}
-            onFocus={handleButtonFocus}
-            onBlur={handleButtonBlur}
+            onMouseEnter={() => handleButtonExpansion(true)}
+            onMouseLeave={() => handleButtonExpansion(false)}
+            onFocus={() => handleButtonExpansion(true)}
+            onBlur={() => handleButtonExpansion(false)}
             aria-controls={isOpen ? "dropdown-options-list" : undefined}
           >
             <span
@@ -698,10 +652,10 @@ const Dropdown = ({
                   : "truncate"
               } transition-all duration-200 text-left flex-1 min-w-0`}
               title={
-                selectedOption && !isButtonTextExpanded
+                selectedOption && !isButtonTextExpanded && buttonRef.current
                   ? (() => {
                       const buttonWidth =
-                        buttonRef.current?.getBoundingClientRect().width || 200;
+                        buttonRef.current.getBoundingClientRect().width;
                       const maxTextWidth = buttonWidth - 48;
                       return shouldTruncateText(
                         selectedOption.name,
@@ -715,9 +669,7 @@ const Dropdown = ({
             >
               {selectedOption
                 ? (() => {
-                    if (isButtonTextExpanded) {
-                      return selectedOption.name;
-                    }
+                    if (isButtonTextExpanded) return selectedOption.name;
                     const buttonWidth =
                       buttonRef.current?.getBoundingClientRect().width || 200;
                     const maxTextWidth = buttonWidth - 48;
@@ -781,9 +733,7 @@ const Dropdown = ({
                             <input
                               ref={searchInputRef}
                               type="text"
-                              className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 -pr-2${
-                                searchTerm && searchTerm.length > 0
-                              } pl-2 ${
+                              className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 pl-2 ${
                                 searchState === "not-found"
                                   ? "border-accent focus:border-accent focus:ring-3 focus:ring-red-100"
                                   : "border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-100"
@@ -799,7 +749,6 @@ const Dropdown = ({
                                   leaveTimeoutRef.current = null;
                                 }
                               }}
-                              onBlur={() => {}}
                               aria-autocomplete="list"
                               aria-expanded={isOpen}
                               aria-controls="dropdown-options-list"
@@ -810,14 +759,14 @@ const Dropdown = ({
                                   : undefined
                               }
                             />
-                            {(!searchTerm || searchTerm.length === 0) && (
+                            {!searchTerm && (
                               <FaMagnifyingGlass
                                 className={`absolute top-2.5 right-2 ${getSearchIconColor()} transition-all duration-300 ease-in-out opacity-100 transform translate-x-0`}
                                 size={16}
                               />
                             )}
                           </div>
-                          {searchTerm && searchTerm.length > 0 && (
+                          {searchTerm && (
                             <div className="flex items-center">
                               {(searchState === "not-found" ||
                                 (searchState === "typing" &&
@@ -825,23 +774,17 @@ const Dropdown = ({
                               onAddNew ? (
                                 <FaPlus
                                   className={`${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer mr-1 ml-1 scale-150`}
-                                  style={{
-                                    width: "16px",
-                                    minWidth: "16px",
-                                  }}
+                                  style={{ width: "16px", minWidth: "16px" }}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (onAddNew) onAddNew(searchTerm);
+                                    onAddNew?.(searchTerm);
                                     actualCloseDropdown();
                                   }}
                                 />
                               ) : (
                                 <FaMagnifyingGlass
                                   className={`${getSearchIconColor()} transition-all duration-300 ease-in-out scale-125 ml-1 mr-1`}
-                                  style={{
-                                    width: "16px",
-                                    minWidth: "16px",
-                                  }}
+                                  style={{ width: "16px", minWidth: "16px" }}
                                 />
                               )}
                             </div>
@@ -862,117 +805,21 @@ const Dropdown = ({
                         }
                       >
                         {currentFilteredOptions.length > 0 ? (
-                          currentFilteredOptions.map((option, index) => {
-                            const buttonWidth =
-                              buttonRef.current?.getBoundingClientRect()
-                                .width || 200;
-                            const maxTextWidth =
-                              buttonWidth - (withRadio ? 72 : 48); // Account for padding, chevron, and radio
-                            const shouldTruncate = shouldTruncateText(
-                              option.name,
-                              maxTextWidth,
-                            );
-                            const isHovered = hoveredOptionId === option.id;
-                            const isFocused = focusedOptionId === option.id;
-                            // Prioritize keyboard focus over mouse hover to prevent dual expansion
-                            const shouldExpand =
-                              (isFocused && isKeyboardNavigation) ||
-                              (isHovered && !isKeyboardNavigation)
-                                ? shouldTruncate
-                                : false;
-                            const truncatedText =
-                              shouldTruncate && !shouldExpand
-                                ? truncateText(option.name, maxTextWidth)
-                                : option.name;
-
-                            return (
-                              <button
-                                key={option.id}
-                                id={`dropdown-option-${option.id}`}
-                                role="option"
-                                aria-selected={highlightedIndex === index}
-                                type="button"
-                                className={`flex items-start w-full py-2 px-3 rounded-lg text-sm text-gray-800 ${
-                                  !isKeyboardNavigation
-                                    ? "hover:bg-gray-100"
-                                    : ""
-                                } focus:outline-hidden focus:bg-gray-100 ${
-                                  highlightedIndex === index
-                                    ? "bg-gray-100"
-                                    : ""
-                                } transition-colors duration-150 ${shouldExpand ? "items-start" : "items-center"}`}
-                                onClick={() => handleSelect(option.id)}
-                                onMouseEnter={() => {
-                                  setIsKeyboardNavigation(false);
-                                  setHighlightedIndex(index);
-                                  handleOptionHover(option.id, option.name);
-                                }}
-                                onMouseLeave={handleOptionLeave}
-                                onFocus={() => {
-                                  setHighlightedIndex(index);
-                                  handleOptionFocus(option.id, option.name);
-                                }}
-                                onBlur={() => {
-                                  handleOptionBlur();
-                                  setTimeout(() => {
-                                    const activeElement =
-                                      document.activeElement;
-                                    const isStillInDropdown =
-                                      dropdownMenuRef.current?.contains(
-                                        activeElement,
-                                      );
-                                    if (!isStillInDropdown) {
-                                      setHighlightedIndex(-1);
-                                    }
-                                  }, 0);
-                                }}
-                              >
-                                {withRadio && (
-                                  <div
-                                    className={`mr-2 flex ${shouldExpand ? "items-start pt-0.5" : "items-center"} flex-shrink-0`}
-                                  >
-                                    <div
-                                      className={`w-4 h-4 rounded-full border ${
-                                        option.id === value
-                                          ? "border-primary"
-                                          : "border-gray-300"
-                                      } flex items-center justify-center`}
-                                    >
-                                      {option.id === value && (
-                                        <div className="w-2 h-2 rounded-full bg-primary"></div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                <span
-                                  className={`${
-                                    shouldExpand
-                                      ? "whitespace-normal break-words leading-relaxed"
-                                      : "truncate"
-                                  } transition-all duration-200 text-left`}
-                                  title={
-                                    shouldTruncate && !shouldExpand
-                                      ? option.name
-                                      : undefined
-                                  }
-                                >
-                                  {shouldExpand ? option.name : truncatedText}
-                                </span>
-                              </button>
-                            );
-                          })
+                          currentFilteredOptions.map(renderOption)
                         ) : (
                           <div className="py-2 px-3 text-sm text-gray-500">
                             Tidak ada pilihan yang sesuai
                           </div>
                         )}
                       </div>
-                      {isScrollable && scrolledFromTop && (
-                        <div className="absolute top-0 left-0 w-full h-8 pointer-events-none"></div>
-                      )}
-                      {isScrollable && !reachedBottom && (
-                        <div className="absolute bottom-0 left-0 w-full h-8 pointer-events-none"></div>
-                      )}
+                      {scrollState.isScrollable &&
+                        scrollState.scrolledFromTop && (
+                          <div className="absolute top-0 left-0 w-full h-8 pointer-events-none" />
+                        )}
+                      {scrollState.isScrollable &&
+                        !scrollState.reachedBottom && (
+                          <div className="absolute bottom-0 left-0 w-full h-8 pointer-events-none" />
+                        )}
                     </div>
                   </div>
                 )}
