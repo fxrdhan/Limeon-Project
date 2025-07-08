@@ -919,6 +919,56 @@ export const useAddItemForm = ({
     clearSearchTerm();
   };
 
+  const regenerateItemCode = async () => {
+    if (!formData.type_id || !formData.category_id || !formData.unit_id) {
+      alert('Silakan pilih jenis, kategori, dan satuan terlebih dahulu');
+      return;
+    }
+
+    const typeCode = generateTypeCode(formData.type_id, types);
+    const unitCode = generateUnitCode(formData.unit_id, units);
+    const categoryCode = generateCategoryCode(formData.category_id, categories);
+    const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
+
+    try {
+      const { data, error } = await supabase
+        .from("items")
+        .select("code")
+        .ilike("code", `${codePrefix}%`)
+        .order("code", { ascending: true });
+
+      if (error) throw error;
+
+      let sequence = 1;
+      if (data && data.length > 0) {
+        const usedSequences = new Set<number>();
+        
+        data.forEach(item => {
+          const sequenceStr = item.code.substring(codePrefix.length);
+          const sequenceNum = parseInt(sequenceStr);
+          if (!isNaN(sequenceNum)) {
+            usedSequences.add(sequenceNum);
+          }
+        });
+
+        while (usedSequences.has(sequence)) {
+          sequence++;
+        }
+      }
+
+      const sequenceStr = sequence.toString().padStart(2, "0");
+      const generatedCode = `${codePrefix}${sequenceStr}`;
+      
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        code: generatedCode,
+      }));
+    } catch (error) {
+      console.error("Error regenerating item code:", error);
+      alert('Gagal memperbarui kode item');
+    }
+  };
+
   return {
     formData,
     displayBasePrice,
@@ -971,5 +1021,6 @@ export const useAddItemForm = ({
     deleteItemMutation,
     resetForm,
     confirmDialog,
+    regenerateItemCode,
   };
 };
