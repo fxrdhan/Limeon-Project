@@ -1,6 +1,7 @@
 import { classNames } from "@/lib/classNames";
 import type { TableCellProps, TableRowProps, TableProps } from "@/types";
 import { memo } from "react";
+import React from "react";
 
 export const Table = memo(
   ({
@@ -8,6 +9,7 @@ export const Table = memo(
     className,
     scrollable = false,
     maxHeight = "600px",
+    stickyHeader = false,
   }: TableProps) => {
     if (scrollable) {
       return (
@@ -19,7 +21,15 @@ export const Table = memo(
           style={{ maxHeight }}
         >
           <table className="min-w-full w-full table-fixed bg-white">
-            {children}
+            {React.Children.map(children, (child) => {
+              if (React.isValidElement(child) && child.type === TableHead) {
+                return React.cloneElement(
+                  child as React.ReactElement<{ stickyHeader?: boolean }>,
+                  { stickyHeader },
+                );
+              }
+              return child;
+            })}
           </table>
         </div>
       );
@@ -33,7 +43,15 @@ export const Table = memo(
         )}
       >
         <table className="min-w-full w-full table-fixed bg-white overflow-hidden">
-          {children}
+          {React.Children.map(children, (child) => {
+            if (React.isValidElement(child) && child.type === TableHead) {
+              return React.cloneElement(
+                child as React.ReactElement<{ stickyHeader?: boolean }>,
+                { stickyHeader },
+              );
+            }
+            return child;
+          })}
         </table>
       </div>
     );
@@ -58,7 +76,34 @@ export const TableHead = ({
         className,
       )}
     >
-      {children}
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child) && child.type === TableRow) {
+          return React.cloneElement(
+            child as React.ReactElement<{ children: React.ReactNode }>,
+            {
+              children: React.Children.map(
+                (child as React.ReactElement<{ children: React.ReactNode }>)
+                  .props.children,
+                (headerChild) => {
+                  if (
+                    React.isValidElement(headerChild) &&
+                    headerChild.type === TableHeader
+                  ) {
+                    return React.cloneElement(
+                      headerChild as React.ReactElement<{
+                        stickyHeader?: boolean;
+                      }>,
+                      { stickyHeader },
+                    );
+                  }
+                  return headerChild;
+                },
+              ),
+            },
+          );
+        }
+        return child;
+      })}
     </thead>
   );
 };
