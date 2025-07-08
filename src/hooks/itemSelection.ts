@@ -3,12 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { fuzzyMatch, getScore } from "@/utils/search";
 import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Item, UnitConversion } from "@/types";
-
-interface UseItemSelectionOptions {
-  disableRealtime?: boolean;
-  enabled?: boolean;
-}
+import type { Item, UnitConversion, UseItemSelectionOptions } from "@/types";
 
 export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
   const { disableRealtime = false, enabled = true } = options;
@@ -23,11 +18,11 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
         .from("items")
         .select(
           `
-                    id, name, code, barcode, base_price, sell_price, stock, unit_id, base_unit, unit_conversions,
-                    item_categories (name),
-                    item_types (name),
-                    item_units (name)
-                `,
+            id, name, code, barcode, base_price, sell_price, stock, unit_id, base_unit, unit_conversions,
+            item_categories (name),
+            item_types (name),
+            item_units (name)
+          `,
         )
         .order("name");
 
@@ -119,19 +114,29 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
     enabled: !disableRealtime && enabled,
     debounceMs: 0, // No debounce for instant updates
     onRealtimeEvent: async (payload) => {
-      console.log("🔥 ITEM SELECTION - Realtime event received:", payload.eventType, payload);
-      
+      console.log(
+        "🔥 ITEM SELECTION - Realtime event received:",
+        payload.eventType,
+        payload,
+      );
+
       // Immediate cache invalidation and refetch for fast response
       await queryClient.invalidateQueries({ queryKey: ["items"] });
-      
+
       // Force immediate refetch instead of waiting for stale check
-      refetchQuery().then(() => {
-        console.log("🔥 ITEM SELECTION - Items refetched immediately after realtime event");
-      }).catch((error) => {
-        console.error("❌ ITEM SELECTION - Error refetching items:", error);
-      });
-      
-      console.log("🔥 ITEM SELECTION - Cache invalidated and refetch triggered");
+      refetchQuery()
+        .then(() => {
+          console.log(
+            "🔥 ITEM SELECTION - Items refetched immediately after realtime event",
+          );
+        })
+        .catch((error) => {
+          console.error("❌ ITEM SELECTION - Error refetching items:", error);
+        });
+
+      console.log(
+        "🔥 ITEM SELECTION - Cache invalidated and refetch triggered",
+      );
     },
     showDiffInConsole: true,
     detailedLogging: true,
