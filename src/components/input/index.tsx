@@ -16,6 +16,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           className={classNames(
             "p-2.5 border rounded-lg",
             "px-3 text-sm",
+            "text-ellipsis overflow-hidden",
             error ? "border-red-500" : "border-gray-300",
             "focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100",
             "disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70 read-only:bg-gray-100 read-only:cursor-default read-only:opacity-70", // Disabled and Read-only styles
