@@ -110,7 +110,7 @@ const UnitList = () => {
             {isLoading && (!units || units.length === 0) ? (
               <UnitListSkeleton rows={8} />
             ) : (
-              <Table scrollable={true} maxHeight="600px" stickyHeader={true}>
+              <Table scrollable={true} stickyHeader={true}>
                 <TableHead>
                   <TableRow>
                     <TableHeader className="w-[15%]">
