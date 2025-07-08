@@ -144,7 +144,7 @@ function ItemList() {
             {isLoadingState && items.length === 0 ? (
               <ItemListSkeleton rows={8} />
             ) : (
-              <Table>
+              <Table scrollable={true} stickyHeader={true}>
                 <TableHead>
                   <TableRow>
                     <TableHeader className="w-[23%]">Nama Item</TableHeader>
