@@ -1,3 +1,13 @@
+import { RealtimeChannel } from "@supabase/supabase-js";
+
+// Realtime and presence types
+export interface PresenceState {
+  channel: RealtimeChannel | null;
+  onlineUsers: number;
+  setChannel: (channel: RealtimeChannel | null) => void;
+  setOnlineUsers: (count: number) => void;
+}
+
 export interface DeepDiffChange {
   type: "added" | "removed" | "modified";
   path: string[];
