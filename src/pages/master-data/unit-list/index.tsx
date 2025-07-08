@@ -111,10 +111,14 @@ const UnitList = () => {
               <UnitListSkeleton rows={8} />
             ) : (
               <Table scrollable={true} maxHeight="600px" stickyHeader={true}>
-                <TableHead stickyHeader={true}>
+                <TableHead stickyHeader={false}>
                   <TableRow>
-                    <TableHeader className="w-[15%]" stickyHeader={true}>Nama Satuan</TableHeader>
-                    <TableHeader className="w-[85%]" stickyHeader={true}>Deskripsi</TableHeader>
+                    <TableHeader className="w-[15%]" stickyHeader={true}>
+                      Nama Satuan
+                    </TableHeader>
+                    <TableHeader className="w-[85%]" stickyHeader={false}>
+                      Deskripsi
+                    </TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
