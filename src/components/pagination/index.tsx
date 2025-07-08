@@ -81,7 +81,7 @@ const Pagination = ({
     exit: { scale: 0.8, y: 200 },
   };
 
-  const pageSizes = useMemo(() => [10, 20, 40], []);
+  const pageSizes = useMemo(() => [10, 20, 50, 100], []);
 
   useEffect(() => {
     const currentIndex = pageSizes.indexOf(itemsPerPage);
