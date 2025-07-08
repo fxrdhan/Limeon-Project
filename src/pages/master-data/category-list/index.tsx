@@ -109,7 +109,7 @@ const CategoryList = () => {
             {isLoading && (!categories || categories.length === 0) ? (
               <CategoryListSkeleton rows={8} />
             ) : (
-              <Table>
+              <Table scrollable={true} stickyHeader={true}>
                 <TableHead>
                   <TableRow>
                     <TableHeader className="w-[15%]">Nama Kategori</TableHeader>
