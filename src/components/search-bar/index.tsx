@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { LuSearch } from "react-icons/lu";
+import { PiKeyReturnBold } from "react-icons/pi";
 import type { TableSearchProps } from "@/types";
 
 const SearchBar: React.FC<TableSearchProps> = ({
@@ -38,7 +39,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
 
   return (
     <div className={`mb-4 relative ${className}`}>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center">
         <LuSearch
           className={`${getSearchIconColor()} transition-all duration-300 ease-in-out ${
             hasValue
@@ -84,16 +85,14 @@ const SearchBar: React.FC<TableSearchProps> = ({
           >
             {value}
           </span>
-          <span
-            className={`absolute top-1/2 transform -translate-y-1/2 text-sm text-white bg-slate-400 rounded px-2 py-1 pointer-events-none ml-1 font-semibold tracking-wide transition-all duration-300 ease-in-out ${
+          <PiKeyReturnBold
+            className={`absolute top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none ml-1 transition-all duration-300 ease-in-out ${
               searchState === "not-found" && value
-                ? "opacity-100 scale-100 translate-x-0"
+                ? "opacity-100 scale-150 translate-x-0"
                 : "opacity-0 scale-95 translate-x-2"
             }`}
             style={{ left: `${textWidth + (hasValue ? 0 : 10)}px` }}
-          >
-            ENTER
-          </span>
+          />
         </div>
       </div>
     </div>
