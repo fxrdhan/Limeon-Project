@@ -322,15 +322,25 @@ export const useAddItemForm = ({
           .from("items")
           .select("code")
           .ilike("code", `${codePrefix}%`)
-          .order("code", { ascending: false });
+          .order("code", { ascending: true });
+
         let sequence = 1;
         if (data && data.length > 0) {
-          const lastSequenceStr = data[0].code.substring(codePrefix.length);
-          const lastSequence = parseInt(lastSequenceStr);
-          if (!isNaN(lastSequence)) {
-            sequence = lastSequence + 1;
+          const usedSequences = new Set<number>();
+
+          data.forEach(item => {
+            const sequenceStr = item.code.substring(codePrefix.length);
+            const sequenceNum = parseInt(sequenceStr);
+            if (!isNaN(sequenceNum)) {
+              usedSequences.add(sequenceNum);
+            }
+          });
+
+          while (usedSequences.has(sequence)) {
+            sequence++;
           }
         }
+
         const sequenceStr = sequence.toString().padStart(2, "0");
         const generatedCode = `${codePrefix}${sequenceStr}`;
         setFormData((prevFormData) => ({
@@ -725,7 +735,7 @@ export const useAddItemForm = ({
         queryKey: ["items"],
         refetchType: "all",
       });
-      
+
       // Force refetch items with a small delay to ensure data consistency
       setTimeout(() => {
         queryClient.refetchQueries({
@@ -733,14 +743,14 @@ export const useAddItemForm = ({
           type: "all",
         });
       }, 100);
-      
+
       // Call refetchItems callback if provided
       if (refetchItems) {
         setTimeout(() => {
           refetchItems();
         }, 150);
       }
-      
+
       sessionStorage.removeItem(CACHE_KEY);
       onClose();
     } catch (error) {
@@ -919,11 +929,23 @@ export const useAddItemForm = ({
     clearSearchTerm();
   };
 
+  /**
+   * Regenerates item code based on type, category, and unit selections
+   *
+   * Logic:
+   * 1. In edit mode: If item name hasn't changed, try to keep the same code
+   * 2. Always exclude current item from sequence search to avoid conflicts
+   * 3. Find the lowest available sequence number (01, 02, 03, etc.)
+   * 4. Generate code format: [TypeCode][UnitCode][CategoryCode][Sequence]
+   */
   const regenerateItemCode = async () => {
     if (!formData.type_id || !formData.category_id || !formData.unit_id) {
       alert('Silakan pilih jenis, kategori, dan satuan terlebih dahulu');
       return;
     }
+
+    // Show loading state
+    setSaving(true);
 
     const typeCode = generateTypeCode(formData.type_id, types);
     const unitCode = generateUnitCode(formData.unit_id, units);
@@ -931,18 +953,63 @@ export const useAddItemForm = ({
     const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
 
     try {
-      const { data, error } = await supabase
+      // Build query to exclude current item when in edit mode
+      let query = supabase
         .from("items")
         .select("code")
         .ilike("code", `${codePrefix}%`)
         .order("code", { ascending: true });
 
+      // If in edit mode, exclude current item from search
+      if (isEditMode && itemId) {
+        query = query.neq("id", itemId);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
 
       let sequence = 1;
+
+      // Smart regeneration logic for edit mode
+      // If item name hasn't changed, try to preserve the existing code
+      if (isEditMode && initialFormData && formData.name === initialFormData.name) {
+        const currentCode = initialFormData.code;
+        if (currentCode && currentCode.startsWith(codePrefix)) {
+          const currentSequenceStr = currentCode.substring(codePrefix.length);
+          const currentSequenceNum = parseInt(currentSequenceStr);
+
+          if (!isNaN(currentSequenceNum)) {
+            // Check if current sequence is still available (not used by other items)
+            // Since we excluded current item from search, if sequence is not found,
+            // it means it's safe to keep the same code
+            const isCurrentSequenceAvailable = !data || !data.some(item => {
+              const sequenceStr = item.code.substring(codePrefix.length);
+              const sequenceNum = parseInt(sequenceStr);
+              return !isNaN(sequenceNum) && sequenceNum === currentSequenceNum;
+            });
+
+            if (isCurrentSequenceAvailable) {
+              // Preserve existing code - no need to change
+              const generatedCode = `${codePrefix}${currentSequenceStr}`;
+              setFormData((prevFormData) => ({
+                ...prevFormData,
+                code: generatedCode,
+              }));
+              setSaving(false);
+              alert(`Kode item berhasil dipertahankan: ${generatedCode}`);
+              return;
+            }
+          }
+        }
+      }
+
+      // Generate new sequence number by finding the lowest available slot
+      // This ensures consistent numbering (01, 02, 03...) without gaps
       if (data && data.length > 0) {
         const usedSequences = new Set<number>();
-        
+
+        // Collect all used sequence numbers
         data.forEach(item => {
           const sequenceStr = item.code.substring(codePrefix.length);
           const sequenceNum = parseInt(sequenceStr);
@@ -951,6 +1018,7 @@ export const useAddItemForm = ({
           }
         });
 
+        // Find the first available sequence number starting from 1
         while (usedSequences.has(sequence)) {
           sequence++;
         }
@@ -958,16 +1026,33 @@ export const useAddItemForm = ({
 
       const sequenceStr = sequence.toString().padStart(2, "0");
       const generatedCode = `${codePrefix}${sequenceStr}`;
-      
+
       setFormData((prevFormData) => ({
         ...prevFormData,
         code: generatedCode,
       }));
+
+      setSaving(false);
+      alert(`Kode item berhasil diperbarui: ${generatedCode}`);
     } catch (error) {
       console.error("Error regenerating item code:", error);
-      alert('Gagal memperbarui kode item');
+      setSaving(false);
+
+      // More specific error messages
+      if (error instanceof Error) {
+        if (error.message?.includes('network')) {
+          alert('Gagal memperbarui kode item: Masalah koneksi internet');
+        } else if (error.message?.includes('permission')) {
+          alert('Gagal memperbarui kode item: Tidak memiliki izin akses');
+        } else {
+          alert(`Gagal memperbarui kode item: ${error.message || 'Terjadi kesalahan tak terduga'}`);
+        }
+      } else {
+        alert('Gagal memperbarui kode item: Terjadi kesalahan tak terduga');
+      }
     }
   };
+
 
   return {
     formData,
