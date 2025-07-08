@@ -109,7 +109,7 @@ const TypeList = () => {
             {isLoading && (!types || types.length === 0) ? (
               <TypeListSkeleton rows={8} />
             ) : (
-              <Table>
+              <Table scrollable={true} stickyHeader={true}>
                 <TableHead>
                   <TableRow>
                     <TableHeader className="w-[15%]">Nama Jenis</TableHeader>
