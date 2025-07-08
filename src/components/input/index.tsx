@@ -1,34 +1,34 @@
 import { forwardRef, useState } from "react";
 import type { InputProps } from "@/types";
 import { classNames } from "@/lib/classNames";
-import { shouldTruncateText } from "@/utils/text";
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, className, fullWidth = true, ...props }, ref) => {
     const [isHovered, setIsHovered] = useState(false);
-    
+
     const shouldShowOverlay = () => {
-      if (!props.value || typeof props.value !== 'string' || !isHovered) return false;
-      
+      if (!props.value || typeof props.value !== "string" || !isHovered)
+        return false;
+
       // Create a temporary element to measure text width
-      const tempElement = document.createElement('span');
-      tempElement.style.font = '14px system-ui, -apple-system, sans-serif'; // text-sm
-      tempElement.style.visibility = 'hidden';
-      tempElement.style.position = 'absolute';
-      tempElement.style.whiteSpace = 'nowrap';
+      const tempElement = document.createElement("span");
+      tempElement.style.font = "14px system-ui, -apple-system, sans-serif"; // text-sm
+      tempElement.style.visibility = "hidden";
+      tempElement.style.position = "absolute";
+      tempElement.style.whiteSpace = "nowrap";
       tempElement.textContent = props.value;
-      
+
       document.body.appendChild(tempElement);
       const textWidth = tempElement.offsetWidth;
       document.body.removeChild(tempElement);
-      
+
       // Calculate available width (input width - padding)
       const inputWidth = fullWidth ? 300 : 200; // approximate widths
       const availableWidth = inputWidth - 24; // 12px padding on each side
-      
+
       return textWidth > availableWidth;
     };
-    
+
     return (
       <div className={fullWidth ? "w-full" : ""}>
         {label && (
@@ -57,15 +57,18 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {shouldShowOverlay() && (
-            <div className={classNames(
-              "absolute bottom-full left-0 right-0 z-10 mb-1",
-              "p-2.5 px-3 text-sm",
-              "border rounded-lg bg-white shadow-lg",
-              "whitespace-pre-wrap break-words",
-              "min-h-[2.5rem] max-h-32 overflow-y-auto",
-              error ? "border-red-500" : "border-gray-300",
-              "pointer-events-none"
-            )}>
+            <div
+              className={classNames(
+                "absolute bottom-full left-0 right-0 z-10 mb-1",
+                "p-2.5 px-3 text-sm",
+                "border rounded-lg bg-white/30 backdrop-blur-sm",
+                "shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),4px_0_6px_-1px_rgba(0,0,0,0.1),-4px_0_6px_-1px_rgba(0,0,0,0.1)]",
+                "whitespace-pre-wrap break-words",
+                "min-h-[2.5rem] max-h-32 overflow-y-auto",
+                error ? "border-red-500" : "border-gray-300",
+                "pointer-events-none",
+              )}
+            >
               {props.value}
             </div>
           )}
