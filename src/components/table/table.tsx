@@ -2,15 +2,19 @@ import { classNames } from "@/lib/classNames";
 import type { TableCellProps, TableRowProps, TableProps } from "@/types";
 import { memo } from "react";
 import React from "react";
+import { useTableHeight } from "@/hooks/useTableHeight";
 
 export const Table = memo(
   ({
     children,
     className,
     scrollable = false,
-    maxHeight = "600px",
+    maxHeight,
     stickyHeader = false,
   }: TableProps) => {
+    const dynamicHeight = useTableHeight(320);
+    const tableHeight = scrollable ? (maxHeight || dynamicHeight) : undefined;
+    
     if (scrollable) {
       return (
         <div
@@ -18,7 +22,7 @@ export const Table = memo(
             "overflow-auto rounded-lg border-2 border-gray-200",
             className,
           )}
-          style={{ maxHeight }}
+          style={{ maxHeight: tableHeight }}
         >
           <table className="min-w-full w-full table-fixed bg-white">
             {React.Children.map(children, (child) => {
