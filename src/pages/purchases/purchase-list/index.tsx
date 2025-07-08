@@ -309,7 +309,7 @@ const PurchaseList = () => {
           <PurchaseListSkeleton rows={8} />
         ) : (
           <>
-            <Table>
+            <Table scrollable={true} stickyHeader={true}>
               <TableHead>
                 <TableRow>
                   <TableHeader className="w-[16%]">No. Faktur</TableHeader>
