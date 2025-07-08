@@ -775,16 +775,14 @@ const Dropdown = ({
                 {(isOpen || isClosing) && (
                   <div>
                     {searchList && (
-                      <div className="p-2 pr-0! border-b border-gray-200 sticky top-0 z-10">
+                      <div className="p-2 border-b border-gray-200 sticky top-0 z-10">
                         <div className="relative flex items-center gap-2 min-w-0">
                           <div className="relative flex-1 min-w-0">
                             <input
                               ref={searchInputRef}
                               type="text"
-                              className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 ${
+                              className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 -pr-2${
                                 searchTerm && searchTerm.length > 0
-                                  ? "pl-2"
-                                  : "pr-8"
                               } pl-2 ${
                                 searchState === "not-found"
                                   ? "border-accent focus:border-accent focus:ring-3 focus:ring-red-100"
@@ -826,7 +824,7 @@ const Dropdown = ({
                                   currentFilteredOptions.length === 0)) &&
                               onAddNew ? (
                                 <FaPlus
-                                  className={`${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer mr-3 ml-1 scale-150`}
+                                  className={`${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer mr-1 ml-1 scale-150`}
                                   style={{
                                     width: "16px",
                                     minWidth: "16px",
@@ -839,7 +837,7 @@ const Dropdown = ({
                                 />
                               ) : (
                                 <FaMagnifyingGlass
-                                  className={`${getSearchIconColor()} transition-all duration-300 ease-in-out scale-125 ml-1 mr-3`}
+                                  className={`${getSearchIconColor()} transition-all duration-300 ease-in-out scale-125 ml-1 mr-1`}
                                   style={{
                                     width: "16px",
                                     minWidth: "16px",
