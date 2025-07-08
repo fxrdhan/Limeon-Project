@@ -41,6 +41,7 @@ const Dropdown = ({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [currentFilteredOptions, setCurrentFilteredOptions] = useState(options);
   const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
+  const [initialDropDirection, setInitialDropDirection] = useState<"down" | "up" | null>(null);
   const [scrollState, setScrollState] = useState({
     isScrollable: false,
     reachedBottom: false,
@@ -139,7 +140,15 @@ const Dropdown = ({
       spaceBelow < dropdownActualHeight + 10 &&
       buttonRect.top > dropdownActualHeight + 10;
 
-    setDropDirection(shouldDropUp ? "up" : "down");
+    // Set initial direction only once when dropdown first opens
+    if (initialDropDirection === null) {
+      const direction = shouldDropUp ? "up" : "down";
+      setDropDirection(direction);
+      setInitialDropDirection(direction);
+    } else {
+      // Use the initial direction for subsequent calculations
+      setDropDirection(initialDropDirection);
+    }
 
     let leftPosition = buttonRect.left;
     if (leftPosition + buttonRect.width > viewportWidth - 16) {
@@ -148,14 +157,17 @@ const Dropdown = ({
     if (leftPosition < 16) leftPosition = 16;
 
     const margin = 8;
+    const finalDirection = initialDropDirection || (shouldDropUp ? "up" : "down");
+    const isDropUp = finalDirection === "up";
+    
     setPortalStyle({
       position: "fixed",
       left: `${leftPosition}px`,
       width: `${buttonRect.width}px`,
       zIndex: 1050,
-      top: `${buttonRect[shouldDropUp ? "top" : "bottom"] + window.scrollY + (shouldDropUp ? -dropdownActualHeight - margin : margin)}px`,
+      top: `${buttonRect[isDropUp ? "top" : "bottom"] + window.scrollY + (isDropUp ? -dropdownActualHeight - margin : margin)}px`,
     });
-  }, [isOpen]);
+  }, [isOpen, initialDropDirection]);
 
   const actualCloseDropdown = useCallback(() => {
     setIsClosing(true);
@@ -163,6 +175,7 @@ const Dropdown = ({
       setIsOpen(false);
       setIsClosing(false);
       setSearchTerm("");
+      setInitialDropDirection(null); // Reset initial direction when closing
       if (activeDropdownId === instanceId) {
         activeDropdownCloseCallback = null;
         activeDropdownId = null;
