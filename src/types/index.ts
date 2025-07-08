@@ -330,7 +330,7 @@ export interface TableSearchProps {
   placeholder?: string;
   className?: string;
   inputRef?: React.RefObject<HTMLInputElement>;
-  searchState?: 'idle' | 'typing' | 'found' | 'not-found';
+  searchState?: "idle" | "typing" | "found" | "not-found";
   resultsCount?: number;
 }
 
@@ -341,12 +341,14 @@ export interface TableProps {
   maxHeight?: string;
   stickyHeader?: boolean;
 }
+
 export interface TableCellProps
   extends React.TdHTMLAttributes<HTMLTableCellElement> {
   colSpan?: number;
   rowSpan?: number;
   align?: "left" | "center" | "right";
 }
+
 export interface TableRowProps
   extends React.HTMLAttributes<HTMLTableRowElement> {
   children: React.ReactNode;
