@@ -7,6 +7,7 @@ import {
   FaUndoAlt,
   FaQuestionCircle,
   FaTimes,
+  FaRedo,
 } from "react-icons/fa";
 import Input from "@/components/input";
 import Button from "@/components/button";
@@ -56,6 +57,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
     top: number;
     left: number;
   } | null>(null);
+  const [isCodeHovered, setIsCodeHovered] = useState(false);
 
   useEffect(() => {
     if (isClosing) {
@@ -122,6 +124,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
     handleAddNewUnit,
     closeModalAndClearSearch,
     isDirty,
+    regenerateItemCode,
   } = useAddItemPageHandlers({
     itemId,
     initialSearchQuery,
@@ -369,12 +372,30 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                             label="Kode Item"
                             className="md:col-span-1"
                           >
-                            <Input
-                              name="code"
-                              value={formData.code}
-                              readOnly={true}
-                              className="w-full"
-                            />
+                            <div
+                              className="relative"
+                              onMouseEnter={() => setIsCodeHovered(true)}
+                              onMouseLeave={() => setIsCodeHovered(false)}
+                            >
+                              <Input
+                                name="code"
+                                value={formData.code}
+                                readOnly={true}
+                                className={`w-full transition-all duration-200 ${isCodeHovered ? 'blur-sm' : ''}`}
+                              />
+                              {isCodeHovered && (
+                                <div
+                                  className="absolute inset-0 flex items-center justify-center gap-1 cursor-pointer"
+                                  onClick={regenerateItemCode}
+                                  title="Regenerate kode item dari digit terendah"
+                                >
+                                  <FaRedo size={16} className="text-blue-500" />
+                                  <span className="text-sm text-blue-600 font-medium">
+                                    Regenerate
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </FormField>
 
                           <FormField
