@@ -230,5 +230,6 @@ export const useAddItemPageHandlers = ({
     handleCancel: handleActualCancel,
     isClosing,
     setIsClosing,
+    regenerateItemCode: addItemForm.regenerateItemCode,
   };
 };
