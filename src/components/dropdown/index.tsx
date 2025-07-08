@@ -39,6 +39,7 @@ const Dropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [currentFilteredOptions, setCurrentFilteredOptions] = useState(options);
   const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
   const [isScrollable, setIsScrollable] = useState(false);
@@ -66,12 +67,21 @@ const Dropdown = ({
   const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const selectedOption = options.find((option) => option?.id === value);
 
+  // Debounce search term to prevent flickering
   useEffect(() => {
-    if (!searchList && searchTerm.trim() === "") {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (!searchList && debouncedSearchTerm.trim() === "") {
       setCurrentFilteredOptions(options);
       setSearchState("idle");
-    } else if (searchTerm.trim() !== "") {
-      const searchTermLower = searchTerm.toLowerCase();
+    } else if (debouncedSearchTerm.trim() !== "") {
+      const searchTermLower = debouncedSearchTerm.toLowerCase();
       const filtered = options
         .filter((option) => {
           return (
@@ -90,12 +100,20 @@ const Dropdown = ({
           return a.name.localeCompare(b.name);
         });
       setCurrentFilteredOptions(filtered);
-      setSearchState(filtered.length > 0 ? "found" : "not-found");
-    } else if (searchList && searchTerm.trim() === "") {
+
+      // Only update state if it's different from current state to prevent flickering
+      const newState = filtered.length > 0 ? "found" : "not-found";
+      setSearchState((prevState) => {
+        if (prevState !== newState) {
+          return newState;
+        }
+        return prevState;
+      });
+    } else if (searchList && debouncedSearchTerm.trim() === "") {
       setCurrentFilteredOptions(options);
       setSearchState("idle");
     }
-  }, [options, searchTerm, searchList, setCurrentFilteredOptions]);
+  }, [options, debouncedSearchTerm, searchList, setCurrentFilteredOptions]);
 
   useEffect(() => {
     if (isOpen && currentFilteredOptions.length > 0) {
@@ -291,7 +309,9 @@ const Dropdown = ({
           if (highlightedIndex >= 0 && highlightedIndex < items.length) {
             handleSelect(items[highlightedIndex].id);
           } else if (
-            searchState === "not-found" &&
+            (searchState === "not-found" ||
+              (searchState === "typing" &&
+                currentFilteredOptions.length === 0)) &&
             onAddNew &&
             searchTerm.trim() !== ""
           ) {
@@ -528,9 +548,14 @@ const Dropdown = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = e.target.value;
       setSearchTerm(newValue);
-      setSearchState(newValue.trim() !== "" ? "typing" : "idle");
+      // Set immediate state for better UX, but let debounced search handle the filtering
+      if (newValue.trim() === "") {
+        setSearchState("idle");
+      } else if (searchState === "idle") {
+        setSearchState("typing");
+      }
     },
-    [],
+    [searchState],
   );
 
   const getSearchIconColor = () => {
@@ -787,92 +812,41 @@ const Dropdown = ({
                                   : undefined
                               }
                             />
-                            {searchState === "not-found" && onAddNew ? (
-                              <FaPlus
-                                className={`absolute top-2.5 right-2 ${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer ${
-                                  searchTerm && searchTerm.length > 0
-                                    ? "opacity-0 transform -translate-x-2"
-                                    : "opacity-100 transform translate-x-0"
-                                }`}
-                                style={{
-                                  visibility:
-                                    searchTerm && searchTerm.length > 0
-                                      ? "hidden"
-                                      : "visible",
-                                }}
-                                size={16}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (onAddNew) onAddNew(searchTerm);
-                                  actualCloseDropdown();
-                                }}
-                              />
-                            ) : (
+                            {(!searchTerm || searchTerm.length === 0) && (
                               <FaMagnifyingGlass
-                                className={`absolute top-2.5 right-2 ${getSearchIconColor()} transition-all duration-300 ease-in-out ${
-                                  searchTerm && searchTerm.length > 0
-                                    ? "opacity-0 transform translate-x-2"
-                                    : "opacity-100 transform translate-x-0"
-                                }`}
-                                style={{
-                                  visibility:
-                                    searchTerm && searchTerm.length > 0
-                                      ? "hidden"
-                                      : "visible",
-                                }}
+                                className={`absolute top-2.5 right-2 ${getSearchIconColor()} transition-all duration-300 ease-in-out opacity-100 transform translate-x-0`}
                                 size={16}
                               />
                             )}
                           </div>
-                          {searchState === "not-found" && onAddNew ? (
-                            <FaPlus
-                              className={`${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer mr-3 ml-1 ${
-                                searchTerm && searchTerm.length > 0
-                                  ? "opacity-100 transform translate-x-0 scale-150"
-                                  : "opacity-0 transform translate-x-2 scale-150"
-                              }`}
-                              style={{
-                                visibility:
-                                  searchTerm && searchTerm.length > 0
-                                    ? "visible"
-                                    : "hidden",
-                                width:
-                                  searchTerm && searchTerm.length > 0
-                                    ? "auto"
-                                    : "0",
-                                minWidth:
-                                  searchTerm && searchTerm.length > 0
-                                    ? "16px"
-                                    : "0",
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (onAddNew) onAddNew(searchTerm);
-                                actualCloseDropdown();
-                              }}
-                            />
-                          ) : (
-                            <FaMagnifyingGlass
-                              className={`${getSearchIconColor()} transition-all duration-300 ease-in-out ${
-                                searchTerm && searchTerm.length > 0
-                                  ? "opacity-100 transform translate-x-0 scale-125 ml-1 mr-3"
-                                  : "opacity-0 transform -translate-x-2 scale-125"
-                              }`}
-                              style={{
-                                visibility:
-                                  searchTerm && searchTerm.length > 0
-                                    ? "visible"
-                                    : "hidden",
-                                width:
-                                  searchTerm && searchTerm.length > 0
-                                    ? "auto"
-                                    : "0",
-                                minWidth:
-                                  searchTerm && searchTerm.length > 0
-                                    ? "16px"
-                                    : "0",
-                              }}
-                            />
+                          {searchTerm && searchTerm.length > 0 && (
+                            <div className="flex items-center">
+                              {(searchState === "not-found" ||
+                                (searchState === "typing" &&
+                                  currentFilteredOptions.length === 0)) &&
+                              onAddNew ? (
+                                <FaPlus
+                                  className={`${getSearchIconColor()} transition-all duration-300 ease-in-out cursor-pointer mr-3 ml-1 scale-150`}
+                                  style={{
+                                    width: "16px",
+                                    minWidth: "16px",
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onAddNew) onAddNew(searchTerm);
+                                    actualCloseDropdown();
+                                  }}
+                                />
+                              ) : (
+                                <FaMagnifyingGlass
+                                  className={`${getSearchIconColor()} transition-all duration-300 ease-in-out scale-125 ml-1 mr-3`}
+                                  style={{
+                                    width: "16px",
+                                    minWidth: "16px",
+                                  }}
+                                />
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
