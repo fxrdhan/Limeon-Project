@@ -17,6 +17,7 @@ import FormAction from "@/components/form-action";
 import DescriptiveTextarea from "@/components/descriptive-textarea";
 import Checkbox from "@/components/checkbox";
 import AddEditModal from "@/components/add-edit/v1";
+import { PiKeyReturnBold } from "react-icons/pi";
 
 import {
   Card,
@@ -885,7 +886,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                                     }}
                                     title="Tekan Enter atau klik untuk menambah"
                                   >
-                                    ENTER
+                                    <PiKeyReturnBold size={24} />
                                   </div>
                                 </div>
                               </FormField>
