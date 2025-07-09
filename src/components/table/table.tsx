@@ -81,11 +81,19 @@ const calculateColumnWidths = (
       if (cellContent !== null && cellContent !== undefined) {
         if (typeof cellContent === "number") {
           contentLength = cellContent.toLocaleString("id-ID").length;
-        } else if (typeof cellContent === "object" && cellContent !== null && "name" in cellContent) {
+        } else if (
+          typeof cellContent === "object" &&
+          cellContent !== null &&
+          "name" in cellContent
+        ) {
           contentLength = String((cellContent as { name: string }).name).length;
         } else if (Array.isArray(cellContent)) {
           contentLength = cellContent
-            .map((item) => (typeof item === "object" && item !== null && "name" in item) ? (item as { name: string }).name : String(item))
+            .map((item) =>
+              typeof item === "object" && item !== null && "name" in item
+                ? (item as { name: string }).name
+                : String(item),
+            )
             .join(", ").length;
         } else {
           contentLength = String(cellContent).length;
@@ -202,10 +210,13 @@ export const Table = memo(
         <div
           ref={containerRef}
           className={classNames(
-            "w-full overflow-hidden rounded-lg border-2 border-gray-200",
+            "w-full rounded-lg border-2 border-gray-200 overflow-hidden",
             className,
           )}
-          style={{ maxHeight: tableHeight }}
+          style={{ 
+            maxHeight: tableHeight,
+            height: tableHeight 
+          }}
         >
           <div className="overflow-auto h-full">
             <table className="w-full table-fixed bg-white min-w-full">
@@ -287,7 +298,7 @@ export const TableHead = ({
   return (
     <thead
       className={classNames(
-        "bg-gray-50 text-gray-700 border-b-2 border-gray-200 group",
+        "text-gray-700 border-b-2 border-gray-200 group",
         stickyHeader && "sticky top-0 z-10",
         className,
       )}
@@ -499,9 +510,10 @@ export const TableHeader = ({
       className={classNames(
         "py-3 px-2 text-left text-gray-700 uppercase tracking-wider text-sm font-medium",
         "overflow-hidden whitespace-nowrap text-ellipsis",
-        "group-hover:whitespace-normal group-hover:text-ellipsis-none group-hover:overflow-visible",
-        "border-r border-gray-200 last:border-r-0",
-        stickyHeader && "bg-gray-50 sticky top-0 z-10",
+        "group-hover:whitespace-normal group-hover:overflow-visible",
+        "bg-gray-200 border-r border-gray-300 last:border-r-0",
+        "first:rounded-tl-md last:rounded-tr-md",
+        stickyHeader && "sticky top-0 z-10",
         className,
       )}
       style={dynamicStyle}
