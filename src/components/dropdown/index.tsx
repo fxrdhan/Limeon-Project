@@ -139,7 +139,7 @@ const Dropdown = ({
     const viewportWidth = window.innerWidth;
 
     // Calculate available space with better margin consideration
-    const margin = 16;
+    const margin = 4;
     const spaceBelow = viewportHeight - buttonRect.bottom - margin;
     const spaceAbove = buttonRect.top - margin;
 
@@ -172,10 +172,9 @@ const Dropdown = ({
     // Calculate top position with improved spacing
     let topPosition: number;
     if (isDropUp) {
-      topPosition =
-        buttonRect.top + window.scrollY - dropdownActualHeight - margin;
+      topPosition = buttonRect.top + window.scrollY - dropdownActualHeight - 2;
     } else {
-      topPosition = buttonRect.bottom + window.scrollY + margin;
+      topPosition = buttonRect.bottom + window.scrollY + 2;
     }
 
     // Create contextual shadows based on dropdown direction
@@ -666,10 +665,10 @@ const Dropdown = ({
         )}
         <span
           className={`${shouldExpand ? "whitespace-normal break-words leading-relaxed" : "truncate"} transition-all duration-200 text-left ${
-            option.id === value 
-              ? "text-primary font-semibold" 
-              : highlightedIndex === index 
-                ? "text-gray-800 font-semibold" 
+            option.id === value
+              ? "text-primary font-semibold"
+              : highlightedIndex === index
+                ? "text-gray-800 font-semibold"
                 : ""
           }`}
           title={shouldTruncate && !shouldExpand ? option.name : undefined}
@@ -693,7 +692,7 @@ const Dropdown = ({
             ref={buttonRef}
             type="button"
             tabIndex={tabIndex}
-            className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-emerald-100 focus:border-primary transition duration-200 ease-in-out ${
+            className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border border-gray-300 bg-white/50 backdrop-blur-md text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-emerald-100 focus:border-primary transition duration-200 ease-in-out ${
               isButtonTextExpanded ? "items-start" : "items-center"
             }`}
             aria-haspopup="menu"
@@ -766,7 +765,7 @@ const Dropdown = ({
                 style={portalStyle}
                 className={`
                   ${dropDirection === "down" ? "origin-top" : "origin-bottom"}
-                  bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200
+                  bg-white/50 backdrop-blur-md rounded-xl border border-gray-200
                   transition-all duration-300 ease-out transform
                   ${
                     isClosing
