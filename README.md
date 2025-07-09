@@ -1,29 +1,29 @@
-# PharmaSys - Pharmacy & Clinic Management System
+# PharmaSys - Sistem Manajemen Farmasi & Klinik
 
-PharmaSys is a modern, web-based application designed to streamline the operational management of pharmacies and clinics. It provides a comprehensive suite of tools for managing master data, purchases, inventory, sales, and more, all within a user-friendly interface.
+PharmaSys adalah aplikasi berbasis web modern yang dirancang untuk menyederhanakan manajemen operasional farmasi dan klinik. Aplikasi ini menyediakan rangkaian alat yang komprehensif untuk mengelola data master, pembelian, inventori, penjualan, dan lainnya, semua dalam antarmuka yang ramah pengguna.
 
-## ✨ Key Features
+## Fitur Utama
 
--   **📊 Interactive Dashboard:** Get a quick overview of key metrics and activities.
--   **🗃️ Master Data Management:** Centralized control over essential data:
-    -   Items, Categories, Units, and Types
-    -   Suppliers, Patients, and Doctors
--   **🛒 Purchase Management:**
-    -   Automated invoice data extraction from images.
-    -   Manage purchase orders and track their status.
-    -   View and print purchase details.
--   **🔐 Authentication:** Secure login for authorized personnel.
--   **👤 User Profile Management:** Users can manage their own profile information.
--   **🔄 Real-time Data Synchronization:** Data is automatically updated across all active user sessions. When one user makes a change, others see the update instantly without needing to refresh the page. This is coupled with a user presence feature to show who is currently online.
--   **⚡ Performance Optimized:** Built with code-splitting and lazy loading to ensure fast load times.
+-   **Dashboard Interaktif:** Dapatkan gambaran cepat tentang metrik dan aktivitas kunci.
+-   **Manajemen Data Master:** Kontrol terpusat atas data penting:
+    -   Barang, Kategori, Unit, dan Jenis
+    -   Supplier, Pasien, dan Dokter
+-   **Manajemen Pembelian:**
+    -   Ekstraksi data faktur otomatis dari gambar.
+    -   Kelola pesanan pembelian dan lacak statusnya.
+    -   Lihat dan cetak detail pembelian.
+-   **Autentikasi:** Login aman untuk personel yang berwenang.
+-   **Manajemen Profil Pengguna:** Pengguna dapat mengelola informasi profil mereka sendiri.
+-   **Sinkronisasi Data Real-time:** Data diperbarui secara otomatis di semua sesi pengguna aktif. Ketika satu pengguna membuat perubahan, yang lain melihat pembaruan secara instan tanpa perlu me-refresh halaman. Ini digabungkan dengan fitur kehadiran pengguna untuk menunjukkan siapa yang sedang online.
+-   **Dioptimalkan untuk Performa:** Dibangun dengan code-splitting dan lazy loading untuk memastikan waktu muat yang cepat.
 
-*(Note: Some features like Inventory, Sales, Clinic, and Reports are currently under development as indicated by "Coming Soon" pages.)*
+*(Catatan: Beberapa fitur seperti Inventori, Penjualan, Klinik, dan Laporan saat ini sedang dalam pengembangan seperti yang ditunjukkan oleh halaman "Coming Soon".)*
 
 ---
 
-## 🚀 Tech Stack
+## Tech Stack
 
-This project is built with a modern and robust technology stack:
+Proyek ini dibangun dengan teknologi modern dan robust:
 
 -   **Library:** [React](https://react.dev/)
 -   **Build Tool:** [Vite](https://vitejs.dev/)
@@ -36,43 +36,43 @@ This project is built with a modern and robust technology stack:
 
 ---
 
-## 🔗 Supabase Integration
+## Integrasi Supabase
 
-PharmaSys leverages the full power of [Supabase](https://supabase.com/) as its backend, providing a scalable and integrated solution.
+PharmaSys memanfaatkan kekuatan penuh [Supabase](https://supabase.com/) sebagai backend-nya, menyediakan solusi yang skalabel dan terintegrasi.
 
--   **Database:** PostgreSQL database for storing all application data, from master data (items, suppliers) to transactional data (purchases, sales).
--   **Authentication:** Manages user authentication and authorization, ensuring secure access to the application.
--   **Realtime:** This feature is at the core of the application's collaborative nature.
-    -   **Live Data Sync:** The application subscribes to `postgres_changes` events from the Supabase Realtime API. When a user creates, updates, or deletes data, the backend notifies all connected clients.
-    -   **Automatic UI Updates:** A custom React hook (`useRealtimeSubscription`) receives these events and automatically invalidates the relevant data caches in TanStack Query. This triggers a seamless and efficient refetch, ensuring the UI always reflects the latest database state without requiring a manual refresh.
-    -   **User Presence:** The same Realtime channels are used to track which users are currently active in the application, displaying a live count of online users.
--   **Storage:** Utilized for handling file uploads, particularly for invoice images that are later processed.
--   **Edge Functions:** Serverless functions that run complex backend logic. Key functions include:
-    -   `extract-invoice`: Processes uploaded invoice images to extract data.
-    -   `confirm-invoice`: Saves the extracted invoice data into the database.
-    -   `regenerate-invoice`: Re-processes an existing invoice from storage.
-    -   `metrics`: Gathers and reports on function usage and performance.
+-   **Database:** Database PostgreSQL untuk menyimpan semua data aplikasi, dari data master (barang, supplier) hingga data transaksional (pembelian, penjualan).
+-   **Authentication:** Mengelola autentikasi dan otorisasi pengguna, memastikan akses yang aman ke aplikasi.
+-   **Realtime:** Fitur ini menjadi inti dari sifat kolaboratif aplikasi.
+    -   **Live Data Sync:** Aplikasi berlangganan ke event `postgres_changes` dari Supabase Realtime API. Ketika pengguna membuat, memperbarui, atau menghapus data, backend memberitahu semua klien yang terhubung.
+    -   **Automatic UI Updates:** Hook React khusus (`useRealtimeSubscription`) menerima event ini dan secara otomatis membatalkan cache data yang relevan di TanStack Query. Ini memicu refetch yang mulus dan efisien, memastikan UI selalu mencerminkan state database terbaru tanpa perlu refresh manual.
+    -   **User Presence:** Channel Realtime yang sama digunakan untuk melacak pengguna mana yang sedang aktif di aplikasi, menampilkan jumlah pengguna online secara langsung.
+-   **Storage:** Digunakan untuk menangani upload file, khususnya untuk gambar faktur yang kemudian diproses.
+-   **Edge Functions:** Fungsi serverless yang menjalankan logika backend yang kompleks. Fungsi utama meliputi:
+    -   `extract-invoice`: Memproses gambar faktur yang diunggah untuk mengekstrak data.
+    -   `confirm-invoice`: Menyimpan data faktur yang diekstrak ke database.
+    -   `regenerate-invoice`: Memproses ulang faktur yang sudah ada dari storage.
+    -   `metrics`: Mengumpulkan dan melaporkan penggunaan dan performa fungsi.
 
 ### Database Migrations
 
-All database schema changes (e.g., adding tables or columns) are managed through manual SQL migration scripts. It is crucial to write these scripts defensively using `IF NOT EXISTS` or similar checks to prevent errors in different environments. Apply these scripts directly via the Supabase SQL Editor.
+Semua perubahan skema database (misalnya, menambahkan tabel atau kolom) dikelola melalui skrip migrasi SQL manual. Penting untuk menulis skrip ini secara defensif menggunakan `IF NOT EXISTS` atau pemeriksaan serupa untuk mencegah kesalahan di lingkungan yang berbeda. Terapkan skrip ini langsung melalui Supabase SQL Editor.
 
-**Important:** The `supabase/**` directory is used for data exports and local development state; it should not be modified directly for schema migrations.
+**Penting:** Direktori `supabase/**` digunakan untuk ekspor data dan state pengembangan lokal; tidak boleh dimodifikasi secara langsung untuk migrasi skema.
 
 ---
 
-## 🛠️ Getting Started
+## Memulai
 
-Follow these instructions to get a local copy up and running for development and testing purposes.
+Ikuti petunjuk ini untuk mendapatkan salinan lokal dan menjalankannya untuk tujuan pengembangan dan pengujian.
 
-### Prerequisites
+### Persyaratan
 
--   [Node.js](https://nodejs.org/) (v18 or newer recommended)
+-   [Node.js](https://nodejs.org/) (v18 atau yang lebih baru direkomendasikan)
 -   [Yarn](https://yarnpkg.com/) (v3.x)
 
-### Installation
+### Instalasi
 
-1.  **Clone the repository:**
+1.  **Clone repository:**
     ```sh
     git clone <repository-url>
     cd PharmaSys
@@ -84,11 +84,11 @@ Follow these instructions to get a local copy up and running for development and
     ```
 
 3.  **Set up environment variables:**
-    Create a `.env` file in the root of the project by copying the example file:
+    Buat file `.env` di root proyek dengan menyalin file contoh:
     ```sh
     cp .env.example .env
     ```
-    You will need to populate this file with your Supabase project credentials.
+    Anda perlu mengisi file ini dengan kredensial proyek Supabase Anda.
     ```ini
     # .env
     VITE_SUPABASE_URL="YOUR_SUPABASE_PROJECT_URL"
@@ -96,55 +96,55 @@ Follow these instructions to get a local copy up and running for development and
     ```
 
 4.  **Run the development server:**
-    This command starts the Vite development server and the Tailwind CSS watcher concurrently.
+    Perintah ini memulai server pengembangan Vite dan watcher Tailwind CSS secara bersamaan.
     ```sh
     yarn dev
     ```
-    The application will be available at `http://localhost:5173` (or the next available port).
+    Aplikasi akan tersedia di `http://localhost:5173` (atau port yang tersedia berikutnya).
 
 ---
 
-## 📜 Available Scripts
+## Script Yang Tersedia
 
-The `package.json` file includes several scripts to help with development:
+File `package.json` mencakup beberapa script untuk membantu pengembangan:
 
--   `yarn dev`: Starts the application in development mode with hot-reloading.
--   `yarn build`: Compiles and bundles the application for production.
--   `yarn preview`: Serves the production build locally to preview it.
--   `yarn lint`: Runs ESLint to check for code quality and style issues.
+-   `yarn dev`: Memulai aplikasi dalam mode pengembangan dengan hot-reloading.
+-   `yarn build`: Mengompilasi dan mem-bundle aplikasi untuk produksi.
+-   `yarn preview`: Menyajikan build produksi secara lokal untuk preview.
+-   `yarn lint`: Menjalankan ESLint untuk memeriksa masalah kualitas kode dan gaya.
 
 ### Utility Scripts
 
-These scripts interact with the backend and require `tsx` to run.
+Script ini berinteraksi dengan backend dan memerlukan `tsx` untuk menjalankan.
 
--   `yarn add-admin`: A CLI script to create a new admin user.
--   `yarn update-password`: A CLI script to update a user's password.
--   `yarn export`: A CLI script to export data.
+-   `yarn add-admin`: Script CLI untuk membuat pengguna admin baru.
+-   `yarn update-password`: Script CLI untuk memperbarui kata sandi pengguna.
+-   `yarn export`: Script CLI untuk mengekspor data.
 
-For help with these scripts, you can run `yarn <script-name>:help`.
+Untuk bantuan dengan script ini, Anda dapat menjalankan `yarn <script-name>:help`.
 
 ---
 
-## 📂 Project Structure
+## Struktur Proyek
 
-The source code is located in the `src/` directory and follows a feature-based organization.
+Kode sumber terletak di direktori `src/` dan mengikuti organisasi berbasis fitur.
 
 ```
 src/
-├── components/      # Reusable UI components (Alerts, Dialogs, Loaders, etc.)
-├── hooks/           # Custom React hooks
-├── layout/          # Main application layout (sidebar, header)
-├── lib/             # Library configurations (e.g., Supabase client)
-├── pages/           # Page components, organized by feature
+├── components/      # Komponen UI yang dapat digunakan kembali (Alerts, Dialogs, Loaders, dll.)
+├── hooks/           # Hook React khusus
+├── layout/          # Layout aplikasi utama (sidebar, header)
+├── lib/             # Konfigurasi library (misalnya, klien Supabase)
+├── pages/           # Komponen halaman, diorganisir berdasarkan fitur
 │   ├── auth/
 │   ├── dashboard/
 │   ├── master-data/
 │   └── ...
-├── services/        # API call logic for interacting with Supabase
-├── store/           # Zustand state management stores
-├── types/           # Global TypeScript type definitions
-├── utils/           # Utility functions
-├── App.css          # Main stylesheet for Tailwind CSS
-├── App.tsx          # Root component with routing setup
-└── main.tsx         # Application entry point
+├── services/        # Logika panggilan API untuk berinteraksi dengan Supabase
+├── store/           # Store manajemen state Zustand
+├── types/           # Definisi tipe TypeScript global
+├── utils/           # Fungsi utilitas
+├── App.css          # Stylesheet utama untuk Tailwind CSS
+├── App.tsx          # Komponen root dengan setup routing
+└── main.tsx         # Entry point aplikasi
 ```
