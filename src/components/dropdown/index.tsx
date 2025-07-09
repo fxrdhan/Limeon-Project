@@ -41,7 +41,9 @@ const Dropdown = ({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [currentFilteredOptions, setCurrentFilteredOptions] = useState(options);
   const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
-  const [initialDropDirection, setInitialDropDirection] = useState<"down" | "up" | null>(null);
+  const [initialDropDirection, setInitialDropDirection] = useState<
+    "down" | "up" | null
+  >(null);
   const [scrollState, setScrollState] = useState({
     isScrollable: false,
     reachedBottom: false,
@@ -135,10 +137,17 @@ const Dropdown = ({
     const dropdownActualHeight = dropdownMenuRef.current.scrollHeight;
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
-    const spaceBelow = viewportHeight - buttonRect.bottom;
+
+    // Calculate available space with better margin consideration
+    const margin = 16;
+    const spaceBelow = viewportHeight - buttonRect.bottom - margin;
+    const spaceAbove = buttonRect.top - margin;
+
+    // Enhanced logic for determining drop direction
     const shouldDropUp =
-      spaceBelow < dropdownActualHeight + 10 &&
-      buttonRect.top > dropdownActualHeight + 10;
+      (spaceBelow < dropdownActualHeight &&
+        spaceAbove > dropdownActualHeight) ||
+      (spaceBelow < dropdownActualHeight && spaceAbove > spaceBelow);
 
     // Set initial direction only once when dropdown first opens
     if (initialDropDirection === null) {
@@ -156,16 +165,49 @@ const Dropdown = ({
     }
     if (leftPosition < 16) leftPosition = 16;
 
-    const margin = 8;
-    const finalDirection = initialDropDirection || (shouldDropUp ? "up" : "down");
+    const finalDirection =
+      initialDropDirection || (shouldDropUp ? "up" : "down");
     const isDropUp = finalDirection === "up";
-    
+
+    // Calculate top position with improved spacing
+    let topPosition: number;
+    if (isDropUp) {
+      topPosition =
+        buttonRect.top + window.scrollY - dropdownActualHeight - margin;
+    } else {
+      topPosition = buttonRect.bottom + window.scrollY + margin;
+    }
+
+    // Create contextual shadows based on dropdown direction
+    const getContextualBoxShadow = (direction: "up" | "down") => {
+      if (direction === "up") {
+        // Shadow on all sides except bottom (connected to field below)
+        return [
+          "0 -8px 16px -4px rgba(0, 0, 0, 0.2)", // top shadow
+          "-8px 0 16px -4px rgba(0, 0, 0, 0.15)", // left shadow
+          "8px 0 16px -4px rgba(0, 0, 0, 0.15)", // right shadow
+          "0 -20px 40px -8px rgba(0, 0, 0, 0.15)", // larger top shadow for depth
+          "0 -4px 8px -2px rgba(0, 0, 0, 0.1)", // close top shadow for definition
+        ].join(", ");
+      } else {
+        // Shadow on all sides except top (connected to field above)
+        return [
+          "0 8px 16px -4px rgba(0, 0, 0, 0.2)", // bottom shadow
+          "-8px 0 16px -4px rgba(0, 0, 0, 0.15)", // left shadow
+          "8px 0 16px -4px rgba(0, 0, 0, 0.15)", // right shadow
+          "0 20px 40px -8px rgba(0, 0, 0, 0.15)", // larger bottom shadow for depth
+          "0 4px 8px -2px rgba(0, 0, 0, 0.1)", // close bottom shadow for definition
+        ].join(", ");
+      }
+    };
+
     setPortalStyle({
       position: "fixed",
       left: `${leftPosition}px`,
       width: `${buttonRect.width}px`,
       zIndex: 1050,
-      top: `${buttonRect[isDropUp ? "top" : "bottom"] + window.scrollY + (isDropUp ? -dropdownActualHeight - margin : margin)}px`,
+      top: `${topPosition}px`,
+      boxShadow: getContextualBoxShadow(finalDirection),
     });
   }, [isOpen, initialDropDirection]);
 
@@ -585,9 +627,9 @@ const Dropdown = ({
         aria-selected={highlightedIndex === index}
         type="button"
         className={`flex ${shouldExpand ? "items-start" : "items-center"} w-full py-2 px-3 rounded-lg text-sm text-gray-800 ${
-          !isKeyboardNavigation ? "hover:bg-gray-100" : ""
+          !isKeyboardNavigation ? "hover:bg-slate-300/50" : ""
         } focus:outline-hidden focus:bg-gray-100 ${
-          highlightedIndex === index ? "bg-gray-100" : ""
+          highlightedIndex === index ? "bg-slate-300/30" : ""
         } transition-colors duration-150`}
         onClick={() => handleSelect(option.id)}
         onMouseEnter={() => {
@@ -623,7 +665,13 @@ const Dropdown = ({
           </div>
         )}
         <span
-          className={`${shouldExpand ? "whitespace-normal break-words leading-relaxed" : "truncate"} transition-all duration-200 text-left`}
+          className={`${shouldExpand ? "whitespace-normal break-words leading-relaxed" : "truncate"} transition-all duration-200 text-left ${
+            option.id === value 
+              ? "text-primary font-semibold" 
+              : highlightedIndex === index 
+                ? "text-gray-800 font-semibold" 
+                : ""
+          }`}
           title={shouldTruncate && !shouldExpand ? option.name : undefined}
         >
           {shouldExpand ? option.name : truncatedText}
@@ -718,7 +766,7 @@ const Dropdown = ({
                 style={portalStyle}
                 className={`
                   ${dropDirection === "down" ? "origin-top" : "origin-bottom"}
-                  shadow-lg bg-white rounded-xl border border-gray-200
+                  bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200
                   transition-all duration-300 ease-out transform
                   ${
                     isClosing
