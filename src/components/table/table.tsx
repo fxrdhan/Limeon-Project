@@ -12,9 +12,12 @@ type ColumnConfig = {
   align?: "left" | "center" | "right";
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TableData = any;
+
 type DynamicTableProps = TableProps & {
   columns?: ColumnConfig[];
-  data?: any[];
+  data?: TableData[];
   autoSize?: boolean;
 };
 
@@ -56,7 +59,7 @@ const useContainerWidth = () => {
 
 const calculateColumnWidths = (
   columns: ColumnConfig[],
-  data: any[],
+  data: TableData[],
   containerWidth: number,
 ) => {
   const widths: Record<string, number> = {};
@@ -78,11 +81,11 @@ const calculateColumnWidths = (
       if (cellContent !== null && cellContent !== undefined) {
         if (typeof cellContent === "number") {
           contentLength = cellContent.toLocaleString("id-ID").length;
-        } else if (typeof cellContent === "object" && cellContent.name) {
-          contentLength = cellContent.name.length;
+        } else if (typeof cellContent === "object" && cellContent !== null && "name" in cellContent) {
+          contentLength = String((cellContent as { name: string }).name).length;
         } else if (Array.isArray(cellContent)) {
           contentLength = cellContent
-            .map((item) => item.name || item)
+            .map((item) => (typeof item === "object" && item !== null && "name" in item) ? (item as { name: string }).name : String(item))
             .join(", ").length;
         } else {
           contentLength = String(cellContent).length;
@@ -361,7 +364,10 @@ export const TableRow = memo(
     columnWidths,
     columns,
     ...props
-  }: TableRowProps & { columnWidths?: Record<string, number>; columns?: ColumnConfig[] }) => {
+  }: TableRowProps & {
+    columnWidths?: Record<string, number>;
+    columns?: ColumnConfig[];
+  }) => {
     return (
       <tr
         className={classNames(
@@ -501,7 +507,9 @@ export const TableHeader = ({
       style={dynamicStyle}
       title={typeof children === "string" ? children : undefined}
     >
-      <div className="overflow-hidden text-ellipsis group-hover:overflow-visible">{children}</div>
+      <div className="overflow-hidden text-ellipsis group-hover:overflow-visible">
+        {children}
+      </div>
     </th>
   );
 };

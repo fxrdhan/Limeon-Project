@@ -50,7 +50,6 @@ function ItemList() {
     locationKey: location.key,
   });
 
-
   const [editingItemId, setEditingItemId] = useState<string | undefined>(
     undefined,
   );
@@ -144,27 +143,57 @@ function ItemList() {
             {isLoadingState && items.length === 0 ? (
               <ItemListSkeleton rows={8} />
             ) : (
-              <Table scrollable={true} stickyHeader={true}>
+              <Table
+                scrollable={true}
+                stickyHeader={true}
+                autoSize={true}
+                columns={[
+                  { key: "name", header: "Nama Item", minWidth: 200 },
+                  { key: "code", header: "Kode", minWidth: 80 },
+                  { key: "barcode", header: "Barcode", minWidth: 100 },
+                  { key: "category", header: "Kategori", minWidth: 100 },
+                  { key: "type", header: "Jenis", minWidth: 120 },
+                  { key: "unit", header: "Satuan", minWidth: 80 },
+                  {
+                    key: "unit_conversions",
+                    header: "Satuan Turunan",
+                    minWidth: 140,
+                  },
+                  {
+                    key: "base_price",
+                    header: "Harga Pokok",
+                    minWidth: 120,
+                    align: "right",
+                  },
+                  {
+                    key: "sell_price",
+                    header: "Harga Jual",
+                    minWidth: 120,
+                    align: "right",
+                  },
+                  {
+                    key: "stock",
+                    header: "Stok",
+                    minWidth: 80,
+                    align: "center",
+                  },
+                ]}
+                data={items}
+              >
                 <TableHead>
                   <TableRow>
-                    <TableHeader className="w-[23%]">Nama Item</TableHeader>
-                    <TableHeader className="w-[6%]">Kode</TableHeader>
-                    <TableHeader className="w-[8%]">Barcode</TableHeader>
-                    <TableHeader className="w-[8%]">Kategori</TableHeader>
-                    <TableHeader className="w-[14%]">Jenis</TableHeader>
-                    <TableHeader className="w-[6%]">Satuan</TableHeader>
-                    <TableHeader className="w-[10%]">
-                      Satuan Turunan
-                    </TableHeader>
-                    <TableHeader className="w-[10%] text-right">
+                    <TableHeader>Nama Item</TableHeader>
+                    <TableHeader>Kode</TableHeader>
+                    <TableHeader>Barcode</TableHeader>
+                    <TableHeader>Kategori</TableHeader>
+                    <TableHeader>Jenis</TableHeader>
+                    <TableHeader>Satuan</TableHeader>
+                    <TableHeader>Satuan Turunan</TableHeader>
+                    <TableHeader className="text-right">
                       Harga Pokok
                     </TableHeader>
-                    <TableHeader className="w-[10%] text-right">
-                      Harga Jual
-                    </TableHeader>
-                    <TableHeader className="w-[5%] text-center">
-                      Stok
-                    </TableHeader>
+                    <TableHeader className="text-right">Harga Jual</TableHeader>
+                    <TableHeader className="text-center">Stok</TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -221,7 +250,7 @@ function ItemList() {
                             maximumFractionDigits: 0,
                           })}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell>
                           {item.stock}
                         </TableCell>
                       </TableRow>
