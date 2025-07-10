@@ -263,34 +263,32 @@ const ConfirmInvoicePage = () => {
             </div>
             <div className="mb-6">
               <SectionTitle number="4" title="Daftar Produk" />
-              <Table>
+              <Table
+                autoSize={true}
+                columns={[
+                  { key: "sku", header: "SKU", minWidth: 100 },
+                  { key: "product_name", header: "Nama Produk", minWidth: 200 },
+                  { key: "quantity", header: "Qty", minWidth: 60, align: "center" },
+                  { key: "unit", header: "Satuan", minWidth: 80, align: "center" },
+                  { key: "batch_number", header: "No. Batch", minWidth: 100, align: "center" },
+                  { key: "expiry_date", header: "Exp", minWidth: 100, align: "center" },
+                  { key: "unit_price", header: "Harga", minWidth: 80, align: "right" },
+                  { key: "discount", header: "Disk", minWidth: 70, align: "right" },
+                  { key: "total_price", header: "Total", minWidth: 100, align: "right" },
+                ]}
+                data={invoiceData.product_list ?? []}
+              >
                 <TableHead>
                   <TableRow>
-                    <TableHeader className="text-xs w-[12%]">SKU</TableHeader>
-                    <TableHeader className="text-xs w-[30%]">
-                      Nama Produk
-                    </TableHeader>
-                    <TableHeader className="text-xs text-center w-9%]">
-                      Qty
-                    </TableHeader>
-                    <TableHeader className="text-xs text-center w-[8%]">
-                      Satuan
-                    </TableHeader>
-                    <TableHeader className="text-xs text-center w-[10%]">
-                      No. Batch
-                    </TableHeader>
-                    <TableHeader className="text-xs text-center w-[10%]">
-                      Exp
-                    </TableHeader>
-                    <TableHeader className="text-xs text-right w-[8%]">
-                      Harga
-                    </TableHeader>
-                    <TableHeader className="text-xs text-right w-[7%]">
-                      Disk
-                    </TableHeader>
-                    <TableHeader className="text-xs text-right w-[10%]">
-                      Total
-                    </TableHeader>
+                    <TableHeader className="text-xs">SKU</TableHeader>
+                    <TableHeader className="text-xs">Nama Produk</TableHeader>
+                    <TableHeader className="text-xs text-center">Qty</TableHeader>
+                    <TableHeader className="text-xs text-center">Satuan</TableHeader>
+                    <TableHeader className="text-xs text-center">No. Batch</TableHeader>
+                    <TableHeader className="text-xs text-center">Exp</TableHeader>
+                    <TableHeader className="text-xs text-right">Harga</TableHeader>
+                    <TableHeader className="text-xs text-right">Disk</TableHeader>
+                    <TableHeader className="text-xs text-right">Total</TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -303,31 +301,31 @@ const ConfirmInvoicePage = () => {
                             : `product-unknown-${index}`
                         }
                       >
-                        <TableCell className="text-sm w-[10%]">
+                        <TableCell className="text-sm">
                           {renderProductField(product.sku)}
                         </TableCell>
-                        <TableCell className="text-sm w-[30%] font-medium">
+                        <TableCell className="text-sm font-medium">
                           {renderProductField(product.product_name)}
                         </TableCell>
-                        <TableCell align="center" className="text-sm w-[7%]">
+                        <TableCell className="text-sm text-center">
                           {renderProductField(product.quantity)}
                         </TableCell>
-                        <TableCell align="center" className="text-sm w-[8%]">
+                        <TableCell className="text-sm text-center">
                           {renderProductField(product.unit)}
                         </TableCell>
-                        <TableCell align="center" className="text-sm w-[10%]">
+                        <TableCell className="text-sm text-center">
                           {renderProductField(product.batch_number)}
                         </TableCell>
-                        <TableCell align="center" className="text-sm w-[10%]">
+                        <TableCell className="text-sm text-center">
                           {renderProductField(product.expiry_date)}
                         </TableCell>
-                        <TableCell className="text-sm text-right w-[8%]">
+                        <TableCell className="text-sm text-right">
                           {renderProductField(product.unit_price)}
                         </TableCell>
-                        <TableCell className="text-sm text-right w-[7%]">
+                        <TableCell className="text-sm text-right">
                           {renderProductField(product.discount, true)}
                         </TableCell>
-                        <TableCell className="text-sm text-right w-[10%]">
+                        <TableCell className="text-sm text-right">
                           {renderProductField(product.total_price)}
                         </TableCell>
                       </TableRow>
