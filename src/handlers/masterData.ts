@@ -326,9 +326,9 @@ export const useMasterDataManagement = (
     onSuccess: () => {
       // Immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: [tableName] });
-      queryClient.refetchQueries({ 
+      queryClient.refetchQueries({
         queryKey: [tableName],
-        type: 'active'
+        type: "active",
       });
       setIsAddModalOpen(false);
     },
@@ -353,9 +353,9 @@ export const useMasterDataManagement = (
     onSuccess: () => {
       // Immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: [tableName] });
-      queryClient.refetchQueries({ 
+      queryClient.refetchQueries({
         queryKey: [tableName],
-        type: 'active'
+        type: "active",
       });
       setIsEditModalOpen(false);
       setEditingItem(null);
@@ -376,9 +376,9 @@ export const useMasterDataManagement = (
     onSuccess: () => {
       // Immediate cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: [tableName] });
-      queryClient.refetchQueries({ 
+      queryClient.refetchQueries({
         queryKey: [tableName],
-        type: 'active'
+        type: "active",
       });
       setIsEditModalOpen(false);
       setEditingItem(null);
@@ -437,21 +437,35 @@ export const useMasterDataManagement = (
     enabled: realtime && !actualIsModalOpen,
     debounceMs: 0, // Instant updates for better responsiveness
     onRealtimeEvent: async (payload) => {
-      console.log(`🔥 MASTER DATA (${tableName}) - Realtime event received:`, payload.eventType, payload);
-      console.log(`🔥 MASTER DATA (${tableName}) - Immediate cache invalidation and refetch`);
-      
+      console.log(
+        `🔥 MASTER DATA (${tableName}) - Realtime event received:`,
+        payload.eventType,
+        payload,
+      );
+      console.log(
+        `🔥 MASTER DATA (${tableName}) - Immediate cache invalidation and refetch`,
+      );
+
       // Immediate cache invalidation
       await queryClient.invalidateQueries({ queryKey: [tableName] });
-      
+
       // Force immediate refetch for maximum responsiveness
-      queryClient.refetchQueries({
-        queryKey: [tableName],
-        type: 'active'
-      }).then(() => {
-        console.log(`🔥 MASTER DATA (${tableName}) - Data refreshed successfully`);
-      }).catch((error) => {
-        console.error(`❌ MASTER DATA (${tableName}) - Error refreshing data:`, error);
-      });
+      queryClient
+        .refetchQueries({
+          queryKey: [tableName],
+          type: "active",
+        })
+        .then(() => {
+          console.log(
+            `🔥 MASTER DATA (${tableName}) - Data refreshed successfully`,
+          );
+        })
+        .catch((error) => {
+          console.error(
+            `❌ MASTER DATA (${tableName}) - Error refreshing data:`,
+            error,
+          );
+        });
     },
     showDiffInConsole: true,
     detailedLogging: true,
