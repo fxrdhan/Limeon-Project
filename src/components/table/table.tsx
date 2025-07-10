@@ -195,7 +195,7 @@ export const Table = memo(
     autoSize = false,
   }: DynamicTableProps) => {
     const dynamicHeight = useTableHeight(320);
-    const tableHeight = scrollable ? maxHeight || dynamicHeight : undefined;
+    const tableMaxHeight = scrollable ? maxHeight || dynamicHeight : undefined;
     const { width: containerWidth, containerRef } = useContainerWidth();
 
     const columnWidths = useMemo(() => {
@@ -213,12 +213,12 @@ export const Table = memo(
             "w-full rounded-lg border-2 border-gray-200 overflow-hidden",
             className,
           )}
-          style={{ 
-            maxHeight: tableHeight,
-            height: tableHeight 
+          style={{
+            maxHeight: tableMaxHeight,
+            // Removed fixed height - let content determine natural height
           }}
         >
-          <div className="overflow-auto h-full">
+          <div className="overflow-auto" style={{ maxHeight: tableMaxHeight }}>
             <table className="w-full table-fixed bg-white min-w-full">
               {React.Children.map(children, (child) => {
                 if (React.isValidElement(child) && child.type === TableHead) {
@@ -299,7 +299,7 @@ export const TableHead = ({
     <thead
       className={classNames(
         "text-gray-700 border-b-2 border-gray-200 group",
-        stickyHeader && "sticky top-0 z-10",
+        stickyHeader && "sticky top-0 z-20 bg-gray-200",
         className,
       )}
     >
@@ -513,7 +513,7 @@ export const TableHeader = ({
         "group-hover:whitespace-normal group-hover:overflow-visible",
         "bg-gray-200 border-r border-gray-300 last:border-r-0",
         "first:rounded-tl-md last:rounded-tr-md",
-        stickyHeader && "sticky top-0 z-10",
+        stickyHeader && "sticky top-0 z-30 bg-gray-200",
         className,
       )}
       style={dynamicStyle}
