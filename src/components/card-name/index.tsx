@@ -70,16 +70,41 @@ const CardName: React.FC<CardNameProps> = ({
     );
   };
 
+  const getBackgroundImage = () => {
+    if (!imageConfig) return "";
+    
+    const { imageKey, blankImage } = imageConfig;
+    const imageUrl = typeof item[imageKey] === "string" ? item[imageKey] : undefined;
+    
+    return (imageUrl as string) || blankImage || "";
+  };
+
+  const backgroundImage = getBackgroundImage();
+
   return (
     <div
       onClick={() => onClick(item)}
-      className={`bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 ${
+      className={`relative border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 overflow-hidden ${
         index === 0 && debouncedSearch
-          ? "ring-2 ring-emerald-400 bg-emerald-50"
+          ? "ring-2 ring-emerald-400"
           : "hover:border-blue-300"
       }`}
+      style={{
+        backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
     >
-      <div className="flex items-start space-x-4">
+      <div 
+        className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/40"
+        style={{
+          background: index === 0 && debouncedSearch 
+            ? "linear-gradient(to right, rgba(236, 253, 245, 0.95), rgba(236, 253, 245, 0.8), rgba(236, 253, 245, 0.4))"
+            : "linear-gradient(to right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4))"
+        }}
+      />
+      <div className="relative z-10 flex items-start space-x-4">
         <div className="flex-shrink-0">{renderImage()}</div>
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-semibold text-gray-900 truncate">
