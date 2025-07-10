@@ -3,6 +3,7 @@ import SearchBar from "@/components/search-bar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
 import PageTitle from "@/components/page-title";
+import CardName, { type CardItem } from "@/components/card-name";
 import blankProfilePicture from "@/assets/blank-profile-picture.png";
 
 import { FaPlus } from "react-icons/fa";
@@ -308,64 +309,33 @@ const PatientList = () => {
                         "id" in patient,
                     )
                     .map((patient, index) => (
-                      <div
+                      <CardName
                         key={patient.id}
-                        onClick={() => openPatientDetail(patient)}
-                        className={`bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 ${
-                          index === 0 && debouncedSearch
-                            ? "ring-2 ring-emerald-400 bg-emerald-50"
-                            : "hover:border-blue-300"
-                        }`}
-                      >
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0">
-                            <img
-                              src={patient.image_url || blankProfilePicture}
-                              alt={`Foto ${patient.name}`}
-                              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  blankProfilePicture;
-                              }}
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-gray-900 truncate">
-                              {patient.name}
-                            </h3>
-                            <div className="mt-1 space-y-1">
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                  Jenis Kelamin:
-                                </span>{" "}
-                                {patient.gender || "-"}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                  Tanggal Lahir:
-                                </span>{" "}
-                                {patient.birth_date
-                                  ? new Date(
-                                      patient.birth_date,
-                                    ).toLocaleDateString("id-ID")
-                                  : "-"}
-                              </p>
-                              <p className="text-sm text-gray-600 truncate">
-                                <span className="font-medium">Alamat:</span>{" "}
-                                {patient.address || "-"}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Telepon:</span>{" "}
-                                {patient.phone || "-"}
-                              </p>
-                              <p className="text-sm text-gray-600 truncate">
-                                <span className="font-medium">Email:</span>{" "}
-                                {patient.email || "-"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                        item={patient as unknown as CardItem}
+                        index={index}
+                        debouncedSearch={debouncedSearch}
+                        onClick={(item) => openPatientDetail(item as unknown as PatientType)}
+                        imageConfig={{
+                          imageKey: "image_url",
+                          blankImage: blankProfilePicture,
+                          altText: `Foto ${patient.name}`,
+                          isRounded: true,
+                        }}
+                        fields={[
+                          { key: "gender", label: "Jenis Kelamin" },
+                          {
+                            key: "birth_date",
+                            label: "Tanggal Lahir",
+                            render: (value) =>
+                              value && typeof value === "string"
+                                ? new Date(value).toLocaleDateString("id-ID")
+                                : "-",
+                          },
+                          { key: "address", label: "Alamat" },
+                          { key: "phone", label: "Telepon" },
+                          { key: "email", label: "Email" },
+                        ]}
+                      />
                     ))
                 ) : (
                   <div className="col-span-full text-center text-gray-500 py-10">
