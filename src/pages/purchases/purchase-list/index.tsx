@@ -309,24 +309,30 @@ const PurchaseList = () => {
           <PurchaseListSkeleton rows={8} />
         ) : (
           <>
-            <Table scrollable={true} stickyHeader={true}>
+            <Table
+              scrollable={true}
+              stickyHeader={true}
+              autoSize={true}
+              columns={[
+                { key: "invoice_number", header: "No. Faktur", minWidth: 140 },
+                { key: "date", header: "Tanggal", minWidth: 100 },
+                { key: "supplier", header: "Supplier", minWidth: 120 },
+                { key: "total", header: "Total", minWidth: 120, align: "right" },
+                { key: "payment_status", header: "Status Pembayaran", minWidth: 140, align: "center" },
+                { key: "payment_method", header: "Metode Pembayaran", minWidth: 140, align: "center" },
+                { key: "actions", header: "Aksi", minWidth: 120, align: "center" },
+              ]}
+              data={purchases}
+            >
               <TableHead>
                 <TableRow>
-                  <TableHeader className="w-[16%]">No. Faktur</TableHeader>
-                  <TableHeader className="w-[10%]">Tanggal</TableHeader>
-                  <TableHeader className="w-[16%]">Supplier</TableHeader>
-                  <TableHeader className="w-[12%] text-right">
-                    Total
-                  </TableHeader>
-                  <TableHeader className="w-[16%] text-center!">
-                    Status Pembayaran
-                  </TableHeader>
-                  <TableHeader className="w-[16%] text-center!">
-                    Metode Pembayaran
-                  </TableHeader>
-                  <TableHeader className="w-[14%] text-center!">
-                    Aksi
-                  </TableHeader>
+                  <TableHeader>No. Faktur</TableHeader>
+                  <TableHeader>Tanggal</TableHeader>
+                  <TableHeader>Supplier</TableHeader>
+                  <TableHeader className="text-right">Total</TableHeader>
+                  <TableHeader className="text-center">Status Pembayaran</TableHeader>
+                  <TableHeader className="text-center">Metode Pembayaran</TableHeader>
+                  <TableHeader className="text-center">Aksi</TableHeader>
                 </TableRow>
               </TableHead>
               <TableBody>
