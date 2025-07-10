@@ -3,7 +3,8 @@ import SearchBar from "@/components/search-bar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
 import PageTitle from "@/components/page-title";
-import CardName, { type CardItem } from "@/components/card-name";
+import CardName from "@/components/card-name";
+import { type CardItem } from "@/types";
 
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
