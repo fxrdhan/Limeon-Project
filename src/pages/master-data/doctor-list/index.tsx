@@ -3,6 +3,7 @@ import SearchBar from "@/components/search-bar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
 import PageTitle from "@/components/page-title";
+import CardName, { type CardItem } from "@/components/card-name";
 import blankProfilePicture from "@/assets/blank-profile-picture.png";
 
 import { FaPlus } from "react-icons/fa";
@@ -336,62 +337,26 @@ const DoctorList = () => {
                         "id" in doctor,
                     )
                     .map((doctor, index) => (
-                      <div
+                      <CardName
                         key={doctor.id}
-                        onClick={() => openDoctorDetail(doctor)}
-                        className={`bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 ${
-                          index === 0 && debouncedSearch
-                            ? "ring-2 ring-emerald-400 bg-emerald-50"
-                            : "hover:border-blue-300"
-                        }`}
-                      >
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0">
-                            <img
-                              src={doctor.image_url || blankProfilePicture}
-                              alt={`Foto ${doctor.name}`}
-                              className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  blankProfilePicture;
-                              }}
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-gray-900 truncate">
-                              {doctor.name}
-                            </h3>
-                            <div className="mt-1 space-y-1">
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                  Jenis Kelamin:
-                                </span>{" "}
-                                {doctor.gender || "-"}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                  Spesialisasi:
-                                </span>{" "}
-                                {doctor.specialization || "-"}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                  Nomor Lisensi:
-                                </span>{" "}
-                                {doctor.license_number || "-"}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Telepon:</span>{" "}
-                                {doctor.phone || "-"}
-                              </p>
-                              <p className="text-sm text-gray-600 truncate">
-                                <span className="font-medium">Email:</span>{" "}
-                                {doctor.email || "-"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                        item={doctor as unknown as CardItem}
+                        index={index}
+                        debouncedSearch={debouncedSearch}
+                        onClick={(item) => openDoctorDetail(item as unknown as DoctorType)}
+                        imageConfig={{
+                          imageKey: "image_url",
+                          blankImage: blankProfilePicture,
+                          altText: `Foto ${doctor.name}`,
+                          isRounded: true,
+                        }}
+                        fields={[
+                          { key: "gender", label: "Jenis Kelamin" },
+                          { key: "specialization", label: "Spesialisasi" },
+                          { key: "license_number", label: "Nomor Lisensi" },
+                          { key: "phone", label: "Telepon" },
+                          { key: "email", label: "Email" },
+                        ]}
+                      />
                     ))
                 ) : (
                   <div className="col-span-full text-center text-gray-500 py-10">
