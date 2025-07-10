@@ -109,11 +109,20 @@ const TypeList = () => {
             {isLoading && (!types || types.length === 0) ? (
               <TypeListSkeleton rows={8} />
             ) : (
-              <Table scrollable={true} stickyHeader={true}>
+              <Table
+                scrollable={true}
+                stickyHeader={true}
+                autoSize={true}
+                columns={[
+                  { key: "name", header: "Nama Jenis", minWidth: 120 },
+                  { key: "description", header: "Deskripsi", minWidth: 200 },
+                ]}
+                data={types}
+              >
                 <TableHead>
                   <TableRow>
-                    <TableHeader className="w-[15%]">Nama Jenis</TableHeader>
-                    <TableHeader className="w-[85%]">Deskripsi</TableHeader>
+                    <TableHeader>Nama Jenis</TableHeader>
+                    <TableHeader>Deskripsi</TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
