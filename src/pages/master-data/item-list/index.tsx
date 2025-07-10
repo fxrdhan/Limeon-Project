@@ -250,9 +250,7 @@ function ItemList() {
                             maximumFractionDigits: 0,
                           })}
                         </TableCell>
-                        <TableCell>
-                          {item.stock}
-                        </TableCell>
+                        <TableCell>{item.stock}</TableCell>
                       </TableRow>
                     ))
                   )}
