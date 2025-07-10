@@ -437,43 +437,40 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                         setPortalRenderId((prev) => prev + 1);
                       }}
                     />
-                    <Table>
+                    <Table
+                      autoSize={true}
+                      columns={[
+                        { key: "no", header: "No", minWidth: 40, align: "center" },
+                        { key: "code", header: "Kode", minWidth: 80 },
+                        { key: "name", header: "Nama", minWidth: 200 },
+                        { key: "batch_no", header: "Batch No.", minWidth: 100 },
+                        { key: "expiry_date", header: "EXP", minWidth: 100, align: "center" },
+                        { key: "quantity", header: "Jml.", minWidth: 60, align: "center" },
+                        { key: "unit", header: "Unit", minWidth: 70, align: "center" },
+                        { key: "price", header: "Harga", minWidth: 100, align: "right" },
+                        { key: "discount", header: "Disc", minWidth: 80, align: "right" },
+                        ...(formData.is_vat_included ? [] : [{ key: "vat", header: "VAT", minWidth: 60, align: "right" as const }]),
+                        { key: "subtotal", header: "Subtotal", minWidth: 120, align: "right" },
+                        { key: "actions", header: "‎", minWidth: 60, align: "center" },
+                      ]}
+                      data={purchaseItems}
+                    >
                       <TableHead>
                         <TableRow>
-                          <TableHeader className="w-[3%] !text-center">
-                            No
-                          </TableHeader>
-                          <TableHeader className="w-[7%]">Kode</TableHeader>
-                          <TableHeader className="w-[26%]">Nama</TableHeader>
-                          <TableHeader className="w-[10%] !text-left">
-                            Batch No.
-                          </TableHeader>
-                          <TableHeader className="w-[10%] !text-center">
-                            EXP
-                          </TableHeader>
-                          <TableHeader className="w-[5%] !text-center">
-                            Jml.
-                          </TableHeader>
-                          <TableHeader className="w-[6%] !text-center">
-                            Unit
-                          </TableHeader>
-                          <TableHeader className="w-[8%] text-right">
-                            Harga
-                          </TableHeader>
-                          <TableHeader className="w-[6%] text-right">
-                            Disc
-                          </TableHeader>
+                          <TableHeader className="text-center">No</TableHeader>
+                          <TableHeader>Kode</TableHeader>
+                          <TableHeader>Nama</TableHeader>
+                          <TableHeader>Batch No.</TableHeader>
+                          <TableHeader className="text-center">EXP</TableHeader>
+                          <TableHeader className="text-center">Jml.</TableHeader>
+                          <TableHeader className="text-center">Unit</TableHeader>
+                          <TableHeader className="text-right">Harga</TableHeader>
+                          <TableHeader className="text-right">Disc</TableHeader>
                           {!formData.is_vat_included && (
-                            <TableHeader className="w-[5%] !text-right">
-                              VAT
-                            </TableHeader>
+                            <TableHeader className="text-right">VAT</TableHeader>
                           )}
-                          <TableHeader className="w-[10%] !text-right">
-                            Subtotal
-                          </TableHeader>
-                          <TableHeader className="w-[5%] !text-center">
-                            ‎{" "}
-                          </TableHeader>
+                          <TableHeader className="text-right">Subtotal</TableHeader>
+                          <TableHeader className="text-center">‎</TableHeader>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -481,7 +478,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                           <TableRow>
                             <TableCell
                               colSpan={formData.is_vat_included ? 11 : 12}
-                              className="!text-center text-gray-500"
+                              className="text-center text-gray-500"
                             >
                               {"Belum ada item ditambahkan"}
                             </TableCell>
@@ -489,7 +486,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                         ) : (
                           purchaseItems.map((item, index) => (
                             <TableRow key={item.id}>
-                              <TableCell className="!text-center">
+                              <TableCell className="text-center">
                                 {index + 1}
                               </TableCell>
                               <TableCell>
@@ -507,7 +504,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                                   placeholder="No. Batch"
                                 />
                               </TableCell>
-                              <TableCell className="!text-center">
+                              <TableCell className="text-center">
                                 <Datepicker
                                   value={
                                     item.expiry_date
@@ -528,7 +525,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                                   portalWidth="280px"
                                 />
                               </TableCell>
-                              <TableCell className="!text-center">
+                              <TableCell className="text-center">
                                 <input
                                   type="number"
                                   onFocus={(e) => e.target.select()}
@@ -561,7 +558,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                                   className="w-8 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-leeft"
                                 />
                               </TableCell>
-                              <TableCell className="!text-center">
+                              <TableCell className="text-center">
                                 <select
                                   value={item.unit}
                                   onChange={(e) =>
@@ -711,7 +708,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                                   currency: "IDR",
                                 })}
                               </TableCell>
-                              <TableCell className="!text-center">
+                              <TableCell className="text-center">
                                 <Button
                                   type="button"
                                   variant="danger"
