@@ -16,14 +16,17 @@ const CardName: React.FC<CardNameProps> = ({
     const imageUrl =
       typeof item[imageKey] === "string" ? item[imageKey] : undefined;
 
+    // Ukuran gambar yang berbeda untuk rounded vs non-rounded
+    const imageClasses = isRounded
+      ? "w-24 h-24 object-cover border-2 border-gray-200 rounded-full"
+      : "w-16 h-16 object-cover border-2 border-gray-200 rounded-lg";
+
     if (imageUrl || blankImage) {
       return (
         <img
           src={(imageUrl as string) || blankImage}
           alt={altText}
-          className={`w-16 h-16 object-cover border-2 border-gray-200 ${
-            isRounded ? "rounded-full" : "rounded-lg"
-          }`}
+          className={imageClasses}
           onError={(e) => {
             if (blankImage) {
               (e.target as HTMLImageElement).src = blankImage;
@@ -34,7 +37,11 @@ const CardName: React.FC<CardNameProps> = ({
     }
 
     return (
-      <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center border-2 border-gray-200">
+      <div
+        className={`bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center border-2 border-gray-200 ${
+          isRounded ? "w-24 h-24 rounded-full" : "w-16 h-16 rounded-lg"
+        }`}
+      >
         <div className="text-2xl font-bold text-blue-600">
           {typeof item.name === "string"
             ? item.name.charAt(0).toUpperCase()
@@ -59,7 +66,7 @@ const CardName: React.FC<CardNameProps> = ({
   return (
     <div
       onClick={() => onClick(item)}
-      className={`relative border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 overflow-hidden ${
+      className={`relative border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 overflow-hidden min-h-[120px] ${
         index === 0 && debouncedSearch
           ? "ring-2 ring-emerald-400"
           : "hover:border-blue-300"
@@ -82,9 +89,11 @@ const CardName: React.FC<CardNameProps> = ({
               : "linear-gradient(to right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4))",
         }}
       />
-      <div className="relative z-10 flex items-start space-x-4">
+      <div className="relative z-10 flex items-start">
         <div className="flex-shrink-0">{renderImage()}</div>
-        <div className="flex-1 min-w-0">
+        <div
+          className={`flex-1 min-w-0 ${imageConfig?.isRounded ? "ml-8" : "ml-4"}`}
+        >
           <h3 className="text-lg font-semibold text-gray-900 truncate">
             {String(item.name || "")}
           </h3>
