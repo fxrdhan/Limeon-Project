@@ -246,3 +246,34 @@ export interface GenericDetailModalProps {
   initialNameFromSearch?: string;
   imageAspectRatio?: "default" | "square";
 }
+
+// CardName component types
+export type CardItem = {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+};
+
+export interface CardNameField {
+  key: string;
+  label: string;
+  type?: string;
+  render?: (value: unknown, item: CardItem) => React.ReactNode;
+  useBlankImage?: boolean;
+}
+
+export interface CardNameImageConfig {
+  imageKey: string;
+  blankImage?: string;
+  isRounded?: boolean;
+  altText: string;
+}
+
+export interface CardNameProps {
+  item: CardItem;
+  index: number;
+  debouncedSearch: string;
+  onClick: (item: CardItem) => void;
+  fields: CardNameField[];
+  imageConfig?: CardNameImageConfig;
+}
