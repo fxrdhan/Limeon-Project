@@ -915,24 +915,25 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                           </div>
                           <div className="md:w-2/3 lg:w-3/5 flex flex-col h-full">
                             <div className="overflow-hidden grow h-full">
-                              <Table className="w-full h-full">
+                              <Table 
+                                className="w-full h-full"
+                                autoSize={true}
+                                columns={[
+                                  { key: "unit", header: "Turunan", minWidth: 100 },
+                                  { key: "conversion", header: "Konversi", minWidth: 140, align: "center" },
+                                  { key: "basePrice", header: "H. Pokok", minWidth: 100, align: "right" },
+                                  { key: "sellPrice", header: "H. Jual", minWidth: 100, align: "right" },
+                                  { key: "actions", header: "‎", minWidth: 80, align: "center" },
+                                ]}
+                                data={unitConversionHook.conversions}
+                              >
                                 <TableHead>
                                   <TableRow>
-                                    <TableHeader className="w-[20%]">
-                                      Turunan
-                                    </TableHeader>
-                                    <TableHeader className="w-[28%] text-center">
-                                      Konversi
-                                    </TableHeader>
-                                    <TableHeader className="w-[20%] text-right">
-                                      H. Pokok
-                                    </TableHeader>
-                                    <TableHeader className="w-[20%] text-right">
-                                      H. Jual
-                                    </TableHeader>
-                                    <TableHeader className="w-[12%] text-center">
-                                      ‎
-                                    </TableHeader>
+                                    <TableHeader>Turunan</TableHeader>
+                                    <TableHeader className="text-center">Konversi</TableHeader>
+                                    <TableHeader className="text-right">H. Pokok</TableHeader>
+                                    <TableHeader className="text-right">H. Jual</TableHeader>
+                                    <TableHeader className="text-center">‎</TableHeader>
                                   </TableRow>
                                 </TableHead>
                                 <TableBody className="h-[100px]">
