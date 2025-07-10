@@ -1,34 +1,5 @@
 import React from "react";
-
-export type CardItem = {
-  id: string;
-  name: string;
-  [key: string]: unknown;
-};
-
-interface CardNameField {
-  key: string;
-  label: string;
-  type?: string;
-  render?: (value: unknown, item: CardItem) => React.ReactNode;
-  useBlankImage?: boolean;
-}
-
-interface CardNameImageConfig {
-  imageKey: string;
-  blankImage?: string;
-  isRounded?: boolean;
-  altText: string;
-}
-
-interface CardNameProps {
-  item: CardItem;
-  index: number;
-  debouncedSearch: string;
-  onClick: (item: CardItem) => void;
-  fields: CardNameField[];
-  imageConfig?: CardNameImageConfig;
-}
+import { CardNameField, CardNameProps } from "@/types";
 
 const CardName: React.FC<CardNameProps> = ({
   item,
@@ -42,7 +13,8 @@ const CardName: React.FC<CardNameProps> = ({
     if (!imageConfig) return null;
 
     const { imageKey, blankImage, isRounded = false, altText } = imageConfig;
-    const imageUrl = typeof item[imageKey] === "string" ? item[imageKey] : undefined;
+    const imageUrl =
+      typeof item[imageKey] === "string" ? item[imageKey] : undefined;
 
     if (imageUrl || blankImage) {
       return (
@@ -64,7 +36,9 @@ const CardName: React.FC<CardNameProps> = ({
     return (
       <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center border-2 border-gray-200">
         <div className="text-2xl font-bold text-blue-600">
-          {typeof item.name === "string" ? item.name.charAt(0).toUpperCase() : "?"}
+          {typeof item.name === "string"
+            ? item.name.charAt(0).toUpperCase()
+            : "?"}
         </div>
       </div>
     );
@@ -72,10 +46,11 @@ const CardName: React.FC<CardNameProps> = ({
 
   const getBackgroundImage = () => {
     if (!imageConfig) return "";
-    
+
     const { imageKey, blankImage } = imageConfig;
-    const imageUrl = typeof item[imageKey] === "string" ? item[imageKey] : undefined;
-    
+    const imageUrl =
+      typeof item[imageKey] === "string" ? item[imageKey] : undefined;
+
     return (imageUrl as string) || blankImage || "";
   };
 
@@ -90,18 +65,21 @@ const CardName: React.FC<CardNameProps> = ({
           : "hover:border-blue-300"
       }`}
       style={{
-        backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+        backgroundImage: backgroundImage
+          ? `url(${backgroundImage})`
+          : undefined,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
       }}
     >
-      <div 
+      <div
         className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/40"
         style={{
-          background: index === 0 && debouncedSearch 
-            ? "linear-gradient(to right, rgba(236, 253, 245, 0.95), rgba(236, 253, 245, 0.8), rgba(236, 253, 245, 0.4))"
-            : "linear-gradient(to right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4))"
+          background:
+            index === 0 && debouncedSearch
+              ? "linear-gradient(to right, rgba(236, 253, 245, 0.95), rgba(236, 253, 245, 0.8), rgba(236, 253, 245, 0.4))"
+              : "linear-gradient(to right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4))",
         }}
       />
       <div className="relative z-10 flex items-start space-x-4">
