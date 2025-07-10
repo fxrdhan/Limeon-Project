@@ -110,15 +110,20 @@ const UnitList = () => {
             {isLoading && (!units || units.length === 0) ? (
               <UnitListSkeleton rows={8} />
             ) : (
-              <Table scrollable={true} stickyHeader={true}>
+              <Table
+                scrollable={true}
+                stickyHeader={true}
+                autoSize={true}
+                columns={[
+                  { key: "name", header: "Nama Satuan", minWidth: 120 },
+                  { key: "description", header: "Deskripsi", minWidth: 200 },
+                ]}
+                data={units}
+              >
                 <TableHead>
                   <TableRow>
-                    <TableHeader className="w-[15%]">
-                      Nama Satuan
-                    </TableHeader>
-                    <TableHeader className="w-[85%]">
-                      Deskripsi
-                    </TableHeader>
+                    <TableHeader>Nama Satuan</TableHeader>
+                    <TableHeader>Deskripsi</TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
