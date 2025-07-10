@@ -3,6 +3,7 @@ import SearchBar from "@/components/search-bar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
 import PageTitle from "@/components/page-title";
+import CardName, { type CardItem } from "@/components/card-name";
 
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
@@ -313,70 +314,24 @@ const SupplierList = () => {
                         "id" in supplier,
                     )
                     .map((supplier, index) => (
-                      <div
+                      <CardName
                         key={supplier.id}
-                        onClick={() => openSupplierDetail(supplier)}
-                        className={`bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow duration-200 ${
-                          index === 0 && debouncedSearch
-                            ? "ring-2 ring-emerald-400 bg-emerald-50"
-                            : "hover:border-blue-300"
-                        }`}
-                      >
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0">
-                            <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center border-2 border-gray-200 overflow-hidden">
-                              {supplier.image_url ? (
-                                <img
-                                  src={supplier.image_url}
-                                  alt={`Logo ${supplier.name}`}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    (e.target as HTMLElement).style.display =
-                                      "none";
-                                    (
-                                      e.target as HTMLElement
-                                    ).nextElementSibling!.classList.remove(
-                                      "hidden",
-                                    );
-                                  }}
-                                />
-                              ) : null}
-                              <div
-                                className={`text-2xl font-bold text-blue-600 ${supplier.image_url ? "hidden" : ""}`}
-                              >
-                                {supplier.name.charAt(0).toUpperCase()}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-gray-900 truncate">
-                              {supplier.name}
-                            </h3>
-                            <div className="mt-1 space-y-1">
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Alamat:</span>{" "}
-                                <span className="line-clamp-2">
-                                  {supplier.address || "-"}
-                                </span>
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Telepon:</span>{" "}
-                                {supplier.phone || "-"}
-                              </p>
-                              <p className="text-sm text-gray-600 truncate">
-                                <span className="font-medium">Email:</span>{" "}
-                                {supplier.email || "-"}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">
-                                  Kontak Person:
-                                </span>{" "}
-                                {supplier.contact_person || "-"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                        item={supplier as unknown as CardItem}
+                        index={index}
+                        debouncedSearch={debouncedSearch}
+                        onClick={(item) => openSupplierDetail(item as unknown as SupplierType)}
+                        imageConfig={{
+                          imageKey: "image_url",
+                          altText: `Logo ${supplier.name}`,
+                          isRounded: false,
+                        }}
+                        fields={[
+                          { key: "address", label: "Alamat", type: "long" },
+                          { key: "phone", label: "Telepon" },
+                          { key: "email", label: "Email" },
+                          { key: "contact_person", label: "Kontak Person" },
+                        ]}
+                      />
                     ))
                 ) : (
                   <div className="col-span-full text-center text-gray-500 py-10">
