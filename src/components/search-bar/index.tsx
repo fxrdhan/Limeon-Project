@@ -7,6 +7,8 @@ const SearchBar: React.FC<TableSearchProps> = ({
   value,
   onChange,
   onKeyDown,
+  onFocus,
+  onBlur,
   placeholder = "Cari...",
   className = "",
   inputRef,
@@ -67,6 +69,8 @@ const SearchBar: React.FC<TableSearchProps> = ({
             value={value}
             onChange={onChange}
             onKeyDown={onKeyDown}
+            onFocus={onFocus}
+            onBlur={onBlur}
           />
           <LuSearch
             className={`absolute top-3.5 ${getSearchIconColor()} transition-all duration-300 ease-in-out ${
