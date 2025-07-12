@@ -9,6 +9,7 @@ import React, {
 import { createPortal } from "react-dom";
 import { FaPlus } from "react-icons/fa";
 import Button from "@/components/button";
+import SearchBar from "@/components/search-bar";
 import type { ItemSearchBarProps, Item, ItemSearchBarRef } from "@/types";
 import { classNames } from "@/lib/classNames";
 
@@ -283,15 +284,11 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
     );
 
     return (
-      <div className="mb-4" ref={searchBarRef}>
+      <div className="mb-1!" ref={searchBarRef}>
         <div className="flex space-x-2">
           <div className="relative flex-1">
-            <input
-              ref={inputRef}
-              type="text"
-              aria-haspopup="listbox"
-              placeholder="Cari nama atau kode item..."
-              className="w-full text-sm p-3 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"
+            <SearchBar
+              inputRef={inputRef}
               value={searchItem}
               onChange={(e) => {
                 const value = e.target.value;
@@ -310,8 +307,19 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                   setSelectedItem(null);
                 }
               }}
-              onFocus={handleInputFocus}
+              placeholder="Cari nama atau kode item..."
+              className="mb-0"
+              searchState={
+                filteredItems.length === 0 && searchItem
+                  ? "not-found"
+                  : filteredItems.length > 0
+                    ? "found"
+                    : searchItem
+                      ? "typing"
+                      : "idle"
+              }
               onKeyDown={handleInputKeyDown}
+              onFocus={handleInputFocus}
               onBlur={handleInputBlur}
             />
 
@@ -384,7 +392,8 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
             onClick={onOpenAddItemPortal}
             onKeyDown={handleAddItemButtonKeyDown}
             disabled={isAddItemButtonDisabled}
-            className="flex items-center whitespace-nowrap"
+            size="sm"
+            className="flex items-center whitespace-nowrap h-[42px]"
           >
             <FaPlus className="mr-2" />
             Tambah Item Baru
