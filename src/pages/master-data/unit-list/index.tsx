@@ -16,7 +16,7 @@ import {
 } from "@/components/table";
 import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
 
@@ -27,6 +27,7 @@ const UnitList = () => {
   const location = useLocation();
   const headerRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
+  const [sortedUnits, setSortedUnits] = useState<any[]>([]);
 
   const {
     isAddModalOpen,
@@ -60,6 +61,14 @@ const UnitList = () => {
     searchInputRef,
     locationKey: location.key,
   });
+
+  useEffect(() => {
+    setSortedUnits(units || []);
+  }, [units]);
+
+  const handleSort = (sortedData: any[]) => {
+    setSortedUnits(sortedData);
+  };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
@@ -115,10 +124,11 @@ const UnitList = () => {
                 stickyHeader={true}
                 autoSize={true}
                 columns={[
-                  { key: "name", header: "Nama Satuan", minWidth: 120 },
-                  { key: "description", header: "Deskripsi", minWidth: 200 },
+                  { key: "name", header: "Nama Satuan", minWidth: 120, sortable: true },
+                  { key: "description", header: "Deskripsi", minWidth: 200, sortable: true },
                 ]}
                 data={units}
+                onSort={handleSort}
               >
                 <TableHead>
                   <TableRow>
@@ -127,13 +137,13 @@ const UnitList = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {units && units.length > 0 ? (
-                    units.map((unit, index) => (
+                  {sortedUnits && sortedUnits.length > 0 ? (
+                    sortedUnits.map((unit, index) => (
                       <TableRow
                         key={unit.id}
                         onClick={() => handleEdit(unit)}
                         className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch
+                          index === 0 && debouncedSearch && sortedUnits === units
                             ? "bg-emerald-100/50"
                             : ""
                         }`}
