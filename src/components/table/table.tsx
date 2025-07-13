@@ -3,6 +3,9 @@ import type { TableCellProps, TableRowProps, TableProps } from "@/types";
 import { memo, useMemo, useRef, useState, useEffect } from "react";
 import React from "react";
 import { useTableHeight } from "@/hooks/useTableHeight";
+import { ChevronUpIcon, ChevronDownIcon, ArrowsUpDownIcon } from "@heroicons/react/24/outline";
+
+type SortDirection = "asc" | "desc" | "original";
 
 type ColumnConfig = {
   key: string;
@@ -10,6 +13,12 @@ type ColumnConfig = {
   minWidth?: number;
   maxWidth?: number;
   align?: "left" | "center" | "right";
+  sortable?: boolean;
+};
+
+type SortState = {
+  column: string | null;
+  direction: SortDirection;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,6 +28,8 @@ type DynamicTableProps = TableProps & {
   columns?: ColumnConfig[];
   data?: TableData[];
   autoSize?: boolean;
+  sortable?: boolean;
+  onSort?: (data: TableData[]) => void;
 };
 
 // Hook untuk mendapatkan ukuran container secara real-time
@@ -183,6 +194,45 @@ const calculateColumnWidths = (
   return widths;
 };
 
+const sortData = (
+  data: TableData[],
+  column: string,
+  direction: SortDirection,
+  originalData: TableData[]
+): TableData[] => {
+  if (direction === "original") {
+    return [...originalData];
+  }
+
+  return [...data].sort((a, b) => {
+    let aVal = a[column];
+    let bVal = b[column];
+
+    if (aVal === null || aVal === undefined) aVal = "";
+    if (bVal === null || bVal === undefined) bVal = "";
+
+    if (typeof aVal === "object" && aVal !== null && "name" in aVal) {
+      aVal = (aVal as { name: string }).name;
+    }
+    if (typeof bVal === "object" && bVal !== null && "name" in bVal) {
+      bVal = (bVal as { name: string }).name;
+    }
+
+    if (typeof aVal === "number" && typeof bVal === "number") {
+      return direction === "asc" ? aVal - bVal : bVal - aVal;
+    }
+
+    const aStr = String(aVal).toLowerCase();
+    const bStr = String(bVal).toLowerCase();
+
+    if (direction === "asc") {
+      return aStr.localeCompare(bStr);
+    } else {
+      return bStr.localeCompare(aStr);
+    }
+  });
+};
+
 export const Table = memo(
   ({
     children,
@@ -193,17 +243,55 @@ export const Table = memo(
     columns,
     data,
     autoSize = false,
+    sortable = true,
+    onSort,
   }: DynamicTableProps) => {
     const dynamicHeight = useTableHeight(320);
     const tableMaxHeight = scrollable ? maxHeight || dynamicHeight : undefined;
     const { width: containerWidth, containerRef } = useContainerWidth();
+    const [originalData] = useState(() => data ? [...data] : []);
+    const [sortState, setSortState] = useState<SortState>({
+      column: null,
+      direction: "original"
+    });
+    const [sortedData, setSortedData] = useState<TableData[]>(data || []);
+
+    useEffect(() => {
+      if (data) {
+        if (sortState.column && sortState.direction !== "original") {
+          const sorted = sortData(data, sortState.column, sortState.direction, originalData);
+          setSortedData(sorted);
+          onSort?.(sorted);
+        } else {
+          setSortedData([...data]);
+          onSort?.(data);
+        }
+      }
+    }, [data, sortState, originalData, onSort]);
+
+    const handleSort = (columnKey: string) => {
+      if (!sortable) return;
+      
+      const column = columns?.find(col => col.key === columnKey);
+      if (column?.sortable === false) return;
+      
+      setSortState(prev => {
+        if (prev.column !== columnKey) {
+          return { column: columnKey, direction: "asc" };
+        }
+        
+        const nextDirection = prev.direction === "asc" ? "desc" : 
+                             prev.direction === "desc" ? "original" : "asc";
+        return { column: columnKey, direction: nextDirection };
+      });
+    };
 
     const columnWidths = useMemo(() => {
-      if (autoSize && columns && data && data.length > 0) {
-        return calculateColumnWidths(columns, data, containerWidth);
+      if (autoSize && columns && sortedData && sortedData.length > 0) {
+        return calculateColumnWidths(columns, sortedData, containerWidth);
       }
       return {};
-    }, [columns, data, autoSize, containerWidth]);
+    }, [columns, sortedData, autoSize, containerWidth]);
 
     if (scrollable) {
       return (
@@ -226,8 +314,12 @@ export const Table = memo(
                     child as React.ReactElement<{
                       stickyHeader?: boolean;
                       columnWidths?: Record<string, number>;
+                      sortable?: boolean;
+                      sortState?: SortState;
+                      onSort?: (columnKey: string) => void;
+                      columns?: ColumnConfig[];
                     }>,
-                    { stickyHeader, columnWidths },
+                    { stickyHeader, columnWidths, sortable, sortState, onSort: handleSort, columns },
                   );
                 }
                 if (React.isValidElement(child) && child.type === TableBody) {
@@ -262,8 +354,12 @@ export const Table = memo(
                 child as React.ReactElement<{
                   stickyHeader?: boolean;
                   columnWidths?: Record<string, number>;
+                  sortable?: boolean;
+                  sortState?: SortState;
+                  onSort?: (columnKey: string) => void;
+                  columns?: ColumnConfig[];
                 }>,
-                { stickyHeader, columnWidths },
+                { stickyHeader, columnWidths, sortable, sortState, onSort: handleSort, columns },
               );
             }
             if (React.isValidElement(child) && child.type === TableBody) {
@@ -289,11 +385,19 @@ export const TableHead = ({
   className,
   stickyHeader,
   columnWidths,
+  sortable,
+  sortState,
+  onSort,
+  columns,
 }: {
   children: React.ReactNode;
   className?: string;
   stickyHeader?: boolean;
   columnWidths?: Record<string, number>;
+  sortable?: boolean;
+  sortState?: SortState;
+  onSort?: (columnKey: string) => void;
+  columns?: ColumnConfig[];
 }) => {
   return (
     <thead
@@ -321,8 +425,12 @@ export const TableHead = ({
                         stickyHeader?: boolean;
                         columnWidths?: Record<string, number>;
                         columnIndex?: number;
+                        sortable?: boolean;
+                        sortState?: SortState;
+                        onSort?: (columnKey: string) => void;
+                        columns?: ColumnConfig[];
                       }>,
-                      { stickyHeader, columnWidths, columnIndex: index },
+                      { stickyHeader, columnWidths, columnIndex: index, sortable, sortState, onSort, columns },
                     );
                   }
                   return headerChild;
@@ -482,12 +590,20 @@ export const TableHeader = ({
   stickyHeader,
   columnWidths,
   columnIndex,
+  sortable,
+  sortState,
+  onSort,
+  columns,
 }: {
   children: React.ReactNode;
   className?: string;
   stickyHeader?: boolean;
   columnWidths?: Record<string, number>;
   columnIndex?: number;
+  sortable?: boolean;
+  sortState?: SortState;
+  onSort?: (columnKey: string) => void;
+  columns?: ColumnConfig[];
 }) => {
   const dynamicStyle = useMemo(() => {
     if (
@@ -505,6 +621,34 @@ export const TableHeader = ({
     return {};
   }, [columnWidths, columnIndex]);
 
+  const currentColumn = columns?.[columnIndex || 0];
+  const columnKey = currentColumn?.key;
+  const isColumnSortable = sortable && currentColumn?.sortable !== false;
+  const isCurrentlySorted = sortState?.column === columnKey;
+  
+  const getSortIcon = () => {
+    if (!isColumnSortable) return null;
+    
+    if (!isCurrentlySorted) {
+      return <ArrowsUpDownIcon className="w-4 h-4 text-gray-400" />;
+    }
+    
+    switch (sortState?.direction) {
+      case "asc":
+        return <ChevronUpIcon className="w-4 h-4 text-blue-600" />;
+      case "desc":
+        return <ChevronDownIcon className="w-4 h-4 text-blue-600" />;
+      default:
+        return <ArrowsUpDownIcon className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  const handleClick = () => {
+    if (isColumnSortable && columnKey && onSort) {
+      onSort(columnKey);
+    }
+  };
+
   return (
     <th
       className={classNames(
@@ -514,13 +658,20 @@ export const TableHeader = ({
         "bg-gray-200 border-r border-gray-300 last:border-r-0",
         "first:rounded-tl-md last:rounded-tr-md",
         stickyHeader && "sticky top-0 z-30 bg-gray-200",
+        isColumnSortable && "cursor-pointer select-none hover:bg-gray-300 transition-colors duration-150",
         className,
       )}
       style={dynamicStyle}
       title={typeof children === "string" ? children : undefined}
+      onClick={handleClick}
     >
-      <div className="overflow-hidden text-ellipsis group-hover:overflow-visible">
-        {children}
+      <div className="overflow-hidden text-ellipsis group-hover:overflow-visible flex items-center justify-between">
+        <span>{children}</span>
+        {isColumnSortable && (
+          <span className="ml-2 flex-shrink-0">
+            {getSortIcon()}
+          </span>
+        )}
       </div>
     </th>
   );
