@@ -16,7 +16,7 @@ import {
   CategoryListSkeleton,
 } from "@/components/table";
 import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
 
@@ -25,6 +25,7 @@ const CategoryList = () => {
     null,
   ) as React.RefObject<HTMLInputElement>;
   const location = useLocation();
+  const [sortedCategories, setSortedCategories] = useState<any[]>([]);
 
   const {
     isAddModalOpen,
@@ -59,6 +60,13 @@ const CategoryList = () => {
     locationKey: location.key,
   });
 
+  useEffect(() => {
+    setSortedCategories(categories || []);
+  }, [categories]);
+
+  const handleSort = (sortedData: any[]) => {
+    setSortedCategories(sortedData);
+  };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
@@ -114,10 +122,11 @@ const CategoryList = () => {
                 stickyHeader={true}
                 autoSize={true}
                 columns={[
-                  { key: "name", header: "Nama Kategori", minWidth: 120 },
-                  { key: "description", header: "Deskripsi", minWidth: 200 },
+                  { key: "name", header: "Nama Kategori", minWidth: 120, sortable: true },
+                  { key: "description", header: "Deskripsi", minWidth: 200, sortable: true },
                 ]}
                 data={categories}
+                onSort={handleSort}
               >
                 <TableHead>
                   <TableRow>
@@ -126,13 +135,13 @@ const CategoryList = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {categories && categories.length > 0 ? (
-                    categories.map((category, index) => (
+                  {sortedCategories && sortedCategories.length > 0 ? (
+                    sortedCategories.map((category, index) => (
                       <TableRow
                         key={category.id}
                         onClick={() => handleEdit(category)}
                         className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch
+                          index === 0 && debouncedSearch && sortedCategories === categories
                             ? "bg-emerald-100/50"
                             : ""
                         }`}
