@@ -249,17 +249,25 @@ export const Table = memo(
     const dynamicHeight = useTableHeight(320);
     const tableMaxHeight = scrollable ? maxHeight || dynamicHeight : undefined;
     const { width: containerWidth, containerRef } = useContainerWidth();
-    const [originalData] = useState(() => data ? [...data] : []);
+    const originalDataRef = useRef<TableData[]>([]);
     const [sortState, setSortState] = useState<SortState>({
       column: null,
       direction: "original"
     });
     const [sortedData, setSortedData] = useState<TableData[]>(data || []);
 
+    // Update original data ref when data changes
+    useEffect(() => {
+      if (data && data.length > 0) {
+        originalDataRef.current = [...data];
+      }
+    }, [data]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
       if (data) {
         if (sortState.column && sortState.direction !== "original") {
-          const sorted = sortData(data, sortState.column, sortState.direction, originalData);
+          const sorted = sortData(data, sortState.column, sortState.direction, originalDataRef.current);
           setSortedData(sorted);
           onSort?.(sorted);
         } else {
@@ -267,7 +275,7 @@ export const Table = memo(
           onSort?.(data);
         }
       }
-    }, [data, sortState, originalData, onSort]);
+    }, [data, sortState]);
 
     const handleSort = (columnKey: string) => {
       if (!sortable) return;
