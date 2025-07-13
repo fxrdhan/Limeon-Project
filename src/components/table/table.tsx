@@ -3,7 +3,11 @@ import type { TableCellProps, TableRowProps, TableProps } from "@/types";
 import { memo, useMemo, useRef, useState, useEffect } from "react";
 import React from "react";
 import { useTableHeight } from "@/hooks/useTableHeight";
-import { ChevronUpIcon, ChevronDownIcon, ArrowsUpDownIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronUpIcon,
+  ChevronDownIcon,
+  ArrowsUpDownIcon,
+} from "@heroicons/react/24/outline";
 
 type SortDirection = "asc" | "desc" | "original";
 
@@ -198,7 +202,7 @@ const sortData = (
   data: TableData[],
   column: string,
   direction: SortDirection,
-  originalData: TableData[]
+  originalData: TableData[],
 ): TableData[] => {
   if (direction === "original") {
     return [...originalData];
@@ -252,7 +256,7 @@ export const Table = memo(
     const originalDataRef = useRef<TableData[]>([]);
     const [sortState, setSortState] = useState<SortState>({
       column: null,
-      direction: "original"
+      direction: "original",
     });
     const [sortedData, setSortedData] = useState<TableData[]>(data || []);
 
@@ -263,11 +267,15 @@ export const Table = memo(
       }
     }, [data]);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
       if (data) {
         if (sortState.column && sortState.direction !== "original") {
-          const sorted = sortData(data, sortState.column, sortState.direction, originalDataRef.current);
+          const sorted = sortData(
+            data,
+            sortState.column,
+            sortState.direction,
+            originalDataRef.current,
+          );
           setSortedData(sorted);
           onSort?.(sorted);
         } else {
@@ -275,21 +283,26 @@ export const Table = memo(
           onSort?.(data);
         }
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, sortState]);
 
     const handleSort = (columnKey: string) => {
       if (!sortable) return;
-      
-      const column = columns?.find(col => col.key === columnKey);
+
+      const column = columns?.find((col) => col.key === columnKey);
       if (column?.sortable === false) return;
-      
-      setSortState(prev => {
+
+      setSortState((prev) => {
         if (prev.column !== columnKey) {
           return { column: columnKey, direction: "asc" };
         }
-        
-        const nextDirection = prev.direction === "asc" ? "desc" : 
-                             prev.direction === "desc" ? "original" : "asc";
+
+        const nextDirection =
+          prev.direction === "asc"
+            ? "desc"
+            : prev.direction === "desc"
+              ? "original"
+              : "asc";
         return { column: columnKey, direction: nextDirection };
       });
     };
@@ -327,7 +340,14 @@ export const Table = memo(
                       onSort?: (columnKey: string) => void;
                       columns?: ColumnConfig[];
                     }>,
-                    { stickyHeader, columnWidths, sortable, sortState, onSort: handleSort, columns },
+                    {
+                      stickyHeader,
+                      columnWidths,
+                      sortable,
+                      sortState,
+                      onSort: handleSort,
+                      columns,
+                    },
                   );
                 }
                 if (React.isValidElement(child) && child.type === TableBody) {
@@ -367,7 +387,14 @@ export const Table = memo(
                   onSort?: (columnKey: string) => void;
                   columns?: ColumnConfig[];
                 }>,
-                { stickyHeader, columnWidths, sortable, sortState, onSort: handleSort, columns },
+                {
+                  stickyHeader,
+                  columnWidths,
+                  sortable,
+                  sortState,
+                  onSort: handleSort,
+                  columns,
+                },
               );
             }
             if (React.isValidElement(child) && child.type === TableBody) {
@@ -438,7 +465,15 @@ export const TableHead = ({
                         onSort?: (columnKey: string) => void;
                         columns?: ColumnConfig[];
                       }>,
-                      { stickyHeader, columnWidths, columnIndex: index, sortable, sortState, onSort, columns },
+                      {
+                        stickyHeader,
+                        columnWidths,
+                        columnIndex: index,
+                        sortable,
+                        sortState,
+                        onSort,
+                        columns,
+                      },
                     );
                   }
                   return headerChild;
@@ -633,14 +668,14 @@ export const TableHeader = ({
   const columnKey = currentColumn?.key;
   const isColumnSortable = sortable && currentColumn?.sortable !== false;
   const isCurrentlySorted = sortState?.column === columnKey;
-  
+
   const getSortIcon = () => {
     if (!isColumnSortable) return null;
-    
+
     if (!isCurrentlySorted) {
       return <ArrowsUpDownIcon className="w-4 h-4 text-gray-400" />;
     }
-    
+
     switch (sortState?.direction) {
       case "asc":
         return <ChevronUpIcon className="w-4 h-4 text-blue-600" />;
@@ -666,7 +701,8 @@ export const TableHeader = ({
         "bg-gray-200 border-r border-gray-300 last:border-r-0",
         "first:rounded-tl-md last:rounded-tr-md",
         stickyHeader && "sticky top-0 z-30 bg-gray-200",
-        isColumnSortable && "cursor-pointer select-none hover:bg-gray-300 transition-colors duration-150",
+        isColumnSortable &&
+          "cursor-pointer select-none hover:bg-gray-300 transition-colors duration-150",
         className,
       )}
       style={dynamicStyle}
@@ -676,9 +712,7 @@ export const TableHeader = ({
       <div className="overflow-hidden text-ellipsis group-hover:overflow-visible flex items-center justify-between">
         <span>{children}</span>
         {isColumnSortable && (
-          <span className="ml-2 flex-shrink-0">
-            {getSortIcon()}
-          </span>
+          <span className="ml-2 flex-shrink-0">{getSortIcon()}</span>
         )}
       </div>
     </th>
