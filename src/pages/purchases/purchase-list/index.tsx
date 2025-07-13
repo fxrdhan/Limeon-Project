@@ -52,6 +52,7 @@ const PurchaseList = () => {
   const [showUploadPortal, setShowUploadPortal] = useState(false);
   const [showAddPurchasePortal, setShowAddPurchasePortal] = useState(false);
   const [isAddPurchaseClosing, setIsAddPurchaseClosing] = useState(false);
+  const [sortedPurchases, setSortedPurchases] = useState<Purchase[]>([]);
   const queryClient = useQueryClient();
   const { openConfirmDialog } = useConfirmDialog();
   const searchInputRef = useRef<HTMLInputElement>(
@@ -146,6 +147,14 @@ const PurchaseList = () => {
 
   const purchases = data?.purchases || [];
   const totalItems = data?.totalItems || 0;
+
+  useEffect(() => {
+    setSortedPurchases(purchases);
+  }, [purchases]);
+
+  const handleSort = (sortedData: Purchase[]) => {
+    setSortedPurchases(sortedData);
+  };
 
 
   const deletePurchaseMutation = useMutation({
@@ -284,7 +293,7 @@ const PurchaseList = () => {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari nomor faktur..."
             className="grow"
-            searchState={getSearchState(search, debouncedSearch, purchases)}
+            searchState={getSearchState(search, debouncedSearch, sortedPurchases)}
           />
           <div className="flex space-x-2 ml-4 mb-4">
             <Button
@@ -314,15 +323,16 @@ const PurchaseList = () => {
               stickyHeader={true}
               autoSize={true}
               columns={[
-                { key: "invoice_number", header: "No. Faktur", minWidth: 140 },
-                { key: "date", header: "Tanggal", minWidth: 100 },
-                { key: "supplier", header: "Supplier", minWidth: 120 },
-                { key: "total", header: "Total", minWidth: 120, align: "right" },
-                { key: "payment_status", header: "Status Pembayaran", minWidth: 140, align: "center" },
-                { key: "payment_method", header: "Metode Pembayaran", minWidth: 140, align: "center" },
-                { key: "actions", header: "Aksi", minWidth: 120, align: "center" },
+                { key: "invoice_number", header: "No. Faktur", minWidth: 140, sortable: true },
+                { key: "date", header: "Tanggal", minWidth: 100, sortable: true },
+                { key: "supplier", header: "Supplier", minWidth: 120, sortable: true },
+                { key: "total", header: "Total", minWidth: 120, align: "right", sortable: true },
+                { key: "payment_status", header: "Status Pembayaran", minWidth: 140, align: "center", sortable: true },
+                { key: "payment_method", header: "Metode Pembayaran", minWidth: 140, align: "center", sortable: true },
+                { key: "actions", header: "Aksi", minWidth: 120, align: "center", sortable: false },
               ]}
               data={purchases}
+              onSort={handleSort}
             >
               <TableHead>
                 <TableRow>
@@ -336,7 +346,7 @@ const PurchaseList = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {purchases.length === 0 ? (
+                {sortedPurchases.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={7}
@@ -348,7 +358,7 @@ const PurchaseList = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  purchases.map((purchase) => (
+                  sortedPurchases.map((purchase) => (
                     <TableRow key={purchase.id}>
                       <TableCell>{purchase.invoice_number}</TableCell>
                       <TableCell>
@@ -419,7 +429,7 @@ const PurchaseList = () => {
               totalPages={totalPages}
               totalItems={totalItems}
               itemsPerPage={itemsPerPage}
-              itemsCount={purchases.length}
+              itemsCount={sortedPurchases.length}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
