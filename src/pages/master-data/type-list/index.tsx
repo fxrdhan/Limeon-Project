@@ -16,7 +16,7 @@ import {
 } from "@/components/table";
 import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
 
@@ -25,6 +25,7 @@ const TypeList = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
+  const [sortedTypes, setSortedTypes] = useState<any[]>([]);
 
   const {
     isAddModalOpen,
@@ -59,6 +60,13 @@ const TypeList = () => {
     locationKey: location.key,
   });
 
+  useEffect(() => {
+    setSortedTypes(types || []);
+  }, [types]);
+
+  const handleSort = (sortedData: any[]) => {
+    setSortedTypes(sortedData);
+  };
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
@@ -114,10 +122,11 @@ const TypeList = () => {
                 stickyHeader={true}
                 autoSize={true}
                 columns={[
-                  { key: "name", header: "Nama Jenis", minWidth: 120 },
-                  { key: "description", header: "Deskripsi", minWidth: 200 },
+                  { key: "name", header: "Nama Jenis", minWidth: 120, sortable: true },
+                  { key: "description", header: "Deskripsi", minWidth: 200, sortable: true },
                 ]}
                 data={types}
+                onSort={handleSort}
               >
                 <TableHead>
                   <TableRow>
@@ -126,13 +135,13 @@ const TypeList = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {types && types.length > 0 ? (
-                    types.map((type, index) => (
+                  {sortedTypes && sortedTypes.length > 0 ? (
+                    sortedTypes.map((type, index) => (
                       <TableRow
                         key={type.id}
                         onClick={() => handleEdit(type)}
                         className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch
+                          index === 0 && debouncedSearch && sortedTypes === types
                             ? "bg-emerald-100/50"
                             : ""
                         }`}
