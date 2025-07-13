@@ -3,7 +3,7 @@ import SearchBar from "@/components/search-bar";
 import PageTitle from "@/components/page-title";
 import Pagination from "@/components/pagination";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
   Table,
@@ -57,6 +57,15 @@ function ItemList() {
     string | undefined
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
+  const [sortedItems, setSortedItems] = useState<ItemDataType[]>([]);
+
+  useEffect(() => {
+    setSortedItems(items as ItemDataType[]);
+  }, [items]);
+
+  const handleSort = (sortedData: ItemDataType[]) => {
+    setSortedItems(sortedData);
+  };
 
   const openAddItemModal = (itemId?: string, searchQuery?: string) => {
     // Set the data for the modal
@@ -89,8 +98,8 @@ function ItemList() {
     if (e.key === "Enter") {
       e.preventDefault();
 
-      if (items.length > 0) {
-        const firstItem = items[0] as ItemDataType;
+      if (sortedItems.length > 0) {
+        const firstItem = sortedItems[0] as ItemDataType;
         openAddItemModal(firstItem.id);
       } else if (debouncedSearch.trim() !== "") {
         openAddItemModal(undefined, debouncedSearch);
@@ -148,37 +157,42 @@ function ItemList() {
                 stickyHeader={true}
                 autoSize={true}
                 columns={[
-                  { key: "name", header: "Nama Item", minWidth: 200 },
-                  { key: "code", header: "Kode", minWidth: 80 },
-                  { key: "barcode", header: "Barcode", minWidth: 100 },
-                  { key: "category", header: "Kategori", minWidth: 100 },
-                  { key: "type", header: "Jenis", minWidth: 120 },
-                  { key: "unit", header: "Satuan", minWidth: 80 },
+                  { key: "name", header: "Nama Item", minWidth: 200, sortable: true },
+                  { key: "code", header: "Kode", minWidth: 80, sortable: true },
+                  { key: "barcode", header: "Barcode", minWidth: 100, sortable: true },
+                  { key: "category", header: "Kategori", minWidth: 100, sortable: true },
+                  { key: "type", header: "Jenis", minWidth: 120, sortable: true },
+                  { key: "unit", header: "Satuan", minWidth: 80, sortable: true },
                   {
                     key: "unit_conversions",
                     header: "Satuan Turunan",
                     minWidth: 140,
+                    sortable: false,
                   },
                   {
                     key: "base_price",
                     header: "Harga Pokok",
                     minWidth: 120,
                     align: "right",
+                    sortable: true,
                   },
                   {
                     key: "sell_price",
                     header: "Harga Jual",
                     minWidth: 120,
                     align: "right",
+                    sortable: true,
                   },
                   {
                     key: "stock",
                     header: "Stok",
                     minWidth: 80,
                     align: "center",
+                    sortable: true,
                   },
                 ]}
                 data={items}
+                onSort={handleSort}
               >
                 <TableHead>
                   <TableRow>
@@ -197,7 +211,7 @@ function ItemList() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {items.length === 0 ? (
+                  {sortedItems.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={10}
@@ -209,7 +223,7 @@ function ItemList() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    (items as ItemDataType[]).map((item, index) => (
+                    (sortedItems as ItemDataType[]).map((item, index) => (
                       <TableRow
                         key={item.id}
                         onClick={() => handleItemEdit(item)}
