@@ -918,6 +918,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                               <Table 
                                 className="w-full h-full"
                                 autoSize={true}
+                                sortable={false}
                                 columns={[
                                   { key: "unit", header: "Turunan", minWidth: 100 },
                                   { key: "conversion", header: "Konversi", minWidth: 140, align: "center" },
