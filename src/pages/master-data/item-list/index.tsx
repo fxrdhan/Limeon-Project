@@ -69,7 +69,6 @@ function ItemList() {
       floatingFilter: true,
       minWidth: 200,
       flex: 1,
-      suppressSizeToFit: true,
       cellStyle: {
         overflow: "hidden",
         textOverflow: "ellipsis",
@@ -166,8 +165,6 @@ function ItemList() {
       headerName: "Stok",
       filter: "agNumberColumnFilter",
       floatingFilter: true,
-      width: 80,
-      suppressSizeToFit: true,
       cellStyle: { textAlign: "center" },
     },
   ];
@@ -272,19 +269,26 @@ function ItemList() {
                 columnDefs={columnDefs}
                 domLayout="autoHeight"
                 autoSizeStrategy={{
-                  type: "fitCellContents",
+                  type: 'fitCellContents',
+                  skipHeader: false,
                 }}
                 defaultColDef={{
                   sortable: true,
                   resizable: true,
                   filter: true,
                   cellDataType: false,
-                  minWidth: 100,
-                  suppressSizeToFit: false,
+                  minWidth: 80,
                 }}
                 colResizeDefault="shift"
+                onGridReady={(params) => {
+                  setTimeout(() => {
+                    params.api.autoSizeAllColumns();
+                  }, 100);
+                }}
                 onFirstDataRendered={(params) => {
-                  params.api.sizeColumnsToFit();
+                  setTimeout(() => {
+                    params.api.autoSizeAllColumns();
+                  }, 50);
                 }}
                 onRowClicked={onRowClicked}
                 rowSelection={{
