@@ -131,16 +131,36 @@ export const calculateColumnWidths = (
 
 export const filterData = (
   data: TableData[],
-  searchTerm: string,
+  columnSearches: Record<string, string>,
   columns: ColumnConfig[],
 ): TableData[] => {
-  if (!searchTerm || !columns) return data;
+  if (!columnSearches || !columns || Object.keys(columnSearches).length === 0) return data;
 
   return data.filter((row) => {
-    return columns.some((column) => {
-      const value = row[column.key];
+    return Object.entries(columnSearches).every(([columnKey, searchTerm]) => {
+      if (!searchTerm.trim()) return true;
+      
+      const value = row[columnKey];
       if (value == null) return false;
-      return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+      
+      let searchableValue = "";
+      if (typeof value === "number") {
+        searchableValue = value.toLocaleString("id-ID");
+      } else if (typeof value === "object" && value !== null && "name" in value) {
+        searchableValue = String((value as { name: string }).name);
+      } else if (Array.isArray(value)) {
+        searchableValue = value
+          .map((item) =>
+            typeof item === "object" && item !== null && "name" in item
+              ? (item as { name: string }).name
+              : String(item),
+          )
+          .join(", ");
+      } else {
+        searchableValue = String(value);
+      }
+      
+      return searchableValue.toLowerCase().includes(searchTerm.toLowerCase());
     });
   });
 };
