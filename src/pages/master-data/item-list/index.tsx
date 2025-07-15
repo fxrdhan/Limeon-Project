@@ -113,6 +113,11 @@ function ItemList() {
       filter: true,
       floatingFilter: true,
       minWidth: 120,
+      cellStyle: {
+        overflow: "visible",
+        textOverflow: "unset",
+        whiteSpace: "normal",
+      },
     },
     {
       field: "unit.name",
