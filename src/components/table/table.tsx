@@ -7,10 +7,11 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   ArrowsUpDownIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { useContainerWidth } from "@/hooks/useContainerWidth";
 import { calculateColumnWidths, sortData } from "@/utils/table";
-import type { SortDirection, ColumnConfig, SortState } from "@/types/table";
+import type { ColumnConfig, SortState } from "@/types/table";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TableData = any;
@@ -20,7 +21,9 @@ type DynamicTableProps = TableProps & {
   data?: TableData[];
   autoSize?: boolean;
   sortable?: boolean;
+  searchable?: boolean;
   onSort?: (data: TableData[]) => void;
+  onSearch?: (data: TableData[]) => void;
 };
 
 export const Table = memo(
@@ -34,7 +37,9 @@ export const Table = memo(
     data,
     autoSize = false,
     sortable = true,
+    searchable = true,
     onSort,
+    onSearch,
   }: DynamicTableProps) => {
     const dynamicHeight = useTableHeight(320);
     const tableMaxHeight = scrollable ? maxHeight || dynamicHeight : undefined;
@@ -45,6 +50,8 @@ export const Table = memo(
       direction: "original",
     });
     const [sortedData, setSortedData] = useState<TableData[]>(data || []);
+    const [searchTerm, setSearchTerm] = useState<string>("");
+    const [filteredData, setFilteredData] = useState<TableData[]>(data || []);
 
     // Update original data ref when data changes
     useEffect(() => {
@@ -53,11 +60,32 @@ export const Table = memo(
       }
     }, [data]);
 
+    const filterData = (data: TableData[], searchTerm: string): TableData[] => {
+      if (!searchTerm || !columns) return data;
+
+      return data.filter((row) => {
+        return columns.some((column) => {
+          const value = row[column.key];
+          if (value == null) return false;
+          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+        });
+      });
+    };
+
     useEffect(() => {
       if (data) {
+        const filtered = filterData(data, searchTerm);
+        setFilteredData(filtered);
+        onSearch?.(filtered);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data, searchTerm, columns, onSearch]);
+
+    useEffect(() => {
+      if (filteredData) {
         if (sortState.column && sortState.direction !== "original") {
           const sorted = sortData(
-            data,
+            filteredData,
             sortState.column,
             sortState.direction,
             originalDataRef.current,
@@ -65,12 +93,12 @@ export const Table = memo(
           setSortedData(sorted);
           onSort?.(sorted);
         } else {
-          setSortedData([...data]);
-          onSort?.(data);
+          setSortedData([...filteredData]);
+          onSort?.(filteredData);
         }
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data, sortState]);
+    }, [filteredData, sortState]);
 
     const handleSort = (columnKey: string) => {
       if (!sortable) return;
@@ -100,6 +128,41 @@ export const Table = memo(
       return {};
     }, [columns, sortedData, autoSize, containerWidth]);
 
+    const SearchBar = () => {
+      if (!searchable || !columns) return null;
+
+      return (
+        <tr>
+          {columns.map((column, index) => (
+            <td
+              key={column.key}
+              className="py-2 px-2 border-b border-gray-200 bg-gray-50"
+              style={
+                columnWidths && Object.keys(columnWidths).length > 0
+                  ? {
+                      width: Object.values(columnWidths)[index] + "px",
+                      minWidth: Object.values(columnWidths)[index] + "px",
+                      maxWidth: Object.values(columnWidths)[index] + "px",
+                    }
+                  : {}
+              }
+            >
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder={`Search ${column.header.toLowerCase()}...`}
+                  className="w-full pl-8 pr-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </td>
+          ))}
+        </tr>
+      );
+    };
+
     if (scrollable) {
       return (
         <div
@@ -117,23 +180,32 @@ export const Table = memo(
             <table className="w-full table-fixed bg-white min-w-full">
               {React.Children.map(children, (child) => {
                 if (React.isValidElement(child) && child.type === TableHead) {
-                  return React.cloneElement(
-                    child as React.ReactElement<{
-                      stickyHeader?: boolean;
-                      columnWidths?: Record<string, number>;
-                      sortable?: boolean;
-                      sortState?: SortState;
-                      onSort?: (columnKey: string) => void;
-                      columns?: ColumnConfig[];
-                    }>,
-                    {
-                      stickyHeader,
-                      columnWidths,
-                      sortable,
-                      sortState,
-                      onSort: handleSort,
-                      columns,
-                    },
+                  return (
+                    <>
+                      {React.cloneElement(
+                        child as React.ReactElement<{
+                          stickyHeader?: boolean;
+                          columnWidths?: Record<string, number>;
+                          sortable?: boolean;
+                          sortState?: SortState;
+                          onSort?: (columnKey: string) => void;
+                          columns?: ColumnConfig[];
+                        }>,
+                        {
+                          stickyHeader,
+                          columnWidths,
+                          sortable,
+                          sortState,
+                          onSort: handleSort,
+                          columns,
+                        },
+                      )}
+                      {searchable && (
+                        <thead className="bg-gray-50">
+                          <SearchBar />
+                        </thead>
+                      )}
+                    </>
                   );
                 }
                 if (React.isValidElement(child) && child.type === TableBody) {
@@ -164,23 +236,32 @@ export const Table = memo(
         <table className="w-full table-fixed bg-white min-w-full">
           {React.Children.map(children, (child) => {
             if (React.isValidElement(child) && child.type === TableHead) {
-              return React.cloneElement(
-                child as React.ReactElement<{
-                  stickyHeader?: boolean;
-                  columnWidths?: Record<string, number>;
-                  sortable?: boolean;
-                  sortState?: SortState;
-                  onSort?: (columnKey: string) => void;
-                  columns?: ColumnConfig[];
-                }>,
-                {
-                  stickyHeader,
-                  columnWidths,
-                  sortable,
-                  sortState,
-                  onSort: handleSort,
-                  columns,
-                },
+              return (
+                <>
+                  {React.cloneElement(
+                    child as React.ReactElement<{
+                      stickyHeader?: boolean;
+                      columnWidths?: Record<string, number>;
+                      sortable?: boolean;
+                      sortState?: SortState;
+                      onSort?: (columnKey: string) => void;
+                      columns?: ColumnConfig[];
+                    }>,
+                    {
+                      stickyHeader,
+                      columnWidths,
+                      sortable,
+                      sortState,
+                      onSort: handleSort,
+                      columns,
+                    },
+                  )}
+                  {searchable && (
+                    <thead className="bg-gray-50">
+                      <SearchBar />
+                    </thead>
+                  )}
+                </>
               );
             }
             if (React.isValidElement(child) && child.type === TableBody) {
