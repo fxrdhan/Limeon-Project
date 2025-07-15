@@ -59,6 +59,7 @@ function ItemList() {
     string | undefined
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const gridRef = useRef<AgGridReact>(null);
 
   useEffect(() => {
@@ -69,6 +70,7 @@ function ItemList() {
           'unit.name', 'unit_conversions', 'base_price', 'sell_price', 'stock'
         ];
         gridRef.current?.api?.autoSizeColumns(columnsToAutoSize);
+        setIsInitialLoad(false);
       }, 200);
     }
   }, [items]);
@@ -272,6 +274,8 @@ function ItemList() {
                 width: "100%",
                 marginTop: "1rem",
                 marginBottom: "1rem",
+                filter: isInitialLoad ? "blur(8px)" : "none",
+                transition: "filter 0.3s ease-out",
               }}
             >
               <AgGridReact
