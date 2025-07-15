@@ -50,8 +50,9 @@ export const Table = memo(
       direction: "original",
     });
     const [sortedData, setSortedData] = useState<TableData[]>(data || []);
-    const [searchTerm, setSearchTerm] = useState<string>("");
+    const searchStateRef = useRef<Record<string, string>>({});
     const [filteredData, setFilteredData] = useState<TableData[]>(data || []);
+    const [searchTrigger, setSearchTrigger] = useState(0);
 
     // Update original data ref when data changes
     useEffect(() => {
@@ -62,11 +63,16 @@ export const Table = memo(
 
     useEffect(() => {
       if (data) {
-        const filtered = filterData(data, searchTerm, columns || []);
+        const filtered = filterData(
+          data,
+          searchStateRef.current,
+          columns || [],
+        );
         setFilteredData(filtered);
         onSearch?.(filtered);
       }
-    }, [data, searchTerm, columns, onSearch]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data, columns, searchTrigger]);
 
     useEffect(() => {
       if (filteredData) {
@@ -115,6 +121,58 @@ export const Table = memo(
       return {};
     }, [columns, sortedData, autoSize, containerWidth]);
 
+    const SearchInput = memo(
+      ({
+        columnKey,
+        columnHeader,
+      }: {
+        columnKey: string;
+        columnHeader: string;
+      }) => {
+        const [localValue, setLocalValue] = useState<string>("");
+        const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+        const handleChange = (value: string) => {
+          setLocalValue(value);
+
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
+
+          timeoutRef.current = setTimeout(() => {
+            searchStateRef.current = {
+              ...searchStateRef.current,
+              [columnKey]: value,
+            };
+            // Trigger re-filter
+            setSearchTrigger((prev) => prev + 1);
+          }, 300);
+        };
+
+        useEffect(() => {
+          return () => {
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+            }
+          };
+        }, []);
+
+        return (
+          <div className="relative">
+            <MagnifyingGlassIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={localValue}
+              onChange={(e) => handleChange(e.target.value)}
+              placeholder={`Search ${columnHeader.toLowerCase()}...`}
+              className="w-full pl-8 pr-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        );
+      },
+    );
+    SearchInput.displayName = "SearchInput";
+
     const SearchBar = () => {
       if (!searchable || !columns) return null;
 
@@ -134,16 +192,10 @@ export const Table = memo(
                   : {}
               }
             >
-              <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={`Search ${column.header.toLowerCase()}...`}
-                  className="w-full pl-8 pr-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              <SearchInput
+                columnKey={column.key}
+                columnHeader={column.header}
+              />
             </td>
           ))}
         </tr>
