@@ -3,7 +3,6 @@ import { supabase } from "@/lib/supabase";
 import { useConfirmDialog } from "@/components/dialog-box";
 import { fuzzyMatch, getScore } from "@/utils/search";
 import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
-import { useFieldFocus } from "@/hooks/fieldFocus";
 import { useAlert } from "@/components/alert/hooks";
 import {
   useQuery,
@@ -37,9 +36,7 @@ export const useMasterDataManagement = (
 
   const {
     realtime = false,
-    searchInputRef,
     isCustomModalOpen,
-    locationKey,
   } = options || {};
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -471,16 +468,6 @@ export const useMasterDataManagement = (
     detailedLogging: true,
   });
 
-  useFieldFocus({
-    searchInputRef,
-    isModalOpen: actualIsModalOpen,
-    isLoading,
-    isFetching,
-    debouncedSearch,
-    currentPage,
-    itemsPerPage,
-    locationKey,
-  });
 
   return {
     isAddModalOpen,
