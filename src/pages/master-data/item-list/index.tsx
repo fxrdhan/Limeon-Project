@@ -292,10 +292,8 @@ function ItemList() {
                   suppressSizeToFit: false,
                 }}
                 colResizeDefault="shift"
-                onGridReady={(params) => {
-                  setTimeout(() => {
-                    params.api.sizeColumnsToFit();
-                  }, 100);
+                onFirstDataRendered={(params) => {
+                  params.api.sizeColumnsToFit();
                 }}
                 onRowClicked={onRowClicked}
                 rowSelection={{
