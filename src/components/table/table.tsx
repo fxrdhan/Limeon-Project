@@ -10,7 +10,7 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { useContainerWidth } from "@/hooks/useContainerWidth";
-import { calculateColumnWidths, sortData } from "@/utils/table";
+import { calculateColumnWidths, sortData, filterData } from "@/utils/table";
 import type { ColumnConfig, SortState } from "@/types/table";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,25 +60,12 @@ export const Table = memo(
       }
     }, [data]);
 
-    const filterData = (data: TableData[], searchTerm: string): TableData[] => {
-      if (!searchTerm || !columns) return data;
-
-      return data.filter((row) => {
-        return columns.some((column) => {
-          const value = row[column.key];
-          if (value == null) return false;
-          return String(value).toLowerCase().includes(searchTerm.toLowerCase());
-        });
-      });
-    };
-
     useEffect(() => {
       if (data) {
-        const filtered = filterData(data, searchTerm);
+        const filtered = filterData(data, searchTerm, columns || []);
         setFilteredData(filtered);
         onSearch?.(filtered);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, searchTerm, columns, onSearch]);
 
     useEffect(() => {
