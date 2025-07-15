@@ -66,8 +66,15 @@ function ItemList() {
     if (items && items.length > 0 && gridRef.current) {
       setTimeout(() => {
         const columnsToAutoSize = [
-          'code', 'barcode', 'category.name', 'type.name', 
-          'unit.name', 'unit_conversions', 'base_price', 'sell_price', 'stock'
+          "code",
+          "barcode",
+          "category.name",
+          "type.name",
+          "unit.name",
+          "unit_conversions",
+          "base_price",
+          "sell_price",
+          "stock",
         ];
         gridRef.current?.api?.autoSizeColumns(columnsToAutoSize);
         setIsInitialLoad(false);
@@ -276,6 +283,8 @@ function ItemList() {
                 marginBottom: "1rem",
                 filter: isInitialLoad ? "blur(8px)" : "none",
                 transition: "filter 0.3s ease-out",
+                height:
+                  items.length <= 2 ? `${95 + items.length * 42}px` : "auto",
               }}
             >
               <AgGridReact
@@ -283,7 +292,8 @@ function ItemList() {
                 theme={themeQuartz}
                 rowData={items as ItemDataType[]}
                 columnDefs={columnDefs}
-                domLayout="autoHeight"
+                domLayout={items.length <= 2 ? "normal" : "autoHeight"}
+                getRowHeight={() => (items.length <= 2 ? 42 : undefined)}
                 defaultColDef={{
                   sortable: true,
                   resizable: true,
