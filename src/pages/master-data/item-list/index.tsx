@@ -3,7 +3,7 @@ import SearchBar from "@/components/search-bar";
 import PageTitle from "@/components/page-title";
 import Pagination from "@/components/pagination";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { AgGridReact } from "ag-grid-react";
 import {
@@ -60,6 +60,18 @@ function ItemList() {
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
   const gridRef = useRef<AgGridReact>(null);
+
+  useEffect(() => {
+    if (items && items.length > 0 && gridRef.current) {
+      setTimeout(() => {
+        const columnsToAutoSize = [
+          'code', 'barcode', 'category.name', 'type.name', 
+          'unit.name', 'unit_conversions', 'base_price', 'sell_price', 'stock'
+        ];
+        gridRef.current?.api?.autoSizeColumns(columnsToAutoSize);
+      }, 200);
+    }
+  }, [items]);
 
   const columnDefs: ColDef[] = [
     {
@@ -268,10 +280,6 @@ function ItemList() {
                 rowData={items as ItemDataType[]}
                 columnDefs={columnDefs}
                 domLayout="autoHeight"
-                autoSizeStrategy={{
-                  type: 'fitCellContents',
-                  skipHeader: false,
-                }}
                 defaultColDef={{
                   sortable: true,
                   resizable: true,
@@ -280,16 +288,6 @@ function ItemList() {
                   minWidth: 80,
                 }}
                 colResizeDefault="shift"
-                onGridReady={(params) => {
-                  setTimeout(() => {
-                    params.api.autoSizeAllColumns();
-                  }, 100);
-                }}
-                onFirstDataRendered={(params) => {
-                  setTimeout(() => {
-                    params.api.autoSizeAllColumns();
-                  }, 50);
-                }}
                 onRowClicked={onRowClicked}
                 rowSelection={{
                   mode: "singleRow",
