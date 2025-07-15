@@ -78,6 +78,7 @@ function ItemList() {
       floatingFilter: true,
       minWidth: 200,
       flex: 1,
+      suppressSizeToFit: true,
       cellStyle: {
         overflow: "hidden",
         textOverflow: "ellipsis",
@@ -280,8 +281,7 @@ function ItemList() {
                 columnDefs={columnDefs}
                 domLayout="autoHeight"
                 autoSizeStrategy={{
-                  type: "fitGridWidth",
-                  defaultMinWidth: 100,
+                  type: "fitCellContents",
                 }}
                 defaultColDef={{
                   sortable: true,
@@ -290,6 +290,12 @@ function ItemList() {
                   cellDataType: false,
                   minWidth: 100,
                   suppressSizeToFit: false,
+                }}
+                colResizeDefault="shift"
+                onGridReady={(params) => {
+                  setTimeout(() => {
+                    params.api.sizeColumnsToFit();
+                  }, 100);
                 }}
                 onRowClicked={onRowClicked}
                 rowSelection={{
