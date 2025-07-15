@@ -263,7 +263,6 @@ function ItemList() {
           <>
             <div
               style={{
-                height: "600px",
                 width: "100%",
                 marginTop: "1rem",
                 marginBottom: "1rem",
@@ -274,6 +273,7 @@ function ItemList() {
                 theme={themeQuartz}
                 rowData={items as ItemDataType[]}
                 columnDefs={columnDefs}
+                domLayout="autoHeight"
                 autoSizeStrategy={{
                   type: "fitGridWidth",
                   defaultMinWidth: 100,
