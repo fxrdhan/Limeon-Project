@@ -201,20 +201,10 @@ const PatientList = () => {
 
   const closeEditModal = () => {
     setIsEditModalOpen(false);
-    setTimeout(() => {
-      if (searchInputRef.current) {
-        searchInputRef.current.focus();
-      }
-    }, 100);
   };
 
   const closeAddModal = () => {
     setIsAddModalOpen(false);
-    setTimeout(() => {
-      if (searchInputRef.current) {
-        searchInputRef.current.focus();
-      }
-    }, 100);
   };
 
   const handleDelete = (patient: PatientType) => {

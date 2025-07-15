@@ -212,21 +212,11 @@ const SupplierList = () => {
 
   const closeEditModal = () => {
     setIsEditModalOpen(false);
-    setTimeout(() => {
-      if (searchInputRef.current) {
-        searchInputRef.current.focus();
-      }
-    }, 100);
   };
 
   const closeAddModal = () => {
     setIsAddModalOpen(false);
     setNewSupplierImage(null);
-    setTimeout(() => {
-      if (searchInputRef.current) {
-        searchInputRef.current.focus();
-      }
-    }, 100);
   };
 
   const handleDelete = (supplier: SupplierType) => {
