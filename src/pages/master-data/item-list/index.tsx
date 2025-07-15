@@ -61,19 +61,35 @@ function ItemList() {
 
   const columnDefs: ColDef[] = [
     {
+      headerName: "No.",
+      valueGetter: "node.rowIndex + 1",
+      width: 60,
+      suppressSizeToFit: true,
+      suppressAutoSize: true,
+      resizable: false,
+      cellStyle: { textAlign: "center" },
+      sortable: false,
+      filter: false,
+    },
+    {
       field: "name",
       headerName: "Nama Item",
       filter: true,
       floatingFilter: true,
-      flex: 1,
       minWidth: 200,
+      flex: 1,
+      cellStyle: {
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      },
+      tooltipField: "name",
     },
     {
       field: "code",
       headerName: "Kode",
       filter: true,
       floatingFilter: true,
-      flex: 1,
       minWidth: 80,
     },
     {
@@ -81,7 +97,6 @@ function ItemList() {
       headerName: "Barcode",
       filter: true,
       floatingFilter: true,
-      flex: 1,
       minWidth: 100,
       valueGetter: (params) => params.data.barcode || "-",
     },
@@ -90,7 +105,6 @@ function ItemList() {
       headerName: "Kategori",
       filter: true,
       floatingFilter: true,
-      flex: 1,
       minWidth: 100,
     },
     {
@@ -98,7 +112,6 @@ function ItemList() {
       headerName: "Jenis",
       filter: true,
       floatingFilter: true,
-      flex: 1,
       minWidth: 120,
     },
     {
@@ -106,14 +119,12 @@ function ItemList() {
       headerName: "Satuan",
       filter: true,
       floatingFilter: true,
-      flex: 1,
       minWidth: 80,
     },
     {
       field: "unit_conversions",
       headerName: "Satuan Turunan",
       filter: false,
-      flex: 1,
       minWidth: 140,
       valueGetter: (params) => {
         const conversions = params.data.unit_conversions;
@@ -130,7 +141,6 @@ function ItemList() {
       headerName: "Harga Pokok",
       filter: "agNumberColumnFilter",
       floatingFilter: true,
-      flex: 1,
       minWidth: 120,
       cellStyle: { textAlign: "right" },
       valueFormatter: (params) =>
@@ -144,7 +154,6 @@ function ItemList() {
       headerName: "Harga Jual",
       filter: "agNumberColumnFilter",
       floatingFilter: true,
-      flex: 1,
       minWidth: 120,
       cellStyle: { textAlign: "right" },
       valueFormatter: (params) =>
@@ -160,7 +169,8 @@ function ItemList() {
       headerName: "Stok",
       filter: "agNumberColumnFilter",
       floatingFilter: true,
-      width: 20,
+      width: 80,
+      suppressSizeToFit: true,
       cellStyle: { textAlign: "center" },
     },
   ];
@@ -264,17 +274,27 @@ function ItemList() {
                 theme={themeQuartz}
                 rowData={items as ItemDataType[]}
                 columnDefs={columnDefs}
+                autoSizeStrategy={{
+                  type: "fitGridWidth",
+                  defaultMinWidth: 100,
+                }}
                 defaultColDef={{
                   sortable: true,
                   resizable: true,
                   filter: true,
-                  flex: 1,
+                  cellDataType: false,
                   minWidth: 100,
+                  suppressSizeToFit: false,
                 }}
                 onRowClicked={onRowClicked}
-                rowSelection={{ mode: "singleRow" }}
+                rowSelection={{
+                  mode: "singleRow",
+                  checkboxes: false,
+                }}
                 suppressMovableColumns={true}
                 cellSelection={false}
+                suppressScrollOnNewData={true}
+                suppressAnimationFrame={true}
                 loading={isLoadingState}
                 overlayNoRowsTemplate={
                   debouncedSearch
@@ -282,15 +302,6 @@ function ItemList() {
                     : '<span style="padding: 10px; color: #888;">Tidak ada data item yang ditemukan</span>'
                 }
                 rowClass="cursor-pointer"
-                onFirstDataRendered={(params) => {
-                  params.api.autoSizeAllColumns();
-                }}
-                onRowDataUpdated={(params) => {
-                  params.api.autoSizeAllColumns();
-                }}
-                onModelUpdated={(params) => {
-                  params.api.autoSizeAllColumns();
-                }}
                 animateRows={true}
                 loadThemeGoogleFonts={true}
               />
