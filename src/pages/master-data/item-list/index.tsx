@@ -35,7 +35,7 @@ function ItemList() {
     debouncedSearch,
     currentPage,
     itemsPerPage,
-    data: items,
+    data: rawItems,
     totalItems: totalItemsState,
     totalPages,
     isLoading: isLoadingState,
@@ -50,6 +50,8 @@ function ItemList() {
     locationKey: location.key,
   });
 
+  const items = rawItems;
+
   const [editingItemId, setEditingItemId] = useState<string | undefined>(
     undefined,
   );
@@ -60,17 +62,6 @@ function ItemList() {
   const gridRef = useRef<AgGridReact>(null);
 
   const columnDefs: ColDef[] = [
-    {
-      headerName: "No.",
-      valueGetter: "node.rowIndex + 1",
-      width: 60,
-      suppressSizeToFit: true,
-      suppressAutoSize: true,
-      resizable: false,
-      cellStyle: { textAlign: "center" },
-      sortable: false,
-      filter: false,
-    },
     {
       field: "name",
       headerName: "Nama Item",
