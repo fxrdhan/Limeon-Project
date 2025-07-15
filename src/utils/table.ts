@@ -129,6 +129,22 @@ export const calculateColumnWidths = (
   return widths;
 };
 
+export const filterData = (
+  data: TableData[],
+  searchTerm: string,
+  columns: ColumnConfig[],
+): TableData[] => {
+  if (!searchTerm || !columns) return data;
+
+  return data.filter((row) => {
+    return columns.some((column) => {
+      const value = row[column.key];
+      if (value == null) return false;
+      return String(value).toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  });
+};
+
 export const sortData = (
   data: TableData[],
   column: string,
