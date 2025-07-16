@@ -5,14 +5,15 @@ import Pagination from "@/components/pagination";
 
 import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { DataGrid, DataGridRef, createTextColumn, createWrapTextColumn, createCurrencyColumn, createCenterAlignColumn, formatCurrency, formatBaseCurrency } from "@/components/ag-grid";
-import { ColDef, RowClickedEvent } from "ag-grid-community";
+import { DataGrid, DataGridRef, createTextColumn, createWrapTextColumn, createCurrencyColumn, createCenterAlignColumn, createMatchScoreColumn, formatCurrency, formatBaseCurrency } from "@/components/ag-grid";
+import { ColDef, RowClickedEvent, IRowNode } from "ag-grid-community";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
 import AddItemPortal from "@/components/add-edit/v2";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { getSearchState } from "@/utils/search";
+import * as fuzzysort from "fuzzysort";
 
 function ItemList() {
   const location = useLocation();
@@ -54,6 +55,7 @@ function ItemList() {
   const [modalRenderId, setModalRenderId] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const gridRef = useRef<DataGridRef>(null);
+  const [filterString, setFilterString] = useState("");
 
   const columnsToAutoSize = [
     "code",
@@ -71,7 +73,72 @@ function ItemList() {
     setIsInitialLoad(false);
   };
 
+  // Fuzzy matching functions
+  const keys = [
+    "name",
+    "code",
+    "barcode",
+    "category.name",
+    "type.name",
+    "unit.name",
+    "unit_conversions",
+    "base_price",
+    "sell_price",
+    "stock",
+  ];
+
+  const toString = (o: unknown): unknown => {
+    if (!o) {
+      return o;
+    }
+    if (typeof o === "object" && o !== null) {
+      const obj = o as Record<string, unknown>;
+      Object.keys(obj).forEach((k) => {
+        if (typeof obj[k] === "object") {
+          return toString(obj[k]);
+        }
+        obj[k] = "" + obj[k];
+      });
+      return obj;
+    }
+    return o;
+  };
+
+  const getMatchScore = (data: unknown) => {
+    if (!filterString || filterString.length === 0) {
+      return 0;
+    }
+    const stringData = toString({ ...(data as Record<string, unknown>) });
+    const results = fuzzysort.go(filterString, [stringData], { keys });
+    if (results.length > 0) {
+      return results[0].score;
+    }
+    return -Infinity;
+  };
+
+  const isExternalFilterPresent = () => {
+    return filterString.length > 0;
+  };
+
+  const doesExternalFilterPass = (node: IRowNode) => {
+    const score = getMatchScore(node.data);
+    return score > -50;
+  };
+
+  const onFilterTextBoxChanged = (value: string) => {
+    setFilterString(value);
+    if (gridRef.current) {
+      gridRef.current.onFilterChanged();
+      gridRef.current.refreshCells();
+    }
+  };
+
   const columnDefs: ColDef[] = [
+    createMatchScoreColumn({
+      headerName: "Match",
+      minWidth: 100,
+      getMatchScore,
+    }),
     createTextColumn({
       field: "name",
       headerName: "Nama Item",
@@ -172,8 +239,8 @@ function ItemList() {
       if (items.length > 0) {
         const firstItem = items[0] as ItemDataType;
         openAddItemModal(firstItem.id);
-      } else if (debouncedSearch.trim() !== "") {
-        openAddItemModal(undefined, debouncedSearch);
+      } else if (filterString.trim() !== "") {
+        openAddItemModal(undefined, filterString);
       }
     }
   };
@@ -197,7 +264,10 @@ function ItemList() {
           <SearchBar
             inputRef={searchInputRef}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              onFilterTextBoxChanged(e.target.value);
+            }}
             onKeyDown={handleItemKeyDown}
             placeholder="Cari nama atau kode item..."
             className="grow"
@@ -207,7 +277,7 @@ function ItemList() {
             variant="primary"
             withGlow
             className="flex items-center ml-4 mb-4"
-            onClick={() => openAddItemModal(undefined, debouncedSearch)}
+            onClick={() => openAddItemModal(undefined, filterString)}
           >
             <FaPlus className="mr-2" />
             Tambah Item Baru
@@ -227,16 +297,19 @@ function ItemList() {
               ref={gridRef}
               rowData={items as ItemDataType[]}
               columnDefs={columnDefs}
-              autoHeightForSmallTables={true}
+              autoHeightForSmallTables={false}
               onRowClicked={onRowClicked}
               loading={isLoadingState}
               overlayNoRowsTemplate={
-                debouncedSearch
-                  ? `<span style="padding: 10px; color: #888;">Tidak ada item dengan nama "${debouncedSearch}"</span>`
+                search
+                  ? `<span style="padding: 10px; color: #888;">Tidak ada item dengan nama "${search}"</span>`
                   : '<span style="padding: 10px; color: #888;">Tidak ada data item yang ditemukan</span>'
               }
               autoSizeColumns={columnsToAutoSize}
               onFirstDataRendered={handleFirstDataRendered}
+              animateRows={true}
+              isExternalFilterPresent={isExternalFilterPresent}
+              doesExternalFilterPass={doesExternalFilterPass}
               style={{
                 width: "100%",
                 marginTop: "1rem",
