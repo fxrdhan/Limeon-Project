@@ -7,7 +7,7 @@ import AddEditModal from "@/components/add-edit/v1";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
-import { ColDef, RowClickedEvent } from "ag-grid-community";
+import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from "ag-grid-community";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
@@ -72,7 +72,9 @@ const ItemMaster = () => {
   const headerRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<DataGridRef>(null);
+  const agGridRef = useRef<GridApi>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [search, setSearch] = useState("");
 
   const currentConfig = tabConfigs[activeTab];
 
@@ -82,8 +84,6 @@ const ItemMaster = () => {
     isEditModalOpen,
     setIsEditModalOpen,
     editingItem,
-    search,
-    setSearch,
     data,
     totalItems,
     isLoading,
@@ -111,6 +111,18 @@ const ItemMaster = () => {
 
   const handleFirstDataRendered = () => {
     setIsInitialLoad(false);
+  };
+
+  const onGridReady = (params: GridReadyEvent) => {
+    agGridRef.current = params.api;
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearch(value);
+    if (agGridRef.current) {
+      agGridRef.current.setGridOption("quickFilterText", value);
+    }
   };
 
   const columnDefs: ColDef[] = [
@@ -149,8 +161,12 @@ const ItemMaster = () => {
     if (newTab !== activeTab) {
       setActiveTab(newTab);
       setIsInitialLoad(true);
+      setSearch("");
       if (searchInputRef.current) {
         searchInputRef.current.value = "";
+      }
+      if (agGridRef.current) {
+        agGridRef.current.setGridOption("quickFilterText", "");
       }
     }
   };
@@ -188,11 +204,11 @@ const ItemMaster = () => {
           <SearchBar
             inputRef={searchInputRef}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
             placeholder={currentConfig.searchPlaceholder}
             className="grow"
-            searchState={getSearchState(search, debouncedSearch, data)}
+            searchState={getSearchState(search, search, data)}
           />
           <Button
             variant="primary"
@@ -216,10 +232,11 @@ const ItemMaster = () => {
               rowData={data || []}
               columnDefs={columnDefs}
               onRowClicked={onRowClicked}
+              onGridReady={onGridReady}
               loading={isLoading}
               overlayNoRowsTemplate={
-                debouncedSearch
-                  ? `<span style="padding: 10px; color: #888;">${currentConfig.searchNoDataMessage} "${debouncedSearch}"</span>`
+                search
+                  ? `<span style="padding: 10px; color: #888;">${currentConfig.searchNoDataMessage} "${search}"</span>`
                   : `<span style="padding: 10px; color: #888;">${currentConfig.noDataMessage}</span>`
               }
               sizeColumnsToFit={true}
