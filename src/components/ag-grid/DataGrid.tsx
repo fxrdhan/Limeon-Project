@@ -12,6 +12,16 @@ import {
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
+// Custom theme with secondary color for input focus border
+const customTheme = themeQuartz.withParams({
+  inputFocusBorder: {
+    color: "oklch(59.6% 0.145 163.225)",
+    style: "solid",
+    width: 1,
+  },
+  accentColor: "oklch(95% 0.052 163.051)",
+});
+
 export interface DataGridProps {
   rowData: unknown[];
   columnDefs: ColDef[];
@@ -73,7 +83,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       colResizeDefault = "shift",
       autoHeightForSmallTables = false,
     },
-    ref
+    ref,
   ) => {
     const gridRef = useRef<AgGridReact>(null);
 
@@ -81,7 +91,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
     const isSmallTable = autoHeightForSmallTables && rowData.length <= 3;
     const dynamicDomLayout = isSmallTable ? "normal" : domLayout;
     const dynamicGetRowHeight = isSmallTable ? () => 42 : getRowHeight;
-    const dynamicStyle = isSmallTable 
+    const dynamicStyle = isSmallTable
       ? {
           ...style,
           height: `${95 + rowData.length * 42}px`,
@@ -123,7 +133,13 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           }
         }, autoSizeDelay);
       }
-    }, [rowData, autoSizeColumns, sizeColumnsToFit, autoSizeDelay, onFirstDataRendered]);
+    }, [
+      rowData,
+      autoSizeColumns,
+      sizeColumnsToFit,
+      autoSizeDelay,
+      onFirstDataRendered,
+    ]);
 
     const defaultColDef: ColDef = {
       sortable: true,
@@ -143,7 +159,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       <div className={className} style={dynamicStyle}>
         <AgGridReact
           ref={gridRef}
-          theme={themeQuartz}
+          theme={customTheme}
           rowData={rowData}
           columnDefs={columnDefs}
           domLayout={dynamicDomLayout}
@@ -165,7 +181,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
         />
       </div>
     );
-  }
+  },
 );
 
 DataGrid.displayName = "DataGrid";
