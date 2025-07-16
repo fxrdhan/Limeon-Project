@@ -5,18 +5,11 @@ import PageTitle from "@/components/page-title";
 import AddEditModal from "@/components/add-edit/v1";
 
 import { Card } from "@/components/card";
-import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHeader,
-  UnitListSkeleton,
-} from "@/components/table";
+import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
+import { ColDef } from "ag-grid-community";
 import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
 
@@ -27,7 +20,8 @@ const UnitList = () => {
   const location = useLocation();
   const headerRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
-  const [sortedUnits, setSortedUnits] = useState<any[]>([]);
+  const gridRef = useRef<DataGridRef>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const {
     isAddModalOpen,
@@ -62,12 +56,33 @@ const UnitList = () => {
     locationKey: location.key,
   });
 
-  useEffect(() => {
-    setSortedUnits(units || []);
-  }, [units]);
 
-  const handleSort = (sortedData: any[]) => {
-    setSortedUnits(sortedData);
+  const handleFirstDataRendered = () => {
+    setIsInitialLoad(false);
+  };
+
+  const columnDefs: ColDef[] = [
+    createTextColumn({
+      field: "name",
+      headerName: "Nama Satuan",
+      minWidth: 120,
+      flex: 1,
+    }),
+    createTextColumn({
+      field: "description",
+      headerName: "Deskripsi",
+      minWidth: 200,
+      flex: 2,
+      valueGetter: (params) => {
+        return "description" in params.data && params.data.description
+          ? params.data.description
+          : "-";
+      },
+    }),
+  ];
+
+  const onRowClicked = (event: any) => {
+    handleEdit(event.data);
   };
 
   const handleCloseAddModal = () => {
@@ -116,61 +131,28 @@ const UnitList = () => {
           </div>
         ) : (
           <>
-            {isLoading && (!units || units.length === 0) ? (
-              <UnitListSkeleton rows={8} />
-            ) : (
-              <Table
-                scrollable={true}
-                stickyHeader={true}
-                autoSize={true}
-                columns={[
-                  { key: "name", header: "Nama Satuan", minWidth: 120, sortable: true },
-                  { key: "description", header: "Deskripsi", minWidth: 200, sortable: true },
-                ]}
-                data={units}
-                onSort={handleSort}
-              >
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Nama Satuan</TableHeader>
-                    <TableHeader>Deskripsi</TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedUnits && sortedUnits.length > 0 ? (
-                    sortedUnits.map((unit, index) => (
-                      <TableRow
-                        key={unit.id}
-                        onClick={() => handleEdit(unit)}
-                        className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch && sortedUnits === units
-                            ? "bg-emerald-100/50"
-                            : ""
-                        }`}
-                      >
-                        <TableCell>{unit.name}</TableCell>
-                        <TableCell>
-                          {"description" in unit && unit.description
-                            ? unit.description
-                            : "-"}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={2}
-                        className="text-center text-gray-500 py-10"
-                      >
-                        {debouncedSearch
-                          ? `Tidak ada satuan dengan kata kunci "${debouncedSearch}"`
-                          : "Tidak ada data satuan yang ditemukan"}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
+            <DataGrid
+              ref={gridRef}
+              rowData={units || []}
+              columnDefs={columnDefs}
+              domLayout="autoHeight"
+              onRowClicked={onRowClicked}
+              loading={isLoading}
+              overlayNoRowsTemplate={
+                debouncedSearch
+                  ? `<span style="padding: 10px; color: #888;">Tidak ada satuan dengan kata kunci "${debouncedSearch}"</span>`
+                  : '<span style="padding: 10px; color: #888;">Tidak ada data satuan yang ditemukan</span>'
+              }
+              sizeColumnsToFit={true}
+              onFirstDataRendered={handleFirstDataRendered}
+              style={{
+                width: "100%",
+                marginTop: "1rem",
+                marginBottom: "1rem",
+                filter: isInitialLoad ? "blur(8px)" : "none",
+                transition: "filter 0.3s ease-out",
+              }}
+            />
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
