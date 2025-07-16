@@ -18,10 +18,29 @@ export const getScore = (item: Item, searchTermLower: string): number => {
     const nameLower = item.name?.toLowerCase?.() ?? "";
     const codeLower = item.code?.toLowerCase?.() ?? "";
     const barcodeLower = item.barcode?.toLowerCase?.() ?? "";
-
-    if (nameLower.includes(searchTermLower)) return 3;
-    if (codeLower.includes(searchTermLower)) return 2;
-    if (barcodeLower.includes(searchTermLower)) return 1;
+    const categoryLower = item.category?.name?.toLowerCase?.() ?? "";
+    const typeLower = item.type?.name?.toLowerCase?.() ?? "";
+    const unitLower = item.unit?.name?.toLowerCase?.() ?? "";
+    const basePriceLower = item.base_price?.toString?.()?.toLowerCase?.() ?? "";
+    const sellPriceLower = item.sell_price?.toString?.()?.toLowerCase?.() ?? "";
+    const stockLower = item.stock?.toString?.()?.toLowerCase?.() ?? "";
+    
+    // Higher scores for more important fields
+    if (nameLower.includes(searchTermLower)) return 10;
+    if (codeLower.includes(searchTermLower)) return 9;
+    if (barcodeLower.includes(searchTermLower)) return 8;
+    if (categoryLower.includes(searchTermLower)) return 7;
+    if (typeLower.includes(searchTermLower)) return 6;
+    if (unitLower.includes(searchTermLower)) return 5;
+    if (basePriceLower.includes(searchTermLower)) return 4;
+    if (sellPriceLower.includes(searchTermLower)) return 3;
+    if (stockLower.includes(searchTermLower)) return 2;
+    
+    // Check unit conversions
+    if (item.unit_conversions && item.unit_conversions.some(uc => 
+        uc.unit?.name?.toLowerCase?.()?.includes(searchTermLower)
+    )) return 1;
+    
     return 0;
 };
 
