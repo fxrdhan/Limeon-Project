@@ -10,11 +10,10 @@ import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
 import {
   ColDef,
   RowClickedEvent,
-  GridApi,
-  GridReadyEvent,
 } from "ag-grid-community";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef, useState } from "react";
+import { useAgGridSearch } from "@/hooks/useAgGridSearch";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
 
@@ -77,9 +76,7 @@ const ItemMaster = () => {
   const headerRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<DataGridRef>(null);
-  const agGridRef = useRef<GridApi>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [search, setSearch] = useState(""); // Local state for immediate UI feedback
 
   const currentConfig = tabConfigs[activeTab];
 
@@ -115,22 +112,15 @@ const ItemMaster = () => {
     locationKey: location.key,
   });
 
+  const { search, handleSearchChange, onGridReady, clearSearch } = useAgGridSearch({
+    enableDebouncedSearch: true,
+    onDebouncedSearchChange: setDebouncedSearch,
+  });
+
   const handleFirstDataRendered = () => {
     setIsInitialLoad(false);
   };
 
-  const onGridReady = (params: GridReadyEvent) => {
-    agGridRef.current = params.api;
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearch(value); // Immediate UI feedback
-    setDebouncedSearch(value); // Server-side search across ALL data
-    if (agGridRef.current) {
-      agGridRef.current.setGridOption("quickFilterText", value); // Immediate client-side filtering
-    }
-  };
 
   const columnDefs: ColDef[] = [
     createTextColumn({
@@ -168,14 +158,10 @@ const ItemMaster = () => {
     if (newTab !== activeTab) {
       setActiveTab(newTab);
       setIsInitialLoad(true);
-      setSearch("");
+      clearSearch();
       if (searchInputRef.current) {
         searchInputRef.current.value = "";
       }
-      if (agGridRef.current) {
-        agGridRef.current.setGridOption("quickFilterText", "");
-      }
-      setDebouncedSearch(""); // Reset server-side search
     }
   };
 
