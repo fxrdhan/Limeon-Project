@@ -19,13 +19,14 @@ import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
+import type { Category } from "@/types";
 
 const CategoryList = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
   const location = useLocation();
-  const [sortedCategories, setSortedCategories] = useState<any[]>([]);
+  const [sortedCategories, setSortedCategories] = useState<Category[]>([]);
 
   const {
     isAddModalOpen,
@@ -64,7 +65,7 @@ const CategoryList = () => {
     setSortedCategories(categories || []);
   }, [categories]);
 
-  const handleSort = (sortedData: any[]) => {
+  const handleSort = (sortedData: Category[]) => {
     setSortedCategories(sortedData);
   };
 
