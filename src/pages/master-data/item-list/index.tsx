@@ -3,7 +3,7 @@ import SearchBar from "@/components/search-bar";
 import PageTitle from "@/components/page-title";
 import Pagination from "@/components/pagination";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { DataGrid, DataGridRef, createTextColumn, createWrapTextColumn, createCurrencyColumn, createCenterAlignColumn, createMatchScoreColumn, formatCurrency, formatBaseCurrency } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent, IRowNode } from "ag-grid-community";
@@ -74,7 +74,7 @@ function ItemList() {
   };
 
   // Fuzzy matching functions
-  const keys = [
+  const keys = useMemo(() => [
     "name",
     "code",
     "barcode",
@@ -85,9 +85,9 @@ function ItemList() {
     "base_price",
     "sell_price",
     "stock",
-  ];
+  ], []);
 
-  const toString = (o: unknown): unknown => {
+  const toString = useCallback((o: unknown): unknown => {
     if (!o) {
       return o;
     }
@@ -102,9 +102,9 @@ function ItemList() {
       return obj;
     }
     return o;
-  };
+  }, []);
 
-  const getMatchScore = (data: unknown) => {
+  const getMatchScore = useCallback((data: unknown) => {
     if (!filterString || filterString.length === 0) {
       return 0;
     }
@@ -114,7 +114,7 @@ function ItemList() {
       return results[0].score;
     }
     return -Infinity;
-  };
+  }, [filterString, keys, toString]);
 
   const isExternalFilterPresent = () => {
     return filterString.length > 0;
@@ -133,77 +133,87 @@ function ItemList() {
     }
   };
 
-  const columnDefs: ColDef[] = [
-    createMatchScoreColumn({
-      headerName: "Match",
-      minWidth: 100,
-      getMatchScore,
-    }),
-    createTextColumn({
-      field: "name",
-      headerName: "Nama Item",
-      minWidth: 200,
-      flex: 1,
-    }),
-    createTextColumn({
-      field: "code",
-      headerName: "Kode",
-      minWidth: 80,
-    }),
-    createTextColumn({
-      field: "barcode",
-      headerName: "Barcode",
-      minWidth: 100,
-      valueGetter: (params) => params.data.barcode || "-",
-    }),
-    createTextColumn({
-      field: "category.name",
-      headerName: "Kategori",
-      minWidth: 100,
-    }),
-    createWrapTextColumn({
-      field: "type.name",
-      headerName: "Jenis",
-      minWidth: 120,
-    }),
-    createTextColumn({
-      field: "unit.name",
-      headerName: "Satuan",
-      minWidth: 80,
-    }),
-    createTextColumn({
-      field: "unit_conversions",
-      headerName: "Satuan Turunan",
-      filter: false,
-      minWidth: 140,
-      valueGetter: (params) => {
-        const conversions = params.data.unit_conversions;
-        if (conversions && conversions.length > 0) {
-          return conversions
-            .map((uc: UnitConversion) => uc.unit?.name || "N/A")
-            .join(", ");
-        }
-        return "-";
-      },
-    }),
-    createCurrencyColumn({
-      field: "base_price",
-      headerName: "Harga Pokok",
-      minWidth: 120,
-      valueFormatter: (params) => formatBaseCurrency(params.value),
-    }),
-    createCurrencyColumn({
-      field: "sell_price",
-      headerName: "Harga Jual",
-      minWidth: 120,
-      valueFormatter: (params) => formatCurrency(params.value),
-    }),
-    createCenterAlignColumn({
-      field: "stock",
-      headerName: "Stok",
-      filter: "agNumberColumnFilter",
-    }),
-  ];
+  const columnDefs: ColDef[] = useMemo(() => {
+    const columns: ColDef[] = [];
+    
+    // Only show match column when filtering is active
+    if (filterString.length > 0) {
+      columns.push(createMatchScoreColumn({
+        headerName: "Match",
+        minWidth: 100,
+        getMatchScore,
+      }));
+    }
+    
+    columns.push(
+      createTextColumn({
+        field: "name",
+        headerName: "Nama Item",
+        minWidth: 200,
+        flex: 1,
+      }),
+      createTextColumn({
+        field: "code",
+        headerName: "Kode",
+        minWidth: 80,
+      }),
+      createTextColumn({
+        field: "barcode",
+        headerName: "Barcode",
+        minWidth: 100,
+        valueGetter: (params) => params.data.barcode || "-",
+      }),
+      createTextColumn({
+        field: "category.name",
+        headerName: "Kategori",
+        minWidth: 100,
+      }),
+      createWrapTextColumn({
+        field: "type.name",
+        headerName: "Jenis",
+        minWidth: 120,
+      }),
+      createTextColumn({
+        field: "unit.name",
+        headerName: "Satuan",
+        minWidth: 80,
+      }),
+      createTextColumn({
+        field: "unit_conversions",
+        headerName: "Satuan Turunan",
+        filter: false,
+        minWidth: 140,
+        valueGetter: (params) => {
+          const conversions = params.data.unit_conversions;
+          if (conversions && conversions.length > 0) {
+            return conversions
+              .map((uc: UnitConversion) => uc.unit?.name || "N/A")
+              .join(", ");
+          }
+          return "-";
+        },
+      }),
+      createCurrencyColumn({
+        field: "base_price",
+        headerName: "Harga Pokok",
+        minWidth: 120,
+        valueFormatter: (params) => formatBaseCurrency(params.value),
+      }),
+      createCurrencyColumn({
+        field: "sell_price",
+        headerName: "Harga Jual",
+        minWidth: 120,
+        valueFormatter: (params) => formatCurrency(params.value),
+      }),
+      createCenterAlignColumn({
+        field: "stock",
+        headerName: "Stok",
+        filter: "agNumberColumnFilter",
+      })
+    );
+    
+    return columns;
+  }, [filterString, getMatchScore]);
 
   const openAddItemModal = (itemId?: string, searchQuery?: string) => {
     // Set the data for the modal
