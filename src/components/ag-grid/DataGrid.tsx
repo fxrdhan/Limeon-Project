@@ -19,7 +19,7 @@ const customTheme = themeQuartz.withParams({
     style: "solid",
     width: 1,
   },
-  accentColor: "oklch(95% 0.052 163.051)",
+  accentColor: "oklch(84.5% 0.143 164.978)",
 });
 
 export interface DataGridProps {
