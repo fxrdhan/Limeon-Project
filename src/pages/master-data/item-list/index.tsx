@@ -14,7 +14,8 @@ import {
   formatCurrency,
   formatBaseCurrency,
 } from "@/components/ag-grid";
-import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from "ag-grid-community";
+import { ColDef, RowClickedEvent } from "ag-grid-community";
+import { useAgGridSearch } from "@/hooks/useAgGridSearch";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
@@ -27,11 +28,10 @@ function ItemList() {
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
-  const gridRef = useRef<GridApi>(null);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  const [search, setSearch] = useState("");
+  const { search, handleSearchChange, onGridReady } = useAgGridSearch();
 
   const {
     currentPage,
@@ -78,17 +78,6 @@ function ItemList() {
     setIsInitialLoad(false);
   };
 
-  const onGridReady = (params: GridReadyEvent) => {
-    gridRef.current = params.api;
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearch(value);
-    if (gridRef.current) {
-      gridRef.current.setGridOption("quickFilterText", value);
-    }
-  };
 
   const columnDefs: ColDef[] = useMemo(() => {
     const columns: ColDef[] = [
