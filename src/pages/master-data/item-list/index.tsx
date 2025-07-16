@@ -3,17 +3,10 @@ import SearchBar from "@/components/search-bar";
 import PageTitle from "@/components/page-title";
 import Pagination from "@/components/pagination";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { AgGridReact } from "ag-grid-react";
-import {
-  ColDef,
-  ModuleRegistry,
-  AllCommunityModule,
-  themeQuartz,
-} from "ag-grid-community";
-
-ModuleRegistry.registerModules([AllCommunityModule]);
+import { DataGrid, DataGridRef, createTextColumn, createWrapTextColumn, createCurrencyColumn, createCenterAlignColumn, formatCurrency, formatBaseCurrency } from "@/components/ag-grid";
+import { ColDef } from "ag-grid-community";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
@@ -60,85 +53,58 @@ function ItemList() {
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const gridRef = useRef<AgGridReact>(null);
+  const gridRef = useRef<DataGridRef>(null);
 
-  useEffect(() => {
-    if (items && items.length > 0 && gridRef.current) {
-      setTimeout(() => {
-        const columnsToAutoSize = [
-          "code",
-          "barcode",
-          "category.name",
-          "type.name",
-          "unit.name",
-          "unit_conversions",
-          "base_price",
-          "sell_price",
-          "stock",
-        ];
-        gridRef.current?.api?.autoSizeColumns(columnsToAutoSize);
-        setIsInitialLoad(false);
-      }, 200);
-    }
-  }, [items]);
+  const columnsToAutoSize = [
+    "code",
+    "barcode", 
+    "category.name",
+    "type.name",
+    "unit.name",
+    "unit_conversions",
+    "base_price",
+    "sell_price",
+    "stock",
+  ];
+
+  const handleFirstDataRendered = () => {
+    setIsInitialLoad(false);
+  };
 
   const columnDefs: ColDef[] = [
-    {
+    createTextColumn({
       field: "name",
       headerName: "Nama Item",
-      filter: true,
-      floatingFilter: true,
       minWidth: 200,
       flex: 1,
-      cellStyle: {
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-      },
-      tooltipField: "name",
-    },
-    {
+    }),
+    createTextColumn({
       field: "code",
       headerName: "Kode",
-      filter: true,
-      floatingFilter: true,
       minWidth: 80,
-    },
-    {
+    }),
+    createTextColumn({
       field: "barcode",
       headerName: "Barcode",
-      filter: true,
-      floatingFilter: true,
       minWidth: 100,
       valueGetter: (params) => params.data.barcode || "-",
-    },
-    {
+    }),
+    createTextColumn({
       field: "category.name",
       headerName: "Kategori",
-      filter: true,
-      floatingFilter: true,
       minWidth: 100,
-    },
-    {
+    }),
+    createWrapTextColumn({
       field: "type.name",
       headerName: "Jenis",
-      filter: true,
-      floatingFilter: true,
       minWidth: 120,
-      cellStyle: {
-        overflow: "visible",
-        textOverflow: "unset",
-        whiteSpace: "normal",
-      },
-    },
-    {
+    }),
+    createTextColumn({
       field: "unit.name",
       headerName: "Satuan",
-      filter: true,
-      floatingFilter: true,
       minWidth: 80,
-    },
-    {
+    }),
+    createTextColumn({
       field: "unit_conversions",
       headerName: "Satuan Turunan",
       filter: false,
@@ -152,42 +118,24 @@ function ItemList() {
         }
         return "-";
       },
-    },
-    {
+    }),
+    createCurrencyColumn({
       field: "base_price",
       headerName: "Harga Pokok",
-      filter: "agNumberColumnFilter",
-      floatingFilter: true,
       minWidth: 120,
-      cellStyle: { textAlign: "right" },
-      valueFormatter: (params) =>
-        params.value.toLocaleString("id-ID", {
-          style: "currency",
-          currency: "IDR",
-        }),
-    },
-    {
+      valueFormatter: (params) => formatBaseCurrency(params.value),
+    }),
+    createCurrencyColumn({
       field: "sell_price",
       headerName: "Harga Jual",
-      filter: "agNumberColumnFilter",
-      floatingFilter: true,
       minWidth: 120,
-      cellStyle: { textAlign: "right" },
-      valueFormatter: (params) =>
-        params.value.toLocaleString("id-ID", {
-          style: "currency",
-          currency: "IDR",
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }),
-    },
-    {
+      valueFormatter: (params) => formatCurrency(params.value),
+    }),
+    createCenterAlignColumn({
       field: "stock",
       headerName: "Stok",
       filter: "agNumberColumnFilter",
-      floatingFilter: true,
-      cellStyle: { textAlign: "center" },
-    },
+    }),
   ];
 
   const openAddItemModal = (itemId?: string, searchQuery?: string) => {
@@ -276,7 +224,21 @@ function ItemList() {
         )}
         {!isErrorState && (
           <>
-            <div
+            <DataGrid
+              ref={gridRef}
+              rowData={items as ItemDataType[]}
+              columnDefs={columnDefs}
+              domLayout={items.length <= 3 ? "normal" : "autoHeight"}
+              getRowHeight={() => (items.length <= 3 ? 42 : undefined)}
+              onRowClicked={onRowClicked}
+              loading={isLoadingState}
+              overlayNoRowsTemplate={
+                debouncedSearch
+                  ? `<span style="padding: 10px; color: #888;">Tidak ada item dengan nama "${debouncedSearch}"</span>`
+                  : '<span style="padding: 10px; color: #888;">Tidak ada data item yang ditemukan</span>'
+              }
+              autoSizeColumns={columnsToAutoSize}
+              onFirstDataRendered={handleFirstDataRendered}
               style={{
                 width: "100%",
                 marginTop: "1rem",
@@ -286,42 +248,7 @@ function ItemList() {
                 height:
                   items.length <= 3 ? `${95 + items.length * 42}px` : "auto",
               }}
-            >
-              <AgGridReact
-                ref={gridRef}
-                theme={themeQuartz}
-                rowData={items as ItemDataType[]}
-                columnDefs={columnDefs}
-                domLayout={items.length <= 3 ? "normal" : "autoHeight"}
-                getRowHeight={() => (items.length <= 3 ? 42 : undefined)}
-                defaultColDef={{
-                  sortable: true,
-                  resizable: true,
-                  filter: true,
-                  cellDataType: false,
-                  minWidth: 80,
-                }}
-                colResizeDefault="shift"
-                onRowClicked={onRowClicked}
-                rowSelection={{
-                  mode: "singleRow",
-                  checkboxes: false,
-                }}
-                suppressMovableColumns={true}
-                cellSelection={false}
-                suppressScrollOnNewData={true}
-                suppressAnimationFrame={true}
-                loading={isLoadingState}
-                overlayNoRowsTemplate={
-                  debouncedSearch
-                    ? `<span style="padding: 10px; color: #888;">Tidak ada item dengan nama "${debouncedSearch}"</span>`
-                    : '<span style="padding: 10px; color: #888;">Tidak ada data item yang ditemukan</span>'
-                }
-                rowClass="cursor-pointer"
-                animateRows={true}
-                loadThemeGoogleFonts={true}
-              />
-            </div>
+            />
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
