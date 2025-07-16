@@ -215,7 +215,6 @@ const ItemMaster = () => {
               ref={gridRef}
               rowData={data || []}
               columnDefs={columnDefs}
-              autoHeightForSmallTables={true}
               onRowClicked={onRowClicked}
               loading={isLoading}
               overlayNoRowsTemplate={
