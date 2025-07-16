@@ -36,6 +36,7 @@ export interface DataGridProps {
   loadThemeGoogleFonts?: boolean;
   rowSelection?: "single" | "multiple";
   colResizeDefault?: "shift" | undefined;
+  autoHeightForSmallTables?: boolean;
 }
 
 export interface DataGridRef {
@@ -70,10 +71,22 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       loadThemeGoogleFonts = true,
       rowSelection = "single",
       colResizeDefault = "shift",
+      autoHeightForSmallTables = false,
     },
     ref
   ) => {
     const gridRef = useRef<AgGridReact>(null);
+
+    // Calculate dynamic height properties when autoHeightForSmallTables is enabled
+    const isSmallTable = autoHeightForSmallTables && rowData.length <= 3;
+    const dynamicDomLayout = isSmallTable ? "normal" : domLayout;
+    const dynamicGetRowHeight = isSmallTable ? () => 42 : getRowHeight;
+    const dynamicStyle = isSmallTable 
+      ? {
+          ...style,
+          height: `${95 + rowData.length * 42}px`,
+        }
+      : style;
 
     useImperativeHandle(ref, () => ({
       api: gridRef.current?.api || null,
@@ -127,14 +140,14 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
     };
 
     return (
-      <div className={className} style={style}>
+      <div className={className} style={dynamicStyle}>
         <AgGridReact
           ref={gridRef}
           theme={themeQuartz}
           rowData={rowData}
           columnDefs={columnDefs}
-          domLayout={domLayout}
-          getRowHeight={getRowHeight}
+          domLayout={dynamicDomLayout}
+          getRowHeight={dynamicGetRowHeight}
           defaultColDef={defaultColDef}
           colResizeDefault={colResizeDefault}
           onRowClicked={onRowClicked}
