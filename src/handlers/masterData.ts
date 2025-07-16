@@ -34,10 +34,7 @@ export const useMasterDataManagement = (
   const queryClient = useQueryClient();
   const alert = useAlert();
 
-  const {
-    realtime = false,
-    isCustomModalOpen,
-  } = options || {};
+  const { realtime = false, isCustomModalOpen } = options || {};
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -68,13 +65,12 @@ export const useMasterDataManagement = (
     return () => clearTimeout(timer);
   }, [editingItem, isEditModalOpen]);
 
-
   const fetchData = async (page: number, searchTerm: string, limit: number) => {
     const from = (page - 1) * limit;
 
     if (tableName === "items") {
       const to = from + limit - 1;
-      let itemsQuery = supabase.from("items").select(`
+      const itemsQuery = supabase.from("items").select(`
                 id,
                 name,
                 code,
@@ -91,11 +87,14 @@ export const useMasterDataManagement = (
                 item_units (name)
             `);
 
-      let countQuery = supabase.from("items").select("id", { count: "exact" });
+      const countQuery = supabase.from("items").select("id", { count: "exact" });
 
       // Don't filter at Supabase level - let local filtering handle comprehensive search
       // This ensures we get all data and can search across all fields including relations
-      console.log('🔍 SUPABASE QUERY - Fetching all data for local filtering. Search term:', searchTerm || 'none');
+      console.log(
+        "🔍 SUPABASE QUERY - Fetching all data for local filtering. Search term:",
+        searchTerm || "none",
+      );
 
       const [itemsResult, countResult, allUnitsForConversionRes] =
         await Promise.all([
@@ -105,14 +104,21 @@ export const useMasterDataManagement = (
         ]);
 
       if (itemsResult.error) {
-        console.error('🔍 SUPABASE QUERY - Error:', itemsResult.error);
+        console.error("🔍 SUPABASE QUERY - Error:", itemsResult.error);
         throw itemsResult.error;
       }
       if (countResult.error) throw countResult.error;
       if (allUnitsForConversionRes.error) throw allUnitsForConversionRes.error;
-      
-      console.log('🔍 SUPABASE QUERY - Raw results:', itemsResult.data?.length || 0, 'items');
-      console.log('🔍 SUPABASE QUERY - Sample raw item:', itemsResult.data?.[0]);
+
+      console.log(
+        "🔍 SUPABASE QUERY - Raw results:",
+        itemsResult.data?.length || 0,
+        "items",
+      );
+      console.log(
+        "🔍 SUPABASE QUERY - Sample raw item:",
+        itemsResult.data?.[0],
+      );
 
       const allUnitsForConversion: UnitData[] =
         allUnitsForConversionRes.data || [];
@@ -181,54 +187,72 @@ export const useMasterDataManagement = (
       let filteredData = completedData;
       if (searchTerm) {
         const searchTermLower = searchTerm.toLowerCase();
-        console.log('🔍 LOCAL FILTERING - Search term:', searchTermLower);
-        console.log('🔍 LOCAL FILTERING - Raw data from Supabase:', completedData.length, 'items');
-        console.log('🔍 LOCAL FILTERING - Sample item:', completedData[0]);
-        
+        console.log("🔍 LOCAL FILTERING - Search term:", searchTermLower);
+        console.log(
+          "🔍 LOCAL FILTERING - Raw data from Supabase:",
+          completedData.length,
+          "items",
+        );
+        console.log("🔍 LOCAL FILTERING - Sample item:", completedData[0]);
+
         if (Array.isArray(completedData)) {
           filteredData = completedData
-            .filter(
-              (item) => {
-                const matches = fuzzyMatch(item.name, searchTermLower) ||
-                  (item.code && fuzzyMatch(item.code, searchTermLower)) ||
-                  (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
-                  (item.category?.name && fuzzyMatch(item.category.name, searchTermLower)) ||
-                  (item.type?.name && fuzzyMatch(item.type.name, searchTermLower)) ||
-                  (item.unit?.name && fuzzyMatch(item.unit.name, searchTermLower)) ||
-                  (item.base_price && fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
-                  (item.sell_price && fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
-                  (item.stock && fuzzyMatch(item.stock.toString(), searchTermLower)) ||
-                  (item.unit_conversions && item.unit_conversions.some(uc => 
-                    uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower)
+            .filter((item) => {
+              const matches =
+                fuzzyMatch(item.name, searchTermLower) ||
+                (item.code && fuzzyMatch(item.code, searchTermLower)) ||
+                (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
+                (item.category?.name &&
+                  fuzzyMatch(item.category.name, searchTermLower)) ||
+                (item.type?.name &&
+                  fuzzyMatch(item.type.name, searchTermLower)) ||
+                (item.unit?.name &&
+                  fuzzyMatch(item.unit.name, searchTermLower)) ||
+                (item.base_price &&
+                  fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
+                (item.sell_price &&
+                  fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
+                (item.stock &&
+                  fuzzyMatch(item.stock.toString(), searchTermLower)) ||
+                (item.unit_conversions &&
+                  item.unit_conversions.some(
+                    (uc) =>
+                      uc.unit?.name &&
+                      fuzzyMatch(uc.unit.name, searchTermLower),
                   ));
-                
-                if (matches && searchTermLower.includes('analgesik')) {
-                  console.log('🎯 LOCAL FILTERING - Found match:', {
-                    name: item.name,
-                    category: item.category?.name,
-                    type: item.type?.name,
-                    unit: item.unit?.name
-                  });
-                }
-                
-                return matches;
+
+              if (matches && searchTermLower.includes("analgesik")) {
+                console.log("🎯 LOCAL FILTERING - Found match:", {
+                  name: item.name,
+                  category: item.category?.name,
+                  type: item.type?.name,
+                  unit: item.unit?.name,
+                });
               }
-            )
+
+              return matches;
+            })
             .sort((a, b) => {
               const scoreA = getScore(a, searchTermLower);
               const scoreB = getScore(b, searchTermLower);
               if (scoreA !== scoreB) return scoreB - scoreA;
               return a.name.localeCompare(b.name);
             });
-            
-          console.log('🔍 LOCAL FILTERING - Filtered results:', filteredData.length, 'items');
+
+          console.log(
+            "🔍 LOCAL FILTERING - Filtered results:",
+            filteredData.length,
+            "items",
+          );
         } else {
           filteredData = [];
         }
       }
 
       // When searching, return the filtered count, not the total DB count
-      const finalCount = searchTerm ? filteredData.length : (countResult.count || 0);
+      const finalCount = searchTerm
+        ? filteredData.length
+        : countResult.count || 0;
       return { data: filteredData, totalItems: finalCount };
     } else {
       const to = from + limit - 1;
@@ -496,7 +520,6 @@ export const useMasterDataManagement = (
     showDiffInConsole: true,
     detailedLogging: true,
   });
-
 
   return {
     isAddModalOpen,
