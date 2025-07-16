@@ -94,15 +94,9 @@ export const useMasterDataManagement = (
 
       let countQuery = supabase.from("items").select("id", { count: "exact" });
 
-      if (searchTerm) {
-        const fuzzySearchPattern = `%${searchTerm.toLowerCase().split("").join("%")}%`;
-        itemsQuery = itemsQuery.or(
-          `name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern},barcode.ilike.${fuzzySearchPattern}`,
-        );
-        countQuery = countQuery.or(
-          `name.ilike.${fuzzySearchPattern},code.ilike.${fuzzySearchPattern},barcode.ilike.${fuzzySearchPattern}`,
-        );
-      }
+      // Don't filter at Supabase level - let local filtering handle comprehensive search
+      // This ensures we get all data and can search across all fields including relations
+      console.log('🔍 SUPABASE QUERY - Fetching all data for local filtering. Search term:', searchTerm || 'none');
 
       const [itemsResult, countResult, allUnitsForConversionRes] =
         await Promise.all([
@@ -111,9 +105,15 @@ export const useMasterDataManagement = (
           supabase.from("item_units").select("id, name"),
         ]);
 
-      if (itemsResult.error) throw itemsResult.error;
+      if (itemsResult.error) {
+        console.error('🔍 SUPABASE QUERY - Error:', itemsResult.error);
+        throw itemsResult.error;
+      }
       if (countResult.error) throw countResult.error;
       if (allUnitsForConversionRes.error) throw allUnitsForConversionRes.error;
+      
+      console.log('🔍 SUPABASE QUERY - Raw results:', itemsResult.data?.length || 0, 'items');
+      console.log('🔍 SUPABASE QUERY - Sample raw item:', itemsResult.data?.[0]);
 
       const allUnitsForConversion: UnitData[] =
         allUnitsForConversionRes.data || [];
@@ -182,13 +182,38 @@ export const useMasterDataManagement = (
       let filteredData = completedData;
       if (searchTerm) {
         const searchTermLower = searchTerm.toLowerCase();
+        console.log('🔍 LOCAL FILTERING - Search term:', searchTermLower);
+        console.log('🔍 LOCAL FILTERING - Raw data from Supabase:', completedData.length, 'items');
+        console.log('🔍 LOCAL FILTERING - Sample item:', completedData[0]);
+        
         if (Array.isArray(completedData)) {
           filteredData = completedData
             .filter(
-              (item) =>
-                fuzzyMatch(item.name, searchTermLower) ||
-                (item.code && fuzzyMatch(item.code, searchTermLower)) ||
-                (item.barcode && fuzzyMatch(item.barcode, searchTermLower)),
+              (item) => {
+                const matches = fuzzyMatch(item.name, searchTermLower) ||
+                  (item.code && fuzzyMatch(item.code, searchTermLower)) ||
+                  (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
+                  (item.category?.name && fuzzyMatch(item.category.name, searchTermLower)) ||
+                  (item.type?.name && fuzzyMatch(item.type.name, searchTermLower)) ||
+                  (item.unit?.name && fuzzyMatch(item.unit.name, searchTermLower)) ||
+                  (item.base_price && fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
+                  (item.sell_price && fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
+                  (item.stock && fuzzyMatch(item.stock.toString(), searchTermLower)) ||
+                  (item.unit_conversions && item.unit_conversions.some(uc => 
+                    uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower)
+                  ));
+                
+                if (matches && searchTermLower.includes('analgesik')) {
+                  console.log('🎯 LOCAL FILTERING - Found match:', {
+                    name: item.name,
+                    category: item.category?.name,
+                    type: item.type?.name,
+                    unit: item.unit?.name
+                  });
+                }
+                
+                return matches;
+              }
             )
             .sort((a, b) => {
               const scoreA = getScore(a, searchTermLower);
@@ -196,12 +221,16 @@ export const useMasterDataManagement = (
               if (scoreA !== scoreB) return scoreB - scoreA;
               return a.name.localeCompare(b.name);
             });
+            
+          console.log('🔍 LOCAL FILTERING - Filtered results:', filteredData.length, 'items');
         } else {
           filteredData = [];
         }
       }
 
-      return { data: filteredData, totalItems: countResult.count || 0 };
+      // When searching, return the filtered count, not the total DB count
+      const finalCount = searchTerm ? filteredData.length : (countResult.count || 0);
+      return { data: filteredData, totalItems: finalCount };
     } else {
       const to = from + limit - 1;
       let query = supabase.from(tableName).select("*", { count: "exact" });
