@@ -112,7 +112,7 @@ const ItemMaster = () => {
     locationKey: location.key,
   });
 
-  const { search, handleSearchChange, onGridReady, clearSearch } = useAgGridSearch({
+  const { search, handleSearchChange, onGridReady, clearSearch, isExternalFilterPresent, doesExternalFilterPass } = useAgGridSearch({
     enableDebouncedSearch: true,
     onDebouncedSearchChange: setDebouncedSearch,
   });
@@ -235,6 +235,8 @@ const ItemMaster = () => {
               }
               sizeColumnsToFit={true}
               onFirstDataRendered={handleFirstDataRendered}
+              isExternalFilterPresent={isExternalFilterPresent}
+              doesExternalFilterPass={doesExternalFilterPass}
               style={{
                 width: "100%",
                 marginTop: "1rem",
