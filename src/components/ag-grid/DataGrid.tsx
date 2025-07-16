@@ -8,6 +8,7 @@ import {
   GridApi,
   GridReadyEvent,
   RowClickedEvent,
+  IRowNode,
 } from "ag-grid-community";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -47,12 +48,16 @@ export interface DataGridProps {
   rowSelection?: "single" | "multiple";
   colResizeDefault?: "shift" | undefined;
   autoHeightForSmallTables?: boolean;
+  isExternalFilterPresent?: () => boolean;
+  doesExternalFilterPass?: (node: IRowNode) => boolean;
 }
 
 export interface DataGridRef {
   api: GridApi | null;
   autoSizeColumns: (columns?: string[]) => void;
   sizeColumnsToFit: () => void;
+  onFilterChanged: () => void;
+  refreshCells: () => void;
 }
 
 const DataGrid = forwardRef<DataGridRef, DataGridProps>(
@@ -82,6 +87,8 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       rowSelection = "single",
       colResizeDefault = "shift",
       autoHeightForSmallTables = false,
+      isExternalFilterPresent,
+      doesExternalFilterPass,
     },
     ref,
   ) => {
@@ -114,6 +121,16 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       sizeColumnsToFit: () => {
         if (gridRef.current?.api) {
           gridRef.current.api.sizeColumnsToFit();
+        }
+      },
+      onFilterChanged: () => {
+        if (gridRef.current?.api) {
+          gridRef.current.api.onFilterChanged();
+        }
+      },
+      refreshCells: () => {
+        if (gridRef.current?.api) {
+          gridRef.current.api.refreshCells();
         }
       },
     }));
@@ -178,6 +195,8 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           rowClass={rowClass}
           animateRows={animateRows}
           loadThemeGoogleFonts={loadThemeGoogleFonts}
+          isExternalFilterPresent={isExternalFilterPresent}
+          doesExternalFilterPass={doesExternalFilterPass}
         />
       </div>
     );
