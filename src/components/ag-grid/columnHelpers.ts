@@ -113,6 +113,7 @@ export const formatBaseCurrency = (value: number): string => {
 };
 
 export const createMatchScoreColumn = (config: Omit<ColumnConfig, "field"> & { getMatchScore: (data: unknown) => number }): ColDef => ({
+  field: "matchScore",
   headerName: config.headerName,
   width: config.minWidth || 100,
   sort: "desc",
