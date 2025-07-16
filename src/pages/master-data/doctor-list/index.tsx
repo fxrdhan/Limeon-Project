@@ -1,448 +1,251 @@
-import GenericDetailModal from "@/components/add-edit/v3";
+import AddEditModal from "@/components/add-edit/v1";
 import SearchBar from "@/components/search-bar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
 import PageTitle from "@/components/page-title";
-import CardName from "@/components/card-name";
-import { type CardItem } from "@/types";
-import blankProfilePicture from "@/assets/blank-profile-picture.png";
 
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
-import { PatientListSkeleton } from "@/components/table";
-import { useState, useRef } from "react";
-import { StorageService } from "@/utils/storage";
+import { DataGrid, createTextColumn } from "@/components/ag-grid";
+import { ColDef, RowClickedEvent } from "ag-grid-community";
+import { useState, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { useMutation } from "@tanstack/react-query";
-import type {
-  Doctor as DoctorType,
-  FieldConfig as FieldConfigDoctor,
-} from "@/types";
+import type { Doctor as DoctorType } from "@/types";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { getSearchState } from "@/utils/search";
+import { useAgGridSearch } from "@/hooks/useAgGridSearch";
 
 const DoctorList = () => {
-  const [, setNewDoctorImage] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
   const location = useLocation();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const {
-    handlePageChange,
-    itemsPerPage,
     isAddModalOpen,
+    setIsAddModalOpen,
     isEditModalOpen,
     setIsEditModalOpen,
-    setIsAddModalOpen,
     editingItem,
-    setEditingItem,
-    handleItemsPerPageChange,
-    search,
-    setSearch,
-    debouncedSearch,
-    currentPage,
-    queryClient,
-    openConfirmDialog,
-    totalItems,
-    queryError,
     data: doctorsData,
+    totalItems,
     isLoading,
     isError,
+    queryError,
     isFetching,
-    handleKeyDown,
     handleEdit,
+    handleModalSubmit,
+    handlePageChange,
+    handleItemsPerPageChange,
+    totalPages,
+    currentPage,
+    itemsPerPage,
+    addMutation,
+    updateMutation,
+    deleteMutation,
+    openConfirmDialog,
+    debouncedSearch,
+    handleKeyDown,
   } = useMasterDataManagement("doctors", "Dokter", {
     realtime: true,
     searchInputRef,
     locationKey: location.key,
   });
 
+  const {
+    search,
+    handleSearchChange,
+    onGridReady,
+    isExternalFilterPresent,
+    doesExternalFilterPass,
+  } = useAgGridSearch();
 
   const doctors = doctorsData || [];
-  const currentTotalItems = totalItems || 0;
-  const selectedDoctor = editingItem as DoctorType | null;
 
-  const updateDoctor = async (updatedData: Partial<DoctorType>) => {
-    if (!selectedDoctor || !selectedDoctor.id) {
-      console.error(
-        "Tidak dapat memperbarui: selectedDoctor atau ID-nya hilang.",
-      );
-      return;
-    }
-    const { ...dataToUpdate } = updatedData;
-
-    const { error } = await supabase
-      .from("doctors")
-      .update(dataToUpdate)
-      .eq("id", selectedDoctor.id);
-    if (error) throw error;
+  const handleFirstDataRendered = () => {
+    setIsInitialLoad(false);
   };
 
-  const createDoctor = async (newDoctor: Partial<DoctorType>) => {
-    const dataToInsert = { ...newDoctor };
-    const { data, error } = await supabase
-      .from("doctors")
-      .insert([dataToInsert])
-      .select();
-    if (error) throw error;
-    return data[0];
-  };
+  const columnDefs: ColDef[] = useMemo(() => {
+    const columns: ColDef[] = [
+      createTextColumn({
+        field: "name",
+        headerName: "Nama Dokter",
+        minWidth: 200,
+        flex: 1,
+      }),
+      createTextColumn({
+        field: "gender",
+        headerName: "Jenis Kelamin",
+        minWidth: 120,
+        valueGetter: (params) => params.data.gender || "-",
+      }),
+      createTextColumn({
+        field: "specialization",
+        headerName: "Spesialisasi",
+        minWidth: 150,
+        flex: 1,
+        valueGetter: (params) => params.data.specialization || "-",
+      }),
+      createTextColumn({
+        field: "license_number",
+        headerName: "Nomor Lisensi",
+        minWidth: 140,
+        valueGetter: (params) => params.data.license_number || "-",
+      }),
+      createTextColumn({
+        field: "experience_years",
+        headerName: "Pengalaman",
+        minWidth: 100,
+        valueGetter: (params) => {
+          const years = params.data.experience_years;
+          return years ? `${years} tahun` : "-";
+        },
+      }),
+      createTextColumn({
+        field: "phone",
+        headerName: "Telepon",
+        minWidth: 120,
+        valueGetter: (params) => params.data.phone || "-",
+      }),
+      createTextColumn({
+        field: "email",
+        headerName: "Email",
+        minWidth: 150,
+        valueGetter: (params) => params.data.email || "-",
+      }),
+    ];
 
-  const updateDoctorMutation = useMutation<void, Error, Partial<DoctorType>>({
-    mutationFn: updateDoctor,
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["doctors"] });
-      if (selectedDoctor) {
-        setEditingItem((prev) => (prev ? { ...prev, ...variables } : null));
-      }
-    },
-    onError: (error) => {
-      console.error("Error updating doctor:", error);
-      alert(`Gagal memperbarui dokter: ${error.message}`);
-    },
-  });
+    return columns;
+  }, []);
 
-  const createDoctorMutation = useMutation<
-    DoctorType,
-    Error,
-    Partial<DoctorType>
-  >({
-    mutationFn: createDoctor,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["doctors"] });
-      setIsAddModalOpen(false);
-    },
-    onError: (error) => {
-      console.error("Error creating doctor:", error);
-      alert(`Gagal membuat dokter baru: ${error.message}`);
-    },
-  });
-
-  const deleteDoctorMutation = useMutation({
-    mutationFn: async (doctorId: string) => {
-      const { error } = await supabase
-        .from("doctors")
-        .delete()
-        .eq("id", doctorId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["doctors"] });
-      setIsEditModalOpen(false);
-      setEditingItem(null);
-    },
-    onError: (error: Error) => {
-      console.error("Error deleting doctor:", error);
-      alert(`Gagal menghapus dokter: ${error.message}`);
-    },
-  });
-
-  const updateDoctorImageMutation = useMutation<
-    string | undefined,
-    Error,
-    { entityId: string; file: File }
-  >({
-    mutationFn: async ({
-      entityId,
-      file,
-    }: {
-      entityId: string;
-      file: File;
-    }) => {
-      const { data: doctorData } = await supabase
-        .from("doctors")
-        .select("image_url")
-        .eq("id", entityId)
-        .single();
-
-      if (doctorData?.image_url) {
-        const oldPath = StorageService.extractPathFromUrl(
-          doctorData.image_url,
-          "doctors",
-        );
-        if (oldPath) {
-          await StorageService.deleteEntityImage("doctors", oldPath);
-        }
-      }
-
-      const { publicUrl } = await StorageService.uploadEntityImage(
-        "doctors",
-        entityId,
-        file,
-      );
-
-      const { error } = await supabase
-        .from("doctors")
-        .update({ image_url: publicUrl, updated_at: new Date().toISOString() })
-        .eq("id", entityId);
-      if (error) throw error;
-      return publicUrl;
-    },
-    onSuccess: (newImageUrl) => {
-      queryClient.invalidateQueries({ queryKey: ["doctors"] });
-      if (newImageUrl && selectedDoctor) {
-        setEditingItem((prev) =>
-          prev ? { ...prev, image_url: newImageUrl } : null,
-        );
-      }
-    },
-    onError: (error) => console.error("Error updating doctor image:", error),
-  });
-
-  const openDoctorDetail = (doctor: DoctorType) => {
-    handleEdit(doctor);
-  };
-
-  const openAddDoctorModal = () => {
-    setIsAddModalOpen(true);
-  };
-
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
-  };
-
-  const closeAddModal = () => {
+  const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
   };
 
-  const handleDelete = (doctor: DoctorType) => {
-    openConfirmDialog({
-      title: "Konfirmasi Hapus",
-      message: `Apakah Anda yakin ingin menghapus dokter "${doctor.name}"? Tindakan ini tidak dapat diurungkan.`,
-      variant: "danger",
-      confirmText: "Hapus",
-      onConfirm: () => deleteDoctorMutation.mutate(doctor.id),
-    });
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
   };
 
-  const doctorFields: FieldConfigDoctor[] = [
-    { key: "name", label: "Nama Dokter", type: "text", editable: true },
-    {
-      key: "gender",
-      label: "Jenis Kelamin",
-      type: "text",
-      editable: true,
-      isRadioDropdown: true,
-      options: [
-        { id: "Laki-laki", name: "Laki-laki" },
-        { id: "Perempuan", name: "Perempuan" },
-      ],
-    },
-    {
-      key: "specialization",
-      label: "Spesialisasi",
-      type: "text",
-      editable: true,
-    },
-    {
-      key: "license_number",
-      label: "Nomor Lisensi",
-      type: "text",
-      editable: true,
-    },
-    { key: "birth_date", label: "Tanggal Lahir", type: "date", editable: true },
-    {
-      key: "experience_years",
-      label: "Pengalaman (Tahun)",
-      type: "text",
-      editable: true,
-    },
-    {
-      key: "qualification",
-      label: "Kualifikasi",
-      type: "textarea",
-      editable: true,
-    },
-    { key: "address", label: "Alamat", type: "textarea", editable: true },
-    { key: "phone", label: "Telepon", type: "tel", editable: true },
-    { key: "email", label: "Email", type: "email", editable: true },
-  ];
-
-
-  const emptyDoctorData = {
-    name: "",
-    gender: "",
-    specialization: "",
-    license_number: "",
-    birth_date: "",
-    experience_years: "",
-    qualification: "",
-    address: "",
-    phone: "",
-    email: "",
-    image_url: null,
+  const onRowClicked = (event: RowClickedEvent) => {
+    handleEdit(event.data);
   };
-
-  const totalPages = Math.ceil(currentTotalItems / itemsPerPage);
 
   return (
-    <Card>
-      <PageTitle title="Daftar Dokter" />
-
-      <div className="mt-6 flex items-center">
-        <SearchBar
-          inputRef={searchInputRef}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Cari nama dokter..."
-          className="grow"
-          searchState={getSearchState(search, debouncedSearch, doctors)}
-        />
-        <Button
-          variant="primary"
-          withGlow
-          className="flex items-center ml-4 mb-4"
-          onClick={openAddDoctorModal}
-        >
-          <FaPlus className="mr-2" />
-          Tambah Dokter Baru
-        </Button>
-      </div>
-      {isError && !isLoading && (
-        <div className="text-center text-red-500">
-          Error: {queryError?.message || "Gagal memuat data"}
-        </div>
-      )}
-
-      <div
-        className={`${
-          isFetching ? "opacity-50 transition-opacity duration-300" : ""
-        }`}
+    <>
+      <Card
+        className={
+          isFetching
+            ? "opacity-75 transition-opacity duration-300 flex-1 flex flex-col"
+            : "flex-1 flex flex-col"
+        }
       >
+        <div className="mb-6">
+          <PageTitle title="Daftar Dokter" />
+        </div>
+        <div className="flex items-center">
+          <SearchBar
+            inputRef={searchInputRef}
+            value={search}
+            onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Cari di semua kolom (nama, spesialisasi, lisensi, dll)..."
+            className="grow"
+            searchState={getSearchState(search, search, doctors)}
+          />
+          <Button
+            variant="primary"
+            withGlow
+            className="flex items-center ml-4 mb-4"
+            onClick={() => setIsAddModalOpen(true)}
+          >
+            <FaPlus className="mr-2" />
+            Tambah Dokter Baru
+          </Button>
+        </div>
+        {isError && (
+          <div className="text-center p-6 text-red-500">
+            Error:{" "}
+            {queryError instanceof Error
+              ? queryError.message
+              : "Gagal memuat data"}
+          </div>
+        )}
         {!isError && (
           <>
-            {isLoading && (!doctors || doctors.length === 0) ? (
-              <PatientListSkeleton rows={8} />
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {doctors && doctors.length > 0 ? (
-                  doctors
-                    .filter(
-                      (doctor): doctor is DoctorType =>
-                        typeof doctor === "object" &&
-                        doctor !== null &&
-                        "name" in doctor &&
-                        "id" in doctor,
-                    )
-                    .map((doctor, index) => (
-                      <CardName
-                        key={doctor.id}
-                        item={doctor as unknown as CardItem}
-                        index={index}
-                        debouncedSearch={debouncedSearch}
-                        onClick={(item) => openDoctorDetail(item as unknown as DoctorType)}
-                        imageConfig={{
-                          imageKey: "image_url",
-                          blankImage: blankProfilePicture,
-                          altText: `Foto ${doctor.name}`,
-                          isRounded: true,
-                        }}
-                        fields={[
-                          { key: "gender", label: "Jenis Kelamin" },
-                          { key: "specialization", label: "Spesialisasi" },
-                          { key: "license_number", label: "Nomor Lisensi" },
-                          { key: "phone", label: "Telepon" },
-                          { key: "email", label: "Email" },
-                        ]}
-                      />
-                    ))
-                ) : (
-                  <div className="col-span-full text-center text-gray-500 py-10">
-                    {debouncedSearch
-                      ? `Tidak ada dokter dengan kata kunci "${debouncedSearch}"`
-                      : "Belum ada data dokter."}
-                  </div>
-                )}
-              </div>
-            )}
+            <DataGrid
+              rowData={doctors as DoctorType[]}
+              columnDefs={columnDefs}
+              onRowClicked={onRowClicked}
+              onGridReady={onGridReady}
+              loading={isLoading}
+              overlayNoRowsTemplate={
+                search
+                  ? `<span style="padding: 10px; color: #888;">Tidak ada dokter dengan nama "${search}"</span>`
+                  : '<span style="padding: 10px; color: #888;">Tidak ada data dokter yang ditemukan</span>'
+              }
+              sizeColumnsToFit={true}
+              onFirstDataRendered={handleFirstDataRendered}
+              animateRows={true}
+              isExternalFilterPresent={isExternalFilterPresent}
+              doesExternalFilterPass={doesExternalFilterPass}
+              style={{
+                width: "100%",
+                marginTop: "1rem",
+                marginBottom: "1rem",
+                filter: isInitialLoad ? "blur(8px)" : "none",
+                transition: "filter 0.3s ease-out",
+              }}
+            />
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={currentTotalItems}
-              itemsPerPage={itemsPerPage}
+              totalItems={totalItems || 0}
+              itemsPerPage={itemsPerPage || 10}
               itemsCount={doctors?.length || 0}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
+              hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
             />
           </>
         )}
-      </div>
+      </Card>
 
-      <GenericDetailModal
-        title={selectedDoctor ? `${selectedDoctor.name}` : ""}
-        data={(selectedDoctor as unknown) as Record<string, string | number | boolean | null> || {}}
-        fields={doctorFields}
-        isOpen={isEditModalOpen}
-        onClose={closeEditModal}
-        onSave={async (
-          updatedData: Record<string, string | number | boolean | null>,
-        ) => {
-          if (selectedDoctor) {
-            await updateDoctorMutation.mutateAsync(updatedData);
-          }
-          return Promise.resolve();
-        }}
-        onFieldSave={async (key: string, value: unknown) => {
-          if (selectedDoctor && selectedDoctor.id) {
-            const dataToUpdate: Partial<DoctorType> = {
-              id: selectedDoctor.id,
-              [key]: value,
-            };
-            await updateDoctorMutation.mutateAsync(dataToUpdate);
-          }
-        }}
-        onDeleteRequest={() => {
-          if (selectedDoctor) handleDelete(selectedDoctor);
-        }}
-        deleteButtonLabel="Hapus Dokter"
-        imageUrl={selectedDoctor?.image_url || undefined}
-        defaultImageUrl={blankProfilePicture}
-        onImageSave={async (data: { entityId?: string; file: File }) => {
-          const idToUse = data.entityId || selectedDoctor?.id;
-          if (idToUse) {
-            await updateDoctorImageMutation.mutateAsync({
-              entityId: idToUse,
-              file: data.file,
-            });
-          }
-        }}
-        imageUploadText="Unggah Foto Dokter"
-        imageNotAvailableText="Foto dokter belum diunggah"
-        mode="edit"
-        imageAspectRatio="square"
-      />
-
-      <GenericDetailModal
-        title="Tambah Dokter Baru"
-        data={emptyDoctorData}
-        fields={doctorFields}
+      <AddEditModal
         isOpen={isAddModalOpen}
-        onClose={closeAddModal}
-        onSave={async (newDoctorData) => {
-          await createDoctorMutation.mutateAsync(newDoctorData);
-          return Promise.resolve();
-        }}
+        onClose={handleCloseAddModal}
+        onSubmit={handleModalSubmit}
+        isLoading={addMutation.isPending}
+        entityName="Dokter"
         initialNameFromSearch={debouncedSearch}
-        onImageSave={async (data: { entityId?: string; file: File }) => {
-          if (data.entityId) {
-            await updateDoctorImageMutation.mutateAsync({
-              entityId: data.entityId,
-              file: data.file,
-            });
-          } else {
-            setNewDoctorImage(URL.createObjectURL(data.file));
-          }
-        }}
-        imageUploadText="Unggah Foto Dokter (Opsional)"
-        imageNotAvailableText="Foto dokter belum diunggah"
-        mode="add"
-        imageAspectRatio="square"
       />
-    </Card>
+
+      <AddEditModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSubmit={handleModalSubmit}
+        initialData={editingItem || undefined}
+        onDelete={
+          editingItem
+            ? (itemId) => {
+                openConfirmDialog({
+                  title: "Konfirmasi Hapus",
+                  message: `Apakah Anda yakin ingin menghapus dokter "${editingItem.name}"?`,
+                  variant: "danger",
+                  confirmText: "Ya, Hapus",
+                  onConfirm: async () => {
+                    await deleteMutation.mutateAsync(itemId);
+                  },
+                });
+              }
+            : undefined
+        }
+        isLoading={updateMutation.isPending}
+        isDeleting={deleteMutation.isPending}
+        entityName="Dokter"
+      />
+    </>
   );
 };
-
 export default DoctorList;
