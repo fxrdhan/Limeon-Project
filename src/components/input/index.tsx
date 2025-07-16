@@ -47,7 +47,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               "text-ellipsis overflow-hidden whitespace-nowrap",
               "h-[2.5rem]",
               error ? "border-red-500" : "border-gray-300",
-              "focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100",
+              "focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200",
               "disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70 read-only:bg-gray-100 read-only:cursor-default read-only:opacity-70",
               "disabled:focus:ring-0 disabled:focus:border-gray-300 read-only:focus:ring-0 read-only:focus:border-gray-300",
               "transition-all duration-200 ease-in-out",
