@@ -7,7 +7,12 @@ import AddEditModal from "@/components/add-edit/v1";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
-import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from "ag-grid-community";
+import {
+  ColDef,
+  RowClickedEvent,
+  GridApi,
+  GridReadyEvent,
+} from "ag-grid-community";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
@@ -74,7 +79,7 @@ const ItemMaster = () => {
   const gridRef = useRef<DataGridRef>(null);
   const agGridRef = useRef<GridApi>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(""); // Local state for immediate UI feedback
 
   const currentConfig = tabConfigs[activeTab];
 
@@ -85,6 +90,7 @@ const ItemMaster = () => {
     setIsEditModalOpen,
     editingItem,
     data,
+    setDebouncedSearch,
     totalItems,
     isLoading,
     isError,
@@ -119,10 +125,8 @@ const ItemMaster = () => {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setSearch(value);
-    if (agGridRef.current) {
-      agGridRef.current.setGridOption("quickFilterText", value);
-    }
+    setSearch(value); // Immediate UI feedback
+    setDebouncedSearch(value); // Server-side search across ALL data
   };
 
   const columnDefs: ColDef[] = [
@@ -168,6 +172,7 @@ const ItemMaster = () => {
       if (agGridRef.current) {
         agGridRef.current.setGridOption("quickFilterText", "");
       }
+      setDebouncedSearch(""); // Reset server-side search
     }
   };
 
