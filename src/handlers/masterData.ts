@@ -43,7 +43,6 @@ export const useMasterDataManagement = (
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MasterDataItem | null>(null);
 
-  const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -61,14 +60,6 @@ export const useMasterDataManagement = (
     return () => clearTimeout(timer);
   }, [editingItem, isEditModalOpen]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setCurrentPage(1);
-    }, 250);
-
-    return () => clearTimeout(timer);
-  }, [search]);
 
   const fetchData = async (page: number, searchTerm: string, limit: number) => {
     const from = (page - 1) * limit;
@@ -329,8 +320,8 @@ export const useMasterDataManagement = (
     error,
     isFetching,
   } = useQuery({
-    queryKey: [tableName, currentPage, debouncedSearch, itemsPerPage],
-    queryFn: () => fetchData(currentPage, debouncedSearch, itemsPerPage),
+    queryKey: [tableName, currentPage, itemsPerPage],
+    queryFn: () => fetchData(currentPage, "", itemsPerPage),
     placeholderData: keepPreviousData,
     staleTime: 0, // Always consider data stale for instant updates
     gcTime: 5 * 60 * 1000, // Keep cache for 5 minutes
@@ -505,8 +496,6 @@ export const useMasterDataManagement = (
     setIsEditModalOpen,
     editingItem,
     setEditingItem,
-    search,
-    setSearch,
     debouncedSearch,
     setDebouncedSearch,
     currentPage,
