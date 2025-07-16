@@ -25,7 +25,7 @@ export const getScore = (item: Item, searchTermLower: string): number => {
     return 0;
 };
 
-export const getSearchState = (search: string, debouncedSearch: string, dataArray: any[] | null | undefined): 'idle' | 'typing' | 'found' | 'not-found' => {
+export const getSearchState = (search: string, debouncedSearch: string, dataArray: unknown[] | null | undefined): 'idle' | 'typing' | 'found' | 'not-found' => {
     if (!search) return 'idle';
     if (search && !debouncedSearch) return 'typing';
     if (debouncedSearch && dataArray && dataArray.length > 0) return 'found';
