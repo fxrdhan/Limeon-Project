@@ -6,6 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+*-this-session-is-being-continued-from-a-previous-co.txt
 
 # Build artifacts (Tailwind CSS output)
 src/output.css
