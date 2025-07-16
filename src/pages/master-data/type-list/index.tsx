@@ -5,28 +5,23 @@ import PageTitle from "@/components/page-title";
 import AddEditModal from "@/components/add-edit/v1";
 
 import { Card } from "@/components/card";
-import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHeader,
-  TypeListSkeleton,
-} from "@/components/table";
+import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
+import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
-import type { ItemType } from "@/types";
 
 const TypeList = () => {
   const location = useLocation();
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
-  const [sortedTypes, setSortedTypes] = useState<ItemType[]>([]);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<DataGridRef>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const {
     isAddModalOpen,
@@ -61,12 +56,32 @@ const TypeList = () => {
     locationKey: location.key,
   });
 
-  useEffect(() => {
-    setSortedTypes((types as ItemType[]) || []);
-  }, [types]);
+  const handleFirstDataRendered = () => {
+    setIsInitialLoad(false);
+  };
 
-  const handleSort = (sortedData: ItemType[]) => {
-    setSortedTypes(sortedData);
+  const columnDefs: ColDef[] = [
+    createTextColumn({
+      field: "name",
+      headerName: "Nama Jenis",
+      minWidth: 120,
+      flex: 1,
+    }),
+    createTextColumn({
+      field: "description",
+      headerName: "Deskripsi",
+      minWidth: 200,
+      flex: 2,
+      valueGetter: (params) => {
+        return "description" in params.data && params.data.description
+          ? params.data.description
+          : "-";
+      },
+    }),
+  ];
+
+  const onRowClicked = (event: RowClickedEvent) => {
+    handleEdit(event.data);
   };
 
   const handleCloseAddModal = () => {
@@ -84,11 +99,11 @@ const TypeList = () => {
           isFetching ? "opacity-75 transition-opacity duration-300" : ""
         }
       >
-        <div className="mb-6">
+        <div ref={headerRef} className="mb-6">
           <PageTitle title="Daftar Jenis Item" />
         </div>
 
-        <div className="flex items-center">
+        <div ref={searchBarRef} className="flex items-center">
           <SearchBar
             inputRef={searchInputRef}
             value={search}
@@ -115,61 +130,28 @@ const TypeList = () => {
           </div>
         ) : (
           <>
-            {isLoading && (!types || types.length === 0) ? (
-              <TypeListSkeleton rows={8} />
-            ) : (
-              <Table
-                scrollable={true}
-                stickyHeader={true}
-                autoSize={true}
-                columns={[
-                  { key: "name", header: "Nama Jenis", minWidth: 120, sortable: true },
-                  { key: "description", header: "Deskripsi", minWidth: 200, sortable: true },
-                ]}
-                data={types}
-                onSort={handleSort}
-              >
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Nama Jenis</TableHeader>
-                    <TableHeader>Deskripsi</TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedTypes && sortedTypes.length > 0 ? (
-                    sortedTypes.map((type, index) => (
-                      <TableRow
-                        key={type.id}
-                        onClick={() => handleEdit(type)}
-                        className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch && sortedTypes === types
-                            ? "bg-emerald-100/50"
-                            : ""
-                        }`}
-                      >
-                        <TableCell>{type.name}</TableCell>
-                        <TableCell>
-                          {"description" in type && type.description
-                            ? type.description
-                            : "-"}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={2}
-                        className="text-center text-gray-500 py-10"
-                      >
-                        {debouncedSearch
-                          ? `Tidak ada jenis item dengan kata kunci "${debouncedSearch}"`
-                          : "Tidak ada data jenis item yang ditemukan"}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
+            <DataGrid
+              ref={gridRef}
+              rowData={types || []}
+              columnDefs={columnDefs}
+              autoHeightForSmallTables={true}
+              onRowClicked={onRowClicked}
+              loading={isLoading}
+              overlayNoRowsTemplate={
+                debouncedSearch
+                  ? `<span style="padding: 10px; color: #888;">Tidak ada jenis item dengan kata kunci "${debouncedSearch}"</span>`
+                  : '<span style="padding: 10px; color: #888;">Tidak ada data jenis item yang ditemukan</span>'
+              }
+              sizeColumnsToFit={true}
+              onFirstDataRendered={handleFirstDataRendered}
+              style={{
+                width: "100%",
+                marginTop: "1rem",
+                marginBottom: "1rem",
+                filter: isInitialLoad ? "blur(8px)" : "none",
+                transition: "filter 0.3s ease-out",
+              }}
+            />
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -178,6 +160,7 @@ const TypeList = () => {
               itemsCount={types?.length || 0}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
+              hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
             />
           </>
         )}
