@@ -135,7 +135,7 @@ const UnitList = () => {
               ref={gridRef}
               rowData={units || []}
               columnDefs={columnDefs}
-              domLayout="autoHeight"
+              autoHeightForSmallTables={true}
               onRowClicked={onRowClicked}
               loading={isLoading}
               overlayNoRowsTemplate={
