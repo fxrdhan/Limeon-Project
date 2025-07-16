@@ -284,7 +284,7 @@ function ItemList() {
                 filter: isInitialLoad ? "blur(8px)" : "none",
                 transition: "filter 0.3s ease-out",
                 height:
-                  items.length <= 2 ? `${95 + items.length * 42}px` : "auto",
+                  items.length <= 3 ? `${95 + items.length * 42}px` : "auto",
               }}
             >
               <AgGridReact
@@ -292,8 +292,8 @@ function ItemList() {
                 theme={themeQuartz}
                 rowData={items as ItemDataType[]}
                 columnDefs={columnDefs}
-                domLayout={items.length <= 2 ? "normal" : "autoHeight"}
-                getRowHeight={() => (items.length <= 2 ? 42 : undefined)}
+                domLayout={items.length <= 3 ? "normal" : "autoHeight"}
+                getRowHeight={() => (items.length <= 3 ? 42 : undefined)}
                 defaultColDef={{
                   sortable: true,
                   resizable: true,
