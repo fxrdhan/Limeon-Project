@@ -6,7 +6,7 @@ import Pagination from "@/components/pagination";
 import { useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { DataGrid, DataGridRef, createTextColumn, createWrapTextColumn, createCurrencyColumn, createCenterAlignColumn, formatCurrency, formatBaseCurrency } from "@/components/ag-grid";
-import { ColDef } from "ag-grid-community";
+import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
@@ -177,8 +177,7 @@ function ItemList() {
       }
     }
   };
-  // eslint-disable-next-line
-  const onRowClicked = (event: any) => {
+  const onRowClicked = (event: RowClickedEvent) => {
     handleItemEdit(event.data);
   };
 
