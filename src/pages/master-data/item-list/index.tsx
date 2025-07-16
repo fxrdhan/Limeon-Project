@@ -5,8 +5,16 @@ import Pagination from "@/components/pagination";
 
 import { useState, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { DataGrid, createTextColumn, createWrapTextColumn, createCurrencyColumn, createCenterAlignColumn, formatCurrency, formatBaseCurrency } from "@/components/ag-grid";
-import { ColDef, RowClickedEvent } from "ag-grid-community";
+import {
+  DataGrid,
+  createTextColumn,
+  createWrapTextColumn,
+  createCurrencyColumn,
+  createCenterAlignColumn,
+  formatCurrency,
+  formatBaseCurrency,
+} from "@/components/ag-grid";
+import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from "ag-grid-community";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
@@ -19,13 +27,13 @@ function ItemList() {
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
+  const gridRef = useRef<GridApi>(null);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
+  const [search, setSearch] = useState("");
+
   const {
-    search,
-    setSearch,
-    debouncedSearch,
     currentPage,
     itemsPerPage,
     data: rawItems,
@@ -56,7 +64,7 @@ function ItemList() {
 
   const columnsToAutoSize = [
     "code",
-    "barcode", 
+    "barcode",
     "category.name",
     "type.name",
     "unit.name",
@@ -70,6 +78,17 @@ function ItemList() {
     setIsInitialLoad(false);
   };
 
+  const onGridReady = (params: GridReadyEvent) => {
+    gridRef.current = params.api;
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearch(value);
+    if (gridRef.current) {
+      gridRef.current.setGridOption("quickFilterText", value);
+    }
+  };
 
   const columnDefs: ColDef[] = useMemo(() => {
     const columns: ColDef[] = [
@@ -136,9 +155,9 @@ function ItemList() {
         field: "stock",
         headerName: "Stok",
         filter: "agNumberColumnFilter",
-      })
+      }),
     ];
-    
+
     return columns;
   }, []);
 
@@ -201,13 +220,11 @@ function ItemList() {
           <SearchBar
             inputRef={searchInputRef}
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-            }}
+            onChange={handleSearchChange}
             onKeyDown={handleItemKeyDown}
             placeholder="Cari di semua kolom (nama, kode, kategori, harga, dll)..."
             className="grow"
-            searchState={getSearchState(search, debouncedSearch, items)}
+            searchState={getSearchState(search, search, items)}
           />
           <Button
             variant="primary"
@@ -234,6 +251,7 @@ function ItemList() {
               columnDefs={columnDefs}
               autoHeightForSmallTables={false}
               onRowClicked={onRowClicked}
+              onGridReady={onGridReady}
               loading={isLoadingState}
               overlayNoRowsTemplate={
                 search
