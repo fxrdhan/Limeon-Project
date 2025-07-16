@@ -14,6 +14,41 @@ export const fuzzyMatch = (text: string, pattern: string): boolean => {
     return pIdx === lowerPattern.length;
 };
 
+// Generic fuzzy search for any object - searches through all string/number fields
+export const fuzzySearchMatch = (data: Record<string, unknown>, searchTerm: string): boolean => {
+    if (!searchTerm || !data) return true;
+    
+    const search = searchTerm.toLowerCase();
+    
+    // Helper function to recursively search through object properties
+    const searchInValue = (value: unknown): boolean => {
+        if (value === null || value === undefined) return false;
+        
+        if (typeof value === 'string') {
+            return fuzzyMatch(value, search);
+        }
+        
+        if (typeof value === 'number') {
+            return fuzzyMatch(value.toString(), search);
+        }
+        
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            // Search in nested objects (like category.name, type.name)
+            return Object.values(value).some(nestedValue => searchInValue(nestedValue));
+        }
+        
+        if (Array.isArray(value)) {
+            // Search in arrays (like unit_conversions)
+            return value.some(item => searchInValue(item));
+        }
+        
+        return false;
+    };
+    
+    // Search through all properties of the data object
+    return Object.values(data).some(value => searchInValue(value));
+};
+
 export const getScore = (item: Item, searchTermLower: string): number => {
     const nameLower = item.name?.toLowerCase?.() ?? "";
     const codeLower = item.code?.toLowerCase?.() ?? "";
