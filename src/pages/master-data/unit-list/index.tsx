@@ -6,7 +6,7 @@ import AddEditModal from "@/components/add-edit/v1";
 
 import { Card } from "@/components/card";
 import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
-import { ColDef } from "ag-grid-community";
+import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { FaPlus } from "react-icons/fa";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef, useState } from "react";
@@ -81,7 +81,7 @@ const UnitList = () => {
     }),
   ];
 
-  const onRowClicked = (event: any) => {
+  const onRowClicked = (event: RowClickedEvent) => {
     handleEdit(event.data);
   };
 
