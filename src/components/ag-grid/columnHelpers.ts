@@ -111,3 +111,16 @@ export const formatBaseCurrency = (value: number): string => {
     currency: "IDR",
   }) || "";
 };
+
+export const createMatchScoreColumn = (config: Omit<ColumnConfig, "field"> & { getMatchScore: (data: unknown) => number }): ColDef => ({
+  headerName: config.headerName,
+  width: config.minWidth || 100,
+  sort: "desc",
+  filter: false,
+  sortable: true,
+  resizable: config.resizable !== false,
+  valueGetter: (params) => {
+    return config.getMatchScore(params.data);
+  },
+  cellStyle: { textAlign: "center" },
+});
