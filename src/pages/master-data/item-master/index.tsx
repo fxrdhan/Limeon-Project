@@ -127,6 +127,9 @@ const ItemMaster = () => {
     const value = e.target.value;
     setSearch(value); // Immediate UI feedback
     setDebouncedSearch(value); // Server-side search across ALL data
+    if (agGridRef.current) {
+      agGridRef.current.setGridOption("quickFilterText", value); // Immediate client-side filtering
+    }
   };
 
   const columnDefs: ColDef[] = [
