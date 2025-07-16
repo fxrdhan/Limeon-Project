@@ -6,6 +6,7 @@ export {
   createNumberColumn,
   createCurrencyColumn,
   createCenterAlignColumn,
+  createMatchScoreColumn,
   formatCurrency,
   formatBaseCurrency,
 } from "./columnHelpers";
