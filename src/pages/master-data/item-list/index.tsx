@@ -227,8 +227,7 @@ function ItemList() {
               ref={gridRef}
               rowData={items as ItemDataType[]}
               columnDefs={columnDefs}
-              domLayout={items.length <= 3 ? "normal" : "autoHeight"}
-              getRowHeight={() => (items.length <= 3 ? 42 : undefined)}
+              autoHeightForSmallTables={true}
               onRowClicked={onRowClicked}
               loading={isLoadingState}
               overlayNoRowsTemplate={
@@ -244,8 +243,6 @@ function ItemList() {
                 marginBottom: "1rem",
                 filter: isInitialLoad ? "blur(8px)" : "none",
                 transition: "filter 0.3s ease-out",
-                height:
-                  items.length <= 3 ? `${95 + items.length * 42}px` : "auto",
               }}
             />
             <Pagination
