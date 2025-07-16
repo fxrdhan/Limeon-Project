@@ -94,9 +94,7 @@ const Sidebar = ({
         icon: <FaDatabase className="text-lg" />,
         children: [
           { name: "Daftar Item", path: "/master-data/items" },
-          { name: "Kategori Item", path: "/master-data/categories" },
-          { name: "Jenis Item", path: "/master-data/types" },
-          { name: "Satuan", path: "/master-data/units" },
+          { name: "Item Master", path: "/master-data/item-master" },
           { name: "Supplier", path: "/master-data/suppliers" },
           { name: "Pasien", path: "/master-data/patients" },
           { name: "Dokter", path: "/master-data/doctors" },
