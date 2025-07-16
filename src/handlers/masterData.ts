@@ -244,10 +244,8 @@ export const useMasterDataManagement = (
         }
       }
 
-      // When searching, get ALL results; when not searching, use pagination
-      const { data, error, count } = searchTerm 
-        ? await query.order("name") // No .range() for search - get all results
-        : await query.order("name").range(from, to); // Use pagination only when not searching
+      // Always use pagination, whether searching or not
+      const { data, error, count } = await query.order("name").range(from, to);
 
       if (error) {
         console.error(`Error fetching data for ${tableName}:`, error);
