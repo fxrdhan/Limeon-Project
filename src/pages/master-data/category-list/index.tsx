@@ -6,27 +6,22 @@ import AddEditModal from "@/components/add-edit/v1";
 
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
-import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHeader,
-  CategoryListSkeleton,
-} from "@/components/table";
+import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
+import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
-import type { Category } from "@/types";
 
 const CategoryList = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
   const location = useLocation();
-  const [sortedCategories, setSortedCategories] = useState<Category[]>([]);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<DataGridRef>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const {
     isAddModalOpen,
@@ -61,12 +56,32 @@ const CategoryList = () => {
     locationKey: location.key,
   });
 
-  useEffect(() => {
-    setSortedCategories(categories || []);
-  }, [categories]);
+  const handleFirstDataRendered = () => {
+    setIsInitialLoad(false);
+  };
 
-  const handleSort = (sortedData: Category[]) => {
-    setSortedCategories(sortedData);
+  const columnDefs: ColDef[] = [
+    createTextColumn({
+      field: "name",
+      headerName: "Nama Kategori",
+      minWidth: 120,
+      flex: 1,
+    }),
+    createTextColumn({
+      field: "description",
+      headerName: "Deskripsi",
+      minWidth: 200,
+      flex: 2,
+      valueGetter: (params) => {
+        return "description" in params.data && params.data.description
+          ? params.data.description
+          : "-";
+      },
+    }),
+  ];
+
+  const onRowClicked = (event: RowClickedEvent) => {
+    handleEdit(event.data);
   };
 
   const handleCloseAddModal = () => {
@@ -84,11 +99,11 @@ const CategoryList = () => {
           isFetching ? "opacity-75 transition-opacity duration-300" : ""
         }
       >
-        <div className="mb-6">
+        <div ref={headerRef} className="mb-6">
           <PageTitle title="Daftar Kategori Item" />
         </div>
 
-        <div className="flex items-center">
+        <div ref={searchBarRef} className="flex items-center">
           <SearchBar
             inputRef={searchInputRef}
             value={search}
@@ -115,61 +130,28 @@ const CategoryList = () => {
           </div>
         ) : (
           <>
-            {isLoading && (!categories || categories.length === 0) ? (
-              <CategoryListSkeleton rows={8} />
-            ) : (
-              <Table
-                scrollable={true}
-                stickyHeader={true}
-                autoSize={true}
-                columns={[
-                  { key: "name", header: "Nama Kategori", minWidth: 120, sortable: true },
-                  { key: "description", header: "Deskripsi", minWidth: 200, sortable: true },
-                ]}
-                data={categories}
-                onSort={handleSort}
-              >
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Nama Kategori</TableHeader>
-                    <TableHeader>Deskripsi</TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedCategories && sortedCategories.length > 0 ? (
-                    sortedCategories.map((category, index) => (
-                      <TableRow
-                        key={category.id}
-                        onClick={() => handleEdit(category)}
-                        className={`cursor-pointer hover:bg-blue-50 ${
-                          index === 0 && debouncedSearch && sortedCategories === categories
-                            ? "bg-emerald-100/50"
-                            : ""
-                        }`}
-                      >
-                        <TableCell>{category.name}</TableCell>
-                        <TableCell>
-                          {"description" in category && category.description
-                            ? category.description
-                            : "-"}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={2}
-                        className="text-center text-gray-500 py-10"
-                      >
-                        {debouncedSearch
-                          ? `Tidak ada kategori dengan kata kunci "${debouncedSearch}"`
-                          : "Tidak ada data kategori yang ditemukan"}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
+            <DataGrid
+              ref={gridRef}
+              rowData={categories || []}
+              columnDefs={columnDefs}
+              autoHeightForSmallTables={true}
+              onRowClicked={onRowClicked}
+              loading={isLoading}
+              overlayNoRowsTemplate={
+                debouncedSearch
+                  ? `<span style="padding: 10px; color: #888;">Tidak ada kategori dengan kata kunci "${debouncedSearch}"</span>`
+                  : '<span style="padding: 10px; color: #888;">Tidak ada data kategori yang ditemukan</span>'
+              }
+              sizeColumnsToFit={true}
+              onFirstDataRendered={handleFirstDataRendered}
+              style={{
+                width: "100%",
+                marginTop: "1rem",
+                marginBottom: "1rem",
+                filter: isInitialLoad ? "blur(8px)" : "none",
+                transition: "filter 0.3s ease-out",
+              }}
+            />
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -178,6 +160,7 @@ const CategoryList = () => {
               itemsCount={categories?.length || 0}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
+              hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
             />
           </>
         )}
