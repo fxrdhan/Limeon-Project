@@ -249,7 +249,6 @@ function ItemList() {
             <DataGrid
               rowData={items as ItemDataType[]}
               columnDefs={columnDefs}
-              autoHeightForSmallTables={false}
               onRowClicked={onRowClicked}
               onGridReady={onGridReady}
               loading={isLoadingState}
