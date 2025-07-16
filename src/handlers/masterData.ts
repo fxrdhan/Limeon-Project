@@ -43,12 +43,20 @@ export const useMasterDataManagement = (
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MasterDataItem | null>(null);
 
+  const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const actualIsModalOpen =
     isCustomModalOpen ?? (isAddModalOpen || isEditModalOpen);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -497,6 +505,8 @@ export const useMasterDataManagement = (
     setIsEditModalOpen,
     editingItem,
     setEditingItem,
+    search,
+    setSearch,
     debouncedSearch,
     setDebouncedSearch,
     currentPage,
