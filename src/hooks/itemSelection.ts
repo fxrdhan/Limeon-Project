@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { fuzzyMatch, getScore } from "@/utils/search";
 import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Item, UnitConversion, UseItemSelectionOptions } from "@/types";
+import type { Item, UnitConversion, UseItemSelectionOptions, DBItem } from "@/types";
 
 export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
   const { disableRealtime = false, enabled = true } = options;
@@ -27,8 +27,7 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
         .order("name");
 
       if (error) throw error;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mappedData = (data || []).map((item: any) => {
+      const mappedData = (data || []).map((item: DBItem) => {
         let parsedConversions: UnitConversion[] = [];
         if (typeof item.unit_conversions === "string") {
           try {
@@ -45,9 +44,9 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
         }
         return {
           ...item,
-          category: { name: item.item_categories?.name || "" },
-          type: { name: item.item_types?.name || "" },
-          unit: { name: item.item_units?.name || "" },
+          category: { name: item.item_categories?.[0]?.name || "" },
+          type: { name: item.item_types?.[0]?.name || "" },
+          unit: { name: item.item_units?.[0]?.name || "" },
           unit_conversions: parsedConversions,
         };
       });
