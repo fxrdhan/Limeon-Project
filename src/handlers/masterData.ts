@@ -244,7 +244,10 @@ export const useMasterDataManagement = (
         }
       }
 
-      const { data, error, count } = await query.order("name").range(from, to);
+      // When searching, get ALL results; when not searching, use pagination
+      const { data, error, count } = searchTerm 
+        ? await query.order("name") // No .range() for search - get all results
+        : await query.order("name").range(from, to); // Use pagination only when not searching
 
       if (error) {
         console.error(`Error fetching data for ${tableName}:`, error);
@@ -320,8 +323,8 @@ export const useMasterDataManagement = (
     error,
     isFetching,
   } = useQuery({
-    queryKey: [tableName, currentPage, itemsPerPage],
-    queryFn: () => fetchData(currentPage, "", itemsPerPage),
+    queryKey: [tableName, currentPage, itemsPerPage, debouncedSearch],
+    queryFn: () => fetchData(currentPage, debouncedSearch, itemsPerPage),
     placeholderData: keepPreviousData,
     staleTime: 0, // Always consider data stale for instant updates
     gcTime: 5 * 60 * 1000, // Keep cache for 5 minutes
