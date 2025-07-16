@@ -14,9 +14,7 @@ import {
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const ItemList = lazy(() => import("@/pages/master-data/item-list"));
-const CategoryList = lazy(() => import("@/pages/master-data/category-list"));
-const UnitList = lazy(() => import("@/pages/master-data/unit-list"));
-const TypeList = lazy(() => import("@/pages/master-data/type-list"));
+const ItemMaster = lazy(() => import("@/pages/master-data/item-master"));
 const PatientList = lazy(() => import("@/pages/master-data/patient-list"));
 const DoctorList = lazy(() => import("@/pages/master-data/doctor-list"));
 const SupplierList = lazy(() => import("@/pages/master-data/supplier-list"));
@@ -87,50 +85,23 @@ function App() {
                 }
               />
               <Route
-                path="categories"
+                path="item-master"
                 element={
                   <Suspense
                     fallback={
                       <TableLoadingFallback
-                        title="Daftar Kategori Item"
+                        title="Item Master"
                         tableColumns={2}
                       />
                     }
                   >
-                    <CategoryList />
+                    <ItemMaster />
                   </Suspense>
                 }
               />
-              <Route
-                path="types"
-                element={
-                  <Suspense
-                    fallback={
-                      <TableLoadingFallback
-                        title="Daftar Jenis Item"
-                        tableColumns={2}
-                      />
-                    }
-                  >
-                    <TypeList />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="units"
-                element={
-                  <Suspense
-                    fallback={
-                      <TableLoadingFallback
-                        title="Daftar Satuan Item"
-                        tableColumns={2}
-                      />
-                    }
-                  >
-                    <UnitList />
-                  </Suspense>
-                }
-              />
+              <Route path="categories" element={<Navigate to="/master-data/item-master" replace />} />
+              <Route path="types" element={<Navigate to="/master-data/item-master" replace />} />
+              <Route path="units" element={<Navigate to="/master-data/item-master" replace />} />
               <Route
                 path="suppliers"
                 element={
