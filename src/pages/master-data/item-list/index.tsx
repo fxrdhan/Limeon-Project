@@ -31,7 +31,7 @@ function ItemList() {
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  const { search, handleSearchChange, onGridReady } = useAgGridSearch();
+  const { search, handleSearchChange, onGridReady, isExternalFilterPresent, doesExternalFilterPass } = useAgGridSearch();
 
   const {
     currentPage,
@@ -249,6 +249,8 @@ function ItemList() {
               autoSizeColumns={columnsToAutoSize}
               onFirstDataRendered={handleFirstDataRendered}
               animateRows={true}
+              isExternalFilterPresent={isExternalFilterPresent}
+              doesExternalFilterPass={doesExternalFilterPass}
               style={{
                 width: "100%",
                 marginTop: "1rem",
