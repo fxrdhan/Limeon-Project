@@ -67,10 +67,9 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
         style={{
           top: position.top,
           left: position.left,
-          width: Math.max(position.width, 200),
         }}
       >
-        <div className="bg-accent/80 text-white text-sm px-3 py-2 rounded-lg shadow-lg backdrop-blur-xs flex items-center gap-2">
+        <div className="bg-danger/75 text-white text-sm px-3 py-2 rounded-lg shadow-lg backdrop-blur-xs flex items-center gap-2 w-fit">
           <FaExclamationTriangle
             className="text-yellow-300 flex-shrink-0"
             size={14}
@@ -78,7 +77,7 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
           <span className="font-medium">{error}</span>
         </div>
         {/* Arrow pointing up */}
-        <div className="absolute -top-1 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-accent/80 backdrop-blur-xs"></div>
+        <div className="absolute -top-1 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-danger/75 backdrop-blur-xs"></div>
       </motion.div>
     </AnimatePresence>,
     document.body,
