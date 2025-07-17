@@ -63,7 +63,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
               hasValue ? "pl-3" : "pl-10"
             } ${
               searchState === "not-found"
-                ? "border-accent focus:border-accent focus:ring-3 focus:ring-red-100"
+                ? "border-danger focus:border-danger focus:ring-3 focus:ring-red-100"
                 : "border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200"
             } focus:outline-none rounded-lg`}
             value={value}
