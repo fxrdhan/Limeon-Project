@@ -25,9 +25,9 @@ const Button = React.forwardRef<
         "rounded-lg ring-0 outline-hidden shadow-md bg-primary flex items-center text-white hover:text-white",
       secondary:
         "rounded-lg bg-secondary bg-secondary ring-0 outline-hidden flex items-center text-white hover:text-white",
-      accent: "bg-accent hover:bg-rose-600 text-white",
+      accent: "",
       danger:
-        "text-accent hover:text-white hover:bg-accent outline-hidden hover:opacity-100!",
+        "text-danger hover:text-white hover:bg-danger/80 outline-hidden hover:opacity-100!",
     };
 
     const sizes = {
@@ -47,7 +47,7 @@ const Button = React.forwardRef<
           "hover:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)] focus:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)]";
       } else if (variant === "danger") {
         glowClass =
-          "focus:shadow-[0_0_5px_var(--color-accent),0_0_15px_var(--color-accent),0_0_30px_var(--color-accent)] hover:shadow-[0_0_5px_var(--color-accent),0_0_15px_var(--color-accent),0_0_30px_var(--color-accent)]";
+          "focus:shadow-[0_0_5px_var(--color-danger),0_0_15px_var(--color-danger),0_0_30px_var(--color-danger)] hover:shadow-[0_0_5px_var(--color-danger),0_0_15px_var(--color-danger),0_0_30px_var(--color-danger)]";
       }
     }
 
