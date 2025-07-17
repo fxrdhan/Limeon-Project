@@ -177,58 +177,53 @@ const ItemMaster = () => {
           isFetching ? "opacity-75 transition-opacity duration-300" : ""
         }
       >
-        <div ref={headerRef} className="mb-6">
+        <div ref={headerRef} className="mb-4">
           <PageTitle title="Item Master" />
         </div>
 
-        <div className="mb-6">
-          <div className="flex justify-center">
-            <LayoutGroup id="item-master-tabs">
-              <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative">
-                {Object.values(tabConfigs).map((config) => (
-                  <button
-                    key={config.key}
+        <div ref={searchBarRef} className="flex items-center mb-4 mt-5">
+          <LayoutGroup id="item-master-tabs">
+            <div className="flex mb-4 items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative mr-4">
+              {Object.values(tabConfigs).map((config) => (
+                <button
+                  key={config.key}
+                  className={classNames(
+                    "group px-4 py-2 rounded-full focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
+                    activeTab !== config.key
+                      ? "hover:bg-emerald-100 hover:text-emerald-700"
+                      : "",
+                  )}
+                  onClick={() => handleTabChange(config.key)}
+                >
+                  {activeTab === config.key && (
+                    <motion.div
+                      layoutId="tab-selector-bg"
+                      className="absolute inset-0 bg-primary rounded-full shadow-xs"
+                      style={{ borderRadius: "9999px" }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30,
+                        duration: 0.3,
+                      }}
+                    />
+                  )}
+                  <span
                     className={classNames(
-                      "group px-4 py-2 rounded-full focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
-                      activeTab !== config.key
-                        ? "hover:bg-emerald-100 hover:text-emerald-700"
-                        : "",
+                      "relative z-10 select-none font-medium",
+                      activeTab === config.key
+                        ? "text-white"
+                        : "text-gray-700 group-hover:text-emerald-700",
                     )}
-                    onClick={() => handleTabChange(config.key)}
                   >
-                    {activeTab === config.key && (
-                      <motion.div
-                        layoutId="tab-selector-bg"
-                        className="absolute inset-0 bg-primary rounded-full shadow-xs"
-                        style={{ borderRadius: "9999px" }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 500,
-                          damping: 30,
-                          duration: 0.3,
-                        }}
-                      />
-                    )}
-                    <span
-                      className={classNames(
-                        "relative z-10 select-none font-medium",
-                        activeTab === config.key
-                          ? "text-white"
-                          : "text-gray-700 group-hover:text-emerald-700",
-                      )}
-                    >
-                      {activeTab === config.key
-                        ? `${config.label} Item`
-                        : config.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </LayoutGroup>
-          </div>
-        </div>
-
-        <div ref={searchBarRef} className="flex items-center">
+                    {activeTab === config.key
+                      ? `${config.label} Item`
+                      : config.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </LayoutGroup>
           <SearchBar
             inputRef={searchInputRef}
             value={search}
