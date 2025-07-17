@@ -19,7 +19,7 @@ import {
 import { useConfirmDialog } from "@/components/dialog-box";
 import { Card } from "@/components/card";
 import { Link, useLocation } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { FaPlus, FaEdit, FaTrash, FaEye, FaFileUpload } from "react-icons/fa";
 import {
@@ -145,7 +145,7 @@ const PurchaseList = () => {
     queryClient.invalidateQueries({ queryKey: ["purchases"] });
   }, [queryClient]);
 
-  const purchases = data?.purchases || [];
+  const purchases = useMemo(() => data?.purchases || [], [data?.purchases]);
   const totalItems = data?.totalItems || 0;
 
   useEffect(() => {

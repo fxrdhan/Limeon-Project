@@ -1,8 +1,10 @@
-import React, { forwardRef, useState, useRef, useImperativeHandle } from "react";
+import React, { forwardRef, useState, useRef, useImperativeHandle, useEffect, useCallback } from "react";
 import { z } from "zod";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaExclamationTriangle } from "react-icons/fa";
 import type { InputProps } from "@/types";
 import { classNames } from "@/lib/classNames";
-import ValidationOverlay from "@/components/validation-overlay";
 import { useFieldValidation } from "@/hooks/useFieldValidation";
 
 interface ExtendedInputProps extends Omit<InputProps, "error"> {
@@ -74,9 +76,76 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
       onChange?.(e);
     };
 
-    const handleCloseValidation = () => {
+    const handleCloseValidation = useCallback(() => {
       setShowValidationError(false);
       validation.clearError();
+    }, [validation]);
+
+    // ValidationOverlay integrated logic
+    const [validationPosition, setValidationPosition] = React.useState<{
+      top: number;
+      left: number;
+      width: number;
+    } | null>(null);
+    const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+      if (validate && showValidationError && validation.validation.showError && inputRef.current) {
+        const rect = inputRef.current.getBoundingClientRect();
+        setValidationPosition({
+          top: rect.bottom + 8,
+          left: rect.left,
+          width: rect.width,
+        });
+
+        // Auto hide after delay
+        if (validationAutoHide && validationAutoHideDelay > 0) {
+          validationTimeoutRef.current = setTimeout(() => {
+            handleCloseValidation();
+          }, validationAutoHideDelay);
+        }
+      }
+
+      return () => {
+        if (validationTimeoutRef.current) {
+          clearTimeout(validationTimeoutRef.current);
+        }
+      };
+    }, [validate, showValidationError, validation.validation.showError, validationAutoHide, validationAutoHideDelay, handleCloseValidation]);
+
+    const renderValidationOverlay = () => {
+      if (!validate || !validation.validation.error || !validationPosition) {
+        return null;
+      }
+
+      return createPortal(
+        <AnimatePresence>
+          {showValidationError && validation.validation.showError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="fixed z-[9999] pointer-events-none"
+              style={{
+                top: validationPosition.top,
+                left: validationPosition.left,
+              }}
+            >
+              <div className="bg-danger/75 text-white text-sm px-3 py-2 rounded-lg shadow-lg backdrop-blur-xs flex items-center gap-2 w-fit">
+                <FaExclamationTriangle
+                  className="text-yellow-300 flex-shrink-0"
+                  size={14}
+                />
+                <span className="font-medium">{validation.validation.error}</span>
+              </div>
+              {/* Arrow pointing up */}
+              <div className="absolute -top-1 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-danger/75 backdrop-blur-xs"></div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      );
     };
 
     const shouldShowOverlay = () => {
@@ -149,18 +218,9 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
               {value}
             </div>
           )}
-          {validate && validationSchema && (
-            <ValidationOverlay
-              isVisible={showValidationError && validation.validation.showError}
-              error={validation.validation.error}
-              targetRef={inputRef}
-              onClose={handleCloseValidation}
-              autoHide={validationAutoHide}
-              autoHideDelay={validationAutoHideDelay}
-            />
-          )}
         </div>
         {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+        {renderValidationOverlay()}
       </div>
     );
   },
