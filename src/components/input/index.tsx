@@ -15,6 +15,7 @@ interface ExtendedInputProps extends Omit<InputProps, "error"> {
   validationAutoHideDelay?: number;
   onValidationChange?: (isValid: boolean, error: string | null) => void;
   error?: string;
+  type?: "text" | "currency" | "number" | "email" | "password" | "tel" | "url";
 }
 
 const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
@@ -33,14 +34,45 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
     onBlur,
     onKeyDown,
     onChange,
+    type = "text",
     ...props 
   }, ref) => {
     const [isHovered, setIsHovered] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const [showValidationError, setShowValidationError] = React.useState(false);
 
     // Expose the input ref to parent components
     useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
+
+    // Currency helper functions
+    const getCleanPriceValue = useCallback((value: string) => {
+      if (!value) return "";
+      return value.replace(/^Rp\s*/, "").replace(/[^0-9]/g, "");
+    }, []);
+
+    // Get the actual display value based on type
+    const getDisplayValue = useCallback(() => {
+      if (type === "currency" && typeof value === "string") {
+        if (isFocused) {
+          // When focused, show only numbers for easy editing
+          return getCleanPriceValue(value);
+        } else {
+          // When not focused, show formatted currency
+          const cleanValue = getCleanPriceValue(value);
+          return cleanValue ? `Rp ${cleanValue}` : "";
+        }
+      }
+      return value;
+    }, [type, value, isFocused, getCleanPriceValue]);
+
+    // Get the appropriate placeholder
+    const getPlaceholder = useCallback(() => {
+      if (type === "currency") {
+        return isFocused ? "0" : "Rp 0";
+      }
+      return props.placeholder;
+    }, [type, isFocused, props.placeholder]);
 
     const validation = useFieldValidation({
       schema: validationSchema || z.any(),
@@ -55,7 +87,13 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
       }
     }, [validation.validation.isValid, validation.validation.error, validate, validationSchema, onValidationChange]);
 
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(true);
+      props.onFocus?.(e);
+    };
+
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(false);
       if (validate && validationSchema) {
         validation.handleBlur();
         setShowValidationError(true);
@@ -89,7 +127,25 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
       if (validate && showValidationError) {
         handleCloseValidation();
       }
-      onChange?.(e);
+
+      if (type === "currency") {
+        const inputValue = e.target.value;
+        const cleanValue = inputValue.replace(/[^0-9]/g, ""); // Only keep numbers
+        
+        // Create a completely new event object with the currency format
+        const newEvent = {
+          ...e,
+          target: {
+            ...e.target,
+            name: e.target.name,
+            value: cleanValue ? `Rp ${cleanValue}` : ""
+          }
+        };
+        
+        onChange?.(newEvent as React.ChangeEvent<HTMLInputElement>);
+      } else {
+        onChange?.(e);
+      }
     };
 
     // Effect for positioning
@@ -157,7 +213,8 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
     };
 
     const shouldShowOverlay = () => {
-      if (!value || typeof value !== "string" || !isHovered)
+      const displayValue = getDisplayValue();
+      if (!displayValue || typeof displayValue !== "string" || !isHovered)
         return false;
 
       // Create a temporary element to measure text width
@@ -166,7 +223,7 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
       tempElement.style.visibility = "hidden";
       tempElement.style.position = "absolute";
       tempElement.style.whiteSpace = "nowrap";
-      tempElement.textContent = value;
+      tempElement.textContent = displayValue;
 
       document.body.appendChild(tempElement);
       const textWidth = tempElement.offsetWidth;
@@ -189,9 +246,12 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
         <div className="relative">
           <input
             ref={inputRef}
-            value={value}
+            type={type === "currency" ? "text" : type}
+            value={getDisplayValue()}
+            placeholder={getPlaceholder()}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             onChange={handleChange}
@@ -223,7 +283,7 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
                 "pointer-events-none",
               )}
             >
-              {value}
+              {getDisplayValue()}
             </div>
           )}
         </div>
