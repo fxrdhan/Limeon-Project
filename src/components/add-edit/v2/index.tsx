@@ -135,6 +135,22 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
   });
 
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const [basePriceFocused, setBasePriceFocused] = useState(false);
+  const [sellPriceFocused, setSellPriceFocused] = useState(false);
+
+  // Helper functions for price display
+  const getCleanPriceValue = (value: string) => {
+    if (!value) return "";
+    return value.replace(/^Rp\s*/, "").replace(/[^0-9]/g, "");
+  };
+
+  const getDisplayPriceValue = (value: string, isFocused: boolean) => {
+    if (!value) return "";
+    if (isFocused) {
+      return getCleanPriceValue(value);
+    }
+    return value.startsWith("Rp") ? value : `Rp ${getCleanPriceValue(value)}`;
+  };
 
   const handleFefoTooltipMouseEnter = () => {
     if (fefoIconRef.current) {
@@ -701,10 +717,21 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                                 type="text"
                                 name="base_price"
                                 tabIndex={12}
-                                value={displayBasePrice}
-                                placeholder="Rp 0"
+                                value={getDisplayPriceValue(displayBasePrice, basePriceFocused)}
+                                placeholder={basePriceFocused ? "0" : "Rp 0"}
+                                onFocus={() => setBasePriceFocused(true)}
+                                onBlur={() => setBasePriceFocused(false)}
                                 onChange={(e) => {
-                                  handleChange(e);
+                                  const cleanValue = getCleanPriceValue(e.target.value);
+                                  const syntheticEvent = {
+                                    ...e,
+                                    target: {
+                                      ...e.target,
+                                      name: "base_price",
+                                      value: cleanValue ? `Rp ${cleanValue}` : ""
+                                    }
+                                  };
+                                  handleChange(syntheticEvent);
                                   setTimeout(() => {
                                     const profit =
                                       formData.base_price > 0
@@ -789,9 +816,22 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                                 type="text"
                                 name="sell_price"
                                 tabIndex={14}
-                                value={displaySellPrice}
-                                placeholder="Rp 0"
-                                onChange={handleSellPriceChange}
+                                value={getDisplayPriceValue(displaySellPrice, sellPriceFocused)}
+                                placeholder={sellPriceFocused ? "0" : "Rp 0"}
+                                onFocus={() => setSellPriceFocused(true)}
+                                onBlur={() => setSellPriceFocused(false)}
+                                onChange={(e) => {
+                                  const cleanValue = getCleanPriceValue(e.target.value);
+                                  const syntheticEvent = {
+                                    ...e,
+                                    target: {
+                                      ...e.target,
+                                      name: "sell_price",
+                                      value: cleanValue ? `Rp ${cleanValue}` : ""
+                                    }
+                                  };
+                                  handleSellPriceChange(syntheticEvent);
+                                }}
                                 min="0"
                                 className="w-full"
                                 validate={true}
