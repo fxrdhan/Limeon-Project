@@ -41,6 +41,7 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
     const [isFocused, setIsFocused] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const [showValidationError, setShowValidationError] = React.useState(false);
+    const [hasAutoHidden, setHasAutoHidden] = React.useState(false);
 
     // Expose the input ref to parent components
     useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
@@ -105,6 +106,7 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
       if (validate && validationSchema) {
         validation.handleBlur();
         setShowValidationError(true);
+        setHasAutoHidden(false); // Reset auto-hide state for new validation
       }
       onBlur?.(e);
     };
@@ -128,11 +130,12 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
     const handleCloseValidation = useCallback(() => {
       setShowValidationError(false);
       validationRef.current.clearError();
+      setHasAutoHidden(false);
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       // Clear validation error when user starts typing
-      if (validate && showValidationError) {
+      if (validate && (showValidationError || hasAutoHidden)) {
         handleCloseValidation();
       }
 
@@ -158,7 +161,7 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
 
     // Effect for positioning
     useEffect(() => {
-      if (validate && showValidationError && validation.validation.showError && inputRef.current) {
+      if (validate && showValidationError && validation.validation.error && inputRef.current) {
         const rect = inputRef.current.getBoundingClientRect();
         setValidationPosition({
           top: rect.bottom + 8,
@@ -166,14 +169,14 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
           width: rect.width,
         });
       }
-    }, [validate, showValidationError, validation.validation.showError]);
+    }, [validate, showValidationError, validation.validation.error]);
 
     // Effect for auto-hide timeout
     useEffect(() => {
       if (validate && showValidationError && validation.validation.showError && validationAutoHide && validationAutoHideDelay > 0) {
         validationTimeoutRef.current = setTimeout(() => {
           setShowValidationError(false);
-          validationRef.current.clearError();
+          setHasAutoHidden(true);
         }, validationAutoHideDelay);
       }
 
@@ -185,6 +188,17 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
       };
     }, [validate, showValidationError, validation.validation.showError, validationAutoHide, validationAutoHideDelay]);
 
+    // Effect for hover-triggered validation display after auto-hide
+    useEffect(() => {
+      if (validate && hasAutoHidden && validation.validation.error) {
+        if (isHovered) {
+          setShowValidationError(true);
+        } else {
+          setShowValidationError(false);
+        }
+      }
+    }, [validate, hasAutoHidden, validation.validation.error, isHovered]);
+
     const renderValidationOverlay = () => {
       if (!validate || !validation.validation.error || !validationPosition) {
         return null;
@@ -192,7 +206,7 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
 
       return createPortal(
         <AnimatePresence>
-          {showValidationError && validation.validation.showError && (
+          {showValidationError && validation.validation.error && (
             <motion.div
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -268,7 +282,9 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
               "px-3 text-sm",
               "text-ellipsis overflow-hidden whitespace-nowrap",
               "h-[2.5rem]",
-              error ? "border-red-500" : "border-gray-300",
+              error || (validate && !validation.validation.isValid && validation.validation.error && !isFocused) 
+                ? "border-danger ring-3 ring-danger/20" 
+                : "border-gray-300",
               "focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200",
               "disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70 read-only:bg-gray-100 read-only:cursor-default read-only:opacity-70",
               "disabled:focus:ring-0 disabled:focus:border-gray-300 read-only:focus:ring-0 read-only:focus:border-gray-300",
@@ -287,7 +303,9 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
                 "shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),4px_0_6px_-1px_rgba(0,0,0,0.1),-4px_0_6px_-1px_rgba(0,0,0,0.1)]",
                 "whitespace-pre-wrap break-words",
                 "min-h-[2.5rem] max-h-32 overflow-y-auto",
-                error ? "border-red-500" : "border-gray-300",
+                error || (validate && !validation.validation.isValid && validation.validation.error) 
+                  ? "border-danger" 
+                  : "border-gray-300",
                 "pointer-events-none",
               )}
             >
