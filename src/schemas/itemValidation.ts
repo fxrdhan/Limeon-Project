@@ -6,13 +6,63 @@ export const itemNameSchema = z
   .min(1, "Nama item harus diisi")
   .refine(
     (value) => value.trim().length > 0,
-    "Nama item tidak boleh hanya berisi spasi"
+    "Nama item tidak boleh hanya berisi spasi",
   );
 
 // Schema untuk validasi field nama item dalam bentuk object
 export const itemNameObjectSchema = z.object({
   name: itemNameSchema,
 });
+
+// Schema untuk validasi harga pokok (tidak boleh 0) - menerima string currency format
+export const basePriceSchema = z.string().refine((value) => {
+  // Remove "Rp" prefix and any whitespace, then parse to number
+  const cleanValue = value
+    .replace(/^Rp\s*/, "")
+    .replace(/\./g, "")
+    .trim();
+  const numValue = parseFloat(cleanValue);
+  return !isNaN(numValue) && numValue > 0;
+}, "Harga pokok harus lebih dari 0");
+
+// Schema untuk validasi harga jual (tidak boleh 0) - menerima string currency format
+export const sellPriceSchema = z.string().refine((value) => {
+  // Remove "Rp" prefix and any whitespace, then parse to number
+  const cleanValue = value
+    .replace(/^Rp\s*/, "")
+    .replace(/\./g, "")
+    .trim();
+  const numValue = parseFloat(cleanValue);
+  return !isNaN(numValue) && numValue > 0;
+}, "Harga jual harus lebih dari 0");
+
+// Utility function untuk parse currency string ke number
+const parseCurrencyString = (value: string): number => {
+  const cleanValue = value
+    .replace(/^Rp\s*/, "")
+    .replace(/\./g, "")
+    .trim();
+  return parseFloat(cleanValue) || 0;
+};
+
+// Schema untuk validasi harga jual dengan perbandingan terhadap harga pokok
+export const sellPriceComparisonSchema = (basePrice: string) =>
+  z
+    .string()
+    .refine((value) => {
+      // Remove "Rp" prefix and any whitespace, then parse to number
+      const cleanValue = value
+        .replace(/^Rp\s*/, "")
+        .replace(/\./g, "")
+        .trim();
+      const numValue = parseFloat(cleanValue);
+      return !isNaN(numValue) && numValue > 0;
+    }, "Harga jual harus lebih dari 0")
+    .refine((value) => {
+      const sellPriceNum = parseCurrencyString(value);
+      const basePriceNum = parseCurrencyString(basePrice);
+      return sellPriceNum > basePriceNum;
+    }, "Harga jual harus lebih tinggi dari harga pokok");
 
 // Schema lengkap untuk item (akan digunakan nanti)
 export const itemSchema = z.object({
@@ -21,13 +71,13 @@ export const itemSchema = z.object({
     .min(1, "Nama item harus diisi")
     .refine(
       (value) => value.trim().length > 0,
-      "Nama item tidak boleh hanya berisi spasi"
+      "Nama item tidak boleh hanya berisi spasi",
     ),
   category_id: z.string().min(1, "Kategori harus dipilih"),
   type_id: z.string().min(1, "Jenis harus dipilih"),
   unit_id: z.string().min(1, "Satuan harus dipilih"),
   base_price: z.number().min(0.01, "Harga pokok harus lebih dari 0"),
-  sell_price: z.number().min(0, "Harga jual tidak boleh negatif"),
+  sell_price: z.number().min(0.01, "Harga jual harus lebih dari 0"),
   // Field opsional
   barcode: z.string().optional(),
   description: z.string().optional(),
@@ -39,4 +89,6 @@ export const itemSchema = z.object({
 });
 
 export type ItemNameValidation = z.infer<typeof itemNameSchema>;
+export type BasePriceValidation = z.infer<typeof basePriceSchema>; // string (currency format)
+export type SellPriceValidation = z.infer<typeof sellPriceSchema>; // string (currency format)
 export type ItemValidation = z.infer<typeof itemSchema>;
