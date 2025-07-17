@@ -1,4 +1,4 @@
-import AddEditModal from "@/components/add-edit/v1";
+import AddEditModal from "@/components/add-edit/v3";
 import SearchBar from "@/components/search-bar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
@@ -10,7 +10,7 @@ import { DataGrid, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { useState, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import type { Patient as PatientType } from "@/types";
+import type { Patient as PatientType, FieldConfig } from "@/types";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { getSearchState } from "@/utils/search";
 import { useAgGridSearch } from "@/hooks/useAgGridSearch";
@@ -41,8 +41,8 @@ const PatientList = () => {
     totalPages,
     currentPage,
     itemsPerPage,
-    addMutation,
-    updateMutation,
+    // addMutation,
+    // updateMutation,
     deleteMutation,
     openConfirmDialog,
     debouncedSearch,
@@ -62,6 +62,44 @@ const PatientList = () => {
   } = useAgGridSearch();
 
   const patients = patientsData || [];
+
+  const patientFields: FieldConfig[] = [
+    {
+      key: "name",
+      label: "Nama Pasien",
+      type: "text",
+    },
+    {
+      key: "gender",
+      label: "Jenis Kelamin",
+      type: "text",
+      options: [
+        { id: "L", name: "Laki-laki" },
+        { id: "P", name: "Perempuan" },
+      ],
+      isRadioDropdown: true,
+    },
+    {
+      key: "birth_date",
+      label: "Tanggal Lahir",
+      type: "date",
+    },
+    {
+      key: "address",
+      label: "Alamat",
+      type: "textarea",
+    },
+    {
+      key: "phone",
+      label: "Telepon",
+      type: "tel",
+    },
+    {
+      key: "email",
+      label: "Email",
+      type: "email",
+    },
+  ];
 
   const handleFirstDataRendered = () => {
     setIsInitialLoad(false);
@@ -209,37 +247,52 @@ const PatientList = () => {
       </Card>
 
       <AddEditModal
+        title="Tambah Pasien Baru"
+        data={{}}
+        fields={patientFields}
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSubmit={handleModalSubmit}
-        isLoading={addMutation.isPending}
-        entityName="Pasien"
+        onSave={async (data) => {
+          await handleModalSubmit({
+            name: String(data.name || ""),
+            description: String(data.address || ""),
+            id: undefined,
+          });
+        }}
+        mode="add"
         initialNameFromSearch={debouncedSearch}
       />
 
       <AddEditModal
+        title="Edit Pasien"
+        data={editingItem as unknown as Record<string, string | number | boolean | null> || {}}
+        fields={patientFields}
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
-        onSubmit={handleModalSubmit}
-        initialData={editingItem || undefined}
-        onDelete={
+        onSave={async (data) => {
+          await handleModalSubmit({
+            name: String(data.name || ""),
+            description: String(data.address || ""),
+            id: editingItem?.id,
+          });
+        }}
+        onDeleteRequest={
           editingItem
-            ? (itemId) => {
+            ? () => {
                 openConfirmDialog({
                   title: "Konfirmasi Hapus",
                   message: `Apakah Anda yakin ingin menghapus pasien "${editingItem.name}"?`,
                   variant: "danger",
                   confirmText: "Ya, Hapus",
                   onConfirm: async () => {
-                    await deleteMutation.mutateAsync(itemId);
+                    await deleteMutation.mutateAsync(editingItem.id);
                   },
                 });
               }
             : undefined
         }
-        isLoading={updateMutation.isPending}
-        isDeleting={deleteMutation.isPending}
-        entityName="Pasien"
+        mode="edit"
+        imageUrl={(editingItem as PatientType)?.image_url || undefined}
       />
     </>
   );
