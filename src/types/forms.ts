@@ -69,4 +69,5 @@ export interface FormFieldProps {
   label: string;
   children: React.ReactNode;
   className?: string;
+  required?: boolean;
 }
