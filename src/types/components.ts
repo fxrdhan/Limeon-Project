@@ -23,7 +23,6 @@ export interface DropdownProps {
 export type BadgeVariant =
   | "primary"
   | "secondary"
-  | "accent"
   | "success"
   | "warning"
   | "danger"
@@ -42,7 +41,6 @@ export interface BadgeProps {
 export type ButtonVariant =
   | "primary"
   | "secondary"
-  | "accent"
   | "text"
   | "danger";
 
