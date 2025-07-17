@@ -66,6 +66,7 @@ export interface InputProps
   label?: string;
   error?: string;
   fullWidth?: boolean;
+  value?: string;
 }
 
 export interface LoadingProps {

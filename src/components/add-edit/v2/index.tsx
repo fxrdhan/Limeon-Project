@@ -10,7 +10,6 @@ import {
   FaRedo,
 } from "react-icons/fa";
 import Input from "@/components/input";
-import ValidatedInput from "@/components/validated-input";
 import Button from "@/components/button";
 import Dropdown from "@/components/dropdown";
 import FormSection from "@/components/form-section";
@@ -405,13 +404,14 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                             label="Nama Item"
                             className="md:col-span-2"
                           >
-                            <ValidatedInput
+                            <Input
                               name="name"
                               ref={nameInputRef}
                               value={formData.name}
                               tabIndex={1}
                               onChange={handleChange}
                               className="w-full"
+                              validate={true}
                               validationSchema={itemNameSchema}
                               showValidationOnBlur={true}
                               validationAutoHide={true}
@@ -874,7 +874,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                                     tabIndex={16}
                                     value={
                                       unitConversionHook.unitConversionFormData
-                                        .conversion || ""
+                                        .conversion?.toString() || ""
                                     }
                                     onChange={(e) => {
                                       const { name, value } = e.target;
