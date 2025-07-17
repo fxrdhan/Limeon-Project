@@ -383,7 +383,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                                 name="code"
                                 value={formData.code}
                                 readOnly={true}
-                                className={`w-full transition-all duration-200 ${isCodeHovered ? 'blur-sm' : ''}`}
+                                className={`w-full transition-all duration-200 ${isCodeHovered ? "blur-sm" : ""}`}
                               />
                               {isCodeHovered && (
                                 <div
@@ -403,6 +403,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                           <FormField
                             label="Nama Item"
                             className="md:col-span-2"
+                            required={true}
                           >
                             <Input
                               name="name"
@@ -873,8 +874,8 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                                     name="conversion"
                                     tabIndex={16}
                                     value={
-                                      unitConversionHook.unitConversionFormData
-                                        .conversion?.toString() || ""
+                                      unitConversionHook.unitConversionFormData.conversion?.toString() ||
+                                      ""
                                     }
                                     onChange={(e) => {
                                       const { name, value } = e.target;
@@ -922,26 +923,58 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                           </div>
                           <div className="md:w-2/3 lg:w-3/5 flex flex-col h-full">
                             <div className="overflow-hidden grow h-full">
-                              <Table 
+                              <Table
                                 className="w-full h-full"
                                 autoSize={true}
                                 sortable={false}
                                 columns={[
-                                  { key: "unit", header: "Turunan", minWidth: 100 },
-                                  { key: "conversion", header: "Konversi", minWidth: 140, align: "center" },
-                                  { key: "basePrice", header: "H. Pokok", minWidth: 100, align: "right" },
-                                  { key: "sellPrice", header: "H. Jual", minWidth: 100, align: "right" },
-                                  { key: "actions", header: "‎", minWidth: 80, align: "center" },
+                                  {
+                                    key: "unit",
+                                    header: "Turunan",
+                                    minWidth: 100,
+                                  },
+                                  {
+                                    key: "conversion",
+                                    header: "Konversi",
+                                    minWidth: 140,
+                                    align: "center",
+                                  },
+                                  {
+                                    key: "basePrice",
+                                    header: "H. Pokok",
+                                    minWidth: 100,
+                                    align: "right",
+                                  },
+                                  {
+                                    key: "sellPrice",
+                                    header: "H. Jual",
+                                    minWidth: 100,
+                                    align: "right",
+                                  },
+                                  {
+                                    key: "actions",
+                                    header: "‎",
+                                    minWidth: 80,
+                                    align: "center",
+                                  },
                                 ]}
                                 data={unitConversionHook.conversions}
                               >
                                 <TableHead>
                                   <TableRow>
                                     <TableHeader>Turunan</TableHeader>
-                                    <TableHeader className="text-center">Konversi</TableHeader>
-                                    <TableHeader className="text-right">H. Pokok</TableHeader>
-                                    <TableHeader className="text-right">H. Jual</TableHeader>
-                                    <TableHeader className="text-center">‎</TableHeader>
+                                    <TableHeader className="text-center">
+                                      Konversi
+                                    </TableHeader>
+                                    <TableHeader className="text-right">
+                                      H. Pokok
+                                    </TableHeader>
+                                    <TableHeader className="text-right">
+                                      H. Jual
+                                    </TableHeader>
+                                    <TableHeader className="text-center">
+                                      ‎
+                                    </TableHeader>
                                   </TableRow>
                                 </TableHead>
                                 <TableBody className="h-[100px]">
