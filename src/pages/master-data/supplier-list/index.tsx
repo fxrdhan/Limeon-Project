@@ -1,4 +1,4 @@
-import AddEditModal from "@/components/add-edit/v1";
+import AddEditModal from "@/components/add-edit/v3";
 import SearchBar from "@/components/search-bar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
@@ -10,7 +10,7 @@ import { DataGrid, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { useState, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import type { Supplier as SupplierType } from "@/types";
+import type { Supplier as SupplierType, FieldConfig } from "@/types";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { getSearchState } from "@/utils/search";
 import { useAgGridSearch } from "@/hooks/useAgGridSearch";
@@ -41,8 +41,8 @@ const SupplierList = () => {
     totalPages,
     currentPage,
     itemsPerPage,
-    addMutation,
-    updateMutation,
+    // addMutation,
+    // updateMutation,
     deleteMutation,
     openConfirmDialog,
     debouncedSearch,
@@ -62,6 +62,34 @@ const SupplierList = () => {
   } = useAgGridSearch();
 
   const suppliers = suppliersData || [];
+
+  const supplierFields: FieldConfig[] = [
+    {
+      key: "name",
+      label: "Nama Supplier",
+      type: "text",
+    },
+    {
+      key: "address",
+      label: "Alamat",
+      type: "textarea",
+    },
+    {
+      key: "phone",
+      label: "Telepon",
+      type: "tel",
+    },
+    {
+      key: "email",
+      label: "Email",
+      type: "email",
+    },
+    {
+      key: "contact_person",
+      label: "Kontak Person",
+      type: "text",
+    },
+  ];
 
   const handleFirstDataRendered = () => {
     setIsInitialLoad(false);
@@ -197,37 +225,52 @@ const SupplierList = () => {
       </Card>
 
       <AddEditModal
+        title="Tambah Supplier Baru"
+        data={{}}
+        fields={supplierFields}
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSubmit={handleModalSubmit}
-        isLoading={addMutation.isPending}
-        entityName="Supplier"
+        onSave={async (data) => {
+          await handleModalSubmit({
+            name: String(data.name || ""),
+            description: String(data.address || ""),
+            id: undefined,
+          });
+        }}
+        mode="add"
         initialNameFromSearch={debouncedSearch}
       />
 
       <AddEditModal
+        title="Edit Supplier"
+        data={editingItem as unknown as Record<string, string | number | boolean | null> || {}}
+        fields={supplierFields}
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
-        onSubmit={handleModalSubmit}
-        initialData={editingItem || undefined}
-        onDelete={
+        onSave={async (data) => {
+          await handleModalSubmit({
+            name: String(data.name || ""),
+            description: String(data.address || ""),
+            id: editingItem?.id,
+          });
+        }}
+        onDeleteRequest={
           editingItem
-            ? (itemId) => {
+            ? () => {
                 openConfirmDialog({
                   title: "Konfirmasi Hapus",
                   message: `Apakah Anda yakin ingin menghapus supplier "${editingItem.name}"?`,
                   variant: "danger",
                   confirmText: "Ya, Hapus",
                   onConfirm: async () => {
-                    await deleteMutation.mutateAsync(itemId);
+                    await deleteMutation.mutateAsync(editingItem.id);
                   },
                 });
               }
             : undefined
         }
-        isLoading={updateMutation.isPending}
-        isDeleting={deleteMutation.isPending}
-        entityName="Supplier"
+        mode="edit"
+        imageUrl={(editingItem as SupplierType)?.image_url || undefined}
       />
     </>
   );
