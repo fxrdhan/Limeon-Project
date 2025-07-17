@@ -19,7 +19,7 @@ import DescriptiveTextarea from "@/components/descriptive-textarea";
 import Checkbox from "@/components/checkbox";
 import AddEditModal from "@/components/add-edit/v1";
 import { PiKeyReturnBold } from "react-icons/pi";
-import { itemNameSchema } from "@/schemas/itemValidation";
+import { itemNameSchema, basePriceSchema, sellPriceComparisonSchema } from "@/schemas/itemValidation";
 
 import {
   Card,
@@ -185,7 +185,8 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
     !formData.unit_id ||
     !formData.base_price ||
     formData.base_price <= 0 ||
-    formData.sell_price < 0;
+    !formData.sell_price ||
+    formData.sell_price <= 0;
 
   const operationsPending =
     addTypeMutation.isPending ||
@@ -435,6 +436,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                           <FormField
                             label="Jenis Produk"
                             className="md:col-span-1"
+                            required={true}
                           >
                             <Dropdown
                               name="is_medicine"
@@ -461,7 +463,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                          <FormField label="Kategori">
+                          <FormField label="Kategori" required={true}>
                             {loading && categories.length === 0 ? (
                               <Input
                                 value="Memuat kategori..."
@@ -484,7 +486,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                             )}
                           </FormField>
 
-                          <FormField label="Jenis">
+                          <FormField label="Jenis" required={true}>
                             {loading && types.length === 0 ? (
                               <Input
                                 value="Memuat jenis..."
@@ -507,7 +509,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                             )}
                           </FormField>
 
-                          <FormField label="Satuan">
+                          <FormField label="Satuan" required={true}>
                             {loading && units.length === 0 ? (
                               <Input
                                 value="Memuat satuan..."
@@ -557,7 +559,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                     <div className="w-full md:w-1/4">
                       <FormSection title="Pengaturan Tambahan">
                         <div className="grid grid-cols-1 gap-6">
-                          <FormField label="Status">
+                          <FormField label="Status" required={true}>
                             <Dropdown
                               name="is_active"
                               tabIndex={9}
@@ -694,7 +696,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                               />
                             </FormField>
 
-                            <FormField label="Harga Pokok">
+                            <FormField label="Harga Pokok" required={true}>
                               <Input
                                 type="text"
                                 name="base_price"
@@ -715,6 +717,11 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                                 }}
                                 min="0"
                                 className="w-full"
+                                validate={true}
+                                validationSchema={basePriceSchema}
+                                showValidationOnBlur={true}
+                                validationAutoHide={true}
+                                validationAutoHideDelay={3000}
                                 required
                               />
                             </FormField>
@@ -777,7 +784,7 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                               </div>
                             </FormField>
 
-                            <FormField label="Harga Jual">
+                            <FormField label="Harga Jual" required={true}>
                               <Input
                                 type="text"
                                 name="sell_price"
@@ -787,6 +794,11 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                                 onChange={handleSellPriceChange}
                                 min="0"
                                 className="w-full"
+                                validate={true}
+                                validationSchema={sellPriceComparisonSchema(displayBasePrice)}
+                                showValidationOnBlur={true}
+                                validationAutoHide={true}
+                                validationAutoHideDelay={3000}
                                 required
                               />
                             </FormField>
