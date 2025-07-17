@@ -51,6 +51,15 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
       return value.replace(/^Rp\s*/, "").replace(/[^0-9]/g, "");
     }, []);
 
+    const formatCurrencyDisplay = useCallback((value: string) => {
+      const cleanValue = getCleanPriceValue(value);
+      if (!cleanValue) return "";
+      
+      // Add thousand separators (dots) for Indonesian format
+      const formattedNumber = cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      return `Rp ${formattedNumber}`;
+    }, [getCleanPriceValue]);
+
     // Get the actual display value based on type
     const getDisplayValue = useCallback(() => {
       if (type === "currency" && typeof value === "string") {
@@ -58,13 +67,12 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
           // When focused, show only numbers for easy editing
           return getCleanPriceValue(value);
         } else {
-          // When not focused, show formatted currency
-          const cleanValue = getCleanPriceValue(value);
-          return cleanValue ? `Rp ${cleanValue}` : "";
+          // When not focused, show formatted currency with thousand separators
+          return formatCurrencyDisplay(value);
         }
       }
       return value;
-    }, [type, value, isFocused, getCleanPriceValue]);
+    }, [type, value, isFocused, getCleanPriceValue, formatCurrencyDisplay]);
 
     // Get the appropriate placeholder
     const getPlaceholder = useCallback(() => {
@@ -283,7 +291,7 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
                 "pointer-events-none",
               )}
             >
-              {getDisplayValue()}
+              {type === "currency" && typeof value === "string" ? formatCurrencyDisplay(value) : getDisplayValue()}
             </div>
           )}
         </div>
