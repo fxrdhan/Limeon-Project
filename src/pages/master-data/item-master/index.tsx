@@ -7,10 +7,7 @@ import AddEditModal from "@/components/add-edit/v1";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
-import {
-  ColDef,
-  RowClickedEvent,
-} from "ag-grid-community";
+import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef, useState } from "react";
 import { useAgGridSearch } from "@/hooks/useAgGridSearch";
@@ -114,7 +111,14 @@ const ItemMaster = () => {
     locationKey: location.key,
   });
 
-  const { search, handleSearchChange, onGridReady, clearSearch, isExternalFilterPresent, doesExternalFilterPass } = useAgGridSearch({
+  const {
+    search,
+    handleSearchChange,
+    onGridReady,
+    clearSearch,
+    isExternalFilterPresent,
+    doesExternalFilterPass,
+  } = useAgGridSearch({
     enableDebouncedSearch: true,
     onDebouncedSearchChange: setDebouncedSearch,
   });
@@ -122,7 +126,6 @@ const ItemMaster = () => {
   const handleFirstDataRendered = () => {
     setIsInitialLoad(false);
   };
-
 
   const columnDefs: ColDef[] = [
     createTextColumn({
@@ -187,7 +190,9 @@ const ItemMaster = () => {
                     key={config.key}
                     className={classNames(
                       "group px-4 py-2 rounded-full focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
-                      activeTab !== config.key ? "hover:bg-emerald-100 hover:text-emerald-700" : "",
+                      activeTab !== config.key
+                        ? "hover:bg-emerald-100 hover:text-emerald-700"
+                        : "",
                     )}
                     onClick={() => handleTabChange(config.key)}
                   >
@@ -212,7 +217,9 @@ const ItemMaster = () => {
                           : "text-gray-700 group-hover:text-emerald-700",
                       )}
                     >
-                      {config.label}
+                      {activeTab === config.key
+                        ? `${config.label} Item`
+                        : config.label}
                     </span>
                   </button>
                 ))}
