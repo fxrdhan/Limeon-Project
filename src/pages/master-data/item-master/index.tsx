@@ -132,13 +132,12 @@ const ItemMaster = () => {
       field: "name",
       headerName: currentConfig.nameColumnHeader,
       minWidth: 120,
-      flex: 1,
     }),
     createTextColumn({
       field: "description",
       headerName: "Deskripsi",
       minWidth: 200,
-      flex: 2,
+      flex: 1,
       valueGetter: (params) => {
         return "description" in params.data && params.data.description
           ? params.data.description
@@ -262,7 +261,7 @@ const ItemMaster = () => {
                   ? `<span style="padding: 10px; color: #888;">${currentConfig.searchNoDataMessage} "${search}"</span>`
                   : `<span style="padding: 10px; color: #888;">${currentConfig.noDataMessage}</span>`
               }
-              sizeColumnsToFit={true}
+              autoSizeColumns={["name"]}
               onFirstDataRendered={handleFirstDataRendered}
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
