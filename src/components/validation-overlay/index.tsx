@@ -25,7 +25,7 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
     left: number;
     width: number;
   } | null>(null);
-  
+
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -70,15 +70,18 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
           width: Math.max(position.width, 200),
         }}
       >
-        <div className="bg-red-500 text-white text-sm px-3 py-2 rounded-md shadow-lg border border-red-600 flex items-center gap-2">
-          <FaExclamationTriangle className="text-yellow-300 flex-shrink-0" size={14} />
+        <div className="bg-accent/80 text-white text-sm px-3 py-2 rounded-lg shadow-lg backdrop-blur-xs flex items-center gap-2">
+          <FaExclamationTriangle
+            className="text-yellow-300 flex-shrink-0"
+            size={14}
+          />
           <span className="font-medium">{error}</span>
         </div>
         {/* Arrow pointing up */}
-        <div className="absolute -top-1 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-red-500"></div>
+        <div className="absolute -top-1 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-accent/80 backdrop-blur-xs"></div>
       </motion.div>
     </AnimatePresence>,
-    document.body
+    document.body,
   );
 };
 
