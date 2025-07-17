@@ -1777,6 +1777,7 @@ __metadata:
     typescript: ^5.8.3
     typescript-eslint: ^8.34.1
     vite: ^6.3.5
+    zod: ^4.0.5
     zustand: ^5.0.5
   languageName: unknown
   linkType: soft
@@ -4533,6 +4534,13 @@ __metadata:
   version: 0.1.0
   resolution: "yocto-queue@npm:0.1.0"
   checksum: f77b3d8d00310def622123df93d4ee654fc6a0096182af8bd60679ddcdfb3474c56c6c7190817c84a2785648cdee9d721c0154eb45698c62176c322fb46fc700
+  languageName: node
+  linkType: hard
+
+"zod@npm:^4.0.5":
+  version: 4.0.5
+  resolution: "zod@npm:4.0.5"
+  checksum: d1e35c6737ac448e2115e5f3bfa4d71e398f4f4c95243fd4128dca74f7df40163337a26c812bc365ea95e27206787ab57bd4d682c8e8b8af2ed298eff1e7d8ba
   languageName: node
   linkType: hard
 
