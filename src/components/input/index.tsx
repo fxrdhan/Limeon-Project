@@ -1,13 +1,86 @@
-import { forwardRef, useState } from "react";
+import React, { forwardRef, useState, useRef, useImperativeHandle } from "react";
+import { z } from "zod";
 import type { InputProps } from "@/types";
 import { classNames } from "@/lib/classNames";
+import ValidationOverlay from "@/components/validation-overlay";
+import { useFieldValidation } from "@/hooks/useFieldValidation";
 
-const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, className, fullWidth = true, ...props }, ref) => {
+interface ExtendedInputProps extends Omit<InputProps, "error"> {
+  validate?: boolean;
+  validationSchema?: z.ZodSchema;
+  showValidationOnBlur?: boolean;
+  validationAutoHide?: boolean;
+  validationAutoHideDelay?: number;
+  onValidationChange?: (isValid: boolean, error: string | null) => void;
+  error?: string;
+}
+
+const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
+  ({ 
+    label, 
+    error, 
+    className, 
+    fullWidth = true, 
+    validate = false,
+    validationSchema,
+    showValidationOnBlur = true,
+    validationAutoHide = true,
+    validationAutoHideDelay = 3000,
+    onValidationChange,
+    value,
+    onBlur,
+    onKeyDown,
+    onChange,
+    ...props 
+  }, ref) => {
     const [isHovered, setIsHovered] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [showValidationError, setShowValidationError] = React.useState(false);
+
+    // Expose the input ref to parent components
+    useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
+
+    const validation = useFieldValidation({
+      schema: validationSchema || z.any(),
+      value: value,
+      showOnBlur: showValidationOnBlur,
+    });
+
+    // Notify parent about validation changes
+    React.useEffect(() => {
+      if (validate && validationSchema && onValidationChange) {
+        onValidationChange(validation.validation.isValid, validation.validation.error);
+      }
+    }, [validation.validation.isValid, validation.validation.error, validate, validationSchema, onValidationChange]);
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      if (validate && validationSchema) {
+        validation.handleBlur();
+        setShowValidationError(true);
+      }
+      onBlur?.(e);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      onKeyDown?.(e);
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Clear validation error when user starts typing
+      if (validate && showValidationError) {
+        setShowValidationError(false);
+        validation.clearError();
+      }
+      onChange?.(e);
+    };
+
+    const handleCloseValidation = () => {
+      setShowValidationError(false);
+      validation.clearError();
+    };
 
     const shouldShowOverlay = () => {
-      if (!props.value || typeof props.value !== "string" || !isHovered)
+      if (!value || typeof value !== "string" || !isHovered)
         return false;
 
       // Create a temporary element to measure text width
@@ -16,7 +89,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       tempElement.style.visibility = "hidden";
       tempElement.style.position = "absolute";
       tempElement.style.whiteSpace = "nowrap";
-      tempElement.textContent = props.value;
+      tempElement.textContent = value;
 
       document.body.appendChild(tempElement);
       const textWidth = tempElement.offsetWidth;
@@ -38,9 +111,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           <input
-            ref={ref}
+            ref={inputRef}
+            value={value}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            onChange={handleChange}
             className={classNames(
               "p-2.5 border rounded-lg",
               "px-3 text-sm",
@@ -69,8 +146,18 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                 "pointer-events-none",
               )}
             >
-              {props.value}
+              {value}
             </div>
+          )}
+          {validate && validationSchema && (
+            <ValidationOverlay
+              isVisible={showValidationError && validation.validation.showError}
+              error={validation.validation.error}
+              targetRef={inputRef}
+              onClose={handleCloseValidation}
+              autoHide={validationAutoHide}
+              autoHideDelay={validationAutoHideDelay}
+            />
           )}
         </div>
         {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
