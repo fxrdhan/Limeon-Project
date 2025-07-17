@@ -1,4 +1,4 @@
-import AddEditModal from "@/components/add-edit/v1";
+import AddEditModal from "@/components/add-edit/v3";
 import SearchBar from "@/components/search-bar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
@@ -10,7 +10,7 @@ import { DataGrid, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { useState, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import type { Doctor as DoctorType } from "@/types";
+import type { Doctor as DoctorType, FieldConfig } from "@/types";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { getSearchState } from "@/utils/search";
 import { useAgGridSearch } from "@/hooks/useAgGridSearch";
@@ -41,8 +41,8 @@ const DoctorList = () => {
     totalPages,
     currentPage,
     itemsPerPage,
-    addMutation,
-    updateMutation,
+    // addMutation,
+    // updateMutation,
     deleteMutation,
     openConfirmDialog,
     debouncedSearch,
@@ -62,6 +62,64 @@ const DoctorList = () => {
   } = useAgGridSearch();
 
   const doctors = doctorsData || [];
+
+  const doctorFields: FieldConfig[] = [
+    {
+      key: "name",
+      label: "Nama Dokter",
+      type: "text",
+    },
+    {
+      key: "gender",
+      label: "Jenis Kelamin",
+      type: "text",
+      options: [
+        { id: "L", name: "Laki-laki" },
+        { id: "P", name: "Perempuan" },
+      ],
+      isRadioDropdown: true,
+    },
+    {
+      key: "specialization",
+      label: "Spesialisasi",
+      type: "text",
+    },
+    {
+      key: "license_number",
+      label: "Nomor Lisensi",
+      type: "text",
+    },
+    {
+      key: "experience_years",
+      label: "Pengalaman (tahun)",
+      type: "text",
+    },
+    {
+      key: "phone",
+      label: "Telepon",
+      type: "tel",
+    },
+    {
+      key: "email",
+      label: "Email",
+      type: "email",
+    },
+    {
+      key: "address",
+      label: "Alamat",
+      type: "textarea",
+    },
+    {
+      key: "birth_date",
+      label: "Tanggal Lahir",
+      type: "date",
+    },
+    {
+      key: "qualification",
+      label: "Kualifikasi",
+      type: "textarea",
+    },
+  ];
 
   const handleFirstDataRendered = () => {
     setIsInitialLoad(false);
@@ -213,37 +271,52 @@ const DoctorList = () => {
       </Card>
 
       <AddEditModal
+        title="Tambah Dokter Baru"
+        data={{}}
+        fields={doctorFields}
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSubmit={handleModalSubmit}
-        isLoading={addMutation.isPending}
-        entityName="Dokter"
+        onSave={async (data) => {
+          await handleModalSubmit({
+            name: String(data.name || ""),
+            description: String(data.specialization || ""),
+            id: undefined,
+          });
+        }}
+        mode="add"
         initialNameFromSearch={debouncedSearch}
       />
 
       <AddEditModal
+        title="Edit Dokter"
+        data={editingItem as unknown as Record<string, string | number | boolean | null> || {}}
+        fields={doctorFields}
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
-        onSubmit={handleModalSubmit}
-        initialData={editingItem || undefined}
-        onDelete={
+        onSave={async (data) => {
+          await handleModalSubmit({
+            name: String(data.name || ""),
+            description: String(data.specialization || ""),
+            id: editingItem?.id,
+          });
+        }}
+        onDeleteRequest={
           editingItem
-            ? (itemId) => {
+            ? () => {
                 openConfirmDialog({
                   title: "Konfirmasi Hapus",
                   message: `Apakah Anda yakin ingin menghapus dokter "${editingItem.name}"?`,
                   variant: "danger",
                   confirmText: "Ya, Hapus",
                   onConfirm: async () => {
-                    await deleteMutation.mutateAsync(itemId);
+                    await deleteMutation.mutateAsync(editingItem.id);
                   },
                 });
               }
             : undefined
         }
-        isLoading={updateMutation.isPending}
-        isDeleting={deleteMutation.isPending}
-        entityName="Dokter"
+        mode="edit"
+        imageUrl={(editingItem as DoctorType)?.image_url || undefined}
       />
     </>
   );
