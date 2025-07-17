@@ -36,3 +36,6 @@ dist-ssr
 
 # Claude AI project instructions
 CLAUDE.md
+
+# MCP configuration (contains sensitive tokens)
+.mcp.json
