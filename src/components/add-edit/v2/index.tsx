@@ -10,6 +10,7 @@ import {
   FaRedo,
 } from "react-icons/fa";
 import Input from "@/components/input";
+import ValidatedInput from "@/components/validated-input";
 import Button from "@/components/button";
 import Dropdown from "@/components/dropdown";
 import FormSection from "@/components/form-section";
@@ -19,6 +20,7 @@ import DescriptiveTextarea from "@/components/descriptive-textarea";
 import Checkbox from "@/components/checkbox";
 import AddEditModal from "@/components/add-edit/v1";
 import { PiKeyReturnBold } from "react-icons/pi";
+import { itemNameSchema } from "@/schemas/itemValidation";
 
 import {
   Card,
@@ -178,10 +180,11 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
   }
 
   const formIsInvalid =
-    !formData.name.trim() ||
+    !formData.name?.trim() ||
     !formData.category_id ||
     !formData.type_id ||
     !formData.unit_id ||
+    !formData.base_price ||
     formData.base_price <= 0 ||
     formData.sell_price < 0;
 
@@ -402,13 +405,17 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                             label="Nama Item"
                             className="md:col-span-2"
                           >
-                            <Input
+                            <ValidatedInput
                               name="name"
                               ref={nameInputRef}
                               value={formData.name}
                               tabIndex={1}
                               onChange={handleChange}
                               className="w-full"
+                              validationSchema={itemNameSchema}
+                              showValidationOnBlur={true}
+                              validationAutoHide={true}
+                              validationAutoHideDelay={3000}
                               required
                             />
                           </FormField>
