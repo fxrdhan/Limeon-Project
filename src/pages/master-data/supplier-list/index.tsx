@@ -73,7 +73,6 @@ const SupplierList = () => {
         field: "name",
         headerName: "Nama Supplier",
         minWidth: 200,
-        flex: 1,
       }),
       createTextColumn({
         field: "address",
@@ -170,7 +169,7 @@ const SupplierList = () => {
                   ? `<span style="padding: 10px; color: #888;">Tidak ada supplier dengan nama "${search}"</span>`
                   : '<span style="padding: 10px; color: #888;">Tidak ada data supplier yang ditemukan</span>'
               }
-              sizeColumnsToFit={true}
+              autoSizeColumns={["name", "phone", "email", "contact_person"]}
               onFirstDataRendered={handleFirstDataRendered}
               animateRows={true}
               isExternalFilterPresent={isExternalFilterPresent}
