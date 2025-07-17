@@ -795,7 +795,7 @@ const Dropdown = ({
                               type="text"
                               className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 pl-2 ${
                                 searchState === "not-found"
-                                  ? "border-accent focus:border-accent focus:ring-3 focus:ring-red-100"
+                                  ? "border-danger focus:border-danger focus:ring-3 focus:ring-red-200"
                                   : "border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200"
                               }`}
                               placeholder="Cari..."
