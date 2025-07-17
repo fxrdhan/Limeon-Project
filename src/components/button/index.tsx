@@ -25,7 +25,6 @@ const Button = React.forwardRef<
         "rounded-lg ring-0 outline-hidden shadow-md bg-primary flex items-center text-white hover:text-white",
       secondary:
         "rounded-lg bg-secondary bg-secondary ring-0 outline-hidden flex items-center text-white hover:text-white",
-      accent: "",
       danger:
         "text-danger hover:text-white hover:bg-danger/80 outline-hidden hover:opacity-100!",
     };
