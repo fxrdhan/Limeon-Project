@@ -67,20 +67,6 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
       onKeyDown?.(e);
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      // Clear validation error when user starts typing
-      if (validate && showValidationError) {
-        setShowValidationError(false);
-        validation.clearError();
-      }
-      onChange?.(e);
-    };
-
-    const handleCloseValidation = useCallback(() => {
-      setShowValidationError(false);
-      validation.clearError();
-    }, [validation]);
-
     // ValidationOverlay integrated logic
     const [validationPosition, setValidationPosition] = React.useState<{
       top: number;
@@ -89,6 +75,24 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
     } | null>(null);
     const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Use refs to avoid dependency issues
+    const validationRef = useRef(validation);
+    validationRef.current = validation;
+
+    const handleCloseValidation = useCallback(() => {
+      setShowValidationError(false);
+      validationRef.current.clearError();
+    }, []);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Clear validation error when user starts typing
+      if (validate && showValidationError) {
+        handleCloseValidation();
+      }
+      onChange?.(e);
+    };
+
+    // Effect for positioning
     useEffect(() => {
       if (validate && showValidationError && validation.validation.showError && inputRef.current) {
         const rect = inputRef.current.getBoundingClientRect();
@@ -97,21 +101,25 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
           left: rect.left,
           width: rect.width,
         });
+      }
+    }, [validate, showValidationError, validation.validation.showError]);
 
-        // Auto hide after delay
-        if (validationAutoHide && validationAutoHideDelay > 0) {
-          validationTimeoutRef.current = setTimeout(() => {
-            handleCloseValidation();
-          }, validationAutoHideDelay);
-        }
+    // Effect for auto-hide timeout
+    useEffect(() => {
+      if (validate && showValidationError && validation.validation.showError && validationAutoHide && validationAutoHideDelay > 0) {
+        validationTimeoutRef.current = setTimeout(() => {
+          setShowValidationError(false);
+          validationRef.current.clearError();
+        }, validationAutoHideDelay);
       }
 
       return () => {
         if (validationTimeoutRef.current) {
           clearTimeout(validationTimeoutRef.current);
+          validationTimeoutRef.current = null;
         }
       };
-    }, [validate, showValidationError, validation.validation.showError, validationAutoHide, validationAutoHideDelay, handleCloseValidation]);
+    }, [validate, showValidationError, validation.validation.showError, validationAutoHide, validationAutoHideDelay]);
 
     const renderValidationOverlay = () => {
       if (!validate || !validation.validation.error || !validationPosition) {
