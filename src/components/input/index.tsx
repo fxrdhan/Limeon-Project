@@ -79,7 +79,7 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
     const handleCloseValidation = useCallback(() => {
       setShowValidationError(false);
       validation.clearError();
-    }, [validation]);
+    }, [validation.clearError]);
 
     // ValidationOverlay integrated logic
     const [validationPosition, setValidationPosition] = React.useState<{
