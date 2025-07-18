@@ -1,4 +1,5 @@
 import React from "react";
+import { z } from "zod";
 import { Category, Item } from "./database";
 
 // Component props and UI-related types
@@ -61,6 +62,13 @@ export interface InputProps
   error?: string;
   fullWidth?: boolean;
   value?: string;
+  validate?: boolean;
+  validationSchema?: z.ZodSchema;
+  showValidationOnBlur?: boolean;
+  validationAutoHide?: boolean;
+  validationAutoHideDelay?: number;
+  onValidationChange?: (isValid: boolean, error: string | null) => void;
+  type?: "text" | "currency" | "number" | "email" | "password" | "tel" | "url";
 }
 
 export interface LoadingProps {
