@@ -1,5 +1,5 @@
 import AddEditModal from "@/components/add-edit/v3";
-import SearchBar from "@/components/search-bar";
+import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
 import PageTitle from "@/components/page-title";
@@ -13,7 +13,8 @@ import { useLocation } from "react-router-dom";
 import type { Patient as PatientType, FieldConfig } from "@/types";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { getSearchState } from "@/utils/search";
-import { useAgGridSearch } from "@/hooks/useAgGridSearch";
+import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
+import { patientSearchColumns } from "@/utils/searchColumns";
 
 const PatientList = () => {
   const searchInputRef = useRef<HTMLInputElement>(
@@ -59,20 +60,35 @@ const PatientList = () => {
     onGridReady,
     isExternalFilterPresent,
     doesExternalFilterPass,
-  } = useAgGridSearch();
+    handleTargetedSearch,
+    handleGlobalSearch,
+  } = useEnhancedAgGridSearch({
+    columns: patientSearchColumns,
+    useFuzzySearch: true,
+  });
 
   const patients = patientsData || [];
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-      const isModalOpen = isAddModalOpen || isEditModalOpen;
-      const isTypeable = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]$/.test(e.key);
-      
-      if (!isInputFocused && !isModalOpen && isTypeable && searchInputRef.current) {
-        searchInputRef.current.focus();
-        handleSearchChange(e.key);
+      try {
+        const target = e.target as HTMLElement;
+        const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+        const isModalOpen = isAddModalOpen || isEditModalOpen;
+        const isTypeable = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~#]$/.test(e.key);
+        
+        if (!isInputFocused && !isModalOpen && isTypeable && searchInputRef.current) {
+          e.preventDefault();
+          searchInputRef.current.focus();
+          
+          // Create a synthetic change event
+          const syntheticEvent = {
+            target: { value: e.key }
+          } as React.ChangeEvent<HTMLInputElement>;
+          handleSearchChange(syntheticEvent);
+        }
+      } catch (error) {
+        console.error('Error in global keydown handler:', error);
       }
     };
 
@@ -196,14 +212,17 @@ const PatientList = () => {
           <PageTitle title="Daftar Pasien" />
         </div>
         <div className="flex items-center">
-          <SearchBar
+          <EnhancedSearchBar
             inputRef={searchInputRef}
             value={search}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
-            placeholder="Cari di semua kolom (nama, jenis kelamin, alamat, dll)..."
+            placeholder="Cari di semua kolom atau ketik # untuk pencarian kolom spesifik..."
             className="grow"
             searchState={getSearchState(search, search, patients)}
+            columns={patientSearchColumns}
+            onTargetedSearch={handleTargetedSearch}
+            onGlobalSearch={handleGlobalSearch}
           />
           <Button
             variant="primary"
