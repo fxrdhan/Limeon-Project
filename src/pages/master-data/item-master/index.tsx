@@ -1,6 +1,6 @@
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
-import SearchBar from "@/components/search-bar";
+import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
 import PageTitle from "@/components/page-title";
 import AddEditModal from "@/components/add-edit/v1";
 
@@ -10,7 +10,8 @@ import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { useRef, useState, useEffect } from "react";
-import { useAgGridSearch } from "@/hooks/useAgGridSearch";
+import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
+import { itemMasterSearchColumns } from "@/utils/searchColumns";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
 import { motion, LayoutGroup } from "framer-motion";
@@ -118,21 +119,35 @@ const ItemMaster = () => {
     clearSearch,
     isExternalFilterPresent,
     doesExternalFilterPass,
-  } = useAgGridSearch({
+    handleTargetedSearch,
+    handleGlobalSearch,
+  } = useEnhancedAgGridSearch({
+    columns: itemMasterSearchColumns,
     enableDebouncedSearch: true,
     onDebouncedSearchChange: setDebouncedSearch,
+    useFuzzySearch: true,
   });
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-      const isModalOpen = isAddModalOpen || isEditModalOpen;
-      const isTypeable = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]$/.test(e.key);
-      
-      if (!isInputFocused && !isModalOpen && isTypeable && searchInputRef.current) {
-        searchInputRef.current.focus();
-        handleSearchChange(e.key);
+      try {
+        const target = e.target as HTMLElement;
+        const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+        const isModalOpen = isAddModalOpen || isEditModalOpen;
+        const isTypeable = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~#]$/.test(e.key);
+        
+        if (!isInputFocused && !isModalOpen && isTypeable && searchInputRef.current) {
+          e.preventDefault();
+          searchInputRef.current.focus();
+          
+          // Create a synthetic change event
+          const syntheticEvent = {
+            target: { value: e.key }
+          } as React.ChangeEvent<HTMLInputElement>;
+          handleSearchChange(syntheticEvent);
+        }
+      } catch (error) {
+        console.error('Error in global keydown handler:', error);
       }
     };
 
@@ -240,14 +255,17 @@ const ItemMaster = () => {
               ))}
             </div>
           </LayoutGroup>
-          <SearchBar
+          <EnhancedSearchBar
             inputRef={searchInputRef}
             value={search}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
-            placeholder={currentConfig.searchPlaceholder}
+            placeholder={`${currentConfig.searchPlaceholder} atau ketik # untuk pencarian kolom spesifik`}
             className="grow"
             searchState={getSearchState(search, search, data)}
+            columns={itemMasterSearchColumns}
+            onTargetedSearch={handleTargetedSearch}
+            onGlobalSearch={handleGlobalSearch}
           />
           <Button
             variant="primary"
