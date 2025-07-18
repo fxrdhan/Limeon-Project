@@ -1,19 +1,7 @@
-import { ColDef, ValueGetterParams, ValueFormatterParams, CellStyle } from "ag-grid-community";
+import { ColDef } from "ag-grid-community";
+import { ColumnConfig } from "@/types";
 
-export interface ColumnConfig {
-  field: string;
-  headerName: string;
-  minWidth?: number;
-  flex?: number;
-  filter?: boolean | string;
-  floatingFilter?: boolean;
-  sortable?: boolean;
-  resizable?: boolean;
-  cellStyle?: CellStyle;
-  valueGetter?: (params: ValueGetterParams) => unknown;
-  valueFormatter?: (params: ValueFormatterParams) => string;
-  tooltipField?: string;
-}
+export type { ColumnConfig };
 
 export const createTextColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
@@ -24,7 +12,7 @@ export const createTextColumn = (config: ColumnConfig): ColDef => ({
   flex: config.flex,
   cellStyle: config.cellStyle || {
     overflow: "hidden",
-    textOverflow: "ellipsis", 
+    textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   },
   tooltipField: config.tooltipField || config.field,
@@ -71,13 +59,15 @@ export const createCurrencyColumn = (config: ColumnConfig): ColDef => ({
   floatingFilter: config.floatingFilter !== false,
   minWidth: config.minWidth || 120,
   cellStyle: config.cellStyle || { textAlign: "right" },
-  valueFormatter: config.valueFormatter || ((params) =>
-    params.value?.toLocaleString("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }) || ""),
+  valueFormatter:
+    config.valueFormatter ||
+    ((params) =>
+      params.value?.toLocaleString("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }) || ""),
   valueGetter: config.valueGetter,
   sortable: config.sortable !== false,
   resizable: config.resizable !== false,
@@ -97,22 +87,30 @@ export const createCenterAlignColumn = (config: ColumnConfig): ColDef => ({
 });
 
 export const formatCurrency = (value: number): string => {
-  return value?.toLocaleString("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }) || "";
+  return (
+    value?.toLocaleString("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }) || ""
+  );
 };
 
 export const formatBaseCurrency = (value: number): string => {
-  return value?.toLocaleString("id-ID", {
-    style: "currency",
-    currency: "IDR",
-  }) || "";
+  return (
+    value?.toLocaleString("id-ID", {
+      style: "currency",
+      currency: "IDR",
+    }) || ""
+  );
 };
 
-export const createMatchScoreColumn = (config: Omit<ColumnConfig, "field"> & { getMatchScore: (data: unknown) => number }): ColDef => ({
+export const createMatchScoreColumn = (
+  config: Omit<ColumnConfig, "field"> & {
+    getMatchScore: (data: unknown) => number;
+  },
+): ColDef => ({
   field: "matchScore",
   headerName: config.headerName,
   width: config.minWidth || 100,
