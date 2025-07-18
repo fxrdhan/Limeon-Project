@@ -33,11 +33,11 @@ function ItemList() {
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  const { 
-    search, 
-    handleSearchChange, 
-    onGridReady, 
-    isExternalFilterPresent, 
+  const {
+    search,
+    handleSearchChange,
+    onGridReady,
+    isExternalFilterPresent,
     doesExternalFilterPass,
     handleTargetedSearch: originalHandleTargetedSearch,
     handleGlobalSearch: originalHandleGlobalSearch,
@@ -67,20 +67,26 @@ function ItemList() {
   });
 
   // Synchronize search state between UI and data management hooks
-  const handleGlobalSearch = useCallback((searchValue: string) => {
-    // Update the UI search state
-    originalHandleGlobalSearch(searchValue);
-    // Update the data management search state
-    setDataSearch(searchValue);
-  }, [originalHandleGlobalSearch, setDataSearch]);
+  const handleGlobalSearch = useCallback(
+    (searchValue: string) => {
+      // Update the UI search state
+      originalHandleGlobalSearch(searchValue);
+      // Update the data management search state
+      setDataSearch(searchValue);
+    },
+    [originalHandleGlobalSearch, setDataSearch],
+  );
 
-  const handleTargetedSearch = useCallback((targetedSearch: TargetedSearch | null) => {
-    // Update the UI search state
-    originalHandleTargetedSearch(targetedSearch);
-    // For targeted search, we still need to clear the data search since 
-    // AG Grid will handle the filtering, not the data management hook
-    setDataSearch("");
-  }, [originalHandleTargetedSearch, setDataSearch]);
+  const handleTargetedSearch = useCallback(
+    (targetedSearch: TargetedSearch | null) => {
+      // Update the UI search state
+      originalHandleTargetedSearch(targetedSearch);
+      // For targeted search, we still need to clear the data search since
+      // AG Grid will handle the filtering, not the data management hook
+      setDataSearch("");
+    },
+    [originalHandleTargetedSearch, setDataSearch],
+  );
 
   // Create a comprehensive clear function that synchronizes both hooks
   const handleClearSearch = useCallback(() => {
@@ -105,27 +111,36 @@ function ItemList() {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       try {
         const target = e.target as HTMLElement;
-        const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+        const isInputFocused =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
         const isModalOpen = isAddItemModalOpen;
-        const isTypeable = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~#]$/.test(e.key);
-        
-        if (!isInputFocused && !isModalOpen && isTypeable && searchInputRef.current) {
+        const isTypeable =
+          /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~#]$/.test(e.key);
+
+        if (
+          !isInputFocused &&
+          !isModalOpen &&
+          isTypeable &&
+          searchInputRef.current
+        ) {
           e.preventDefault();
           searchInputRef.current.focus();
-          
+
           // Create a synthetic change event
           const syntheticEvent = {
-            target: { value: e.key }
+            target: { value: e.key },
           } as React.ChangeEvent<HTMLInputElement>;
           handleSearchChange(syntheticEvent);
         }
       } catch (error) {
-        console.error('Error in global keydown handler:', error);
+        console.error("Error in global keydown handler:", error);
       }
     };
 
-    document.addEventListener('keydown', handleGlobalKeyDown);
-    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
   }, [isAddItemModalOpen, handleSearchChange]);
 
   const columnsToAutoSize = [
@@ -143,7 +158,6 @@ function ItemList() {
   const handleFirstDataRendered = () => {
     setIsInitialLoad(false);
   };
-
 
   const columnDefs: ColDef[] = useMemo(() => {
     const columns: ColDef[] = [
