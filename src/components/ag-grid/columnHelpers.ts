@@ -6,8 +6,6 @@ export type { ColumnConfig };
 export const createTextColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
-  filter: config.filter !== false,
-  floatingFilter: config.floatingFilter !== false,
   minWidth: config.minWidth || 100,
   flex: config.flex,
   cellStyle: config.cellStyle || {
@@ -25,8 +23,6 @@ export const createTextColumn = (config: ColumnConfig): ColDef => ({
 export const createWrapTextColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
-  filter: config.filter !== false,
-  floatingFilter: config.floatingFilter !== false,
   minWidth: config.minWidth || 120,
   cellStyle: config.cellStyle || {
     overflow: "visible",
@@ -42,8 +38,6 @@ export const createWrapTextColumn = (config: ColumnConfig): ColDef => ({
 export const createNumberColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
-  filter: config.filter || "agNumberColumnFilter",
-  floatingFilter: config.floatingFilter !== false,
   minWidth: config.minWidth || 120,
   cellStyle: config.cellStyle || { textAlign: "right" },
   valueGetter: config.valueGetter,
@@ -55,8 +49,6 @@ export const createNumberColumn = (config: ColumnConfig): ColDef => ({
 export const createCurrencyColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
-  filter: "agNumberColumnFilter",
-  floatingFilter: config.floatingFilter !== false,
   minWidth: config.minWidth || 120,
   cellStyle: config.cellStyle || { textAlign: "right" },
   valueFormatter:
@@ -76,8 +68,6 @@ export const createCurrencyColumn = (config: ColumnConfig): ColDef => ({
 export const createCenterAlignColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
-  filter: config.filter !== false,
-  floatingFilter: config.floatingFilter !== false,
   minWidth: config.minWidth || 80,
   cellStyle: config.cellStyle || { textAlign: "center" },
   valueGetter: config.valueGetter,
