@@ -11,7 +11,8 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   position,
   searchTerm = "",
 }) => {
-  const [filteredColumns, setFilteredColumns] = useState<SearchColumn[]>(columns);
+  const [filteredColumns, setFilteredColumns] =
+    useState<SearchColumn[]>(columns);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const modalRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -22,7 +23,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         (col) =>
           col.headerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           col.field.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          col.description?.toLowerCase().includes(searchTerm.toLowerCase())
+          col.description?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
       setFilteredColumns(filtered);
       setSelectedIndex(0);
@@ -37,57 +38,60 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       if (!isOpen) return;
 
       switch (e.key) {
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
-          setSelectedIndex((prev) => 
-            prev < filteredColumns.length - 1 ? prev + 1 : 0
+          setSelectedIndex((prev) =>
+            prev < filteredColumns.length - 1 ? prev + 1 : 0,
           );
           break;
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
-          setSelectedIndex((prev) => 
-            prev > 0 ? prev - 1 : filteredColumns.length - 1
+          setSelectedIndex((prev) =>
+            prev > 0 ? prev - 1 : filteredColumns.length - 1,
           );
           break;
-        case 'Enter':
+        case "Enter":
           e.preventDefault();
           if (filteredColumns[selectedIndex]) {
             onSelect(filteredColumns[selectedIndex]);
           }
           break;
-        case 'Escape':
+        case "Escape":
           e.preventDefault();
           onClose();
           break;
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, filteredColumns, selectedIndex, onSelect, onClose]);
 
   useEffect(() => {
     if (isOpen && itemRefs.current[selectedIndex]) {
       itemRefs.current[selectedIndex]?.scrollIntoView({
-        block: 'center',
-        behavior: 'smooth',
+        block: "center",
+        behavior: "smooth",
       });
     }
   }, [selectedIndex, isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, onClose]);
 
@@ -95,13 +99,13 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
 
   const getColumnIcon = (column: SearchColumn) => {
     switch (column.type) {
-      case 'number':
-      case 'currency':
+      case "number":
+      case "currency":
         return <LuHash className="w-3 h-3 text-blue-500" />;
-      case 'date':
+      case "date":
         return <LuFilter className="w-3 h-3 text-purple-500" />;
       default:
-        return <LuSearch className="w-3 h-3 text-emerald-500" />;
+        return <LuSearch className="w-3 h-3 text-purple-500" />;
     }
   };
 
@@ -120,7 +124,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
           <span>Pilih kolom untuk pencarian targeted</span>
         </div>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto min-h-0">
         {filteredColumns.length === 0 ? (
           <div className="px-3 py-4 text-sm text-gray-500 text-center">
@@ -135,7 +139,9 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
                   itemRefs.current[index] = el;
                 }}
                 className={`px-3 py-2 cursor-pointer flex items-start gap-3 hover:bg-gray-50 transition-colors ${
-                  index === selectedIndex ? 'bg-emerald-50 border-r-2 border-emerald-500' : ''
+                  index === selectedIndex
+                    ? "bg-purple-100 border-r-2 border-purple-500 hover:bg-purple-50"
+                    : ""
                 }`}
                 onClick={() => onSelect(column)}
               >
@@ -144,9 +150,13 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${
-                      index === selectedIndex ? 'text-emerald-700' : 'text-gray-900'
-                    }`}>
+                    <span
+                      className={`text-sm font-medium ${
+                        index === selectedIndex
+                          ? "text-purple-700"
+                          : "text-gray-900"
+                      }`}
+                    >
                       {column.headerName}
                     </span>
                     <span className="text-xs text-gray-400 font-mono">
@@ -164,7 +174,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
           </div>
         )}
       </div>
-      
+
       <div className="flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg">
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>↑↓ navigasi • Enter pilih • Esc tutup</span>
