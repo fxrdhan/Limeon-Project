@@ -14,8 +14,6 @@ export interface ColumnConfig {
   headerName: string;
   minWidth?: number;
   flex?: number;
-  filter?: boolean | string;
-  floatingFilter?: boolean;
   sortable?: boolean;
   resizable?: boolean;
   cellStyle?: CellStyle;
@@ -50,6 +48,7 @@ export interface DataGridProps {
   colResizeDefault?: "shift" | undefined;
   isExternalFilterPresent?: () => boolean;
   doesExternalFilterPass?: (node: IRowNode) => boolean;
+  disableFiltering?: boolean;
 }
 
 export interface DataGridRef {
