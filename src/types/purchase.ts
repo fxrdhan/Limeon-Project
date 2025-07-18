@@ -20,6 +20,14 @@ export interface PurchaseItem {
   unit_conversion_rate: number;
 }
 
+export interface AddPurchasePortalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  isClosing: boolean;
+  setIsClosing: React.Dispatch<React.SetStateAction<boolean>>;
+  initialInvoiceNumber?: string;
+}
+
 export interface PurchaseData {
   id: string;
   invoice_number: string;
