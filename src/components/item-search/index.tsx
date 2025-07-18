@@ -9,7 +9,7 @@ import React, {
 import { createPortal } from "react-dom";
 import { FaPlus } from "react-icons/fa";
 import Button from "@/components/button";
-import SearchBar from "@/components/search-bar";
+import { SearchBar } from "@/components/search-bar";
 import type { ItemSearchBarProps, Item, ItemSearchBarRef } from "@/types";
 import { classNames } from "@/lib/classNames";
 
@@ -290,7 +290,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
             <SearchBar
               inputRef={inputRef}
               value={searchItem}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const value = e.target.value;
                 setSearchItem(value);
                 if (
