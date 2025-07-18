@@ -107,14 +107,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       onGlobalSearch?.(newMode.globalSearch);
     }
 
-    // Force immediate refresh when targeted search value changes from non-empty to empty
+    // Force immediate refresh when targeted search value changes
     if (
       prevMode.isTargeted &&
       prevMode.targetedSearch &&
       newMode.isTargeted &&
       newMode.targetedSearch &&
-      prevMode.targetedSearch.value &&
-      !newMode.targetedSearch.value
+      prevMode.targetedSearch.value !== newMode.targetedSearch.value
     ) {
       // Double trigger to ensure AG Grid refreshes properly
       setTimeout(() => {
