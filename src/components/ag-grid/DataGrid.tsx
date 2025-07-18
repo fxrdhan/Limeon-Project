@@ -5,11 +5,9 @@ import {
   ModuleRegistry,
   AllCommunityModule,
   themeQuartz,
-  GridApi,
   GridReadyEvent,
-  RowClickedEvent,
-  IRowNode,
 } from "ag-grid-community";
+import { DataGridProps, DataGridRef } from "@/types";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -22,42 +20,6 @@ const customTheme = themeQuartz.withParams({
   },
   accentColor: "oklch(84.5% 0.143 164.978)",
 });
-
-export interface DataGridProps {
-  rowData: unknown[];
-  columnDefs: ColDef[];
-  loading?: boolean;
-  onRowClicked?: (event: RowClickedEvent) => void;
-  onGridReady?: (event: GridReadyEvent) => void;
-  onFirstDataRendered?: () => void;
-  domLayout?: "normal" | "autoHeight" | "print";
-  overlayNoRowsTemplate?: string;
-  className?: string;
-  style?: React.CSSProperties;
-  autoSizeColumns?: string[];
-  autoSizeDelay?: number;
-  sizeColumnsToFit?: boolean;
-  getRowHeight?: () => number | undefined;
-  rowClass?: string;
-  suppressMovableColumns?: boolean;
-  cellSelection?: boolean;
-  suppressScrollOnNewData?: boolean;
-  suppressAnimationFrame?: boolean;
-  animateRows?: boolean;
-  loadThemeGoogleFonts?: boolean;
-  rowSelection?: "single" | "multiple";
-  colResizeDefault?: "shift" | undefined;
-  isExternalFilterPresent?: () => boolean;
-  doesExternalFilterPass?: (node: IRowNode) => boolean;
-}
-
-export interface DataGridRef {
-  api: GridApi | null;
-  autoSizeColumns: (columns?: string[]) => void;
-  sizeColumnsToFit: () => void;
-  onFilterChanged: () => void;
-  refreshCells: () => void;
-}
 
 const DataGrid = forwardRef<DataGridRef, DataGridProps>(
   (
@@ -91,7 +53,6 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
     ref,
   ) => {
     const gridRef = useRef<AgGridReact>(null);
-
 
     useImperativeHandle(ref, () => ({
       api: gridRef.current?.api || null,
@@ -194,3 +155,4 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
 DataGrid.displayName = "DataGrid";
 
 export default DataGrid;
+export type { DataGridProps, DataGridRef };
