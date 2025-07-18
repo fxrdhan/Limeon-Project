@@ -1,4 +1,11 @@
-import React, { forwardRef, useState, useRef, useImperativeHandle, useEffect, useCallback } from "react";
+import React, {
+  forwardRef,
+  useState,
+  useRef,
+  useImperativeHandle,
+  useEffect,
+  useCallback,
+} from "react";
 import { z } from "zod";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,36 +14,28 @@ import type { InputProps } from "@/types";
 import { classNames } from "@/lib/classNames";
 import { useFieldValidation } from "@/hooks/useFieldValidation";
 
-interface ExtendedInputProps extends Omit<InputProps, "error"> {
-  validate?: boolean;
-  validationSchema?: z.ZodSchema;
-  showValidationOnBlur?: boolean;
-  validationAutoHide?: boolean;
-  validationAutoHideDelay?: number;
-  onValidationChange?: (isValid: boolean, error: string | null) => void;
-  error?: string;
-  type?: "text" | "currency" | "number" | "email" | "password" | "tel" | "url";
-}
-
-const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
-  ({ 
-    label, 
-    error, 
-    className, 
-    fullWidth = true, 
-    validate = false,
-    validationSchema,
-    showValidationOnBlur = true,
-    validationAutoHide = true,
-    validationAutoHideDelay = 3000,
-    onValidationChange,
-    value,
-    onBlur,
-    onKeyDown,
-    onChange,
-    type = "text",
-    ...props 
-  }, ref) => {
+const Input = forwardRef<HTMLInputElement, InputProps>(
+  (
+    {
+      label,
+      error,
+      className,
+      fullWidth = true,
+      validate = false,
+      validationSchema,
+      showValidationOnBlur = true,
+      validationAutoHide = true,
+      validationAutoHideDelay = 3000,
+      onValidationChange,
+      value,
+      onBlur,
+      onKeyDown,
+      onChange,
+      type = "text",
+      ...props
+    },
+    ref,
+  ) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -52,14 +51,20 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
       return value.replace(/^Rp\s*/, "").replace(/[^0-9]/g, "");
     }, []);
 
-    const formatCurrencyDisplay = useCallback((value: string) => {
-      const cleanValue = getCleanPriceValue(value);
-      if (!cleanValue) return "";
-      
-      // Add thousand separators (dots) for Indonesian format
-      const formattedNumber = cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-      return `Rp ${formattedNumber}`;
-    }, [getCleanPriceValue]);
+    const formatCurrencyDisplay = useCallback(
+      (value: string) => {
+        const cleanValue = getCleanPriceValue(value);
+        if (!cleanValue) return "";
+
+        // Add thousand separators (dots) for Indonesian format
+        const formattedNumber = cleanValue.replace(
+          /\B(?=(\d{3})+(?!\d))/g,
+          ".",
+        );
+        return `Rp ${formattedNumber}`;
+      },
+      [getCleanPriceValue],
+    );
 
     // Get the actual display value based on type
     const getDisplayValue = useCallback(() => {
@@ -92,9 +97,18 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
     // Notify parent about validation changes
     React.useEffect(() => {
       if (validate && validationSchema && onValidationChange) {
-        onValidationChange(validation.validation.isValid, validation.validation.error);
+        onValidationChange(
+          validation.validation.isValid,
+          validation.validation.error,
+        );
       }
-    }, [validation.validation.isValid, validation.validation.error, validate, validationSchema, onValidationChange]);
+    }, [
+      validation.validation.isValid,
+      validation.validation.error,
+      validate,
+      validationSchema,
+      onValidationChange,
+    ]);
 
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(true);
@@ -142,17 +156,17 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
       if (type === "currency") {
         const inputValue = e.target.value;
         const cleanValue = inputValue.replace(/[^0-9]/g, ""); // Only keep numbers
-        
+
         // Create a completely new event object with the currency format
         const newEvent = {
           ...e,
           target: {
             ...e.target,
             name: e.target.name,
-            value: cleanValue ? `Rp ${cleanValue}` : ""
-          }
+            value: cleanValue ? `Rp ${cleanValue}` : "",
+          },
         };
-        
+
         onChange?.(newEvent as React.ChangeEvent<HTMLInputElement>);
       } else {
         onChange?.(e);
@@ -161,7 +175,12 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
 
     // Effect for positioning
     useEffect(() => {
-      if (validate && showValidationError && validation.validation.error && inputRef.current) {
+      if (
+        validate &&
+        showValidationError &&
+        validation.validation.error &&
+        inputRef.current
+      ) {
         const rect = inputRef.current.getBoundingClientRect();
         setValidationPosition({
           top: rect.bottom + 8,
@@ -173,7 +192,13 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
 
     // Effect for auto-hide timeout
     useEffect(() => {
-      if (validate && showValidationError && validation.validation.showError && validationAutoHide && validationAutoHideDelay > 0) {
+      if (
+        validate &&
+        showValidationError &&
+        validation.validation.showError &&
+        validationAutoHide &&
+        validationAutoHideDelay > 0
+      ) {
         validationTimeoutRef.current = setTimeout(() => {
           setShowValidationError(false);
           setHasAutoHidden(true);
@@ -186,7 +211,13 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
           validationTimeoutRef.current = null;
         }
       };
-    }, [validate, showValidationError, validation.validation.showError, validationAutoHide, validationAutoHideDelay]);
+    }, [
+      validate,
+      showValidationError,
+      validation.validation.showError,
+      validationAutoHide,
+      validationAutoHideDelay,
+    ]);
 
     // Effect for hover-triggered validation display after auto-hide
     useEffect(() => {
@@ -223,7 +254,9 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
                   className="text-yellow-300 flex-shrink-0"
                   size={14}
                 />
-                <span className="font-medium">{validation.validation.error}</span>
+                <span className="font-medium">
+                  {validation.validation.error}
+                </span>
               </div>
               {/* Arrow pointing up */}
               <div className="absolute -top-1 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-danger/75 backdrop-blur-xs"></div>
@@ -282,8 +315,12 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
               "px-3 text-sm",
               "text-ellipsis overflow-hidden whitespace-nowrap",
               "h-[2.5rem]",
-              error || (validate && !validation.validation.isValid && validation.validation.error && !isFocused) 
-                ? "border-danger ring-3 ring-danger/20" 
+              error ||
+                (validate &&
+                  !validation.validation.isValid &&
+                  validation.validation.error &&
+                  !isFocused)
+                ? "border-danger ring-3 ring-danger/20"
                 : "border-gray-300",
               "focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200",
               "disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70 read-only:bg-gray-100 read-only:cursor-default read-only:opacity-70",
@@ -303,13 +340,18 @@ const Input = forwardRef<HTMLInputElement, ExtendedInputProps>(
                 "shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),4px_0_6px_-1px_rgba(0,0,0,0.1),-4px_0_6px_-1px_rgba(0,0,0,0.1)]",
                 "whitespace-pre-wrap break-words",
                 "min-h-[2.5rem] max-h-32 overflow-y-auto",
-                error || (validate && !validation.validation.isValid && validation.validation.error) 
-                  ? "border-danger" 
+                error ||
+                  (validate &&
+                    !validation.validation.isValid &&
+                    validation.validation.error)
+                  ? "border-danger"
                   : "border-gray-300",
                 "pointer-events-none",
               )}
             >
-              {type === "currency" && typeof value === "string" ? formatCurrencyDisplay(value) : getDisplayValue()}
+              {type === "currency" && typeof value === "string"
+                ? formatCurrencyDisplay(value)
+                : getDisplayValue()}
             </div>
           )}
         </div>
