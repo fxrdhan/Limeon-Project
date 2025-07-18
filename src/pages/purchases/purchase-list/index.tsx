@@ -1,6 +1,6 @@
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
-import SearchBar from "@/components/search-bar";
+import { SearchBar } from "@/components/search-bar";
 import PageTitle from "@/components/page-title";
 import Badge from "@/components/badge";
 
@@ -290,7 +290,7 @@ const PurchaseList = () => {
           <SearchBar
             inputRef={searchInputRef}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
             placeholder="Cari nomor faktur..."
             className="grow"
             searchState={getSearchState(search, debouncedSearch, sortedPurchases)}
