@@ -33,16 +33,24 @@ import {
   CardFooter,
 } from "@/components/card";
 import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHeader,
-} from "@/components/table";
+  DataGrid,
+  createTextColumn,
+  createCurrencyColumn,
+} from "@/components/ag-grid";
 import { useAddItemPageHandlers } from "@/handlers/addItem";
 import { FaTrash } from "react-icons/fa";
 import type { AddItemPortalProps } from "@/types";
+
+const DeleteButton = ({ onClick }: { onClick: () => void }) => (
+  <Button
+    variant="danger"
+    size="sm"
+    tabIndex={18}
+    onClick={onClick}
+  >
+    <FaTrash />
+  </Button>
+);
 
 const AddItemPortal: React.FC<AddItemPortalProps> = ({
   isOpen,
@@ -817,7 +825,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                               1 {unitConversionHook.baseUnit || "Satuan Dasar"}{" "}
                               setara berapa satuan turunan?
                             </p>
-                            <div className="flex flex-row gap-4 mb-4">
+                            <div className="flex flex-row gap-4 mb-3">
                               <FormField
                                 label="Satuan Turunan"
                                 className="flex-1"
@@ -932,131 +940,79 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                               </FormField>
                             </div>
                           </div>
-                          <div className="md:w-2/3 lg:w-3/5 flex flex-col h-full">
-                            <div className="overflow-hidden grow h-full">
-                              <Table
-                                className="w-full h-full"
-                                autoSize={true}
-                                sortable={false}
-                                columns={[
-                                  {
-                                    key: "unit",
-                                    header: "Turunan",
+                          <div className="md:w-2/3 lg:w-3/5 flex flex-col">
+                            <div
+                              className="overflow-hidden"
+                              style={{ height: "130px" }}
+                            >
+                              <DataGrid
+                                disableFiltering={true}
+                                rowData={unitConversionHook.conversions.filter(
+                                  (uc, index, self) =>
+                                    index ===
+                                      self.findIndex(
+                                        (u) => u.unit.name === uc.unit.name,
+                                      ) && uc.unit,
+                                )}
+                                columnDefs={[
+                                  createTextColumn({
+                                    field: "unit.name",
+                                    headerName: "Turunan",
                                     minWidth: 100,
-                                  },
-                                  {
-                                    key: "conversion",
-                                    header: "Konversi",
+                                    flex: 1,
+                                  }),
+                                  createTextColumn({
+                                    field: "conversionDisplay",
+                                    headerName: "Konversi",
                                     minWidth: 140,
-                                    align: "center",
-                                  },
-                                  {
-                                    key: "basePrice",
-                                    header: "H. Pokok",
+                                    flex: 2,
+                                    cellStyle: { textAlign: "center" },
+                                    valueGetter: (params) =>
+                                      params.data ? `1 ${unitConversionHook.baseUnit} = ${params.data.conversion} ${params.data.unit.name}` : "",
+                                  }),
+                                  createCurrencyColumn({
+                                    field: "basePrice",
+                                    headerName: "H. Pokok",
                                     minWidth: 100,
-                                    align: "right",
-                                  },
-                                  {
-                                    key: "sellPrice",
-                                    header: "H. Jual",
+                                    flex: 1,
+                                  }),
+                                  createCurrencyColumn({
+                                    field: "sellPrice",
+                                    headerName: "H. Jual",
                                     minWidth: 100,
-                                    align: "right",
-                                  },
+                                    flex: 1,
+                                  }),
                                   {
-                                    key: "actions",
-                                    header: "‎",
+                                    field: "actions",
+                                    headerName: "",
                                     minWidth: 80,
-                                    align: "center",
+                                    maxWidth: 80,
+                                    sortable: false,
+                                    resizable: false,
+                                    cellStyle: { textAlign: "center" },
+                                    cellRenderer: (params: any) => 
+                                      params.data ? (
+                                        <DeleteButton
+                                          onClick={() =>
+                                            unitConversionHook.removeUnitConversion(
+                                              params.data.id,
+                                            )
+                                          }
+                                        />
+                                      ) : null,
                                   },
                                 ]}
-                                data={unitConversionHook.conversions}
-                              >
-                                <TableHead>
-                                  <TableRow>
-                                    <TableHeader>Turunan</TableHeader>
-                                    <TableHeader className="text-center">
-                                      Konversi
-                                    </TableHeader>
-                                    <TableHeader className="text-right">
-                                      H. Pokok
-                                    </TableHeader>
-                                    <TableHeader className="text-right">
-                                      H. Jual
-                                    </TableHeader>
-                                    <TableHeader className="text-center">
-                                      ‎
-                                    </TableHeader>
-                                  </TableRow>
-                                </TableHead>
-                                <TableBody className="h-[100px]">
-                                  {unitConversionHook.conversions.length ===
-                                  0 ? (
-                                    <TableRow className="h-full">
-                                      <TableCell
-                                        colSpan={5}
-                                        className="text-center text-gray-500 py-4 align-middle"
-                                      >
-                                        Belum ada data konversi
-                                      </TableCell>
-                                    </TableRow>
-                                  ) : (
-                                    unitConversionHook.conversions
-                                      .filter(
-                                        (uc, index, self) =>
-                                          index ===
-                                            self.findIndex(
-                                              (u) =>
-                                                u.unit.name === uc.unit.name,
-                                            ) && uc.unit,
-                                      )
-                                      .map((uc) => (
-                                        <TableRow key={uc.id}>
-                                          <TableCell>{uc.unit.name}</TableCell>
-                                          <TableCell>
-                                            1 {unitConversionHook.baseUnit} ={" "}
-                                            {uc.conversion} {uc.unit.name}
-                                          </TableCell>
-                                          <TableCell className="text-right">
-                                            {(uc.basePrice || 0).toLocaleString(
-                                              "id-ID",
-                                              {
-                                                style: "currency",
-                                                currency: "IDR",
-                                                minimumFractionDigits: 0,
-                                                maximumFractionDigits: 2,
-                                              },
-                                            )}
-                                          </TableCell>
-                                          <TableCell className="text-right">
-                                            {(uc.sellPrice || 0).toLocaleString(
-                                              "id-ID",
-                                              {
-                                                style: "currency",
-                                                currency: "IDR",
-                                                minimumFractionDigits: 0,
-                                                maximumFractionDigits: 2,
-                                              },
-                                            )}
-                                          </TableCell>
-                                          <TableCell className="text-center">
-                                            <Button
-                                              variant="danger"
-                                              size="sm"
-                                              tabIndex={18}
-                                              onClick={() =>
-                                                unitConversionHook.removeUnitConversion(
-                                                  uc.id,
-                                                )
-                                              }
-                                            >
-                                              <FaTrash />
-                                            </Button>
-                                          </TableCell>
-                                        </TableRow>
-                                      ))
-                                  )}
-                                </TableBody>
-                              </Table>
+                                domLayout="normal"
+                                overlayNoRowsTemplate="<span class='text-gray-500'>Belum ada data konversi</span>"
+                                rowClass=""
+                                animateRows={false}
+                                suppressMovableColumns={true}
+                                cellSelection={false}
+                                rowSelection={undefined}
+                                sizeColumnsToFit={true}
+                                className="ag-theme-quartz h-full"
+                                style={{ height: "100%" }}
+                              />
                             </div>
                           </div>
                         </div>
