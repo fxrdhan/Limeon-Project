@@ -962,13 +962,11 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                     flex: 1,
                                   }),
                                   createTextColumn({
-                                    field: "conversionDisplay",
+                                    field: "conversion",
                                     headerName: "Konversi",
                                     minWidth: 140,
                                     flex: 2,
                                     cellStyle: { textAlign: "center" },
-                                    valueGetter: (params) =>
-                                      params.data ? `1 ${unitConversionHook.baseUnit} = ${params.data.conversion} ${params.data.unit.name}` : "",
                                   }),
                                   createCurrencyColumn({
                                     field: "basePrice",
