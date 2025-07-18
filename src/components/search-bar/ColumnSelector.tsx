@@ -69,7 +69,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   useEffect(() => {
     if (isOpen && itemRefs.current[selectedIndex]) {
       itemRefs.current[selectedIndex]?.scrollIntoView({
-        block: 'nearest',
+        block: 'center',
         behavior: 'smooth',
       });
     }
@@ -108,62 +108,64 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   return (
     <div
       ref={modalRef}
-      className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto min-w-80"
+      className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 min-w-80 flex flex-col"
       style={{
         top: position.top + 5,
         left: position.left,
       }}
     >
-      <div className="sticky top-0 bg-white border-b border-gray-100 px-3 py-2">
+      <div className="flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg">
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <HiOutlineSparkles className="w-3 h-3" />
           <span>Pilih kolom untuk pencarian targeted</span>
         </div>
       </div>
       
-      {filteredColumns.length === 0 ? (
-        <div className="px-3 py-4 text-sm text-gray-500 text-center">
-          Tidak ada kolom yang ditemukan untuk "{searchTerm}"
-        </div>
-      ) : (
-        <div className="py-1">
-          {filteredColumns.map((column, index) => (
-            <div
-              key={column.field}
-              ref={(el) => {
-                itemRefs.current[index] = el;
-              }}
-              className={`px-3 py-2 cursor-pointer flex items-start gap-3 hover:bg-gray-50 transition-colors ${
-                index === selectedIndex ? 'bg-emerald-50 border-r-2 border-emerald-500' : ''
-              }`}
-              onClick={() => onSelect(column)}
-            >
-              <div className="flex-shrink-0 mt-0.5">
-                {getColumnIcon(column)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${
-                    index === selectedIndex ? 'text-emerald-700' : 'text-gray-900'
-                  }`}>
-                    {column.headerName}
-                  </span>
-                  <span className="text-xs text-gray-400 font-mono">
-                    {column.field}
-                  </span>
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {filteredColumns.length === 0 ? (
+          <div className="px-3 py-4 text-sm text-gray-500 text-center">
+            Tidak ada kolom yang ditemukan untuk "{searchTerm}"
+          </div>
+        ) : (
+          <div className="py-2">
+            {filteredColumns.map((column, index) => (
+              <div
+                key={column.field}
+                ref={(el) => {
+                  itemRefs.current[index] = el;
+                }}
+                className={`px-3 py-2 cursor-pointer flex items-start gap-3 hover:bg-gray-50 transition-colors ${
+                  index === selectedIndex ? 'bg-emerald-50 border-r-2 border-emerald-500' : ''
+                }`}
+                onClick={() => onSelect(column)}
+              >
+                <div className="flex-shrink-0 mt-0.5">
+                  {getColumnIcon(column)}
                 </div>
-                {column.description && (
-                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                    {column.description}
-                  </p>
-                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-medium ${
+                      index === selectedIndex ? 'text-emerald-700' : 'text-gray-900'
+                    }`}>
+                      {column.headerName}
+                    </span>
+                    <span className="text-xs text-gray-400 font-mono">
+                      {column.field}
+                    </span>
+                  </div>
+                  {column.description && (
+                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                      {column.description}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
       
-      <div className="sticky bottom-0 bg-gray-50 border-t border-gray-100 px-3 py-2">
+      <div className="flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg">
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>↑↓ navigasi • Enter pilih • Esc tutup</span>
           <span>{filteredColumns.length} kolom</span>
