@@ -19,7 +19,11 @@ import DescriptiveTextarea from "@/components/descriptive-textarea";
 import Checkbox from "@/components/checkbox";
 import AddEditModal from "@/components/add-edit/v1";
 import { PiKeyReturnBold } from "react-icons/pi";
-import { itemNameSchema, basePriceSchema, sellPriceComparisonSchema } from "@/schemas/itemValidation";
+import {
+  itemNameSchema,
+  basePriceSchema,
+  sellPriceComparisonSchema,
+} from "@/schemas/itemValidation";
 
 import {
   Card,
@@ -40,12 +44,7 @@ import { useAddItemPageHandlers } from "@/handlers/addItem";
 import { FaTrash } from "react-icons/fa";
 import type { AddItemPortalProps } from "@/types";
 
-interface AddItemPortalWithClosingProps extends AddItemPortalProps {
-  isClosing: boolean;
-  setIsClosing: React.Dispatch<React.SetStateAction<boolean>>;
-}
-
-const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
+const AddItemPortal: React.FC<AddItemPortalProps> = ({
   isOpen,
   onClose,
   itemId,
@@ -793,7 +792,9 @@ const AddItemPortal: React.FC<AddItemPortalWithClosingProps> = ({
                                 min="0"
                                 className="w-full"
                                 validate={true}
-                                validationSchema={sellPriceComparisonSchema(displayBasePrice)}
+                                validationSchema={sellPriceComparisonSchema(
+                                  displayBasePrice,
+                                )}
                                 showValidationOnBlur={true}
                                 validationAutoHide={true}
                                 validationAutoHideDelay={3000}
