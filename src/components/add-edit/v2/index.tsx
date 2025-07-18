@@ -990,12 +990,12 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                     sortable: false,
                                     resizable: false,
                                     cellStyle: { textAlign: "center" },
-                                    cellRenderer: (params: any) => 
+                                    cellRenderer: (params: { data?: { id: string } }) => 
                                       params.data ? (
                                         <DeleteButton
                                           onClick={() =>
                                             unitConversionHook.removeUnitConversion(
-                                              params.data.id,
+                                              params.data!.id,
                                             )
                                           }
                                         />
