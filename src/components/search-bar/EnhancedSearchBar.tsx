@@ -19,6 +19,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   columns,
   onTargetedSearch,
   onGlobalSearch,
+  onClearSearch,
 }) => {
   const [searchMode, setSearchMode] = useState<EnhancedSearchState>({
     isTargeted: false,
@@ -69,9 +70,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     };
   }, [columns]);
 
+  // Track previous value for comparison
+  const prevValueRef = useRef<string>("");
+  
   // Update search mode when value changes
   useEffect(() => {
     const newMode = parseSearchValue(value);
+    const prevMode = parseSearchValue(prevValueRef.current);
     setSearchMode(newMode);
 
     // Trigger callbacks
@@ -82,6 +87,19 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       onTargetedSearch?.(null);
       onGlobalSearch?.(newMode.globalSearch);
     }
+
+    // Force immediate refresh when targeted search value changes from non-empty to empty
+    if (prevMode.isTargeted && prevMode.targetedSearch && 
+        newMode.isTargeted && newMode.targetedSearch &&
+        prevMode.targetedSearch.value && !newMode.targetedSearch.value) {
+      // Double trigger to ensure AG Grid refreshes properly
+      setTimeout(() => {
+        onTargetedSearch?.(newMode.targetedSearch);
+      }, 10);
+    }
+
+    // Update previous value reference
+    prevValueRef.current = value;
   }, [value, parseSearchValue, onTargetedSearch, onGlobalSearch]);
 
   // Update column selector position
@@ -107,8 +125,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [onChange, inputRef]);
 
   const handleClearTargeted = useCallback(() => {
-    onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
-  }, [onChange]);
+    if (onClearSearch) {
+      // Use the comprehensive clear function if provided
+      onClearSearch();
+    } else {
+      // Fall back to the original behavior
+      onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+    }
+  }, [onClearSearch, onChange]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -117,23 +141,47 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // If in targeted mode, update the value part after the colon
       const newValue = `#${searchMode.targetedSearch.field}:${inputValue}`;
       onChange({ target: { value: newValue } } as React.ChangeEvent<HTMLInputElement>);
+      
+      // Force refresh when value becomes empty to immediately show all data
+      if (inputValue === '' && searchMode.targetedSearch.value !== '') {
+        setTimeout(() => {
+          const emptyTargetedSearch = {
+            field: searchMode.targetedSearch!.field,
+            value: '',
+            column: searchMode.targetedSearch!.column,
+          };
+          onTargetedSearch?.(emptyTargetedSearch);
+        }, 0);
+      }
     } else {
       // For normal search or column selection mode
       onChange(e);
     }
-  }, [searchMode, onChange]);
+  }, [searchMode, onChange, onTargetedSearch]);
 
   const handleInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     try {
-      // Handle escape to close column selector
-      if (e.key === 'Escape' && searchMode.showColumnSelector) {
-        setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
-        return;
+      // Handle escape to close column selector or clear search
+      if (e.key === 'Escape') {
+        if (searchMode.showColumnSelector) {
+          setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
+          return;
+        } else if (value && onClearSearch) {
+          // Clear search when Escape is pressed and there's a search value
+          onClearSearch();
+          return;
+        }
       }
 
       // Handle backspace to clear targeted search
       if (e.key === 'Backspace' && searchMode.isTargeted && searchMode.targetedSearch?.value === '') {
-        onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+        if (onClearSearch) {
+          // Use the comprehensive clear function if provided
+          onClearSearch();
+        } else {
+          // Fall back to the original behavior
+          onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+        }
         return;
       }
 
@@ -149,7 +197,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Fallback: still call the original onKeyDown if it exists
       onKeyDown?.(e);
     }
-  }, [searchMode, onChange, onKeyDown]);
+  }, [searchMode, onChange, onKeyDown, onClearSearch, value]);
 
   const getSearchIconColor = () => {
     if (searchMode.isTargeted) return "text-purple-500";
