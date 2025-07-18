@@ -3,7 +3,7 @@ import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
 import PageTitle from "@/components/page-title";
 import Pagination from "@/components/pagination";
 
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import {
   DataGrid,
@@ -38,8 +38,9 @@ function ItemList() {
     onGridReady, 
     isExternalFilterPresent, 
     doesExternalFilterPass,
-    handleTargetedSearch,
-    handleGlobalSearch,
+    handleTargetedSearch: originalHandleTargetedSearch,
+    handleGlobalSearch: originalHandleGlobalSearch,
+    clearSearch,
   } = useEnhancedAgGridSearch({
     columns: itemSearchColumns,
     useFuzzySearch: true,
@@ -56,12 +57,37 @@ function ItemList() {
     queryError: errorState,
     handlePageChange,
     handleItemsPerPageChange,
+    setSearch: setDataSearch,
   } = useMasterDataManagement("items", "Item", {
     realtime: true,
     searchInputRef,
     isCustomModalOpen: isAddItemModalOpen,
     locationKey: location.key,
   });
+
+  // Synchronize search state between UI and data management hooks
+  const handleGlobalSearch = useCallback((searchValue: string) => {
+    // Update the UI search state
+    originalHandleGlobalSearch(searchValue);
+    // Update the data management search state
+    setDataSearch(searchValue);
+  }, [originalHandleGlobalSearch, setDataSearch]);
+
+  const handleTargetedSearch = useCallback((targetedSearch: any) => {
+    // Update the UI search state
+    originalHandleTargetedSearch(targetedSearch);
+    // For targeted search, we still need to clear the data search since 
+    // AG Grid will handle the filtering, not the data management hook
+    setDataSearch("");
+  }, [originalHandleTargetedSearch, setDataSearch]);
+
+  // Create a comprehensive clear function that synchronizes both hooks
+  const handleClearSearch = useCallback(() => {
+    // Clear the UI search state (AG Grid filters)
+    clearSearch();
+    // Clear the data management search state
+    setDataSearch("");
+  }, [clearSearch, setDataSearch]);
 
   const items = rawItems;
 
@@ -254,6 +280,7 @@ function ItemList() {
             columns={itemSearchColumns}
             onTargetedSearch={handleTargetedSearch}
             onGlobalSearch={handleGlobalSearch}
+            onClearSearch={handleClearSearch}
           />
           <Button
             variant="primary"
