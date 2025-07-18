@@ -331,6 +331,8 @@ export const useRealtimeSubscription = (
       shouldShareSubscription,
       options.showDiffInConsole,
       options.detailedLogging,
+      queryKeyToInvalidate,
+      subscriptionKey,
     ],
   );
 
