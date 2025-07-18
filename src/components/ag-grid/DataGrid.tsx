@@ -1,4 +1,4 @@
-import { forwardRef, useRef, useEffect, useImperativeHandle } from "react";
+import { forwardRef, useRef, useEffect, useImperativeHandle, useMemo } from "react";
 import { AgGridReact } from "ag-grid-react";
 import {
   ColDef,
@@ -45,7 +45,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       suppressAnimationFrame = true,
       animateRows = true,
       loadThemeGoogleFonts = true,
-      rowSelection = "single",
+      rowSelection,
       colResizeDefault = "shift",
       isExternalFilterPresent,
       doesExternalFilterPass,
@@ -123,6 +123,17 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       }
     };
 
+    // Convert deprecated string values to new object format
+    const normalizedRowSelection = useMemo(() => {
+      if (!rowSelection) return undefined;
+      if (typeof rowSelection === 'string') {
+        return {
+          mode: rowSelection === 'single' ? 'singleRow' as const : 'multiRow' as const
+        };
+      }
+      return rowSelection;
+    }, [rowSelection]);
+
     return (
       <div className={className} style={style}>
         <AgGridReact
@@ -136,7 +147,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           colResizeDefault={colResizeDefault}
           onRowClicked={onRowClicked}
           onGridReady={handleGridReady}
-          rowSelection={rowSelection}
+          {...(normalizedRowSelection && { rowSelection: normalizedRowSelection })}
           suppressMovableColumns={suppressMovableColumns}
           cellSelection={cellSelection}
           suppressScrollOnNewData={suppressScrollOnNewData}
