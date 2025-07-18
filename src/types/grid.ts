@@ -1,0 +1,61 @@
+import {
+  RowClickedEvent,
+  IRowNode,
+  GridApi,
+  CellStyle,
+  ValueFormatterParams,
+  ValueGetterParams,
+  GridReadyEvent,
+  ColDef,
+} from "ag-grid-community";
+
+export interface ColumnConfig {
+  field: string;
+  headerName: string;
+  minWidth?: number;
+  flex?: number;
+  filter?: boolean | string;
+  floatingFilter?: boolean;
+  sortable?: boolean;
+  resizable?: boolean;
+  cellStyle?: CellStyle;
+  valueGetter?: (params: ValueGetterParams) => unknown;
+  valueFormatter?: (params: ValueFormatterParams) => string;
+  tooltipField?: string;
+}
+
+export interface DataGridProps {
+  rowData: unknown[];
+  columnDefs: ColDef[];
+  loading?: boolean;
+  onRowClicked?: (event: RowClickedEvent) => void;
+  onGridReady?: (event: GridReadyEvent) => void;
+  onFirstDataRendered?: () => void;
+  domLayout?: "normal" | "autoHeight" | "print";
+  overlayNoRowsTemplate?: string;
+  className?: string;
+  style?: React.CSSProperties;
+  autoSizeColumns?: string[];
+  autoSizeDelay?: number;
+  sizeColumnsToFit?: boolean;
+  getRowHeight?: () => number | undefined;
+  rowClass?: string;
+  suppressMovableColumns?: boolean;
+  cellSelection?: boolean;
+  suppressScrollOnNewData?: boolean;
+  suppressAnimationFrame?: boolean;
+  animateRows?: boolean;
+  loadThemeGoogleFonts?: boolean;
+  rowSelection?: "single" | "multiple";
+  colResizeDefault?: "shift" | undefined;
+  isExternalFilterPresent?: () => boolean;
+  doesExternalFilterPass?: (node: IRowNode) => boolean;
+}
+
+export interface DataGridRef {
+  api: GridApi | null;
+  autoSizeColumns: (columns?: string[]) => void;
+  sizeColumnsToFit: () => void;
+  onFilterChanged: () => void;
+  refreshCells: () => void;
+}
