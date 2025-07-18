@@ -3,6 +3,8 @@ import { SearchColumn, ColumnSelectorProps } from "@/types/search";
 import { LuHash, LuSearch, LuFilter } from "react-icons/lu";
 import { HiOutlineSparkles } from "react-icons/hi2";
 
+type AnimationPhase = "hidden" | "header" | "footer" | "content" | "complete";
+
 const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   columns,
   isOpen,
@@ -14,8 +16,35 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   const [filteredColumns, setFilteredColumns] =
     useState<SearchColumn[]>(columns);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [animationPhase, setAnimationPhase] = useState<AnimationPhase>("hidden");
   const modalRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Animation sequence effect
+  useEffect(() => {
+    if (isOpen && animationPhase === "hidden") {
+      // Start animation sequence
+      setAnimationPhase("header");
+      
+      // Show footer after header
+      setTimeout(() => {
+        setAnimationPhase("footer");
+      }, 150);
+      
+      // Show content after footer
+      setTimeout(() => {
+        setAnimationPhase("content");
+      }, 300);
+      
+      // Mark as complete
+      setTimeout(() => {
+        setAnimationPhase("complete");
+      }, 650);
+    } else if (!isOpen && animationPhase !== "hidden") {
+      // Reset animation when closing
+      setAnimationPhase("hidden");
+    }
+  }, [isOpen, animationPhase]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -35,7 +64,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
+      if (!isOpen || animationPhase !== "complete") return;
 
       switch (e.key) {
         case "ArrowDown":
@@ -65,16 +94,16 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, filteredColumns, selectedIndex, onSelect, onClose]);
+  }, [isOpen, animationPhase, filteredColumns, selectedIndex, onSelect, onClose]);
 
   useEffect(() => {
-    if (isOpen && itemRefs.current[selectedIndex]) {
+    if (isOpen && animationPhase === "complete" && itemRefs.current[selectedIndex]) {
       itemRefs.current[selectedIndex]?.scrollIntoView({
         block: "center",
         behavior: "smooth",
       });
     }
-  }, [selectedIndex, isOpen]);
+  }, [selectedIndex, isOpen, animationPhase]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -86,16 +115,17 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       }
     };
 
-    if (isOpen) {
+    if (isOpen && animationPhase === "complete") {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, animationPhase, onClose]);
 
-  if (!isOpen) return null;
+  // Don't render if not open
+  if (!isOpen && animationPhase === "hidden") return null;
 
   const getColumnIcon = (column: SearchColumn) => {
     switch (column.type) {
@@ -118,14 +148,31 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         left: position.left,
       }}
     >
-      <div className="flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg">
+      {/* Header - fades in first */}
+      <div 
+        className={`flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg transition-opacity duration-300 ${
+          animationPhase === "hidden" ? "opacity-0" : "opacity-100"
+        }`}
+      >
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <HiOutlineSparkles className="w-3 h-3" />
           <span>Pilih kolom untuk pencarian targeted</span>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0">
+      {/* Content - appears last with smooth slide and fade */}
+      <div 
+        className={`flex-1 overflow-y-auto min-h-0 transition-all duration-500 ease-out ${
+          animationPhase === "hidden" || animationPhase === "header" || animationPhase === "footer" 
+            ? "opacity-0 max-h-0" 
+            : "opacity-100 max-h-64"
+        }`}
+        style={{
+          transform: animationPhase === "hidden" || animationPhase === "header" || animationPhase === "footer" 
+            ? "translateY(-10px)" 
+            : "translateY(0px)"
+        }}
+      >
         {filteredColumns.length === 0 ? (
           <div className="px-3 py-4 text-sm text-gray-500 text-center">
             Tidak ada kolom yang ditemukan untuk "{searchTerm}"
@@ -143,7 +190,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
                     ? "bg-purple-100 border-r-2 border-purple-500 hover:bg-purple-50"
                     : ""
                 }`}
-                onClick={() => onSelect(column)}
+                onClick={() => animationPhase === "complete" && onSelect(column)}
               >
                 <div className="flex-shrink-0 mt-0.5">
                   {getColumnIcon(column)}
@@ -175,7 +222,12 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         )}
       </div>
 
-      <div className="flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg">
+      {/* Footer - fades in second */}
+      <div 
+        className={`flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg transition-opacity duration-300 ${
+          animationPhase === "hidden" || animationPhase === "header" ? "opacity-0" : "opacity-100"
+        }`}
+      >
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>↑↓ navigasi • Enter pilih • Esc tutup</span>
           <span>{filteredColumns.length} kolom</span>
