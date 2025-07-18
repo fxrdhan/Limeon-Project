@@ -54,9 +54,15 @@ export const useAgGridSearch = (
     useFuzzySearch = true,
   } = options;
 
-  const [search, setSearch] = useState(initialSearch);
+  const [search, _setSearch] = useState(initialSearch);
   const gridRef = useRef<GridApi>(null);
   const searchRef = useRef(search);
+  
+  // Wrapper for setSearch that also updates searchRef immediately
+  const setSearch = useCallback((value: string) => {
+    _setSearch(value);
+    searchRef.current = value;
+  }, []);
 
   // Keep searchRef in sync with search state
   useEffect(() => {
@@ -102,11 +108,12 @@ export const useAgGridSearch = (
         onDebouncedSearchChange(value);
       }
     },
-    [enableDebouncedSearch, onDebouncedSearchChange, useFuzzySearch]
+    [enableDebouncedSearch, onDebouncedSearchChange, useFuzzySearch, setSearch]
   );
 
   const clearSearch = useCallback(() => {
     setSearch("");
+    
     if (gridRef.current) {
       if (useFuzzySearch) {
         gridRef.current.onFilterChanged();
@@ -117,7 +124,7 @@ export const useAgGridSearch = (
     if (enableDebouncedSearch && onDebouncedSearchChange) {
       onDebouncedSearchChange("");
     }
-  }, [enableDebouncedSearch, onDebouncedSearchChange, useFuzzySearch]);
+  }, [enableDebouncedSearch, onDebouncedSearchChange, useFuzzySearch, setSearch]);
 
   return {
     search,
