@@ -44,7 +44,7 @@ export interface DataGridProps {
   suppressAnimationFrame?: boolean;
   animateRows?: boolean;
   loadThemeGoogleFonts?: boolean;
-  rowSelection?: "single" | "multiple";
+  rowSelection?: "single" | "multiple" | { mode: 'singleRow' | 'multiRow' };
   colResizeDefault?: "shift" | undefined;
   isExternalFilterPresent?: () => boolean;
   doesExternalFilterPass?: (node: IRowNode) => boolean;
