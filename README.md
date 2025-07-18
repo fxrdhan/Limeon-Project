@@ -18,6 +18,8 @@ PharmaSys is a modern web-based application designed to streamline pharmacy and 
 -   **Performance Optimized:** Built with code-splitting and lazy loading to ensure fast loading times.
 ---
 
+## Tech Stack
+
 <div align="center">
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB)
@@ -33,8 +35,6 @@ PharmaSys is a modern web-based application designed to streamline pharmacy and 
 ![Framer Motion](https://img.shields.io/badge/Framer%20Motion-0055FF?style=flat&logo=framer&logoColor=white)
 
 </div>
-
-## Tech Stack
 
 This project is built with:
 
