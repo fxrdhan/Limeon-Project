@@ -49,6 +49,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       colResizeDefault = "shift",
       isExternalFilterPresent,
       doesExternalFilterPass,
+      disableFiltering = false,
     },
     ref,
   ) => {
@@ -110,7 +111,8 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
     const defaultColDef: ColDef = {
       sortable: true,
       resizable: true,
-      filter: true,
+      filter: disableFiltering ? false : true,
+      menuTabs: disableFiltering ? [] : undefined,
       cellDataType: false,
       minWidth: 80,
     };
