@@ -31,18 +31,11 @@ import type {
   CustomDateValueType,
   PurchaseItem,
   ItemSearchBarRef,
+  AddPurchasePortalProps,
 } from "@/types";
 import { usePurchaseForm } from "@/hooks/purchaseForm";
 import { useItemSelection } from "@/hooks/itemSelection";
 import { extractNumericValue, formatRupiah } from "@/lib/formatters";
-
-interface AddPurchasePortalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  isClosing: boolean;
-  setIsClosing: React.Dispatch<React.SetStateAction<boolean>>;
-  initialInvoiceNumber?: string;
-}
 
 const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
   isOpen,
@@ -440,18 +433,67 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                     <Table
                       autoSize={true}
                       columns={[
-                        { key: "no", header: "No", minWidth: 40, align: "center" },
+                        {
+                          key: "no",
+                          header: "No",
+                          minWidth: 40,
+                          align: "center",
+                        },
                         { key: "code", header: "Kode", minWidth: 80 },
                         { key: "name", header: "Nama", minWidth: 200 },
                         { key: "batch_no", header: "Batch No.", minWidth: 100 },
-                        { key: "expiry_date", header: "EXP", minWidth: 100, align: "center" },
-                        { key: "quantity", header: "Jml.", minWidth: 60, align: "center" },
-                        { key: "unit", header: "Unit", minWidth: 70, align: "center" },
-                        { key: "price", header: "Harga", minWidth: 100, align: "right" },
-                        { key: "discount", header: "Disc", minWidth: 80, align: "right" },
-                        ...(formData.is_vat_included ? [] : [{ key: "vat", header: "VAT", minWidth: 60, align: "right" as const }]),
-                        { key: "subtotal", header: "Subtotal", minWidth: 120, align: "right" },
-                        { key: "actions", header: "‎", minWidth: 60, align: "center" },
+                        {
+                          key: "expiry_date",
+                          header: "EXP",
+                          minWidth: 100,
+                          align: "center",
+                        },
+                        {
+                          key: "quantity",
+                          header: "Jml.",
+                          minWidth: 60,
+                          align: "center",
+                        },
+                        {
+                          key: "unit",
+                          header: "Unit",
+                          minWidth: 70,
+                          align: "center",
+                        },
+                        {
+                          key: "price",
+                          header: "Harga",
+                          minWidth: 100,
+                          align: "right",
+                        },
+                        {
+                          key: "discount",
+                          header: "Disc",
+                          minWidth: 80,
+                          align: "right",
+                        },
+                        ...(formData.is_vat_included
+                          ? []
+                          : [
+                              {
+                                key: "vat",
+                                header: "VAT",
+                                minWidth: 60,
+                                align: "right" as const,
+                              },
+                            ]),
+                        {
+                          key: "subtotal",
+                          header: "Subtotal",
+                          minWidth: 120,
+                          align: "right",
+                        },
+                        {
+                          key: "actions",
+                          header: "‎",
+                          minWidth: 60,
+                          align: "center",
+                        },
                       ]}
                       data={purchaseItems}
                     >
@@ -462,14 +504,24 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                           <TableHeader>Nama</TableHeader>
                           <TableHeader>Batch No.</TableHeader>
                           <TableHeader className="text-center">EXP</TableHeader>
-                          <TableHeader className="text-center">Jml.</TableHeader>
-                          <TableHeader className="text-center">Unit</TableHeader>
-                          <TableHeader className="text-right">Harga</TableHeader>
+                          <TableHeader className="text-center">
+                            Jml.
+                          </TableHeader>
+                          <TableHeader className="text-center">
+                            Unit
+                          </TableHeader>
+                          <TableHeader className="text-right">
+                            Harga
+                          </TableHeader>
                           <TableHeader className="text-right">Disc</TableHeader>
                           {!formData.is_vat_included && (
-                            <TableHeader className="text-right">VAT</TableHeader>
+                            <TableHeader className="text-right">
+                              VAT
+                            </TableHeader>
                           )}
-                          <TableHeader className="text-right">Subtotal</TableHeader>
+                          <TableHeader className="text-right">
+                            Subtotal
+                          </TableHeader>
                           <TableHeader className="text-center">‎</TableHeader>
                         </TableRow>
                       </TableHead>
