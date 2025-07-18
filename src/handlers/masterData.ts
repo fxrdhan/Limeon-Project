@@ -483,7 +483,7 @@ export const useMasterDataManagement = (
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   // Only enable realtime if explicitly requested and not already handled by parent component
-  useSupabaseRealtime(tableName, [tableName], {
+  useSupabaseRealtime(tableName, null, {
     enabled: realtime && !actualIsModalOpen,
     debounceMs: 0, // Instant updates for better responsiveness
     onRealtimeEvent: async (payload) => {
@@ -496,7 +496,7 @@ export const useMasterDataManagement = (
         `🔥 MASTER DATA (${tableName}) - Immediate cache invalidation and refetch`,
       );
 
-      // Immediate cache invalidation
+      // Immediate cache invalidation for all queries of this table
       await queryClient.invalidateQueries({ queryKey: [tableName] });
 
       // Force immediate refetch for maximum responsiveness
