@@ -349,7 +349,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           <div
             className={`transition-all duration-300 ease-in-out ${
               displayValue
-                ? "opacity-100 transform translate-x-0 scale-150"
+                ? "opacity-100 transform translate-x-0 scale-150 pl-2"
                 : "opacity-0 transform -translate-x-2 scale-100"
             }`}
             style={{
