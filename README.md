@@ -23,6 +23,7 @@ PharmaSys is a modern web-based application designed to streamline pharmacy and 
 <div align="center">
 
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=for-the-badge&logo=eslint&logoColor=white)
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Yarn](https://img.shields.io/badge/yarn-%232C8EBB.svg?style=for-the-badge&logo=yarn&logoColor=white)
 ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
@@ -38,6 +39,7 @@ PharmaSys is a modern web-based application designed to streamline pharmacy and 
 This project is built with:
 
 -   **Language:** [TypeScript](https://www.typescriptlang.org/)
+-   **Linter:** [ESLint](https://eslint.org/)
 -   **Library:** [React](https://react.dev/)
 -   **Package Manager:** [Yarn](https://www.yarnpkg.com/)
 -   **Build Tool:** [Vite](https://vitejs.dev/)
