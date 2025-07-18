@@ -1,5 +1,5 @@
 import Button from "@/components/button";
-import SearchBar from "@/components/search-bar";
+import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
 import PageTitle from "@/components/page-title";
 import Pagination from "@/components/pagination";
 
@@ -15,13 +15,14 @@ import {
   formatBaseCurrency,
 } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
-import { useAgGridSearch } from "@/hooks/useAgGridSearch";
+import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
 import AddItemPortal from "@/components/add-edit/v2";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { getSearchState } from "@/utils/search";
+import { itemSearchColumns } from "@/utils/searchColumns";
 
 function ItemList() {
   const location = useLocation();
@@ -31,7 +32,18 @@ function ItemList() {
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  const { search, handleSearchChange, onGridReady, isExternalFilterPresent, doesExternalFilterPass } = useAgGridSearch();
+  const { 
+    search, 
+    handleSearchChange, 
+    onGridReady, 
+    isExternalFilterPresent, 
+    doesExternalFilterPass,
+    handleTargetedSearch,
+    handleGlobalSearch,
+  } = useEnhancedAgGridSearch({
+    columns: itemSearchColumns,
+    useFuzzySearch: true,
+  });
 
   const {
     currentPage,
@@ -64,14 +76,24 @@ function ItemList() {
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-      const isModalOpen = isAddItemModalOpen;
-      const isTypeable = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]$/.test(e.key);
-      
-      if (!isInputFocused && !isModalOpen && isTypeable && searchInputRef.current) {
-        searchInputRef.current.focus();
-        handleSearchChange(e.key);
+      try {
+        const target = e.target as HTMLElement;
+        const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+        const isModalOpen = isAddItemModalOpen;
+        const isTypeable = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~#]$/.test(e.key);
+        
+        if (!isInputFocused && !isModalOpen && isTypeable && searchInputRef.current) {
+          e.preventDefault();
+          searchInputRef.current.focus();
+          
+          // Create a synthetic change event
+          const syntheticEvent = {
+            target: { value: e.key }
+          } as React.ChangeEvent<HTMLInputElement>;
+          handleSearchChange(syntheticEvent);
+        }
+      } catch (error) {
+        console.error('Error in global keydown handler:', error);
       }
     };
 
@@ -221,14 +243,17 @@ function ItemList() {
           <PageTitle title="Daftar Item" />
         </div>
         <div className="flex items-center">
-          <SearchBar
+          <EnhancedSearchBar
             inputRef={searchInputRef}
             value={search}
             onChange={handleSearchChange}
             onKeyDown={handleItemKeyDown}
-            placeholder="Cari di semua kolom (nama, kode, kategori, harga, dll)..."
+            placeholder="Cari di semua kolom atau ketik # untuk pencarian kolom spesifik..."
             className="grow"
             searchState={getSearchState(search, search, items)}
+            columns={itemSearchColumns}
+            onTargetedSearch={handleTargetedSearch}
+            onGlobalSearch={handleGlobalSearch}
           />
           <Button
             variant="primary"
