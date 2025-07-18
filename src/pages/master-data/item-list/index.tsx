@@ -116,7 +116,6 @@ function ItemList() {
       createTextColumn({
         field: "unit_conversions",
         headerName: "Satuan Turunan",
-        filter: false,
         minWidth: 140,
         valueGetter: (params) => {
           const conversions = params.data.unit_conversions;
@@ -143,7 +142,6 @@ function ItemList() {
       createCenterAlignColumn({
         field: "stock",
         headerName: "Stok",
-        filter: "agNumberColumnFilter",
       }),
     ];
 
