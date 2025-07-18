@@ -9,7 +9,7 @@ import { Card } from "@/components/card";
 import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useAgGridSearch } from "@/hooks/useAgGridSearch";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
@@ -122,6 +122,23 @@ const ItemMaster = () => {
     enableDebouncedSearch: true,
     onDebouncedSearchChange: setDebouncedSearch,
   });
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      const isModalOpen = isAddModalOpen || isEditModalOpen;
+      const isTypeable = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]$/.test(e.key);
+      
+      if (!isInputFocused && !isModalOpen && isTypeable && searchInputRef.current) {
+        searchInputRef.current.focus();
+        handleSearchChange(e.key);
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isAddModalOpen, isEditModalOpen, handleSearchChange]);
 
   const handleFirstDataRendered = () => {
     setIsInitialLoad(false);
