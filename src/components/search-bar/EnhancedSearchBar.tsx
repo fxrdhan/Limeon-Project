@@ -28,7 +28,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const [columnSelectorPosition, setColumnSelectorPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const textMeasureRef = useRef<HTMLSpanElement>(null);
+  const badgeRef = useRef<HTMLDivElement>(null);
   const [textWidth, setTextWidth] = useState(0);
+  const [badgeWidth, setBadgeWidth] = useState(0);
 
   // Parse search value to detect targeted search
   const parseSearchValue = useCallback((searchValue: string) => {
@@ -248,6 +250,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
   }, [displayValue]);
 
+  // Calculate badge width for dynamic padding
+  useEffect(() => {
+    if (badgeRef.current && showTargetedIndicator) {
+      setBadgeWidth(badgeRef.current.offsetWidth);
+    }
+  }, [showTargetedIndicator, searchMode.targetedSearch?.column.headerName]);
+
   // Get column selector search term
   const getColumnSelectorSearchTerm = () => {
     if (value.startsWith('#')) {
@@ -255,6 +264,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return match ? match[1] : '';
     }
     return '';
+  };
+
+  // Get dynamic placeholder based on search mode
+  const getPlaceholder = () => {
+    if (showTargetedIndicator) {
+      return "Cari...";
+    }
+    return placeholder;
   };
 
   return (
@@ -279,14 +296,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             <input
               ref={inputRef}
               type="text"
-              placeholder={placeholder}
+              placeholder={getPlaceholder()}
               className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-300 ease-in-out ${
-                showTargetedIndicator 
-                  ? "pl-32" // Extra space for inline badge
-                  : displayValue 
-                    ? "pl-3" 
-                    : "pl-10"
-              } ${
                 searchState === "not-found"
                   ? "border-danger focus:border-danger focus:ring-3 focus:ring-red-100"
                   : searchMode.showColumnSelector
@@ -295,6 +306,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   ? "border-purple-300 focus:border-purple-500 focus:ring-3 focus:ring-purple-100"
                   : "border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200"
               } focus:outline-none rounded-lg`}
+              style={{
+                paddingLeft: showTargetedIndicator 
+                  ? `${badgeWidth + 24}px` // Dynamic padding based on badge width + 24px margin
+                  : displayValue 
+                    ? "12px" 
+                    : "40px"
+              }}
               value={displayValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
@@ -305,7 +323,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             {/* Targeted search indicator - inline badge */}
             {showTargetedIndicator && (
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10 flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-medium">
+                <div 
+                  ref={badgeRef}
+                  className="flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-medium"
+                >
                   <span>{searchMode.targetedSearch?.column.headerName}</span>
                   <button
                     onClick={handleClearTargeted}
@@ -346,7 +367,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               className="absolute invisible whitespace-nowrap text-sm"
               style={{ 
                 left: showTargetedIndicator 
-                  ? "128px" // Account for badge width (pl-32 = 128px)
+                  ? `${badgeWidth + 24}px` // Dynamic position based on badge width + margin
                   : hasValue 
                     ? "18px" 
                     : "10px",
@@ -364,7 +385,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   : "opacity-0 scale-95 translate-x-2"
               }`}
               style={{ 
-                left: `${textWidth + (showTargetedIndicator ? 128 : displayValue ? 0 : 10)}px`
+                left: `${textWidth + (showTargetedIndicator ? badgeWidth + 24 : displayValue ? 0 : 10)}px`
               }}
             />
           </div>
