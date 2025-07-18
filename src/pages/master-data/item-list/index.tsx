@@ -3,7 +3,7 @@ import SearchBar from "@/components/search-bar";
 import PageTitle from "@/components/page-title";
 import Pagination from "@/components/pagination";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import {
   DataGrid,
@@ -61,6 +61,23 @@ function ItemList() {
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      const isModalOpen = isAddItemModalOpen;
+      const isTypeable = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]$/.test(e.key);
+      
+      if (!isInputFocused && !isModalOpen && isTypeable && searchInputRef.current) {
+        searchInputRef.current.focus();
+        handleSearchChange(e.key);
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isAddItemModalOpen, handleSearchChange]);
 
   const columnsToAutoSize = [
     "code",
