@@ -61,10 +61,14 @@ const enhancedFuzzySearchMatch = (
   searchTerm: string, 
   targetedSearch?: TargetedSearch | null
 ): boolean => {
+  // If no search term and no targeted search, show all data
   if (!searchTerm && !targetedSearch) return true;
   
-  // Handle targeted search
-  if (targetedSearch && targetedSearch.value) {
+  // If targeted search exists but has no value, show all data
+  if (targetedSearch && !targetedSearch.value.trim()) return true;
+  
+  // Handle targeted search with value
+  if (targetedSearch && targetedSearch.value.trim()) {
     const fieldValue = getNestedValue(data, targetedSearch.field);
     if (fieldValue === null || fieldValue === undefined) return false;
     
@@ -87,7 +91,7 @@ const enhancedFuzzySearchMatch = (
   }
   
   // Handle global search
-  if (searchTerm) {
+  if (searchTerm && searchTerm.trim()) {
     return fuzzySearchMatch(data, searchTerm);
   }
   
@@ -205,15 +209,35 @@ export const useEnhancedAgGridSearch = (
   );
 
   const handleTargetedSearch = useCallback((newTargetedSearch: TargetedSearch | null) => {
+    const prevTargetedSearch = targetedSearchRef.current;
     setTargetedSearch(newTargetedSearch);
     
-    if (gridRef.current && useFuzzySearch) {
-      gridRef.current.onFilterChanged();
-    }
-
     // Clear global search when targeted search is active
     if (newTargetedSearch) {
       setGlobalSearch("");
+    }
+
+    // Use setTimeout to ensure state updates are processed before refreshing
+    setTimeout(() => {
+      if (gridRef.current && useFuzzySearch) {
+        gridRef.current.onFilterChanged();
+      }
+    }, 0);
+
+    // Special handling: when targeted search value changes from non-empty to empty
+    if (prevTargetedSearch && newTargetedSearch && 
+        prevTargetedSearch.value.trim() && !newTargetedSearch.value.trim()) {
+      // Force refresh multiple times to ensure AG Grid shows all data
+      setTimeout(() => {
+        if (gridRef.current && useFuzzySearch) {
+          gridRef.current.onFilterChanged();
+        }
+      }, 10);
+      setTimeout(() => {
+        if (gridRef.current && useFuzzySearch) {
+          gridRef.current.onFilterChanged();
+        }
+      }, 50);
     }
   }, [useFuzzySearch]);
 
