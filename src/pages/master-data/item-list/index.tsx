@@ -19,6 +19,7 @@ import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
+import type { TargetedSearch } from "@/types/search";
 import AddItemPortal from "@/components/add-edit/v2";
 import { useMasterDataManagement } from "@/handlers/masterData";
 import { getSearchState } from "@/utils/search";
@@ -73,7 +74,7 @@ function ItemList() {
     setDataSearch(searchValue);
   }, [originalHandleGlobalSearch, setDataSearch]);
 
-  const handleTargetedSearch = useCallback((targetedSearch: any) => {
+  const handleTargetedSearch = useCallback((targetedSearch: TargetedSearch | null) => {
     // Update the UI search state
     originalHandleTargetedSearch(targetedSearch);
     // For targeted search, we still need to clear the data search since 
