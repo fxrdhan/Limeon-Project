@@ -16,14 +16,27 @@ PharmaSys is a modern web-based application designed to streamline pharmacy and 
 -   **User Profile Management:** Users can manage their own profile information.
 -   **Real-time Data Synchronization:** Data is automatically updated across all active user sessions. When one user makes changes, others see updates instantly without needing to refresh the page. This is combined with user presence features to show who is currently online.
 -   **Performance Optimized:** Built with code-splitting and lazy loading to ensure fast loading times.
-
-*(Note: Some features like Inventory, Sales, Clinic, and Reports are currently under development as indicated by "Coming Soon" pages.)*
-
 ---
+
+<div align="center">
+
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB)
+![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=flat&logo=vite&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat&logo=typescript&logoColor=white)
+![Zod](https://img.shields.io/badge/zod-%233068b7.svg?style=flat&logo=zod&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white)
+![AG Grid](https://img.shields.io/badge/ag--grid-%23ff5722.svg?style=flat&logo=ag-grid&logoColor=white)
+![React Router](https://img.shields.io/badge/React_Router-CA4245?style=flat&logo=react-router&logoColor=white)
+![React Query](https://img.shields.io/badge/-React%20Query-FF4154?style=flat&logo=react%20query&logoColor=white)
+![Zustand](https://img.shields.io/badge/zustand-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB)
+![Framer Motion](https://img.shields.io/badge/Framer%20Motion-0055FF?style=flat&logo=framer&logoColor=white)
+
+</div>
 
 ## Tech Stack
 
-This project is built with modern and robust technologies:
+This project is built with:
 
 -   **Library:** [React](https://react.dev/)
 -   **Build Tool:** [Vite](https://vitejs.dev/)
@@ -37,6 +50,7 @@ This project is built with modern and robust technologies:
 -   **Routing:** [React Router DOM](https://reactrouter.com/)
 -   **Data Fetching & Caching:** [TanStack Query](https://tanstack.com/query/latest)
 -   **State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
+-   **Animation:** [Framer Motion](https://www.framer.com/motion/)
 
 ---
 
