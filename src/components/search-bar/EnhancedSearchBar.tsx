@@ -126,6 +126,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }, 0);
   }, [onChange, inputRef]);
 
+  const handleCloseColumnSelector = useCallback(() => {
+    // Clear the input value and close column selector
+    onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+    setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
+  }, [onChange]);
+
   const handleClearTargeted = useCallback(() => {
     if (onClearSearch) {
       // Use the comprehensive clear function if provided
@@ -166,6 +172,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       // Handle escape to close column selector or clear search
       if (e.key === 'Escape') {
         if (searchMode.showColumnSelector) {
+          // Clear the input value and close column selector
+          onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
           setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
           return;
         } else if (value && onClearSearch) {
@@ -406,7 +414,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         columns={columns.filter(col => col.searchable)}
         isOpen={searchMode.showColumnSelector}
         onSelect={handleColumnSelect}
-        onClose={() => setSearchMode(prev => ({ ...prev, showColumnSelector: false }))}
+        onClose={handleCloseColumnSelector}
         position={columnSelectorPosition}
         searchTerm={getColumnSelectorSearchTerm()}
       />
