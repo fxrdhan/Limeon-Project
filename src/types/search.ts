@@ -42,4 +42,5 @@ export interface EnhancedSearchBarProps {
   columns: SearchColumn[];
   onTargetedSearch?: (targetedSearch: TargetedSearch | null) => void;
   onGlobalSearch?: (search: string) => void;
+  onClearSearch?: () => void;
 }
