@@ -173,16 +173,13 @@ export const useRealtimeSubscription = (
   const sharedTables = ['items', 'purchases', 'purchase_items'];
   const shouldShareSubscription = sharedTables.includes(tableName);
   
-  // Force shared subscription for items table to ensure cross-browser sync
+  // Use stable subscription key that doesn't change with search parameters
+  // This prevents subscription recreation during search operations
   const subscriptionKey = tableName === 'items' 
     ? `items:shared` // Always use same key for items regardless of query keys
-    : `${tableName}:${
-        queryKeyToInvalidate
-          ? Array.isArray(queryKeyToInvalidate)
-            ? queryKeyToInvalidate.join("-")
-            : String(queryKeyToInvalidate)
-          : "callback"
-      }${shouldShareSubscription ? '' : `:${hookInstanceId.current}`}`;
+    : shouldShareSubscription
+      ? `${tableName}:shared` // Use shared key for critical tables
+      : `${tableName}:stable`; // Use stable key for other tables
 
   const handleRealtimeEvent = useCallback(
     (payload: RealtimePostgresChangesPayload<{ [key: string]: unknown }>) => {
@@ -308,18 +305,14 @@ export const useRealtimeSubscription = (
             );
           }
 
-          // Immediate cache invalidation
+          // Immediate cache invalidation - invalidate all queries for this table
           queryClient.invalidateQueries({
-            queryKey: Array.isArray(queryKeyToInvalidate)
-              ? queryKeyToInvalidate
-              : [queryKeyToInvalidate],
+            queryKey: [tableName],
           });
           
           // Force refetch for better responsiveness
           queryClient.refetchQueries({
-            queryKey: Array.isArray(queryKeyToInvalidate)
-              ? queryKeyToInvalidate
-              : [queryKeyToInvalidate],
+            queryKey: [tableName],
           });
         }
       } catch (error) {
@@ -331,12 +324,10 @@ export const useRealtimeSubscription = (
     },
     [
       tableName,
-      queryKeyToInvalidate,
       onRealtimeEvent,
       queryClient,
       alert,
       silentMode,
-      subscriptionKey,
       shouldShareSubscription,
       options.showDiffInConsole,
       options.detailedLogging,
