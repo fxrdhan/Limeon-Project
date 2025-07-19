@@ -488,6 +488,10 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                 options={categories}
                                 placeholder="-- Pilih Kategori --"
                                 required
+                                validate={true}
+                                showValidationOnBlur={true}
+                                validationAutoHide={true}
+                                validationAutoHideDelay={3000}
                                 onAddNew={handleAddNewCategory}
                               />
                             )}
@@ -511,6 +515,10 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                 options={types}
                                 placeholder="-- Pilih Jenis --"
                                 required
+                                validate={true}
+                                showValidationOnBlur={true}
+                                validationAutoHide={true}
+                                validationAutoHideDelay={3000}
                                 onAddNew={handleAddNewType}
                               />
                             )}
@@ -534,6 +542,10 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                 options={units}
                                 placeholder="-- Pilih Satuan --"
                                 required
+                                validate={true}
+                                showValidationOnBlur={true}
+                                validationAutoHide={true}
+                                validationAutoHideDelay={3000}
                                 onAddNew={handleAddNewUnit}
                               />
                             )}
