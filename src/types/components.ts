@@ -23,6 +23,7 @@ export interface DropdownProps {
   showValidationOnBlur?: boolean;
   validationAutoHide?: boolean;
   validationAutoHideDelay?: number;
+  hoverToOpen?: boolean;
 }
 
 export type BadgeVariant =
