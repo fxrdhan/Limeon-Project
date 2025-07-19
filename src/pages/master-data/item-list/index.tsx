@@ -145,6 +145,7 @@ function ItemList() {
 
   const columnsToAutoSize = [
     "code",
+    "manufacturer",
     "barcode",
     "category.name",
     "type.name",
@@ -166,6 +167,12 @@ function ItemList() {
         headerName: "Nama Item",
         minWidth: 200,
         flex: 1,
+      }),
+      createTextColumn({
+        field: "manufacturer",
+        headerName: "Produsen",
+        minWidth: 120,
+        valueGetter: (params) => params.data.manufacturer || "-",
       }),
       createTextColumn({
         field: "code",
