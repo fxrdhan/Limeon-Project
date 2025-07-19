@@ -121,6 +121,7 @@ export const useAddItemForm = ({
   const [formData, setFormData] = useState<FormData>({
     code: "",
     name: "",
+    manufacturer: "",
     type_id: "",
     category_id: "",
     unit_id: "",
@@ -208,6 +209,7 @@ export const useAddItemForm = ({
     const initialState = data || {
       code: "",
       name: initialSearchQuery || "",
+      manufacturer: "",
       type_id: "",
       category_id: "",
       unit_id: "",
@@ -398,7 +400,8 @@ export const useAddItemForm = ({
         .select(
           `
                     *, updated_at,
-                    unit_conversions
+                    unit_conversions,
+                    manufacturer
                 `,
         )
         .eq("id", id)
@@ -408,6 +411,7 @@ export const useAddItemForm = ({
       const fetchedFormData = {
         code: itemData.code || "",
         name: itemData.name || "",
+        manufacturer: itemData.manufacturer || "",
         type_id: itemData.type_id || "",
         category_id: itemData.category_id || "",
         unit_id: itemData.unit_id || "",
@@ -669,6 +673,7 @@ export const useAddItemForm = ({
       if (isEditMode) {
         const itemUpdateData = {
           name: formData.name,
+          manufacturer: formData.manufacturer || null,
           category_id: formData.category_id,
           type_id: formData.type_id,
           unit_id: formData.unit_id,
@@ -699,6 +704,7 @@ export const useAddItemForm = ({
       } else {
         const mainItemData = {
           name: formData.name,
+          manufacturer: formData.manufacturer || null,
           category_id: formData.category_id,
           type_id: formData.type_id,
           unit_id: formData.unit_id,
