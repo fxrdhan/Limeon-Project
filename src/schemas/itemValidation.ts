@@ -79,6 +79,7 @@ export const itemSchema = z.object({
   base_price: z.number().min(0.01, "Harga pokok harus lebih dari 0"),
   sell_price: z.number().min(0.01, "Harga jual harus lebih dari 0"),
   // Field opsional
+  manufacturer: z.string().optional(),
   barcode: z.string().optional(),
   description: z.string().optional(),
   rack: z.string().optional(),
