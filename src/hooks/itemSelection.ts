@@ -18,7 +18,7 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
         .from("items")
         .select(
           `
-            id, name, code, barcode, base_price, sell_price, stock, unit_id, base_unit, unit_conversions,
+            id, name, manufacturer, code, barcode, base_price, sell_price, stock, unit_id, base_unit, unit_conversions,
             item_categories (name),
             item_types (name),
             item_units (name)
