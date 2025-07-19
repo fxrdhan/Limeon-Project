@@ -19,6 +19,10 @@ export interface DropdownProps {
   onAddNew?: (searchTerm?: string) => void;
   withRadio?: boolean;
   searchList?: boolean;
+  validate?: boolean;
+  showValidationOnBlur?: boolean;
+  validationAutoHide?: boolean;
+  validationAutoHideDelay?: number;
 }
 
 export type BadgeVariant =
