@@ -57,6 +57,7 @@ export interface UseMasterDataManagementOptions {
   searchInputRef?: React.RefObject<HTMLInputElement>;
   isCustomModalOpen?: boolean;
   locationKey?: string;
+  handleSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export interface UseItemSelectionOptions {
