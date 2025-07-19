@@ -7,7 +7,9 @@ import {
   useId,
 } from "react";
 import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { FaPlus, FaMagnifyingGlass } from "react-icons/fa6";
+import { FaExclamationTriangle } from "react-icons/fa";
 import type { DropdownProps } from "@/types";
 import { truncateText, shouldTruncateText } from "@/utils/text";
 import { fuzzyMatch } from "@/utils/search";
@@ -34,6 +36,12 @@ const Dropdown = ({
   onAddNew,
   searchList = true,
   tabIndex,
+  required = false,
+  validate = false,
+  showValidationOnBlur = true,
+  validationAutoHide = true,
+  validationAutoHideDelay = 3000,
+  name, // Used for form field identification and validation
 }: DropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -58,6 +66,18 @@ const Dropdown = ({
   const [searchState, setSearchState] = useState<
     "idle" | "typing" | "found" | "not-found"
   >("idle");
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [touched, setTouched] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [showValidationOverlay, setShowValidationOverlay] = useState(false);
+  const [hasAutoHidden, setHasAutoHidden] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [validationPosition, setValidationPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
 
   const instanceId = useId();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -67,7 +87,139 @@ const Dropdown = ({
   const optionsContainerRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const overlayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const selectedOption = options.find((option) => option?.id === value);
+
+  const validateDropdown = useCallback(() => {
+    if (!validate && !required) return true;
+
+    if (required && (!value || value.trim() === "")) {
+      setHasError(true);
+      setErrorMessage("Pilihan harus diisi");
+      return false;
+    }
+
+    setHasError(false);
+    setErrorMessage(null);
+    return true;
+  }, [validate, required, value]);
+
+  const handleCloseValidation = useCallback(() => {
+    setShowError(false);
+    setShowValidationOverlay(false);
+    setHasError(false);
+    setErrorMessage(null);
+    setHasAutoHidden(false);
+  }, []);
+
+  useEffect(() => {
+    if (touched && (validate || required)) {
+      const isValid = validateDropdown();
+      if (!isValid && showValidationOnBlur) {
+        setShowError(true);
+
+        if (validationAutoHide && validationAutoHideDelay > 0) {
+          if (validationTimeoutRef.current) {
+            clearTimeout(validationTimeoutRef.current);
+          }
+          validationTimeoutRef.current = setTimeout(() => {
+            setShowError(false);
+          }, validationAutoHideDelay);
+        }
+      } else if (isValid) {
+        setShowError(false);
+        if (validationTimeoutRef.current) {
+          clearTimeout(validationTimeoutRef.current);
+        }
+      }
+    }
+  }, [
+    touched,
+    validate,
+    required,
+    validateDropdown,
+    showValidationOnBlur,
+    validationAutoHide,
+    validationAutoHideDelay,
+  ]);
+
+  // Clear validation when value changes to valid (but only for clearing, not setting errors)
+  useEffect(() => {
+    if (touched && (validate || required) && value && value.trim() !== "") {
+      // Only clear validation when value becomes valid, don't set errors here
+      handleCloseValidation();
+    }
+  }, [value, touched, validate, required, handleCloseValidation]);
+
+  // Effect for positioning validation overlay
+  useEffect(() => {
+    if (
+      validate &&
+      showValidationOverlay &&
+      hasError &&
+      errorMessage &&
+      buttonRef.current
+    ) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setValidationPosition({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+  }, [validate, showValidationOverlay, hasError, errorMessage]);
+
+  // Effect for auto-hide overlay timeout
+  useEffect(() => {
+    if (
+      validate &&
+      showValidationOverlay &&
+      hasError &&
+      validationAutoHide &&
+      validationAutoHideDelay > 0
+    ) {
+      overlayTimeoutRef.current = setTimeout(() => {
+        setShowValidationOverlay(false);
+        setHasAutoHidden(true);
+      }, validationAutoHideDelay);
+    }
+
+    return () => {
+      if (overlayTimeoutRef.current) {
+        clearTimeout(overlayTimeoutRef.current);
+        overlayTimeoutRef.current = null;
+      }
+    };
+  }, [
+    validate,
+    showValidationOverlay,
+    hasError,
+    validationAutoHide,
+    validationAutoHideDelay,
+  ]);
+
+  // Effect for hover-triggered overlay display after auto-hide
+  useEffect(() => {
+    if (validate && hasAutoHidden && hasError && errorMessage) {
+      if (isHovered) {
+        setShowValidationOverlay(true);
+      } else {
+        setShowValidationOverlay(false);
+      }
+    }
+  }, [validate, hasAutoHidden, hasError, errorMessage, isHovered]);
+
+  useEffect(() => {
+    return () => {
+      if (validationTimeoutRef.current) {
+        clearTimeout(validationTimeoutRef.current);
+      }
+      if (overlayTimeoutRef.current) {
+        clearTimeout(overlayTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Debounce search term
   useEffect(() => {
@@ -242,10 +394,16 @@ const Dropdown = ({
   const handleSelect = useCallback(
     (optionId: string) => {
       onChange(optionId);
+
+      // Clear validation when valid selection is made
+      if (optionId && optionId.trim() !== "") {
+        handleCloseValidation();
+      }
+
       actualCloseDropdown();
       setTimeout(() => buttonRef.current?.focus(), 150);
     },
-    [onChange, actualCloseDropdown],
+    [onChange, actualCloseDropdown, handleCloseValidation],
   );
 
   const handleDropdownKeyDown = useCallback(
@@ -385,11 +543,16 @@ const Dropdown = ({
         dropdownRef.current?.contains(activeElement) ||
         dropdownMenuRef.current?.contains(activeElement);
 
-      if (!isFocusInDropdown && isOpen) {
-        actualCloseDropdown();
+      if (!isFocusInDropdown) {
+        if (isOpen) {
+          actualCloseDropdown();
+        }
+        if (!touched) {
+          setTouched(true);
+        }
       }
     }, 0);
-  }, [isOpen, actualCloseDropdown]);
+  }, [isOpen, actualCloseDropdown, touched]);
 
   const toggleDropdown = useCallback(
     (e: React.MouseEvent) => {
@@ -585,6 +748,43 @@ const Dropdown = ({
     [selectedOption],
   );
 
+  const handleButtonBlur = useCallback(() => {
+    handleButtonExpansion(false);
+
+    // Always set touched to true
+    setTouched(true);
+
+    // Always run validation on blur if validation is enabled
+    if (validate || required) {
+      const isValid = validateDropdown();
+      if (!isValid && showValidationOnBlur) {
+        setShowError(true);
+        setShowValidationOverlay(true);
+        setHasAutoHidden(false); // Reset auto-hide state for new validation
+
+        if (validationAutoHide && validationAutoHideDelay > 0) {
+          if (validationTimeoutRef.current) {
+            clearTimeout(validationTimeoutRef.current);
+          }
+          validationTimeoutRef.current = setTimeout(() => {
+            setShowError(false);
+          }, validationAutoHideDelay);
+        }
+      } else if (isValid) {
+        handleCloseValidation();
+      }
+    }
+  }, [
+    handleButtonExpansion,
+    validate,
+    required,
+    validateDropdown,
+    showValidationOnBlur,
+    validationAutoHide,
+    validationAutoHideDelay,
+    handleCloseValidation,
+  ]);
+
   const handleSearchBarKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (
@@ -679,83 +879,134 @@ const Dropdown = ({
     );
   };
 
+  const renderValidationOverlay = () => {
+    if (!validate || !hasError || !errorMessage || !validationPosition) {
+      return null;
+    }
+
+    return createPortal(
+      <AnimatePresence>
+        {showValidationOverlay && hasError && errorMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="fixed z-[9999] pointer-events-none"
+            style={{
+              top: validationPosition.top,
+              left: validationPosition.left,
+            }}
+          >
+            <div className="bg-danger/75 text-white text-sm px-3 py-2 rounded-lg shadow-lg backdrop-blur-xs flex items-center gap-2 w-fit">
+              <FaExclamationTriangle
+                className="text-yellow-300 flex-shrink-0"
+                size={14}
+              />
+              <span className="font-medium">{errorMessage}</span>
+            </div>
+            {/* Arrow pointing up */}
+            <div className="absolute -top-1 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-danger/75 backdrop-blur-xs"></div>
+          </motion.div>
+        )}
+      </AnimatePresence>,
+      document.body,
+    );
+  };
+
   return (
     <div
       className="relative inline-flex w-full"
       ref={dropdownRef}
-      onMouseEnter={handleTriggerAreaEnter}
-      onMouseLeave={handleMouseLeaveWithCloseIntent}
+      onMouseEnter={() => {
+        handleTriggerAreaEnter();
+        setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        handleMouseLeaveWithCloseIntent();
+        setIsHovered(false);
+      }}
     >
       <div className="w-full flex">
         <div className="hs-dropdown relative inline-flex w-full">
-          <button
-            ref={buttonRef}
-            type="button"
-            tabIndex={tabIndex}
-            className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border border-gray-300 bg-white/50 backdrop-blur-md text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 focus:ring-emerald-200 focus:border-primary transition duration-200 ease-in-out ${
-              isButtonTextExpanded ? "items-start" : "items-center"
-            }`}
-            aria-haspopup="menu"
-            aria-expanded={isOpen || isClosing}
-            onClick={toggleDropdown}
-            onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
-            onMouseEnter={() => handleButtonExpansion(true)}
-            onMouseLeave={() => handleButtonExpansion(false)}
-            onFocus={() => handleButtonExpansion(true)}
-            onBlur={() => handleButtonExpansion(false)}
-            aria-controls={isOpen ? "dropdown-options-list" : undefined}
-          >
-            <span
-              className={`${
-                isButtonTextExpanded
-                  ? "whitespace-normal break-words leading-relaxed"
-                  : "truncate"
-              } transition-all duration-200 text-left flex-1 min-w-0`}
-              title={
-                selectedOption && !isButtonTextExpanded && buttonRef.current
+          <div className="relative w-full">
+            <button
+              ref={buttonRef}
+              type="button"
+              name={name}
+              tabIndex={tabIndex}
+              className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border bg-white/50 backdrop-blur-md text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 transition duration-200 ease-in-out ${
+                isButtonTextExpanded ? "items-start" : "items-center"
+              } ${
+                hasError && showError
+                  ? "border-danger ring-3 ring-red-200! focus:ring-red-200 focus:border-danger"
+                  : "border-gray-300 focus:ring-emerald-200 focus:border-primary"
+              }`}
+              aria-haspopup="menu"
+              aria-expanded={isOpen || isClosing}
+              onClick={toggleDropdown}
+              onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
+              onMouseEnter={() => handleButtonExpansion(true)}
+              onMouseLeave={() => handleButtonExpansion(false)}
+              onFocus={() => handleButtonExpansion(true)}
+              onBlur={handleButtonBlur}
+              aria-controls={isOpen ? "dropdown-options-list" : undefined}
+            >
+              <span
+                className={`${
+                  isButtonTextExpanded
+                    ? "whitespace-normal break-words leading-relaxed"
+                    : "truncate"
+                } transition-all duration-200 text-left flex-1 min-w-0`}
+                title={
+                  selectedOption && !isButtonTextExpanded && buttonRef.current
+                    ? (() => {
+                        const buttonWidth =
+                          buttonRef.current.getBoundingClientRect().width;
+                        const maxTextWidth = buttonWidth - 48;
+                        return shouldTruncateText(
+                          selectedOption.name,
+                          maxTextWidth,
+                        )
+                          ? selectedOption.name
+                          : undefined;
+                      })()
+                    : undefined
+                }
+              >
+                {selectedOption
                   ? (() => {
+                      if (isButtonTextExpanded) return selectedOption.name;
                       const buttonWidth =
-                        buttonRef.current.getBoundingClientRect().width;
+                        buttonRef.current?.getBoundingClientRect().width || 200;
                       const maxTextWidth = buttonWidth - 48;
                       return shouldTruncateText(
                         selectedOption.name,
                         maxTextWidth,
                       )
-                        ? selectedOption.name
-                        : undefined;
+                        ? truncateText(selectedOption.name, maxTextWidth)
+                        : selectedOption.name;
                     })()
-                  : undefined
-              }
-            >
-              {selectedOption
-                ? (() => {
-                    if (isButtonTextExpanded) return selectedOption.name;
-                    const buttonWidth =
-                      buttonRef.current?.getBoundingClientRect().width || 200;
-                    const maxTextWidth = buttonWidth - 48;
-                    return shouldTruncateText(selectedOption.name, maxTextWidth)
-                      ? truncateText(selectedOption.name, maxTextWidth)
-                      : selectedOption.name;
-                  })()
-                : (placeholder ?? "-- Pilih --")}
-            </span>
-            <svg
-              className={`transition-transform duration-200 ${
-                isOpen || isClosing ? "rotate-180" : ""
-              } w-4 h-4 ml-2 flex-shrink-0 ${isButtonTextExpanded ? "mt-0.5" : ""}`}
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
+                  : (placeholder ?? "-- Pilih --")}
+              </span>
+              <svg
+                className={`transition-transform duration-200 ${
+                  isOpen || isClosing ? "rotate-180" : ""
+                } w-4 h-4 ml-2 flex-shrink-0 ${isButtonTextExpanded ? "mt-0.5" : ""}`}
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+          </div>
 
           {(isOpen || isClosing) &&
             typeof document !== "undefined" &&
@@ -888,6 +1139,7 @@ const Dropdown = ({
             )}
         </div>
       </div>
+      {renderValidationOverlay()}
     </div>
   );
 };
