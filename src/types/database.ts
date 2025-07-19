@@ -84,6 +84,7 @@ export interface Doctor {
 export interface Item {
   id: string;
   name: string;
+  manufacturer?: string;
   code?: string;
   barcode?: string | null;
   base_price: number;
@@ -124,6 +125,7 @@ export interface DBUnitConversion {
 export interface DBItem {
   id: string;
   name: string;
+  manufacturer?: string;
   code?: string;
   barcode?: string | null;
   base_price: number;
