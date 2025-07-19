@@ -510,13 +510,14 @@ const Dropdown = ({
       clearTimeout(leaveTimeoutRef.current);
       leaveTimeoutRef.current = null;
     }
-    if (hoverToOpen) {
+    // Only open on hover if explicitly enabled and not already open
+    if (hoverToOpen && !isOpen && !isClosing) {
       hoverTimeoutRef.current = setTimeout(() => {
         openThisDropdown();
         setIsClosing(false);
       }, 100);
     }
-  }, [hoverToOpen, openThisDropdown]);
+  }, [hoverToOpen, openThisDropdown, isOpen, isClosing]);
 
   const handleMenuEnter = useCallback(() => {
     [leaveTimeoutRef, hoverTimeoutRef].forEach((ref) => {
@@ -532,8 +533,11 @@ const Dropdown = ({
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
-    leaveTimeoutRef.current = setTimeout(actualCloseDropdown, 200);
-  }, [actualCloseDropdown]);
+    // Only set close timeout if hover-to-open is enabled and dropdown is actually open
+    if (hoverToOpen && isOpen) {
+      leaveTimeoutRef.current = setTimeout(actualCloseDropdown, 200);
+    }
+  }, [actualCloseDropdown, hoverToOpen, isOpen]);
 
   const handleFocusOut = useCallback(() => {
     setTimeout(() => {
@@ -583,6 +587,12 @@ const Dropdown = ({
     let openStyleTimerId: NodeJS.Timeout | undefined;
 
     if (isOpen) {
+      // Clear any pending hover timeout when dropdown opens
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+
       document.body.style.overflow = "hidden";
       openStyleTimerId = setTimeout(() => {
         setApplyOpenStyles(true);
@@ -614,6 +624,12 @@ const Dropdown = ({
     } else {
       document.body.style.overflow = "";
       setApplyOpenStyles(false);
+      
+      // Clear hover timeout when dropdown is closed
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
     }
   }, [isOpen, calculateDropdownPosition, manageFocusOnOpen, handleFocusOut]);
 
