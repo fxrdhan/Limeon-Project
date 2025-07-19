@@ -73,6 +73,7 @@ export const useMasterDataManagement = (
       const itemsQuery = supabase.from("items").select(`
                 id,
                 name,
+                manufacturer,
                 code,
                 barcode,
                 base_price,
@@ -172,6 +173,7 @@ export const useMasterDataManagement = (
         return {
           id: item.id,
           name: item.name,
+          manufacturer: item.manufacturer,
           code: item.code,
           barcode: item.barcode,
           base_price: item.base_price,
