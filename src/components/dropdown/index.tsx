@@ -894,13 +894,13 @@ const Dropdown = ({
   };
 
   const renderValidationOverlay = () => {
-    if (!validate || !hasError || !errorMessage || !validationPosition) {
+    if (!validate || !hasError || !errorMessage || !validationPosition || isOpen) {
       return null;
     }
 
     return createPortal(
       <AnimatePresence>
-        {showValidationOverlay && hasError && errorMessage && (
+        {showValidationOverlay && hasError && errorMessage && !isOpen && (
           <motion.div
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
