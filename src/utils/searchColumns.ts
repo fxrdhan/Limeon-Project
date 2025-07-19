@@ -67,6 +67,13 @@ export const itemSearchColumns: SearchColumn[] = [
     description: "Cari berdasarkan nama item"
   },
   {
+    field: "manufacturer",
+    headerName: "Produsen",
+    searchable: true,
+    type: "text",
+    description: "Cari berdasarkan nama produsen"
+  },
+  {
     field: "code",
     headerName: "Kode",
     searchable: true,
