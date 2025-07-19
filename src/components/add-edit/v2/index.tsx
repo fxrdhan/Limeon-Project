@@ -45,7 +45,7 @@ const DeleteButton = ({ onClick }: { onClick: () => void }) => (
   <Button
     variant="danger"
     size="sm"
-    tabIndex={18}
+    tabIndex={19}
     onClick={onClick}
   >
     <FaTrash />
@@ -429,11 +429,22 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                             />
                           </FormField>
 
+                          <FormField label="Produsen" className="md:col-span-1">
+                            <Input
+                              name="manufacturer"
+                              value={formData.manufacturer}
+                              tabIndex={2}
+                              onChange={handleChange}
+                              className="w-full"
+                              placeholder="Masukkan nama produsen"
+                            />
+                          </FormField>
+
                           <FormField label="Barcode" className="md:col-span-1">
                             <Input
                               name="barcode"
                               value={formData.barcode}
-                              tabIndex={2}
+                              tabIndex={3}
                               onChange={handleChange}
                               className="w-full"
                               placeholder="Masukkan barcode item"
@@ -447,7 +458,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                           >
                             <Dropdown
                               name="is_medicine"
-                              tabIndex={3}
+                              tabIndex={4}
                               value={formData.is_medicine ? "obat" : "non-obat"}
                               onChange={(value) => {
                                 if (value === "obat") {
@@ -480,7 +491,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                             ) : (
                               <Dropdown
                                 name="category_id"
-                                tabIndex={4}
+                                tabIndex={5}
                                 value={formData.category_id}
                                 onChange={(value) =>
                                   handleDropdownChange("category_id", value)
@@ -507,7 +518,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                             ) : (
                               <Dropdown
                                 name="type_id"
-                                tabIndex={5}
+                                tabIndex={6}
                                 value={formData.type_id}
                                 onChange={(value) =>
                                   handleDropdownChange("type_id", value)
@@ -534,7 +545,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                             ) : (
                               <Dropdown
                                 name="unit_id"
-                                tabIndex={6}
+                                tabIndex={7}
                                 value={formData.unit_id}
                                 onChange={(value) =>
                                   handleDropdownChange("unit_id", value)
@@ -554,7 +565,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                           <FormField label="Rak">
                             <Input
                               name="rack"
-                              tabIndex={7}
+                              tabIndex={8}
                               value={formData.rack}
                               onChange={handleChange}
                               className="w-full"
@@ -565,7 +576,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                         <div>
                           <DescriptiveTextarea
                             label="Keterangan"
-                            tabIndex={8}
+                            tabIndex={9}
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
@@ -581,7 +592,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                           <FormField label="Status" required={true}>
                             <Dropdown
                               name="is_active"
-                              tabIndex={9}
+                              tabIndex={10}
                               value={formData.is_active ? "true" : "false"}
                               onChange={(value) => {
                                 updateFormData({ is_active: value === "true" });
@@ -613,7 +624,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                 />
                               ) : (
                                 <div
-                                  tabIndex={10}
+                                  tabIndex={11}
                                   className="group w-full pb-1 cursor-pointer flex items-center focus:outline-hidden"
                                   onClick={startEditingMinStock}
                                   onKeyDown={(e) => {
@@ -648,7 +659,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                           >
                             <Checkbox
                               id="has_expiry_date"
-                              tabIndex={11}
+                              tabIndex={12}
                               ref={expiryCheckboxRef}
                               label="Memiliki Tanggal Kadaluarsa"
                               checked={formData.has_expiry_date}
@@ -719,7 +730,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                               <Input
                                 type="currency"
                                 name="base_price"
-                                tabIndex={12}
+                                tabIndex={13}
                                 value={displayBasePrice}
                                 onChange={(e) => {
                                   handleChange(e);
@@ -766,7 +777,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                   </div>
                                 ) : (
                                   <div
-                                    tabIndex={13}
+                                    tabIndex={14}
                                     className={`group w-full py-2 cursor-pointer font-semibold flex items-center ${
                                       calculateProfitPercentage() !== null
                                         ? calculateProfitPercentage()! >= 0
@@ -806,7 +817,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                               <Input
                                 type="currency"
                                 name="sell_price"
-                                tabIndex={14}
+                                tabIndex={15}
                                 value={displaySellPrice}
                                 onChange={handleSellPriceChange}
                                 min="0"
@@ -844,7 +855,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                               >
                                 <Dropdown
                                   name="unit"
-                                  tabIndex={15}
+                                  tabIndex={16}
                                   value={
                                     unitConversionHook.availableUnits.find(
                                       (u) =>
@@ -903,7 +914,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                 <div className="relative w-full">
                                   <Input
                                     name="conversion"
-                                    tabIndex={16}
+                                    tabIndex={17}
                                     value={
                                       unitConversionHook.unitConversionFormData.conversion?.toString() ||
                                       ""
@@ -1039,8 +1050,8 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                   isSaving={saving}
                   isDeleting={deleteItemMutation?.isPending}
                   isEditMode={isEditMode}
-                  cancelTabIndex={19}
-                  saveTabIndex={20}
+                  cancelTabIndex={20}
+                  saveTabIndex={21}
                   isDisabled={finalDisabledState}
                   saveText="Simpan"
                   updateText="Update"
