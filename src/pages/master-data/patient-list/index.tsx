@@ -8,7 +8,7 @@ import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import { DataGrid, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import type { Patient as PatientType, FieldConfig } from "@/types";
 import { useMasterDataManagement } from "@/handlers/masterData";
@@ -22,6 +22,19 @@ const PatientList = () => {
   ) as React.RefObject<HTMLInputElement>;
   const location = useLocation();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  const {
+    search,
+    handleSearchChange,
+    onGridReady,
+    isExternalFilterPresent,
+    doesExternalFilterPass,
+    handleTargetedSearch,
+    handleGlobalSearch,
+  } = useEnhancedAgGridSearch({
+    columns: patientSearchColumns,
+    useFuzzySearch: true,
+  });
 
   const {
     isAddModalOpen,
@@ -52,49 +65,11 @@ const PatientList = () => {
     realtime: true,
     searchInputRef,
     locationKey: location.key,
-  });
-
-  const {
-    search,
     handleSearchChange,
-    onGridReady,
-    isExternalFilterPresent,
-    doesExternalFilterPass,
-    handleTargetedSearch,
-    handleGlobalSearch,
-  } = useEnhancedAgGridSearch({
-    columns: patientSearchColumns,
-    useFuzzySearch: true,
   });
 
   const patients = patientsData || [];
 
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      try {
-        const target = e.target as HTMLElement;
-        const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-        const isModalOpen = isAddModalOpen || isEditModalOpen;
-        const isTypeable = /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~#]$/.test(e.key);
-        
-        if (!isInputFocused && !isModalOpen && isTypeable && searchInputRef.current) {
-          e.preventDefault();
-          searchInputRef.current.focus();
-          
-          // Create a synthetic change event
-          const syntheticEvent = {
-            target: { value: e.key }
-          } as React.ChangeEvent<HTMLInputElement>;
-          handleSearchChange(syntheticEvent);
-        }
-      } catch (error) {
-        console.error('Error in global keydown handler:', error);
-      }
-    };
-
-    document.addEventListener('keydown', handleGlobalKeyDown);
-    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isAddModalOpen, isEditModalOpen, handleSearchChange]);
 
   const patientFields: FieldConfig[] = [
     {
