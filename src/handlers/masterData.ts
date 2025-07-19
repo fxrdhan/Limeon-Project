@@ -34,7 +34,7 @@ export const useMasterDataManagement = (
   const queryClient = useQueryClient();
   const alert = useAlert();
 
-  const { realtime = false, isCustomModalOpen } = options || {};
+  const { realtime = false, isCustomModalOpen, searchInputRef, handleSearchChange } = options || {};
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -64,6 +64,48 @@ export const useMasterDataManagement = (
     }
     return () => clearTimeout(timer);
   }, [editingItem, isEditModalOpen]);
+
+  // Global keyboard handler for auto-focus search
+  useEffect(() => {
+    if (!searchInputRef || !handleSearchChange) return;
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      try {
+        const target = e.target as HTMLElement;
+        const isInputFocused =
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable;
+        const isModalOpen = actualIsModalOpen;
+        const isTypeable =
+          /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~#]$/.test(e.key);
+
+        if (
+          !isInputFocused &&
+          !isModalOpen &&
+          isTypeable &&
+          !e.ctrlKey &&
+          !e.altKey &&
+          !e.metaKey &&
+          searchInputRef.current
+        ) {
+          e.preventDefault();
+          searchInputRef.current.focus();
+
+          // Create a synthetic change event
+          const syntheticEvent = {
+            target: { value: e.key },
+          } as React.ChangeEvent<HTMLInputElement>;
+          handleSearchChange(syntheticEvent);
+        }
+      } catch (error) {
+        console.error("Error in global keydown handler:", error);
+      }
+    };
+
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [searchInputRef, handleSearchChange, actualIsModalOpen]);
 
   const fetchData = async (page: number, searchTerm: string, limit: number) => {
     const from = (page - 1) * limit;
