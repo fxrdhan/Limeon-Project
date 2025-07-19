@@ -42,6 +42,7 @@ const Dropdown = ({
   validationAutoHide = true,
   validationAutoHideDelay = 3000,
   name, // Used for form field identification and validation
+  hoverToOpen = false,
 }: DropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -69,7 +70,6 @@ const Dropdown = ({
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
-  const [showError, setShowError] = useState(false);
   const [showValidationOverlay, setShowValidationOverlay] = useState(false);
   const [hasAutoHidden, setHasAutoHidden] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -106,7 +106,6 @@ const Dropdown = ({
   }, [validate, required, value]);
 
   const handleCloseValidation = useCallback(() => {
-    setShowError(false);
     setShowValidationOverlay(false);
     setHasError(false);
     setErrorMessage(null);
@@ -117,18 +116,16 @@ const Dropdown = ({
     if (touched && (validate || required)) {
       const isValid = validateDropdown();
       if (!isValid && showValidationOnBlur) {
-        setShowError(true);
-
+        // Error state is already handled by hasError
         if (validationAutoHide && validationAutoHideDelay > 0) {
           if (validationTimeoutRef.current) {
             clearTimeout(validationTimeoutRef.current);
           }
           validationTimeoutRef.current = setTimeout(() => {
-            setShowError(false);
+            // Auto-hide timeout is handled by overlay state
           }, validationAutoHideDelay);
         }
       } else if (isValid) {
-        setShowError(false);
         if (validationTimeoutRef.current) {
           clearTimeout(validationTimeoutRef.current);
         }
@@ -513,11 +510,13 @@ const Dropdown = ({
       clearTimeout(leaveTimeoutRef.current);
       leaveTimeoutRef.current = null;
     }
-    hoverTimeoutRef.current = setTimeout(() => {
-      openThisDropdown();
-      setIsClosing(false);
-    }, 100);
-  }, [openThisDropdown]);
+    if (hoverToOpen) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        openThisDropdown();
+        setIsClosing(false);
+      }, 100);
+    }
+  }, [hoverToOpen, openThisDropdown]);
 
   const handleMenuEnter = useCallback(() => {
     [leaveTimeoutRef, hoverTimeoutRef].forEach((ref) => {
@@ -758,7 +757,6 @@ const Dropdown = ({
     if (validate || required) {
       const isValid = validateDropdown();
       if (!isValid && showValidationOnBlur) {
-        setShowError(true);
         setShowValidationOverlay(true);
         setHasAutoHidden(false); // Reset auto-hide state for new validation
 
@@ -767,7 +765,7 @@ const Dropdown = ({
             clearTimeout(validationTimeoutRef.current);
           }
           validationTimeoutRef.current = setTimeout(() => {
-            setShowError(false);
+            // Auto-hide is handled by overlay timeout effect
           }, validationAutoHideDelay);
         }
       } else if (isValid) {
@@ -938,8 +936,8 @@ const Dropdown = ({
               className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border bg-white/50 backdrop-blur-md text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 transition duration-200 ease-in-out ${
                 isButtonTextExpanded ? "items-start" : "items-center"
               } ${
-                hasError && showError
-                  ? "border-danger ring-3 ring-red-200! focus:ring-red-200 focus:border-danger"
+                hasError
+                  ? "border-danger ring-3 ring-danger/20 focus:ring-red-200 focus:border-danger"
                   : "border-gray-300 focus:ring-emerald-200 focus:border-primary"
               }`}
               aria-haspopup="menu"
