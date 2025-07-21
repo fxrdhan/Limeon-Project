@@ -9,18 +9,19 @@ import { Card } from "@/components/card";
 import { DataGrid, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { useState, useRef, useMemo } from "react";
-import { useLocation } from "react-router-dom";
 import type { Patient as PatientType, FieldConfig } from "@/types";
+
+// Use the new modular architecture
 import { useMasterDataManagement } from "@/handlers/masterData";
+
 import { getSearchState } from "@/utils/search";
 import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
 import { patientSearchColumns } from "@/utils/searchColumns";
 
-const PatientList = () => {
+const PatientListNew = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
-  const location = useLocation();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const {
@@ -55,21 +56,16 @@ const PatientList = () => {
     totalPages,
     currentPage,
     itemsPerPage,
-    // addMutation,
-    // updateMutation,
     deleteMutation,
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
   } = useMasterDataManagement("patients", "Pasien", {
-    realtime: true,
     searchInputRef,
-    locationKey: location.key,
     handleSearchChange,
   });
 
   const patients = patientsData || [];
-
 
   const patientFields: FieldConfig[] = [
     {
@@ -308,4 +304,5 @@ const PatientList = () => {
     </>
   );
 };
-export default PatientList;
+
+export default PatientListNew;
