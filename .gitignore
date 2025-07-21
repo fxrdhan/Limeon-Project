@@ -39,3 +39,6 @@ CLAUDE.md
 
 # MCP configuration (contains sensitive tokens)
 .mcp.json
+ARCHITECTURE_COMPLETE.md
+LEGACY_CLEANUP_COMPLETE.md
+MASTERDATA_MIGRATION_COMPLETE.md
