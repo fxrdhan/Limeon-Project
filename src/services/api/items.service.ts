@@ -14,9 +14,9 @@ export class ItemsService extends BaseService<DBItem> {
     try {
       const defaultSelect = `
         *,
-        item_categories (name),
-        item_types (name),
-        item_units (name)
+        item_categories!inner(id, name),
+        item_types!inner(id, name),
+        item_units!inner(id, name)
       `;
       
       const result = await super.getAll({
@@ -29,7 +29,11 @@ export class ItemsService extends BaseService<DBItem> {
       }
 
       // Transform the data to the expected format
-      const transformedData = result.data.map((item: DBItem & { item_categories?: { name: string }[]; item_types?: { name: string }[]; item_units?: { name: string }[] }) => {
+      const transformedData = result.data.map((item: DBItem & { 
+        item_categories?: { id: string; name: string }; 
+        item_types?: { id: string; name: string }; 
+        item_units?: { id: string; name: string } 
+      }) => {
         // Parse unit conversions
         let unitConversions: UnitConversion[] = [];
         if (item.unit_conversions) {
@@ -47,11 +51,11 @@ export class ItemsService extends BaseService<DBItem> {
         // Transform to Item interface
         return {
           ...item,
-          category: item.item_categories?.[0] || { name: '' },
-          type: item.item_types?.[0] || { name: '' },
-          unit: item.item_units?.[0] || { name: '' },
+          category: item.item_categories || { name: '' },
+          type: item.item_types || { name: '' },
+          unit: item.item_units || { name: '' },
           unit_conversions: unitConversions,
-          base_unit: item.item_units?.[0]?.name || ''
+          base_unit: item.item_units?.name || ''
         };
       });
 
@@ -71,9 +75,9 @@ export class ItemsService extends BaseService<DBItem> {
         .from('items')
         .select(`
           *,
-          item_categories (name),
-          item_types (name),
-          item_units (name)
+          item_categories!inner(id, name),
+          item_types!inner(id, name),
+          item_units!inner(id, name)
         `)
         .eq('id', id)
         .single();
@@ -99,11 +103,11 @@ export class ItemsService extends BaseService<DBItem> {
       // Transform to Item interface
       const transformedItem: Item = {
         ...item,
-        category: item.item_categories?.[0] || { name: '' },
-        type: item.item_types?.[0] || { name: '' },
-        unit: item.item_units?.[0] || { name: '' },
+        category: item.item_categories || { name: '' },
+        type: item.item_types || { name: '' },
+        unit: item.item_units || { name: '' },
         unit_conversions: unitConversions,
-        base_unit: item.item_units?.[0]?.name || ''
+        base_unit: item.item_units?.name || ''
       };
 
       return { data: transformedItem, error: null };
@@ -117,9 +121,9 @@ export class ItemsService extends BaseService<DBItem> {
     try {
       const defaultSelect = `
         *,
-        item_categories (name),
-        item_types (name),
-        item_units (name)
+        item_categories!inner(id, name),
+        item_types!inner(id, name),
+        item_units!inner(id, name)
       `;
 
       const result = await this.search(query, ['name', 'code', 'barcode', 'manufacturer'], {
@@ -132,7 +136,11 @@ export class ItemsService extends BaseService<DBItem> {
       }
 
       // Transform the data to the expected format
-      const transformedData = result.data.map((item: DBItem & { item_categories?: { name: string }[]; item_types?: { name: string }[]; item_units?: { name: string }[] }) => {
+      const transformedData = result.data.map((item: DBItem & { 
+        item_categories?: { id: string; name: string }; 
+        item_types?: { id: string; name: string }; 
+        item_units?: { id: string; name: string } 
+      }) => {
         // Parse unit conversions
         let unitConversions: UnitConversion[] = [];
         if (item.unit_conversions) {
@@ -150,11 +158,11 @@ export class ItemsService extends BaseService<DBItem> {
         // Transform to Item interface
         return {
           ...item,
-          category: item.item_categories?.[0] || { name: '' },
-          type: item.item_types?.[0] || { name: '' },
-          unit: item.item_units?.[0] || { name: '' },
+          category: item.item_categories || { name: '' },
+          type: item.item_types || { name: '' },
+          unit: item.item_units || { name: '' },
           unit_conversions: unitConversions,
-          base_unit: item.item_units?.[0]?.name || ''
+          base_unit: item.item_units?.name || ''
         };
       });
 
@@ -190,9 +198,9 @@ export class ItemsService extends BaseService<DBItem> {
         .from('items')
         .select(`
           *,
-          item_categories (name),
-          item_types (name),
-          item_units (name)
+          item_categories!inner(id, name),
+          item_types!inner(id, name),
+          item_units!inner(id, name)
         `)
         .lte('stock', threshold)
         .order('stock', { ascending: true });
@@ -202,7 +210,11 @@ export class ItemsService extends BaseService<DBItem> {
       }
 
       // Transform the data to the expected format
-      const transformedData = data.map((item: DBItem & { item_categories?: { name: string }[]; item_types?: { name: string }[]; item_units?: { name: string }[] }) => {
+      const transformedData = data.map((item: DBItem & { 
+        item_categories?: { id: string; name: string }; 
+        item_types?: { id: string; name: string }; 
+        item_units?: { id: string; name: string } 
+      }) => {
         // Parse unit conversions
         let unitConversions: UnitConversion[] = [];
         if (item.unit_conversions) {
@@ -220,11 +232,11 @@ export class ItemsService extends BaseService<DBItem> {
         // Transform to Item interface
         return {
           ...item,
-          category: item.item_categories?.[0] || { name: '' },
-          type: item.item_types?.[0] || { name: '' },
-          unit: item.item_units?.[0] || { name: '' },
+          category: item.item_categories || { name: '' },
+          type: item.item_types || { name: '' },
+          unit: item.item_units || { name: '' },
           unit_conversions: unitConversions,
-          base_unit: item.item_units?.[0]?.name || ''
+          base_unit: item.item_units?.name || ''
         };
       });
 
