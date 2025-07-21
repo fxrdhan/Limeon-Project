@@ -35,9 +35,13 @@ const Button = React.forwardRef<
       lg: "px-6 py-3 text-lg",
     };
 
-    const baseClasses =
-      "cursor-pointer font-medium rounded-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden" +
-      (withGlow ? "" : " hover:opacity-80");
+    const baseClasses = classNames(
+      "cursor-pointer font-medium rounded-lg transition-all duration-300 ease-in-out",
+      "disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden",
+      {
+        "hover:opacity-80": !withGlow
+      }
+    );
 
     let glowClass = "";
     if (withGlow) {
@@ -56,9 +60,11 @@ const Button = React.forwardRef<
         className={classNames(
           baseClasses,
           sizes[size],
-          fullWidth ? "w-full" : "",
           variants[variant],
-          glowClass,
+          {
+            "w-full": fullWidth,
+            [glowClass]: withGlow && glowClass
+          },
           className,
         )}
         disabled={isLoading || props.disabled}
