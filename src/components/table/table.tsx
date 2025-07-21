@@ -1,4 +1,4 @@
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 import type { TableCellProps, TableRowProps, TableProps } from "@/types";
 import { memo, useMemo, useRef, useState, useEffect } from "react";
 import React from "react";
