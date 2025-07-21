@@ -15,7 +15,7 @@ import { itemMasterSearchColumns } from "@/utils/searchColumns";
 import { useLocation } from "react-router-dom";
 import { getSearchState } from "@/utils/search";
 import { motion, LayoutGroup } from "framer-motion";
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 
 type MasterDataType = "item_categories" | "item_types" | "item_units";
 
