@@ -4,7 +4,7 @@ import PageTitle from "@/components/page-title";
 import Pagination from "@/components/pagination";
 
 import { useState, useRef, useMemo, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+// import { useLocation } from "react-router-dom";
 import {
   DataGrid,
   createTextColumn,
@@ -21,12 +21,14 @@ import { Card } from "@/components/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
 import type { TargetedSearch } from "@/types/search";
 import AddItemPortal from "@/components/add-edit/v2";
+
+// Use the new modular architecture
 import { useMasterDataManagement } from "@/handlers/masterData";
+
 import { getSearchState } from "@/utils/search";
 import { itemSearchColumns } from "@/utils/searchColumns";
 
-function ItemList() {
-  const location = useLocation();
+function ItemListNew() {
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
@@ -60,10 +62,8 @@ function ItemList() {
     handleItemsPerPageChange,
     setSearch: setDataSearch,
   } = useMasterDataManagement("items", "Item", {
-    realtime: true,
     searchInputRef,
     isCustomModalOpen: isAddItemModalOpen,
-    locationKey: location.key,
     handleSearchChange,
   });
 
@@ -341,4 +341,4 @@ function ItemList() {
   );
 }
 
-export default ItemList;
+export default ItemListNew;
