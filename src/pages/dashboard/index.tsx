@@ -1,646 +1,403 @@
+import React from "react";
 import PageTitle from "@/components/page-title";
-import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
-import type { RegularDashboardProps, TopSellingMedicine } from "../../types";
-import { Line, Pie, Bar, Doughnut } from "@/components/charts/LazyCharts";
+import { Line, Doughnut } from "@/components/charts/LazyCharts";
 import {
   FaShoppingBag,
   FaShoppingCart,
   FaBoxes,
   FaExclamationTriangle,
+  FaSync,
+  FaArrowUp,
+  FaArrowDown,
 } from "react-icons/fa";
+import { Card } from "@/components/card";
+import Button from "@/components/button";
 
-const Dashboard = () => {
-  const [demoMode, setDemoMode] = useState(false);
+// Import our new dashboard hooks
+import {
+  useDashboardStats,
+  useSalesAnalytics,
+  useTopSellingMedicines,
+  useLowStockItems,
+  useRecentTransactions,
+  useMonthlyRevenueComparison,
+} from "@/hooks/queries/useDashboard";
 
-  const [stats, setStats] = useState({
-    totalSales: 0,
-    totalPurchases: 0,
-    totalMedicines: 0,
-    lowStockCount: 0,
-  });
+// Utility function to format currency
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+  }).format(amount);
+};
 
-  const [salesData, setSalesData] = useState<{
-    labels: string[];
-    datasets: {
-      label: string;
-      data: number[];
-      borderColor: string;
-      backgroundColor: string;
-    }[];
-  }>({
-    labels: [],
-    datasets: [],
-  });
+// Utility function to format percentage
+const formatPercentage = (percentage: number) => {
+  return `${percentage > 0 ? '+' : ''}${percentage.toFixed(1)}%`;
+};
 
-  const [topMedicines, setTopMedicines] = useState<{
-    labels: string[];
-    datasets: {
-      label: string;
-      data: number[];
-      backgroundColor: string[];
-      borderColor: string[];
-      borderWidth: number;
-    }[];
-  }>({
-    labels: [],
-    datasets: [],
-  });
+// Stats Card Component
+interface StatsCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  color: string;
+  isLoading?: boolean;
+}
 
-  useEffect(() => {
-    if (!demoMode) {
-      fetchStats();
-      fetchSalesData();
-      fetchTopMedicines();
-    }
-  }, [demoMode]);
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, isLoading }) => (
+  <Card className="p-6">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-gray-600 mb-1">{title}</p>
+        {isLoading ? (
+          <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+        ) : (
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+        )}
+      </div>
+      <div className={`p-3 rounded-full ${color}`}>
+        {icon}
+      </div>
+    </div>
+  </Card>
+);
 
-  const fetchStats = async () => {
-    const { data: salesData } = await supabase.from("sales").select("total");
+// Chart Card Component
+interface ChartCardProps {
+  title: string;
+  children: React.ReactNode;
+  isLoading?: boolean;
+  onRefresh?: () => void;
+}
 
-    const totalSales = salesData
-      ? salesData.reduce((sum, sale) => sum + sale.total, 0)
-      : 0;
+const ChartCard: React.FC<ChartCardProps> = ({ title, children, isLoading, onRefresh }) => (
+  <Card className="p-6">
+    <div className="flex items-center justify-between mb-4">
+      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      {onRefresh && (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onRefresh}
+          className="p-2"
+        >
+          <FaSync className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+    {isLoading ? (
+      <div className="h-64 bg-gray-200 animate-pulse rounded"></div>
+    ) : (
+      children
+    )}
+  </Card>
+);
 
-    const { data: purchasesData } = await supabase
-      .from("purchases")
-      .select("total");
+const DashboardNew = () => {
+  // Fetch dashboard data using our new hooks
+  const statsQuery = useDashboardStats();
+  const salesQuery = useSalesAnalytics(7);
+  const topMedicinesQuery = useTopSellingMedicines(5);
+  const lowStockQuery = useLowStockItems(10);
+  const recentTransactionsQuery = useRecentTransactions(10);
+  const monthlyRevenueQuery = useMonthlyRevenueComparison();
 
-    const totalPurchases = purchasesData
-      ? purchasesData.reduce((sum, purchase) => sum + purchase.total, 0)
-      : 0;
-
-    const { count: totalMedicines } = await supabase
-      .from("items")
-      .select("*", { count: "exact" });
-
-    const { count: lowStockCount } = await supabase
-      .from("items")
-      .select("*", { count: "exact" })
-      .lt("stock", 10);
-
-    setStats({
-      totalSales,
-      totalPurchases,
-      totalMedicines: totalMedicines || 0,
-      lowStockCount: lowStockCount || 0,
-    });
-  };
-
-  const fetchSalesData = async () => {
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.setDate(now.getDate() - 6));
-    sevenDaysAgo.setHours(0, 0, 0, 0);
-
-    const { data } = await supabase
-      .from("sales")
-      .select("date, total")
-      .gte("date", sevenDaysAgo.toISOString())
-      .order("date");
-
-    if (!data) return;
-
-    const salesByDate = data.reduce<Record<string, number>>((acc, sale) => {
-      const date = new Date(sale.date).toLocaleDateString();
-      if (!acc[date]) acc[date] = 0;
-      acc[date] += sale.total;
-      return acc;
-    }, {});
-
-    const labels = [];
-    const values = [];
-
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - (6 - i));
-      const dateStr = date.toLocaleDateString();
-      labels.push(dateStr);
-      values.push(salesByDate[dateStr] || 0);
-    }
-
-    setSalesData({
-      labels,
+  // Prepare chart data
+  const salesChartData = React.useMemo(() => {
+    if (!salesQuery.data) return { labels: [], datasets: [] };
+    
+    return {
+      labels: salesQuery.data.labels,
       datasets: [
         {
           label: "Penjualan Harian",
-          data: values,
+          data: salesQuery.data.values,
           borderColor: "rgb(53, 162, 235)",
           backgroundColor: "rgba(53, 162, 235, 0.5)",
+          tension: 0.4,
         },
       ],
-    });
-  };
+    };
+  }, [salesQuery.data]);
 
-  const fetchTopMedicines = async () => {
-    const { data } = await supabase.rpc("get_top_selling_medicines", {
-      limit_count: 5,
-    });
+  const topMedicinesChartData = React.useMemo(() => {
+    if (!topMedicinesQuery.data) return { labels: [], datasets: [] };
+    
+    const colors = [
+      "rgba(255, 99, 132, 0.6)",
+      "rgba(54, 162, 235, 0.6)",
+      "rgba(255, 205, 86, 0.6)",
+      "rgba(75, 192, 192, 0.6)",
+      "rgba(153, 102, 255, 0.6)",
+    ];
 
-    if (!data) return;
+    const borderColors = [
+      "rgba(255, 99, 132, 1)",
+      "rgba(54, 162, 235, 1)",
+      "rgba(255, 205, 86, 1)",
+      "rgba(75, 192, 192, 1)",
+      "rgba(153, 102, 255, 1)",
+    ];
 
-    setTopMedicines({
-      labels: data.map((item: TopSellingMedicine) => item.name),
+    return {
+      labels: topMedicinesQuery.data.map(item => item.name),
       datasets: [
         {
           label: "Obat Terlaris",
-          data: data.map((item: TopSellingMedicine) => item.total_quantity),
-          backgroundColor: [
-            "rgba(255, 99, 132, 0.6)",
-            "rgba(54, 162, 235, 0.6)",
-            "rgba(255, 206, 86, 0.6)",
-            "rgba(75, 192, 192, 0.6)",
-            "rgba(153, 102, 255, 0.6)",
-          ],
-          borderColor: [
-            "rgba(255, 99, 132, 1)",
-            "rgba(54, 162, 235, 1)",
-            "rgba(255, 206, 86, 1)",
-            "rgba(75, 192, 192, 1)",
-            "rgba(153, 102, 255, 1)",
-          ],
-          borderWidth: 1,
+          data: topMedicinesQuery.data.map(item => item.total_quantity),
+          backgroundColor: colors,
+          borderColor: borderColors,
+          borderWidth: 2,
         },
       ],
-    });
+    };
+  }, [topMedicinesQuery.data]);
+
+  // Handle manual refresh
+
+  const handleRefreshSales = () => {
+    salesQuery.refetch();
   };
 
-  const toggleDemoMode = () => {
-    setDemoMode(!demoMode);
+  const handleRefreshMedicines = () => {
+    topMedicinesQuery.refetch();
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <PageTitle title="Dashboard" />
-        <button
-          onClick={toggleDemoMode}
-          className={`px-4 py-2 rounded-md font-medium shadow-md border ${demoMode ? "bg-red-500 text-white border-red-600" : "bg-blue-500 text-white border-blue-600 hover:bg-blue-700"}`}
+    <div className="space-y-6">
+      {/* Page Title */}
+      <div className="flex items-center justify-between">
+        <PageTitle title="Dashboard (New Architecture)" />
+        <Button
+          variant="secondary"
+          onClick={() => {
+            statsQuery.refetch();
+            salesQuery.refetch();
+            topMedicinesQuery.refetch();
+            lowStockQuery.refetch();
+            recentTransactionsQuery.refetch();
+            monthlyRevenueQuery.refetch();
+          }}
+          className="flex items-center gap-2"
         >
-          {demoMode ? "Disable Demo Mode" : "Demo Mode"}
-        </button>
+          <FaSync className="h-4 w-4" />
+          Refresh All
+        </Button>
       </div>
 
-      {demoMode ? (
-        <ModernDashboard />
-      ) : (
-        <RegularDashboard
-          stats={stats}
-          salesData={salesData}
-          topMedicines={topMedicines}
-        />
+      {/* Monthly Revenue Comparison */}
+      {monthlyRevenueQuery.data && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Revenue Perbandingan</h3>
+              <p className="text-3xl font-bold text-gray-900">
+                {formatCurrency(monthlyRevenueQuery.data.currentMonth)}
+              </p>
+              <p className="text-sm text-gray-600">Bulan ini</p>
+            </div>
+            <div className="text-right">
+              <div className={`flex items-center gap-2 ${
+                monthlyRevenueQuery.data.isIncrease ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {monthlyRevenueQuery.data.isIncrease ? <FaArrowUp /> : <FaArrowDown />}
+                <span className="font-semibold">
+                  {formatPercentage(monthlyRevenueQuery.data.percentageChange)}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600">vs bulan lalu</p>
+            </div>
+          </div>
+        </Card>
       )}
-    </div>
-  );
-};
 
-const RegularDashboard: React.FC<RegularDashboardProps> = ({
-  stats,
-  salesData,
-  topMedicines,
-}) => {
-  return (
-    <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-blue-100 mr-4">
-              <FaShoppingBag className="text-blue-500 text-xl" />
-            </div>
-            <div>
-              <h2 className="text-sm text-gray-500">Total Penjualan</h2>
-              <p className="text-xl font-semibold">
-                {stats.totalSales.toLocaleString("id-ID", {
-                  style: "currency",
-                  currency: "IDR",
-                })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-green-100 mr-4">
-              <FaShoppingCart className="text-green-500 text-xl" />
-            </div>
-            <div>
-              <h2 className="text-sm text-gray-500">Total Pembelian</h2>
-              <p className="text-xl font-semibold">
-                {stats.totalPurchases.toLocaleString("id-ID", {
-                  style: "currency",
-                  currency: "IDR",
-                })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-purple-100 mr-4">
-              <FaBoxes className="text-purple-500 text-xl" />
-            </div>
-            <div>
-              <h2 className="text-sm text-gray-500">Total Obat</h2>
-              <p className="text-xl font-semibold">{stats.totalMedicines}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-red-100 mr-4">
-              <FaExclamationTriangle className="text-red-500 text-xl" />
-            </div>
-            <div>
-              <h2 className="text-sm text-gray-500">Stok Menipis</h2>
-              <p className="text-xl font-semibold">{stats.lowStockCount}</p>
-            </div>
-          </div>
-        </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatsCard
+          title="Total Penjualan"
+          value={statsQuery.data ? formatCurrency(statsQuery.data.totalSales) : 0}
+          icon={<FaShoppingBag className="h-6 w-6 text-white" />}
+          color="bg-blue-500"
+          isLoading={statsQuery.isLoading}
+        />
+        <StatsCard
+          title="Total Pembelian"
+          value={statsQuery.data ? formatCurrency(statsQuery.data.totalPurchases) : 0}
+          icon={<FaShoppingCart className="h-6 w-6 text-white" />}
+          color="bg-green-500"
+          isLoading={statsQuery.isLoading}
+        />
+        <StatsCard
+          title="Total Obat"
+          value={statsQuery.data ? statsQuery.data.totalMedicines : 0}
+          icon={<FaBoxes className="h-6 w-6 text-white" />}
+          color="bg-purple-500"
+          isLoading={statsQuery.isLoading}
+        />
+        <StatsCard
+          title="Stok Menipis"
+          value={statsQuery.data ? statsQuery.data.lowStockCount : 0}
+          icon={<FaExclamationTriangle className="h-6 w-6 text-white" />}
+          color="bg-red-500"
+          isLoading={statsQuery.isLoading}
+        />
       </div>
 
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">
-            Penjualan 7 Hari Terakhir
-          </h2>
-          <div className="h-64">
-            <Line
-              data={salesData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                  },
-                },
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Obat Terlaris</h2>
-          <div className="h-64">
-            <Pie
-              data={topMedicines}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ModernDashboard = () => {
-  const demoData = {
-    totalCustomer: 120,
-    totalSales: 234,
-    totalProfit: 456,
-    outOfStock: 56,
-
-    expiringMedicines: [
-      { name: "Doxycycline", expiryDate: "24 Dec 2021", quantity: 40 },
-      { name: "Abetis", expiryDate: "24 Dec 2021", quantity: 40 },
-      { name: "Disulfit 10ml", expiryDate: "24 Dec 2021", quantity: 40 },
-      { name: "Cerox CV", expiryDate: "24 Dec 2021", quantity: 40 },
-      { name: "Fluciox", expiryDate: "24 Dec 2021", quantity: 40 },
-    ],
-
-    recentOrders: [
-      {
-        medicine: "Paricol 15mg",
-        batchNo: "78367834",
-        quantity: 40,
-        status: "Delivered",
-        price: 23.0,
-      },
-      {
-        medicine: "Abetis 20mg",
-        batchNo: "88832433",
-        quantity: 40,
-        status: "Pending",
-        price: 23.0,
-      },
-      {
-        medicine: "Cerox CV",
-        batchNo: "76767634",
-        quantity: 40,
-        status: "Cancelled",
-        price: 23.0,
-      },
-      {
-        medicine: "Abetis 20mg",
-        batchNo: "45578866",
-        quantity: 40,
-        status: "Delivered",
-        price: 23.0,
-      },
-      {
-        medicine: "Cerox CV",
-        batchNo: "76767634",
-        quantity: 40,
-        status: "Cancelled",
-        price: 23.0,
-      },
-    ],
-
-    monthlyData: [
-      { month: "Jan", value: 40 },
-      { month: "Feb", value: 35 },
-      { month: "Mar", value: 35 },
-      { month: "Apr", value: 45 },
-      { month: "May", value: 40 },
-      { month: "Jun", value: 50 },
-      { month: "Jul", value: 60 },
-      { month: "Aug", value: 40 },
-      { month: "Sep", value: 45 },
-      { month: "Oct", value: 40 },
-      { month: "Nov", value: 35 },
-      { month: "Dec", value: 30 },
-    ],
-
-    todayReport: {
-      totalEarning: 5098.0,
-      purchasePercentage: 65,
-      cashReceivedPercentage: 75,
-      bankReceivePercentage: 45,
-      servicePercentage: 85,
-    },
-  };
-
-  const monthlyProgressData = {
-    labels: demoData.monthlyData.map((item) => item.month),
-    datasets: [
-      {
-        label: "Penjualan Bulanan",
-        data: demoData.monthlyData.map((item) => item.value),
-        backgroundColor: demoData.monthlyData.map((item) =>
-          item.month === "Jul" ? "#1a73e8" : "#4ade80",
-        ),
-        borderRadius: 6,
-        borderSkipped: false,
-      },
-    ],
-  };
-
-  const todayReportData = {
-    labels: ["Pembelian", "Penerimaan Tunai", "Penerimaan Bank", "Layanan"],
-    datasets: [
-      {
-        data: [
-          demoData.todayReport.purchasePercentage,
-          demoData.todayReport.cashReceivedPercentage,
-          demoData.todayReport.bankReceivePercentage,
-          demoData.todayReport.servicePercentage,
-        ],
-        backgroundColor: ["#3b82f6", "#f43f5e", "#f97316", "#4ade80"],
-        borderWidth: 0,
-        cutout: "55%",
-      },
-    ],
-  };
-
-  return (
-    <div className="bg-gray-50 p-6 rounded-xl">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white p-4 rounded-xl shadow-xs flex items-start justify-between">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Total Customer</p>
-            <p className="text-2xl font-bold">{demoData.totalCustomer}</p>
-            <button className="text-xs text-primary mt-2">Lihat Detail</button>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-            <span className="text-indigo-500">👥</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-xs flex items-start justify-between">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Total Sale</p>
-            <p className="text-2xl font-bold">{demoData.totalSales}</p>
-            <button className="text-xs text-primary mt-2">Lihat Detail</button>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-            <span className="text-green-500">🛒</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-xs flex items-start justify-between">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Total Profit</p>
-            <p className="text-2xl font-bold">${demoData.totalProfit}</p>
-            <button className="text-xs text-primary mt-2">Lihat Detail</button>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
-            <span className="text-yellow-500">💰</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-xs flex items-start justify-between">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Out of Stock</p>
-            <p className="text-2xl font-bold">{demoData.outOfStock}</p>
-            <button className="text-xs text-primary mt-2">Lihat Detail</button>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-            <span className="text-red-500">⚠️</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white p-4 rounded-xl shadow-xs">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Expiring List</h2>
-            <button className="text-xs text-primary">Lihat Semua</button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-xs text-gray-500">
-                  <th className="pb-2">Medicine name</th>
-                  <th className="pb-2">Expiry Date</th>
-                  <th className="pb-2">Quantity</th>
-                  <th className="pb-2">Chart</th>
-                  <th className="pb-2">Return</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {demoData.expiringMedicines.map((medicine, index) => (
-                  <tr key={index} className="text-sm">
-                    <td className="py-3">{medicine.name}</td>
-                    <td className="py-3">{medicine.expiryDate}</td>
-                    <td className="py-3">{medicine.quantity}</td>
-                    <td className="py-3">
-                      <div className="h-6 w-10 text-green-500">📈</div>
-                    </td>
-                    <td className="py-3">
-                      <button className="text-gray-400">↩️</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-xs">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Recent Order's</h2>
-            <button className="text-xs text-primary">Lihat Semua</button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-xs text-gray-500">
-                  <th className="pb-2">Medicine name</th>
-                  <th className="pb-2">Batch No.</th>
-                  <th className="pb-2">Quantity</th>
-                  <th className="pb-2">Status</th>
-                  <th className="pb-2 text-right">Price</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {demoData.recentOrders.map((order, index) => (
-                  <tr key={index} className="text-sm">
-                    <td className="py-3">{order.medicine}</td>
-                    <td className="py-3">{order.batchNo}</td>
-                    <td className="py-3">{order.quantity}</td>
-                    <td className="py-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs
-                                                ${
-                                                  order.status === "Delivered"
-                                                    ? "bg-blue-100 text-blue-600"
-                                                    : order.status === "Pending"
-                                                      ? "bg-yellow-100 text-yellow-600"
-                                                      : "bg-red-100 text-red-600"
-                                                }`}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right">
-                      ${order.price.toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-4 rounded-xl shadow-xs">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Monthly Progress</h2>
-            <select className="text-sm border rounded-sm px-2 py-1">
-              <option>Monthly</option>
-              <option>Weekly</option>
-              <option>Daily</option>
-            </select>
-          </div>
-
-          <div className="h-64">
-            <Bar
-              data={monthlyProgressData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    display: false,
-                  },
-                  tooltip: {
-                    callbacks: {
-                      title: (context) => {
-                        const label = context[0].label;
-                        if (label === "Sep") {
-                          return "September";
-                        }
-                        return label;
-                      },
-                      label: (context) => {
-                        return `Sales: ${context.parsed.y}`;
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    grid: {
-                      display: false,
-                    },
-                  },
-                  x: {
-                    grid: {
-                      display: false,
-                    },
-                  },
-                },
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-xs">
-          <h2 className="text-lg font-semibold mb-4">Today's Report</h2>
-
-          <div className="flex items-center justify-center">
-            <div className="h-64 w-64 relative flex items-center justify-center">
-              <Doughnut
-                data={todayReportData}
+        {/* Sales Chart */}
+        <ChartCard
+          title="Penjualan 7 Hari Terakhir"
+          isLoading={salesQuery.isLoading}
+          onRefresh={handleRefreshSales}
+        >
+          {salesQuery.error ? (
+            <div className="h-64 flex items-center justify-center text-red-500">
+              Error: {salesQuery.error.message}
+            </div>
+          ) : (
+            <div className="h-64">
+              <Line
+                data={salesChartData}
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
                   plugins: {
                     legend: {
-                      display: false,
+                      position: 'top' as const,
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        callback: function(value) {
+                          return formatCurrency(Number(value));
+                        }
+                      }
                     },
                   },
                 }}
               />
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-sm text-gray-500">Total Earning</p>
-                <p className="text-xl font-bold">
-                  ${demoData.todayReport.totalEarning.toFixed(2)}
-                </p>
-              </div>
             </div>
-            <div className="ml-4">
-              <div className="flex items-center mb-2">
-                <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>{" "}
-                Total Purchase
-              </div>
-              <div className="flex items-center mb-2">
-                <span className="w-3 h-3 rounded-full bg-red-500 mr-2"></span>{" "}
-                Cash Received
-              </div>
-              <div className="flex items-center mb-2">
-                <span className="w-3 h-3 rounded-full bg-orange-500 mr-2"></span>{" "}
-                Bank Receive
-              </div>
-              <div className="flex items-center">
-                <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>{" "}
-                Total Service
-              </div>
+          )}
+        </ChartCard>
+
+        {/* Top Medicines Chart */}
+        <ChartCard
+          title="5 Obat Terlaris"
+          isLoading={topMedicinesQuery.isLoading}
+          onRefresh={handleRefreshMedicines}
+        >
+          {topMedicinesQuery.error ? (
+            <div className="h-64 flex items-center justify-center text-red-500">
+              Error: {topMedicinesQuery.error.message}
             </div>
-          </div>
-        </div>
+          ) : (
+            <div className="h-64">
+              <Doughnut
+                data={topMedicinesChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'bottom' as const,
+                    },
+                  },
+                }}
+              />
+            </div>
+          )}
+        </ChartCard>
       </div>
+
+      {/* Low Stock Items Alert */}
+      {lowStockQuery.data && lowStockQuery.data.length > 0 && (
+        <Card className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <FaExclamationTriangle className="h-5 w-5 text-red-500" />
+            <h3 className="text-lg font-semibold text-gray-900">Peringatan Stok Menipis</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {lowStockQuery.data.slice(0, 6).map((item: { id: string; name: string; stock: number; item_categories?: { name: string }[]; item_units?: { name: string }[] }) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200"
+              >
+                <div>
+                  <p className="font-medium text-gray-900">{item.name}</p>
+                  <p className="text-sm text-gray-600">
+                    {item.item_categories?.[0]?.name} • {item.item_units?.[0]?.name}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-red-600">{item.stock}</p>
+                  <p className="text-xs text-gray-500">tersisa</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Recent Transactions */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Transaksi Terbaru</h3>
+        {recentTransactionsQuery.isLoading ? (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-12 bg-gray-200 animate-pulse rounded"></div>
+            ))}
+          </div>
+        ) : recentTransactionsQuery.error ? (
+          <div className="text-red-500 text-center py-4">
+            Error: {recentTransactionsQuery.error.message}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentTransactionsQuery.data?.slice(0, 8).map((transaction: { id: string; type: 'sale' | 'purchase'; invoice_number?: string; counterparty: string; date: string; total: number }) => (
+              <div
+                key={`${transaction.type}-${transaction.id}`}
+                className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-full ${
+                    transaction.type === 'sale' ? 'bg-green-100' : 'bg-blue-100'
+                  }`}>
+                    {transaction.type === 'sale' ? (
+                      <FaShoppingBag className={`h-4 w-4 ${
+                        transaction.type === 'sale' ? 'text-green-600' : 'text-blue-600'
+                      }`} />
+                    ) : (
+                      <FaShoppingCart className="h-4 w-4 text-blue-600" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {transaction.invoice_number || `${transaction.type === 'sale' ? 'Sale' : 'Purchase'} #${transaction.id.slice(0, 8)}`}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {transaction.counterparty} • {new Date(transaction.date).toLocaleDateString('id-ID')}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`font-semibold ${
+                    transaction.type === 'sale' ? 'text-green-600' : 'text-blue-600'
+                  }`}>
+                    {formatCurrency(transaction.total)}
+                  </p>
+                  <p className="text-xs text-gray-500 capitalize">{transaction.type}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 };
 
-export default Dashboard;
+export default DashboardNew;
