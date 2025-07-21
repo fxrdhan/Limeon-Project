@@ -9,7 +9,7 @@ import {
   FaTimes,
   FaWifi,
 } from "react-icons/fa";
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 import type { AlertMessage, AlertItemProps } from "@/types";
 import { AlertContext } from "./hooks";
 
