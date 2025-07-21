@@ -11,7 +11,7 @@ import { FaPlus } from "react-icons/fa";
 import Button from "@/components/button";
 import { SearchBar } from "@/components/search-bar";
 import type { ItemSearchBarProps, Item, ItemSearchBarRef } from "@/types";
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 
 const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
   (
