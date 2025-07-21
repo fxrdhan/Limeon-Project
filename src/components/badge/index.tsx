@@ -1,4 +1,4 @@
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 import type { BadgeProps } from "@/types";
 
 const Badge = ({
