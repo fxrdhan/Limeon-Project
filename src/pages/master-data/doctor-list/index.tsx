@@ -9,18 +9,19 @@ import { Card } from "@/components/card";
 import { DataGrid, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { useState, useRef, useMemo } from "react";
-import { useLocation } from "react-router-dom";
 import type { Doctor as DoctorType, FieldConfig } from "@/types";
+
+// Use the new modular architecture
 import { useMasterDataManagement } from "@/handlers/masterData";
+
 import { getSearchState } from "@/utils/search";
 import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
 import { doctorSearchColumns } from "@/utils/searchColumns";
 
-const DoctorList = () => {
+const DoctorListNew = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
-  const location = useLocation();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const {
@@ -55,21 +56,16 @@ const DoctorList = () => {
     totalPages,
     currentPage,
     itemsPerPage,
-    // addMutation,
-    // updateMutation,
     deleteMutation,
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
   } = useMasterDataManagement("doctors", "Dokter", {
-    realtime: true,
     searchInputRef,
-    locationKey: location.key,
     handleSearchChange,
   });
 
   const doctors = doctorsData || [];
-
 
   const doctorFields: FieldConfig[] = [
     {
@@ -99,8 +95,13 @@ const DoctorList = () => {
     },
     {
       key: "experience_years",
-      label: "Pengalaman (tahun)",
+      label: "Tahun Pengalaman",
       type: "text",
+    },
+    {
+      key: "education",
+      label: "Pendidikan",
+      type: "textarea",
     },
     {
       key: "phone",
@@ -111,21 +112,6 @@ const DoctorList = () => {
       key: "email",
       label: "Email",
       type: "email",
-    },
-    {
-      key: "address",
-      label: "Alamat",
-      type: "textarea",
-    },
-    {
-      key: "birth_date",
-      label: "Tanggal Lahir",
-      type: "date",
-    },
-    {
-      key: "qualification",
-      label: "Kualifikasi",
-      type: "textarea",
     },
   ];
 
@@ -145,19 +131,21 @@ const DoctorList = () => {
         field: "gender",
         headerName: "Jenis Kelamin",
         minWidth: 120,
-        valueGetter: (params) => params.data.gender || "-",
+        valueGetter: (params) => {
+          const value = params.data.gender;
+          return value === "L" ? "Laki-laki" : value === "P" ? "Perempuan" : value || "-";
+        },
       }),
       createTextColumn({
         field: "specialization",
         headerName: "Spesialisasi",
         minWidth: 150,
-        flex: 1,
         valueGetter: (params) => params.data.specialization || "-",
       }),
       createTextColumn({
         field: "license_number",
         headerName: "Nomor Lisensi",
-        minWidth: 140,
+        minWidth: 120,
         valueGetter: (params) => params.data.license_number || "-",
       }),
       createTextColumn({
@@ -332,4 +320,5 @@ const DoctorList = () => {
     </>
   );
 };
-export default DoctorList;
+
+export default DoctorListNew;
