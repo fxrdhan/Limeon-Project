@@ -1133,7 +1133,20 @@ const Dropdown = ({
                           currentFilteredOptions.map(renderOption)
                         ) : (
                           <div className="py-2 px-3 text-sm text-gray-500">
-                            Tidak ada pilihan yang sesuai
+                            {(searchState === "not-found" ||
+                              (searchState === "typing" &&
+                                currentFilteredOptions.length === 0)) &&
+                            onAddNew &&
+                            searchTerm.trim() !== "" ? (
+                              <div>
+                                <div>Tidak ada pilihan yang sesuai</div>
+                                <div className="text-xs text-gray-400 mt-1">
+                                  Tekan Enter untuk menambahkan data baru
+                                </div>
+                              </div>
+                            ) : (
+                              "Tidak ada pilihan yang sesuai"
+                            )}
                           </div>
                         )}
                       </div>
