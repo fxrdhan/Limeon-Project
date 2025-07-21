@@ -29,11 +29,8 @@ export class ItemsService extends BaseService<DBItem> {
       }
 
       // Transform the data to the expected format
-      const transformedData = result.data.map((item: DBItem & { 
-        item_categories?: { id: string; name: string }; 
-        item_types?: { id: string; name: string }; 
-        item_units?: { id: string; name: string } 
-      }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const transformedData = (result.data as any[]).map((item: any) => {
         // Parse unit conversions
         let unitConversions: UnitConversion[] = [];
         if (item.unit_conversions) {
@@ -136,11 +133,8 @@ export class ItemsService extends BaseService<DBItem> {
       }
 
       // Transform the data to the expected format
-      const transformedData = result.data.map((item: DBItem & { 
-        item_categories?: { id: string; name: string }; 
-        item_types?: { id: string; name: string }; 
-        item_units?: { id: string; name: string } 
-      }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const transformedData = (result.data as any[]).map((item: any) => {
         // Parse unit conversions
         let unitConversions: UnitConversion[] = [];
         if (item.unit_conversions) {
@@ -210,11 +204,8 @@ export class ItemsService extends BaseService<DBItem> {
       }
 
       // Transform the data to the expected format
-      const transformedData = data.map((item: DBItem & { 
-        item_categories?: { id: string; name: string }; 
-        item_types?: { id: string; name: string }; 
-        item_units?: { id: string; name: string } 
-      }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const transformedData = (data as any[]).map((item: any) => {
         // Parse unit conversions
         let unitConversions: UnitConversion[] = [];
         if (item.unit_conversions) {
