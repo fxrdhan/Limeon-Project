@@ -192,9 +192,9 @@ const ItemMaster = () => {
                   key={config.key}
                   className={classNames(
                     "group px-4 py-2 rounded-full focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
-                    activeTab !== config.key
-                      ? "hover:bg-emerald-100 hover:text-emerald-700"
-                      : "",
+                    {
+                      "hover:bg-emerald-100 hover:text-emerald-700": activeTab !== config.key
+                    }
                   )}
                   onClick={() => handleTabChange(config.key)}
                 >
@@ -214,9 +214,10 @@ const ItemMaster = () => {
                   <span
                     className={classNames(
                       "relative z-10 select-none font-medium",
-                      activeTab === config.key
-                        ? "text-white"
-                        : "text-gray-700 group-hover:text-emerald-700",
+                      {
+                        "text-white": activeTab === config.key,
+                        "text-gray-700 group-hover:text-emerald-700": activeTab !== config.key
+                      }
                     )}
                   >
                     {activeTab === config.key
