@@ -344,7 +344,9 @@ export const TableHead = ({
     <thead
       className={classNames(
         "text-gray-700 border-b-2 border-gray-200 group",
-        stickyHeader && "sticky top-0 z-20 bg-gray-200",
+        {
+          "sticky top-0 z-20 bg-gray-200": stickyHeader
+        },
         className,
       )}
     >
@@ -606,9 +608,10 @@ export const TableHeader = ({
         "group-hover:whitespace-normal group-hover:overflow-visible",
         "bg-gray-200 border-r border-gray-300 last:border-r-0",
         "first:rounded-tl-md last:rounded-tr-md",
-        stickyHeader && "sticky top-0 z-30 bg-gray-200",
-        isColumnSortable &&
-          "cursor-pointer select-none hover:bg-gray-300 transition-colors duration-150",
+        {
+          "sticky top-0 z-30 bg-gray-200": stickyHeader,
+          "cursor-pointer select-none hover:bg-gray-300 transition-colors duration-150": isColumnSortable
+        },
         className,
       )}
       style={dynamicStyle}
