@@ -1,29 +1,80 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { supabase } from "@/lib/supabase";
 import { useConfirmDialog } from "@/components/dialog-box";
 import { fuzzyMatch, getScore } from "@/utils/search";
-import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import { useAlert } from "@/components/alert/hooks";
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from "@tanstack/react-query";
 import type {
   Category,
   ItemType,
   Unit,
   Item,
   Supplier,
-  UnitConversion,
-  UnitData,
-  DBItem,
-  RawUnitConversion,
+  Patient,
+  Doctor,
   UseMasterDataManagementOptions,
 } from "@/types";
 
-type MasterDataItem = Category | ItemType | Unit | Item | Supplier;
+// Import our new modular services and hooks
+import {
+  useCategories,
+  useCategoryMutations,
+  useMedicineTypes,
+  useMedicineTypeMutations,
+  useUnits,
+  useUnitMutations,
+  useSuppliers,
+  useSupplierMutations,
+  useItems,
+  useItemMutations,
+  usePatients,
+  usePatientMutations,
+  useDoctors,
+  useDoctorMutations,
+} from "@/hooks/queries";
+
+type MasterDataItem = Category | ItemType | Unit | Item | Supplier | Patient | Doctor;
+
+// Hook selector factory to get the right hooks for each table
+const getHooksForTable = (tableName: string) => {
+  switch (tableName) {
+    case "item_categories":
+      return {
+        useData: useCategories,
+        useMutations: useCategoryMutations,
+      };
+    case "item_types":
+      return {
+        useData: useMedicineTypes,
+        useMutations: useMedicineTypeMutations,
+      };
+    case "item_units":
+      return {
+        useData: useUnits,
+        useMutations: useUnitMutations,
+      };
+    case "suppliers":
+      return {
+        useData: useSuppliers,
+        useMutations: useSupplierMutations,
+      };
+    case "items":
+      return {
+        useData: useItems,
+        useMutations: useItemMutations,
+      };
+    case "patients":
+      return {
+        useData: usePatients,
+        useMutations: usePatientMutations,
+      };
+    case "doctors":
+      return {
+        useData: useDoctors,
+        useMutations: useDoctorMutations,
+      };
+    default:
+      throw new Error(`Unsupported table: ${tableName}`);
+  }
+};
 
 export const useMasterDataManagement = (
   tableName: string,
@@ -31,10 +82,13 @@ export const useMasterDataManagement = (
   options?: UseMasterDataManagementOptions,
 ) => {
   const { openConfirmDialog } = useConfirmDialog();
-  const queryClient = useQueryClient();
   const alert = useAlert();
 
-  const { realtime = false, isCustomModalOpen, searchInputRef, handleSearchChange } = options || {};
+  const {
+    isCustomModalOpen,
+    searchInputRef,
+    handleSearchChange,
+  } = options || {};
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -48,6 +102,7 @@ export const useMasterDataManagement = (
   const actualIsModalOpen =
     isCustomModalOpen ?? (isAddModalOpen || isEditModalOpen);
 
+  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
@@ -55,6 +110,7 @@ export const useMasterDataManagement = (
     return () => clearTimeout(timer);
   }, [search]);
 
+  // Clear editing item when modal closes
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (!isEditModalOpen && editingItem) {
@@ -107,277 +163,90 @@ export const useMasterDataManagement = (
     return () => document.removeEventListener("keydown", handleGlobalKeyDown);
   }, [searchInputRef, handleSearchChange, actualIsModalOpen]);
 
-  const fetchData = async (page: number, searchTerm: string, limit: number) => {
-    const from = (page - 1) * limit;
+  // Get the appropriate hooks for this table
+  const hooks = getHooksForTable(tableName);
+  
+  // Use the appropriate data hook
+  const { data: allData = [], isLoading, isError, error } = hooks.useData({
+    enabled: true,
+  });
 
-    if (tableName === "items") {
-      const to = from + limit - 1;
-      const itemsQuery = supabase.from("items").select(`
-                id,
-                name,
-                manufacturer,
-                code,
-                barcode,
-                base_price,
-                sell_price,
-                stock,
-                unit_conversions,
-                category_id,
-                type_id,
-                unit_id,
-                item_categories (name),
-                item_types (name),
-                item_units (name)
-            `);
+  // Get mutations
+  const mutations = hooks.useMutations();
 
-      const countQuery = supabase.from("items").select("id", { count: "exact" });
+  // Filter and paginate data locally
+  const { currentData, totalItems } = useMemo(() => {
+    let filteredData = allData as MasterDataItem[];
 
-      // Don't filter at Supabase level - let local filtering handle comprehensive search
-      // This ensures we get all data and can search across all fields including relations
-      console.log(
-        "🔍 SUPABASE QUERY - Fetching all data for local filtering. Search term:",
-        searchTerm || "none",
-      );
-
-      const [itemsResult, countResult, allUnitsForConversionRes] =
-        await Promise.all([
-          itemsQuery.order("name").range(from, to),
-          countQuery,
-          supabase.from("item_units").select("id, name"),
-        ]);
-
-      if (itemsResult.error) {
-        console.error("🔍 SUPABASE QUERY - Error:", itemsResult.error);
-        throw itemsResult.error;
-      }
-      if (countResult.error) throw countResult.error;
-      if (allUnitsForConversionRes.error) throw allUnitsForConversionRes.error;
-
-      console.log(
-        "🔍 SUPABASE QUERY - Raw results:",
-        itemsResult.data?.length || 0,
-        "items",
-      );
-      console.log(
-        "🔍 SUPABASE QUERY - Sample raw item:",
-        itemsResult.data?.[0],
-      );
-
-      const allUnitsForConversion: UnitData[] =
-        allUnitsForConversionRes.data || [];
-
-      const completedData = (itemsResult.data || []).map((item: DBItem) => {
-        let parsedConversions: UnitConversion[] = [];
-        if (typeof item.unit_conversions === "string") {
-          try {
-            parsedConversions = JSON.parse(item.unit_conversions || "[]");
-          } catch (e) {
-            console.error(
-              "Error parsing unit_conversions for item:",
-              item.id,
-              e,
-            );
-          }
-        } else if (Array.isArray(item.unit_conversions)) {
-          parsedConversions = item.unit_conversions;
-        }
-
-        const mappedConversions: UnitConversion[] = parsedConversions.map(
-          (conv: RawUnitConversion) => {
-            const unitDetail = allUnitsForConversion.find(
-              (u) => u.name === conv.unit_name,
-            );
-            return {
-              id: conv.id || Date.now().toString() + Math.random(),
-              conversion_rate: conv.conversion_rate || conv.conversion || 0,
-              unit_name: conv.unit_name || "Unknown",
-              to_unit_id: unitDetail ? unitDetail.id : "",
-              unit: unitDetail
-                ? { id: unitDetail.id, name: unitDetail.name }
-                : { id: "", name: conv.unit_name || "Unknown Unit" },
-              conversion: conv.conversion_rate || conv.conversion || 0,
-              basePrice: conv.basePrice ?? 0,
-              sellPrice: conv.sellPrice ?? 0,
-            };
-          },
-        );
-
-        const getName = (
-          field: { name: string }[] | { name: string } | null | undefined,
-        ): string => {
-          if (!field) return "";
-          if (Array.isArray(field)) {
-            return field.length > 0 && field[0]?.name ? field[0].name : "";
-          }
-          return field.name || "";
-        };
-
-        return {
-          id: item.id,
-          name: item.name,
-          manufacturer: item.manufacturer,
-          code: item.code,
-          barcode: item.barcode,
-          base_price: item.base_price,
-          sell_price: item.sell_price,
-          stock: item.stock,
-          unit_conversions: mappedConversions,
-          category: { name: getName(item.item_categories) },
-          type: { name: getName(item.item_types) },
-          unit: { name: getName(item.item_units) },
-        } as Item;
-      });
-
-      let filteredData = completedData;
-      if (searchTerm) {
-        const searchTermLower = searchTerm.toLowerCase();
-        console.log("🔍 LOCAL FILTERING - Search term:", searchTermLower);
-        console.log(
-          "🔍 LOCAL FILTERING - Raw data from Supabase:",
-          completedData.length,
-          "items",
-        );
-        console.log("🔍 LOCAL FILTERING - Sample item:", completedData[0]);
-
-        if (Array.isArray(completedData)) {
-          filteredData = completedData
-            .filter((item) => {
-              const matches =
-                fuzzyMatch(item.name, searchTermLower) ||
-                (item.code && fuzzyMatch(item.code, searchTermLower)) ||
-                (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
-                (item.category?.name &&
-                  fuzzyMatch(item.category.name, searchTermLower)) ||
-                (item.type?.name &&
-                  fuzzyMatch(item.type.name, searchTermLower)) ||
-                (item.unit?.name &&
-                  fuzzyMatch(item.unit.name, searchTermLower)) ||
-                (item.base_price &&
-                  fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
-                (item.sell_price &&
-                  fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
-                (item.stock &&
-                  fuzzyMatch(item.stock.toString(), searchTermLower)) ||
-                (item.unit_conversions &&
-                  item.unit_conversions.some(
-                    (uc) =>
-                      uc.unit?.name &&
-                      fuzzyMatch(uc.unit.name, searchTermLower),
-                  ));
-
-              if (matches && searchTermLower.includes("analgesik")) {
-                console.log("🎯 LOCAL FILTERING - Found match:", {
-                  name: item.name,
-                  category: item.category?.name,
-                  type: item.type?.name,
-                  unit: item.unit?.name,
-                });
-              }
-
-              return matches;
-            })
-            .sort((a, b) => {
-              const scoreA = getScore(a, searchTermLower);
-              const scoreB = getScore(b, searchTermLower);
-              if (scoreA !== scoreB) return scoreB - scoreA;
-              return a.name.localeCompare(b.name);
-            });
-
-          console.log(
-            "🔍 LOCAL FILTERING - Filtered results:",
-            filteredData.length,
-            "items",
-          );
-        } else {
-          filteredData = [];
-        }
-      }
-
-      // When searching, return the filtered count, not the total DB count
-      const finalCount = searchTerm
-        ? filteredData.length
-        : countResult.count || 0;
-      return { data: filteredData, totalItems: finalCount };
-    } else {
-      const to = from + limit - 1;
-      let query = supabase.from(tableName).select("*", { count: "exact" });
-
-      if (searchTerm) {
-        const fuzzySearchPattern = `%${searchTerm
-          .toLowerCase()
-          .split("")
-          .join("%")}%`;
-        if (
-          tableName === "item_categories" ||
-          tableName === "item_types" ||
-          tableName === "item_units"
-        ) {
-          query = query.or(
-            `name.ilike.${fuzzySearchPattern},description.ilike.${fuzzySearchPattern}`,
-          );
-        } else {
-          query = query.ilike("name", fuzzySearchPattern);
-        }
-      }
-
-      // Always use pagination, whether searching or not
-      const { data, error, count } = await query.order("name").range(from, to);
-
-      if (error) {
-        console.error(`Error fetching data for ${tableName}:`, error);
-        throw error;
-      }
-
-      let processedData = (data || []) as MasterDataItem[];
-
-      if (searchTerm && processedData.length > 0) {
-        const searchTermLower = searchTerm.toLowerCase();
-        processedData = processedData
+    // Apply search filter
+    if (debouncedSearch) {
+      const searchTermLower = debouncedSearch.toLowerCase();
+      
+      if (tableName === "items") {
+        // Special handling for items with complex search
+        filteredData = (allData as Item[])
           .filter((item) => {
-            if (item.name && fuzzyMatch(item.name, searchTermLower))
-              return true;
+            return (
+              fuzzyMatch(item.name, searchTermLower) ||
+              (item.code && fuzzyMatch(item.code, searchTermLower)) ||
+              (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
+              (item.category?.name && fuzzyMatch(item.category.name, searchTermLower)) ||
+              (item.type?.name && fuzzyMatch(item.type.name, searchTermLower)) ||
+              (item.unit?.name && fuzzyMatch(item.unit.name, searchTermLower)) ||
+              (item.base_price && fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
+              (item.sell_price && fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
+              (item.stock && fuzzyMatch(item.stock.toString(), searchTermLower)) ||
+              (item.unit_conversions &&
+                item.unit_conversions.some(
+                  (uc) => uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower),
+                ))
+            );
+          })
+          .sort((a, b) => {
+            const scoreA = getScore(a, searchTermLower);
+            const scoreB = getScore(b, searchTermLower);
+            if (scoreA !== scoreB) return scoreB - scoreA;
+            return a.name.localeCompare(b.name);
+          });
+      } else {
+        // Standard filtering for other master data
+        filteredData = filteredData
+          .filter((item) => {
+            if (item.name && fuzzyMatch(item.name, searchTermLower)) return true;
             if (
               "description" in item &&
-              item.description &&
+              typeof item.description === "string" &&
               fuzzyMatch(item.description, searchTermLower)
-            )
-              return true;
+            ) return true;
+            
             if (tableName === "suppliers") {
               const supplier = item as Supplier;
-              if (
-                supplier.address &&
-                fuzzyMatch(supplier.address, searchTermLower)
-              )
-                return true;
-              if (supplier.phone && fuzzyMatch(supplier.phone, searchTermLower))
-                return true;
-              if (supplier.email && fuzzyMatch(supplier.email, searchTermLower))
-                return true;
-              if (
-                supplier.contact_person &&
-                fuzzyMatch(supplier.contact_person, searchTermLower)
-              )
-                return true;
+              if (supplier.address && fuzzyMatch(supplier.address, searchTermLower)) return true;
+              if (supplier.phone && fuzzyMatch(supplier.phone, searchTermLower)) return true;
+              if (supplier.email && fuzzyMatch(supplier.email, searchTermLower)) return true;
+              if (supplier.contact_person && fuzzyMatch(supplier.contact_person, searchTermLower)) return true;
+            } else if (tableName === "patients") {
+              const patient = item as Patient;
+              if (patient.gender && fuzzyMatch(patient.gender, searchTermLower)) return true;
+              if (patient.address && fuzzyMatch(patient.address, searchTermLower)) return true;
+              if (patient.phone && fuzzyMatch(patient.phone, searchTermLower)) return true;
+              if (patient.email && fuzzyMatch(patient.email, searchTermLower)) return true;
+              if (patient.birth_date && fuzzyMatch(patient.birth_date.toString(), searchTermLower)) return true;
+            } else if (tableName === "doctors") {
+              const doctor = item as Doctor;
+              if (doctor.specialization && fuzzyMatch(doctor.specialization, searchTermLower)) return true;
+              if (doctor.license_number && fuzzyMatch(doctor.license_number, searchTermLower)) return true;
+              if (doctor.phone && fuzzyMatch(doctor.phone, searchTermLower)) return true;
+              if (doctor.email && fuzzyMatch(doctor.email, searchTermLower)) return true;
+              if (doctor.experience_years && fuzzyMatch(doctor.experience_years.toString(), searchTermLower)) return true;
             }
             return false;
           })
           .sort((a, b) => {
             const nameScore = (itemToSort: MasterDataItem) => {
-              if (
-                itemToSort.name &&
-                itemToSort.name.toLowerCase().startsWith(searchTermLower)
-              )
-                return 3;
-              if (
-                itemToSort.name &&
-                itemToSort.name.toLowerCase().includes(searchTermLower)
-              )
-                return 2;
-              if (
-                itemToSort.name &&
-                fuzzyMatch(itemToSort.name, searchTermLower)
-              )
-                return 1;
+              if (itemToSort.name && itemToSort.name.toLowerCase().startsWith(searchTermLower)) return 3;
+              if (itemToSort.name && itemToSort.name.toLowerCase().includes(searchTermLower)) return 2;
+              if (itemToSort.name && fuzzyMatch(itemToSort.name, searchTermLower)) return 1;
               return 0;
             };
             const scoreA = nameScore(a);
@@ -386,101 +255,21 @@ export const useMasterDataManagement = (
             return a.name.localeCompare(b.name);
           });
       }
-      return { data: processedData, totalItems: count || 0 };
     }
-  };
 
-  const {
-    data: queryData,
-    isLoading,
-    isError,
-    error,
-    isFetching,
-  } = useQuery({
-    queryKey: [tableName, currentPage, itemsPerPage, debouncedSearch],
-    queryFn: () => fetchData(currentPage, debouncedSearch, itemsPerPage),
-    placeholderData: keepPreviousData,
-    staleTime: 0, // Always consider data stale for instant updates
-    gcTime: 5 * 60 * 1000, // Keep cache for 5 minutes
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    refetchInterval: false,
-  });
+    // Apply pagination
+    const totalItems = filteredData.length;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
 
-  const currentData = useMemo(() => queryData?.data || [], [queryData?.data]);
-  const totalItems = queryData?.totalItems || 0;
+    return {
+      currentData: paginatedData,
+      totalItems,
+    };
+  }, [allData, debouncedSearch, currentPage, itemsPerPage, tableName]);
+
   const queryError = error instanceof Error ? error : null;
-
-  const addMutation = useMutation({
-    mutationFn: async (newItem: { name: string; description?: string }) => {
-      const { error } = await supabase.from(tableName).insert(newItem);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      // Immediate cache invalidation and refetch
-      queryClient.invalidateQueries({ queryKey: [tableName] });
-      queryClient.refetchQueries({
-        queryKey: [tableName],
-        type: "active",
-      });
-      setIsAddModalOpen(false);
-    },
-    onError: (error: Error) => {
-      alert.error(`Gagal menambahkan ${entityNameLabel}: ${error.message}`);
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async (updatedItem: {
-      id: string;
-      name: string;
-      description?: string;
-    }) => {
-      const { id, ...updateData } = updatedItem;
-      const { error } = await supabase
-        .from(tableName)
-        .update(updateData)
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      // Immediate cache invalidation and refetch
-      queryClient.invalidateQueries({ queryKey: [tableName] });
-      queryClient.refetchQueries({
-        queryKey: [tableName],
-        type: "active",
-      });
-      setIsEditModalOpen(false);
-      setEditingItem(null);
-    },
-    onError: (error: Error) => {
-      alert.error(`Gagal memperbarui ${entityNameLabel}: ${error.message}`);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (itemId: string) => {
-      const { error } = await supabase
-        .from(tableName)
-        .delete()
-        .eq("id", itemId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      // Immediate cache invalidation and refetch
-      queryClient.invalidateQueries({ queryKey: [tableName] });
-      queryClient.refetchQueries({
-        queryKey: [tableName],
-        type: "active",
-      });
-      setIsEditModalOpen(false);
-      setEditingItem(null);
-    },
-    onError: (error: Error) => {
-      alert.error(`Gagal menghapus ${entityNameLabel}: ${error.message}`);
-    },
-  });
 
   const handleEdit = useCallback((item: MasterDataItem) => {
     setEditingItem(item);
@@ -489,21 +278,84 @@ export const useMasterDataManagement = (
 
   const handleModalSubmit = useCallback(
     async (itemData: { id?: string; name: string; description?: string }) => {
-      if (itemData.id) {
-        await updateMutation.mutateAsync(
-          itemData as { id: string; name: string; description?: string },
-        );
-      } else {
-        await addMutation.mutateAsync(itemData);
+      try {
+        if (itemData.id) {
+          // Update existing item
+          const updateMutation = ("updateCategory" in mutations && mutations.updateCategory) ||
+                               ("updateMedicineType" in mutations && mutations.updateMedicineType) ||
+                               ("updateUnit" in mutations && mutations.updateUnit) ||
+                               ("updateSupplier" in mutations && mutations.updateSupplier) ||
+                               ("updateItem" in mutations && mutations.updateItem) ||
+                               ("updatePatient" in mutations && mutations.updatePatient) ||
+                               ("updateDoctor" in mutations && mutations.updateDoctor);
+          
+          if (updateMutation && typeof updateMutation === 'object' && 'mutateAsync' in updateMutation) {
+            const typedMutation = updateMutation as { mutateAsync: (data: { id: string; data: Record<string, unknown> }) => Promise<void> };
+            await typedMutation.mutateAsync({
+              id: itemData.id,
+              data: { name: itemData.name, description: itemData.description },
+            });
+          }
+        } else {
+          // Create new item
+          const createMutation = ("createCategory" in mutations && mutations.createCategory) ||
+                               ("createMedicineType" in mutations && mutations.createMedicineType) ||
+                               ("createUnit" in mutations && mutations.createUnit) ||
+                               ("createSupplier" in mutations && mutations.createSupplier) ||
+                               ("createItem" in mutations && mutations.createItem) ||
+                               ("createPatient" in mutations && mutations.createPatient) ||
+                               ("createDoctor" in mutations && mutations.createDoctor);
+          
+          if (createMutation && typeof createMutation === 'object' && 'mutateAsync' in createMutation) {
+            const typedMutation = createMutation as { mutateAsync: (data: Record<string, unknown>) => Promise<void> };
+            await typedMutation.mutateAsync({
+              name: itemData.name,
+              description: itemData.description,
+            });
+          }
+        }
+        
+        setIsAddModalOpen(false);
+        setIsEditModalOpen(false);
+        setEditingItem(null);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const action = itemData.id ? "memperbarui" : "menambahkan";
+        alert.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
       }
     },
-    [addMutation, updateMutation],
+    [mutations, entityNameLabel, alert],
+  );
+
+  const handleDelete = useCallback(
+    async (itemId: string) => {
+      try {
+        const deleteMutation = ("deleteCategory" in mutations && mutations.deleteCategory) ||
+                             ("deleteMedicineType" in mutations && mutations.deleteMedicineType) ||
+                             ("deleteUnit" in mutations && mutations.deleteUnit) ||
+                             ("deleteSupplier" in mutations && mutations.deleteSupplier) ||
+                             ("deleteItem" in mutations && mutations.deleteItem) ||
+                             ("deletePatient" in mutations && mutations.deletePatient) ||
+                             ("deleteDoctor" in mutations && mutations.deleteDoctor);
+        
+        if (deleteMutation && typeof deleteMutation === 'object' && 'mutateAsync' in deleteMutation) {
+          const typedMutation = deleteMutation as { mutateAsync: (id: string) => Promise<void> };
+          await typedMutation.mutateAsync(itemId);
+        }
+        
+        setIsEditModalOpen(false);
+        setEditingItem(null);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        alert.error(`Gagal menghapus ${entityNameLabel}: ${errorMessage}`);
+      }
+    },
+    [mutations, entityNameLabel, alert],
   );
 
   const handlePageChange = (newPage: number) => setCurrentPage(newPage);
-  const handleItemsPerPageChange = (
-    e: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
+  
+  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setItemsPerPage(Number(e.target.value));
     setCurrentPage(1);
   };
@@ -526,44 +378,58 @@ export const useMasterDataManagement = (
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  // Only enable realtime if explicitly requested and not already handled by parent component
-  useSupabaseRealtime(tableName, null, {
-    enabled: realtime && !actualIsModalOpen,
-    debounceMs: 0, // Instant updates for better responsiveness
-    onRealtimeEvent: async (payload) => {
-      console.log(
-        `🔥 MASTER DATA (${tableName}) - Realtime event received:`,
-        payload.eventType,
-        payload,
-      );
-      console.log(
-        `🔥 MASTER DATA (${tableName}) - Immediate cache invalidation and refetch`,
-      );
+  // Create mutation objects with consistent interface for backward compatibility
+  const addMutation = {
+    mutate: (data: { name: string; description?: string }) => 
+      handleModalSubmit(data),
+    mutateAsync: (data: { name: string; description?: string }) => 
+      handleModalSubmit(data),
+    isLoading: Object.values(mutations).some((mutation: unknown) => {
+      const m = mutation as { isLoading?: boolean; isPending?: boolean };
+      return m?.isLoading || m?.isPending;
+    }),
+    error: (() => {
+      const mutationWithError = Object.values(mutations).find((mutation: unknown) => {
+        const m = mutation as { error?: Error };
+        return m?.error;
+      }) as { error?: Error } | undefined;
+      return mutationWithError?.error || null;
+    })(),
+  };
 
-      // Immediate cache invalidation for all queries of this table
-      await queryClient.invalidateQueries({ queryKey: [tableName] });
+  const updateMutation = {
+    mutate: (data: { id: string; name: string; description?: string }) => 
+      handleModalSubmit(data),
+    mutateAsync: (data: { id: string; name: string; description?: string }) => 
+      handleModalSubmit(data),
+    isLoading: Object.values(mutations).some((mutation: unknown) => {
+      const m = mutation as { isLoading?: boolean; isPending?: boolean };
+      return m?.isLoading || m?.isPending;
+    }),
+    error: (() => {
+      const mutationWithError = Object.values(mutations).find((mutation: unknown) => {
+        const m = mutation as { error?: Error };
+        return m?.error;
+      }) as { error?: Error } | undefined;
+      return mutationWithError?.error || null;
+    })(),
+  };
 
-      // Force immediate refetch for maximum responsiveness
-      queryClient
-        .refetchQueries({
-          queryKey: [tableName],
-          type: "active",
-        })
-        .then(() => {
-          console.log(
-            `🔥 MASTER DATA (${tableName}) - Data refreshed successfully`,
-          );
-        })
-        .catch((error) => {
-          console.error(
-            `❌ MASTER DATA (${tableName}) - Error refreshing data:`,
-            error,
-          );
-        });
-    },
-    showDiffInConsole: true,
-    detailedLogging: true,
-  });
+  const deleteMutation = {
+    mutate: (itemId: string) => handleDelete(itemId),
+    mutateAsync: (itemId: string) => handleDelete(itemId),
+    isLoading: Object.values(mutations).some((mutation: unknown) => {
+      const m = mutation as { isLoading?: boolean; isPending?: boolean };
+      return m?.isLoading || m?.isPending;
+    }),
+    error: (() => {
+      const mutationWithError = Object.values(mutations).find((mutation: unknown) => {
+        const m = mutation as { error?: Error };
+        return m?.error;
+      }) as { error?: Error } | undefined;
+      return mutationWithError?.error || null;
+    })(),
+  };
 
   return {
     isAddModalOpen,
@@ -586,7 +452,7 @@ export const useMasterDataManagement = (
     isLoading,
     isError,
     queryError,
-    isFetching,
+    isFetching: isLoading, // Alias for compatibility
     addMutation,
     updateMutation,
     deleteMutation,
@@ -596,6 +462,7 @@ export const useMasterDataManagement = (
     handleItemsPerPageChange,
     handleKeyDown,
     openConfirmDialog,
-    queryClient,
+    // Note: queryClient is not needed in new architecture as mutations handle cache updates
+    queryClient: null,
   };
 };
