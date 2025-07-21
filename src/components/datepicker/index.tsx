@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Input from "@/components/input";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 import type { DatepickerProps } from "@/types";
 
 type CalendarView = "days" | "months" | "years";
