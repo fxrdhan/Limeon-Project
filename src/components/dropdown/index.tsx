@@ -7,12 +7,11 @@ import {
   useId,
 } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { FaPlus, FaMagnifyingGlass } from "react-icons/fa6";
-import { FaExclamationTriangle } from "react-icons/fa";
 import type { DropdownProps } from "@/types";
 import { truncateText, shouldTruncateText } from "@/utils/text";
 import { fuzzyMatch } from "@/utils/search";
+import ValidationOverlay from "@/components/validation-overlay";
 
 let activeDropdownCloseCallback: (() => void) | null = null;
 let activeDropdownId: string | null = null;
@@ -73,11 +72,6 @@ const Dropdown = ({
   const [showValidationOverlay, setShowValidationOverlay] = useState(false);
   const [hasAutoHidden, setHasAutoHidden] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [validationPosition, setValidationPosition] = useState<{
-    top: number;
-    left: number;
-    width: number;
-  } | null>(null);
 
   const instanceId = useId();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -88,7 +82,6 @@ const Dropdown = ({
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const overlayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const selectedOption = options.find((option) => option?.id === value);
 
   const validateDropdown = useCallback(() => {
@@ -149,71 +142,11 @@ const Dropdown = ({
     }
   }, [value, touched, validate, required, handleCloseValidation]);
 
-  // Effect for positioning validation overlay
-  useEffect(() => {
-    if (
-      validate &&
-      showValidationOverlay &&
-      hasError &&
-      errorMessage &&
-      buttonRef.current
-    ) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setValidationPosition({
-        top: rect.bottom + 8,
-        left: rect.left,
-        width: rect.width,
-      });
-    }
-  }, [validate, showValidationOverlay, hasError, errorMessage]);
-
-  // Effect for auto-hide overlay timeout
-  useEffect(() => {
-    if (
-      validate &&
-      showValidationOverlay &&
-      hasError &&
-      validationAutoHide &&
-      validationAutoHideDelay > 0
-    ) {
-      overlayTimeoutRef.current = setTimeout(() => {
-        setShowValidationOverlay(false);
-        setHasAutoHidden(true);
-      }, validationAutoHideDelay);
-    }
-
-    return () => {
-      if (overlayTimeoutRef.current) {
-        clearTimeout(overlayTimeoutRef.current);
-        overlayTimeoutRef.current = null;
-      }
-    };
-  }, [
-    validate,
-    showValidationOverlay,
-    hasError,
-    validationAutoHide,
-    validationAutoHideDelay,
-  ]);
-
-  // Effect for hover-triggered overlay display after auto-hide
-  useEffect(() => {
-    if (validate && hasAutoHidden && hasError && errorMessage) {
-      if (isHovered) {
-        setShowValidationOverlay(true);
-      } else {
-        setShowValidationOverlay(false);
-      }
-    }
-  }, [validate, hasAutoHidden, hasError, errorMessage, isHovered]);
 
   useEffect(() => {
     return () => {
       if (validationTimeoutRef.current) {
         clearTimeout(validationTimeoutRef.current);
-      }
-      if (overlayTimeoutRef.current) {
-        clearTimeout(overlayTimeoutRef.current);
       }
     };
   }, []);
@@ -893,40 +826,10 @@ const Dropdown = ({
     );
   };
 
-  const renderValidationOverlay = () => {
-    if (!validate || !hasError || !errorMessage || !validationPosition || isOpen) {
-      return null;
-    }
-
-    return createPortal(
-      <AnimatePresence>
-        {showValidationOverlay && hasError && errorMessage && !isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="fixed z-[9999] pointer-events-none"
-            style={{
-              top: validationPosition.top,
-              left: validationPosition.left,
-            }}
-          >
-            <div className="bg-danger/75 text-white text-sm px-3 py-2 rounded-lg shadow-lg backdrop-blur-xs flex items-center gap-2 w-fit">
-              <FaExclamationTriangle
-                className="text-yellow-300 flex-shrink-0"
-                size={14}
-              />
-              <span className="font-medium">{errorMessage}</span>
-            </div>
-            {/* Arrow pointing up */}
-            <div className="absolute -top-1 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-danger/75 backdrop-blur-xs"></div>
-          </motion.div>
-        )}
-      </AnimatePresence>,
-      document.body,
-    );
-  };
+  const handleValidationAutoHide = useCallback(() => {
+    setShowValidationOverlay(false);
+    setHasAutoHidden(true);
+  }, []);
 
   return (
     <div
@@ -1166,7 +1069,19 @@ const Dropdown = ({
             )}
         </div>
       </div>
-      {renderValidationOverlay()}
+      {validate && (
+        <ValidationOverlay
+          error={errorMessage}
+          showError={showValidationOverlay && hasError}
+          targetRef={buttonRef}
+          autoHide={validationAutoHide}
+          autoHideDelay={validationAutoHideDelay}
+          onAutoHide={handleValidationAutoHide}
+          isHovered={isHovered}
+          hasAutoHidden={hasAutoHidden}
+          isOpen={isOpen}
+        />
+      )}
     </div>
   );
 };
