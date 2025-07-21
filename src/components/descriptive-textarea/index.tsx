@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaChevronDown } from "react-icons/fa";
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 import type { DescriptiveTextareaProps } from "@/types";
 
 const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
