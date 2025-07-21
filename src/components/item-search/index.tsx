@@ -331,17 +331,16 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                   style={portalStyle}
                   className={classNames(
                     "bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto",
-                    dropDirection === "down" ? "origin-top" : "origin-bottom",
                     "transition-all duration-200 ease-out",
-                    isClosing
-                      ? "opacity-0 scale-y-95"
-                      : isOpen && applyOpenStyles
-                        ? "opacity-100 scale-y-100"
-                        : `opacity-0 scale-y-95 ${
-                            dropDirection === "down"
-                              ? "translate-y-1"
-                              : "-translate-y-1"
-                          } pointer-events-none`,
+                    {
+                      "origin-top": dropDirection === "down",
+                      "origin-bottom": dropDirection === "up",
+                      "opacity-0 scale-y-95": isClosing || (!isOpen || !applyOpenStyles),
+                      "opacity-100 scale-y-100": isOpen && applyOpenStyles && !isClosing,
+                      "translate-y-1": !isClosing && (!isOpen || !applyOpenStyles) && dropDirection === "down",
+                      "-translate-y-1": !isClosing && (!isOpen || !applyOpenStyles) && dropDirection === "up",
+                      "pointer-events-none": !isClosing && (!isOpen || !applyOpenStyles)
+                    }
                   )}
                   onMouseEnter={() => {
                     if (openTimeoutRef.current)
@@ -361,9 +360,10 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                         }
                         className={classNames(
                           "p-3 cursor-pointer text-sm transition-colors duration-150",
-                          index === highlightedIndex
-                            ? "bg-primary/10 border-l-4 border-primary"
-                            : "hover:bg-gray-100",
+                          {
+                            "bg-primary/10 border-l-4 border-primary": index === highlightedIndex,
+                            "hover:bg-gray-100": index !== highlightedIndex
+                          }
                         )}
                         onClick={() => handleItemSelect(item)}
                         onMouseEnter={() => setHighlightedIndex(index)}
