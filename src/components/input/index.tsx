@@ -315,18 +315,17 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               "px-3 text-sm",
               "text-ellipsis overflow-hidden whitespace-nowrap",
               "h-[2.5rem]",
-              error ||
-                (validate &&
-                  !validation.validation.isValid &&
-                  validation.validation.error &&
-                  !isFocused)
-                ? "border-danger ring-3 ring-danger/20"
-                : "border-gray-300",
+              {
+                "border-danger ring-3 ring-danger/20": error || (validate && !validation.validation.isValid && validation.validation.error && !isFocused),
+                "border-gray-300": !error && (!validate || validation.validation.isValid || !validation.validation.error || isFocused)
+              },
               "focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200",
               "disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70 read-only:bg-gray-100 read-only:cursor-default read-only:opacity-70",
               "disabled:focus:ring-0 disabled:focus:border-gray-300 read-only:focus:ring-0 read-only:focus:border-gray-300",
               "transition-all duration-200 ease-in-out",
-              fullWidth ? "w-full" : "",
+              {
+                "w-full": fullWidth
+              },
               className,
             )}
             {...props}
@@ -340,12 +339,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                 "shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),4px_0_6px_-1px_rgba(0,0,0,0.1),-4px_0_6px_-1px_rgba(0,0,0,0.1)]",
                 "whitespace-pre-wrap break-words",
                 "min-h-[2.5rem] max-h-32 overflow-y-auto",
-                error ||
-                  (validate &&
-                    !validation.validation.isValid &&
-                    validation.validation.error)
-                  ? "border-danger"
-                  : "border-gray-300",
+                {
+                  "border-danger": error || (validate && !validation.validation.isValid && validation.validation.error),
+                  "border-gray-300": !error && (!validate || validation.validation.isValid || !validation.validation.error)
+                },
                 "pointer-events-none",
               )}
             >
