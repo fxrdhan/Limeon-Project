@@ -45,6 +45,7 @@ This project is built with:
 -   **Build Tool:** [Vite](https://vitejs.dev/)
 -   **Schema Validation:** [Zod](https://zod.dev/)
 -   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+-   **CSS Utilities:** [classnames](https://github.com/JedWatson/classnames)
 -   **Data Grid:** [AG Grid](https://ag-grid.com/)
 -   **Routing:** [React Router DOM](https://reactrouter.com/)
 -   **Data Fetching & Caching:** [TanStack Query](https://tanstack.com/query/latest)
