@@ -1,4 +1,4 @@
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 import type { ButtonProps, ButtonVariant } from "@/types";
 import React from "react";
 
