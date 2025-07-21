@@ -1,5 +1,5 @@
 import type { CardProps } from "@/types";
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 
 export const Card = ({ children, className }: CardProps) => {
   return (
