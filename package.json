@@ -30,6 +30,7 @@
     "axios": "^1.10.0",
     "browser-image-compression": "^2.0.2",
     "chart.js": "^4.5.0",
+    "classnames": "^2.5.1",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.18.1",
     "fuzzysort": "^3.1.0",
@@ -44,6 +45,7 @@
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@tailwindcss/postcss": "^4.1.10",
+    "@types/classnames": "^2.3.4",
     "@types/node": "^24.0.3",
     "@types/pg": "^8.11.6",
     "@types/react": "^19.1.8",
