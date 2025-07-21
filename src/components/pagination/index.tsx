@@ -1,4 +1,4 @@
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 import type { PaginationProps } from "@/types";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import React, {
