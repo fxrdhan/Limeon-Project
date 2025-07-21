@@ -1414,6 +1414,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/classnames@npm:^2.3.4":
+  version: 2.3.4
+  resolution: "@types/classnames@npm:2.3.4"
+  dependencies:
+    classnames: "*"
+  checksum: fde8318ae51735c98ca54d90688e50cd2dc04d0414cafbcd3c7c703157c553a4c60d534bc796f68b56d17047f2f058c149bf03d059b3c7b683b6f98b11b0db83
+  languageName: node
+  linkType: hard
+
 "@types/estree@npm:1.0.8, @types/estree@npm:^1.0.6":
   version: 1.0.8
   resolution: "@types/estree@npm:1.0.8"
@@ -1745,6 +1754,7 @@ __metadata:
     "@tailwindcss/postcss": ^4.1.10
     "@tanstack/react-query": ^5.81.2
     "@tanstack/react-query-devtools": ^5.81.2
+    "@types/classnames": ^2.3.4
     "@types/node": ^24.0.3
     "@types/pg": ^8.11.6
     "@types/react": ^19.1.8
@@ -1755,6 +1765,7 @@ __metadata:
     axios: ^1.10.0
     browser-image-compression: ^2.0.2
     chart.js: ^4.5.0
+    classnames: ^2.5.1
     concurrently: ^9.2.0
     dayjs: ^1.11.13
     dotenv: ^16.5.0
@@ -1924,6 +1935,13 @@ __metadata:
   version: 3.0.0
   resolution: "chownr@npm:3.0.0"
   checksum: fd73a4bab48b79e66903fe1cafbdc208956f41ea4f856df883d0c7277b7ab29fd33ee65f93b2ec9192fc0169238f2f8307b7735d27c155821d886b84aa97aa8d
+  languageName: node
+  linkType: hard
+
+"classnames@npm:*, classnames@npm:^2.5.1":
+  version: 2.5.1
+  resolution: "classnames@npm:2.5.1"
+  checksum: da424a8a6f3a96a2e87d01a432ba19315503294ac7e025f9fece656db6b6a0f7b5003bb1fbb51cbb0d9624d964f1b9bb35a51c73af9b2434c7b292c42231c1e5
   languageName: node
   linkType: hard
 
