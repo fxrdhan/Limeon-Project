@@ -37,7 +37,7 @@ import {
   createTextColumn,
   createCurrencyColumn,
 } from "@/components/ag-grid";
-import { useAddItemPageHandlers } from "@/handlers/addItem";
+import { useAddItemPageHandlers } from "@/hooks/addItemPage";
 import { FaTrash } from "react-icons/fa";
 import type { AddItemPortalProps } from "@/types";
 
