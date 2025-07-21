@@ -174,7 +174,7 @@ function ItemListNew() {
           const conversions = params.data.unit_conversions;
           if (conversions && conversions.length > 0) {
             return conversions
-              .map((uc: UnitConversion) => uc.unit?.name || "N/A")
+              .map((uc: UnitConversion) => uc.unit_name || "N/A")
               .join(", ");
           }
           return "-";
