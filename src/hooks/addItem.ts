@@ -1,18 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUnitConversion } from "@/hooks/unitConversion";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  formatRupiah,
-  extractNumericValue,
-  formatDateTime,
-} from "@/lib/formatters";
+import { formatDateTime, extractNumericValue, formatRupiah } from "@/lib/formatters";
 import { useConfirmDialog } from "@/components/dialog-box";
+import { calculateProfitPercentage, calculateSellPriceFromMargin } from "@/utils/priceCalculations";
+import { useAddItemFormState } from "@/hooks/useAddItemFormState";
+import { useItemCodeGeneration } from "@/hooks/useItemCodeGeneration";
+import { useAddItemMutations } from "@/hooks/useAddItemMutations";
+import { useFormCache } from "@/hooks/useFormCache";
 import type {
-  UnitConversion,
-  Category,
-  MedicineType,
-  Unit,
   FormData,
   UnitData,
   UseAddItemFormProps,
@@ -21,58 +17,12 @@ import type {
 
 const CACHE_KEY = "addItemFormCache";
 
-export const generateTypeCode = (
-  typeId: string,
-  types: MedicineType[],
-): string => {
-  const selectedType = types.find((type) => type.id === typeId);
-  if (!selectedType) return "X";
-
-  const typeName = selectedType.name.toLowerCase();
-  if (typeName.includes("bebas") && !typeName.includes("terbatas")) return "B";
-  if (typeName.includes("bebas terbatas")) return "T";
-  if (typeName.includes("keras")) return "K";
-  if (typeName.includes("narkotika")) return "N";
-  if (typeName.includes("fitofarmaka")) return "F";
-  if (typeName.includes("herbal")) return "H";
-
-  return selectedType.name.charAt(0).toUpperCase();
-};
-
-export const generateUnitCode = (unitId: string, units: Unit[]): string => {
-  const selectedUnit = units.find((unit) => unit.id === unitId);
-  if (!selectedUnit) return "X";
-
-  return selectedUnit.name.charAt(0).toUpperCase();
-};
-
-export const generateCategoryCode = (
-  categoryId: string,
-  categories: Category[],
-): string => {
-  const selectedCategory = categories.find(
-    (category) => category.id === categoryId,
-  );
-  if (!selectedCategory) return "XX";
-
-  const name = selectedCategory.name;
-
-  if (name.toLowerCase().startsWith("anti")) {
-    const baseName = name.slice(4);
-    if (baseName.length > 0) {
-      return "A" + baseName.charAt(0).toUpperCase();
-    }
-    return "A";
-  } else {
-    if (name.length >= 2) {
-      return name.substring(0, 2).toUpperCase();
-    } else if (name.length === 1) {
-      return name.toUpperCase() + "X";
-    } else {
-      return "XX";
-    }
-  }
-};
+// Re-export utility functions for backward compatibility
+export {
+  generateTypeCode,
+  generateUnitCode,
+  generateCategoryCode,
+} from "@/utils/itemCodeGeneration";
 
 export const getUnitById = async (unitName: string) => {
   try {
@@ -94,179 +44,82 @@ export const useAddItemForm = ({
   onClose,
   refetchItems,
 }: UseAddItemFormProps) => {
-  const queryClient = useQueryClient();
-  const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
-  const [initialUnitConversions, setInitialUnitConversions] = useState<
-    UnitConversion[] | null
-  >(null);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(Boolean(itemId));
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [types, setTypes] = useState<MedicineType[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [displayBasePrice, setDisplayBasePrice] = useState("");
-  const [displaySellPrice, setDisplaySellPrice] = useState("");
-  const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
-  const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
-  const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
-  const [editingMargin, setEditingMargin] = useState(false);
-  const [marginPercentage, setMarginPercentage] = useState<string>("0");
-  const [editingMinStock, setEditingMinStock] = useState(false);
-  const [currentSearchTermForModal, setCurrentSearchTermForModal] = useState<
-    string | undefined
-  >();
-  const [minStockValue, setMinStockValue] = useState<string>("0");
+  // Initialize modular hooks
+  const formState = useAddItemFormState({ initialSearchQuery });
   const unitConversionHook = useUnitConversion();
-  const [formData, setFormData] = useState<FormData>({
-    code: "",
-    name: "",
-    manufacturer: "",
-    type_id: "",
-    category_id: "",
-    unit_id: "",
-    rack: "",
-    barcode: "",
-    description: "",
-    base_price: 0,
-    sell_price: 0,
-    min_stock: 10,
-    is_active: true,
-    is_medicine: true,
-    has_expiry_date: false,
-    updated_at: null,
+  const confirmDialog = useConfirmDialog();
+  
+  // Initialize mutations
+  const mutations = useAddItemMutations({ onClose, refetchItems });
+  
+  // Initialize cache management
+  const cache = useFormCache({
+    cacheKey: CACHE_KEY,
+    isEditMode: formState.isEditMode,
+    isDirty: () => formState.isDirty(unitConversionHook.conversions),
+    isSaving: formState.saving,
+  });
+  
+  // Initialize code generation
+  const codeGeneration = useItemCodeGeneration({
+    isEditMode: formState.isEditMode,
+    itemId,
+    formData: formState.formData,
+    initialFormData: formState.initialFormData,
+    categories: formState.categories,
+    types: formState.types,
+    units: formState.units,
+    updateFormData: formState.updateFormData,
   });
 
-  const calculateProfitPercentage = (
+  // Wrapper functions for backward compatibility
+  const calculateProfitPercentageWrapper = (
     base_price?: number,
     sell_price?: number,
   ) => {
-    const currentBasePrice = base_price ?? formData.base_price;
-    const currentSellPrice = sell_price ?? formData.sell_price;
-    if (currentBasePrice > 0 && currentSellPrice >= 0) {
-      return ((currentSellPrice - currentBasePrice) / currentBasePrice) * 100;
-    }
-    return null;
+    const currentBasePrice = base_price ?? formState.formData.base_price;
+    const currentSellPrice = sell_price ?? formState.formData.sell_price;
+    return calculateProfitPercentage(currentBasePrice, currentSellPrice);
   };
 
-  const updateFormData = (newData: Partial<FormData>) => {
-    if (newData.sell_price !== undefined) {
-      setDisplaySellPrice(formatRupiah(newData.sell_price));
-    }
-    if (newData.base_price !== undefined) {
-      setDisplayBasePrice(formatRupiah(newData.base_price));
-    }
-    setFormData((prev) => ({ ...prev, ...newData }));
-  };
-
-  const isDirty = () => {
-    if (!initialFormData) return false;
-    const formDataChanged =
-      JSON.stringify(formData) !== JSON.stringify(initialFormData);
-
-    type ConversionForCompare = {
-      to_unit_id: string;
-      conversion_rate: number;
-      basePrice: number;
-      sellPrice: number;
-    };
-
-    const mapConversionForComparison = (
-      conv: UnitConversion,
-    ): ConversionForCompare | null => {
-      if (!conv || !conv.unit || !conv.unit.id) return null;
-      return {
-        to_unit_id: conv.unit.id,
-        conversion_rate: conv.conversion_rate,
-        basePrice: conv.basePrice,
-        sellPrice: conv.sellPrice,
-      };
-    };
-
-    const currentConversionsForCompare = unitConversionHook.conversions
-      .map(mapConversionForComparison)
-      .filter(Boolean) as ConversionForCompare[];
-
-    const initialConversionsForCompare = Array.isArray(initialUnitConversions)
-      ? (initialUnitConversions
-          .map(mapConversionForComparison)
-          .filter(Boolean) as ConversionForCompare[])
-      : [];
-
-    const safeSortByUnitId = (arr: ConversionForCompare[]) => {
-      return [...arr].sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id));
-    };
-
-    const sortedCurrent = safeSortByUnitId(currentConversionsForCompare);
-    const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
-
-    const conversionsChanged =
-      JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
-    return formDataChanged || conversionsChanged;
+  const isDirtyWrapper = () => {
+    return formState.isDirty(unitConversionHook.conversions);
   };
 
   const setInitialDataForForm = (data?: FormData) => {
-    const initialState = data || {
-      code: "",
-      name: initialSearchQuery || "",
-      manufacturer: "",
-      type_id: "",
-      category_id: "",
-      unit_id: "",
-      rack: "",
-      barcode: "",
-      description: "",
-      base_price: 0,
-      sell_price: 0,
-      min_stock: 10,
-      is_active: true,
-      is_medicine: true,
-      has_expiry_date: false,
-      updated_at: null,
-    };
-
-    setFormData(initialState);
-    setInitialFormData(initialState);
-
-    setDisplayBasePrice(formatRupiah(initialState.base_price || 0));
-    setDisplaySellPrice(formatRupiah(initialState.sell_price || 0));
-    const profit = calculateProfitPercentage(
-      initialState.base_price,
-      initialState.sell_price,
-    );
-    setMarginPercentage(profit !== null ? profit.toFixed(1) : "0");
-    setMinStockValue(String(initialState.min_stock || 10));
-
-    const baseUnitName =
-      units.find((u) => u.id === initialState.unit_id)?.name || "";
-    unitConversionHook.setBaseUnit(baseUnitName);
-    unitConversionHook.setBasePrice(initialState.base_price || 0);
-    unitConversionHook.setSellPrice(initialState.sell_price || 0);
+    formState.setInitialDataForForm(data);
+    
+    if (data) {
+      const baseUnitName =
+        formState.units.find((u) => u.id === data.unit_id)?.name || "";
+      unitConversionHook.setBaseUnit(baseUnitName);
+      unitConversionHook.setBasePrice(data.base_price || 0);
+      unitConversionHook.setSellPrice(data.sell_price || 0);
+    }
   };
 
-  const hasInitialized = useRef(false);
+  // Use the initialization ref from formState
+  const hasInitialized = formState.hasInitialized;
 
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
     if (itemId) {
-      setIsEditMode(true);
+      formState.setIsEditMode(true);
       fetchItemData(itemId);
-      sessionStorage.removeItem(CACHE_KEY);
+      cache.clearCache();
     } else {
-      const cachedData = sessionStorage.getItem(CACHE_KEY);
+      const cachedData = cache.loadFromCache();
       if (cachedData) {
         try {
-          const { formData: cachedFormData, conversions: cachedConversions } =
-            JSON.parse(cachedData);
-          // If we have initialSearchQuery, use it for the name field even if cached data exists
-          const formDataWithSearchQuery = initialSearchQuery
-            ? { ...cachedFormData, name: initialSearchQuery }
-            : cachedFormData;
-          setInitialDataForForm(formDataWithSearchQuery);
-          unitConversionHook.setConversions(cachedConversions || []);
-          setInitialUnitConversions(cachedConversions || []);
+          const updatedCacheData = cache.updateCacheWithSearchQuery(
+            cachedData,
+            initialSearchQuery,
+          );
+          setInitialDataForForm(updatedCacheData.formData);
+          unitConversionHook.setConversions(updatedCacheData.conversions || []);
+          formState.setInitialUnitConversions(updatedCacheData.conversions || []);
         } catch (e) {
           console.error("Failed to parse item form cache, starting fresh.", e);
           setInitialDataForForm();
@@ -276,103 +129,22 @@ export const useAddItemForm = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemId, initialSearchQuery, units]);
+  }, [itemId, initialSearchQuery, formState.units]);
 
-  const latestIsEditMode = useRef(isEditMode);
-  const latestIsDirty = useRef(isDirty());
-  const latestFormData = useRef(formData);
-  const latestConversions = useRef(unitConversionHook.conversions);
-  const latestSavingState = useRef(saving);
-
-  useEffect(() => {
-    latestIsEditMode.current = isEditMode;
-    latestIsDirty.current = isDirty();
-    latestFormData.current = formData;
-    latestConversions.current = unitConversionHook.conversions;
-    latestSavingState.current = saving;
-  });
-
+  // Cache management on component unmount
   useEffect(() => {
     return () => {
       if (
-        !latestIsEditMode.current &&
-        latestIsDirty.current &&
-        !latestSavingState.current
+        !formState.isEditMode &&
+        formState.isDirty(unitConversionHook.conversions) &&
+        !formState.saving
       ) {
-        const cacheData = {
-          formData: latestFormData.current,
-          conversions: latestConversions.current,
-        };
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        cache.saveToCache(formState.formData, unitConversionHook.conversions);
       }
     };
-  }, []);
+  }, [cache, formState, unitConversionHook.conversions]);
 
-  useEffect(() => {
-    const generateItemCode = async () => {
-      if (!formData.type_id || !formData.category_id || !formData.unit_id)
-        return;
-      const typeCode = generateTypeCode(formData.type_id, types);
-      const unitCode = generateUnitCode(formData.unit_id, units);
-      const categoryCode = generateCategoryCode(
-        formData.category_id,
-        categories,
-      );
-      const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
-      try {
-        const { data } = await supabase
-          .from("items")
-          .select("code")
-          .ilike("code", `${codePrefix}%`)
-          .order("code", { ascending: true });
-
-        let sequence = 1;
-        if (data && data.length > 0) {
-          const usedSequences = new Set<number>();
-
-          data.forEach(item => {
-            const sequenceStr = item.code.substring(codePrefix.length);
-            const sequenceNum = parseInt(sequenceStr);
-            if (!isNaN(sequenceNum)) {
-              usedSequences.add(sequenceNum);
-            }
-          });
-
-          while (usedSequences.has(sequence)) {
-            sequence++;
-          }
-        }
-
-        const sequenceStr = sequence.toString().padStart(2, "0");
-        const generatedCode = `${codePrefix}${sequenceStr}`;
-        setFormData((prevFormData) => ({
-          ...prevFormData,
-          code: generatedCode,
-        }));
-      } catch (error) {
-        console.error("Error generating item code:", error);
-      }
-    };
-    if (
-      !isEditMode &&
-      formData.type_id &&
-      formData.category_id &&
-      formData.unit_id &&
-      categories.length > 0 &&
-      types.length > 0 &&
-      units.length > 0
-    ) {
-      generateItemCode();
-    }
-  }, [
-    isEditMode,
-    formData.type_id,
-    formData.category_id,
-    formData.unit_id,
-    categories,
-    types,
-    units,
-  ]);
+  // Auto code generation is now handled by useItemCodeGeneration hook
 
   useEffect(() => {
     if (
@@ -389,12 +161,12 @@ export const useAddItemForm = ({
   ]);
 
   useEffect(() => {
-    unitConversionHook.setSellPrice(formData.sell_price || 0);
-  }, [formData.sell_price, unitConversionHook]);
+    unitConversionHook.setSellPrice(formState.formData.sell_price || 0);
+  }, [formState.formData.sell_price, unitConversionHook]);
 
   const fetchItemData = async (id: string) => {
     try {
-      setLoading(true);
+      formState.setLoading(true);
       const { data: itemData, error: itemError } = await supabase
         .from("items")
         .select(
@@ -430,8 +202,8 @@ export const useAddItemForm = ({
             : false,
         updated_at: itemData.updated_at,
       };
-      setFormData(fetchedFormData);
-      setInitialFormData(fetchedFormData);
+      formState.setFormData(fetchedFormData);
+      formState.setInitialFormData(fetchedFormData);
 
       let parsedConversionsFromDB = [];
       if (itemData.unit_conversions) {
@@ -450,8 +222,8 @@ export const useAddItemForm = ({
         const mappedConversions = parsedConversionsFromDB.map(
           (conv: DBUnitConversion) => {
             const unitDetail =
-              units.find((u) => u.id === conv.to_unit_id) ||
-              units.find((u) => u.name === conv.unit_name);
+              formState.units.find((u) => u.id === conv.to_unit_id) ||
+              formState.units.find((u) => u.name === conv.unit_name);
             return {
               id:
                 conv.id ||
@@ -471,12 +243,12 @@ export const useAddItemForm = ({
             };
           },
         );
-        setInitialUnitConversions(mappedConversions);
+        formState.setInitialUnitConversions(mappedConversions);
       } else {
-        setInitialUnitConversions([]);
+        formState.setInitialUnitConversions([]);
       }
-      setDisplayBasePrice(formatRupiah(itemData.base_price || 0));
-      setDisplaySellPrice(formatRupiah(itemData.sell_price || 0));
+      formState.setDisplayBasePrice(formatRupiah(itemData.base_price || 0));
+      formState.setDisplaySellPrice(formatRupiah(itemData.sell_price || 0));
       unitConversionHook.setBaseUnit(itemData.base_unit || "");
       unitConversionHook.setBasePrice(itemData.base_price || 0);
       unitConversionHook.setSellPrice(itemData.sell_price || 0);
@@ -499,7 +271,7 @@ export const useAddItemForm = ({
       }
       if (Array.isArray(conversions)) {
         for (const conv of conversions) {
-          const unitDetail = units.find((u) => u.name === conv.unit_name);
+          const unitDetail = formState.units.find((u) => u.name === conv.unit_name);
           if (unitDetail && typeof conv.conversion_rate === "number") {
             unitConversionHook.addUnitConversion({
               to_unit_id: unitDetail.id,
@@ -538,7 +310,7 @@ export const useAddItemForm = ({
       console.error("Error fetching item data:", error);
       alert("Gagal memuat data item. Silakan coba lagi.");
     } finally {
-      setLoading(false);
+      formState.setLoading(false);
     }
   };
 
@@ -547,223 +319,69 @@ export const useAddItemForm = ({
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >,
   ) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-    if (name === "base_price" || name === "sell_price") {
+    formState.handleChange(e);
+    
+    // Handle unit conversion sync for price changes
+    const { name, value } = e.target as HTMLInputElement;
+    if (name === "base_price") {
       const numericInt = extractNumericValue(value);
-      updateFormData({ [name]: numericInt });
-      const formattedValue = formatRupiah(numericInt);
-      if (name === "base_price") {
-        setDisplayBasePrice(formattedValue);
-        unitConversionHook.setBasePrice(numericInt);
-      } else if (name === "sell_price") {
-        setDisplaySellPrice(formattedValue);
-        unitConversionHook.setSellPrice(numericInt);
-      }
-    } else if (type === "checkbox") {
-      const { checked } = e.target as HTMLInputElement;
-      updateFormData({ [name]: checked });
-    } else if (type === "number") {
-      updateFormData({ [name]: parseFloat(value) || 0 });
-    } else {
-      updateFormData({ [name]: value });
+      unitConversionHook.setBasePrice(numericInt);
+    } else if (name === "sell_price") {
+      const numericInt = extractNumericValue(value);
+      unitConversionHook.setSellPrice(numericInt);
     }
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      [name]: value,
-    }));
+    formState.handleSelectChange(e);
   };
 
   const handleAddNewCategory = (searchTerm?: string) => {
-    setCurrentSearchTermForModal(searchTerm);
-    setIsAddEditModalOpen(true);
+    formState.setCurrentSearchTermForModal(searchTerm);
+    formState.setIsAddEditModalOpen(true);
   };
 
   const handleAddNewType = (searchTerm?: string) => {
-    setCurrentSearchTermForModal(searchTerm);
-    setIsAddTypeModalOpen(true);
+    formState.setCurrentSearchTermForModal(searchTerm);
+    formState.setIsAddTypeModalOpen(true);
   };
 
   const handleAddNewUnit = (searchTerm?: string) => {
-    setCurrentSearchTermForModal(searchTerm);
-    setIsAddUnitModalOpen(true);
+    formState.setCurrentSearchTermForModal(searchTerm);
+    formState.setIsAddUnitModalOpen(true);
   };
 
-  const addCategoryMutation = useMutation({
-    mutationFn: async (newCategory: { name: string; description: string }) => {
-      const { data, error } = await supabase
-        .from("item_categories")
-        .insert(newCategory)
-        .select("id, name, description")
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-    },
-    onError: (error) => {
-      console.error("Error adding category:", error);
-    },
-  });
-
-  const addTypeMutation = useMutation({
-    mutationFn: async (newType: { name: string; description: string }) => {
-      const { data, error } = await supabase
-        .from("item_types")
-        .insert(newType)
-        .select("id, name, description")
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["types"] });
-    },
-    onError: (error) => {
-      console.error("Error adding type:", error);
-    },
-  });
-
-  const confirmDialog = useConfirmDialog();
-
-  const addUnitMutation = useMutation({
-    mutationFn: async (newUnit: { name: string; description: string }) => {
-      const { data, error } = await supabase
-        .from("item_units")
-        .insert(newUnit)
-        .select("id, name, description")
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["units"] });
-    },
-    onError: (error) => {
-      console.error("Error adding unit:", error);
-    },
-  });
-
-  const deleteItemMutation = useMutation({
-    mutationFn: async (itemIdToDelete: string) => {
-      const { error } = await supabase
-        .from("items")
-        .delete()
-        .eq("id", itemIdToDelete);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["items"] });
-      onClose();
-    },
-    onError: (error) => {
-      console.error("Error deleting item:", error);
-      alert("Gagal menghapus item. Silakan coba lagi.");
-    },
-  });
+  // Use mutations from the modular hook
+  const {
+    addCategoryMutation,
+    addTypeMutation,
+    addUnitMutation,
+    deleteItemMutation,
+    saveItemMutation,
+    saveCategory,
+    saveType,
+    saveUnit,
+  } = mutations;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
+    formState.setSaving(true);
+    
     try {
-      if (isEditMode) {
-        const itemUpdateData = {
-          name: formData.name,
-          manufacturer: formData.manufacturer || null,
-          category_id: formData.category_id,
-          type_id: formData.type_id,
-          unit_id: formData.unit_id,
-          base_price: formData.base_price,
-          sell_price: formData.sell_price,
-          min_stock: formData.min_stock,
-          description: formData.description || null,
-          is_active: formData.is_active,
-          rack: formData.rack || null,
-          barcode: formData.barcode || null,
-          code: formData.code,
-          is_medicine: formData.is_medicine,
-          base_unit: unitConversionHook.baseUnit,
-          has_expiry_date: formData.has_expiry_date,
-          unit_conversions: unitConversionHook.conversions.map((uc) => ({
-            unit_name: uc.unit.name,
-            to_unit_id: uc.to_unit_id,
-            conversion_rate: uc.conversion_rate,
-            base_price: uc.basePrice,
-            sell_price: uc.sellPrice,
-          })),
-        };
-        const { error: updateError } = await supabase
-          .from("items")
-          .update(itemUpdateData)
-          .eq("id", itemId);
-        if (updateError) throw updateError;
-      } else {
-        const mainItemData = {
-          name: formData.name,
-          manufacturer: formData.manufacturer || null,
-          category_id: formData.category_id,
-          type_id: formData.type_id,
-          unit_id: formData.unit_id,
-          base_price: formData.base_price,
-          sell_price: formData.sell_price,
-          stock: 0,
-          min_stock: formData.min_stock,
-          description: formData.description || null,
-          is_active: formData.is_active,
-          rack: formData.rack || null,
-          barcode: formData.barcode || null,
-          code: formData.code,
-          is_medicine: formData.is_medicine,
-          base_unit: unitConversionHook.baseUnit,
-          has_expiry_date: formData.has_expiry_date,
-          unit_conversions: unitConversionHook.conversions.map((uc) => ({
-            unit_name: uc.unit.name,
-            to_unit_id: uc.to_unit_id,
-            conversion_rate: uc.conversion_rate,
-            base_price: uc.basePrice,
-            sell_price: uc.sellPrice,
-          })),
-        };
-        const { data: insertedItem, error: mainError } = await supabase
-          .from("items")
-          .insert(mainItemData)
-          .select("id")
-          .single();
-        if (mainError) throw mainError;
-        if (!insertedItem)
-          throw new Error("Gagal mendapatkan ID item baru setelah insert.");
-      }
-      queryClient.invalidateQueries({
-        queryKey: ["items"],
-        refetchType: "all",
+      await saveItemMutation.mutateAsync({
+        formData: formState.formData,
+        conversions: unitConversionHook.conversions,
+        baseUnit: unitConversionHook.baseUnit,
+        isEditMode: formState.isEditMode,
+        itemId,
       });
-
-      // Force refetch items with a small delay to ensure data consistency
-      setTimeout(() => {
-        queryClient.refetchQueries({
-          queryKey: ["items"],
-          type: "all",
-        });
-      }, 100);
-
-      // Call refetchItems callback if provided
-      if (refetchItems) {
-        setTimeout(() => {
-          refetchItems();
-        }, 150);
-      }
-
-      sessionStorage.removeItem(CACHE_KEY);
-      onClose();
-    } catch (error) {
-      console.error("Error saving item:", error);
-      alert("Gagal menyimpan data item. Silakan coba lagi.");
+      
+      // Clear cache on successful save
+      cache.clearCache();
+    } catch {
+      // Error handling is done in the mutation
     } finally {
-      setSaving(false);
+      formState.setSaving(false);
     }
   };
 
@@ -772,17 +390,12 @@ export const useAddItemForm = ({
     description: string;
   }) => {
     try {
-      const newCategory = await addCategoryMutation.mutateAsync(categoryData);
-      const { data: updatedCategories } = await supabase
-        .from("item_categories")
-        .select("id, name, description, updated_at")
-        .order("name");
-      if (updatedCategories) setCategories(updatedCategories);
-      if (newCategory?.id) updateFormData({ category_id: newCategory.id });
-      setIsAddEditModalOpen(false);
+      const { newCategory, updatedCategories } = await saveCategory(categoryData);
+      if (updatedCategories) formState.setCategories(updatedCategories);
+      if (newCategory?.id) formState.updateFormData({ category_id: newCategory.id });
+      formState.setIsAddEditModalOpen(false);
       clearSearchTerm();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch {
       alert("Gagal menyimpan kategori baru.");
     }
   };
@@ -792,17 +405,12 @@ export const useAddItemForm = ({
     description: string;
   }) => {
     try {
-      const newType = await addTypeMutation.mutateAsync(typeData);
-      const { data: updatedTypes } = await supabase
-        .from("item_types")
-        .select("id, name, description, updated_at")
-        .order("name");
-      if (updatedTypes) setTypes(updatedTypes);
-      if (newType?.id) updateFormData({ type_id: newType.id });
-      setIsAddTypeModalOpen(false);
+      const { newType, updatedTypes } = await saveType(typeData);
+      if (updatedTypes) formState.setTypes(updatedTypes);
+      if (newType?.id) formState.updateFormData({ type_id: newType.id });
+      formState.setIsAddTypeModalOpen(false);
       clearSearchTerm();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch {
       alert("Gagal menyimpan jenis item baru.");
     }
   };
@@ -812,17 +420,12 @@ export const useAddItemForm = ({
     description: string;
   }) => {
     try {
-      const newUnit = await addUnitMutation.mutateAsync(unitData);
-      const { data: updatedUnits } = await supabase
-        .from("item_units")
-        .select("id, name, description, updated_at")
-        .order("name");
-      if (updatedUnits) setUnits(updatedUnits);
-      if (newUnit?.id) updateFormData({ unit_id: newUnit.id });
-      setIsAddUnitModalOpen(false);
+      const { newUnit, updatedUnits } = await saveUnit(unitData);
+      if (updatedUnits) formState.setUnits(updatedUnits);
+      if (newUnit?.id) formState.updateFormData({ unit_id: newUnit.id });
+      formState.setIsAddUnitModalOpen(false);
       clearSearchTerm();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
+    } catch {
       alert("Gagal menyimpan satuan baru.");
     }
   };
@@ -831,28 +434,24 @@ export const useAddItemForm = ({
     if (!itemId) return;
     confirmDialog.openConfirmDialog({
       title: "Konfirmasi Hapus",
-      message: `Apakah Anda yakin ingin menghapus item "${formData.name}"? Stok terkait akan terpengaruh.`,
+      message: `Apakah Anda yakin ingin menghapus item "${formState.formData.name}"? Stok terkait akan terpengaruh.`,
       variant: "danger",
       confirmText: "Hapus",
       onConfirm: () => {
         deleteItemMutation.mutate(itemId);
-        sessionStorage.removeItem(CACHE_KEY);
+        cache.clearCache();
       },
     });
   };
 
-  const calculateSellPriceFromMargin = (margin: number) => {
-    if (formData.base_price > 0) {
-      const sellPrice = formData.base_price * (1 + margin / 100);
-      return Math.round(sellPrice);
-    }
-    return 0;
+  const calculateSellPriceFromMarginWrapper = (margin: number) => {
+    return calculateSellPriceFromMargin(formState.formData.base_price, margin);
   };
 
   const handleCancel = (
     setIsClosing?: React.Dispatch<React.SetStateAction<boolean>>,
   ) => {
-    if (isDirty()) {
+    if (isDirtyWrapper()) {
       confirmDialog.openConfirmDialog({
         title: "Konfirmasi Keluar",
         message:
@@ -877,29 +476,21 @@ export const useAddItemForm = ({
     }
   };
 
-  const resetForm = () => {
-    if (isEditMode && initialFormData && initialUnitConversions) {
-      setFormData({ ...initialFormData });
-      setDisplayBasePrice(formatRupiah(initialFormData.base_price || 0));
-      setDisplaySellPrice(formatRupiah(initialFormData.sell_price || 0));
-
-      const profit = calculateProfitPercentage(
-        initialFormData.base_price || 0,
-        initialFormData.sell_price || 0,
-      );
-      setMarginPercentage(profit ? profit.toFixed(1) : "0");
-      setMinStockValue(String(initialFormData.min_stock || 10));
-
+  const resetFormWrapper = () => {
+    formState.resetForm();
+    
+    if (formState.isEditMode && formState.initialFormData && formState.initialUnitConversions) {
+      // Reset unit conversions
       unitConversionHook.resetConversions();
       const baseUnitName =
-        units.find((u) => u.id === initialFormData.unit_id)?.name || "";
+        formState.units.find((u) => u.id === formState.initialFormData!.unit_id)?.name || "";
       unitConversionHook.setBaseUnit(baseUnitName);
-      unitConversionHook.setBasePrice(initialFormData.base_price || 0);
-      unitConversionHook.setSellPrice(initialFormData.sell_price || 0);
+      unitConversionHook.setBasePrice(formState.initialFormData.base_price || 0);
+      unitConversionHook.setSellPrice(formState.initialFormData.sell_price || 0);
       unitConversionHook.skipNextRecalculation();
 
-      initialUnitConversions.forEach((convDataFromDB) => {
-        const unitDetails = units.find(
+      formState.initialUnitConversions.forEach((convDataFromDB) => {
+        const unitDetails = formState.units.find(
           (u) => u.name === convDataFromDB.unit_name,
         );
         if (unitDetails && typeof convDataFromDB.conversion_rate === "number") {
@@ -915,17 +506,16 @@ export const useAddItemForm = ({
         }
       });
     } else {
-      setInitialDataForForm();
-      sessionStorage.removeItem(CACHE_KEY);
+      cache.clearCache();
     }
   };
 
-  const formattedUpdateAt = formData.updated_at
-    ? formatDateTime(formData.updated_at)
+  const formattedUpdateAt = formState.formData.updated_at
+    ? formatDateTime(formState.formData.updated_at)
     : "-";
 
   const clearSearchTerm = () => {
-    setCurrentSearchTermForModal(undefined);
+    formState.setCurrentSearchTermForModal(undefined);
   };
 
   const closeModalAndClearSearch = (
@@ -935,183 +525,79 @@ export const useAddItemForm = ({
     clearSearchTerm();
   };
 
-  /**
-   * Regenerates item code based on type, category, and unit selections
-   *
-   * Logic:
-   * 1. In edit mode: If item name hasn't changed, try to keep the same code
-   * 2. Always exclude current item from sequence search to avoid conflicts
-   * 3. Find the lowest available sequence number (01, 02, 03, etc.)
-   * 4. Generate code format: [TypeCode][UnitCode][CategoryCode][Sequence]
-   */
-  const regenerateItemCode = async () => {
-    if (!formData.type_id || !formData.category_id || !formData.unit_id) {
-      alert('Silakan pilih jenis, kategori, dan satuan terlebih dahulu');
-      return;
-    }
-
-    // Show loading state
-    setSaving(true);
-
-    const typeCode = generateTypeCode(formData.type_id, types);
-    const unitCode = generateUnitCode(formData.unit_id, units);
-    const categoryCode = generateCategoryCode(formData.category_id, categories);
-    const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
-
-    try {
-      // Build query to exclude current item when in edit mode
-      let query = supabase
-        .from("items")
-        .select("code")
-        .ilike("code", `${codePrefix}%`)
-        .order("code", { ascending: true });
-
-      // If in edit mode, exclude current item from search
-      if (isEditMode && itemId) {
-        query = query.neq("id", itemId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      let sequence = 1;
-
-      // Smart regeneration logic for edit mode
-      // If item name hasn't changed, try to preserve the existing code
-      if (isEditMode && initialFormData && formData.name === initialFormData.name) {
-        const currentCode = initialFormData.code;
-        if (currentCode && currentCode.startsWith(codePrefix)) {
-          const currentSequenceStr = currentCode.substring(codePrefix.length);
-          const currentSequenceNum = parseInt(currentSequenceStr);
-
-          if (!isNaN(currentSequenceNum)) {
-            // Check if current sequence is still available (not used by other items)
-            // Since we excluded current item from search, if sequence is not found,
-            // it means it's safe to keep the same code
-            const isCurrentSequenceAvailable = !data || !data.some(item => {
-              const sequenceStr = item.code.substring(codePrefix.length);
-              const sequenceNum = parseInt(sequenceStr);
-              return !isNaN(sequenceNum) && sequenceNum === currentSequenceNum;
-            });
-
-            if (isCurrentSequenceAvailable) {
-              // Preserve existing code - no need to change
-              const generatedCode = `${codePrefix}${currentSequenceStr}`;
-              setFormData((prevFormData) => ({
-                ...prevFormData,
-                code: generatedCode,
-              }));
-              setSaving(false);
-              alert(`Kode item berhasil dipertahankan: ${generatedCode}`);
-              return;
-            }
-          }
-        }
-      }
-
-      // Generate new sequence number by finding the lowest available slot
-      // This ensures consistent numbering (01, 02, 03...) without gaps
-      if (data && data.length > 0) {
-        const usedSequences = new Set<number>();
-
-        // Collect all used sequence numbers
-        data.forEach(item => {
-          const sequenceStr = item.code.substring(codePrefix.length);
-          const sequenceNum = parseInt(sequenceStr);
-          if (!isNaN(sequenceNum)) {
-            usedSequences.add(sequenceNum);
-          }
-        });
-
-        // Find the first available sequence number starting from 1
-        while (usedSequences.has(sequence)) {
-          sequence++;
-        }
-      }
-
-      const sequenceStr = sequence.toString().padStart(2, "0");
-      const generatedCode = `${codePrefix}${sequenceStr}`;
-
-      setFormData((prevFormData) => ({
-        ...prevFormData,
-        code: generatedCode,
-      }));
-
-      setSaving(false);
-      alert(`Kode item berhasil diperbarui: ${generatedCode}`);
-    } catch (error) {
-      console.error("Error regenerating item code:", error);
-      setSaving(false);
-
-      // More specific error messages
-      if (error instanceof Error) {
-        if (error.message?.includes('network')) {
-          alert('Gagal memperbarui kode item: Masalah koneksi internet');
-        } else if (error.message?.includes('permission')) {
-          alert('Gagal memperbarui kode item: Tidak memiliki izin akses');
-        } else {
-          alert(`Gagal memperbarui kode item: ${error.message || 'Terjadi kesalahan tak terduga'}`);
-        }
-      } else {
-        alert('Gagal memperbarui kode item: Terjadi kesalahan tak terduga');
-      }
-    }
-  };
+  // Use regenerateItemCode from the modular code generation hook
+  const regenerateItemCode = codeGeneration.regenerateItemCode;
 
 
   return {
-    formData,
-    displayBasePrice,
-    displaySellPrice,
-    categories,
-    types,
-    units,
-    loading,
-    saving,
-    isEditMode,
+    // Form data and state (from formState)
+    formData: formState.formData,
+    displayBasePrice: formState.displayBasePrice,
+    displaySellPrice: formState.displaySellPrice,
+    categories: formState.categories,
+    types: formState.types,
+    units: formState.units,
+    loading: formState.loading,
+    saving: formState.saving,
+    isEditMode: formState.isEditMode,
+    
+    // Modal states (from formState)
+    isAddEditModalOpen: formState.isAddEditModalOpen,
+    setIsAddEditModalOpen: formState.setIsAddEditModalOpen,
+    isAddTypeModalOpen: formState.isAddTypeModalOpen,
+    setIsAddTypeModalOpen: formState.setIsAddTypeModalOpen,
+    isAddUnitModalOpen: formState.isAddUnitModalOpen,
+    setIsAddUnitModalOpen: formState.setIsAddUnitModalOpen,
+    
+    // Editing states (from formState)
+    editingMargin: formState.editingMargin,
+    setEditingMargin: formState.setEditingMargin,
+    marginPercentage: formState.marginPercentage,
+    setMarginPercentage: formState.setMarginPercentage,
+    editingMinStock: formState.editingMinStock,
+    setEditingMinStock: formState.setEditingMinStock,
+    minStockValue: formState.minStockValue,
+    setMinStockValue: formState.setMinStockValue,
+    currentSearchTermForModal: formState.currentSearchTermForModal,
+    
+    // Event handlers
     handleChange,
     handleSelectChange,
     handleSubmit,
-    unitConversionHook,
-    updateFormData,
-    isDirty,
-    addCategoryMutation,
-    setCategories,
-    addUnitMutation,
-    setUnits,
-    addTypeMutation,
-    setTypes,
-    isAddEditModalOpen,
-    setIsAddEditModalOpen,
-    isAddTypeModalOpen,
-    setIsAddTypeModalOpen,
-    isAddUnitModalOpen,
-    setIsAddUnitModalOpen,
-    editingMargin,
-    setEditingMargin,
-    marginPercentage,
-    setMarginPercentage,
-    editingMinStock,
-    setEditingMinStock,
-    minStockValue,
-    setMinStockValue,
     handleSaveCategory,
     handleSaveType,
     handleSaveUnit,
     handleDeleteItem,
-    currentSearchTermForModal,
     handleAddNewCategory,
     handleAddNewType,
     handleAddNewUnit,
-    closeModalAndClearSearch: closeModalAndClearSearch,
-    calculateSellPriceFromMargin,
     handleCancel,
-    calculateProfitPercentage,
-    formattedUpdateAt,
-    deleteItemMutation,
-    resetForm,
-    confirmDialog,
+    
+    // Utility functions
+    updateFormData: formState.updateFormData,
+    isDirty: isDirtyWrapper,
+    calculateProfitPercentage: calculateProfitPercentageWrapper,
+    calculateSellPriceFromMargin: calculateSellPriceFromMarginWrapper,
+    closeModalAndClearSearch,
+    resetForm: resetFormWrapper,
     regenerateItemCode,
+    
+    // Mutations (from mutations)
+    addCategoryMutation,
+    addUnitMutation,
+    addTypeMutation,
+    deleteItemMutation,
+    
+    // Setters (from formState)
+    setCategories: formState.setCategories,
+    setUnits: formState.setUnits,
+    setTypes: formState.setTypes,
+    
+    // Unit conversion hook
+    unitConversionHook,
+    
+    // Other utilities
+    confirmDialog,
+    formattedUpdateAt,
   };
 };
