@@ -3,16 +3,14 @@ import React, {
   useState,
   useRef,
   useImperativeHandle,
-  useEffect,
   useCallback,
+  useEffect,
 } from "react";
 import { z } from "zod";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { FaExclamationTriangle } from "react-icons/fa";
 import type { InputProps } from "@/types";
 import classNames from "classnames";
 import { useFieldValidation } from "@/hooks/useFieldValidation";
+import ValidationOverlay from "@/components/validation-overlay";
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   (
@@ -95,7 +93,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     });
 
     // Notify parent about validation changes
-    React.useEffect(() => {
+    useEffect(() => {
       if (validate && validationSchema && onValidationChange) {
         onValidationChange(
           validation.validation.isValid,
@@ -129,13 +127,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       onKeyDown?.(e);
     };
 
-    // ValidationOverlay integrated logic
-    const [validationPosition, setValidationPosition] = React.useState<{
-      top: number;
-      left: number;
-      width: number;
-    } | null>(null);
-    const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Use refs to avoid dependency issues
     const validationRef = useRef(validation);
@@ -173,99 +164,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       }
     };
 
-    // Effect for positioning
-    useEffect(() => {
-      if (
-        validate &&
-        showValidationError &&
-        validation.validation.error &&
-        inputRef.current
-      ) {
-        const rect = inputRef.current.getBoundingClientRect();
-        setValidationPosition({
-          top: rect.bottom + 8,
-          left: rect.left,
-          width: rect.width,
-        });
-      }
-    }, [validate, showValidationError, validation.validation.error]);
+    const handleValidationAutoHide = useCallback(() => {
+      setShowValidationError(false);
+      setHasAutoHidden(true);
+    }, []);
 
-    // Effect for auto-hide timeout
-    useEffect(() => {
-      if (
-        validate &&
-        showValidationError &&
-        validation.validation.showError &&
-        validationAutoHide &&
-        validationAutoHideDelay > 0
-      ) {
-        validationTimeoutRef.current = setTimeout(() => {
-          setShowValidationError(false);
-          setHasAutoHidden(true);
-        }, validationAutoHideDelay);
-      }
-
-      return () => {
-        if (validationTimeoutRef.current) {
-          clearTimeout(validationTimeoutRef.current);
-          validationTimeoutRef.current = null;
-        }
-      };
-    }, [
-      validate,
-      showValidationError,
-      validation.validation.showError,
-      validationAutoHide,
-      validationAutoHideDelay,
-    ]);
-
-    // Effect for hover-triggered validation display after auto-hide
-    useEffect(() => {
-      if (validate && hasAutoHidden && validation.validation.error) {
-        if (isHovered) {
-          setShowValidationError(true);
-        } else {
-          setShowValidationError(false);
-        }
-      }
-    }, [validate, hasAutoHidden, validation.validation.error, isHovered]);
-
-    const renderValidationOverlay = () => {
-      if (!validate || !validation.validation.error || !validationPosition) {
-        return null;
-      }
-
-      return createPortal(
-        <AnimatePresence>
-          {showValidationError && validation.validation.error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="fixed z-[9999] pointer-events-none"
-              style={{
-                top: validationPosition.top,
-                left: validationPosition.left,
-              }}
-            >
-              <div className="bg-danger/75 text-white text-sm px-3 py-2 rounded-lg shadow-lg backdrop-blur-xs flex items-center gap-2 w-fit">
-                <FaExclamationTriangle
-                  className="text-yellow-300 flex-shrink-0"
-                  size={14}
-                />
-                <span className="font-medium">
-                  {validation.validation.error}
-                </span>
-              </div>
-              {/* Arrow pointing up */}
-              <div className="absolute -top-1 left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-danger/75 backdrop-blur-xs"></div>
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        document.body,
-      );
-    };
 
     const shouldShowOverlay = () => {
       const displayValue = getDisplayValue();
@@ -353,7 +256,18 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-        {renderValidationOverlay()}
+        {validate && (
+          <ValidationOverlay
+            error={validation.validation.error}
+            showError={showValidationError && validation.validation.showError}
+            targetRef={inputRef}
+            autoHide={validationAutoHide}
+            autoHideDelay={validationAutoHideDelay}
+            onAutoHide={handleValidationAutoHide}
+            isHovered={isHovered}
+            hasAutoHidden={hasAutoHidden}
+          />
+        )}
       </div>
     );
   },
