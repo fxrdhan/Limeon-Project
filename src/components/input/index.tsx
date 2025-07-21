@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaExclamationTriangle } from "react-icons/fa";
 import type { InputProps } from "@/types";
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 import { useFieldValidation } from "@/hooks/useFieldValidation";
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
