@@ -14,17 +14,11 @@ import {
 } from "@/components/loading-fallback";
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
-const DashboardNew = lazy(() => import("@/pages/dashboard-new"));
 const ItemList = lazy(() => import("@/pages/master-data/item-list"));
-const ItemListNew = lazy(() => import("@/pages/master-data/item-list-new"));
-const ItemMaster = lazy(() => import("@/pages/master-data/item-master-new"));
-const ItemMasterOld = lazy(() => import("@/pages/master-data/item-master"));
+const ItemMaster = lazy(() => import("@/pages/master-data/item-master"));
 const PatientList = lazy(() => import("@/pages/master-data/patient-list"));
-const PatientListNew = lazy(() => import("@/pages/master-data/patient-list-new"));
 const DoctorList = lazy(() => import("@/pages/master-data/doctor-list"));
-const DoctorListNew = lazy(() => import("@/pages/master-data/doctor-list-new"));
 const SupplierList = lazy(() => import("@/pages/master-data/supplier-list"));
-const SupplierListNew = lazy(() => import("@/pages/master-data/supplier-list-new"));
 const ConfirmInvoicePage = lazy(
   () => import("@/pages/purchases/confirm-invoice"),
 );
@@ -71,29 +65,7 @@ function App() {
               element={
                 <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
                   <Suspense fallback={<DashboardLoadingFallback />}>
-                    <DashboardNew />
-                  </Suspense>
-                </ErrorBoundary>
-              }
-            />
-            
-            {/* Architecture Testing Routes */}
-            <Route
-              path="dashboard-old"
-              element={
-                <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
-                  <Suspense fallback={<DashboardLoadingFallback />}>
                     <Dashboard />
-                  </Suspense>
-                </ErrorBoundary>
-              }
-            />
-            <Route
-              path="dashboard-new"
-              element={
-                <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
-                  <Suspense fallback={<DashboardLoadingFallback />}>
-                    <DashboardNew />
                   </Suspense>
                 </ErrorBoundary>
               }
@@ -112,24 +84,9 @@ function App() {
                         />
                       }
                     >
-                      <ItemListNew />
+                      <ItemList />
                     </Suspense>
                   </ErrorBoundary>
-                }
-              />
-              <Route
-                path="items-old"
-                element={
-                  <Suspense
-                    fallback={
-                      <TableLoadingFallback
-                        title="Daftar Item (Old Architecture)"
-                        tableColumns={10}
-                      />
-                    }
-                  >
-                    <ItemList />
-                  </Suspense>
                 }
               />
               <Route
@@ -145,23 +102,6 @@ function App() {
                       }
                     >
                       <ItemMaster />
-                    </Suspense>
-                  </ErrorBoundary>
-                }
-              />
-              <Route
-                path="item-master-old"
-                element={
-                  <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
-                    <Suspense
-                      fallback={
-                        <TableLoadingFallback
-                          title="Item Master (Old Architecture)"
-                          tableColumns={2}
-                        />
-                      }
-                    >
-                      <ItemMasterOld />
                     </Suspense>
                   </ErrorBoundary>
                 }
@@ -190,24 +130,9 @@ function App() {
                         />
                       }
                     >
-                      <SupplierListNew />
+                      <SupplierList />
                     </Suspense>
                   </ErrorBoundary>
-                }
-              />
-              <Route
-                path="suppliers-old"
-                element={
-                  <Suspense
-                    fallback={
-                      <TableLoadingFallback
-                        title="Daftar Supplier (Old Architecture)"
-                        tableColumns={5}
-                      />
-                    }
-                  >
-                    <SupplierList />
-                  </Suspense>
                 }
               />
               <Route
@@ -222,24 +147,9 @@ function App() {
                         />
                       }
                     >
-                      <PatientListNew />
+                      <PatientList />
                     </Suspense>
                   </ErrorBoundary>
-                }
-              />
-              <Route
-                path="patients-old"
-                element={
-                  <Suspense
-                    fallback={
-                      <TableLoadingFallback
-                        title="Daftar Pasien (Old Architecture)"
-                        tableColumns={6}
-                      />
-                    }
-                  >
-                    <PatientList />
-                  </Suspense>
                 }
               />
               <Route
@@ -254,24 +164,9 @@ function App() {
                         />
                       }
                     >
-                      <DoctorListNew />
+                      <DoctorList />
                     </Suspense>
                   </ErrorBoundary>
-                }
-              />
-              <Route
-                path="doctors-old"
-                element={
-                  <Suspense
-                    fallback={
-                      <TableLoadingFallback
-                        title="Daftar Dokter (Old Architecture)"
-                        tableColumns={6}
-                      />
-                    }
-                  >
-                    <DoctorList />
-                  </Suspense>
                 }
               />
             </Route>
