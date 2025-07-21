@@ -1,29 +1,41 @@
+import React, { useState, useRef } from "react";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
 import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
 import PageTitle from "@/components/page-title";
 import AddEditModal from "@/components/add-edit/v1";
-
-import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
-import { useMasterDataManagement } from "@/handlers/masterData";
-import { useRef, useState } from "react";
-import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
-import { itemMasterSearchColumns } from "@/utils/searchColumns";
-import { useLocation } from "react-router-dom";
-import { getSearchState } from "@/utils/search";
+import { FaPlus } from "react-icons/fa";
 import { motion, LayoutGroup } from "framer-motion";
 import classNames from "classnames";
 
-type MasterDataType = "item_categories" | "item_types" | "item_units";
+// Import our new hooks
+import { 
+  useCategories, 
+  useCategoryMutations,
+  useMedicineTypes, 
+  useMedicineTypeMutations,
+  useUnits,
+  useUnitMutations
+} from "@/hooks/queries";
+
+// Services are available but not used in this component
+
+import type { Category, MedicineType, Unit } from "@/types/database";
+import { useAlert } from "@/components/alert/hooks";
+import { useConfirmDialog } from "@/components/dialog-box";
+import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
+import { itemMasterSearchColumns } from "@/utils/searchColumns";
+
+type MasterDataType = "categories" | "types" | "units";
+type MasterDataEntity = Category | MedicineType | Unit;
 
 interface TabConfig {
   key: MasterDataType;
   label: string;
   entityName: string;
-  tableName: string;
   addButtonText: string;
   searchPlaceholder: string;
   nameColumnHeader: string;
@@ -32,33 +44,30 @@ interface TabConfig {
 }
 
 const tabConfigs: Record<MasterDataType, TabConfig> = {
-  item_categories: {
-    key: "item_categories",
+  categories: {
+    key: "categories",
     label: "Kategori",
     entityName: "Kategori",
-    tableName: "item_categories",
     addButtonText: "Tambah Kategori Baru",
     searchPlaceholder: "Cari nama atau deskripsi kategori item",
     nameColumnHeader: "Nama Kategori",
     noDataMessage: "Tidak ada data kategori yang ditemukan",
     searchNoDataMessage: "Tidak ada kategori dengan kata kunci",
   },
-  item_types: {
-    key: "item_types",
+  types: {
+    key: "types",
     label: "Jenis",
     entityName: "Jenis Item",
-    tableName: "item_types",
     addButtonText: "Tambah Jenis Item Baru",
     searchPlaceholder: "Cari nama atau deskripsi jenis item...",
     nameColumnHeader: "Nama Jenis",
     noDataMessage: "Tidak ada data jenis item yang ditemukan",
     searchNoDataMessage: "Tidak ada jenis item dengan kata kunci",
   },
-  item_units: {
-    key: "item_units",
+  units: {
+    key: "units",
     label: "Satuan",
     entityName: "Satuan",
-    tableName: "item_units",
     addButtonText: "Tambah Satuan Baru",
     searchPlaceholder: "Cari nama atau deskripsi satuan...",
     nameColumnHeader: "Nama Satuan",
@@ -67,19 +76,23 @@ const tabConfigs: Record<MasterDataType, TabConfig> = {
   },
 };
 
-const ItemMaster = () => {
-  const [activeTab, setActiveTab] = useState<MasterDataType>("item_categories");
-  const searchInputRef = useRef<HTMLInputElement>(
-    null,
-  ) as React.RefObject<HTMLInputElement>;
-  const location = useLocation();
-  const headerRef = useRef<HTMLDivElement>(null);
-  const searchBarRef = useRef<HTMLDivElement>(null);
+const ItemMasterNew = () => {
+  const [activeTab, setActiveTab] = useState<MasterDataType>("categories");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MasterDataEntity | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const gridRef = useRef<DataGridRef>(null);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  const { openConfirmDialog } = useConfirmDialog();
+  const alert = useAlert();
 
   const currentConfig = tabConfigs[activeTab];
 
+  // Enhanced search functionality
   const {
     search,
     handleSearchChange,
@@ -94,43 +107,161 @@ const ItemMaster = () => {
     useFuzzySearch: true,
   });
 
-  const {
-    isAddModalOpen,
-    setIsAddModalOpen,
-    isEditModalOpen,
-    setIsEditModalOpen,
-    editingItem,
-    data,
-    totalItems,
-    isLoading,
-    isError,
-    queryError,
-    isFetching,
-    handleEdit,
-    handleModalSubmit,
-    handlePageChange,
-    handleItemsPerPageChange,
-    totalPages,
-    currentPage,
-    itemsPerPage,
-    addMutation,
-    updateMutation,
-    deleteMutation,
-    openConfirmDialog,
-    debouncedSearch,
-    handleKeyDown,
-  } = useMasterDataManagement(activeTab, currentConfig.entityName, {
-    realtime: true,
-    searchInputRef,
-    locationKey: location.key,
-    handleSearchChange,
-  });
+  // Data hooks - conditionally fetch based on active tab
+  const categoriesQuery = useCategories({ enabled: activeTab === "categories" });
+  const typesQuery = useMedicineTypes({ enabled: activeTab === "types" });
+  const unitsQuery = useUnits({ enabled: activeTab === "units" });
 
+  // Mutation hooks
+  const categoryMutations = useCategoryMutations();
+  const typeMutations = useMedicineTypeMutations();
+  const unitMutations = useUnitMutations();
 
-  const handleFirstDataRendered = () => {
-    setIsInitialLoad(false);
+  // Get current data and mutations based on active tab
+  const getCurrentData = () => {
+    switch (activeTab) {
+      case "categories":
+        return {
+          data: categoriesQuery.data || [],
+          isLoading: categoriesQuery.isLoading,
+          isError: categoriesQuery.isError,
+          error: categoriesQuery.error,
+          isFetching: categoriesQuery.isFetching,
+        };
+      case "types":
+        return {
+          data: typesQuery.data || [],
+          isLoading: typesQuery.isLoading,
+          isError: typesQuery.isError,
+          error: typesQuery.error,
+          isFetching: typesQuery.isFetching,
+        };
+      case "units":
+        return {
+          data: unitsQuery.data || [],
+          isLoading: unitsQuery.isLoading,
+          isError: unitsQuery.isError,
+          error: unitsQuery.error,
+          isFetching: unitsQuery.isFetching,
+        };
+    }
   };
 
+  const getCurrentMutations = () => {
+    switch (activeTab) {
+      case "categories":
+        return {
+          create: categoryMutations.createCategory,
+          update: categoryMutations.updateCategory,
+          delete: categoryMutations.deleteCategory,
+        };
+      case "types":
+        return {
+          create: typeMutations.createType,
+          update: typeMutations.updateType,
+          delete: typeMutations.deleteType,
+        };
+      case "units":
+        return {
+          create: unitMutations.createUnit,
+          update: unitMutations.updateUnit,
+          delete: unitMutations.deleteUnit,
+        };
+    }
+  };
+
+  const { data, isLoading, isError, error, isFetching } = getCurrentData();
+  const mutations = getCurrentMutations();
+
+  // Filter data based on search for display
+  const filteredData = React.useMemo(() => {
+    if (!search || search.trim() === "") return data;
+    
+    return data.filter(item => {
+      const nameMatch = item.name.toLowerCase().includes(search.toLowerCase());
+      if ('description' in item && item.description && typeof item.description === 'string') {
+        return nameMatch || item.description.toLowerCase().includes(search.toLowerCase());
+      }
+      return nameMatch;
+    });
+  }, [data, search]);
+
+  // Pagination logic
+  const totalItems = filteredData.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
+  // Event handlers
+  const handleEdit = (item: MasterDataEntity) => {
+    setEditingItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleModalSubmit = async (formData: { name: string; description?: string }) => {
+    try {
+      if (editingItem) {
+        // Update
+        await mutations.update.mutateAsync({
+          id: editingItem.id,
+          data: formData
+        });
+        alert.success(`${currentConfig.entityName} berhasil diperbarui`);
+        setIsEditModalOpen(false);
+        setEditingItem(null);
+      } else {
+        // Create
+        await mutations.create.mutateAsync(formData);
+        alert.success(`${currentConfig.entityName} berhasil ditambahkan`);
+        setIsAddModalOpen(false);
+      }
+    } catch (error) {
+      console.error("Mutation error:", error);
+      alert.error(`Gagal ${editingItem ? 'memperbarui' : 'menambahkan'} ${currentConfig.entityName.toLowerCase()}`);
+    }
+  };
+
+  const handleDelete = async (item: MasterDataEntity) => {
+    openConfirmDialog({
+      title: "Konfirmasi Hapus",
+      message: `Apakah Anda yakin ingin menghapus ${currentConfig.entityName.toLowerCase()} "${item.name}"?`,
+      variant: "danger",
+      confirmText: "Ya, Hapus",
+      onConfirm: async () => {
+        try {
+          await mutations.delete.mutateAsync(item.id);
+          alert.success(`${currentConfig.entityName} berhasil dihapus`);
+          setIsEditModalOpen(false);
+          setEditingItem(null);
+        } catch (error) {
+          console.error("Delete error:", error);
+          alert.error(`Gagal menghapus ${currentConfig.entityName.toLowerCase()}`);
+        }
+      },
+    });
+  };
+
+  const handleTabChange = (newTab: MasterDataType) => {
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+      setCurrentPage(1);
+      clearSearch();
+      if (searchInputRef.current) {
+        searchInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+
+  // Column definitions
   const columnDefs: ColDef[] = [
     createTextColumn({
       field: "name",
@@ -143,34 +274,13 @@ const ItemMaster = () => {
       minWidth: 200,
       flex: 1,
       valueGetter: (params) => {
-        return "description" in params.data && params.data.description
-          ? params.data.description
-          : "-";
+        return params.data.description || "-";
       },
     }),
   ];
 
   const onRowClicked = (event: RowClickedEvent) => {
     handleEdit(event.data);
-  };
-
-  const handleCloseAddModal = () => {
-    setIsAddModalOpen(false);
-  };
-
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-  };
-
-  const handleTabChange = (newTab: MasterDataType) => {
-    if (newTab !== activeTab) {
-      setActiveTab(newTab);
-      setIsInitialLoad(true);
-      clearSearch();
-      if (searchInputRef.current) {
-        searchInputRef.current.value = "";
-      }
-    }
   };
 
   return (
@@ -180,11 +290,11 @@ const ItemMaster = () => {
           isFetching ? "opacity-75 transition-opacity duration-300" : ""
         }
       >
-        <div ref={headerRef} className="mb-4">
-          <PageTitle title="Item Master" />
+        <div className="mb-4">
+          <PageTitle title="Item Master (New Architecture)" />
         </div>
 
-        <div ref={searchBarRef} className="flex items-center mb-4 mt-5">
+        <div className="flex items-center mb-4 mt-5">
           <LayoutGroup id="item-master-tabs">
             <div className="flex mb-4 items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative mr-4">
               {Object.values(tabConfigs).map((config) => (
@@ -228,18 +338,19 @@ const ItemMaster = () => {
               ))}
             </div>
           </LayoutGroup>
+          
           <EnhancedSearchBar
             inputRef={searchInputRef}
             value={search}
             onChange={handleSearchChange}
-            onKeyDown={handleKeyDown}
             placeholder={`${currentConfig.searchPlaceholder} atau ketik # untuk pencarian kolom spesifik`}
             className="grow"
-            searchState={getSearchState(search, search, data)}
+            searchState={search.length > 0 ? (filteredData.length > 0 ? "found" : "not-found") : "idle"}
             columns={itemMasterSearchColumns}
             onTargetedSearch={handleTargetedSearch}
             onGlobalSearch={handleGlobalSearch}
           />
+          
           <Button
             variant="primary"
             className="flex items-center ml-4 mb-4"
@@ -253,13 +364,13 @@ const ItemMaster = () => {
 
         {isError ? (
           <div className="text-center p-6 text-red-500">
-            Error: {queryError?.message || "Gagal memuat data"}
+            Error: {error?.message || "Gagal memuat data"}
           </div>
         ) : (
           <>
             <DataGrid
               ref={gridRef}
-              rowData={data || []}
+              rowData={paginatedData}
               columnDefs={columnDefs}
               onRowClicked={onRowClicked}
               onGridReady={onGridReady}
@@ -270,25 +381,22 @@ const ItemMaster = () => {
                   : `<span style="padding: 10px; color: #888;">${currentConfig.noDataMessage}</span>`
               }
               autoSizeColumns={["name"]}
-              onFirstDataRendered={handleFirstDataRendered}
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
               style={{
                 width: "100%",
                 marginTop: "1rem",
                 marginBottom: "1rem",
-                filter: isInitialLoad ? "blur(8px)" : "none",
-                transition: "filter 0.3s ease-out",
               }}
             />
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={totalItems || 0}
-              itemsPerPage={itemsPerPage || 10}
-              itemsCount={data?.length || 0}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              itemsCount={paginatedData.length}
               onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
+              onItemsPerPageChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
               hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
             />
           </>
@@ -297,39 +405,27 @@ const ItemMaster = () => {
 
       <AddEditModal
         isOpen={isAddModalOpen}
-        onClose={handleCloseAddModal}
+        onClose={() => setIsAddModalOpen(false)}
         onSubmit={handleModalSubmit}
-        isLoading={addMutation.isPending}
+        isLoading={mutations.create.isPending}
         entityName={currentConfig.entityName}
-        initialNameFromSearch={debouncedSearch}
       />
 
       <AddEditModal
         isOpen={isEditModalOpen}
-        onClose={handleCloseEditModal}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingItem(null);
+        }}
         onSubmit={handleModalSubmit}
         initialData={editingItem || undefined}
-        onDelete={
-          editingItem
-            ? (itemId) => {
-                openConfirmDialog({
-                  title: "Konfirmasi Hapus",
-                  message: `Apakah Anda yakin ingin menghapus ${currentConfig.entityName.toLowerCase()} "${editingItem.name}"?`,
-                  variant: "danger",
-                  confirmText: "Ya, Hapus",
-                  onConfirm: async () => {
-                    await deleteMutation.mutateAsync(itemId);
-                  },
-                });
-              }
-            : undefined
-        }
-        isLoading={updateMutation.isPending}
-        isDeleting={deleteMutation.isPending}
+        onDelete={editingItem ? () => handleDelete(editingItem) : undefined}
+        isLoading={mutations.update.isPending}
+        isDeleting={mutations.delete.isPending}
         entityName={currentConfig.entityName}
       />
     </>
   );
 };
 
-export default ItemMaster;
+export default ItemMasterNew;
