@@ -136,6 +136,8 @@ const subscriptionRegistry = new Map<
     subscribers: number;
     lastActivity: number;
     isActive: boolean;
+    channelType: 'broadcast' | 'postgres_changes';
+    lastMessageReceived: number;
   }
 >();
 
@@ -396,6 +398,8 @@ export const useRealtimeSubscription = (
       subscribers: 1,
       lastActivity: Date.now(),
       isActive: false,
+      channelType: 'postgres_changes',
+      lastMessageReceived: Date.now(),
     });
 
     // Subscribe with retry logic
@@ -408,6 +412,7 @@ export const useRealtimeSubscription = (
             6,
           )}):`,
           status,
+          err ? `Error: ${err}` : '',
         );
 
         if (status === "SUBSCRIBED") {
@@ -439,32 +444,87 @@ export const useRealtimeSubscription = (
           isSubscribedRef.current = false;
           connectionReadyRef.current = false;
 
-          // Retry logic
+          // Mark subscription as inactive
+          if (subscription) {
+            subscription.isActive = false;
+          }
+
+          // Retry logic with exponential backoff
           if (retryCountRef.current < retryAttempts) {
             retryCountRef.current++;
+            const backoffDelay = Math.min(1000 * Math.pow(2, retryCountRef.current), 30000);
             console.log(
-              `Retrying subscription for ${tableName} (attempt ${retryCountRef.current})`,
+              `🔄 Retrying subscription for ${tableName} (attempt ${retryCountRef.current}/${retryAttempts}) in ${backoffDelay}ms`,
             );
-            setTimeout(subscribe, 1000 + retryCountRef.current * 500);
+            setTimeout(() => {
+              // Create a new channel for retry
+              const newChannelName = `realtime_${tableName}_${hookInstanceId.current}_retry_${retryCountRef.current}`;
+              const newChannel = supabase
+                .channel(newChannelName, {
+                  config: {
+                    broadcast: { self: false },
+                    presence: { key: subscriptionKey },
+                  },
+                })
+                .on("postgres_changes", {
+                  event: "*",
+                  schema: "public", 
+                  table: tableName,
+                }, handleRealtimeEvent);
+              
+              // Update subscription registry
+              const sub = subscriptionRegistry.get(subscriptionKey);
+              if (sub) {
+                sub.channel = newChannel;
+              }
+              
+              subscribe();
+            }, backoffDelay);
           } else {
             console.error(
-              `Max retry attempts reached for ${tableName} subscription`,
+              `❌ Max retry attempts reached for ${tableName} subscription. Will attempt reconnection on next page interaction.`,
             );
-            // Remove failed subscription
-            subscriptionRegistry.delete(subscriptionKey);
+            // Don't remove subscription, keep it for potential manual retry
+            if (subscription) {
+              subscription.isActive = false;
+            }
           }
         } else if (status === "TIMED_OUT") {
-          console.warn(`Subscription timed out for ${tableName}`);
+          console.warn(`⏰ Subscription timed out for ${tableName}, attempting reconnection...`);
           isSubscribedRef.current = false;
           connectionReadyRef.current = false;
           if (subscription) {
             subscription.isActive = false;
           }
+          
+          // Auto-retry on timeout
+          if (retryCountRef.current < retryAttempts) {
+            setTimeout(() => {
+              console.log(`🔄 Auto-reconnecting after timeout for ${tableName}...`);
+              createSubscription();
+            }, 2000);
+          }
         } else if (status === "CLOSED") {
-          console.log(`Subscription closed for ${tableName}`);
+          console.log(`🔌 Subscription closed for ${tableName}`);
           isSubscribedRef.current = false;
           connectionReadyRef.current = false;
-          subscriptionRegistry.delete(subscriptionKey);
+          
+          // Only delete if this was an intentional close, not a network issue
+          const wasIntentional = subscription?.isActive === false;
+          if (wasIntentional) {
+            subscriptionRegistry.delete(subscriptionKey);
+          } else {
+            // Network issue - mark as inactive but keep for retry
+            if (subscription) {
+              subscription.isActive = false;
+            }
+            
+            // Attempt reconnection after brief delay
+            setTimeout(() => {
+              console.log(`🔄 Attempting reconnection after unexpected close for ${tableName}...`);
+              createSubscription();
+            }, 3000);
+          }
         }
       });
     };
