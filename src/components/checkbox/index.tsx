@@ -2,7 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaCheck } from "react-icons/fa";
 import type { CheckboxProps } from "@/types";
-import { classNames } from "@/lib/classNames";
+import classNames from "classnames";
 
 const CheckboxComponent: React.ForwardRefRenderFunction<
   HTMLLabelElement,
