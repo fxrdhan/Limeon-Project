@@ -38,6 +38,9 @@ export default defineConfig({
 
           // Backend/API libraries
           "api-libs": ["@supabase/supabase-js", "axios"],
+          
+          // Supabase realtime (large chunk)
+          "supabaseRealtime": ["@supabase/realtime-js"],
 
           // UI/Utility libraries
           "ui-libs": [
@@ -50,5 +53,10 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 1000, // Increase warning limit to 1MB
+    
+    // Optimize for better performance
+    target: 'esnext',
+    minify: 'esbuild',
+    sourcemap: false, // Disable sourcemaps in production for smaller bundle
   },
 });
