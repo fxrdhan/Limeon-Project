@@ -1,40 +1,28 @@
-import React, { forwardRef, RefObject } from 'react';
+import { forwardRef } from 'react';
 import SearchInput from './search/SearchInput';
 import SearchIcon from './search/SearchIcon';
 import AddNewButton from './search/AddNewButton';
 import { SEARCH_STATES } from '../constants';
-
-interface SearchBarProps {
-  searchTerm: string;
-  searchState: string;
-  isOpen: boolean;
-  highlightedIndex: number;
-  currentFilteredOptions: Array<{ id: string; name: string }>;
-  onAddNew?: (term: string) => void;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  onFocus: () => void;
-  leaveTimeoutRef: RefObject<NodeJS.Timeout | null>;
-}
+import { useDropdownContext } from '../hooks/useDropdownContext';
+import type { SearchBarProps } from '../types';
 
 const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
-  (
-    {
+  ({ onKeyDown, onFocus, leaveTimeoutRef }, ref) => {
+    const {
       searchTerm,
       searchState,
       isOpen,
       highlightedIndex,
-      currentFilteredOptions,
+      filteredOptions,
       onAddNew,
       onSearchChange,
-      onKeyDown,
-      onFocus,
-      leaveTimeoutRef,
-    },
-    ref,
-  ) => {
+    } = useDropdownContext();
+    
+    const handleAddNewFromSearch = (term: string) => {
+      onAddNew?.(term);
+    };
     const showAddNew = (searchState === SEARCH_STATES.NOT_FOUND ||
-      (searchState === SEARCH_STATES.TYPING && currentFilteredOptions.length === 0)) && onAddNew;
+      (searchState === SEARCH_STATES.TYPING && filteredOptions.length === 0)) && onAddNew;
 
     return (
       <div className="p-2 border-b border-gray-200 sticky top-0 z-10">
@@ -46,7 +34,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
               searchState={searchState}
               isOpen={isOpen}
               highlightedIndex={highlightedIndex}
-              currentFilteredOptions={currentFilteredOptions}
+              currentFilteredOptions={filteredOptions}
               onSearchChange={onSearchChange}
               onKeyDown={onKeyDown}
               onFocus={onFocus}
@@ -60,11 +48,11 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           </div>
           {searchTerm && (
             <div className="flex items-center">
-              {showAddNew && onAddNew ? (
+              {showAddNew ? (
                 <AddNewButton
                   searchTerm={searchTerm}
                   searchState={searchState}
-                  onAddNew={onAddNew}
+                  onAddNew={handleAddNewFromSearch}
                 />
               ) : (
                 <SearchIcon
