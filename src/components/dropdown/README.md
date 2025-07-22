@@ -1,409 +1,288 @@
-# Dropdown Component - Technical Architecture
+# Dropdown Component
 
-## Overview
+A flexible, accessible React dropdown component with search functionality, keyboard navigation, and validation support.
 
-This dropdown component implements a modular architecture following Single Responsibility Principle (SRP) with TypeScript interfaces organized in a dedicated types system. The component uses React Context pattern to eliminate prop drilling and custom hooks for focused state management.
+## Features
 
-## Architecture Philosophy
+- **Search & Filter**: Built-in search with real-time filtering
+- **Keyboard Navigation**: Full arrow key and Enter/Escape support
+- **Validation**: Form validation with custom error messages
+- **Accessibility**: ARIA labels, roles, and keyboard navigation
+- **Positioning**: Automatic up/down positioning based on viewport
+- **Text Expansion**: Expandable text for long option names
+- **Radio Mode**: Optional radio button indicators
+- **Hover to Open**: Optional hover activation
+- **TypeScript**: Full type safety with organized interfaces
 
-### Single Responsibility Principle
-Every component and hook has exactly one responsibility:
-- UI rendering components handle only visual presentation
-- Logic hooks manage only specific state or behavior
-- Context providers handle only state distribution
-- Type definitions are centralized for maintainability
+## Basic Usage
 
-### Context Pattern Implementation
-The component uses React Context to share state between components, eliminating the need to pass props through multiple component layers. This reduces component coupling and improves maintainability.
+```tsx
+import Dropdown from '@/components/dropdown';
 
-## File Structure
-
-```
-dropdown/
-├── index.tsx                    # Main dropdown orchestrator with context provider
-├── constants.ts                 # Configuration constants and enums
-├── README.md                    # Technical documentation
-│
-├── types/                       # TypeScript interface definitions
-│   ├── index.ts                 # Central type exports
-│   ├── context.ts               # DropdownContextType interface
-│   ├── hooks.ts                 # Hook parameter interfaces
-│   └── components.ts            # Component prop interfaces
-│
-├── providers/                   # Context implementation
-│   ├── DropdownContext.tsx      # Context provider component
-│   └── dropdownContext.ts       # Context definition
-│
-├── components/
-│   ├── DropdownButton.tsx       # Button orchestrator
-│   ├── DropdownMenu.tsx         # Menu orchestrator (uses context)
-│   ├── SearchBar.tsx            # Search orchestrator (uses context)
-│   ├── OptionItem.tsx           # Option orchestrator (uses context)
-│   │
-│   ├── button/                  # Atomic button components
-│   │   ├── Button.tsx           # Pure button UI
-│   │   ├── ButtonText.tsx       # Text display logic
-│   │   └── ButtonIcon.tsx       # Icon display logic
-│   │
-│   ├── search/                  # Atomic search components
-│   │   ├── SearchInput.tsx      # Pure input field
-│   │   ├── SearchIcon.tsx       # Icon state management
-│   │   └── AddNewButton.tsx     # Add functionality
-│   │
-│   ├── menu/                    # Atomic menu components
-│   │   ├── MenuPortal.tsx       # Portal creation
-│   │   ├── MenuContent.tsx      # Content wrapper
-│   │   ├── ScrollIndicators.tsx # Scroll visualization
-│   │   └── EmptyState.tsx       # Empty state display
-│   │
-│   └── options/                 # Atomic option components
-│       ├── OptionContainer.tsx  # Option wrapper and events
-│       ├── OptionText.tsx       # Text rendering
-│       └── RadioIndicator.tsx   # Radio button display
-│
-├── hooks/                       # Custom hooks for state management
-│   ├── useDropdownState.ts      # Open/close state management
-│   ├── useDropdownValidation.ts # Form validation logic
-│   ├── useDropdownPosition.ts   # Positioning calculations
-│   ├── useDropdownHover.ts      # Hover interaction handling
-│   ├── useScrollState.ts        # Scroll position tracking
-│   ├── useTextExpansion.ts      # Text expansion logic
-│   ├── useDropdownContext.ts    # Context hook with type safety
-│   ├── useDropdownEffects.ts    # Grouped effect management
-│   ├── useFocusManagement.ts    # Focus-related effects
-│   ├── useScrollManagement.ts   # Scroll-related effects
-│   │
-│   ├── button/                  # Button-specific hooks
-│   │   ├── useButtonText.ts     # Text display logic
-│   │   └── useButtonExpansion.ts# Expansion behavior
-│   │
-│   ├── search/                  # Search-specific hooks
-│   │   ├── useSearch.ts         # Search state management
-│   │   └── useOptionsFilter.ts  # Options filtering logic
-│   │
-│   └── keyboard/                # Keyboard navigation hooks
-│       ├── useKeyboardEvents.ts # Event handling
-│       └── useNavigationState.ts# Navigation state management
-│
-└── utils/                       # Pure utility functions
-    └── dropdownUtils.ts         # Helper functions for filtering and styling
-```
-
-## Type System Architecture
-
-### Centralized Type Management
-All TypeScript interfaces are organized in the `types/` folder for better maintainability:
-
-```typescript
-// types/context.ts - Context interface
-export interface DropdownContextType {
-  // State properties
-  isOpen: boolean;
-  isClosing: boolean;
-  value?: string;
-  // ... other context properties
-}
-
-// types/hooks.ts - Hook parameter interfaces  
-export interface UseDropdownEffectsProps {
-  isOpen: boolean;
-  applyOpenStyles: boolean;
-  // ... other effect parameters
-}
-
-// types/components.ts - Component prop interfaces
-export interface DropdownMenuProps {
-  leaveTimeoutRef: RefObject<NodeJS.Timeout | null>;
-  onSearchKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-}
-
-// types/index.ts - Central exports
-export type { DropdownContextType } from './context';
-export type { UseDropdownEffectsProps } from './hooks';
-export type { DropdownMenuProps } from './components';
-```
-
-## Context Pattern Implementation
-
-### DropdownContext Structure
-The context provides centralized state management eliminating prop drilling:
-
-```typescript
-// Context provides access to:
-interface DropdownContextType {
-  // State
-  isOpen: boolean;
-  isClosing: boolean;
-  applyOpenStyles: boolean;
-  value?: string;
-  withRadio?: boolean;
-  searchList: boolean;
+const MyComponent = () => {
+  const [selectedValue, setSelectedValue] = useState('');
   
-  // Search state
-  searchTerm: string;
-  searchState: string;
-  filteredOptions: Array<{ id: string; name: string }>;
-  
-  // Navigation state
-  highlightedIndex: number;
-  isKeyboardNavigation: boolean;
-  expandedId: string | null;
-  
-  // Handlers
-  onSelect: (optionId: string) => void;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
-  // ... other handlers
-}
-```
+  const options = [
+    { id: '1', name: 'Option 1' },
+    { id: '2', name: 'Option 2' },
+    { id: '3', name: 'Option 3' }
+  ];
 
-### Context Usage in Components
-Components access context through the custom hook:
-
-```typescript
-// In any child component
-const {
-  isOpen,
-  searchTerm,
-  filteredOptions,
-  onSelect,
-  onSearchChange
-} = useDropdownContext();
-```
-
-## Custom Hooks Architecture
-
-### Effect Management Hooks
-Complex effects are grouped into focused hooks for better organization:
-
-#### useDropdownEffects
-Manages main dropdown lifecycle effects:
-```typescript
-useDropdownEffects({
-  isOpen,
-  applyOpenStyles,
-  filteredOptions,
-  value,
-  setApplyOpenStyles,
-  setHighlightedIndex,
-  setExpandedId,
-  calculateDropdownPosition,
-  manageFocusOnOpen,
-  handleFocusOut,
-  // ... other effect dependencies
-});
-```
-
-#### useFocusManagement
-Handles focus-related behavior:
-```typescript
-const { manageFocusOnOpen, handleFocusOut } = useFocusManagement({
-  isOpen,
-  searchList,
-  touched,
-  setTouched,
-  actualCloseDropdown,
-  dropdownRef,
-  dropdownMenuRef,
-  searchInputRef,
-  optionsContainerRef,
-});
-```
-
-#### useScrollManagement
-Manages scroll-related effects:
-```typescript
-useScrollManagement({
-  isOpen,
-  applyOpenStyles,
-  filteredOptions,
-  highlightedIndex,
-  checkScroll,
-  scrollToHighlightedOption,
-  optionsContainerRef,
-});
-```
-
-### State Management Hooks
-Core hooks manage specific aspects of dropdown state:
-
-```typescript
-// Open/close state with global singleton management
-const { isOpen, isClosing, openThisDropdown, actualCloseDropdown } = useDropdownState();
-
-// Search functionality with debouncing
-const { searchTerm, searchState, handleSearchChange, resetSearch } = useSearch();
-
-// Options filtering with search state updates
-const { filteredOptions } = useOptionsFilter({
-  options,
-  debouncedSearchTerm,
-  searchList,
-  updateSearchState,
-});
-
-// Keyboard navigation with highlight management
-const { highlightedIndex, handleNavigate, handleEscape } = useNavigationState({
-  isOpen,
-  currentFilteredOptions: filteredOptions,
-  setExpandedId,
-  optionsContainerRef,
-});
-```
-
-## Component Architecture
-
-### Main Orchestrator
-The main dropdown component coordinates all hooks and provides context:
-
-```typescript
-const Dropdown = (props: DropdownProps) => {
-  // Initialize all hooks
-  const dropdownState = useDropdownState();
-  const searchState = useSearch();
-  const filteredOptions = useOptionsFilter(/* ... */);
-  
-  // Create context value
-  const contextValue = {
-    ...dropdownState,
-    ...searchState,
-    filteredOptions,
-    // ... other state and handlers
-  };
-  
   return (
-    <DropdownProvider value={contextValue}>
-      <DropdownButton />
-      <DropdownMenu />
-    </DropdownProvider>
+    <Dropdown
+      options={options}
+      value={selectedValue}
+      onChange={setSelectedValue}
+      placeholder="Select an option"
+    />
   );
 };
 ```
 
-### Context-Aware Components
-Components access shared state through context:
+## Props API
 
-```typescript
-// DropdownMenu.tsx - Reduced from 44 props to 3
-const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
-  ({ leaveTimeoutRef, onSearchKeyDown }, ref) => {
-    const {
-      isOpen,
-      searchList,
-      filteredOptions,
-      onMenuEnter,
-      onMenuLeave,
-      // ... access all needed state from context
-    } = useDropdownContext();
-    
-    return (
-      <MenuPortal isOpen={isOpen}>
-        <SearchBar />
-        <MenuContent>
-          {filteredOptions.map(option => (
-            <OptionItem key={option.id} option={option} />
-          ))}
-        </MenuContent>
-      </MenuPortal>
-    );
-  }
-);
-```
+### Required Props
 
-## Performance Optimizations
+| Prop | Type | Description |
+|------|------|-------------|
+| `options` | `Array<{id: string, name: string}>` | List of selectable options |
+| `value` | `string` | Currently selected option ID |
+| `onChange` | `(optionId: string) => void` | Handler for option selection |
 
-### Prop Drilling Elimination
-- DropdownMenu: Reduced from 44 props to 3 props (93% reduction)
-- SearchBar: Reduced from 11 props to 3 props
-- OptionItem: Reduced from 12 props to 7 props
+### Optional Props
 
-### Effect Optimization
-- Grouped related effects in custom hooks
-- Reduced main component from 430 lines to 200 lines
-- Improved separation of concerns
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `placeholder` | `string` | `"-- Pilih --"` | Placeholder text when no option selected |
+| `searchList` | `boolean` | `true` | Enable search functionality |
+| `withRadio` | `boolean` | `false` | Show radio button indicators |
+| `required` | `boolean` | `false` | Mark field as required for validation |
+| `validate` | `boolean` | `false` | Enable form validation |
+| `showValidationOnBlur` | `boolean` | `true` | Show validation errors on blur |
+| `validationAutoHide` | `boolean` | `true` | Auto-hide validation messages |
+| `validationAutoHideDelay` | `number` | `undefined` | Delay before auto-hiding validation |
+| `hoverToOpen` | `boolean` | `false` | Open dropdown on hover |
+| `onAddNew` | `(searchTerm: string) => void` | `undefined` | Handler for adding new options |
+| `name` | `string` | `undefined` | Form field name for validation |
+| `tabIndex` | `number` | `undefined` | Tab order for accessibility |
 
-### Type Safety
-- Centralized type definitions prevent type inconsistencies
-- Context hook provides full type safety
-- Interface inheritance reduces type duplication
+## Advanced Examples
 
-## Usage Examples
+### With Search and Add New
 
-### Basic Implementation
-```typescript
-<Dropdown
-  options={[
-    { id: '1', name: 'Option 1' },
-    { id: '2', name: 'Option 2' },
-  ]}
-  value={selectedValue}
-  onChange={handleChange}
-  placeholder="Select an option"
-/>
-```
-
-### Advanced Configuration
-```typescript
+```tsx
 <Dropdown
   options={options}
   value={selectedValue}
-  onChange={handleChange}
+  onChange={setSelectedValue}
   searchList={true}
-  withRadio={true}
-  onAddNew={handleAddNew}
-  required={true}
-  validate={true}
-  hoverToOpen={true}
+  onAddNew={(searchTerm) => {
+    const newOption = { id: Date.now().toString(), name: searchTerm };
+    setOptions(prev => [...prev, newOption]);
+    setSelectedValue(newOption.id);
+  }}
+  placeholder="Search or add new option"
 />
 ```
 
-## Configuration Constants
+### With Validation
 
-All configuration is centralized in constants.ts:
+```tsx
+<Dropdown
+  options={options}
+  value={selectedValue}
+  onChange={setSelectedValue}
+  required={true}
+  validate={true}
+  name="category"
+  showValidationOnBlur={true}
+  validationAutoHide={true}
+  validationAutoHideDelay={3000}
+/>
+```
 
-```typescript
+### With Radio Buttons
+
+```tsx
+<Dropdown
+  options={options}
+  value={selectedValue}
+  onChange={setSelectedValue}
+  withRadio={true}
+  searchList={false}
+  placeholder="Choose one option"
+/>
+```
+
+### Hover to Open
+
+```tsx
+<Dropdown
+  options={options}
+  value={selectedValue}
+  onChange={setSelectedValue}
+  hoverToOpen={true}
+  placeholder="Hover to open"
+/>
+```
+
+## Keyboard Navigation
+
+| Key | Action |
+|-----|--------|
+| `ArrowDown` | Navigate to next option |
+| `ArrowUp` | Navigate to previous option |
+| `Enter` | Select highlighted option |
+| `Escape` | Close dropdown |
+| `Tab` | Move focus and close dropdown |
+| `PageDown`/`PageUp` | Navigate quickly through options |
+
+## Architecture
+
+### Component Structure
+
+```
+dropdown/
+├── index.tsx                    # Main component orchestrator
+├── constants.ts                 # Configuration constants
+├── types/                       # TypeScript interfaces
+│   ├── context.ts              # Context type definitions
+│   ├── hooks.ts                # Hook parameter interfaces
+│   ├── components.ts           # Component prop interfaces
+│   └── index.ts                # Type exports
+├── providers/                   # React Context
+│   ├── DropdownContext.tsx     # Context provider component
+│   └── dropdownContext.ts      # Context definition
+├── components/                  # UI Components
+│   ├── DropdownButton.tsx      # Main button
+│   ├── DropdownMenu.tsx        # Menu container
+│   ├── SearchBar.tsx           # Search input
+│   ├── OptionItem.tsx          # Individual option
+│   ├── button/                 # Button sub-components
+│   ├── search/                 # Search sub-components
+│   ├── menu/                   # Menu sub-components
+│   └── options/                # Option sub-components
+├── hooks/                       # Custom hooks
+│   ├── useDropdownState.ts     # Open/close state
+│   ├── useDropdownValidation.ts# Form validation
+│   ├── useDropdownPosition.ts  # Positioning logic
+│   ├── useDropdownContext.ts   # Context access
+│   ├── search/                 # Search-related hooks
+│   ├── keyboard/               # Keyboard navigation hooks
+│   └── [other hooks]
+└── utils/                       # Utility functions
+    └── dropdownUtils.ts        # Helper functions
+```
+
+### Design Patterns
+
+**Context Pattern**: Eliminates prop drilling by sharing state through React Context
+
+```tsx
+// Components access shared state via context
+const { isOpen, filteredOptions, onSelect } = useDropdownContext();
+```
+
+**Custom Hooks**: Encapsulates complex logic into reusable, testable units
+
+```tsx
+// State management
+const { isOpen, toggleDropdown } = useDropdownState();
+
+// Search functionality  
+const { searchTerm, handleSearchChange } = useSearch();
+
+// Keyboard navigation
+const { highlightedIndex, handleNavigate } = useNavigationState();
+```
+
+**Atomic Design**: Components are broken down into focused, single-responsibility units
+
+```tsx
+// Composed from smaller components
+<DropdownMenu>
+  <SearchBar />
+  <MenuContent>
+    <OptionItem />
+  </MenuContent>
+</DropdownMenu>
+```
+
+## Validation
+
+The dropdown integrates with form validation systems:
+
+```tsx
+// Validation states
+const validationStates = {
+  idle: 'No validation performed',
+  valid: 'Field passes validation',
+  invalid: 'Field has validation errors'
+};
+
+// Custom validation logic can be added
+const customValidate = (value: string) => {
+  if (!value) return 'This field is required';
+  if (value === 'invalid') return 'Invalid option selected';
+  return null;
+};
+```
+
+## Accessibility
+
+- **ARIA Labels**: Proper labeling for screen readers
+- **Keyboard Navigation**: Full keyboard support
+- **Focus Management**: Logical focus flow
+- **Role Attributes**: Semantic HTML roles
+- **Screen Reader Support**: Announces state changes
+
+## Performance
+
+- **Debounced Search**: Prevents excessive filtering during typing
+- **Virtualization Ready**: Structure supports virtual scrolling for large lists
+- **Context Optimization**: Minimizes unnecessary re-renders
+- **Memoization**: Strategic use of React.memo and useCallback
+
+## Customization
+
+### Styling
+
+The component uses Tailwind CSS classes that can be customized:
+
+```tsx
+// Override default classes via CSS modules or styled-components
+.dropdown-button {
+  @apply your-custom-classes;
+}
+```
+
+### Constants
+
+Modify behavior through constants:
+
+```tsx
+// constants.ts
 export const DROPDOWN_CONSTANTS = {
   ANIMATION_DURATION: 100,
   DEBOUNCE_DELAY: 150,
   MAX_HEIGHT: 240,
-  BUTTON_PADDING: 48,
   VIEWPORT_MARGIN: 16,
-};
-
-export const SEARCH_STATES = {
-  IDLE: 'idle',
-  TYPING: 'typing',
-  FOUND: 'found',
-  NOT_FOUND: 'not-found',
-};
-
-export const KEYBOARD_KEYS = {
-  ARROW_DOWN: 'ArrowDown',
-  ARROW_UP: 'ArrowUp',
-  ENTER: 'Enter',
-  ESCAPE: 'Escape',
 };
 ```
 
-## Architecture Benefits
+## Browser Support
 
-### Maintainability
-- Single Responsibility: Each file has one clear purpose
-- Type Safety: Centralized type definitions prevent inconsistencies
-- Context Pattern: Eliminates prop drilling complexity
+- Modern browsers (Chrome 60+, Firefox 60+, Safari 12+, Edge 79+)
+- Mobile browsers (iOS Safari 12+, Chrome Mobile 60+)
+- Keyboard navigation support
+- Screen reader compatibility
 
-### Performance
-- Reduced re-renders through optimized context usage
-- Grouped effects reduce useEffect complexity
-- Tree-shakable component architecture
+## Contributing
 
-### Developer Experience
-- Clear separation of concerns
-- Self-documenting code structure
-- Easy to test individual components and hooks
-- Minimal cognitive overhead for new developers
+When modifying the component:
 
-### Scalability
-- Easy to add new features without breaking existing code
-- Modular architecture supports incremental changes
-- Type system catches errors at compile time
+1. Maintain single responsibility principle
+2. Update TypeScript interfaces in `types/` folder
+3. Write unit tests for new functionality
+4. Follow existing naming conventions
+5. Update this documentation for API changes
