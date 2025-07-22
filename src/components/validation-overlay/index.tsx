@@ -20,7 +20,7 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
   showError,
   targetRef,
   autoHide = true,
-  autoHideDelay = 3000,
+  autoHideDelay = 1000,
   onAutoHide,
   isHovered = false,
   hasAutoHidden = false,
