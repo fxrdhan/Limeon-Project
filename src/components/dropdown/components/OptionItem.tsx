@@ -1,39 +1,28 @@
-import React, { RefObject } from 'react';
+import { type FC } from 'react';
 import { truncateText, shouldTruncateText } from '@/utils/text';
 import { DROPDOWN_CONSTANTS } from '../constants';
 import OptionContainer from './options/OptionContainer';
 import RadioIndicator from './options/RadioIndicator';
 import OptionText from './options/OptionText';
+import { useDropdownContext } from '../hooks/useDropdownContext';
+import type { OptionItemProps } from '../types';
 
-interface OptionItemProps {
-  option: { id: string; name: string };
-  index: number;
-  isSelected: boolean;
-  isHighlighted: boolean;
-  isExpanded: boolean;
-  withRadio?: boolean;
-  isKeyboardNavigation: boolean;
-  buttonRef: RefObject<HTMLButtonElement | null>;
-  onSelect: (optionId: string) => void;
-  onHighlight: (index: number) => void;
-  onExpansion: (optionId: string, optionName: string, shouldExpand: boolean) => void;
-  dropdownMenuRef: RefObject<HTMLDivElement | null>;
-}
-
-const OptionItem: React.FC<OptionItemProps> = ({
+const OptionItem: FC<OptionItemProps> = ({
   option,
   index,
   isSelected,
   isHighlighted,
   isExpanded,
-  withRadio = false,
-  isKeyboardNavigation,
-  buttonRef,
-  onSelect,
   onHighlight,
-  onExpansion,
   dropdownMenuRef,
 }) => {
+  const {
+    withRadio = false,
+    isKeyboardNavigation,
+    buttonRef,
+    onSelect,
+    onExpansion,
+  } = useDropdownContext();
   const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
   const maxTextWidth = buttonWidth - (withRadio 
     ? DROPDOWN_CONSTANTS.BUTTON_PADDING + DROPDOWN_CONSTANTS.RADIO_EXTRA_PADDING 
