@@ -23,7 +23,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       validationSchema,
       showValidationOnBlur = true,
       validationAutoHide = true,
-      validationAutoHideDelay = 3000,
+      validationAutoHideDelay,
       onValidationChange,
       value,
       onBlur,
