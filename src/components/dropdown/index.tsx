@@ -39,7 +39,7 @@ const Dropdown = ({
   validate = false,
   showValidationOnBlur = true,
   validationAutoHide = true,
-  validationAutoHideDelay = 3000,
+  validationAutoHideDelay,
   name, // Used for form field identification and validation
   hoverToOpen = false,
 }: DropdownProps) => {
@@ -110,7 +110,7 @@ const Dropdown = ({
       const isValid = validateDropdown();
       if (!isValid && showValidationOnBlur) {
         // Error state is already handled by hasError
-        if (validationAutoHide && validationAutoHideDelay > 0) {
+        if (validationAutoHide && validationAutoHideDelay && validationAutoHideDelay > 0) {
           if (validationTimeoutRef.current) {
             clearTimeout(validationTimeoutRef.current);
           }
@@ -388,6 +388,7 @@ const Dropdown = ({
             onAddNew &&
             searchTerm.trim() !== ""
           ) {
+            handleCloseValidation();
             onAddNew(searchTerm);
             actualCloseDropdown();
           }
@@ -424,6 +425,7 @@ const Dropdown = ({
       onAddNew,
       searchState,
       searchTerm,
+      handleCloseValidation,
     ],
   );
 
@@ -709,7 +711,7 @@ const Dropdown = ({
         setShowValidationOverlay(true);
         setHasAutoHidden(false); // Reset auto-hide state for new validation
 
-        if (validationAutoHide && validationAutoHideDelay > 0) {
+        if (validationAutoHide && validationAutoHideDelay && validationAutoHideDelay > 0) {
           if (validationTimeoutRef.current) {
             clearTimeout(validationTimeoutRef.current);
           }
@@ -1005,6 +1007,7 @@ const Dropdown = ({
                                   style={{ width: "16px", minWidth: "16px" }}
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    handleCloseValidation();
                                     onAddNew?.(searchTerm);
                                     actualCloseDropdown();
                                   }}
