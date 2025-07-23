@@ -1,8 +1,8 @@
 import { useRef, useCallback, RefObject } from "react";
 import type { DropdownProps } from "@/types";
 import ValidationOverlay from "@/components/validation-overlay";
-import DropdownButton from "./modules/DropdownButton";
-import DropdownMenu from "./modules/DropdownMenu";
+import DropdownButton from "./components/DropdownButton";
+import DropdownMenu from "./components/DropdownMenu";
 import { DropdownProvider } from "./providers/DropdownContext";
 import { useDropdownState } from "./hooks/useDropdownState";
 import { useSearch } from "./hooks/search/useSearch";
