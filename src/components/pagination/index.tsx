@@ -1,14 +1,14 @@
-import React, { useRef, useState } from 'react';
-import classNames from 'classnames';
-import { 
-  usePaginationState, 
-  useFloatingPagination, 
-  useKeyboardNavigation, 
-  useAnimationDirection 
-} from './hooks';
-import { PaginationProvider } from './providers';
-import { PaginationContent, FloatingWrapper } from './components';
-import type { FloatingPaginationProps, PaginationContextValue } from './types';
+import React, { useRef, useState } from "react";
+import classNames from "classnames";
+import {
+  usePaginationState,
+  useFloatingPagination,
+  useKeyboardNavigation,
+  useAnimationDirection,
+} from "./hooks";
+import { PaginationProvider } from "./providers";
+import { PaginationContent, FloatingWrapper } from "./modules";
+import type { FloatingPaginationProps, PaginationContextValue } from "./types";
 
 const Pagination: React.FC<FloatingPaginationProps> = ({
   currentPage,
@@ -22,7 +22,7 @@ const Pagination: React.FC<FloatingPaginationProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedPageSizeIndex, setSelectedPageSizeIndex] = useState(0);
-  
+
   // Custom hooks for different concerns
   const paginationState = usePaginationState({
     currentPage,
@@ -31,12 +31,12 @@ const Pagination: React.FC<FloatingPaginationProps> = ({
     onPageChange,
     onItemsPerPageChange,
   });
-  
+
   const { showFloating } = useFloatingPagination({
     enableFloating,
     containerRef,
   });
-  
+
   const { direction } = useAnimationDirection({
     currentPage,
   });
@@ -70,11 +70,13 @@ const Pagination: React.FC<FloatingPaginationProps> = ({
 
   return (
     <PaginationProvider value={contextValue}>
-      <div 
-        ref={containerRef} 
+      <div
+        ref={containerRef}
         className={classNames(
           "transition-opacity duration-200",
-          showFloating && !hideFloatingWhenModalOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+          showFloating && !hideFloatingWhenModalOpen
+            ? "opacity-0 pointer-events-none"
+            : "opacity-100",
         )}
       >
         <PaginationContent />
