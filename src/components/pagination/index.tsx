@@ -7,7 +7,7 @@ import {
   useAnimationDirection,
 } from "./hooks";
 import { PaginationProvider } from "./providers";
-import { PaginationContent, FloatingWrapper } from "./modules";
+import { PaginationContent, FloatingWrapper } from "./components";
 import type { FloatingPaginationProps, PaginationContextValue } from "./types";
 
 const Pagination: React.FC<FloatingPaginationProps> = ({

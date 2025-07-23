@@ -175,7 +175,7 @@ pagination/
 ├── providers/                   # React Context
 │   ├── PaginationContext.tsx   # Context provider component
 │   └── paginationContext.ts    # Context definition
-├── modules/                    # UI Components
+├── components/                    # UI Components
 │   ├── PaginationButton.tsx    # Previous/Next buttons
 │   ├── PageSizeSelector.tsx    # Page size selector
 │   ├── CurrentPageDisplay.tsx  # Current page indicator
