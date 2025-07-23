@@ -377,7 +377,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="w-full md:w-4/5">
                       <FormSection title="Data Umum">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                           <FormField
                             label="Kode Item"
                             className="md:col-span-1"
@@ -410,7 +410,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
 
                           <FormField
                             label="Nama Item"
-                            className="md:col-span-2"
+                            className="md:col-span-1"
                             required={true}
                           >
                             <Input
@@ -450,7 +450,9 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                               placeholder="Masukkan barcode item"
                             />
                           </FormField>
+                        </div>
 
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                           <FormField
                             label="Jenis Produk"
                             className="md:col-span-1"
@@ -478,9 +480,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                               searchList={false}
                             />
                           </FormField>
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                           <FormField label="Kategori" required={true}>
                             {loading && categories.length === 0 ? (
                               <Input
