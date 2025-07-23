@@ -153,7 +153,7 @@ dropdown/
 ├── providers/                   # React Context
 │   ├── DropdownContext.tsx     # Context provider component
 │   └── dropdownContext.ts      # Context definition
-├── components/                  # UI Components
+├── modules/                    # UI Components
 │   ├── DropdownButton.tsx      # Main button
 │   ├── DropdownMenu.tsx        # Menu container
 │   ├── SearchBar.tsx           # Search input
