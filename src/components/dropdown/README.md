@@ -21,7 +21,7 @@ import Dropdown from '@/components/dropdown';
 
 const MyComponent = () => {
   const [selectedValue, setSelectedValue] = useState('');
-  
+
   const options = [
     { id: '1', name: 'Option 1' },
     { id: '2', name: 'Option 2' },
@@ -189,7 +189,7 @@ const { isOpen, filteredOptions, onSelect } = useDropdownContext();
 // State management
 const { isOpen, toggleDropdown } = useDropdownState();
 
-// Search functionality  
+// Search functionality
 const { searchTerm, handleSearchChange } = useSearch();
 
 // Keyboard navigation
@@ -269,13 +269,6 @@ export const DROPDOWN_CONSTANTS = {
   VIEWPORT_MARGIN: 16,
 };
 ```
-
-## Browser Support
-
-- Modern browsers (Chrome 60+, Firefox 60+, Safari 12+, Edge 79+)
-- Mobile browsers (iOS Safari 12+, Chrome Mobile 60+)
-- Keyboard navigation support
-- Screen reader compatibility
 
 ## Contributing
 
