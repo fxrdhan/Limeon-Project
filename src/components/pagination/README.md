@@ -22,11 +22,11 @@ import Pagination from '@/components/pagination';
 const MyComponent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-  
+
   const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setItemsPerPage(parseInt(e.target.value));
     setCurrentPage(1); // Reset to first page
@@ -123,8 +123,8 @@ const [isModalOpen, setIsModalOpen] = useState(false);
 const MyServerPaginatedTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
-  
-  const { data, totalItems } = useQuery(['items', currentPage, itemsPerPage], 
+
+  const { data, totalItems } = useQuery(['items', currentPage, itemsPerPage],
     () => fetchItems({ page: currentPage, limit: itemsPerPage })
   );
 
@@ -241,7 +241,7 @@ const observer = new IntersectionObserver(([entry]) => {
 
 The component supports these page size options by default:
 - 10 items per page
-- 20 items per page  
+- 20 items per page
 - 50 items per page
 - 100 items per page
 
@@ -340,14 +340,6 @@ The component uses Tailwind CSS classes that can be customized:
 }
 ```
 
-## Browser Support
-
-- Modern browsers (Chrome 60+, Firefox 60+, Safari 12+, Edge 79+)
-- Mobile browsers (iOS Safari 12+, Chrome Mobile 60+)
-- Intersection Observer support (with polyfill for older browsers)
-- CSS backdrop-filter support for floating mode
-- Framer Motion compatibility
-
 ## Contributing
 
 When modifying the component:
@@ -359,30 +351,3 @@ When modifying the component:
 5. **Document Changes**: Update this README for API changes
 6. **Performance**: Consider performance implications of new features
 7. **Accessibility**: Ensure new features maintain accessibility standards
-
-## Troubleshooting
-
-### Common Issues
-
-**Floating pagination not appearing:**
-- Check that `enableFloating` is `true`
-- Ensure the main pagination container is properly scrolled out of view
-- Verify that `hideFloatingWhenModalOpen` is not preventing display
-
-**Page size changes not working:**
-- Verify that `onItemsPerPageChange` handler is properly implemented
-- Check that you're resetting `currentPage` to 1 when page size changes
-- Ensure the new page size is included in the available options
-
-**TypeScript errors:**
-- Make sure all required props are provided
-- Check that event handler signatures match the expected types
-- Verify import paths are correct
-
-### Performance Optimization
-
-For large datasets:
-- Consider server-side pagination instead of client-side
-- Implement virtual scrolling for very long lists
-- Use React.memo for expensive parent components
-- Debounce rapid page changes if needed
