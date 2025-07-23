@@ -214,11 +214,12 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
   };
 
   const handleAddConversion = () => {
-    if (
-      !unitConversionHook.unitConversionFormData.unit ||
-      unitConversionHook.unitConversionFormData.conversion <= 0
-    ) {
-      alert("Satuan dan konversi harus diisi dengan benar!");
+    if (!unitConversionHook.unitConversionFormData.unit) {
+      return; // Simply return without alert if no unit is selected
+    }
+    
+    if (unitConversionHook.unitConversionFormData.conversion <= 0) {
+      alert("Nilai konversi harus lebih dari 0!");
       return;
     }
 
@@ -932,7 +933,7 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
                                       );
                                     }}
                                     type="number"
-                                    min="1"
+                                    min={unitConversionHook.unitConversionFormData.unit ? "1" : undefined}
                                     className="w-full pr-10"
                                     onKeyDown={(e) => {
                                       if (e.key === "Enter") {
