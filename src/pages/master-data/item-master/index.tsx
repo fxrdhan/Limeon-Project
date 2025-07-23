@@ -103,38 +103,15 @@ const ItemMasterNew = () => {
     doesExternalFilterPass,
     handleTargetedSearch,
     handleGlobalSearch,
-    gridRef,
   } = useEnhancedAgGridSearch({
     columns: itemMasterSearchColumns,
     useFuzzySearch: true,
   });
 
-  // Track filtered data count for pagination
-  const [filteredCount, setFilteredCount] = useState(0);
-
-  // Enhanced onGridReady that also tracks filtered data
+  // Enhanced onGridReady 
   const onGridReady = React.useCallback((params: GridReadyEvent) => {
     originalOnGridReady(params);
-    setFilteredCount(params.api.getDisplayedRowCount());
   }, [originalOnGridReady]);
-
-  // Update filtered count when search changes
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      if (gridRef.current) {
-        const newFilteredCount = gridRef.current.getDisplayedRowCount();
-        setFilteredCount(newFilteredCount);
-        
-        // Reset to page 1 if current page is beyond available pages
-        const newTotalPages = Math.ceil(newFilteredCount / itemsPerPage);
-        if (currentPage > newTotalPages && newTotalPages > 0) {
-          setCurrentPage(1);
-        }
-      }
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [search, currentPage, itemsPerPage, gridRef]);
 
   // Data hooks - conditionally fetch based on active tab
   const categoriesQuery = useCategories({ enabled: activeTab === "categories" });
@@ -201,11 +178,6 @@ const ItemMasterNew = () => {
 
   const { data, isLoading, isError, error, isFetching } = getCurrentData();
   const mutations = getCurrentMutations();
-  
-  // Update filtered count when data changes (e.g., tab switch)
-  React.useEffect(() => {
-    setFilteredCount(data.length);
-  }, [data.length]);
 
   // Create a comprehensive clear function
   const handleClearSearch = React.useCallback(() => {
@@ -215,16 +187,18 @@ const ItemMasterNew = () => {
     if (searchInputRef.current) {
       searchInputRef.current.value = "";
     }
-    // Reset filtered count to show all data
-    setFilteredCount(data.length);
-  }, [clearSearch, data.length]);
+  }, [clearSearch]);
 
-  // Use AG Grid filtering instead of manual filtering
-  // Pagination logic based on filtered count from AG Grid
-  const totalItems = filteredCount || data.length;
+  // Client-side pagination using useMemo for stable references
+  const paginatedData = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return data.slice(startIndex, endIndex);
+  }, [data, currentPage, itemsPerPage]);
+
+  // Pagination calculations
+  const totalItems = data.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = data.slice(startIndex, startIndex + itemsPerPage);
 
   // Event handlers
   const handleEdit = (item: MasterDataEntity) => {
@@ -376,7 +350,7 @@ const ItemMasterNew = () => {
             onChange={handleSearchChange}
             placeholder={`${currentConfig.searchPlaceholder} atau ketik # untuk pencarian kolom spesifik`}
             className="grow"
-            searchState={getSearchState(search, search, filteredCount ? new Array(filteredCount) : [])}
+            searchState={getSearchState(search, search, paginatedData)}
             columns={itemMasterSearchColumns}
             onTargetedSearch={handleTargetedSearch}
             onGlobalSearch={handleGlobalSearch}
