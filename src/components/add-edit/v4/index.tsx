@@ -11,7 +11,7 @@ import ItemSearchBar from "@/components/item-search";
 import DescriptiveTextarea from "@/components/descriptive-textarea";
 import Checkbox from "@/components/checkbox";
 import FormAction from "@/components/form-action";
-import AddItemPortal from "@/components/add-edit/v2";
+import ItemManagementPage from "@/pages/ItemManagementPage";
 import {
   CardContent,
   CardFooter,
@@ -854,7 +854,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
         </motion.div>
       )}
 
-      <AddItemPortal
+      <ItemManagementPage
         key={`${searchItem ?? ""}-${portalRenderId}`}
         isOpen={isAddItemPortalOpen}
         onClose={handleCloseAddItemPortal}
