@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import type { Item as ItemDataType } from "@/types";
-import AddItemPortal from "@/components/add-edit/v2";
+import ItemManagementPage from "@/pages/ItemManagementPage";
 
 // Use the new modular architecture
 import { useMasterDataManagement } from "@/handlers/masterData";
@@ -146,7 +146,7 @@ function ItemListNew() {
         />
       }
       modal={
-        <AddItemPortal
+        <ItemManagementPage
           key={`${
             editingItemId ?? "new"
           }-${currentSearchQueryForModal ?? ""}-${modalRenderId}`}
