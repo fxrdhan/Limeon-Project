@@ -8,7 +8,7 @@ import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import { DataGrid, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 // import { useLocation } from "react-router-dom";
 import type { Supplier as SupplierType, FieldConfig } from "@/types";
 
@@ -53,6 +53,15 @@ const SupplierListNew = () => {
     searchInputRef,
   });
 
+  // Stable callback functions to prevent infinite re-renders
+  const handleSearch = useCallback((searchValue: string) => {
+    setDataSearch(searchValue);
+  }, [setDataSearch]);
+
+  const handleClear = useCallback(() => {
+    setDataSearch("");
+  }, [setDataSearch]);
+
   // Unified search functionality with hybrid mode
   const {
     search,
@@ -65,12 +74,8 @@ const SupplierListNew = () => {
     searchMode: 'hybrid',
     useFuzzySearch: true,
     data: suppliersData,
-    onSearch: (searchValue: string) => {
-      setDataSearch(searchValue);
-    },
-    onClear: () => {
-      setDataSearch("");
-    },
+    onSearch: handleSearch,
+    onClear: handleClear,
   });
 
   const suppliers = suppliersData || [];

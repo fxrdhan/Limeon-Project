@@ -88,6 +88,15 @@ export function useUnifiedSearch({
     return originalDoesExternalFilterPass?.(node) ?? true;
   }, [search, originalDoesExternalFilterPass]);
 
+  // Stable references for onSearch and onClear  
+  const stableOnSearch = useCallback((searchValue: string) => {
+    onSearch?.(searchValue);
+  }, [onSearch]);
+
+  const stableOnClear = useCallback(() => {
+    onClear?.();
+  }, [onClear]);
+
   // Unified search change handler
   const handleSearchChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -98,9 +107,9 @@ export function useUnifiedSearch({
     
     // For server-side search, call the external handler
     if (searchMode === 'server' || searchMode === 'hybrid') {
-      onSearch?.(value);
+      stableOnSearch(value);
     }
-  }, [originalHandleSearchChange, externalSearchHandler, onSearch, searchMode]);
+  }, [originalHandleSearchChange, externalSearchHandler, stableOnSearch, searchMode]);
 
   // Unified global search handler  
   const handleGlobalSearch = useCallback((searchValue: string) => {
@@ -108,9 +117,9 @@ export function useUnifiedSearch({
     
     // For server-side search, call the external handler
     if (searchMode === 'server' || searchMode === 'hybrid') {
-      onSearch?.(searchValue);
+      stableOnSearch(searchValue);
     }
-  }, [originalHandleGlobalSearch, onSearch, searchMode]);
+  }, [originalHandleGlobalSearch, stableOnSearch, searchMode]);
 
   // Unified targeted search handler
   const handleTargetedSearch = useCallback((targetedSearch: TargetedSearch | null) => {
@@ -119,9 +128,9 @@ export function useUnifiedSearch({
     // For targeted search, we typically want to clear server-side search
     // since AG Grid will handle the filtering
     if (searchMode === 'server' || searchMode === 'hybrid') {
-      onSearch?.('');
+      stableOnSearch('');
     }
-  }, [originalHandleTargetedSearch, onSearch, searchMode]);
+  }, [originalHandleTargetedSearch, stableOnSearch, searchMode]);
 
   // Unified clear search handler
   const handleClearSearch = useCallback(() => {
@@ -129,11 +138,16 @@ export function useUnifiedSearch({
     
     // Call external clear handler if provided
     if (searchMode === 'server' || searchMode === 'hybrid') {
-      onSearch?.('');
+      stableOnSearch('');
     }
     
-    onClear?.();
-  }, [originalClearSearch, onSearch, onClear, searchMode]);
+    stableOnClear();
+  }, [originalClearSearch, stableOnSearch, stableOnClear, searchMode]);
+
+  // Stable search state calculation
+  const searchState = useMemo(() => {
+    return getSearchState(search, search, data);
+  }, [search, data]);
 
   // Search bar props for easy integration
   const searchBarProps = useMemo(() => ({
@@ -142,7 +156,7 @@ export function useUnifiedSearch({
     onTargetedSearch: handleTargetedSearch,
     onGlobalSearch: handleGlobalSearch,
     onClearSearch: handleClearSearch,
-    searchState: getSearchState(search, search, data),
+    searchState,
     columns,
   }), [
     search,
@@ -150,7 +164,7 @@ export function useUnifiedSearch({
     handleTargetedSearch,
     handleGlobalSearch,
     handleClearSearch,
-    data,
+    searchState,
     columns,
   ]);
 
