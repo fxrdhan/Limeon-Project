@@ -63,7 +63,9 @@ function App() {
             <Route
               index
               element={
-                <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
+                <ErrorBoundary
+                  showDetails={process.env.NODE_ENV === "development"}
+                >
                   <Suspense fallback={<DashboardLoadingFallback />}>
                     <Dashboard />
                   </Suspense>
@@ -75,7 +77,9 @@ function App() {
               <Route
                 path="items"
                 element={
-                  <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
+                  <ErrorBoundary
+                    showDetails={process.env.NODE_ENV === "development"}
+                  >
                     <Suspense
                       fallback={
                         <TableLoadingFallback
@@ -92,7 +96,9 @@ function App() {
               <Route
                 path="item-master"
                 element={
-                  <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
+                  <ErrorBoundary
+                    showDetails={process.env.NODE_ENV === "development"}
+                  >
                     <Suspense
                       fallback={
                         <TableLoadingFallback
@@ -121,7 +127,9 @@ function App() {
               <Route
                 path="suppliers"
                 element={
-                  <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
+                  <ErrorBoundary
+                    showDetails={process.env.NODE_ENV === "development"}
+                  >
                     <Suspense
                       fallback={
                         <TableLoadingFallback
@@ -138,7 +146,9 @@ function App() {
               <Route
                 path="patients"
                 element={
-                  <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
+                  <ErrorBoundary
+                    showDetails={process.env.NODE_ENV === "development"}
+                  >
                     <Suspense
                       fallback={
                         <TableLoadingFallback
@@ -155,7 +165,9 @@ function App() {
               <Route
                 path="doctors"
                 element={
-                  <ErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
+                  <ErrorBoundary
+                    showDetails={process.env.NODE_ENV === "development"}
+                  >
                     <Suspense
                       fallback={
                         <TableLoadingFallback
