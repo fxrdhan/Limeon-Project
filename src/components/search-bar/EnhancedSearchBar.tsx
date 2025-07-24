@@ -41,6 +41,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Parse search value to detect targeted search
   const parseSearchValue = useCallback(
     (searchValue: string) => {
+      // Handle special case for hashtag-only input
+      if (searchValue === "#") {
+        return {
+          isTargeted: false,
+          globalSearch: undefined,
+          showColumnSelector: true,
+        };
+      }
+
       if (searchValue.startsWith("#")) {
         const match = searchValue.match(/^#([^:]*):?(.*)$/);
         if (match) {
@@ -102,7 +111,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     if (newMode.isTargeted && newMode.targetedSearch) {
       onTargetedSearch?.(newMode.targetedSearch);
       onGlobalSearch?.("");
-    } else if (!newMode.isTargeted && newMode.globalSearch !== undefined) {
+    } else if (
+      !newMode.isTargeted && 
+      !newMode.showColumnSelector && 
+      newMode.globalSearch !== undefined && 
+      newMode.globalSearch.trim() !== "" &&
+      newMode.globalSearch !== "#"
+    ) {
       onTargetedSearch?.(null);
       onGlobalSearch?.(newMode.globalSearch);
     }
