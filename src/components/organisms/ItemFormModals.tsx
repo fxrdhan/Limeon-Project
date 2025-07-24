@@ -1,4 +1,4 @@
-import AddEditModal from "@/components/add-edit/v1";
+import EntityManagementModal from "@/pages/EntityManagementModal";
 
 interface MutationState {
   isPending: boolean;
@@ -34,7 +34,7 @@ export default function ItemFormModals({
 }: ItemFormModalsProps) {
   return (
     <>
-      <AddEditModal
+      <EntityManagementModal
         entityName="Kategori"
         isOpen={categoryModal.isOpen}
         onClose={categoryModal.onClose}
@@ -43,7 +43,7 @@ export default function ItemFormModals({
         initialNameFromSearch={currentSearchTerm}
       />
 
-      <AddEditModal
+      <EntityManagementModal
         isOpen={typeModal.isOpen}
         onClose={typeModal.onClose}
         onSubmit={typeModal.onSubmit}
@@ -52,7 +52,7 @@ export default function ItemFormModals({
         initialNameFromSearch={currentSearchTerm}
       />
 
-      <AddEditModal
+      <EntityManagementModal
         isOpen={unitModal.isOpen}
         onClose={unitModal.onClose}
         onSubmit={unitModal.onSubmit}

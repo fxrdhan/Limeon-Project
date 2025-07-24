@@ -3,7 +3,7 @@ import Button from "@/components/button";
 import Pagination from "@/components/pagination";
 import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
 import PageTitle from "@/components/page-title";
-import AddEditModal from "@/components/add-edit/v1";
+import EntityManagementModal from "@/pages/EntityManagementModal";
 import { Card } from "@/components/card";
 import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
@@ -309,7 +309,7 @@ const ItemMasterNew = () => {
         )}
       </Card>
 
-      <AddEditModal
+      <EntityManagementModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSubmit={async (formData) => {
@@ -323,7 +323,7 @@ const ItemMasterNew = () => {
         entityName={currentConfig.entityName}
       />
 
-      <AddEditModal
+      <EntityManagementModal
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);

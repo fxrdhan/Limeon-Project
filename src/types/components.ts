@@ -219,7 +219,7 @@ export interface AddEditModalProps {
   onDelete?: (categoryId: string) => void;
   isLoading?: boolean;
   isDeleting?: boolean;
-  entityName?: string;
+  entityName: string;
   initialNameFromSearch?: string;
 }
 
