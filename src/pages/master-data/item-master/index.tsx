@@ -6,19 +6,19 @@ import PageTitle from "@/components/page-title";
 import AddEditModal from "@/components/add-edit/v1";
 import { Card } from "@/components/card";
 import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
-import { ColDef, RowClickedEvent, GridReadyEvent } from "ag-grid-community";
+import { ColDef, RowClickedEvent } from "ag-grid-community";
 import { FaPlus } from "react-icons/fa";
 import { motion, LayoutGroup } from "framer-motion";
 import classNames from "classnames";
 
 // Import our new hooks
-import { 
-  useCategories, 
+import {
+  useCategories,
   useCategoryMutations,
-  useMedicineTypes, 
+  useMedicineTypes,
   useMedicineTypeMutations,
   useUnits,
-  useUnitMutations
+  useUnitMutations,
 } from "@/hooks/queries";
 
 // Services are available but not used in this component
@@ -26,9 +26,8 @@ import {
 import type { Category, MedicineType, Unit } from "@/types/database";
 import { useAlert } from "@/components/alert/hooks";
 import { useConfirmDialog } from "@/components/dialog-box";
-import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
+import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import { itemMasterSearchColumns } from "@/utils/searchColumns";
-import { getSearchState } from "@/utils/search";
 
 type MasterDataType = "categories" | "types" | "units";
 type MasterDataEntity = Category | MedicineType | Unit;
@@ -84,37 +83,19 @@ const ItemMasterNew = () => {
   const [editingItem, setEditingItem] = useState<MasterDataEntity | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dataGridRef = useRef<DataGridRef>(null);
-  
+
   const { openConfirmDialog } = useConfirmDialog();
   const alert = useAlert();
 
   const currentConfig = tabConfigs[activeTab];
 
-  // Enhanced search functionality
-  const {
-    search,
-    handleSearchChange,
-    onGridReady: originalOnGridReady,
-    clearSearch,
-    isExternalFilterPresent,
-    doesExternalFilterPass,
-    handleTargetedSearch,
-    handleGlobalSearch,
-  } = useEnhancedAgGridSearch({
-    columns: itemMasterSearchColumns,
-    useFuzzySearch: true,
-  });
-
-  // Enhanced onGridReady 
-  const onGridReady = React.useCallback((params: GridReadyEvent) => {
-    originalOnGridReady(params);
-  }, [originalOnGridReady]);
-
   // Data hooks - conditionally fetch based on active tab
-  const categoriesQuery = useCategories({ enabled: activeTab === "categories" });
+  const categoriesQuery = useCategories({
+    enabled: activeTab === "categories",
+  });
   const typesQuery = useMedicineTypes({ enabled: activeTab === "types" });
   const unitsQuery = useUnits({ enabled: activeTab === "units" });
 
@@ -179,22 +160,35 @@ const ItemMasterNew = () => {
   const { data, isLoading, isError, error, isFetching } = getCurrentData();
   const mutations = getCurrentMutations();
 
-  // Create a comprehensive clear function
-  const handleClearSearch = React.useCallback(() => {
-    // Clear the UI search state (AG Grid filters)
-    clearSearch();
-    // Clear the search input value
-    if (searchInputRef.current) {
-      searchInputRef.current.value = "";
-    }
-  }, [clearSearch]);
-
   // Client-side pagination using useMemo for stable references
   const paginatedData = React.useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return data.slice(startIndex, endIndex);
   }, [data, currentPage, itemsPerPage]);
+
+  // Unified search functionality
+  const {
+    search,
+    onGridReady,
+    isExternalFilterPresent,
+    doesExternalFilterPass,
+    searchBarProps,
+    clearSearch,
+  } = useUnifiedSearch({
+    columns: itemMasterSearchColumns,
+    searchMode: 'client',
+    useFuzzySearch: true,
+    data: paginatedData,
+  });
+
+  // Clear search with input ref sync
+  const handleClearSearch = React.useCallback(() => {
+    clearSearch();
+    if (searchInputRef.current) {
+      searchInputRef.current.value = "";
+    }
+  }, [clearSearch]);
 
   // Pagination calculations
   const totalItems = data.length;
@@ -206,13 +200,16 @@ const ItemMasterNew = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleModalSubmit = async (formData: { name: string; description?: string }) => {
+  const handleModalSubmit = async (formData: {
+    name: string;
+    description?: string;
+  }) => {
     try {
       if (editingItem) {
         // Update
         await mutations.update.mutateAsync({
           id: editingItem.id,
-          data: formData
+          data: formData,
         });
         alert.success(`${currentConfig.entityName} berhasil diperbarui`);
         setIsEditModalOpen(false);
@@ -225,7 +222,9 @@ const ItemMasterNew = () => {
       }
     } catch (error) {
       console.error("Mutation error:", error);
-      alert.error(`Gagal ${editingItem ? 'memperbarui' : 'menambahkan'} ${currentConfig.entityName.toLowerCase()}`);
+      alert.error(
+        `Gagal ${editingItem ? "memperbarui" : "menambahkan"} ${currentConfig.entityName.toLowerCase()}`,
+      );
     }
   };
 
@@ -243,7 +242,9 @@ const ItemMasterNew = () => {
           setEditingItem(null);
         } catch (error) {
           console.error("Delete error:", error);
-          alert.error(`Gagal menghapus ${currentConfig.entityName.toLowerCase()}`);
+          alert.error(
+            `Gagal menghapus ${currentConfig.entityName.toLowerCase()}`,
+          );
         }
       },
     });
@@ -296,7 +297,7 @@ const ItemMasterNew = () => {
         }
       >
         <div className="mb-4">
-          <PageTitle title="Item Master (New Architecture)" />
+          <PageTitle title="Item Master" />
         </div>
 
         <div className="flex items-center mb-4 mt-5">
@@ -308,8 +309,9 @@ const ItemMasterNew = () => {
                   className={classNames(
                     "group px-4 py-2 rounded-full focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
                     {
-                      "hover:bg-emerald-100 hover:text-emerald-700": activeTab !== config.key
-                    }
+                      "hover:bg-emerald-100 hover:text-emerald-700":
+                        activeTab !== config.key,
+                    },
                   )}
                   onClick={() => handleTabChange(config.key)}
                 >
@@ -331,8 +333,9 @@ const ItemMasterNew = () => {
                       "relative z-10 select-none font-medium",
                       {
                         "text-white": activeTab === config.key,
-                        "text-gray-700 group-hover:text-emerald-700": activeTab !== config.key
-                      }
+                        "text-gray-700 group-hover:text-emerald-700":
+                          activeTab !== config.key,
+                      },
                     )}
                   >
                     {activeTab === config.key
@@ -343,20 +346,15 @@ const ItemMasterNew = () => {
               ))}
             </div>
           </LayoutGroup>
-          
+
           <EnhancedSearchBar
             inputRef={searchInputRef}
-            value={search}
-            onChange={handleSearchChange}
+            {...searchBarProps}
             placeholder={`${currentConfig.searchPlaceholder} atau ketik # untuk pencarian kolom spesifik`}
             className="grow"
-            searchState={getSearchState(search, search, paginatedData)}
-            columns={itemMasterSearchColumns}
-            onTargetedSearch={handleTargetedSearch}
-            onGlobalSearch={handleGlobalSearch}
             onClearSearch={handleClearSearch}
           />
-          
+
           <Button
             variant="primary"
             className="flex items-center ml-4 mb-4"
@@ -402,7 +400,9 @@ const ItemMasterNew = () => {
               itemsPerPage={itemsPerPage}
               itemsCount={paginatedData.length}
               onPageChange={handlePageChange}
-              onItemsPerPageChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
+              onItemsPerPageChange={(e) =>
+                handleItemsPerPageChange(parseInt(e.target.value))
+              }
               hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
             />
           </>

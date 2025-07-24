@@ -14,8 +14,7 @@ import type { Doctor as DoctorType, FieldConfig } from "@/types";
 // Use the new modular architecture
 import { useMasterDataManagement } from "@/handlers/masterData";
 
-import { getSearchState } from "@/utils/search";
-import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
+import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import { doctorSearchColumns } from "@/utils/searchColumns";
 
 const DoctorListNew = () => {
@@ -24,19 +23,7 @@ const DoctorListNew = () => {
   ) as React.RefObject<HTMLInputElement>;
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  const {
-    search,
-    handleSearchChange,
-    onGridReady,
-    isExternalFilterPresent,
-    doesExternalFilterPass,
-    handleTargetedSearch,
-    handleGlobalSearch,
-  } = useEnhancedAgGridSearch({
-    columns: doctorSearchColumns,
-    useFuzzySearch: true,
-  });
-
+  // Data management hook for server-side operations
   const {
     isAddModalOpen,
     setIsAddModalOpen,
@@ -60,9 +47,29 @@ const DoctorListNew = () => {
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
+    setSearch: setDataSearch,
   } = useMasterDataManagement("doctors", "Dokter", {
     searchInputRef,
-    handleSearchChange,
+  });
+
+  // Unified search functionality with hybrid mode
+  const {
+    search,
+    onGridReady,
+    isExternalFilterPresent,
+    doesExternalFilterPass,
+    searchBarProps,
+  } = useUnifiedSearch({
+    columns: doctorSearchColumns,
+    searchMode: 'hybrid',
+    useFuzzySearch: true,
+    data: doctorsData,
+    onSearch: (searchValue: string) => {
+      setDataSearch(searchValue);
+    },
+    onClear: () => {
+      setDataSearch("");
+    },
   });
 
   const doctors = doctorsData || [];
@@ -201,15 +208,10 @@ const DoctorListNew = () => {
         <div className="flex items-center">
           <EnhancedSearchBar
             inputRef={searchInputRef}
-            value={search}
-            onChange={handleSearchChange}
+            {...searchBarProps}
             onKeyDown={handleKeyDown}
             placeholder="Cari di semua kolom atau ketik # untuk pencarian kolom spesifik..."
             className="grow"
-            searchState={getSearchState(search, search, doctors)}
-            columns={doctorSearchColumns}
-            onTargetedSearch={handleTargetedSearch}
-            onGlobalSearch={handleGlobalSearch}
           />
           <Button
             variant="primary"

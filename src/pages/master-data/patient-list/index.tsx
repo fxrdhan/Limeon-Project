@@ -14,8 +14,7 @@ import type { Patient as PatientType, FieldConfig } from "@/types";
 // Use the new modular architecture
 import { useMasterDataManagement } from "@/handlers/masterData";
 
-import { getSearchState } from "@/utils/search";
-import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
+import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import { patientSearchColumns } from "@/utils/searchColumns";
 
 const PatientListNew = () => {
@@ -24,19 +23,7 @@ const PatientListNew = () => {
   ) as React.RefObject<HTMLInputElement>;
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  const {
-    search,
-    handleSearchChange,
-    onGridReady,
-    isExternalFilterPresent,
-    doesExternalFilterPass,
-    handleTargetedSearch,
-    handleGlobalSearch,
-  } = useEnhancedAgGridSearch({
-    columns: patientSearchColumns,
-    useFuzzySearch: true,
-  });
-
+  // Data management hook for server-side operations
   const {
     isAddModalOpen,
     setIsAddModalOpen,
@@ -60,9 +47,29 @@ const PatientListNew = () => {
     openConfirmDialog,
     debouncedSearch,
     handleKeyDown,
+    setSearch: setDataSearch,
   } = useMasterDataManagement("patients", "Pasien", {
     searchInputRef,
-    handleSearchChange,
+  });
+
+  // Unified search functionality with hybrid mode
+  const {
+    search,
+    onGridReady,
+    isExternalFilterPresent,
+    doesExternalFilterPass,
+    searchBarProps,
+  } = useUnifiedSearch({
+    columns: patientSearchColumns,
+    searchMode: 'hybrid',
+    useFuzzySearch: true,
+    data: patientsData,
+    onSearch: (searchValue: string) => {
+      setDataSearch(searchValue);
+    },
+    onClear: () => {
+      setDataSearch("");
+    },
   });
 
   const patients = patientsData || [];
@@ -185,15 +192,10 @@ const PatientListNew = () => {
         <div className="flex items-center">
           <EnhancedSearchBar
             inputRef={searchInputRef}
-            value={search}
-            onChange={handleSearchChange}
+            {...searchBarProps}
             onKeyDown={handleKeyDown}
             placeholder="Cari di semua kolom atau ketik # untuk pencarian kolom spesifik..."
             className="grow"
-            searchState={getSearchState(search, search, patients)}
-            columns={patientSearchColumns}
-            onTargetedSearch={handleTargetedSearch}
-            onGlobalSearch={handleGlobalSearch}
           />
           <Button
             variant="primary"

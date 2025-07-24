@@ -3,7 +3,7 @@ import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
 import PageTitle from "@/components/page-title";
 import Pagination from "@/components/pagination";
 
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo } from "react";
 // import { useLocation } from "react-router-dom";
 import {
   DataGrid,
@@ -15,17 +15,15 @@ import {
   formatBaseCurrency,
 } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
-import { useEnhancedAgGridSearch } from "@/hooks/useEnhancedAgGridSearch";
+import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import type { Item as ItemDataType, UnitConversion } from "@/types";
-import type { TargetedSearch } from "@/types/search";
 import AddItemPortal from "@/components/add-edit/v2";
 
 // Use the new modular architecture
 import { useMasterDataManagement } from "@/handlers/masterData";
 
-import { getSearchState } from "@/utils/search";
 import { itemSearchColumns } from "@/utils/searchColumns";
 
 function ItemListNew() {
@@ -35,20 +33,7 @@ function ItemListNew() {
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  const {
-    search,
-    handleSearchChange,
-    onGridReady,
-    isExternalFilterPresent,
-    doesExternalFilterPass,
-    handleTargetedSearch: originalHandleTargetedSearch,
-    handleGlobalSearch: originalHandleGlobalSearch,
-    clearSearch,
-  } = useEnhancedAgGridSearch({
-    columns: itemSearchColumns,
-    useFuzzySearch: true,
-  });
-
+  // Data management hook for server-side operations
   const {
     currentPage,
     itemsPerPage,
@@ -64,38 +49,27 @@ function ItemListNew() {
   } = useMasterDataManagement("items", "Item", {
     searchInputRef,
     isCustomModalOpen: isAddItemModalOpen,
-    handleSearchChange,
   });
 
-  // Synchronize search state between UI and data management hooks
-  const handleGlobalSearch = useCallback(
-    (searchValue: string) => {
-      // Update the UI search state
-      originalHandleGlobalSearch(searchValue);
-      // Update the data management search state
+  // Unified search functionality with hybrid mode
+  const {
+    search,
+    onGridReady,
+    isExternalFilterPresent,
+    doesExternalFilterPass,
+    searchBarProps,
+  } = useUnifiedSearch({
+    columns: itemSearchColumns,
+    searchMode: 'hybrid',
+    useFuzzySearch: true,
+    data: rawItems,
+    onSearch: (searchValue: string) => {
       setDataSearch(searchValue);
     },
-    [originalHandleGlobalSearch, setDataSearch],
-  );
-
-  const handleTargetedSearch = useCallback(
-    (targetedSearch: TargetedSearch | null) => {
-      // Update the UI search state
-      originalHandleTargetedSearch(targetedSearch);
-      // For targeted search, we still need to clear the data search since
-      // AG Grid will handle the filtering, not the data management hook
+    onClear: () => {
       setDataSearch("");
     },
-    [originalHandleTargetedSearch, setDataSearch],
-  );
-
-  // Create a comprehensive clear function that synchronizes both hooks
-  const handleClearSearch = useCallback(() => {
-    // Clear the UI search state (AG Grid filters)
-    clearSearch();
-    // Clear the data management search state
-    setDataSearch("");
-  }, [clearSearch, setDataSearch]);
+  });
 
   const items = rawItems;
 
@@ -259,16 +233,10 @@ function ItemListNew() {
         <div className="flex items-center">
           <EnhancedSearchBar
             inputRef={searchInputRef}
-            value={search}
-            onChange={handleSearchChange}
+            {...searchBarProps}
             onKeyDown={handleItemKeyDown}
             placeholder="Cari di semua kolom atau ketik # untuk pencarian kolom spesifik..."
             className="grow"
-            searchState={getSearchState(search, search, items)}
-            columns={itemSearchColumns}
-            onTargetedSearch={handleTargetedSearch}
-            onGlobalSearch={handleGlobalSearch}
-            onClearSearch={handleClearSearch}
           />
           <Button
             variant="primary"
