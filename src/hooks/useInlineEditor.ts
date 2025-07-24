@@ -10,29 +10,29 @@ export const useInlineEditor = ({
   onSave,
 }: UseInlineEditorProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(String(initialValue));
+  const [value, setValue] = useState(String(initialValue));
   const inputRef = useRef<HTMLInputElement>(null);
 
   const startEditing = useCallback(() => {
-    setEditValue(String(initialValue));
+    setValue(String(initialValue));
     setIsEditing(true);
   }, [initialValue]);
 
   const stopEditing = useCallback(() => {
     setIsEditing(false);
-    const numericValue = parseFloat(editValue);
+    const numericValue = parseFloat(value);
     if (!isNaN(numericValue)) {
       onSave(numericValue);
     }
-  }, [editValue, onSave]);
+  }, [value, onSave]);
 
   const cancelEditing = useCallback(() => {
     setIsEditing(false);
-    setEditValue(String(initialValue));
+    setValue(String(initialValue));
   }, [initialValue]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditValue(e.target.value);
+    setValue(e.target.value);
   }, []);
 
   const handleKeyDown = useCallback(
@@ -50,12 +50,13 @@ export const useInlineEditor = ({
 
   return {
     isEditing,
-    editValue,
+    value,
     inputRef,
     startEditing,
     stopEditing,
     cancelEditing,
     handleChange,
     handleKeyDown,
+    setValue,
   };
 };
