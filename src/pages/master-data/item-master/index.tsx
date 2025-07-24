@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
 import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
@@ -11,21 +11,10 @@ import { FaPlus } from "react-icons/fa";
 import { motion, LayoutGroup } from "framer-motion";
 import classNames from "classnames";
 
-// Import our new hooks
-import {
-  useCategories,
-  useCategoryMutations,
-  useMedicineTypes,
-  useMedicineTypeMutations,
-  useUnits,
-  useUnitMutations,
-} from "@/hooks/queries";
-
-// Services are available but not used in this component
+// Use the new modular architecture
+import { useMasterDataManagement } from "@/handlers/masterData";
 
 import type { Category, MedicineType, Unit } from "@/types/database";
-import { useAlert } from "@/components/alert/hooks";
-import { useConfirmDialog } from "@/components/dialog-box";
 import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import { itemMasterSearchColumns } from "@/utils/searchColumns";
 
@@ -78,156 +67,86 @@ const tabConfigs: Record<MasterDataType, TabConfig> = {
 
 const ItemMasterNew = () => {
   const [activeTab, setActiveTab] = useState<MasterDataType>("categories");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<MasterDataEntity | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
   const dataGridRef = useRef<DataGridRef>(null);
-
-  const { openConfirmDialog } = useConfirmDialog();
-  const alert = useAlert();
 
   const currentConfig = tabConfigs[activeTab];
 
-  // Data hooks - conditionally fetch based on active tab
-  const categoriesQuery = useCategories({
-    enabled: activeTab === "categories",
+  // Data management hooks for each tab
+  const categoriesManagement = useMasterDataManagement("item_categories", "Kategori", {
+    searchInputRef,
   });
-  const typesQuery = useMedicineTypes({ enabled: activeTab === "types" });
-  const unitsQuery = useUnits({ enabled: activeTab === "units" });
+  const typesManagement = useMasterDataManagement("item_types", "Jenis Item", {
+    searchInputRef,
+  });
+  const unitsManagement = useMasterDataManagement("item_units", "Satuan", {
+    searchInputRef,
+  });
 
-  // Mutation hooks
-  const categoryMutations = useCategoryMutations();
-  const typeMutations = useMedicineTypeMutations();
-  const unitMutations = useUnitMutations();
-
-  // Get current data and mutations based on active tab
-  const getCurrentData = () => {
+  // Get current management based on active tab
+  const getCurrentManagement = () => {
     switch (activeTab) {
       case "categories":
-        return {
-          data: categoriesQuery.data || [],
-          isLoading: categoriesQuery.isLoading,
-          isError: categoriesQuery.isError,
-          error: categoriesQuery.error,
-          isFetching: categoriesQuery.isFetching,
-        };
+        return categoriesManagement;
       case "types":
-        return {
-          data: typesQuery.data || [],
-          isLoading: typesQuery.isLoading,
-          isError: typesQuery.isError,
-          error: typesQuery.error,
-          isFetching: typesQuery.isFetching,
-        };
+        return typesManagement;
       case "units":
-        return {
-          data: unitsQuery.data || [],
-          isLoading: unitsQuery.isLoading,
-          isError: unitsQuery.isError,
-          error: unitsQuery.error,
-          isFetching: unitsQuery.isFetching,
-        };
+        return unitsManagement;
     }
   };
 
-  const getCurrentMutations = () => {
-    switch (activeTab) {
-      case "categories":
-        return {
-          create: categoryMutations.createCategory,
-          update: categoryMutations.updateCategory,
-          delete: categoryMutations.deleteCategory,
-        };
-      case "types":
-        return {
-          create: typeMutations.createType,
-          update: typeMutations.updateType,
-          delete: typeMutations.deleteType,
-        };
-      case "units":
-        return {
-          create: unitMutations.createUnit,
-          update: unitMutations.updateUnit,
-          delete: unitMutations.deleteUnit,
-        };
-    }
-  };
+  const {
+    data,
+    isLoading,
+    isError,
+    queryError: error,
+    isFetching,
+    isAddModalOpen,
+    setIsAddModalOpen,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    editingItem,
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    totalItems,
+    handleEdit,
+    handleModalSubmit,
+    handlePageChange,
+    handleItemsPerPageChange,
+    deleteMutation,
+    openConfirmDialog,
+    handleKeyDown,
+    setSearch: setDataSearch,
+  } = getCurrentManagement();
 
-  const { data, isLoading, isError, error, isFetching } = getCurrentData();
-  const mutations = getCurrentMutations();
+  // Stable callback functions to prevent infinite re-renders
+  const handleSearch = useCallback((searchValue: string) => {
+    setDataSearch(searchValue);
+  }, [setDataSearch]);
 
-  // Client-side pagination using useMemo for stable references
-  const paginatedData = React.useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return data.slice(startIndex, endIndex);
-  }, [data, currentPage, itemsPerPage]);
+  const handleClear = useCallback(() => {
+    setDataSearch("");
+  }, [setDataSearch]);
 
-  // Unified search functionality
+  // Unified search functionality with hybrid mode
   const {
     search,
     onGridReady,
     isExternalFilterPresent,
     doesExternalFilterPass,
     searchBarProps,
-    clearSearch,
   } = useUnifiedSearch({
     columns: itemMasterSearchColumns,
-    searchMode: 'client',
+    searchMode: 'hybrid',
     useFuzzySearch: true,
-    data: paginatedData,
+    data: data,
+    onSearch: handleSearch,
+    onClear: handleClear,
   });
 
-  // Clear search with input ref sync
-  const handleClearSearch = React.useCallback(() => {
-    clearSearch();
-    if (searchInputRef.current) {
-      searchInputRef.current.value = "";
-    }
-  }, [clearSearch]);
-
-  // Pagination calculations
-  const totalItems = data.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   // Event handlers
-  const handleEdit = (item: MasterDataEntity) => {
-    setEditingItem(item);
-    setIsEditModalOpen(true);
-  };
-
-  const handleModalSubmit = async (formData: {
-    name: string;
-    description?: string;
-  }) => {
-    try {
-      if (editingItem) {
-        // Update
-        await mutations.update.mutateAsync({
-          id: editingItem.id,
-          data: formData,
-        });
-        alert.success(`${currentConfig.entityName} berhasil diperbarui`);
-        setIsEditModalOpen(false);
-        setEditingItem(null);
-      } else {
-        // Create
-        await mutations.create.mutateAsync(formData);
-        alert.success(`${currentConfig.entityName} berhasil ditambahkan`);
-        setIsAddModalOpen(false);
-      }
-    } catch (error) {
-      console.error("Mutation error:", error);
-      alert.error(
-        `Gagal ${editingItem ? "memperbarui" : "menambahkan"} ${currentConfig.entityName.toLowerCase()}`,
-      );
-    }
-  };
-
   const handleDelete = async (item: MasterDataEntity) => {
     openConfirmDialog({
       title: "Konfirmasi Hapus",
@@ -235,17 +154,7 @@ const ItemMasterNew = () => {
       variant: "danger",
       confirmText: "Ya, Hapus",
       onConfirm: async () => {
-        try {
-          await mutations.delete.mutateAsync(item.id);
-          alert.success(`${currentConfig.entityName} berhasil dihapus`);
-          setIsEditModalOpen(false);
-          setEditingItem(null);
-        } catch (error) {
-          console.error("Delete error:", error);
-          alert.error(
-            `Gagal menghapus ${currentConfig.entityName.toLowerCase()}`,
-          );
-        }
+        await deleteMutation.mutateAsync(item.id);
       },
     });
   };
@@ -253,18 +162,11 @@ const ItemMasterNew = () => {
   const handleTabChange = (newTab: MasterDataType) => {
     if (newTab !== activeTab) {
       setActiveTab(newTab);
-      setCurrentPage(1);
-      handleClearSearch();
+      // Clear search when switching tabs
+      if (searchInputRef.current) {
+        searchInputRef.current.value = "";
+      }
     }
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
   };
 
   // Column definitions
@@ -350,9 +252,9 @@ const ItemMasterNew = () => {
           <EnhancedSearchBar
             inputRef={searchInputRef}
             {...searchBarProps}
+            onKeyDown={handleKeyDown}
             placeholder={`${currentConfig.searchPlaceholder} atau ketik # untuk pencarian kolom spesifik`}
             className="grow"
-            onClearSearch={handleClearSearch}
           />
 
           <Button
@@ -374,7 +276,7 @@ const ItemMasterNew = () => {
           <>
             <DataGrid
               ref={dataGridRef}
-              rowData={paginatedData}
+              rowData={data}
               columnDefs={columnDefs}
               onRowClicked={onRowClicked}
               onGridReady={onGridReady}
@@ -396,13 +298,11 @@ const ItemMasterNew = () => {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              itemsCount={paginatedData.length}
+              totalItems={totalItems || 0}
+              itemsPerPage={itemsPerPage || 10}
+              itemsCount={data?.length || 0}
               onPageChange={handlePageChange}
-              onItemsPerPageChange={(e) =>
-                handleItemsPerPageChange(parseInt(e.target.value))
-              }
+              onItemsPerPageChange={handleItemsPerPageChange}
               hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
             />
           </>
@@ -412,8 +312,14 @@ const ItemMasterNew = () => {
       <AddEditModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleModalSubmit}
-        isLoading={mutations.create.isPending}
+        onSubmit={async (formData) => {
+          await handleModalSubmit({
+            name: String(formData.name || ""),
+            description: String(formData.description || ""),
+            id: undefined,
+          });
+        }}
+        isLoading={false}
         entityName={currentConfig.entityName}
       />
 
@@ -421,13 +327,18 @@ const ItemMasterNew = () => {
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
-          setEditingItem(null);
         }}
-        onSubmit={handleModalSubmit}
+        onSubmit={async (formData) => {
+          await handleModalSubmit({
+            name: String(formData.name || ""),
+            description: String(formData.description || ""),
+            id: editingItem?.id,
+          });
+        }}
         initialData={editingItem || undefined}
         onDelete={editingItem ? () => handleDelete(editingItem) : undefined}
-        isLoading={mutations.update.isPending}
-        isDeleting={mutations.delete.isPending}
+        isLoading={false}
+        isDeleting={deleteMutation.isLoading}
         entityName={currentConfig.entityName}
       />
     </>
