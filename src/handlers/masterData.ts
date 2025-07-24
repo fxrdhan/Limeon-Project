@@ -102,13 +102,38 @@ export const useMasterDataManagement = (
   const actualIsModalOpen =
     isCustomModalOpen ?? (isAddModalOpen || isEditModalOpen);
 
-  // Debounce search input
+  // Debounce search input with special handling for hashtag
   useEffect(() => {
+    // Layer: Empty State Cleanup - When search is completely empty
+    if (search === "" || search.trim() === "") {
+      // Immediately clear debounced search when input is empty
+      if (debouncedSearch !== "") {
+        setDebouncedSearch("");
+      }
+      return;
+    }
+    
+    // Check if search is in hashtag mode (starts with # but not yet complete)
+    const isHashtagMode = search.startsWith("#") && !search.includes(":");
+    const isHashtagOnly = search === "#";
+    
+    // Don't apply search for incomplete hashtag modes
+    if (isHashtagMode || isHashtagOnly) {
+      // Clear previous search results when entering hashtag mode
+      if (debouncedSearch !== "") {
+        setDebouncedSearch("");
+      }
+      return;
+    }
+    
+    // Use longer delay for hashtag completion to ensure smooth UX
+    const delay = search.startsWith("#") && search.includes(":") ? 150 : 300;
+    
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 300);
+    }, delay);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, debouncedSearch]);
 
   // Clear editing item when modal closes
   useEffect(() => {

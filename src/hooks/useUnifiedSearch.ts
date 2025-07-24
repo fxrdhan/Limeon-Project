@@ -97,29 +97,62 @@ export function useUnifiedSearch({
     onClear?.();
   }, [onClear]);
 
+  // Check if value is in hashtag mode (incomplete hashtag search)
+  const isHashtagMode = useCallback((value: string) => {
+    if (value === "#") return true;
+    if (value.startsWith("#") && !value.includes(":")) return true;
+    return false;
+  }, []);
+
   // Unified search change handler
   const handleSearchChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     originalHandleSearchChange(e);
     
+    // Layer: Empty State Cleanup - When input is completely empty
+    if (value === "" || value.trim() === "") {
+      // Clear all search states immediately
+      if (searchMode === 'server' || searchMode === 'hybrid') {
+        stableOnSearch("");
+      }
+      stableOnClear(); // Trigger clear callback
+      return; // Early return
+    }
+    
     // Call external search handler if provided (for integration with existing hooks)
     externalSearchHandler?.(e);
     
     // For server-side search, call the external handler
+    // But skip if we're in hashtag mode (incomplete hashtag search)
     if (searchMode === 'server' || searchMode === 'hybrid') {
-      stableOnSearch(value);
+      if (!isHashtagMode(value)) {
+        stableOnSearch(value);
+      }
     }
-  }, [originalHandleSearchChange, externalSearchHandler, stableOnSearch, searchMode]);
+  }, [originalHandleSearchChange, externalSearchHandler, stableOnSearch, stableOnClear, searchMode, isHashtagMode]);
 
   // Unified global search handler  
   const handleGlobalSearch = useCallback((searchValue: string) => {
     originalHandleGlobalSearch(searchValue);
     
-    // For server-side search, call the external handler
-    if (searchMode === 'server' || searchMode === 'hybrid') {
-      stableOnSearch(searchValue);
+    // Layer: Empty State Cleanup - When global search is empty
+    if (searchValue === "" || searchValue.trim() === "") {
+      // Clear all search states immediately
+      if (searchMode === 'server' || searchMode === 'hybrid') {
+        stableOnSearch("");
+      }
+      stableOnClear(); // Trigger clear callback
+      return; // Early return
     }
-  }, [originalHandleGlobalSearch, stableOnSearch, searchMode]);
+    
+    // For server-side search, call the external handler
+    // But skip if we're in hashtag mode (incomplete hashtag search)
+    if (searchMode === 'server' || searchMode === 'hybrid') {
+      if (!isHashtagMode(searchValue)) {
+        stableOnSearch(searchValue);
+      }
+    }
+  }, [originalHandleGlobalSearch, stableOnSearch, stableOnClear, searchMode, isHashtagMode]);
 
   // Unified targeted search handler
   const handleTargetedSearch = useCallback((targetedSearch: TargetedSearch | null) => {

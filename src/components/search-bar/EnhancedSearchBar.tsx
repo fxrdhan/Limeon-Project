@@ -107,6 +107,19 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     const prevMode = parseSearchValue(prevValueRef.current);
     setSearchMode(newMode);
 
+    // Helper function to check if value is hashtag mode
+    const isHashtagMode = (searchValue: string) => {
+      return searchValue === "#" || (searchValue.startsWith("#") && !searchValue.includes(":"));
+    };
+
+    // Layer: Empty State Cleanup - When searchbar is completely empty
+    if (value === "" || value.trim() === "") {
+      // Clear all search states when searchbar is empty
+      onTargetedSearch?.(null);
+      onGlobalSearch?.("");
+      return; // Early return to prevent other callbacks
+    }
+
     // Trigger callbacks
     if (newMode.isTargeted && newMode.targetedSearch) {
       onTargetedSearch?.(newMode.targetedSearch);
@@ -116,10 +129,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       !newMode.showColumnSelector && 
       newMode.globalSearch !== undefined && 
       newMode.globalSearch.trim() !== "" &&
-      newMode.globalSearch !== "#"
+      !isHashtagMode(newMode.globalSearch) // Explicit hashtag mode check
     ) {
       onTargetedSearch?.(null);
       onGlobalSearch?.(newMode.globalSearch);
+    } else if (newMode.showColumnSelector) {
+      // When in column selector mode, clear any existing search
+      onTargetedSearch?.(null);
+      onGlobalSearch?.("");
     }
 
     // Force immediate refresh when targeted search value changes
