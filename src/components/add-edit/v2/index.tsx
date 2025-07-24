@@ -1,56 +1,17 @@
-import React, { useRef, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  FaHistory,
-  FaPen,
-  FaUndoAlt,
-  FaQuestionCircle,
-  FaTimes,
-  FaRedo,
-} from "react-icons/fa";
-import Input from "@/components/input";
-import Button from "@/components/button";
-import Dropdown from "@/components/dropdown";
-import FormSection from "@/components/form-section";
-import FormField from "@/components/form-field";
-import FormAction from "@/components/form-action";
-import DescriptiveTextarea from "@/components/descriptive-textarea";
-import Checkbox from "@/components/checkbox";
-import AddEditModal from "@/components/add-edit/v1";
-import { PiKeyReturnBold } from "react-icons/pi";
-import {
-  itemNameSchema,
-  basePriceSchema,
-  sellPriceComparisonSchema,
-} from "@/schemas/itemValidation";
-
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/card";
-import {
-  DataGrid,
-  createTextColumn,
-  createCurrencyColumn,
-} from "@/components/ag-grid";
-import { useAddItemPageHandlers } from "@/hooks/addItemPage";
-import { FaTrash } from "react-icons/fa";
+import React, { useRef, useEffect } from "react";
 import type { AddItemPortalProps } from "@/types";
+import { useAddItemPageHandlers } from "@/hooks/addItemPage";
+import { useItemFormValidation } from "@/hooks/useItemFormValidation";
+import { useItemPriceCalculations } from "@/hooks/useItemPriceCalculations";
 
-const DeleteButton = ({ onClick }: { onClick: () => void }) => (
-  <Button
-    variant="danger"
-    size="sm"
-    tabIndex={19}
-    onClick={onClick}
-  >
-    <FaTrash />
-  </Button>
-);
+// Atomic Design Components
+import ItemModalTemplate from "@/components/templates/ItemModalTemplate";
+import ItemFormHeader from "@/components/molecules/ItemFormHeader";
+import ItemBasicInfoForm from "@/components/organisms/ItemBasicInfoForm";
+import ItemSettingsForm from "@/components/organisms/ItemSettingsForm";
+import ItemPricingForm from "@/components/organisms/ItemPricingForm";
+import ItemUnitConversionManager from "@/components/organisms/ItemUnitConversionManager";
+import ItemFormModals from "@/components/organisms/ItemFormModals";
 
 const AddItemPortal: React.FC<AddItemPortalProps> = ({
   isOpen,
@@ -61,20 +22,17 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
   setIsClosing,
   refetchItems,
 }) => {
-  const [tooltipPosition, setTooltipPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const [isCodeHovered, setIsCodeHovered] = useState(false);
-
-  useEffect(() => {
-    if (isClosing) {
-      onClose();
-    }
-  }, [isClosing, onClose]);
-
-  const fefoIconRef = useRef<HTMLDivElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
+
+  const handlers = useAddItemPageHandlers({
+    itemId,
+    initialSearchQuery,
+    onClose,
+    expiryCheckboxRef,
+    refetchItems,
+  });
+
   const {
     formData,
     displayBasePrice,
@@ -103,17 +61,12 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     editingMinStock,
     minStockValue,
     handleDeleteItem,
-    calculateProfitPercentage,
     handleCancel,
     formattedUpdateAt,
     addCategoryMutation,
     addUnitMutation,
     addTypeMutation,
-    marginInputRef,
     setMarginPercentage,
-    minStockInputRef,
-    showFefoTooltip,
-    setShowFefoTooltip,
     handleDropdownChange,
     handleMarginChange,
     handleSellPriceChange,
@@ -133,31 +86,32 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     closeModalAndClearSearch,
     isDirty,
     regenerateItemCode,
-  } = useAddItemPageHandlers({
-    itemId,
-    initialSearchQuery,
-    onClose,
-    expiryCheckboxRef,
-    refetchItems,
+  } = handlers;
+
+  // Price calculations
+  const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
+    basePrice: formData.base_price,
+    sellPrice: formData.sell_price,
   });
 
-  const nameInputRef = useRef<HTMLInputElement>(null);
+  // Form validation
+  const { finalDisabledState } = useItemFormValidation({
+    formData,
+    isDirtyFn: isDirty,
+    isEditMode,
+    operationsPending:
+      addTypeMutation.isPending ||
+      addUnitMutation.isPending ||
+      addCategoryMutation.isPending ||
+      deleteItemMutation.isPending,
+  });
 
-  const handleFefoTooltipMouseEnter = () => {
-    if (fefoIconRef.current) {
-      const rect = fefoIconRef.current.getBoundingClientRect();
-      setTooltipPosition({
-        top: rect.top - 10,
-        left: rect.left + rect.width / 2,
-      });
+  // Handle modal closing animation
+  useEffect(() => {
+    if (isClosing) {
+      onClose();
     }
-    setShowFefoTooltip(true);
-  };
-
-  const handleFefoTooltipMouseLeave = () => {
-    setShowFefoTooltip(false);
-    setTooltipPosition(null);
-  };
+  }, [isClosing, onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -172,39 +126,8 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     }
   }, [isOpen, isEditMode, formData.name, loading]);
 
-  if (loading && !isEditMode) {
-    if (isEditMode && !formData.name) {
-      return (
-        <Card>
-          <CardContent className="flex justify-center items-center h-40">
-            <div className="animate-spin h-10 w-10 border-4 border-blue-500 rounded-full border-t-transparent"></div>
-            <span className="ml-3">Memuat data item...</span>
-          </CardContent>
-        </Card>
-      );
-    }
-  }
-
-  const formIsInvalid =
-    !formData.name?.trim() ||
-    !formData.category_id ||
-    !formData.type_id ||
-    !formData.unit_id ||
-    !formData.base_price ||
-    formData.base_price <= 0 ||
-    !formData.sell_price ||
-    formData.sell_price <= 0;
-
-  const operationsPending =
-    addTypeMutation.isPending ||
-    addUnitMutation.isPending ||
-    addCategoryMutation.isPending ||
-    deleteItemMutation.isPending;
-
-  const disableCondition = formIsInvalid || operationsPending;
-  const finalDisabledState = isEditMode
-    ? disableCondition || !isDirty()
-    : disableCondition;
+  // Remove loading card to prevent flashing during data fetch
+  // The modal will show with empty fields momentarily then populate
 
   const handleReset = () => {
     resetForm();
@@ -213,9 +136,21 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     }
   };
 
+  const handleBackdropClick = () => {
+    if (!isClosing) {
+      setIsClosing(true);
+    }
+  };
+
+  const handleClose = () => {
+    if (!isClosing) {
+      setIsClosing(true);
+    }
+  };
+
   const handleAddConversion = () => {
     if (!unitConversionHook.unitConversionFormData.unit) {
-      return; // Simply return without alert if no unit is selected
+      return;
     }
     
     if (unitConversionHook.unitConversionFormData.conversion <= 0) {
@@ -255,842 +190,149 @@ const AddItemPortal: React.FC<AddItemPortalProps> = ({
     });
   };
 
-  const backdropVariants = {
-    hidden: {
-      opacity: 0,
-    },
-    visible: {
-      opacity: 1,
-    },
+  const handleFieldChange = (field: string, value: boolean | string) => {
+    if (field === "is_medicine" && value === false) {
+      updateFormData({ 
+        [field]: value,
+        has_expiry_date: false 
+      });
+    } else {
+      updateFormData({ [field]: value });
+    }
   };
 
-  const modalVariants = {
-    hidden: {
-      scale: 0.95,
-      opacity: 0,
-    },
-    visible: {
-      scale: 1,
-      opacity: 1,
-    },
-  };
-
-  const contentVariants = {
-    hidden: {
-      opacity: 0,
-    },
-    visible: {
-      opacity: 1,
-    },
-  };
-
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          key="modal-backdrop"
-          variants={backdropVariants}
-          initial="hidden"
-          animate={isClosing ? "exit" : "visible"}
-          exit="exit"
-          transition={{ duration: 0.15 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !isClosing) {
-              setIsClosing(true);
-            }
-          }}
-        >
-          <motion.div
-            key="modal-content"
-            variants={modalVariants}
-            initial="hidden"
-            animate={isClosing ? "exit" : "visible"}
-            exit="exit"
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="rounded-xl bg-white shadow-xl max-w-7xl max-h-[90vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <motion.div
-              key="modal-header"
-              variants={contentVariants}
-              initial="hidden"
-              animate={isClosing ? "exit" : "visible"}
-              exit="exit"
-              transition={{ duration: 0.2, delay: 0.05 }}
-            >
-              <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-gray-200 mb-6">
-                <div className="flex items-center"></div>
-
-                <div className="absolute left-1/2 transform -translate-x-1/2">
-                  <CardTitle>
-                    {isEditMode ? "Edit Data Item" : "Tambah Data Item Baru"}
-                  </CardTitle>
-                </div>
-
-                <div className="flex items-center space-x-1 shrink-0">
-                  {isEditMode && formattedUpdateAt !== "-" && (
-                    <span className="text-sm text-gray-500 italic whitespace-nowrap flex items-center">
-                      <FaHistory className="mr-1" size={12} />
-                      {formattedUpdateAt}
-                    </span>
-                  )}
-                  {!isEditMode && (
-                    <Button
-                      variant="text"
-                      size="md"
-                      onClick={handleReset}
-                      className="text-gray-600 hover:text-orange-600 flex items-center"
-                      title="Reset Form"
-                    >
-                      <FaUndoAlt className="mr-1.5" size={12} /> Reset All
-                    </Button>
-                  )}
-                  <Button
-                    variant="text"
-                    size="sm"
-                    onClick={() => {
-                      if (!isClosing) {
-                        setIsClosing(true);
-                      }
-                    }}
-                    className="p-2"
-                    title="Tutup"
-                  >
-                    <FaTimes size={18} />
-                  </Button>
-                </div>
-              </CardHeader>
-            </motion.div>
-
-            <motion.form
-              key="modal-form"
-              variants={contentVariants}
-              initial="hidden"
-              animate={isClosing ? "exit" : "visible"}
-              exit="exit"
-              transition={{ duration: 0.2, delay: 0.1 }}
-              onSubmit={handleSubmit}
-              className="flex-1 flex flex-col min-h-0"
-            >
-              <div className="flex-1 overflow-y-auto">
-                <div className="px-6 py-1">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="w-full md:w-4/5">
-                      <FormSection title="Data Umum">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                          <FormField
-                            label="Kode Item"
-                            className="md:col-span-1"
-                          >
-                            <div
-                              className="relative"
-                              onMouseEnter={() => setIsCodeHovered(true)}
-                              onMouseLeave={() => setIsCodeHovered(false)}
-                            >
-                              <Input
-                                name="code"
-                                value={formData.code}
-                                readOnly={true}
-                                className={`w-full transition-all duration-200 ${isCodeHovered ? "blur-sm" : ""}`}
-                              />
-                              {isCodeHovered && (
-                                <div
-                                  className="absolute inset-0 flex items-center justify-center gap-1 cursor-pointer"
-                                  onClick={regenerateItemCode}
-                                  title="Regenerate kode item dari digit terendah"
-                                >
-                                  <FaRedo size={16} className="text-blue-500" />
-                                  <span className="text-sm text-blue-600 font-medium">
-                                    Regenerate
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </FormField>
-
-                          <FormField
-                            label="Nama Item"
-                            className="md:col-span-1"
-                            required={true}
-                          >
-                            <Input
-                              name="name"
-                              ref={nameInputRef}
-                              value={formData.name}
-                              tabIndex={1}
-                              onChange={handleChange}
-                              className="w-full"
-                              validate={true}
-                              validationSchema={itemNameSchema}
-                              showValidationOnBlur={true}
-                              validationAutoHide={true}
-                              validationAutoHideDelay={3000}
-                              required
-                            />
-                          </FormField>
-
-                          <FormField label="Produsen" className="md:col-span-1">
-                            <Input
-                              name="manufacturer"
-                              value={formData.manufacturer}
-                              tabIndex={2}
-                              onChange={handleChange}
-                              className="w-full"
-                              placeholder="Masukkan nama produsen"
-                            />
-                          </FormField>
-
-                          <FormField label="Barcode" className="md:col-span-1">
-                            <Input
-                              name="barcode"
-                              value={formData.barcode}
-                              tabIndex={3}
-                              onChange={handleChange}
-                              className="w-full"
-                              placeholder="Masukkan barcode item"
-                            />
-                          </FormField>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                          <FormField
-                            label="Jenis Produk"
-                            className="md:col-span-1"
-                            required={true}
-                          >
-                            <Dropdown
-                              name="is_medicine"
-                              tabIndex={4}
-                              value={formData.is_medicine ? "obat" : "non-obat"}
-                              onChange={(value) => {
-                                if (value === "obat") {
-                                  updateFormData({ is_medicine: true });
-                                } else {
-                                  updateFormData({
-                                    is_medicine: false,
-                                    has_expiry_date: false,
-                                  });
-                                }
-                              }}
-                              options={[
-                                { id: "obat", name: "Obat" },
-                                { id: "non-obat", name: "Non-Obat" },
-                              ]}
-                              withRadio
-                              searchList={false}
-                            />
-                          </FormField>
-
-                          <FormField label="Kategori" required={true}>
-                            {loading && categories.length === 0 ? (
-                              <Input
-                                value="Memuat kategori..."
-                                readOnly
-                                disabled
-                              />
-                            ) : (
-                              <Dropdown
-                                name="category_id"
-                                tabIndex={5}
-                                value={formData.category_id}
-                                onChange={(value) =>
-                                  handleDropdownChange("category_id", value)
-                                }
-                                options={categories}
-                                placeholder="-- Pilih Kategori --"
-                                required
-                                validate={true}
-                                showValidationOnBlur={true}
-                                validationAutoHide={true}
-                                validationAutoHideDelay={3000}
-                                onAddNew={handleAddNewCategory}
-                              />
-                            )}
-                          </FormField>
-
-                          <FormField label="Jenis" required={true}>
-                            {loading && types.length === 0 ? (
-                              <Input
-                                value="Memuat jenis..."
-                                readOnly
-                                disabled
-                              />
-                            ) : (
-                              <Dropdown
-                                name="type_id"
-                                tabIndex={6}
-                                value={formData.type_id}
-                                onChange={(value) =>
-                                  handleDropdownChange("type_id", value)
-                                }
-                                options={types}
-                                placeholder="-- Pilih Jenis --"
-                                required
-                                validate={true}
-                                showValidationOnBlur={true}
-                                validationAutoHide={true}
-                                validationAutoHideDelay={3000}
-                                onAddNew={handleAddNewType}
-                              />
-                            )}
-                          </FormField>
-
-                          <FormField label="Satuan" required={true}>
-                            {loading && units.length === 0 ? (
-                              <Input
-                                value="Memuat satuan..."
-                                readOnly
-                                disabled
-                              />
-                            ) : (
-                              <Dropdown
-                                name="unit_id"
-                                tabIndex={7}
-                                value={formData.unit_id}
-                                onChange={(value) =>
-                                  handleDropdownChange("unit_id", value)
-                                }
-                                options={units}
-                                placeholder="-- Pilih Satuan --"
-                                required
-                                validate={true}
-                                showValidationOnBlur={true}
-                                validationAutoHide={true}
-                                validationAutoHideDelay={3000}
-                                onAddNew={handleAddNewUnit}
-                              />
-                            )}
-                          </FormField>
-
-                          <FormField label="Rak">
-                            <Input
-                              name="rack"
-                              tabIndex={8}
-                              value={formData.rack}
-                              onChange={handleChange}
-                              className="w-full"
-                            />
-                          </FormField>
-                        </div>
-
-                        <div>
-                          <DescriptiveTextarea
-                            label="Keterangan"
-                            tabIndex={9}
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            placeholder="Masukkan keterangan atau deskripsi tambahan untuk item ini..."
-                          />
-                        </div>
-                      </FormSection>
-                    </div>
-
-                    <div className="w-full md:w-1/4">
-                      <FormSection title="Pengaturan Tambahan">
-                        <div className="grid grid-cols-1 gap-6">
-                          <FormField label="Status" required={true}>
-                            <Dropdown
-                              name="is_active"
-                              tabIndex={10}
-                              value={formData.is_active ? "true" : "false"}
-                              onChange={(value) => {
-                                updateFormData({ is_active: value === "true" });
-                              }}
-                              options={[
-                                { id: "true", name: "Masih dijual" },
-                                { id: "false", name: "Tidak Dijual" },
-                              ]}
-                              withRadio
-                              searchList={false}
-                            />
-                          </FormField>
-
-                          <FormField
-                            label="Stok Minimal:"
-                            className="flex items-center"
-                          >
-                            <div className="ml-2 grow flex items-center">
-                              {editingMinStock ? (
-                                <Input
-                                  className="max-w-20"
-                                  ref={minStockInputRef}
-                                  type="number"
-                                  value={minStockValue}
-                                  onChange={handleMinStockChange}
-                                  onBlur={stopEditingMinStock}
-                                  onKeyDown={handleMinStockKeyDown}
-                                  min="0"
-                                />
-                              ) : (
-                                <div
-                                  tabIndex={11}
-                                  className="group w-full pb-1 cursor-pointer flex items-center focus:outline-hidden"
-                                  onClick={startEditingMinStock}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                      e.preventDefault();
-                                      startEditingMinStock();
-                                    }
-                                  }}
-                                  title="Klik untuk mengubah stok minimal"
-                                >
-                                  <span>{formData.min_stock}</span>
-                                  <FaPen
-                                    className="ml-2 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors"
-                                    size={14}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      startEditingMinStock();
-                                    }}
-                                    title="Edit stok minimal"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </FormField>
-
-                          <div
-                            className={
-                              formData.is_medicine
-                                ? ""
-                                : "opacity-50 pointer-events-none"
-                            }
-                          >
-                            <Checkbox
-                              id="has_expiry_date"
-                              tabIndex={12}
-                              ref={expiryCheckboxRef}
-                              label="Memiliki Tanggal Kadaluarsa"
-                              checked={formData.has_expiry_date}
-                              disabled={!formData.is_medicine}
-                              onChange={(isChecked) =>
-                                updateFormData({ has_expiry_date: isChecked })
-                              }
-                              className="py-1"
-                            />
-                            <div className="mt-1 text-sm text-gray-500 flex items-center">
-                              Akan digunakan metode FEFO
-                              <div
-                                className="relative ml-1 inline-block"
-                                onMouseEnter={handleFefoTooltipMouseEnter}
-                                onMouseLeave={handleFefoTooltipMouseLeave}
-                                ref={fefoIconRef}
-                              >
-                                <FaQuestionCircle
-                                  className="text-gray-400 cursor-help"
-                                  size={14}
-                                />
-                              </div>
-                              {showFefoTooltip &&
-                                tooltipPosition &&
-                                createPortal(
-                                  <div
-                                    style={{
-                                      position: "fixed",
-                                      top: `${tooltipPosition.top}px`,
-                                      left: `${tooltipPosition.left}px`,
-                                      transform: "translate(-50%, -100%)",
-                                      zIndex: 1000,
-                                    }}
-                                    className="w-max max-w-xs p-2 bg-zinc-500 text-white text-xs rounded-md shadow-lg"
-                                    onMouseEnter={() =>
-                                      setShowFefoTooltip(true)
-                                    }
-                                    onMouseLeave={handleFefoTooltipMouseLeave}
-                                  >
-                                    First Expired First Out: Barang dengan
-                                    tanggal kadaluarsa terdekat akan dikeluarkan
-                                    lebih dulu saat penjualan.
-                                  </div>,
-                                  document.body,
-                                )}
-                            </div>
-                          </div>
-                        </div>
-                      </FormSection>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="w-full md:w-1/4">
-                      <FormSection title="Harga Pokok & Jual">
-                        <div className="flex flex-col space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField label="Satuan Dasar">
-                              <Input
-                                type="text"
-                                value={unitConversionHook.baseUnit}
-                                readOnly={true}
-                                className="w-full"
-                              />
-                            </FormField>
-
-                            <FormField label="Harga Pokok" required={true}>
-                              <Input
-                                type="currency"
-                                name="base_price"
-                                tabIndex={13}
-                                value={displayBasePrice}
-                                onChange={(e) => {
-                                  handleChange(e);
-                                  setTimeout(() => {
-                                    const profit =
-                                      formData.base_price > 0
-                                        ? calculateProfitPercentage()
-                                        : null;
-                                    if (profit !== null) {
-                                      setMarginPercentage(profit.toFixed(1));
-                                    }
-                                  }, 0);
-                                }}
-                                min="0"
-                                className="w-full"
-                                validate={true}
-                                validationSchema={basePriceSchema}
-                                showValidationOnBlur={true}
-                                validationAutoHide={true}
-                                validationAutoHideDelay={3000}
-                                required
-                              />
-                            </FormField>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-6 focus:outline-hidden">
-                            <FormField label="Margin">
-                              <div className="flex items-center focus:outline-hidden">
-                                {editingMargin ? (
-                                  <div className="flex items-center focus:outline-hidden">
-                                    <Input
-                                      className="max-w-20 focus:outline-hidden"
-                                      ref={marginInputRef}
-                                      type="number"
-                                      value={marginPercentage}
-                                      onChange={handleMarginChange}
-                                      onBlur={stopEditingMargin}
-                                      onKeyDown={handleMarginKeyDown}
-                                      step="0.1"
-                                    />
-                                    <span className="ml-2 text-lg font-medium">
-                                      %
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div
-                                    tabIndex={14}
-                                    className={`group w-full py-2 cursor-pointer font-semibold flex items-center ${
-                                      calculateProfitPercentage() !== null
-                                        ? calculateProfitPercentage()! >= 0
-                                          ? "text-green-600"
-                                          : "text-red-600"
-                                        : "text-gray-500"
-                                    } focus:outline-hidden`}
-                                    onClick={startEditingMargin}
-                                    title="Klik untuk mengubah margin"
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        startEditingMargin();
-                                      }
-                                    }}
-                                  >
-                                    {calculateProfitPercentage() !== null
-                                      ? `${calculateProfitPercentage()!.toFixed(
-                                          1,
-                                        )} %`
-                                      : "-"}
-                                    <FaPen
-                                      className="ml-4 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors"
-                                      size={14}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        startEditingMargin();
-                                      }}
-                                      title="Edit margin"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            </FormField>
-
-                            <FormField label="Harga Jual" required={true}>
-                              <Input
-                                type="currency"
-                                name="sell_price"
-                                tabIndex={15}
-                                value={displaySellPrice}
-                                onChange={handleSellPriceChange}
-                                min="0"
-                                className="w-full"
-                                validate={true}
-                                validationSchema={sellPriceComparisonSchema(
-                                  displayBasePrice,
-                                )}
-                                showValidationOnBlur={true}
-                                validationAutoHide={true}
-                                validationAutoHideDelay={3000}
-                                required
-                              />
-                            </FormField>
-                          </div>
-                        </div>
-                      </FormSection>
-                    </div>
-
-                    <div className="w-full md:w-3/4">
-                      <FormSection title="Satuan dan Konversi">
-                        <div className="flex flex-col md:flex-row gap-4">
-                          <div className="flex-1 md:w-1/3 lg:w-1/4">
-                            <h3 className="text-lg font-medium mb-3">
-                              Tambah Konversi Satuan
-                            </h3>
-                            <p className="text-sm text-gray-600 mb-2">
-                              1 {unitConversionHook.baseUnit || "Satuan Dasar"}{" "}
-                              setara berapa satuan turunan?
-                            </p>
-                            <div className="flex flex-row gap-4 mb-3">
-                              <FormField
-                                label="Satuan Turunan"
-                                className="flex-1"
-                              >
-                                <Dropdown
-                                  name="unit"
-                                  tabIndex={16}
-                                  value={
-                                    unitConversionHook.availableUnits.find(
-                                      (u) =>
-                                        u.name ===
-                                        unitConversionHook
-                                          .unitConversionFormData.unit,
-                                    )?.id || ""
-                                  }
-                                  onChange={(unitId) => {
-                                    const selectedUnit =
-                                      unitConversionHook.availableUnits.find(
-                                        (u) => u.id === unitId,
-                                      );
-                                    if (selectedUnit) {
-                                      unitConversionHook.setUnitConversionFormData(
-                                        {
-                                          ...unitConversionHook.unitConversionFormData,
-                                          unit: selectedUnit.name,
-                                        },
-                                      );
-                                    }
-                                  }}
-                                  options={unitConversionHook.availableUnits
-                                    .filter(
-                                      (unit) =>
-                                        unit.name !==
-                                        unitConversionHook.baseUnit,
-                                    )
-                                    .filter(
-                                      (unit) =>
-                                        !unitConversionHook.conversions.some(
-                                          (uc) => uc.unit.name === unit.name,
-                                        ),
-                                    )
-                                    .map((unit) => ({
-                                      id: unit.id,
-                                      name: unit.name,
-                                    }))}
-                                  placeholder="-- Pilih Satuan --"
-                                />
-                              </FormField>
-                              <FormField
-                                label={
-                                  unitConversionHook.unitConversionFormData.unit
-                                    ? `1 ${
-                                        unitConversionHook.baseUnit ||
-                                        "Satuan Dasar"
-                                      } = ? ${
-                                        unitConversionHook
-                                          .unitConversionFormData.unit
-                                      }`
-                                    : "Nilai Konversi"
-                                }
-                                className="flex-1"
-                              >
-                                <div className="relative w-full">
-                                  <Input
-                                    name="conversion"
-                                    tabIndex={17}
-                                    value={
-                                      unitConversionHook.unitConversionFormData.conversion?.toString() ||
-                                      ""
-                                    }
-                                    onChange={(e) => {
-                                      const { name, value } = e.target;
-                                      unitConversionHook.setUnitConversionFormData(
-                                        {
-                                          ...unitConversionHook.unitConversionFormData,
-                                          [name]:
-                                            name === "conversion"
-                                              ? parseFloat(value) || 0
-                                              : value,
-                                        },
-                                      );
-                                    }}
-                                    type="number"
-                                    min={unitConversionHook.unitConversionFormData.unit ? "1" : undefined}
-                                    className="w-full pr-10"
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        handleAddConversion();
-                                      }
-                                    }}
-                                  />
-                                  <div
-                                    className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 focus:outline-hidden ${
-                                      unitConversionHook.unitConversionFormData
-                                        .unit &&
-                                      unitConversionHook.unitConversionFormData
-                                        .conversion > 0 &&
-                                      unitConversionHook.baseUnit
-                                        ? "text-primary"
-                                        : "text-gray-300"
-                                    }`}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      handleAddConversion();
-                                    }}
-                                    title="Tekan Enter atau klik untuk menambah"
-                                  >
-                                    <PiKeyReturnBold size={24} />
-                                  </div>
-                                </div>
-                              </FormField>
-                            </div>
-                          </div>
-                          <div className="md:w-2/3 lg:w-3/5 flex flex-col">
-                            <div
-                              className="overflow-hidden"
-                              style={{ height: "130px" }}
-                            >
-                              <DataGrid
-                                disableFiltering={true}
-                                rowData={unitConversionHook.conversions.filter(
-                                  (uc, index, self) =>
-                                    index ===
-                                      self.findIndex(
-                                        (u) => u.unit.name === uc.unit.name,
-                                      ) && uc.unit,
-                                )}
-                                columnDefs={[
-                                  createTextColumn({
-                                    field: "unit.name",
-                                    headerName: "Turunan",
-                                    minWidth: 100,
-                                    flex: 1,
-                                  }),
-                                  createTextColumn({
-                                    field: "conversion",
-                                    headerName: "Konversi",
-                                    minWidth: 140,
-                                    flex: 2,
-                                    cellStyle: { textAlign: "center" },
-                                  }),
-                                  createCurrencyColumn({
-                                    field: "basePrice",
-                                    headerName: "H. Pokok",
-                                    minWidth: 100,
-                                    flex: 1,
-                                  }),
-                                  createCurrencyColumn({
-                                    field: "sellPrice",
-                                    headerName: "H. Jual",
-                                    minWidth: 100,
-                                    flex: 1,
-                                  }),
-                                  {
-                                    field: "actions",
-                                    headerName: "",
-                                    minWidth: 80,
-                                    maxWidth: 80,
-                                    sortable: false,
-                                    resizable: false,
-                                    cellStyle: { textAlign: "center" },
-                                    cellRenderer: (params: { data?: { id: string } }) => 
-                                      params.data ? (
-                                        <DeleteButton
-                                          onClick={() =>
-                                            unitConversionHook.removeUnitConversion(
-                                              params.data!.id,
-                                            )
-                                          }
-                                        />
-                                      ) : null,
-                                  },
-                                ]}
-                                domLayout="normal"
-                                overlayNoRowsTemplate="<span class='text-gray-500'>Belum ada data konversi</span>"
-                                rowClass=""
-                                animateRows={false}
-                                suppressMovableColumns={true}
-                                cellSelection={false}
-                                rowSelection={undefined}
-                                sizeColumnsToFit={true}
-                                className="ag-theme-quartz h-full"
-                                style={{ height: "100%" }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </FormSection>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <CardFooter className="sticky bottom-0 z-10 py-6! px-6!">
-                <FormAction
-                  onCancel={() => handleCancel(setIsClosing)}
-                  onDelete={isEditMode ? handleDeleteItem : undefined}
-                  isSaving={saving}
-                  isDeleting={deleteItemMutation?.isPending}
-                  isEditMode={isEditMode}
-                  cancelTabIndex={20}
-                  saveTabIndex={21}
-                  isDisabled={finalDisabledState}
-                  saveText="Simpan"
-                  updateText="Update"
-                  deleteText={"Hapus"}
-                />
-              </CardFooter>
-            </motion.form>
-            <AddEditModal
-              entityName="Kategori"
-              isOpen={isAddEditModalOpen}
-              onClose={() => closeModalAndClearSearch(setIsAddEditModalOpen)}
-              onSubmit={handleSaveCategory}
-              isLoading={addCategoryMutation.isPending}
-              initialNameFromSearch={currentSearchTermForModal}
-            />
-
-            <AddEditModal
-              isOpen={isAddTypeModalOpen}
-              onClose={() => closeModalAndClearSearch(setIsAddTypeModalOpen)}
-              onSubmit={handleSaveType}
-              isLoading={addTypeMutation.isPending}
-              entityName="Jenis Item"
-              initialNameFromSearch={currentSearchTermForModal}
-            />
-
-            <AddEditModal
-              isOpen={isAddUnitModalOpen}
-              onClose={() => closeModalAndClearSearch(setIsAddUnitModalOpen)}
-              onSubmit={handleSaveUnit}
-              isLoading={addUnitMutation.isPending}
-              entityName="Satuan"
-              initialNameFromSearch={currentSearchTermForModal}
-            />
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>,
-    document.body,
+  return (
+    <ItemModalTemplate
+      isOpen={isOpen}
+      isClosing={isClosing}
+      onBackdropClick={handleBackdropClick}
+      onSubmit={handleSubmit}
+      children={{
+        header: (
+          <ItemFormHeader
+            isEditMode={isEditMode}
+            formattedUpdateAt={formattedUpdateAt}
+            isClosing={isClosing}
+            onReset={!isEditMode ? handleReset : undefined}
+            onClose={handleClose}
+          />
+        ),
+        basicInfo: (
+          <ItemBasicInfoForm
+            ref={nameInputRef}
+            formData={{
+              code: formData.code,
+              name: formData.name,
+              manufacturer: formData.manufacturer,
+              barcode: formData.barcode,
+              is_medicine: formData.is_medicine,
+              category_id: formData.category_id,
+              type_id: formData.type_id,
+              unit_id: formData.unit_id,
+              rack: formData.rack,
+              description: formData.description,
+            }}
+            categories={categories}
+            types={types}
+            units={units}
+            loading={loading}
+            onCodeRegenerate={regenerateItemCode}
+            onChange={handleChange}
+            onFieldChange={handleFieldChange}
+            onDropdownChange={handleDropdownChange}
+            onAddNewCategory={handleAddNewCategory}
+            onAddNewType={handleAddNewType}
+            onAddNewUnit={handleAddNewUnit}
+          />
+        ),
+        categoryForm: null,
+        settingsForm: (
+          <ItemSettingsForm
+            ref={expiryCheckboxRef}
+            formData={{
+              is_active: formData.is_active,
+              is_medicine: formData.is_medicine,
+              has_expiry_date: formData.has_expiry_date,
+              min_stock: formData.min_stock,
+            }}
+            minStockEditing={{
+              isEditing: editingMinStock,
+              value: minStockValue,
+            }}
+            onFieldChange={handleFieldChange}
+            onStartEditMinStock={startEditingMinStock}
+            onStopEditMinStock={stopEditingMinStock}
+            onMinStockChange={handleMinStockChange}
+            onMinStockKeyDown={handleMinStockKeyDown}
+          />
+        ),
+        pricingForm: (
+          <ItemPricingForm
+            formData={{
+              base_price: formData.base_price,
+              sell_price: formData.sell_price,
+            }}
+            displayBasePrice={displayBasePrice}
+            displaySellPrice={displaySellPrice}
+            baseUnit={unitConversionHook.baseUnit}
+            marginEditing={{
+              isEditing: editingMargin,
+              percentage: marginPercentage,
+            }}
+            calculatedMargin={calcMargin}
+            onBasePriceChange={handleChange}
+            onSellPriceChange={handleSellPriceChange}
+            onMarginChange={setMarginPercentage}
+            onStartEditMargin={startEditingMargin}
+            onStopEditMargin={stopEditingMargin}
+            onMarginInputChange={handleMarginChange}
+            onMarginKeyDown={handleMarginKeyDown}
+          />
+        ),
+        unitConversionManager: (
+          <ItemUnitConversionManager
+            baseUnit={unitConversionHook.baseUnit}
+            availableUnits={unitConversionHook.availableUnits}
+            conversions={unitConversionHook.conversions}
+            formData={unitConversionHook.unitConversionFormData}
+            onFormDataChange={unitConversionHook.setUnitConversionFormData}
+            onAddConversion={handleAddConversion}
+            onRemoveConversion={unitConversionHook.removeUnitConversion}
+          />
+        ),
+        modals: (
+          <ItemFormModals
+            categoryModal={{
+              isOpen: isAddEditModalOpen,
+              onClose: () => closeModalAndClearSearch(setIsAddEditModalOpen),
+              onSubmit: handleSaveCategory,
+              mutation: addCategoryMutation,
+            }}
+            typeModal={{
+              isOpen: isAddTypeModalOpen,
+              onClose: () => closeModalAndClearSearch(setIsAddTypeModalOpen),
+              onSubmit: handleSaveType,
+              mutation: addTypeMutation,
+            }}
+            unitModal={{
+              isOpen: isAddUnitModalOpen,
+              onClose: () => closeModalAndClearSearch(setIsAddUnitModalOpen),
+              onSubmit: handleSaveUnit,
+              mutation: addUnitMutation,
+            }}
+            currentSearchTerm={currentSearchTermForModal}
+          />
+        ),
+      }}
+      formAction={{
+        onCancel: () => handleCancel(setIsClosing),
+        onDelete: isEditMode ? handleDeleteItem : undefined,
+        isSaving: saving,
+        isDeleting: deleteItemMutation?.isPending || false,
+        isEditMode,
+        isDisabled: finalDisabledState,
+      }}
+    />
   );
 };
 
