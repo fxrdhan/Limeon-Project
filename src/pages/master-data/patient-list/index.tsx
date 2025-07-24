@@ -1,4 +1,4 @@
-import AddEditModal from "@/components/add-edit/v3";
+import IdentityDataModal from "@/pages/IdentityDataModal";
 import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
@@ -260,7 +260,7 @@ const PatientListNew = () => {
         )}
       </Card>
 
-      <AddEditModal
+      <IdentityDataModal
         title="Tambah Pasien Baru"
         data={{}}
         fields={patientFields}
@@ -277,7 +277,7 @@ const PatientListNew = () => {
         initialNameFromSearch={debouncedSearch}
       />
 
-      <AddEditModal
+      <IdentityDataModal
         title="Edit Pasien"
         data={editingItem as unknown as Record<string, string | number | boolean | null> || {}}
         fields={patientFields}
