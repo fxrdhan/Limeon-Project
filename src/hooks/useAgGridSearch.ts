@@ -93,7 +93,7 @@ export const useAgGridSearch = (
       const value = e.target.value;
       setSearch(value);
 
-      if (gridRef.current) {
+      if (gridRef.current && !gridRef.current.isDestroyed()) {
         if (useFuzzySearch) {
           // Use external filter for fuzzy search
           gridRef.current.onFilterChanged();
@@ -114,7 +114,7 @@ export const useAgGridSearch = (
   const clearSearch = useCallback(() => {
     setSearch("");
     
-    if (gridRef.current) {
+    if (gridRef.current && !gridRef.current.isDestroyed()) {
       if (useFuzzySearch) {
         gridRef.current.onFilterChanged();
       } else {

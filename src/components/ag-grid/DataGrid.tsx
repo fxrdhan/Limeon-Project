@@ -58,7 +58,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
     useImperativeHandle(ref, () => ({
       api: gridRef.current?.api || null,
       autoSizeColumns: (columns?: string[]) => {
-        if (gridRef.current?.api) {
+        if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
           if (columns && columns.length > 0) {
             gridRef.current.api.autoSizeColumns(columns);
           } else if (autoSizeColumns && autoSizeColumns.length > 0) {
@@ -69,17 +69,17 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
         }
       },
       sizeColumnsToFit: () => {
-        if (gridRef.current?.api) {
+        if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
           gridRef.current.api.sizeColumnsToFit();
         }
       },
       onFilterChanged: () => {
-        if (gridRef.current?.api) {
+        if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
           gridRef.current.api.onFilterChanged();
         }
       },
       refreshCells: () => {
-        if (gridRef.current?.api) {
+        if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
           gridRef.current.api.refreshCells();
         }
       },

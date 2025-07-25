@@ -149,6 +149,7 @@ export const useEnhancedAgGridSearch = (
   const searchRef = useRef(search);
   const globalSearchRef = useRef(globalSearch);
   const targetedSearchRef = useRef(targetedSearch);
+  const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
   
   // Wrapper for setSearch that also updates searchRef immediately
   const setSearch = useCallback((value: string) => {
@@ -168,6 +169,15 @@ export const useEnhancedAgGridSearch = (
   useEffect(() => {
     targetedSearchRef.current = targetedSearch;
   }, [targetedSearch]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all pending timeouts
+      timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
+      timeoutRefs.current = [];
+    };
+  }, []);
 
   const isExternalFilterPresent = useFuzzySearch
     ? () => {
@@ -217,34 +227,40 @@ export const useEnhancedAgGridSearch = (
       setGlobalSearch("");
     }
 
+    // Clear existing timeouts
+    timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
+    timeoutRefs.current = [];
+
     // Use setTimeout to ensure state updates are processed before refreshing
-    setTimeout(() => {
-      if (gridRef.current && useFuzzySearch) {
+    const timeout1 = setTimeout(() => {
+      if (gridRef.current && useFuzzySearch && !gridRef.current.isDestroyed?.()) {
         gridRef.current.onFilterChanged();
       }
     }, 0);
+    timeoutRefs.current.push(timeout1);
 
     // Special handling: when targeted search value changes from non-empty to empty
     if (prevTargetedSearch && newTargetedSearch && 
         prevTargetedSearch.value.trim() && !newTargetedSearch.value.trim()) {
       // Force refresh multiple times to ensure AG Grid shows all data
-      setTimeout(() => {
-        if (gridRef.current && useFuzzySearch) {
+      const timeout2 = setTimeout(() => {
+        if (gridRef.current && useFuzzySearch && !gridRef.current.isDestroyed?.()) {
           gridRef.current.onFilterChanged();
         }
       }, 10);
-      setTimeout(() => {
-        if (gridRef.current && useFuzzySearch) {
+      const timeout3 = setTimeout(() => {
+        if (gridRef.current && useFuzzySearch && !gridRef.current.isDestroyed?.()) {
           gridRef.current.onFilterChanged();
         }
       }, 50);
+      timeoutRefs.current.push(timeout2, timeout3);
     }
   }, [useFuzzySearch]);
 
   const handleGlobalSearch = useCallback((newGlobalSearch: string) => {
     setGlobalSearch(newGlobalSearch);
     
-    if (gridRef.current) {
+    if (gridRef.current && !gridRef.current.isDestroyed?.()) {
       if (useFuzzySearch) {
         gridRef.current.onFilterChanged();
       } else {
@@ -268,7 +284,7 @@ export const useEnhancedAgGridSearch = (
     setGlobalSearch("");
     setTargetedSearch(null);
     
-    if (gridRef.current) {
+    if (gridRef.current && !gridRef.current.isDestroyed?.()) {
       if (useFuzzySearch) {
         gridRef.current.onFilterChanged();
       } else {
