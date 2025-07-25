@@ -53,9 +53,12 @@ const DoctorListNew = () => {
   });
 
   // Stable callback functions to prevent infinite re-renders
-  const handleSearch = useCallback((searchValue: string) => {
-    setDataSearch(searchValue);
-  }, [setDataSearch]);
+  const handleSearch = useCallback(
+    (searchValue: string) => {
+      setDataSearch(searchValue);
+    },
+    [setDataSearch],
+  );
 
   const handleClear = useCallback(() => {
     setDataSearch("");
@@ -70,7 +73,7 @@ const DoctorListNew = () => {
     searchBarProps,
   } = useUnifiedSearch({
     columns: doctorSearchColumns,
-    searchMode: 'hybrid',
+    searchMode: "hybrid",
     useFuzzySearch: true,
     data: doctorsData,
     onSearch: handleSearch,
@@ -145,7 +148,11 @@ const DoctorListNew = () => {
         minWidth: 120,
         valueGetter: (params) => {
           const value = params.data.gender;
-          return value === "L" ? "Laki-laki" : value === "P" ? "Perempuan" : value || "-";
+          return value === "L"
+            ? "Laki-laki"
+            : value === "P"
+              ? "Perempuan"
+              : value || "-";
         },
       }),
       createTextColumn({
@@ -221,7 +228,7 @@ const DoctorListNew = () => {
           <Button
             variant="primary"
             withGlow
-            className="flex items-center ml-4 mb-4"
+            className="flex items-center ml-4 mb-2"
             onClick={() => setIsAddModalOpen(true)}
           >
             <FaPlus className="mr-2" />
@@ -295,7 +302,12 @@ const DoctorListNew = () => {
 
       <IdentityDataModal
         title="Edit Dokter"
-        data={editingItem as unknown as Record<string, string | number | boolean | null> || {}}
+        data={
+          (editingItem as unknown as Record<
+            string,
+            string | number | boolean | null
+          >) || {}
+        }
         fields={doctorFields}
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
