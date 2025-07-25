@@ -1,9 +1,9 @@
 import React from "react";
 import ImageUploader from "@/components/image-uploader";
 import { FaPencilAlt, FaSpinner } from "react-icons/fa";
-import { useDetailModalContext } from "@/contexts/DetailModalContext";
+import { useIdentityModalContext } from "@/contexts/IdentityModalContext";
 
-const DetailImageUploader: React.FC = () => {
+const IdentityImageUploader: React.FC = () => {
   const {
     currentImageUrl,
     isUploadingImage,
@@ -17,7 +17,7 @@ const DetailImageUploader: React.FC = () => {
     imagePlaceholder,
     handleImageUpload,
     handleImageDeleteInternal,
-  } = useDetailModalContext();
+  } = useIdentityModalContext();
 
   const aspectRatioClass =
     imageAspectRatio === "square" ? "aspect-square" : "aspect-video";
@@ -42,9 +42,7 @@ const DetailImageUploader: React.FC = () => {
             <p className="text-sm font-medium text-gray-600">
               {imageUploadText}
             </p>
-            <p className="text-xs text-gray-400 mt-1">
-              {imageFormatHint}
-            </p>
+            <p className="text-xs text-gray-400 mt-1">{imageFormatHint}</p>
           </div>
         </div>
       );
@@ -91,9 +89,7 @@ const DetailImageUploader: React.FC = () => {
               />
             </svg>
           </div>
-          <p className="text-gray-500 font-medium">
-            {imageNotAvailableText}
-          </p>
+          <p className="text-gray-500 font-medium">{imageNotAvailableText}</p>
         </div>
       </div>
     );
@@ -108,7 +104,7 @@ const DetailImageUploader: React.FC = () => {
           shape="rounded"
           onImageUpload={handleImageUpload}
           onImageDelete={handleImageDeleteInternal}
-          disabled={isUploadingImage || (mode !== "add")}
+          disabled={isUploadingImage || mode !== "add"}
           loadingIcon={
             <FaSpinner className="text-white text-xl animate-spin" />
           }
@@ -121,4 +117,4 @@ const DetailImageUploader: React.FC = () => {
   );
 };
 
-export default DetailImageUploader;
+export default IdentityImageUploader;

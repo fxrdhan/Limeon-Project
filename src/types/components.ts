@@ -232,7 +232,7 @@ export interface FieldConfig {
   editable?: boolean;
 }
 
-export interface GenericDetailModalProps {
+export interface GenericIdentityModalProps {
   title: string;
   data: Record<string, string | number | boolean | null>;
   fields: FieldConfig[];

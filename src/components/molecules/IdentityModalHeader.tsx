@@ -1,9 +1,9 @@
 import React from "react";
 import { FaHistory } from "react-icons/fa";
-import { useDetailModalContext } from "@/contexts/DetailModalContext";
+import { useIdentityModalContext } from "@/contexts/IdentityModalContext";
 
-const DetailModalHeader: React.FC = () => {
-  const { title, mode, formattedUpdateAt } = useDetailModalContext();
+const IdentityModalHeader: React.FC = () => {
+  const { title, mode, formattedUpdateAt } = useIdentityModalContext();
 
   return (
     <div className="flex justify-between items-center p-4 border-b">
@@ -20,4 +20,4 @@ const DetailModalHeader: React.FC = () => {
   );
 };
 
-export default DetailModalHeader;
+export default IdentityModalHeader;
