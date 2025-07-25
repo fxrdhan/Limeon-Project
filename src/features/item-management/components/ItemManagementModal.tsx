@@ -1,16 +1,16 @@
 import React, { useEffect, useRef } from "react";
-import type { AddItemPortalProps } from "@/types";
-import { useAddItemPageHandlers } from "@/hooks/addItemPage";
-import { useItemFormValidation } from "@/hooks/useItemFormValidation";
-import { ItemManagementProvider, type ItemManagementContextValue } from "@/contexts/ItemManagementContext";
-import { useItemManagement } from "@/contexts/ItemManagementContext.hooks";
+import type { ItemManagementModalProps, ItemManagementContextValue } from "../types";
+import { useAddItemPageHandlers } from "../hooks/useAddItemPageHandlers";
+import { useItemFormValidation } from "../hooks/useItemFormValidation";
+import { ItemManagementProvider } from "../contexts/ItemManagementContext";
+import { useItemManagement } from "../contexts/useItemManagementContext";
 
 // Template and Organisms
-import ItemModalTemplate from "@/components/templates/ItemModalTemplate";
-import { ItemFormSections } from "@/components/organisms/ItemFormOrganisms";
-import ItemModalContainer from "@/components/organisms/ItemModalContainer";
+import ItemModalTemplate from "./ItemModalTemplate";
+import { ItemFormSections } from "./ItemFormOrganisms";
+import ItemModalContainer from "./modals/ItemModalContainer";
 
-const ItemManagementPage: React.FC<AddItemPortalProps> = ({
+const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
   isOpen,
   onClose,
   itemId,
@@ -236,4 +236,4 @@ const ItemManagementContent: React.FC = () => {
   );
 };
 
-export default ItemManagementPage;
+export default ItemManagementModal;

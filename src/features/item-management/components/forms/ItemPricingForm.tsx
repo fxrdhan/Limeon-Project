@@ -2,8 +2,8 @@ import React from "react";
 import Input from "@/components/input";
 import FormSection from "@/components/form-section";
 import FormField from "@/components/form-field";
-import PriceInput from "@/components/molecules/PriceInput";
-import MarginEditor from "@/components/molecules/MarginEditor";
+import PriceInput from "../ui/PriceInput";
+import MarginEditor from "../ui/MarginEditor";
 import { basePriceSchema, sellPriceComparisonSchema } from "@/schemas/itemValidation";
 
 interface ItemPricingFormProps {

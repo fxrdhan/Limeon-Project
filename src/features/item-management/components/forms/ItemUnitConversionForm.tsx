@@ -1,7 +1,7 @@
 import { FaTrash } from "react-icons/fa";
 import Button from "@/components/button";
 import FormSection from "@/components/form-section";
-import UnitConversionInput from "@/components/molecules/UnitConversionInput";
+import UnitConversionInput from "../ui/UnitConversionInput";
 import {
   DataGrid,
   createTextColumn,

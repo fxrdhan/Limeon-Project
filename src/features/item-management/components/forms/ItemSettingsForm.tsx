@@ -3,7 +3,7 @@ import Dropdown from "@/components/dropdown";
 import Checkbox from "@/components/checkbox";
 import FormSection from "@/components/form-section";
 import FormField from "@/components/form-field";
-import MinStockEditor from "@/components/molecules/MinStockEditor";
+import MinStockEditor from "../ui/MinStockEditor";
 import FefoTooltip from "@/components/molecules/FefoTooltip";
 
 interface ItemSettingsFormProps {

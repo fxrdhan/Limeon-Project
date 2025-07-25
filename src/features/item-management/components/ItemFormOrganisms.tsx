@@ -4,17 +4,17 @@ import {
   useItemModal,
   useItemPrice,
   useItemUI,
-} from "@/contexts/ItemManagementContext.hooks";
-import { useItemPriceCalculations } from "@/hooks/useItemPriceCalculations";
-import { useUnitConversionLogic } from "@/hooks/useUnitConversionLogic";
+} from "../contexts/useItemManagementContext";
+import { useItemPriceCalculations } from "../hooks/useItemPriceCalculations";
+import { useUnitConversionLogic } from "../hooks/useUnitConversionLogic";
 import { useInlineEditor } from "@/hooks/useInlineEditor";
 
 // Child components
-import ItemFormHeader from "@/components/molecules/ItemFormHeader";
-import ItemBasicInfoForm from "@/components/organisms/ItemBasicInfoForm";
-import ItemSettingsForm from "@/components/organisms/ItemSettingsForm";
-import ItemPricingForm from "@/components/organisms/ItemPricingForm";
-import ItemUnitConversionManager from "@/components/organisms/ItemUnitConversionManager";
+import ItemFormHeader from "./ui/ItemFormHeader";
+import ItemBasicInfoForm from "./forms/ItemBasicInfoForm";
+import ItemSettingsForm from "./forms/ItemSettingsForm";
+import ItemPricingForm from "./forms/ItemPricingForm";
+import ItemUnitConversionManager from "./forms/ItemUnitConversionForm";
 
 // Header Section
 // eslint-disable-next-line react-refresh/only-export-components

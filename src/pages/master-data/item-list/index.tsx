@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import type { Item as ItemDataType } from "@/types";
-import ItemManagementPage from "@/pages/ItemManagementPage";
+import { ItemManagementModal } from "@/features/item-management";
 
 // Use the new modular architecture
 import { useMasterDataManagement } from "@/handlers/masterData";
@@ -10,7 +10,7 @@ import { itemSearchColumns } from "@/utils/searchColumns";
 // Atomic Design Components
 import ItemListTemplate from "@/components/templates/ItemListTemplate";
 import ItemSearchToolbar from "@/components/molecules/ItemSearchToolbar";
-import ItemDataTable from "@/components/organisms/ItemDataTable";
+import ItemDataTable from "@/features/item-management/components/ItemDataTable";
 import { useItemGridColumns } from "@/components/molecules/ItemGridColumns";
 
 function ItemListNew() {
@@ -146,7 +146,7 @@ function ItemListNew() {
         />
       }
       modal={
-        <ItemManagementPage
+        <ItemManagementModal
           key={`${
             editingItemId ?? "new"
           }-${currentSearchQueryForModal ?? ""}-${modalRenderId}`}

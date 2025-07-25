@@ -1,6 +1,6 @@
 import React from "react";
-import { useItemModal, useItemActions } from "@/contexts/ItemManagementContext.hooks";
-import ItemFormModals from "@/components/organisms/ItemFormModals";
+import { useItemModal, useItemActions } from "../../contexts/useItemManagementContext";
+import ItemFormModals from "./ItemFormModals";
 
 const ItemModalContainer: React.FC = () => {
   const {

@@ -2,18 +2,19 @@ import { useState, useEffect } from "react";
 import { 
   generateCompleteItemCode, 
   generateItemCodeForEdit 
-} from "@/utils/itemCodeGeneration";
-import type { Category, MedicineType, Unit, FormData } from "@/types";
+} from "../utils/itemCodeGeneration";
+import type { ItemFormData } from "../types";
+import type { Category, MedicineType, Unit } from "@/types";
 
 interface UseItemCodeGenerationProps {
   isEditMode: boolean;
   itemId?: string;
-  formData: FormData;
-  initialFormData: FormData | null;
+  formData: ItemFormData;
+  initialFormData: ItemFormData | null;
   categories: Category[];
   types: MedicineType[];
   units: Unit[];
-  updateFormData: (data: Partial<FormData>) => void;
+  updateFormData: (data: Partial<ItemFormData>) => void;
 }
 
 /**

@@ -15,7 +15,7 @@ interface AddItemFormType {
   setMinStockValue: (value: string) => void;
   setEditingMinStock: (editing: boolean) => void;
   minStockValue: string;
-  handleCancel: (closingStateSetter?: React.Dispatch<React.SetStateAction<boolean>>) => void;
+  handleCancel: (closingStateSetter?: ((value: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>) => void;
 }
 
 export interface AddItemEventHandlersProps {
@@ -149,7 +149,7 @@ export const useAddItemEventHandlers = ({
   };
 
   const handleActualCancel = (
-    closingStateSetter?: React.Dispatch<React.SetStateAction<boolean>>,
+    closingStateSetter?: ((value: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>,
   ) => {
     addItemForm.handleCancel(closingStateSetter);
   };

@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { formatRupiah, extractNumericValue } from "@/lib/formatters";
-import { formatMarginPercentage } from "@/utils/priceCalculations";
-import type { FormData, UnitConversion, Category, MedicineType, Unit } from "@/types";
+import { formatMarginPercentage } from "../utils/priceCalculations";
+import type { ItemFormData, UnitConversion } from "../types";
+import type { Category, MedicineType, Unit } from "@/types";
 
 interface UseAddItemFormStateProps {
   initialSearchQuery?: string;
@@ -12,7 +13,7 @@ interface UseAddItemFormStateProps {
  */
 export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateProps) => {
   // Core form state
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<ItemFormData>({
     code: "",
     name: initialSearchQuery || "",
     manufacturer: "",
@@ -32,7 +33,7 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
   });
 
   // Initial state tracking for dirty detection
-  const [initialFormData, setInitialFormData] = useState<FormData | null>(null);
+  const [initialFormData, setInitialFormData] = useState<ItemFormData | null>(null);
   const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null);
 
   // Display states for formatted prices
@@ -69,7 +70,7 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
   /**
    * Updates form data and synchronized display values
    */
-  const updateFormData = (newData: Partial<FormData>) => {
+  const updateFormData = (newData: Partial<ItemFormData>) => {
     // Update display prices if price fields change
     if (newData.sell_price !== undefined) {
       setDisplaySellPrice(formatRupiah(newData.sell_price));
@@ -168,7 +169,7 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
   /**
    * Sets initial data for the form
    */
-  const setInitialDataForForm = (data?: FormData) => {
+  const setInitialDataForForm = (data?: ItemFormData) => {
     const initialState = data || {
       code: "",
       name: initialSearchQuery || "",
