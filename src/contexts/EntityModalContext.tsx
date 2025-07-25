@@ -18,7 +18,7 @@ export interface EntityModalContextValue {
     isLoading: boolean;
     isDeleting: boolean;
   };
-  
+
   // Actions
   formActions: {
     setName: (name: string) => void;
@@ -37,6 +37,7 @@ const EntityModalContext = createContext<EntityModalContextValue | null>(null);
 
 export const EntityModalProvider = EntityModalContext.Provider;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useEntityModal = () => {
   const context = useContext(EntityModalContext);
   if (!context) {
