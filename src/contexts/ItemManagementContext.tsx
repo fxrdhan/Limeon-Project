@@ -1,5 +1,11 @@
 import React, { createContext, ReactNode, useMemo } from "react";
-import type { FormData, Category, MedicineType, Unit, UseUnitConversionReturn } from "@/types";
+import type {
+  FormData,
+  Category,
+  MedicineType,
+  Unit,
+  UseUnitConversionReturn,
+} from "@/types";
 
 // Consolidated state interfaces
 interface ItemFormState {
@@ -43,7 +49,9 @@ interface ItemActionState {
 // Action handlers
 interface ItemFormActions {
   updateFormData: (data: Partial<FormData>) => void;
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => void;
   handleSubmit: (e: React.FormEvent) => void;
   resetForm: () => void;
   regenerateItemCode: () => void;
@@ -60,18 +68,33 @@ interface ItemModalActions {
   setIsAddEditModalOpen: (open: boolean) => void;
   setIsAddTypeModalOpen: (open: boolean) => void;
   setIsAddUnitModalOpen: (open: boolean) => void;
-  closeModalAndClearSearch: (setter: ((open: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>) => void;
+  closeModalAndClearSearch: (
+    setter:
+      | ((open: boolean) => void)
+      | React.Dispatch<React.SetStateAction<boolean>>,
+  ) => void;
   handleAddNewCategory: () => void;
   handleAddNewType: () => void;
   handleAddNewUnit: () => void;
 }
 
 interface ItemBusinessActions {
-  handleCancel: (setter?: React.Dispatch<React.SetStateAction<boolean>>) => void;
+  handleCancel: (
+    setter?: React.Dispatch<React.SetStateAction<boolean>>,
+  ) => void;
   handleDeleteItem: () => void;
-  handleSaveCategory: (data: { name: string; description: string }) => Promise<void>;
-  handleSaveType: (data: { name: string; description: string }) => Promise<void>;
-  handleSaveUnit: (data: { name: string; description: string }) => Promise<void>;
+  handleSaveCategory: (data: {
+    name: string;
+    description: string;
+  }) => Promise<void>;
+  handleSaveType: (data: {
+    name: string;
+    description: string;
+  }) => Promise<void>;
+  handleSaveUnit: (data: {
+    name: string;
+    description: string;
+  }) => Promise<void>;
 }
 
 // Consolidated context interface
@@ -82,34 +105,29 @@ export interface ItemManagementContextValue {
   modal: ItemModalState;
   price: ItemPriceState;
   action: ItemActionState;
-  
+
   // Actions
   formActions: ItemFormActions;
   uiActions: ItemUIActions;
   modalActions: ItemModalActions;
   businessActions: ItemBusinessActions;
 }
-
-export const ItemManagementContext = createContext<ItemManagementContextValue | undefined>(undefined);
+// eslint-disable-next-line react-refresh/only-export-components
+export const ItemManagementContext = createContext<
+  ItemManagementContextValue | undefined
+>(undefined);
 
 interface ItemManagementProviderProps {
   children: ReactNode;
   value: ItemManagementContextValue;
 }
 
-export const ItemManagementProvider: React.FC<ItemManagementProviderProps> = ({ children, value }) => {
+export const ItemManagementProvider: React.FC<ItemManagementProviderProps> = ({
+  children,
+  value,
+}) => {
   // Memoize context value to prevent unnecessary re-renders
-  const memoizedValue = useMemo(() => value, [
-    // Only re-render when essential state changes
-    value.form.formData,
-    value.ui.isOpen,
-    value.ui.isClosing,
-    value.modal.isAddEditModalOpen,
-    value.modal.isAddTypeModalOpen,
-    value.modal.isAddUnitModalOpen,
-    value.action.saving,
-    value, // Include the whole value to satisfy exhaustive deps
-  ]);
+  const memoizedValue = useMemo(() => value, [value]);
 
   return (
     <ItemManagementContext.Provider value={memoizedValue}>

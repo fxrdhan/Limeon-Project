@@ -1,5 +1,10 @@
 import React from "react";
-import { useItemForm, useItemModal, useItemPrice, useItemUI } from "@/contexts/ItemManagementContext.hooks";
+import {
+  useItemForm,
+  useItemModal,
+  useItemPrice,
+  useItemUI,
+} from "@/contexts/ItemManagementContext.hooks";
 import { useItemPriceCalculations } from "@/hooks/useItemPriceCalculations";
 import { useUnitConversionLogic } from "@/hooks/useUnitConversionLogic";
 import { useInlineEditor } from "@/hooks/useInlineEditor";
@@ -12,9 +17,13 @@ import ItemPricingForm from "@/components/organisms/ItemPricingForm";
 import ItemUnitConversionManager from "@/components/organisms/ItemUnitConversionManager";
 
 // Header Section
-const FormHeader: React.FC<{ onReset?: () => void; onClose: () => void }> = ({ onReset, onClose }) => {
+// eslint-disable-next-line react-refresh/only-export-components
+const FormHeader: React.FC<{ onReset?: () => void; onClose: () => void }> = ({
+  onReset,
+  onClose,
+}) => {
   const { isEditMode, formattedUpdateAt, isClosing } = useItemUI();
-  
+
   return (
     <ItemFormHeader
       isEditMode={isEditMode}
@@ -27,6 +36,7 @@ const FormHeader: React.FC<{ onReset?: () => void; onClose: () => void }> = ({ o
 };
 
 // Basic Info Section
+// eslint-disable-next-line react-refresh/only-export-components
 const BasicInfoSection: React.FC = () => {
   const {
     formData,
@@ -39,17 +49,14 @@ const BasicInfoSection: React.FC = () => {
     regenerateItemCode,
   } = useItemForm();
 
-  const {
-    handleAddNewCategory,
-    handleAddNewType,
-    handleAddNewUnit,
-  } = useItemModal();
+  const { handleAddNewCategory, handleAddNewType, handleAddNewUnit } =
+    useItemModal();
 
   const handleFieldChange = (field: string, value: boolean | string) => {
     if (field === "is_medicine" && value === false) {
-      updateFormData({ 
+      updateFormData({
         is_medicine: value as boolean,
-        has_expiry_date: false 
+        has_expiry_date: false,
       });
     } else if (field === "is_medicine") {
       updateFormData({ is_medicine: value as boolean });
@@ -100,6 +107,7 @@ const BasicInfoSection: React.FC = () => {
 };
 
 // Settings Section
+// eslint-disable-next-line react-refresh/only-export-components
 const SettingsSection: React.FC = () => {
   const { formData, updateFormData } = useItemForm();
 
@@ -112,9 +120,9 @@ const SettingsSection: React.FC = () => {
 
   const handleFieldChange = (field: string, value: boolean | string) => {
     if (field === "is_medicine" && value === false) {
-      updateFormData({ 
+      updateFormData({
         is_medicine: value as boolean,
-        has_expiry_date: false 
+        has_expiry_date: false,
       });
     } else if (field === "is_medicine") {
       updateFormData({ is_medicine: value as boolean });
@@ -149,9 +157,11 @@ const SettingsSection: React.FC = () => {
 };
 
 // Pricing Section
+// eslint-disable-next-line react-refresh/only-export-components
 const PricingSection: React.FC = () => {
   const { formData, updateFormData, handleChange } = useItemForm();
-  const { unitConversionHook, displayBasePrice, displaySellPrice } = useItemPrice();
+  const { unitConversionHook, displayBasePrice, displaySellPrice } =
+    useItemPrice();
 
   const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
     basePrice: formData.base_price || 0,
@@ -200,6 +210,7 @@ const PricingSection: React.FC = () => {
 };
 
 // Unit Conversion Section
+// eslint-disable-next-line react-refresh/only-export-components
 const UnitConversionSection: React.FC = () => {
   const { unitConversionHook } = useItemPrice();
 
