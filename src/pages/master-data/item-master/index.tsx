@@ -266,11 +266,13 @@ const ItemMasterNew = () => {
           isFetching ? "opacity-75 transition-opacity duration-300" : ""
         }
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4">
           <PageTitle title="Item Master" />
-          
+        </div>
+        
+        <div className="mb-4">
           <LayoutGroup id="item-master-tabs">
-            <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative">
+            <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
               {tabOrder.map((tabKey) => {
                 const config = tabConfigs[tabKey];
                 return (
@@ -317,7 +319,9 @@ const ItemMasterNew = () => {
               })}
             </div>
           </LayoutGroup>
+        </div>
 
+        <div className="flex items-center mb-4">
           {activeTab === 'items' ? (
             <div className="grow">
               <ItemSearchToolbar
@@ -342,7 +346,7 @@ const ItemMasterNew = () => {
           {activeTab !== 'items' && (
             <Button
               variant="primary"
-              className="flex items-center ml-4 mb-4"
+              className="flex items-center ml-4"
               onClick={() => setIsAddModalOpen(true)}
               withGlow
             >
