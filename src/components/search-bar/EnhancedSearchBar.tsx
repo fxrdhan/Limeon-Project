@@ -160,12 +160,44 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Update column selector position
   useEffect(() => {
-    if (searchMode.showColumnSelector && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setColumnSelectorPosition({
-        top: rect.bottom,
-        left: rect.left,
-      });
+    const updatePosition = () => {
+      if (searchMode.showColumnSelector && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setColumnSelectorPosition({
+          top: rect.bottom,
+          left: rect.left,
+        });
+      }
+    };
+
+    // Initial position update
+    updatePosition();
+
+    if (searchMode.showColumnSelector) {
+      // Add event listeners for dynamic positioning
+      const handleResize = () => updatePosition();
+      const handleScroll = () => updatePosition();
+
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleScroll, true); // Use capture to catch all scroll events
+      document.addEventListener('scroll', handleScroll, true);
+
+      // Use ResizeObserver for container size changes
+      let resizeObserver: ResizeObserver | null = null;
+      if (containerRef.current && 'ResizeObserver' in window) {
+        resizeObserver = new ResizeObserver(updatePosition);
+        resizeObserver.observe(containerRef.current);
+      }
+
+      // Cleanup function
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('scroll', handleScroll, true);
+        document.removeEventListener('scroll', handleScroll, true);
+        if (resizeObserver) {
+          resizeObserver.disconnect();
+        }
+      };
     }
   }, [searchMode.showColumnSelector]);
 
