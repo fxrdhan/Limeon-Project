@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useMemo } from "react";
+import type { ItemFormData } from "../types";
 import type {
-  FormData,
   Category,
   MedicineType,
   Unit,
@@ -9,7 +9,7 @@ import type {
 
 // Consolidated state interfaces
 interface ItemFormState {
-  formData: Partial<FormData>;
+  formData: Partial<ItemFormData>;
   categories: Category[];
   types: MedicineType[];
   units: Unit[];
@@ -48,7 +48,7 @@ interface ItemActionState {
 
 // Action handlers
 interface ItemFormActions {
-  updateFormData: (data: Partial<FormData>) => void;
+  updateFormData: (data: Partial<ItemFormData>) => void;
   handleChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
@@ -61,7 +61,7 @@ interface ItemUIActions {
   handleBackdropClick: () => void;
   handleClose: () => void;
   handleReset?: () => void;
-  setIsClosing: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsClosing: (value: boolean) => void;
 }
 
 interface ItemModalActions {
@@ -80,7 +80,7 @@ interface ItemModalActions {
 
 interface ItemBusinessActions {
   handleCancel: (
-    setter?: React.Dispatch<React.SetStateAction<boolean>>,
+    setter?: ((value: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>,
   ) => void;
   handleDeleteItem: () => void;
   handleSaveCategory: (data: {

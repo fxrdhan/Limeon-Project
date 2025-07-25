@@ -4,7 +4,7 @@ import Dropdown from "@/components/dropdown";
 import FormSection from "@/components/form-section";
 import FormField from "@/components/form-field";
 import DescriptiveTextarea from "@/components/descriptive-textarea";
-import ItemCodeField from "@/components/molecules/ItemCodeField";
+import ItemCodeField from "../ui/ItemCodeField";
 import { itemNameSchema } from "@/schemas/itemValidation";
 
 interface DropdownOption {

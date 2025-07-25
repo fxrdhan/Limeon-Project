@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { FormData, UnitConversion } from "@/types";
+import type { ItemFormData, UnitConversion } from "../types";
 
 interface UseAddItemMutationsProps {
   onClose: () => void;
@@ -104,7 +104,7 @@ export const useAddItemMutations = ({
    * Prepares item data for database insertion/update
    */
   const prepareItemData = (
-    formData: FormData,
+    formData: ItemFormData,
     conversions: UnitConversion[],
     baseUnit: string,
     isUpdate: boolean = false,
@@ -154,7 +154,7 @@ export const useAddItemMutations = ({
       isEditMode,
       itemId,
     }: {
-      formData: FormData;
+      formData: ItemFormData;
       conversions: UnitConversion[];
       baseUnit: string;
       isEditMode: boolean;

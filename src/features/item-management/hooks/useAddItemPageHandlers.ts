@@ -1,6 +1,11 @@
 import { useEffect } from "react";
-import { useAddItemForm } from "@/hooks/addItem";
-import { AddItemPageHandlersProps, MedicineType } from "@/types";
+import { useAddItemForm } from "./useItemManagement";
+import type { MedicineType } from "@/types";
+import type { UseItemManagementProps } from "../types";
+
+interface AddItemPageHandlersProps extends UseItemManagementProps {
+  expiryCheckboxRef?: React.RefObject<HTMLLabelElement | null>;
+}
 import { useItemQueries } from "./useItemQueries";
 import { useAddItemEventHandlers } from "./useEventHandlers";
 import { useAddItemUIState } from "./useUIState";
@@ -91,7 +96,7 @@ export const useAddItemPageHandlers = ({
     handleAddNewType: addItemForm.handleAddNewType,
     handleAddNewUnit: addItemForm.handleAddNewUnit,
     closeModalAndClearSearch: addItemForm.closeModalAndClearSearch,
-    handleCancel: (closingStateSetter?: React.Dispatch<React.SetStateAction<boolean>>) => 
+    handleCancel: (closingStateSetter?: ((value: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>) => 
       handleActualCancel(closingStateSetter || setIsClosing),
     isClosing,
     setIsClosing,

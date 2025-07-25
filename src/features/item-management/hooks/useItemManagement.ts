@@ -1,28 +1,28 @@
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useUnitConversion } from "@/hooks/unitConversion";
+import { useUnitConversion } from "./unitConversion";
 import { formatDateTime, extractNumericValue, formatRupiah } from "@/lib/formatters";
 import { useConfirmDialog } from "@/components/dialog-box";
-import { calculateProfitPercentage, calculateSellPriceFromMargin } from "@/utils/priceCalculations";
-import { useAddItemFormState } from "@/hooks/useAddItemFormState";
-import { useItemCodeGeneration } from "@/hooks/useItemCodeGeneration";
-import { useAddItemMutations } from "@/hooks/useAddItemMutations";
+import { calculateProfitPercentage, calculateSellPriceFromMargin } from "../utils/priceCalculations";
+import { useAddItemFormState } from "./useAddItemFormState";
+import { useItemCodeGeneration } from "./useItemCodeGeneration";
+import { useAddItemMutations } from "./useAddItemMutations";
 import { useFormCache } from "@/hooks/useFormCache";
 import type {
-  FormData,
+  ItemFormData,
   UnitData,
-  UseAddItemFormProps,
+  UseItemManagementProps,
   DBUnitConversion,
-} from "@/types";
+} from "../types";
 
-const CACHE_KEY = "addItemFormCache";
+import { CACHE_KEY } from "../constants";
 
 // Re-export utility functions for backward compatibility
 export {
   generateTypeCode,
   generateUnitCode,
   generateCategoryCode,
-} from "@/utils/itemCodeGeneration";
+} from "../utils/itemCodeGeneration";
 
 export const getUnitById = async (unitName: string) => {
   try {
@@ -43,7 +43,7 @@ export const useAddItemForm = ({
   initialSearchQuery,
   onClose,
   refetchItems,
-}: UseAddItemFormProps) => {
+}: UseItemManagementProps) => {
   // Initialize modular hooks
   const formState = useAddItemFormState({ initialSearchQuery });
   const unitConversionHook = useUnitConversion();
@@ -86,7 +86,7 @@ export const useAddItemForm = ({
     return formState.isDirty(unitConversionHook.conversions);
   };
 
-  const setInitialDataForForm = (data?: FormData) => {
+  const setInitialDataForForm = (data?: ItemFormData) => {
     formState.setInitialDataForForm(data);
     
     if (data) {
@@ -449,7 +449,7 @@ export const useAddItemForm = ({
   };
 
   const handleCancel = (
-    setIsClosing?: React.Dispatch<React.SetStateAction<boolean>>,
+    setIsClosing?: ((value: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>,
   ) => {
     if (isDirtyWrapper()) {
       confirmDialog.openConfirmDialog({
