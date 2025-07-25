@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { LuSearch, LuHash, LuX } from "react-icons/lu";
 import { PiKeyReturnBold } from "react-icons/pi";
 import {
@@ -356,14 +356,113 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
   }, [showTargetedIndicator, searchMode.targetedSearch?.column.headerName]);
 
-  // Get column selector search term
-  const getColumnSelectorSearchTerm = () => {
+  // Get column selector search term - compute directly for immediate update
+  const searchTerm = useMemo(() => {
     if (value.startsWith("#")) {
       const match = value.match(/^#([^:]*)/);
       return match ? match[1] : "";
     }
     return "";
-  };
+  }, [value]);
+
+  // Custom fuzzy matching function
+  const fuzzyMatch = useCallback((searchTerm: string, target: string): number => {
+    const search = searchTerm.toLowerCase();
+    const text = target.toLowerCase();
+    
+    // 1. Exact match - highest score
+    if (text === search) return 1000;
+    
+    // 2. Starts with - very high score
+    if (text.startsWith(search)) return 900;
+    
+    // 3. Contains - high score
+    if (text.includes(search)) return 800;
+    
+    // 4. Subsequence matching - check if all characters of search appear in order in text
+    let searchIndex = 0;
+    for (let i = 0; i < text.length && searchIndex < search.length; i++) {
+      if (text[i] === search[searchIndex]) {
+        searchIndex++;
+      }
+    }
+    
+    if (searchIndex === search.length) {
+      // All characters found in sequence
+      const ratio = search.length / text.length;
+      return 500 + Math.floor(ratio * 200); // 500-700 based on ratio
+    }
+    
+    // 5. Character overlap - count common characters
+    const searchChars = search.split('');
+    const textChars = text.split('');
+    let commonChars = 0;
+    
+    for (const char of searchChars) {
+      const textIndex = textChars.indexOf(char);
+      if (textIndex !== -1) {
+        commonChars++;
+        textChars.splice(textIndex, 1); // Remove to avoid double counting
+      }
+    }
+    
+    const overlapRatio = commonChars / search.length;
+    if (overlapRatio >= 0.6) { // At least 60% character overlap
+      return Math.floor(300 + overlapRatio * 100); // 300-400 score
+    }
+    
+    return 0; // No match
+  }, []);
+
+  // Sort columns by relevance using custom fuzzy matching
+  const sortedColumns = useMemo(() => {
+    const searchableColumns = columns.filter((col) => col.searchable);
+    
+    if (!searchTerm) return searchableColumns;
+    
+    const results: Array<{ column: SearchColumn; score: number; source: string }> = [];
+    
+    searchableColumns.forEach(col => {
+      // Test header name (highest priority)
+      const headerScore = fuzzyMatch(searchTerm, col.headerName);
+      if (headerScore > 0) {
+        results.push({
+          column: col,
+          score: headerScore + 1000, // Boost header matches
+          source: 'header'
+        });
+        return; // Don't check other fields if header matches
+      }
+      
+      // Test field name (medium priority)
+      const fieldScore = fuzzyMatch(searchTerm, col.field);
+      if (fieldScore > 0) {
+        results.push({
+          column: col,
+          score: fieldScore + 500, // Medium boost
+          source: 'field'
+        });
+        return; // Don't check description if field matches
+      }
+      
+      // Test description (lowest priority)
+      if (col.description) {
+        const descScore = fuzzyMatch(searchTerm, col.description);
+        if (descScore > 0) {
+          results.push({
+            column: col,
+            score: descScore, // No boost for description
+            source: 'description'
+          });
+        }
+      }
+    });
+    
+    // Sort by score (higher is better)
+    return results
+      .sort((a, b) => b.score - a.score)
+      .map(result => result.column);
+  }, [columns, searchTerm, fuzzyMatch]);
 
   // Get dynamic placeholder based on search mode
   const getPlaceholder = () => {
@@ -497,12 +596,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       {/* Column Selector Modal */}
       <ColumnSelector
-        columns={columns.filter((col) => col.searchable)}
+        columns={sortedColumns}
         isOpen={searchMode.showColumnSelector}
         onSelect={handleColumnSelect}
         onClose={handleCloseColumnSelector}
         position={columnSelectorPosition}
-        searchTerm={getColumnSelectorSearchTerm()}
+        searchTerm={searchTerm}
       />
     </>
   );
