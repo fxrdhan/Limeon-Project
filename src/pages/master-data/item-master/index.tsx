@@ -1,25 +1,33 @@
 import { useState, useRef, useCallback } from "react";
-import Button from "@/components/button";
 import Pagination from "@/components/pagination";
-import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
 import PageTitle from "@/components/page-title";
-import { EntityManagementModal, ItemManagementModal } from "@/features/item-management";
+import {
+  EntityManagementModal,
+  ItemManagementModal,
+} from "@/features/item-management";
 import { Card } from "@/components/card";
 import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
-import { FaPlus } from "react-icons/fa";
 import { motion, LayoutGroup } from "framer-motion";
 import classNames from "classnames";
 
 // Use the new modular architecture
 import { useMasterDataManagement } from "@/handlers/masterData";
 
-import type { Category, MedicineType, Unit, Item as ItemDataType } from "@/types/database";
+import type {
+  Category,
+  MedicineType,
+  Unit,
+  Item as ItemDataType,
+} from "@/types/database";
 import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
-import { itemMasterSearchColumns, itemSearchColumns } from "@/utils/searchColumns";
+import {
+  itemMasterSearchColumns,
+  itemSearchColumns,
+} from "@/utils/searchColumns";
 
 // Additional imports for Items tab
-import ItemSearchToolbar from "@/components/molecules/ItemSearchToolbar";
+import SearchToolbar from "@/components/molecules/SearchToolbar";
 import ItemDataTable from "@/features/item-management/components/ItemDataTable";
 import { useItemGridColumns } from "@/components/molecules/ItemGridColumns";
 
@@ -85,25 +93,36 @@ const tabOrder: MasterDataType[] = ["items", "categories", "types", "units"];
 
 const ItemMasterNew = () => {
   const [activeTab, setActiveTab] = useState<MasterDataType>("items");
-  const searchInputRef = useRef<HTMLInputElement>(null) as React.RefObject<HTMLInputElement>;
+  const searchInputRef = useRef<HTMLInputElement>(
+    null,
+  ) as React.RefObject<HTMLInputElement>;
   const dataGridRef = useRef<DataGridRef>(null);
 
   // State for Items tab modal management
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isItemModalClosing, setIsItemModalClosing] = useState(false);
-  const [editingItemId, setEditingItemId] = useState<string | undefined>(undefined);
-  const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<string | undefined>(undefined);
+  const [editingItemId, setEditingItemId] = useState<string | undefined>(
+    undefined,
+  );
+  const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<
+    string | undefined
+  >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
 
   const currentConfig = tabConfigs[activeTab];
 
   // Grid columns configuration for Items tab
-  const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns();
+  const { columnDefs: itemColumnDefs, columnsToAutoSize } =
+    useItemGridColumns();
 
   // Data management hooks for each tab
-  const categoriesManagement = useMasterDataManagement("item_categories", "Kategori", {
-    searchInputRef,
-  });
+  const categoriesManagement = useMasterDataManagement(
+    "item_categories",
+    "Kategori",
+    {
+      searchInputRef,
+    },
+  );
   const typesManagement = useMasterDataManagement("item_types", "Jenis Item", {
     searchInputRef,
   });
@@ -154,9 +173,12 @@ const ItemMasterNew = () => {
   } = getCurrentManagement();
 
   // Stable callback functions to prevent infinite re-renders
-  const handleSearch = useCallback((searchValue: string) => {
-    setDataSearch(searchValue);
-  }, [setDataSearch]);
+  const handleSearch = useCallback(
+    (searchValue: string) => {
+      setDataSearch(searchValue);
+    },
+    [setDataSearch],
+  );
 
   const handleClear = useCallback(() => {
     setDataSearch("");
@@ -170,14 +192,14 @@ const ItemMasterNew = () => {
     doesExternalFilterPass,
     searchBarProps,
   } = useUnifiedSearch({
-    columns: activeTab === 'items' ? itemSearchColumns : itemMasterSearchColumns,
-    searchMode: 'hybrid',
+    columns:
+      activeTab === "items" ? itemSearchColumns : itemMasterSearchColumns,
+    searchMode: "hybrid",
     useFuzzySearch: true,
     data: data,
     onSearch: handleSearch,
     onClear: handleClear,
   });
-
 
   // Event handlers for Items tab
   const openAddItemModal = (itemId?: string, searchQuery?: string) => {
@@ -266,116 +288,93 @@ const ItemMasterNew = () => {
           isFetching ? "opacity-75 transition-opacity duration-300" : ""
         }
       >
-        <div className="flex items-center justify-between mb-4">
-          <LayoutGroup id="item-master-tabs">
-            <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
-              {tabOrder.map((tabKey) => {
-                const config = tabConfigs[tabKey];
-                return (
-                  <button
-                    key={config.key}
-                    className={classNames(
-                      "group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
-                      {
-                        "hover:bg-emerald-100 hover:text-emerald-700":
-                          activeTab !== config.key,
-                      },
-                    )}
-                    onClick={() => handleTabChange(config.key)}
-                  >
-                    {activeTab === config.key && (
-                      <motion.div
-                        layoutId="tab-selector-bg"
-                        className="absolute inset-0 bg-primary rounded-lg shadow-xs"
-                        transition={{
-                          type: "spring",
-                          stiffness: 500,
-                          damping: 30,
-                          duration: 0.3,
-                        }}
-                      />
-                    )}
-                    <span
+        <div className="relative flex items-center justify-center mb-0 pt-0">
+          <div className="absolute left-0 pb-4 pt-6">
+            <LayoutGroup id="item-master-tabs">
+              <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
+                {tabOrder.map((tabKey) => {
+                  const config = tabConfigs[tabKey];
+                  return (
+                    <button
+                      key={config.key}
                       className={classNames(
-                        "relative z-10 select-none font-medium",
+                        "group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
                         {
-                          "text-white": activeTab === config.key,
-                          "text-gray-700 group-hover:text-emerald-700":
+                          "hover:bg-emerald-100 hover:text-emerald-700":
                             activeTab !== config.key,
                         },
                       )}
+                      onClick={() => handleTabChange(config.key)}
                     >
-                      {activeTab === config.key
-                        ? (config.key === "items" ? "Daftar Item" : `${config.label} Item`)
-                        : config.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </LayoutGroup>
-          
-          <PageTitle title="Item Master" />
-          
-          <div className="w-fit opacity-0">
-            <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
-              {tabOrder.map((tabKey) => {
-                const config = tabConfigs[tabKey];
-                return (
-                  <button
-                    key={config.key}
-                    className="group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10"
-                  >
-                    <span className="relative z-10 select-none font-medium text-gray-700">
-                      {config.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                      {activeTab === config.key && (
+                        <motion.div
+                          layoutId="tab-selector-bg"
+                          className="absolute inset-0 bg-primary rounded-lg shadow-xs"
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 30,
+                            duration: 0.3,
+                          }}
+                        />
+                      )}
+                      <span
+                        className={classNames(
+                          "relative z-10 select-none font-medium",
+                          {
+                            "text-white": activeTab === config.key,
+                            "text-gray-700 group-hover:text-emerald-700":
+                              activeTab !== config.key,
+                          },
+                        )}
+                      >
+                        {activeTab === config.key
+                          ? config.key === "items"
+                            ? "Daftar Item"
+                            : `${config.label} Item`
+                          : config.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </LayoutGroup>
           </div>
+
+          <PageTitle title="Item Master" />
         </div>
 
-        <div className="flex items-center mb-4">
-          {activeTab === 'items' ? (
-            <div className="grow">
-              <ItemSearchToolbar
-                searchInputRef={searchInputRef}
-                searchBarProps={searchBarProps}
-                search={search}
-                items={data as ItemDataType[]}
-                onAddItem={handleAddItem}
-                onItemSelect={handleItemSelect}
-              />
-            </div>
-          ) : (
-            <EnhancedSearchBar
-              inputRef={searchInputRef}
-              {...searchBarProps}
-              onKeyDown={handleKeyDown}
+        <div className="flex items-center pt-8">
+          <div className="grow">
+            <SearchToolbar
+              searchInputRef={searchInputRef}
+              searchBarProps={searchBarProps}
+              search={search}
+              buttonText={currentConfig.addButtonText}
               placeholder={`${currentConfig.searchPlaceholder} atau ketik # untuk pencarian kolom spesifik`}
-              className="grow"
+              onAdd={
+                activeTab === "items"
+                  ? () => handleAddItem(undefined, search)
+                  : () => setIsAddModalOpen(true)
+              }
+              onKeyDown={
+                activeTab === "items"
+                  ? undefined // Use default items behavior
+                  : handleKeyDown
+              }
+              items={activeTab === "items" ? (data as ItemDataType[]) : undefined}
+              onItemSelect={
+                activeTab === "items" ? (item: ItemDataType) => handleItemSelect(item.id) : undefined
+              }
             />
-          )}
-
-          {activeTab !== 'items' && (
-            <Button
-              variant="primary"
-              className="flex items-center ml-4"
-              onClick={() => setIsAddModalOpen(true)}
-              withGlow
-            >
-              <FaPlus className="mr-2" />
-              {currentConfig.addButtonText}
-            </Button>
-          )}
+          </div>
         </div>
 
         {isError ? (
           <div className="text-center p-6 text-red-500">
             Error: {error?.message || "Gagal memuat data"}
           </div>
-        ) : activeTab === 'items' ? (
+        ) : activeTab === "items" ? (
           <ItemDataTable
             items={data as ItemDataType[]}
             columnDefs={itemColumnDefs}
@@ -433,7 +432,7 @@ const ItemMasterNew = () => {
       </Card>
 
       {/* Modals for non-items tabs */}
-      {activeTab !== 'items' && (
+      {activeTab !== "items" && (
         <>
           <EntityManagementModal
             isOpen={isAddModalOpen}
@@ -471,7 +470,7 @@ const ItemMasterNew = () => {
       )}
 
       {/* Modal for items tab */}
-      {activeTab === 'items' && (
+      {activeTab === "items" && (
         <ItemManagementModal
           key={`${editingItemId ?? "new"}-${currentSearchQueryForModal ?? ""}-${modalRenderId}`}
           isOpen={isAddItemModalOpen}

@@ -54,9 +54,12 @@ const SupplierListNew = () => {
   });
 
   // Stable callback functions to prevent infinite re-renders
-  const handleSearch = useCallback((searchValue: string) => {
-    setDataSearch(searchValue);
-  }, [setDataSearch]);
+  const handleSearch = useCallback(
+    (searchValue: string) => {
+      setDataSearch(searchValue);
+    },
+    [setDataSearch],
+  );
 
   const handleClear = useCallback(() => {
     setDataSearch("");
@@ -71,7 +74,7 @@ const SupplierListNew = () => {
     searchBarProps,
   } = useUnifiedSearch({
     columns: supplierSearchColumns,
-    searchMode: 'hybrid',
+    searchMode: "hybrid",
     useFuzzySearch: true,
     data: suppliersData,
     onSearch: handleSearch,
@@ -184,7 +187,7 @@ const SupplierListNew = () => {
           <Button
             variant="primary"
             withGlow
-            className="flex items-center ml-4 mb-4"
+            className="flex items-center ml-4 mb-2"
             onClick={() => setIsAddModalOpen(true)}
           >
             <FaPlus className="mr-2" />
@@ -258,7 +261,12 @@ const SupplierListNew = () => {
 
       <IdentityDataModal
         title="Edit Supplier"
-        data={editingItem as unknown as Record<string, string | number | boolean | null> || {}}
+        data={
+          (editingItem as unknown as Record<
+            string,
+            string | number | boolean | null
+          >) || {}
+        }
         fields={supplierFields}
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}

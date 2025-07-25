@@ -1,4 +1,10 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { LuSearch, LuHash, LuX } from "react-icons/lu";
 import { PiKeyReturnBold } from "react-icons/pi";
 import fuzzysort from "fuzzysort";
@@ -110,7 +116,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     // Helper function to check if value is hashtag mode
     const isHashtagMode = (searchValue: string) => {
-      return searchValue === "#" || (searchValue.startsWith("#") && !searchValue.includes(":"));
+      return (
+        searchValue === "#" ||
+        (searchValue.startsWith("#") && !searchValue.includes(":"))
+      );
     };
 
     // Layer: Empty State Cleanup - When searchbar is completely empty
@@ -126,9 +135,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       onTargetedSearch?.(newMode.targetedSearch);
       onGlobalSearch?.("");
     } else if (
-      !newMode.isTargeted && 
-      !newMode.showColumnSelector && 
-      newMode.globalSearch !== undefined && 
+      !newMode.isTargeted &&
+      !newMode.showColumnSelector &&
+      newMode.globalSearch !== undefined &&
       newMode.globalSearch.trim() !== "" &&
       !isHashtagMode(newMode.globalSearch) // Explicit hashtag mode check
     ) {
@@ -178,22 +187,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const handleResize = () => updatePosition();
       const handleScroll = () => updatePosition();
 
-      window.addEventListener('resize', handleResize);
-      window.addEventListener('scroll', handleScroll, true); // Use capture to catch all scroll events
-      document.addEventListener('scroll', handleScroll, true);
+      window.addEventListener("resize", handleResize);
+      window.addEventListener("scroll", handleScroll, true); // Use capture to catch all scroll events
+      document.addEventListener("scroll", handleScroll, true);
 
       // Use ResizeObserver for container size changes
       let resizeObserver: ResizeObserver | null = null;
-      if (containerRef.current && 'ResizeObserver' in window) {
+      if (containerRef.current && "ResizeObserver" in window) {
         resizeObserver = new ResizeObserver(updatePosition);
         resizeObserver.observe(containerRef.current);
       }
 
       // Cleanup function
       return () => {
-        window.removeEventListener('resize', handleResize);
-        window.removeEventListener('scroll', handleScroll, true);
-        document.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener("resize", handleResize);
+        window.removeEventListener("scroll", handleScroll, true);
+        document.removeEventListener("scroll", handleScroll, true);
         if (resizeObserver) {
           resizeObserver.disconnect();
         }
@@ -398,7 +407,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     return "";
   }, [value]);
 
-
   // Pre-prepare searchable columns for better performance
   const searchableColumns = useMemo(() => {
     return columns.filter((col) => col.searchable);
@@ -407,65 +415,65 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Sort columns using fuzzysort library
   const sortedColumns = useMemo(() => {
     if (!searchTerm) return searchableColumns;
-    
+
     // Prepare search targets for fuzzysort
-    const searchTargets = searchableColumns.map(col => ({
+    const searchTargets = searchableColumns.map((col) => ({
       column: col,
       headerName: col.headerName,
       field: col.field,
-      description: col.description || ''
+      description: col.description || "",
     }));
-    
+
     // Search header names (highest priority)
     const headerResults = fuzzysort.go(searchTerm, searchTargets, {
-      key: 'headerName',
-      threshold: -1000
+      key: "headerName",
+      threshold: -1000,
     });
-    
+
     // Search field names (medium priority)
     const fieldResults = fuzzysort.go(searchTerm, searchTargets, {
-      key: 'field', 
-      threshold: -1000
+      key: "field",
+      threshold: -1000,
     });
-    
+
     // Search descriptions (lowest priority)
     const descResults = fuzzysort.go(searchTerm, searchTargets, {
-      key: 'description',
-      threshold: -1000
+      key: "description",
+      threshold: -1000,
     });
-    
+
     // Combine results with priority scoring
     const combinedResults = new Map();
-    
-    headerResults.forEach(result => {
+
+    headerResults.forEach((result) => {
       combinedResults.set(result.obj.column.field, {
         column: result.obj.column,
-        score: result.score + 1000 // Boost header matches
+        score: result.score + 1000, // Boost header matches
       });
     });
-    
-    fieldResults.forEach(result => {
+
+    fieldResults.forEach((result) => {
       if (!combinedResults.has(result.obj.column.field)) {
         combinedResults.set(result.obj.column.field, {
           column: result.obj.column,
-          score: result.score + 500 // Medium boost
+          score: result.score + 500, // Medium boost
         });
       }
     });
-    
-    descResults.forEach(result => {
+
+    descResults.forEach((result) => {
       if (!combinedResults.has(result.obj.column.field)) {
         combinedResults.set(result.obj.column.field, {
           column: result.obj.column,
-          score: result.score // No boost
+          score: result.score, // No boost
         });
       }
     });
-    
+
     // Sort by score and return columns
     return Array.from(combinedResults.values())
       .sort((a, b) => b.score - a.score)
-      .map(item => item.column);
+      .map((item) => item.column);
   }, [searchableColumns, searchTerm]);
 
   // Get dynamic placeholder based on search mode
@@ -478,7 +486,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   return (
     <>
-      <div ref={containerRef} className={`mb-4 relative ${className}`}>
+      <div ref={containerRef} className={`mb-2 relative ${className}`}>
         <div className="flex items-center">
           {/* Dynamic search icon */}
           <div
