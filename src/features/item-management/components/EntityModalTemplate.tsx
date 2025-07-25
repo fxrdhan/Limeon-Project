@@ -1,7 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEntityModal } from "@/contexts/EntityModalContext";
+import { useEntityModal } from "../contexts/EntityModalContext";
 
 interface EntityModalTemplateProps {
   children: React.ReactNode;

@@ -1,14 +1,19 @@
 // Main component export
 export { default as ItemManagementModal } from "./components/ItemManagementModal";
 
+// Entity component exports
+export { default as EntityManagementModal } from "./components/modals/EntityManagementModal";
+
 // Context exports
 export { ItemManagementProvider } from "./contexts/ItemManagementContext";
 export { useItemManagement } from "./contexts/useItemManagementContext";
+export { EntityModalProvider, useEntityModal } from "./contexts/EntityModalContext";
 
 // Hook exports
 export { useAddItemForm } from "./hooks/useItemManagement";
 export { useItemFormValidation } from "./hooks/useItemFormValidation";
 export { useUnitConversion } from "./hooks/unitConversion";
+export { useEntityModalLogic } from "./hooks/useEntityModalLogic";
 
 // Type exports
 export type {

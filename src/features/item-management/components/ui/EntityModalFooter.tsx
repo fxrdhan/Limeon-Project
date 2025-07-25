@@ -1,6 +1,6 @@
 import React from "react";
 import Button from "@/components/button";
-import { useEntityModal } from "@/contexts/EntityModalContext";
+import { useEntityModal } from "../../contexts/EntityModalContext";
 
 const EntityModalFooter: React.FC = () => {
   const { form, ui, action, formActions, uiActions } = useEntityModal();
