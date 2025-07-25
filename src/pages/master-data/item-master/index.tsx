@@ -266,20 +266,16 @@ const ItemMasterNew = () => {
           isFetching ? "opacity-75 transition-opacity duration-300" : ""
         }
       >
-        <div className="mb-4">
-          <PageTitle title="Item Master" />
-        </div>
-        
-        <div className="mb-4">
+        <div className="flex items-center justify-between mb-4">
           <LayoutGroup id="item-master-tabs">
-            <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
+            <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
               {tabOrder.map((tabKey) => {
                 const config = tabConfigs[tabKey];
                 return (
                   <button
                     key={config.key}
                     className={classNames(
-                      "group px-4 py-2 rounded-full focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
+                      "group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
                       {
                         "hover:bg-emerald-100 hover:text-emerald-700":
                           activeTab !== config.key,
@@ -290,8 +286,7 @@ const ItemMasterNew = () => {
                     {activeTab === config.key && (
                       <motion.div
                         layoutId="tab-selector-bg"
-                        className="absolute inset-0 bg-primary rounded-full shadow-xs"
-                        style={{ borderRadius: "9999px" }}
+                        className="absolute inset-0 bg-primary rounded-lg shadow-xs"
                         transition={{
                           type: "spring",
                           stiffness: 500,
@@ -319,6 +314,26 @@ const ItemMasterNew = () => {
               })}
             </div>
           </LayoutGroup>
+          
+          <PageTitle title="Item Master" />
+          
+          <div className="w-fit opacity-0">
+            <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
+              {tabOrder.map((tabKey) => {
+                const config = tabConfigs[tabKey];
+                return (
+                  <button
+                    key={config.key}
+                    className="group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10"
+                  >
+                    <span className="relative z-10 select-none font-medium text-gray-700">
+                      {config.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center mb-4">
