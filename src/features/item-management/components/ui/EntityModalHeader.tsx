@@ -1,7 +1,7 @@
 import React from "react";
 import Button from "@/components/button";
 import { FaTimes, FaHistory } from "react-icons/fa";
-import { useEntityModal } from "@/contexts/EntityModalContext";
+import { useEntityModal } from "../../contexts/EntityModalContext";
 
 const EntityModalHeader: React.FC = () => {
   const { ui, uiActions } = useEntityModal();

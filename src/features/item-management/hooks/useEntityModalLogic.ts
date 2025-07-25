@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { formatDateTime } from "@/lib/formatters";
-import type { EntityModalContextValue } from "@/contexts/EntityModalContext";
+import type { EntityModalContextValue } from "../contexts/EntityModalContext";
 
 interface EntityData {
   id?: string;

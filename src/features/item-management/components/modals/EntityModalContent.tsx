@@ -1,7 +1,7 @@
 import React from "react";
-import EntityModalHeader from "@/components/molecules/EntityModalHeader";
-import EntityFormFields from "@/components/molecules/EntityFormFields";
-import EntityModalFooter from "@/components/molecules/EntityModalFooter";
+import EntityModalHeader from "../ui/EntityModalHeader";
+import EntityFormFields from "../ui/EntityFormFields";
+import EntityModalFooter from "../ui/EntityModalFooter";
 
 interface EntityModalContentProps {
   nameInputRef: React.RefObject<HTMLInputElement | null>;
