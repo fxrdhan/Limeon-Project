@@ -14,7 +14,6 @@ import {
 } from "@/components/loading-fallback";
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
-const ItemList = lazy(() => import("@/pages/master-data/item-list"));
 const ItemMaster = lazy(() => import("@/pages/master-data/item-master"));
 const PatientList = lazy(() => import("@/pages/master-data/patient-list"));
 const DoctorList = lazy(() => import("@/pages/master-data/doctor-list"));
@@ -76,22 +75,7 @@ function App() {
             <Route path="master-data">
               <Route
                 path="items"
-                element={
-                  <ErrorBoundary
-                    showDetails={process.env.NODE_ENV === "development"}
-                  >
-                    <Suspense
-                      fallback={
-                        <TableLoadingFallback
-                          title="Daftar Item"
-                          tableColumns={10}
-                        />
-                      }
-                    >
-                      <ItemList />
-                    </Suspense>
-                  </ErrorBoundary>
-                }
+                element={<Navigate to="/master-data/item-master" replace />}
               />
               <Route
                 path="item-master"

@@ -93,7 +93,6 @@ const Sidebar = ({
         path: "/master-data",
         icon: <FaDatabase className="text-lg" />,
         children: [
-          { name: "Daftar Item", path: "/master-data/items" },
           { name: "Item Master", path: "/master-data/item-master" },
           { name: "Supplier", path: "/master-data/suppliers" },
           { name: "Pasien", path: "/master-data/patients" },
