@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { LuSearch, LuHash, LuX } from "react-icons/lu";
 import { PiKeyReturnBold } from "react-icons/pi";
+import fuzzysort from "fuzzysort";
 import {
   EnhancedSearchBarProps,
   SearchColumn,
@@ -365,104 +366,75 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     return "";
   }, [value]);
 
-  // Custom fuzzy matching function
-  const fuzzyMatch = useCallback((searchTerm: string, target: string): number => {
-    const search = searchTerm.toLowerCase();
-    const text = target.toLowerCase();
-    
-    // 1. Exact match - highest score
-    if (text === search) return 1000;
-    
-    // 2. Starts with - very high score
-    if (text.startsWith(search)) return 900;
-    
-    // 3. Contains - high score
-    if (text.includes(search)) return 800;
-    
-    // 4. Subsequence matching - check if all characters of search appear in order in text
-    let searchIndex = 0;
-    for (let i = 0; i < text.length && searchIndex < search.length; i++) {
-      if (text[i] === search[searchIndex]) {
-        searchIndex++;
-      }
-    }
-    
-    if (searchIndex === search.length) {
-      // All characters found in sequence
-      const ratio = search.length / text.length;
-      return 500 + Math.floor(ratio * 200); // 500-700 based on ratio
-    }
-    
-    // 5. Character overlap - count common characters
-    const searchChars = search.split('');
-    const textChars = text.split('');
-    let commonChars = 0;
-    
-    for (const char of searchChars) {
-      const textIndex = textChars.indexOf(char);
-      if (textIndex !== -1) {
-        commonChars++;
-        textChars.splice(textIndex, 1); // Remove to avoid double counting
-      }
-    }
-    
-    const overlapRatio = commonChars / search.length;
-    if (overlapRatio >= 0.6) { // At least 60% character overlap
-      return Math.floor(300 + overlapRatio * 100); // 300-400 score
-    }
-    
-    return 0; // No match
-  }, []);
 
-  // Sort columns by relevance using custom fuzzy matching
+  // Pre-prepare searchable columns for better performance
+  const searchableColumns = useMemo(() => {
+    return columns.filter((col) => col.searchable);
+  }, [columns]);
+
+  // Sort columns using fuzzysort library
   const sortedColumns = useMemo(() => {
-    const searchableColumns = columns.filter((col) => col.searchable);
-    
     if (!searchTerm) return searchableColumns;
     
-    const results: Array<{ column: SearchColumn; score: number; source: string }> = [];
+    // Prepare search targets for fuzzysort
+    const searchTargets = searchableColumns.map(col => ({
+      column: col,
+      headerName: col.headerName,
+      field: col.field,
+      description: col.description || ''
+    }));
     
-    searchableColumns.forEach(col => {
-      // Test header name (highest priority)
-      const headerScore = fuzzyMatch(searchTerm, col.headerName);
-      if (headerScore > 0) {
-        results.push({
-          column: col,
-          score: headerScore + 1000, // Boost header matches
-          source: 'header'
+    // Search header names (highest priority)
+    const headerResults = fuzzysort.go(searchTerm, searchTargets, {
+      key: 'headerName',
+      threshold: -1000
+    });
+    
+    // Search field names (medium priority)
+    const fieldResults = fuzzysort.go(searchTerm, searchTargets, {
+      key: 'field', 
+      threshold: -1000
+    });
+    
+    // Search descriptions (lowest priority)
+    const descResults = fuzzysort.go(searchTerm, searchTargets, {
+      key: 'description',
+      threshold: -1000
+    });
+    
+    // Combine results with priority scoring
+    const combinedResults = new Map();
+    
+    headerResults.forEach(result => {
+      combinedResults.set(result.obj.column.field, {
+        column: result.obj.column,
+        score: result.score + 1000 // Boost header matches
+      });
+    });
+    
+    fieldResults.forEach(result => {
+      if (!combinedResults.has(result.obj.column.field)) {
+        combinedResults.set(result.obj.column.field, {
+          column: result.obj.column,
+          score: result.score + 500 // Medium boost
         });
-        return; // Don't check other fields if header matches
-      }
-      
-      // Test field name (medium priority)
-      const fieldScore = fuzzyMatch(searchTerm, col.field);
-      if (fieldScore > 0) {
-        results.push({
-          column: col,
-          score: fieldScore + 500, // Medium boost
-          source: 'field'
-        });
-        return; // Don't check description if field matches
-      }
-      
-      // Test description (lowest priority)
-      if (col.description) {
-        const descScore = fuzzyMatch(searchTerm, col.description);
-        if (descScore > 0) {
-          results.push({
-            column: col,
-            score: descScore, // No boost for description
-            source: 'description'
-          });
-        }
       }
     });
     
-    // Sort by score (higher is better)
-    return results
+    descResults.forEach(result => {
+      if (!combinedResults.has(result.obj.column.field)) {
+        combinedResults.set(result.obj.column.field, {
+          column: result.obj.column,
+          score: result.score // No boost
+        });
+      }
+    });
+    
+    // Sort by score and return columns
+    return Array.from(combinedResults.values())
       .sort((a, b) => b.score - a.score)
-      .map(result => result.column);
-  }, [columns, searchTerm, fuzzyMatch]);
+      .map(item => item.column);
+  }, [searchableColumns, searchTerm]);
 
   // Get dynamic placeholder based on search mode
   const getPlaceholder = () => {

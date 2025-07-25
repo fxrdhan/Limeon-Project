@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import fuzzysort from "fuzzysort";
 import { SearchColumn, ColumnSelectorProps } from "@/types/search";
 import { LuHash, LuSearch, LuFilter } from "react-icons/lu";
 import { HiOutlineSparkles } from "react-icons/hi2";
@@ -48,12 +49,65 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
 
   useEffect(() => {
     if (searchTerm) {
-      const filtered = columns.filter(
-        (col) =>
-          col.headerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          col.field.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          col.description?.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
+      // Prepare search targets for fuzzysort
+      const searchTargets = columns.map(col => ({
+        column: col,
+        headerName: col.headerName,
+        field: col.field,
+        description: col.description || ''
+      }));
+      
+      // Search header names (highest priority)
+      const headerResults = fuzzysort.go(searchTerm, searchTargets, {
+        key: 'headerName',
+        threshold: -1000
+      });
+      
+      // Search field names (medium priority)
+      const fieldResults = fuzzysort.go(searchTerm, searchTargets, {
+        key: 'field', 
+        threshold: -1000
+      });
+      
+      // Search descriptions (lowest priority)
+      const descResults = fuzzysort.go(searchTerm, searchTargets, {
+        key: 'description',
+        threshold: -1000
+      });
+      
+      // Combine results with priority scoring
+      const combinedResults = new Map();
+      
+      headerResults.forEach(result => {
+        combinedResults.set(result.obj.column.field, {
+          column: result.obj.column,
+          score: result.score + 1000 // Boost header matches
+        });
+      });
+      
+      fieldResults.forEach(result => {
+        if (!combinedResults.has(result.obj.column.field)) {
+          combinedResults.set(result.obj.column.field, {
+            column: result.obj.column,
+            score: result.score + 500 // Medium boost
+          });
+        }
+      });
+      
+      descResults.forEach(result => {
+        if (!combinedResults.has(result.obj.column.field)) {
+          combinedResults.set(result.obj.column.field, {
+            column: result.obj.column,
+            score: result.score // No boost
+          });
+        }
+      });
+      
+      // Sort by score and extract columns
+      const filtered = Array.from(combinedResults.values())
+        .sort((a, b) => b.score - a.score)
+        .map(item => item.column);
+        
       setFilteredColumns(filtered);
       setSelectedIndex(0);
     } else {
