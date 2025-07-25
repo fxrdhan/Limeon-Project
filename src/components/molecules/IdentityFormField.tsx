@@ -4,14 +4,14 @@ import Dropdown from "@/components/dropdown";
 import Datepicker from "@/components/datepicker";
 import Button from "@/components/button";
 import { FaPencilAlt, FaSave, FaBan } from "react-icons/fa";
-import { useDetailModalContext } from "@/contexts/DetailModalContext";
+import { useIdentityModalContext } from "@/contexts/IdentityModalContext";
 import type { FieldConfig, CustomDateValueType } from "@/types";
 
-interface DetailFormFieldProps {
+interface IdentityFormFieldProps {
   field: FieldConfig;
 }
 
-const DetailFormField: React.FC<DetailFormFieldProps> = ({ field }) => {
+const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
   const {
     editMode,
     editValues,
@@ -23,7 +23,7 @@ const DetailFormField: React.FC<DetailFormFieldProps> = ({ field }) => {
     handleSaveField,
     handleCancelEdit,
     setInputRef,
-  } = useDetailModalContext();
+  } = useIdentityModalContext();
 
   const isInEditMode = editMode[field.key] || mode === "add";
   const fieldValue = editValues[field.key];
@@ -84,9 +84,7 @@ const DetailFormField: React.FC<DetailFormFieldProps> = ({ field }) => {
           name={field.key}
           options={field.options}
           value={String(fieldValue ?? "")}
-          onChange={(selectedValue) =>
-            handleChange(field.key, selectedValue)
-          }
+          onChange={(selectedValue) => handleChange(field.key, selectedValue)}
           placeholder={`Pilih ${field.label.toLowerCase()}`}
           withRadio={true}
           searchList={false}
@@ -97,19 +95,12 @@ const DetailFormField: React.FC<DetailFormFieldProps> = ({ field }) => {
     if (field.type === "date") {
       return (
         <Datepicker
-          value={
-            fieldValue
-              ? new Date(String(fieldValue))
-              : null
-          }
+          value={fieldValue ? new Date(String(fieldValue)) : null}
           onChange={(date: CustomDateValueType) => {
             const formattedDate = date
               ? date.toISOString().split("T")[0]
               : null;
-            handleChange(
-              field.key,
-              formattedDate as string | number | boolean,
-            );
+            handleChange(field.key, formattedDate as string | number | boolean);
           }}
           placeholder={`Pilih ${field.label.toLowerCase()}`}
           inputClassName="w-full p-2.5 border rounded-lg text-sm"
@@ -121,9 +112,7 @@ const DetailFormField: React.FC<DetailFormFieldProps> = ({ field }) => {
     if (field.type === "textarea") {
       return (
         <textarea
-          ref={(el) =>
-            setInputRef(field.key, el as HTMLTextAreaElement)
-          }
+          ref={(el) => setInputRef(field.key, el as HTMLTextAreaElement)}
           id={field.key}
           className="text-sm w-full p-2 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"
           value={String(fieldValue ?? "")}
@@ -137,9 +126,7 @@ const DetailFormField: React.FC<DetailFormFieldProps> = ({ field }) => {
 
     return (
       <Input
-        ref={(el) =>
-          setInputRef(field.key, el as HTMLInputElement)
-        }
+        ref={(el) => setInputRef(field.key, el as HTMLInputElement)}
         id={field.key}
         type={field.type || "text"}
         value={String(fieldValue ?? "")}
@@ -161,10 +148,8 @@ const DetailFormField: React.FC<DetailFormFieldProps> = ({ field }) => {
     }
 
     const value = String(displayValue ?? "");
-    return value || (
-      <span className="text-gray-400 italic">
-        Tidak ada data
-      </span>
+    return (
+      value || <span className="text-gray-400 italic">Tidak ada data</span>
     );
   };
 
@@ -191,4 +176,4 @@ const DetailFormField: React.FC<DetailFormFieldProps> = ({ field }) => {
   );
 };
 
-export default DetailFormField;
+export default IdentityFormField;

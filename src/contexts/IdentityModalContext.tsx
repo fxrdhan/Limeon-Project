@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from "react";
 import type { FieldConfig } from "@/types";
 
-export interface DetailModalContextValue {
+export interface IdentityModalContextValue {
   // State
   editMode: Record<string, boolean>;
   editValues: Record<string, string | number | boolean | null>;
@@ -50,33 +50,33 @@ export interface DetailModalContextValue {
   ) => void;
 }
 
-const DetailModalContext = createContext<DetailModalContextValue | undefined>(
+const IdentityModalContext = createContext<IdentityModalContextValue | undefined>(
   undefined,
 );
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useDetailModalContext = () => {
-  const context = useContext(DetailModalContext);
+export const useIdentityModalContext = () => {
+  const context = useContext(IdentityModalContext);
   if (context === undefined) {
     throw new Error(
-      "useDetailModalContext must be used within a DetailModalProvider",
+      "useIdentityModalContext must be used within an IdentityModalProvider",
     );
   }
   return context;
 };
 
-interface DetailModalProviderProps {
+interface IdentityModalProviderProps {
   children: React.ReactNode;
-  value: DetailModalContextValue;
+  value: IdentityModalContextValue;
 }
 
-export const DetailModalProvider: React.FC<DetailModalProviderProps> = ({
+export const IdentityModalProvider: React.FC<IdentityModalProviderProps> = ({
   children,
   value,
 }) => {
   return (
-    <DetailModalContext.Provider value={value}>
+    <IdentityModalContext.Provider value={value}>
       {children}
-    </DetailModalContext.Provider>
+    </IdentityModalContext.Provider>
   );
 };

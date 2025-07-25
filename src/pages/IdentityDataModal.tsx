@@ -1,11 +1,11 @@
 import React from "react";
-import { DetailModalProvider } from "@/contexts/DetailModalContext";
-import { useDetailModalLogic } from "@/hooks/useDetailModalLogic";
-import DetailModalTemplate from "@/components/templates/DetailModalTemplate";
-import DetailModalContent from "@/components/organisms/DetailModalContent";
-import type { GenericDetailModalProps } from "@/types";
+import { IdentityModalProvider } from "@/contexts/IdentityModalContext";
+import { useIdentityModalLogic } from "@/hooks/useIdentityModalLogic";
+import IdentityModalTemplate from "@/components/templates/IdentitylModalTemplate";
+import IdentityModalContent from "@/components/organisms/IdentityModalContent";
+import type { GenericIdentityModalProps } from "@/types";
 
-const IdentityDataModal: React.FC<GenericDetailModalProps> = ({
+const IdentityDataModal: React.FC<GenericIdentityModalProps> = ({
   title,
   data,
   fields,
@@ -27,7 +27,7 @@ const IdentityDataModal: React.FC<GenericDetailModalProps> = ({
   initialNameFromSearch,
   imageAspectRatio = "default",
 }) => {
-  const { contextValue, resetInternalState } = useDetailModalLogic({
+  const { contextValue, resetInternalState } = useIdentityModalLogic({
     title,
     data,
     fields,
@@ -51,15 +51,15 @@ const IdentityDataModal: React.FC<GenericDetailModalProps> = ({
   });
 
   return (
-    <DetailModalProvider value={contextValue}>
-      <DetailModalTemplate
+    <IdentityModalProvider value={contextValue}>
+      <IdentityModalTemplate
         isOpen={isOpen}
         onClose={onClose}
         resetInternalState={resetInternalState}
       >
-        <DetailModalContent />
-      </DetailModalTemplate>
-    </DetailModalProvider>
+        <IdentityModalContent />
+      </IdentityModalTemplate>
+    </IdentityModalProvider>
   );
 };
 

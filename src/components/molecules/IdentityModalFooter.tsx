@@ -1,9 +1,9 @@
 import React from "react";
 import Button from "@/components/button";
 import { FaSpinner } from "react-icons/fa";
-import { useDetailModalContext } from "@/contexts/DetailModalContext";
+import { useIdentityModalContext } from "@/contexts/IdentityModalContext";
 
-const DetailModalFooter: React.FC = () => {
+const IdentityModalFooter: React.FC = () => {
   const {
     mode,
     isSubmitting,
@@ -12,24 +12,17 @@ const DetailModalFooter: React.FC = () => {
     deleteButtonLabel,
     handleSaveAll,
     handleCloseModal,
-  } = useDetailModalContext();
+  } = useIdentityModalContext();
 
   if (mode === "edit") {
     return (
       <div className="p-4 border-t flex justify-between items-center bg-white">
         {onDeleteRequest && (
-          <Button
-            variant="danger"
-            onClick={() => onDeleteRequest(localData)}
-          >
+          <Button variant="danger" onClick={() => onDeleteRequest(localData)}>
             {deleteButtonLabel}
           </Button>
         )}
-        <Button
-          type="button"
-          variant="text"
-          onClick={handleCloseModal}
-        >
+        <Button type="button" variant="text" onClick={handleCloseModal}>
           Tutup
         </Button>
       </div>
@@ -38,11 +31,7 @@ const DetailModalFooter: React.FC = () => {
 
   return (
     <div className="p-4 border-t flex justify-between items-center bg-white">
-      <Button
-        type="button"
-        variant="text"
-        onClick={handleCloseModal}
-      >
+      <Button type="button" variant="text" onClick={handleCloseModal}>
         Batal
       </Button>
       <Button
@@ -64,4 +53,4 @@ const DetailModalFooter: React.FC = () => {
   );
 };
 
-export default DetailModalFooter;
+export default IdentityModalFooter;

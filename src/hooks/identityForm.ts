@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { FieldConfig } from '@/types';
 
-interface UseDetailFormProps {
+interface UseIdentityFormProps {
     initialData: Record<string, string | number | boolean | null>;
     fields: FieldConfig[];
     onSave: (updatedData: Record<string, string | number | boolean | null>) => Promise<void>;
@@ -14,7 +14,7 @@ interface UseDetailFormProps {
     initialNameFromSearch?: string;
 }
 
-export const useDetailForm = ({
+export const useIdentityForm = ({
     initialData,
     fields,
     onSave,
@@ -25,7 +25,7 @@ export const useDetailForm = ({
     mode = 'edit',
     isOpen,
     initialNameFromSearch
-}: UseDetailFormProps) => {
+}: UseIdentityFormProps) => {
     const [editMode, setEditMode] = useState<Record<string, boolean>>({});
     const [editValues, setEditValues] = useState<Record<string, string | number | boolean | null>>({});
     const [currentImageUrl, setCurrentImageUrl] = useState(initialImageUrl);
@@ -121,7 +121,7 @@ export const useDetailForm = ({
 
     const handleSaveField = useCallback(async (key: string) => {
         if (!onFieldSave) {
-            console.warn("Handler onFieldSave tidak disediakan pada hook useDetailForm.");
+            console.warn("Handler onFieldSave tidak disediakan pada hook useIdentityForm.");
             setLocalData(prev => ({ ...prev, [key]: editValues[key] }));
             setEditMode(prev => ({ ...prev, [key]: false }));
             return;

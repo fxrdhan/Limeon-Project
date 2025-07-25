@@ -1,33 +1,33 @@
 import { useEffect, useState, useCallback } from "react";
-import { useDetailForm } from "@/hooks/detailForm";
+import { useIdentityForm } from "@/hooks/identityForm";
 import { formatDateTime } from "@/lib/formatters";
-import type { GenericDetailModalProps } from "@/types";
-import type { DetailModalContextValue } from "@/contexts/DetailModalContext";
+import type { GenericIdentityModalProps } from "@/types";
+import type { IdentityModalContextValue } from "@/contexts/IdentityModalContext";
 
-interface UseDetailModalLogicProps {
+interface UseIdentityModalLogicProps {
   title: string;
   data: Record<string, string | number | boolean | null>;
-  fields: GenericDetailModalProps["fields"];
+  fields: GenericIdentityModalProps["fields"];
   isOpen: boolean;
   onClose: () => void;
-  onSave?: GenericDetailModalProps["onSave"];
-  onFieldSave?: GenericDetailModalProps["onFieldSave"];
-  onImageSave?: GenericDetailModalProps["onImageSave"];
-  onImageDelete?: GenericDetailModalProps["onImageDelete"];
+  onSave?: GenericIdentityModalProps["onSave"];
+  onFieldSave?: GenericIdentityModalProps["onFieldSave"];
+  onImageSave?: GenericIdentityModalProps["onImageSave"];
+  onImageDelete?: GenericIdentityModalProps["onImageDelete"];
   imageUrl?: string;
   defaultImageUrl?: string;
   imagePlaceholder?: string;
   imageUploadText?: string;
   imageNotAvailableText?: string;
   imageFormatHint?: string;
-  onDeleteRequest?: GenericDetailModalProps["onDeleteRequest"];
+  onDeleteRequest?: GenericIdentityModalProps["onDeleteRequest"];
   deleteButtonLabel?: string;
   mode?: "edit" | "add";
   initialNameFromSearch?: string;
   imageAspectRatio?: "default" | "square";
 }
 
-export const useDetailModalLogic = (props: UseDetailModalLogicProps) => {
+export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
   const {
     title,
     data,
@@ -70,7 +70,7 @@ export const useDetailModalLogic = (props: UseDetailModalLogicProps) => {
     handleImageDeleteInternal,
     resetInternalState,
     setInputRef,
-  } = useDetailForm({
+  } = useIdentityForm({
     initialData: data,
     fields,
     onSave: onSave || (() => Promise.resolve()),
@@ -139,7 +139,7 @@ export const useDetailModalLogic = (props: UseDetailModalLogicProps) => {
     typeof data?.updated_at === "string" ? data.updated_at : null,
   );
 
-  const contextValue: DetailModalContextValue = {
+  const contextValue: IdentityModalContextValue = {
     // State
     editMode,
     editValues,

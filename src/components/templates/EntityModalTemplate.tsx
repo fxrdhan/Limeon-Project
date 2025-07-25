@@ -1,6 +1,6 @@
-import React, { Fragment } from "react";
+import React from "react";
 import { createPortal } from "react-dom";
-import { Transition, TransitionChild } from "@headlessui/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEntityModal } from "@/contexts/EntityModalContext";
 
 interface EntityModalTemplateProps {
@@ -13,37 +13,30 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({ children }) =
   const { handleBackdropClick } = uiActions;
 
   return createPortal(
-    <Transition show={isOpen} as={Fragment}>
-      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
-        <TransitionChild
-          as={Fragment}
-          enter="transition-opacity duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="transition-opacity duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
+          <motion.div
             className="fixed inset-0 bg-black/50 backdrop-blur-xs"
             aria-hidden="true"
             onClick={handleBackdropClick}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
           />
-        </TransitionChild>
 
-        <TransitionChild
-          as={Fragment}
-          enter="transition-all duration-200 ease-out"
-          enterFrom="opacity-0 scale-95"
-          enterTo="opacity-100 scale-100"
-          leave="transition-all duration-200 ease-in"
-          leaveFrom="opacity-100 scale-100"
-          leaveTo="opacity-0 scale-95"
-        >
-          {children}
-        </TransitionChild>
-      </div>
-    </Transition>,
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
+            {children}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
     document.body
   );
 };
