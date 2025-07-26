@@ -4,6 +4,7 @@ import { FaTimes, FaHistory, FaUndo, FaEye } from "react-icons/fa";
 import { useEntityHistory } from "../../hooks/useEntityHistory";
 import VersionDiff from "./VersionDiff";
 import { formatDateTime } from "@/lib/formatters";
+import { HISTORY_DEBUG } from "../../config/debug";
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -20,13 +21,13 @@ const HistoryModal: React.FC<HistoryModalProps> = ({
   entityId,
   entityName,
 }) => {
-  console.log('🪟 HistoryModal props:', { isOpen, entityTable, entityId, entityName });
+  if (HISTORY_DEBUG) console.log('🪟 HistoryModal props:', { isOpen, entityTable, entityId, entityName });
   
   const { history, isLoading, restoreVersion } = useEntityHistory(entityTable, entityId);
   const [selectedVersions, setSelectedVersions] = useState<number[]>([]);
   const [showDiff, setShowDiff] = useState(false);
 
-  console.log('📋 HistoryModal state:', { 
+  if (HISTORY_DEBUG) console.log('📋 HistoryModal state:', { 
     historyCount: history?.length || 0, 
     isLoading, 
     hasHistory: !!history?.length 

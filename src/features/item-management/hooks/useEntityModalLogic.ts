@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { formatDateTime } from "@/lib/formatters";
-import type { EntityModalContextValue } from "../contexts/EntityModalContext";
+import type { EntityModalContextValue, ModalMode, VersionData } from "../contexts/EntityModalContext";
 
 interface EntityData {
   id?: string;
@@ -34,6 +34,13 @@ export const useEntityModalLogic = ({
 }: UseEntityModalLogicProps) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [mode, setMode] = useState<ModalMode>('add');
+  const [historyData, setHistoryData] = useState({
+    entityTable: '',
+    entityId: '',
+    selectedVersion: undefined as VersionData | undefined,
+  });
+  const [previousMode, setPreviousMode] = useState<ModalMode>('add');
   const nameInputRef = useRef<HTMLInputElement>(null);
   
   const isEditMode = Boolean(initialData);
@@ -59,6 +66,15 @@ export const useEntityModalLogic = ({
     setDescription("");
   }, []);
 
+  // Initialize mode when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const newMode = initialData ? 'edit' : 'add';
+      setMode(newMode);
+      setPreviousMode(newMode);
+    }
+  }, [isOpen, initialData]);
+
   // Initialize form data when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -71,12 +87,14 @@ export const useEntityModalLogic = ({
       } else {
         resetForm();
       }
-      // Focus on name input after modal opens
-      setTimeout(() => {
-        nameInputRef.current?.focus();
-      }, 100);
+      // Focus on name input after modal opens (only for form modes)
+      if (mode === 'add' || mode === 'edit') {
+        setTimeout(() => {
+          nameInputRef.current?.focus();
+        }, 100);
+      }
     }
-  }, [isOpen, initialData, initialNameFromSearch, resetForm]);
+  }, [isOpen, initialData, initialNameFromSearch, resetForm, mode]);
 
   const handleSubmit = useCallback(async () => {
     if (!isValid) {
@@ -95,6 +113,42 @@ export const useEntityModalLogic = ({
       onDelete(initialData.id);
     }
   }, [initialData, onDelete]);
+
+  // History actions
+  const openHistory = useCallback((entityTable: string, entityId: string) => {
+    setPreviousMode(mode);
+    setMode('history');
+    setHistoryData({
+      entityTable,
+      entityId,
+      selectedVersion: undefined,
+    });
+  }, [mode]);
+
+  const openVersionDetail = useCallback((version: VersionData) => {
+    setMode('version-detail');
+    setHistoryData(prev => ({
+      ...prev,
+      selectedVersion: version,
+    }));
+  }, []);
+
+  const goBack = useCallback(() => {
+    if (mode === 'version-detail') {
+      setMode('history');
+      setHistoryData(prev => ({
+        ...prev,
+        selectedVersion: undefined,
+      }));
+    } else if (mode === 'history') {
+      setMode(previousMode);
+      setHistoryData({
+        entityTable: '',
+        entityId: '',
+        selectedVersion: undefined,
+      });
+    }
+  }, [mode, previousMode]);
 
   // UI actions
   const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -116,10 +170,16 @@ export const useEntityModalLogic = ({
       isEditMode,
       entityName,
       formattedUpdateAt,
+      mode,
     },
     action: {
       isLoading,
       isDeleting,
+    },
+    history: {
+      entityTable: historyData.entityTable,
+      entityId: historyData.entityId,
+      selectedVersion: historyData.selectedVersion,
     },
     formActions: {
       setName,
@@ -131,6 +191,10 @@ export const useEntityModalLogic = ({
     uiActions: {
       handleClose: onClose,
       handleBackdropClick,
+      setMode,
+      openHistory,
+      openVersionDetail,
+      goBack,
     },
   };
 

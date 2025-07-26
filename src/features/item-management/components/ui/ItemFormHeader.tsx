@@ -1,4 +1,4 @@
-import { FaHistory, FaUndoAlt, FaTimes } from "react-icons/fa";
+import { FaUndoAlt, FaTimes } from "react-icons/fa";
 import { CardHeader, CardTitle } from "@/components/card";
 import Button from "@/components/button";
 
@@ -8,6 +8,7 @@ interface ItemFormHeaderProps {
   isClosing: boolean;
   onReset?: () => void;
   onClose: () => void;
+  onHistoryClick?: () => void;
 }
 
 export default function ItemFormHeader({
@@ -16,6 +17,7 @@ export default function ItemFormHeader({
   isClosing,
   onReset,
   onClose,
+  onHistoryClick,
 }: ItemFormHeaderProps) {
   return (
     <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-gray-200 mb-6">
@@ -29,10 +31,15 @@ export default function ItemFormHeader({
 
       <div className="flex items-center space-x-1 shrink-0">
         {isEditMode && formattedUpdateAt && formattedUpdateAt !== "-" && (
-          <span className="text-sm text-gray-500 italic whitespace-nowrap flex items-center">
-            <FaHistory className="mr-1" size={12} />
+          <Button
+            variant="text"
+            size="sm"
+            onClick={onHistoryClick}
+            className="text-sm text-gray-500 hover:text-blue-600 italic whitespace-nowrap flex items-center transition-colors"
+            title="Lihat riwayat perubahan"
+          >
             {formattedUpdateAt}
-          </span>
+          </Button>
         )}
         {!isEditMode && onReset && (
           <Button
