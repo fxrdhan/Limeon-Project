@@ -4,6 +4,7 @@ import { fuzzyMatch, getScore } from "@/utils/search";
 import { useQuery } from "@tanstack/react-query";
 import type { Item, UnitConversion, UseItemSelectionOptions, DBItem } from "@/types";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const useItemSelection = (_options: UseItemSelectionOptions = {}) => {
   const [searchItem, setSearchItem] = useState("");
   const [showItemDropdown, setShowItemDropdown] = useState(false);

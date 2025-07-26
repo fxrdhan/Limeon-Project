@@ -1,5 +1,16 @@
 import { createContext, useContext } from "react";
 
+export type ModalMode = 'add' | 'edit' | 'history' | 'version-detail';
+
+export interface VersionData {
+  id: string;
+  version_number: number;
+  action_type: string;
+  changed_at: string;
+  entity_data: Record<string, unknown>;
+  changed_fields?: Record<string, { from: unknown; to: unknown }>;
+}
+
 export interface EntityModalContextValue {
   // State
   form: {
@@ -13,10 +24,16 @@ export interface EntityModalContextValue {
     isEditMode: boolean;
     entityName: string;
     formattedUpdateAt: string;
+    mode: ModalMode;
   };
   action: {
     isLoading: boolean;
     isDeleting: boolean;
+  };
+  history: {
+    entityTable: string;
+    entityId: string;
+    selectedVersion?: VersionData;
   };
 
   // Actions
@@ -30,6 +47,10 @@ export interface EntityModalContextValue {
   uiActions: {
     handleClose: () => void;
     handleBackdropClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+    setMode: (mode: ModalMode) => void;
+    openHistory: (entityTable: string, entityId: string) => void;
+    openVersionDetail: (version: VersionData) => void;
+    goBack: () => void;
   };
 }
 

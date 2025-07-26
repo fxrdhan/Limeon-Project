@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import Button from "@/components/button";
 import { FaHistory } from "react-icons/fa";
-import HistoryModal from "./HistoryModal";
+import { useEntityModal } from "../../contexts/EntityModalContext";
 
 interface HistoryButtonProps {
   entityTable: string;
@@ -16,29 +16,21 @@ const HistoryButton: React.FC<HistoryButtonProps> = ({
   entityName,
   className = "",
 }) => {
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const { uiActions } = useEntityModal();
+
+  const handleHistoryClick = () => {
+    uiActions.openHistory(entityTable, entityId);
+  };
 
   return (
-    <>
-      <Button
-        variant="text"
-        onClick={() => setIsHistoryOpen(true)}
-        className={`text-gray-500 hover:text-gray-700 p-1 ${className}`}
-        title={`Lihat riwayat perubahan ${entityName}`}
-      >
-        <FaHistory size={16} />
-      </Button>
-      
-      {isHistoryOpen && (
-        <HistoryModal
-          isOpen={isHistoryOpen}
-          onClose={() => setIsHistoryOpen(false)}
-          entityTable={entityTable}
-          entityId={entityId}
-          entityName={entityName}
-        />
-      )}
-    </>
+    <Button
+      variant="text"
+      onClick={handleHistoryClick}
+      className={`text-gray-500 hover:text-gray-700 p-1 ${className}`}
+      title={`Lihat riwayat perubahan ${entityName}`}
+    >
+      <FaHistory size={16} />
+    </Button>
   );
 };
 

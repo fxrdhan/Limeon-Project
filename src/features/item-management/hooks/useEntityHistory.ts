@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { HISTORY_DEBUG } from "../config/debug";
 
 export interface EntityHistoryItem {
   id: string;
@@ -21,15 +22,15 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
 
   const fetchHistory = useCallback(async () => {
     if (!entityTable || !entityId) {
-      console.log('Missing params:', { entityTable, entityId });
+      if (HISTORY_DEBUG) console.log('Missing params:', { entityTable, entityId });
       return;
     }
     
-    console.log('🔍 Fetching history for:', { entityTable, entityId });
+    if (HISTORY_DEBUG) console.log('🔍 Fetching history for:', { entityTable, entityId });
     
     // Check auth status
     const { data: { user } } = await supabase.auth.getUser();
-    console.log('🔑 Current user:', user?.id || 'Not authenticated');
+    if (HISTORY_DEBUG) console.log('🔑 Current user:', user?.id || 'Not authenticated');
     
     setIsLoading(true);
     setError(null);
@@ -40,7 +41,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         .from('entity_history')
         .select('count')
         .limit(1);
-      console.log('🔗 Connection test:', { testData, testError });
+      if (HISTORY_DEBUG) console.log('🔗 Connection test:', { testData, testError });
       
       // Now try the actual query
       const { data, error: fetchError } = await supabase
@@ -50,7 +51,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         .eq('entity_id', entityId)
         .order('version_number', { ascending: false });
 
-      console.log('📊 History query result:', { 
+      if (HISTORY_DEBUG) console.log('📊 History query result:', { 
         data, 
         error: fetchError,
         queryParams: { entityTable, entityId },
@@ -58,16 +59,16 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
       });
 
       if (fetchError) {
-        console.error('❌ Query error:', fetchError);
+        if (HISTORY_DEBUG) console.error('❌ Query error:', fetchError);
         throw new Error(fetchError.message);
       }
 
       setHistory(data || []);
-      console.log('✅ History set to:', data);
+      if (HISTORY_DEBUG) console.log('✅ History set to:', data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
-      console.error('💥 Error fetching entity history:', err);
+      if (HISTORY_DEBUG) console.error('💥 Error fetching entity history:', err);
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +178,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
       // Refresh history
       await fetchHistory();
     } catch (err) {
-      console.error('Error adding history entry:', err);
+      if (HISTORY_DEBUG) console.error('Error adding history entry:', err);
     }
   };
 
