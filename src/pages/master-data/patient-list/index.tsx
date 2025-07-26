@@ -12,7 +12,7 @@ import { useState, useRef, useMemo, useCallback } from "react";
 import type { Patient as PatientType, FieldConfig } from "@/types";
 
 // Use the new modular architecture
-import { useMasterDataManagement } from "@/handlers/masterData";
+import { useMasterDataManagement } from "@/features/master-data/hooks/useMasterDataManagement";
 
 import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
 import { patientSearchColumns } from "@/utils/searchColumns";

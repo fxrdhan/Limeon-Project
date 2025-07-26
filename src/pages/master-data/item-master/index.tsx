@@ -12,7 +12,7 @@ import { motion, LayoutGroup } from "framer-motion";
 import classNames from "classnames";
 
 // Use the new modular architecture
-import { useMasterDataManagement } from "@/handlers/masterData";
+import { useMasterDataManagement } from "@/features/master-data/hooks/useMasterDataManagement";
 
 import type {
   Category,
