@@ -27,9 +27,9 @@ import {
 } from "@/utils/searchColumns";
 
 // Additional imports for Items tab
-import SearchToolbar from "@/components/molecules/SearchToolbar";
+import SearchToolbar from "@/features/shared/components/SearchToolbar";
 import ItemDataTable from "@/features/item-management/components/ItemDataTable";
-import { useItemGridColumns } from "@/components/molecules/ItemGridColumns";
+import { useItemGridColumns } from "@/features/item-management/components/ItemGridColumns";
 
 type MasterDataType = "categories" | "types" | "units" | "items";
 type MasterDataEntity = Category | MedicineType | Unit | ItemDataType;
