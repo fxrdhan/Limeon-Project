@@ -53,7 +53,6 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     getItemByID,
     refetchItems,
   } = useItemSelection({
-    disableRealtime: false,
     enabled: isOpen,
   });
 

@@ -53,7 +53,6 @@ export interface UseFieldFocusOptions {
 }
 
 export interface UseMasterDataManagementOptions {
-  realtime?: boolean;
   searchInputRef?: React.RefObject<HTMLInputElement>;
   isCustomModalOpen?: boolean;
   locationKey?: string;
@@ -61,7 +60,6 @@ export interface UseMasterDataManagementOptions {
 }
 
 export interface UseItemSelectionOptions {
-  disableRealtime?: boolean;
   enabled?: boolean;
 }
 

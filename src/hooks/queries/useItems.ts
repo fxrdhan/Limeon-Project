@@ -20,6 +20,8 @@ export const useItems = (options?: {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -32,6 +34,8 @@ export const useItem = (id: string, options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -62,6 +66,8 @@ export const useItemsByCategory = (categoryId: string, options?: { enabled?: boo
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -74,6 +80,8 @@ export const useItemsByType = (typeId: string, options?: { enabled?: boolean }) 
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -86,6 +94,8 @@ export const useLowStockItems = (threshold: number = 10, options?: { enabled?: b
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -101,12 +111,28 @@ export const useItemMutations = () => {
       itemData: Omit<DBItem, 'id' | 'created_at' | 'updated_at'>;
       unitConversions?: DBUnitConversion[];
     }) => {
+      console.log(`🚀 CREATE ITEM CALLED with itemData:`, itemData, `unitConversions:`, unitConversions);
       const result = await itemsService.createItemWithConversions(itemData, unitConversions);
-      if (result.error) throw result.error;
+      console.log(`📝 CREATE ITEM API result:`, result);
+      if (result.error) {
+        console.error(`❌ CREATE ITEM failed:`, result.error);
+        throw result.error;
+      }
+      console.log(`✅ CREATE ITEM API success, returning:`, result.data);
       return result.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.items.all() });
+    onSuccess: (data) => {
+      console.log(`🎉 CREATE ITEM SUCCESS! Data:`, data);
+      
+      // Local cache update
+      console.log(`💾 Updating local cache...`);
+      const keysToInvalidate = getInvalidationKeys.items.all();
+      keysToInvalidate.forEach(keySet => {
+        queryClient.invalidateQueries({ queryKey: keySet });
+        queryClient.refetchQueries({ queryKey: keySet });
+      });
+      console.log(`✅ Local cache updated`);
+      
     },
   });
 
@@ -124,9 +150,19 @@ export const useItemMutations = () => {
       if (result.error) throw result.error;
       return result.data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.items.all() });
+    onSuccess: (data, variables) => {
+      console.log(`🎉 UPDATE ITEM SUCCESS! Data:`, data, `Variables:`, variables);
+      
+      // Local cache update
+      console.log(`💾 Updating local cache...`);
+      const keysToInvalidate = getInvalidationKeys.items.all();
+      keysToInvalidate.forEach(keySet => {
+        queryClient.invalidateQueries({ queryKey: keySet });
+        queryClient.refetchQueries({ queryKey: keySet });
+      });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.detail(variables.id) });
+      console.log(`✅ Local cache updated`);
+      
     },
   });
 
@@ -137,7 +173,13 @@ export const useItemMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.items.all() });
+      // Local cache update
+      const keysToInvalidate = getInvalidationKeys.items.all();
+      keysToInvalidate.forEach(keySet => {
+        queryClient.invalidateQueries({ queryKey: keySet });
+        queryClient.refetchQueries({ queryKey: keySet });
+      });
+      
     },
   });
 

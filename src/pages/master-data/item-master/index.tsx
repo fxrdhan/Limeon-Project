@@ -115,7 +115,7 @@ const ItemMasterNew = () => {
   const { columnDefs: itemColumnDefs, columnsToAutoSize } =
     useItemGridColumns();
 
-  // Data management hooks for each tab
+  // Data management hooks for each tab - only active tab subscribes to realtime
   const categoriesManagement = useMasterDataManagement(
     "item_categories",
     "Kategori",

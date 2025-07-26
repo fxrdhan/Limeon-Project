@@ -403,6 +403,7 @@ export const useMasterDataManagement = (
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
+
   // Create mutation objects with consistent interface for backward compatibility
   const addMutation = {
     mutate: (data: { name: string; description?: string }) => 

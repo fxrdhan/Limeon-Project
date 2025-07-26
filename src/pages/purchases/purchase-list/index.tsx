@@ -29,7 +29,6 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { useFieldFocus } from "@/hooks/fieldFocus";
-import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import { getSearchState } from "@/utils/search";
 
 interface Purchase {
@@ -87,7 +86,6 @@ const PurchaseList = () => {
     locationKey: location.key,
   });
 
-  useSupabaseRealtime("purchases", ["purchases"]);
 
   const fetchPurchases = async (
     page: number,

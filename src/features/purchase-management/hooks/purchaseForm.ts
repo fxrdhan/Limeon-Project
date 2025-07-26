@@ -1,7 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
 import type {
     Item,
     Supplier,
@@ -18,7 +17,6 @@ interface UsePurchaseFormProps {
 
 export const usePurchaseForm = ({
     initialInvoiceNumber = "",
-    enabled = true,
 }: UsePurchaseFormProps = {}) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -81,13 +79,6 @@ export const usePurchaseForm = ({
         fetchCompanyProfile();
     }, [fetchSuppliers]);
 
-    // Add realtime subscription for supplier updates
-    useSupabaseRealtime("suppliers", null, {
-        enabled: enabled,
-        onRealtimeEvent: () => {
-            fetchSuppliers();
-        },
-    });
 
     const handleChange = (
         e: React.ChangeEvent<

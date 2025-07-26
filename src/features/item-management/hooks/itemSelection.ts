@@ -1,13 +1,10 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { fuzzyMatch, getScore } from "@/utils/search";
-import { useSupabaseRealtime } from "@/hooks/supabaseRealtime";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { Item, UnitConversion, UseItemSelectionOptions, DBItem } from "@/types";
 
-export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
-  const { disableRealtime = false, enabled = true } = options;
-  const queryClient = useQueryClient();
+export const useItemSelection = (_options: UseItemSelectionOptions = {}) => {
   const [searchItem, setSearchItem] = useState("");
   const [showItemDropdown, setShowItemDropdown] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -59,13 +56,10 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
 
   // Use React Query for consistent caching with item-list page
   const { data: items = [], refetch: refetchQuery } = useQuery({
-    queryKey: ["items"], // Use same base key as masterData
+    queryKey: ["items"],
     queryFn: fetchItems,
-    staleTime: 0, // Always consider data stale for faster updates
-    gcTime: 5 * 60 * 1000, // Keep cache for 5 minutes
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const getItemByID = (itemId: string): Item | undefined => {
@@ -108,38 +102,6 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
       return a.name.localeCompare(b.name);
     });
 
-  // Add realtime subscription for items with optimized performance
-  useSupabaseRealtime("items", ["items"], {
-    enabled: !disableRealtime && enabled,
-    debounceMs: 0, // No debounce for instant updates
-    onRealtimeEvent: async (payload) => {
-      console.log(
-        "🔥 ITEM SELECTION - Realtime event received:",
-        payload.eventType,
-        payload,
-      );
-
-      // Immediate cache invalidation and refetch for fast response
-      await queryClient.invalidateQueries({ queryKey: ["items"] });
-
-      // Force immediate refetch instead of waiting for stale check
-      refetchQuery()
-        .then(() => {
-          console.log(
-            "🔥 ITEM SELECTION - Items refetched immediately after realtime event",
-          );
-        })
-        .catch((error) => {
-          console.error("❌ ITEM SELECTION - Error refetching items:", error);
-        });
-
-      console.log(
-        "🔥 ITEM SELECTION - Cache invalidated and refetch triggered",
-      );
-    },
-    showDiffInConsole: true,
-    detailedLogging: true,
-  });
 
   const refetchItems = useCallback(() => {
     refetchQuery();
