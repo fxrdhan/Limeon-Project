@@ -5,7 +5,7 @@ import PageTitle from "@/components/page-title";
 import Badge from "@/components/badge";
 
 import UploadInvoicePortal from "@/pages/purchases/invoice-uploader";
-import AddPurchasePortal from "@/components/add-edit/v4";
+import { AddPurchasePortal } from "@/features/purchase-management";
 
 import {
   Table,
