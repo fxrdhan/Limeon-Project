@@ -115,22 +115,36 @@ const ItemMasterNew = () => {
   const { columnDefs: itemColumnDefs, columnsToAutoSize } =
     useItemGridColumns();
 
+  // Map activeTab to table names for realtime control
+  const getTableNameFromTab = (tab: MasterDataType) => {
+    switch (tab) {
+      case "categories": return "item_categories";
+      case "types": return "item_types";
+      case "units": return "item_units";
+      case "items": return "items";
+    }
+  };
+
   // Data management hooks for each tab - only active tab subscribes to realtime
   const categoriesManagement = useMasterDataManagement(
     "item_categories",
     "Kategori",
     {
       searchInputRef,
+      activeTableName: getTableNameFromTab(activeTab),
     },
   );
   const typesManagement = useMasterDataManagement("item_types", "Jenis Item", {
     searchInputRef,
+    activeTableName: getTableNameFromTab(activeTab),
   });
   const unitsManagement = useMasterDataManagement("item_units", "Satuan", {
     searchInputRef,
+    activeTableName: getTableNameFromTab(activeTab),
   });
   const itemsManagement = useMasterDataManagement("items", "Item", {
     searchInputRef,
+    activeTableName: getTableNameFromTab(activeTab),
   });
 
   // Get current management based on active tab
