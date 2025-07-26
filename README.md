@@ -66,10 +66,7 @@ PharmaSys leverages the full power of [Supabase](https://supabase.com/) as its b
 
 -   **Database:** PostgreSQL database for storing all application data, from master data (items, suppliers) to transactional data (purchases, sales).
 -   **Authentication:** Manages user authentication and authorization, ensuring secure access to the application.
--   **Realtime:** This feature is at the core of the application's collaborative nature.
-    -   **Live Data Sync:** The application subscribes to `postgres_changes` events from the Supabase Realtime API. When users create, update, or delete data, the backend notifies all connected clients.
-    -   **Automatic UI Updates:** Custom React hooks (`useRealtimeSubscription`) receive these events and automatically invalidate relevant data cache in TanStack Query. This triggers smooth and efficient refetching, ensuring the UI always reflects the latest database state without manual refresh.
-    -   **User Presence:** The same Realtime channel is used to track which users are currently active in the application, displaying online user count in real-time.
+-   **User Presence:** Uses Supabase Realtime to track which users are currently active in the application, displaying online user count in real-time.
 -   **Storage:** Used for handling file uploads, specifically for invoice images that are then processed.
 -   **Edge Functions:** Serverless functions that execute complex backend logic. Main functions include:
     -   `extract-invoice`: Processes uploaded invoice images to extract data.

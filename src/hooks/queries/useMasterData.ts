@@ -13,6 +13,8 @@ export const useCategories = (options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -25,6 +27,8 @@ export const useCategory = (id: string, options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -33,23 +37,51 @@ export const useCategoryMutations = () => {
 
   const createCategory = useMutation({
     mutationFn: async (data: Omit<Category, 'id' | 'updated_at'>) => {
+      console.log(`🚀 CREATE CATEGORY CALLED with data:`, data);
       const result = await masterDataService.categories.create(data);
-      if (result.error) throw result.error;
+      console.log(`📝 CREATE CATEGORY API result:`, result);
+      if (result.error) {
+        console.error(`❌ CREATE CATEGORY failed:`, result.error);
+        throw result.error;
+      }
+      console.log(`✅ CREATE CATEGORY API success, returning:`, result.data);
       return result.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.categories() });
+    onSuccess: (data) => {
+      console.log(`🎉 CREATE CATEGORY SUCCESS! Data:`, data);
+      
+      // Local cache update
+      console.log(`💾 Updating local cache for categories...`);
+      queryClient.invalidateQueries({ queryKey: QueryKeys.masterData.categories.all });
+      queryClient.refetchQueries({ queryKey: QueryKeys.masterData.categories.all });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+      console.log(`✅ Local cache updated`);
+      
     },
   });
 
   const updateCategory = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Category> }) => {
+      console.log(`🚀 UPDATE CATEGORY CALLED with id:`, id, `data:`, data);
       const result = await masterDataService.categories.update(id, data);
-      if (result.error) throw result.error;
+      console.log(`📝 UPDATE CATEGORY API result:`, result);
+      if (result.error) {
+        console.error(`❌ UPDATE CATEGORY failed:`, result.error);
+        throw result.error;
+      }
+      console.log(`✅ UPDATE CATEGORY API success, returning:`, result.data);
       return result.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.categories() });
+    onSuccess: (data, variables) => {
+      console.log(`🎉 UPDATE CATEGORY SUCCESS! Data:`, data, `Variables:`, variables);
+      
+      // Local cache update
+      console.log(`💾 Updating local cache for categories...`);
+      queryClient.invalidateQueries({ queryKey: QueryKeys.masterData.categories.all });
+      queryClient.refetchQueries({ queryKey: QueryKeys.masterData.categories.all });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+      console.log(`✅ Local cache updated`);
+      
     },
   });
 
@@ -60,7 +92,11 @@ export const useCategoryMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.categories() });
+      // Local cache update
+      queryClient.invalidateQueries({ queryKey: QueryKeys.masterData.categories.all });
+      queryClient.refetchQueries({ queryKey: QueryKeys.masterData.categories.all });
+      queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+      
     },
   });
 
@@ -77,6 +113,8 @@ export const useMedicineTypes = (options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -89,6 +127,8 @@ export const useMedicineType = (id: string, options?: { enabled?: boolean }) => 
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -141,6 +181,8 @@ export const useUnits = (options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -153,6 +195,8 @@ export const useUnit = (id: string, options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -205,6 +249,8 @@ export const useSuppliers = (options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -217,6 +263,8 @@ export const useSupplier = (id: string, options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -283,5 +331,7 @@ export const useAllMasterData = (options?: { enabled?: boolean }) => {
       return result;
     },
     enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
