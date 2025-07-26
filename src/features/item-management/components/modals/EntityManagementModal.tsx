@@ -34,7 +34,7 @@ const EntityManagementModal: React.FC<AddEditModalProps> = ({
   return (
     <EntityModalProvider value={contextValue}>
       <EntityModalTemplate>
-        <EntityModalContent nameInputRef={nameInputRef} />
+        <EntityModalContent nameInputRef={nameInputRef} initialData={initialData} />
       </EntityModalTemplate>
     </EntityModalProvider>
   );
