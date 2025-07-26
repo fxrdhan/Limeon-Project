@@ -23,7 +23,7 @@ import {
   useUnitMutations,
   useSuppliers,
   useSupplierMutations,
-  useItems,
+  useItemsRealtime,
   useItemMutations,
   usePatients,
   usePatientMutations,
@@ -58,7 +58,7 @@ const getHooksForTable = (tableName: string) => {
       };
     case "items":
       return {
-        useData: useItems,
+        useData: useItemsRealtime,
         useMutations: useItemMutations,
       };
     case "patients":
