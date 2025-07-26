@@ -11,6 +11,7 @@ export {
   useCheckCodeUniqueness,
   useCheckBarcodeUniqueness
 } from './useItems';
+export { useItemsRealtime } from './useItemsRealtime';
 export * from './usePurchases';
 export {
   useDashboardStats,
