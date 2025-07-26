@@ -2,7 +2,7 @@ import React from "react";
 import { IdentityModalProvider } from "@/contexts/IdentityModalContext";
 import { useIdentityModalLogic } from "@/hooks/useIdentityModalLogic";
 import IdentityModalTemplate from "@/components/templates/IdentitylModalTemplate";
-import IdentityModalContent from "@/components/organisms/IdentityModalContent";
+import IdentityModalContent from "./components/IdentityModalContent";
 import type { GenericIdentityModalProps } from "@/types";
 
 const IdentityDataModal: React.FC<GenericIdentityModalProps> = ({

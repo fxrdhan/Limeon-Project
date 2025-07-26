@@ -1,4 +1,4 @@
-import IdentityDataModal from "@/pages/IdentityDataModal";
+import IdentityDataModal from "@/features/identity/IdentityDataModal";
 import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
 import Button from "@/components/button";
 import Pagination from "@/components/pagination";
