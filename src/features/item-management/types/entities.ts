@@ -9,10 +9,6 @@ export interface UnitOption {
   name: string;
 }
 
-export interface DropdownOption {
-  id: string;
-  name: string;
-}
 
 export interface EntityData {
   id: string;
@@ -50,6 +46,3 @@ export interface DBUnitConversion {
   sell_price?: number;
 }
 
-export interface MutationState {
-  isPending: boolean;
-}

@@ -21,7 +21,6 @@ export type {
   ItemManagementModalProps,
   ItemManagementContextValue,
   UnitConversion,
-  FormData, // backward compatibility
 } from "./types";
 
 // Utility exports

@@ -35,5 +35,3 @@ export interface UnitConversionLogicFormData {
   conversion: number;
 }
 
-// Backward compatibility
-export type FormData = ItemFormData;

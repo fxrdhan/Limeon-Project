@@ -1,6 +1,18 @@
 import Input from "@/components/input";
 import FormField from "@/components/form-field";
-import type { PriceInputProps } from "../../../types";
+import type { z } from "zod";
+
+interface PriceInputProps {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  tabIndex?: number;
+  validationSchema?: z.ZodSchema;
+  required?: boolean;
+  min?: string;
+  className?: string;
+}
 
 export default function PriceInput({
   label,

@@ -2,7 +2,10 @@ import React from "react";
 import Input from "@/components/input";
 import DescriptiveTextarea from "@/components/descriptive-textarea";
 import { useEntityModal } from "../../../contexts/EntityModalContext";
-import type { EntityFormFieldsProps } from "../../../types";
+
+interface EntityFormFieldsProps {
+  nameInputRef: React.RefObject<HTMLInputElement | null>;
+}
 
 const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef }) => {
   const { form, ui, action, formActions } = useEntityModal();

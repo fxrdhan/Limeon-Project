@@ -1,7 +1,10 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FaQuestionCircle } from "react-icons/fa";
-import type { FefoTooltipProps } from "../types";
+
+interface FefoTooltipProps {
+  tooltipText?: string;
+}
 
 export default function FefoTooltip({
   tooltipText = "First Expired First Out: Barang dengan tanggal kadaluarsa terdekat akan dikeluarkan lebih dulu saat penjualan.",

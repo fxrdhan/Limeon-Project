@@ -1,5 +1,20 @@
 import { useMemo } from "react";
-import type { UseItemFormValidationProps } from "../types";
+
+interface ValidationFormData {
+  name: string;
+  category_id: string;
+  type_id: string;
+  unit_id: string;
+  base_price: number;
+  sell_price: number;
+}
+
+interface UseItemFormValidationProps {
+  formData: ValidationFormData;
+  isDirtyFn?: () => boolean;
+  isEditMode: boolean;
+  operationsPending: boolean;
+}
 
 export const useItemFormValidation = ({
   formData,

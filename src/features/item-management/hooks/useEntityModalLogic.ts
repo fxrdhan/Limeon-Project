@@ -1,7 +1,19 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { formatDateTime } from "@/lib/formatters";
 import type { EntityModalContextValue, ModalMode, VersionData } from "../contexts/EntityModalContext";
-import type { UseEntityModalLogicProps } from "../types";
+import type { EntityData } from "../types";
+
+interface UseEntityModalLogicProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: { id?: string; name: string; description: string }) => Promise<void>;
+  onDelete?: (id: string) => void;
+  initialData?: EntityData | null;
+  initialNameFromSearch?: string;
+  entityName: string;
+  isLoading?: boolean;
+  isDeleting?: boolean;
+}
 
 export const useEntityModalLogic = ({
   isOpen,

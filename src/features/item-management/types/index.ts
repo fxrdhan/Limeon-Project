@@ -12,8 +12,5 @@ export * from './hooks';
 // Component props types
 export * from './components';
 
-// UI state types
-export * from './ui';
-
 // Form types (exported last to avoid conflicts)
 export * from './forms';
