@@ -1,29 +1,5 @@
-import { ChangeEvent, RefObject } from "react";
-
-interface AddItemFormType {
-  handleSelectChange: (e: ChangeEvent<HTMLSelectElement>) => void;
-  units: Array<{ id: string; name: string }>;
-  unitConversionHook: { setBaseUnit: (unit: string) => void };
-  setMarginPercentage: (value: string) => void;
-  formData: { base_price: number; min_stock: number; is_medicine: boolean };
-  updateFormData: (data: Record<string, unknown>) => void;
-  calculateSellPriceFromMargin: (margin: number) => number;
-  handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  calculateProfitPercentage: () => number | null;
-  setEditingMargin: (editing: boolean) => void;
-  marginPercentage: string;
-  setMinStockValue: (value: string) => void;
-  setEditingMinStock: (editing: boolean) => void;
-  minStockValue: string;
-  handleCancel: (closingStateSetter?: ((value: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>) => void;
-}
-
-export interface AddItemEventHandlersProps {
-  addItemForm: AddItemFormType;
-  marginInputRef: RefObject<HTMLInputElement | null>;
-  minStockInputRef: RefObject<HTMLInputElement | null>;
-  expiryCheckboxRef?: RefObject<HTMLLabelElement | null>;
-}
+import type { ChangeEvent } from "react";
+import type { AddItemEventHandlersProps } from "../types";
 
 export const useAddItemEventHandlers = ({
   addItemForm,

@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import Input from "@/components/input";
 import DescriptiveTextarea from "@/components/descriptive-textarea";
-import { useEntityModal } from "../../contexts/EntityModalContext";
+import { useEntityModal } from "../../../contexts/EntityModalContext";
 
 const VersionDetailContent: React.FC = () => {
   const { form, ui, action, formActions, history } = useEntityModal();

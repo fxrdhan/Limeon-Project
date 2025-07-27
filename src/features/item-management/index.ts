@@ -2,7 +2,7 @@
 export { default as ItemManagementModal } from "./components/ItemManagementModal";
 
 // Entity component exports
-export { default as EntityManagementModal } from "./components/modals/EntityManagementModal";
+export { EntityManagementModal } from "./components/modals";
 
 // Context exports
 export { ItemManagementProvider } from "./contexts/ItemManagementContext";

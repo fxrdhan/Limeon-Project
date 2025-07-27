@@ -1,28 +1,8 @@
 import { useState } from "react";
 import { DataGrid } from "@/components/ag-grid";
 import Pagination from "@/components/pagination";
-import { RowClickedEvent, ColDef, IRowNode, GridReadyEvent } from "ag-grid-community";
-import type { Item as ItemDataType } from "@/types";
-
-interface ItemDataTableProps {
-  items: ItemDataType[];
-  columnDefs: ColDef[];
-  columnsToAutoSize: string[];
-  isLoading: boolean;
-  isError: boolean;
-  error: Error | unknown;
-  search: string;
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-  onRowClick: (item: ItemDataType) => void;
-  onPageChange: (page: number) => void;
-  onItemsPerPageChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  onGridReady: (params: GridReadyEvent) => void;
-  isExternalFilterPresent: () => boolean;
-  doesExternalFilterPass: (node: IRowNode) => boolean;
-}
+import { RowClickedEvent } from "ag-grid-community";
+import type { ItemDataTableProps } from "../types";
 
 export default function ItemDataTable({
   items,

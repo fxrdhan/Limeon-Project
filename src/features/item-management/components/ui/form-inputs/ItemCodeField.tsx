@@ -2,11 +2,7 @@ import { useState } from "react";
 import { FaRedo } from "react-icons/fa";
 import Input from "@/components/input";
 import FormField from "@/components/form-field";
-
-interface ItemCodeFieldProps {
-  code: string;
-  onRegenerate: () => void;
-}
+import type { ItemCodeFieldProps } from "../../../types";
 
 export default function ItemCodeField({ code, onRegenerate }: ItemCodeFieldProps) {
   const [isHovered, setIsHovered] = useState(false);

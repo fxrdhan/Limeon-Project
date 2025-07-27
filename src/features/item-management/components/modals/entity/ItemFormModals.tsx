@@ -1,30 +1,5 @@
 import EntityManagementModal from "./EntityManagementModal";
-
-interface MutationState {
-  isPending: boolean;
-}
-
-interface ItemFormModalsProps {
-  categoryModal: {
-    isOpen: boolean;
-    onClose: () => void;
-    onSubmit: (data: { name: string; description: string }) => Promise<void>;
-    mutation: MutationState;
-  };
-  typeModal: {
-    isOpen: boolean;
-    onClose: () => void;
-    onSubmit: (data: { name: string; description: string }) => Promise<void>;
-    mutation: MutationState;
-  };
-  unitModal: {
-    isOpen: boolean;
-    onClose: () => void;
-    onSubmit: (data: { name: string; description: string }) => Promise<void>;
-    mutation: MutationState;
-  };
-  currentSearchTerm?: string;
-}
+import type { ItemFormModalsProps } from "../../../types";
 
 export default function ItemFormModals({
   categoryModal,

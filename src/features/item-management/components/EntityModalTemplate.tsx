@@ -2,10 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEntityModal } from "../contexts/EntityModalContext";
-
-interface EntityModalTemplateProps {
-  children: React.ReactNode;
-}
+import type { EntityModalTemplateProps } from "../types";
 
 const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({ children }) => {
   const { ui, uiActions, comparison } = useEntityModal();

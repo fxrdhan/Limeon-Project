@@ -1,17 +1,10 @@
 import React from "react";
 import Button from "@/components/button";
 import { FaHistory, FaArrowLeft } from "react-icons/fa";
-import { useEntityModal } from "../../contexts/EntityModalContext";
-import EntityFormFields from "../ui/EntityFormFields";
-import HistoryListContent from "../ui/HistoryListContent";
-import VersionDetailContent from "../ui/VersionDetailContent";
-
-interface EntityData {
-  id: string;
-  name: string;
-  description?: string | null;
-  updated_at?: string | null;
-}
+import { useEntityModal } from "../../../contexts/EntityModalContext";
+import { EntityFormFields } from "../../ui";
+import { HistoryListContent, VersionDetailContent } from "../../ui";
+import type { EntityData } from "../../../types";
 
 interface EntityModalContentProps {
   nameInputRef: React.RefObject<HTMLInputElement | null>;

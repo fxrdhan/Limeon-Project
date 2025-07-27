@@ -8,7 +8,7 @@ import { useItemManagement } from "../contexts/useItemManagementContext";
 // Template and Organisms
 import ItemModalTemplate from "./ItemModalTemplate";
 import { ItemFormSections } from "./ItemFormOrganisms";
-import ItemModalContainer from "./modals/ItemModalContainer";
+import { ItemModalContainer } from "./modals";
 
 const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
   isOpen,

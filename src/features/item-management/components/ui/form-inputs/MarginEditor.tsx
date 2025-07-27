@@ -3,7 +3,7 @@ import { FaPen } from "react-icons/fa";
 import Input from "@/components/input";
 import FormField from "@/components/form-field";
 
-interface MarginEditorProps {
+interface LocalMarginEditorProps {
   isEditing: boolean;
   marginPercentage: string;
   calculatedMargin: number | null;
@@ -23,7 +23,7 @@ export default function MarginEditor({
   onStopEdit,
   onChange,
   onKeyDown,
-}: MarginEditorProps) {
+}: LocalMarginEditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

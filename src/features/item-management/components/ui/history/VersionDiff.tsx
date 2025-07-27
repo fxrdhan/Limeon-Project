@@ -1,22 +1,14 @@
 import React from "react";
 import { FaArrowRight } from "react-icons/fa";
+import type { VersionData } from "../../../types";
 
-interface VersionData {
-  id: string;
-  version_number: number;
-  action_type: string;
-  changed_at: string;
-  entity_data: Record<string, unknown>;
-  changed_fields?: Record<string, { from: unknown; to: unknown }>;
-}
-
-interface VersionDiffProps {
+interface LocalVersionDiffProps {
   fromVersion: VersionData;
   toVersion: VersionData;
   entityName: string;
 }
 
-const VersionDiff: React.FC<VersionDiffProps> = ({
+const VersionDiff: React.FC<LocalVersionDiffProps> = ({
   fromVersion,
   toVersion,
   entityName,

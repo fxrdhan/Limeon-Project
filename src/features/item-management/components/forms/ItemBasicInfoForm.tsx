@@ -1,42 +1,12 @@
-import React, { forwardRef } from "react";
+import { forwardRef } from "react";
 import Input from "@/components/input";
 import Dropdown from "@/components/dropdown";
 import FormSection from "@/components/form-section";
 import FormField from "@/components/form-field";
 import DescriptiveTextarea from "@/components/descriptive-textarea";
-import ItemCodeField from "../ui/ItemCodeField";
+import { ItemCodeField } from "../ui";
 import { itemNameSchema } from "@/schemas/itemValidation";
-
-interface DropdownOption {
-  id: string;
-  name: string;
-}
-
-interface ItemBasicInfoFormProps {
-  formData: {
-    code: string;
-    name: string;
-    manufacturer: string;
-    barcode: string;
-    is_medicine: boolean;
-    category_id: string;
-    type_id: string;
-    unit_id: string;
-    rack: string;
-    description: string;
-  };
-  categories: DropdownOption[];
-  types: DropdownOption[];
-  units: DropdownOption[];
-  loading: boolean;
-  onCodeRegenerate: () => void;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onFieldChange: (field: string, value: boolean | string) => void;
-  onDropdownChange: (field: string, value: string) => void;
-  onAddNewCategory: (searchTerm?: string) => void;
-  onAddNewType: (searchTerm?: string) => void;
-  onAddNewUnit: (searchTerm?: string) => void;
-}
+import type { ItemBasicInfoFormProps } from "../../types";
 
 const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
   ({ 

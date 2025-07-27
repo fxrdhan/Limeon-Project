@@ -1,18 +1,5 @@
 import { useCallback } from "react";
-import type { UnitData, UnitConversion } from "@/types";
-
-interface UnitConversionFormData {
-  unit: string;
-  conversion: number;
-}
-
-interface UseUnitConversionLogicProps {
-  conversions: UnitConversion[];
-  availableUnits: UnitData[];
-  formData: UnitConversionFormData;
-  addUnitConversion: (conversion: Omit<UnitConversion, "id"> & { basePrice?: number; sellPrice?: number }) => void;
-  setFormData: (data: UnitConversionFormData) => void;
-}
+import type { UseUnitConversionLogicProps } from "../types";
 
 export const useUnitConversionLogic = ({
   conversions,
