@@ -155,7 +155,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               <DiffText
                                 oldText={versionName}
                                 newText={currentData.name}
-                                mode="character"
                                 className="text-sm"
                               />
                             </motion.div>
@@ -177,7 +176,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               <DiffText
                                 oldText={versionDescription}
                                 newText={currentData.description}
-                                mode="character"
                                 className="text-sm leading-relaxed"
                               />
                             </motion.div>

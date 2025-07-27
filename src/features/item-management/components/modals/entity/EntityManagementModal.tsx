@@ -44,8 +44,8 @@ const EntityManagementModal: React.FC<AddEditModalProps> = ({
         entityName={entityName}
         selectedVersion={contextValue.comparison.selectedVersion}
         currentData={{
-          name: contextValue.form.name,
-          description: contextValue.form.description
+          name: initialData?.name || '',
+          description: initialData?.description || ''
         }}
       />
     </EntityModalProvider>
