@@ -35,6 +35,10 @@ export interface EntityModalContextValue {
     entityId: string;
     selectedVersion?: VersionData;
   };
+  comparison: {
+    isOpen: boolean;
+    selectedVersion?: VersionData;
+  };
 
   // Actions
   formActions: {
@@ -50,6 +54,8 @@ export interface EntityModalContextValue {
     setMode: (mode: ModalMode) => void;
     openHistory: (entityTable: string, entityId: string) => void;
     openVersionDetail: (version: VersionData) => void;
+    openComparison: (version: VersionData) => void;
+    closeComparison: () => void;
     goBack: () => void;
   };
 }

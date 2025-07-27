@@ -38,6 +38,7 @@ const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef }) => 
         textareaClassName="text-sm min-h-[80px] resize-none"
         rows={3}
         showInitially={!!description}
+        expandOnClick={true}
       />
     </div>
   );

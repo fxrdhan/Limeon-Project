@@ -13,7 +13,7 @@ const HistoryListContent: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleVersionClick = (version: VersionData) => {
-    uiActions.openVersionDetail(version);
+    uiActions.openComparison(version);
   };
 
   const checkScrollPosition = () => {

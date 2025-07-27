@@ -63,6 +63,7 @@ const VersionDetailContent: React.FC = () => {
         textareaClassName="text-sm min-h-[80px] resize-none"
         rows={3}
         showInitially={!!description}
+        expandOnClick={true}
       />
     </div>
   );

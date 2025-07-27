@@ -15,6 +15,7 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
   textareaClassName,
   labelClassName,
   showInitially = false,
+  expandOnClick = false,
   tabIndex,
   ...props
 }) => {
@@ -33,8 +34,8 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
       <button
         type="button"
         tabIndex={tabIndex}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseEnter={() => !expandOnClick && setIsHovered(true)}
+        onMouseLeave={() => !expandOnClick && setIsHovered(false)}
         className={classNames(
           "group flex items-center text-primary transition-colors focus:outline-hidden focus:text-primary",
           labelClassName,
@@ -46,7 +47,7 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
         </span>
         <motion.div
           animate={{
-            rotate: showTextarea || isHovered ? 180 : 0,
+            rotate: expandOnClick ? (showTextarea ? 180 : 0) : (showTextarea || isHovered ? 180 : 0),
           }}
           transition={{ duration: 0.3 }}
           className="transform"
@@ -55,15 +56,15 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
         </motion.div>
       </button>
       <AnimatePresence>
-        {(showTextarea || isHovered) && (
+        {(expandOnClick ? showTextarea : (showTextarea || isHovered)) && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseEnter={() => !expandOnClick && setIsHovered(true)}
+            onMouseLeave={() => !expandOnClick && setIsHovered(false)}
           >
             <div className="mt-2 min-h-[100px] max-h-[200px] p-1">
               <textarea
