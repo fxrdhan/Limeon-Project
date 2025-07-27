@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Category, MedicineType, Unit } from "@/types/database";
+import type { UseUnitConversionReturn } from "@/types/hooks";
 import type { ItemFormData } from "./forms";
 import type { VersionData } from "./entities";
 
@@ -18,6 +19,7 @@ export interface ItemUIState {
   isClosing: boolean;
   isEditMode: boolean;
   formattedUpdateAt?: string;
+  mode: 'add' | 'edit' | 'history';
 }
 
 export interface ItemModalState {
@@ -28,7 +30,7 @@ export interface ItemModalState {
 }
 
 export interface ItemPriceState {
-  unitConversionHook: Record<string, unknown>; // UseUnitConversionReturn
+  unitConversionHook: UseUnitConversionReturn;
   displayBasePrice: string;
   displaySellPrice: string;
 }
@@ -58,6 +60,9 @@ export interface ItemUIActions {
   handleClose: () => void;
   handleReset?: () => void;
   setIsClosing: (value: boolean) => void;
+  handleHistoryClick?: () => void;
+  setMode: (mode: 'add' | 'edit' | 'history') => void;
+  goBackToForm: () => void;
 }
 
 export interface ItemModalActions {

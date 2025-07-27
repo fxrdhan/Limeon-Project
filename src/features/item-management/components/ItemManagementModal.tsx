@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { ItemManagementModalProps, ItemManagementContextValue } from "../types";
 import { useAddItemPageHandlers } from "../hooks/useAddItemPageHandlers";
 import { useItemFormValidation } from "../hooks/useItemFormValidation";
@@ -9,6 +9,7 @@ import { useItemManagement } from "../contexts/useItemManagementContext";
 import ItemModalTemplate from "./ItemModalTemplate";
 import { ItemFormSections } from "./ItemFormOrganisms";
 import { ItemModalContainer } from "./modals";
+import { ItemHistoryContent } from "./ui/history";
 
 const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
   isOpen,
@@ -21,7 +22,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
 }) => {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
-
+  
   // Main data hook - this is the orchestrator
   const handlers = useAddItemPageHandlers({
     itemId,
@@ -80,6 +81,9 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     formattedUpdateAt,
   } = handlers;
 
+  // UI mode state (after isEditMode is available)
+  const [mode, setMode] = useState<'add' | 'edit' | 'history'>(isEditMode ? 'edit' : 'add');
+
   // Form validation
   const { finalDisabledState } = useItemFormValidation({
     formData,
@@ -108,6 +112,15 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     if (!isClosing) {
       setIsClosing(true);
     }
+  };
+
+  // Mode handlers
+  const handleHistoryClick = () => {
+    setMode('history');
+  };
+
+  const handleGoBackToForm = () => {
+    setMode(isEditMode ? 'edit' : 'add');
   };
 
   // Auto focus management
@@ -142,6 +155,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       isClosing,
       isEditMode,
       formattedUpdateAt,
+      mode,
     },
     modal: {
       isAddEditModalOpen,
@@ -176,6 +190,9 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       handleClose,
       handleReset: !isEditMode ? handleReset : undefined,
       setIsClosing,
+      handleHistoryClick: isEditMode && itemId ? handleHistoryClick : undefined,
+      setMode,
+      goBackToForm: handleGoBackToForm,
     },
     modalActions: {
       setIsAddEditModalOpen,
@@ -201,15 +218,55 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
 
   return (
     <ItemManagementProvider value={contextValue}>
-      <ItemManagementContent />
+      <ItemManagementContent itemId={itemId} />
     </ItemManagementProvider>
   );
 };
 
 // Clean content component - only uses context
-const ItemManagementContent: React.FC = () => {
-  const { ui, action, businessActions, uiActions, formActions } = useItemManagement();
+const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
+  const { ui, action, businessActions, uiActions, formActions, form } = useItemManagement();
 
+  // Mode-based content rendering
+  if (ui.mode === 'history') {
+    if (!itemId) {
+      // Handle no itemId case - go back to form immediately
+      uiActions.goBackToForm();
+      return null;
+    }
+    
+    return (
+      <ItemModalTemplate
+        isOpen={ui.isOpen}
+        isClosing={ui.isClosing}
+        onBackdropClick={uiActions.handleBackdropClick}
+        onSubmit={(e) => e.preventDefault()} // Disable form submission in history mode
+        children={{
+          header: <ItemFormSections.Header onReset={undefined} onClose={uiActions.handleClose} />,
+          basicInfo: (
+            <ItemHistoryContent
+              itemId={itemId}
+              itemName={form.formData.name || "Item"}
+            />
+          ),
+          settingsForm: null,
+          pricingForm: null,
+          unitConversionManager: null,
+          modals: null,
+        }}
+        formAction={{
+          onCancel: () => uiActions.goBackToForm(),
+          onDelete: undefined,
+          isSaving: false,
+          isDeleting: false,
+          isEditMode: false,
+          isDisabled: false,
+        }}
+      />
+    );
+  }
+
+  // Default form mode (add/edit)
   return (
     <ItemModalTemplate
       isOpen={ui.isOpen}

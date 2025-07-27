@@ -51,7 +51,7 @@ export default function ItemModalTemplate({
             animate={isClosing ? "exit" : "visible"}
             exit="exit"
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="rounded-xl bg-white shadow-xl max-w-7xl max-h-[90vh] flex flex-col"
+            className="rounded-xl bg-white shadow-xl w-[90vw] max-w-7xl min-w-7xl max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <motion.div
@@ -77,26 +77,38 @@ export default function ItemModalTemplate({
             >
               <div className="flex-1 overflow-y-auto">
                 <div className="px-6 py-1">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="w-full md:w-4/5">
+                  {/* Detect if this is a full-width layout (only basicInfo, others are null) */}
+                  {!children.settingsForm && !children.pricingForm && !children.unitConversionManager ? (
+                    // Full-width layout for history mode
+                    <div className="w-full">
                       {children.basicInfo}
                       {children.categoryForm && children.categoryForm}
                     </div>
+                  ) : (
+                    // Standard form layout
+                    <>
+                      <div className="flex flex-col md:flex-row gap-6">
+                        <div className="w-full md:w-4/5">
+                          {children.basicInfo}
+                          {children.categoryForm && children.categoryForm}
+                        </div>
 
-                    <div className="w-full md:w-1/4">
-                      {children.settingsForm}
-                    </div>
-                  </div>
+                        <div className="w-full md:w-1/4">
+                          {children.settingsForm}
+                        </div>
+                      </div>
 
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="w-full md:w-1/4">
-                      {children.pricingForm}
-                    </div>
+                      <div className="flex flex-col md:flex-row gap-6">
+                        <div className="w-full md:w-1/4">
+                          {children.pricingForm}
+                        </div>
 
-                    <div className="w-full md:w-3/4">
-                      {children.unitConversionManager}
-                    </div>
-                  </div>
+                        <div className="w-full md:w-3/4">
+                          {children.unitConversionManager}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
