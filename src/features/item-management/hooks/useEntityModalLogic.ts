@@ -1,25 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { formatDateTime } from "@/lib/formatters";
 import type { EntityModalContextValue, ModalMode, VersionData } from "../contexts/EntityModalContext";
-
-interface EntityData {
-  id?: string;
-  name: string;
-  description?: string;
-  updated_at?: string | null;
-}
-
-interface UseEntityModalLogicProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: { id?: string; name: string; description: string }) => Promise<void>;
-  onDelete?: (id: string) => void;
-  initialData?: EntityData | null;
-  initialNameFromSearch?: string;
-  entityName: string;
-  isLoading?: boolean;
-  isDeleting?: boolean;
-}
+import type { UseEntityModalLogicProps } from "../types";
 
 export const useEntityModalLogic = ({
   isOpen,
@@ -139,6 +121,22 @@ export const useEntityModalLogic = ({
     });
   }, [mode]);
 
+  const selectVersion = useCallback((version: VersionData) => {
+    setHistoryData(prev => ({
+      ...prev,
+      selectedVersion: version,
+    }));
+  }, []);
+
+  const closeHistory = useCallback(() => {
+    setMode(previousMode);
+    setHistoryData({
+      entityTable: '',
+      entityId: '',
+      selectedVersion: undefined,
+    });
+  }, [previousMode]);
+
   const openVersionDetail = useCallback((version: VersionData) => {
     setMode('version-detail');
     setHistoryData(prev => ({
@@ -239,6 +237,8 @@ export const useEntityModalLogic = ({
       handleBackdropClick,
       setMode,
       openHistory,
+      closeHistory,
+      selectVersion,
       openVersionDetail,
       openComparison,
       closeComparison,

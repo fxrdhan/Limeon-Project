@@ -1,10 +1,10 @@
 import React from "react";
 import { useConfirmDialog } from "@/components/dialog-box";
-import { EntityModalProvider } from "../../contexts/EntityModalContext";
-import { useEntityModalLogic } from "../../hooks/useEntityModalLogic";
-import EntityModalTemplate from "../EntityModalTemplate";
+import { EntityModalProvider } from "../../../contexts/EntityModalContext";
+import { useEntityModalLogic } from "../../../hooks/useEntityModalLogic";
+import EntityModalTemplate from "../../EntityModalTemplate";
 import EntityModalContent from "./EntityModalContent";
-import ComparisonModal from "./ComparisonModal";
+import { ComparisonModal } from "../comparison";
 import type { AddEditModalProps } from "@/types";
 
 const EntityManagementModal: React.FC<AddEditModalProps> = ({

@@ -2,31 +2,9 @@ import React from "react";
 import Input from "@/components/input";
 import FormSection from "@/components/form-section";
 import FormField from "@/components/form-field";
-import PriceInput from "../ui/PriceInput";
-import MarginEditor from "../ui/MarginEditor";
+import { PriceInput, MarginEditor } from "../ui";
 import { basePriceSchema, sellPriceComparisonSchema } from "@/schemas/itemValidation";
-
-interface ItemPricingFormProps {
-  formData: {
-    base_price: number;
-    sell_price: number;
-  };
-  displayBasePrice: string;
-  displaySellPrice: string;
-  baseUnit: string;
-  marginEditing: {
-    isEditing: boolean;
-    percentage: string;
-  };
-  calculatedMargin: number | null;
-  onBasePriceChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSellPriceChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onMarginChange: (percentage: string) => void;
-  onStartEditMargin: () => void;
-  onStopEditMargin: () => void;
-  onMarginInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onMarginKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-}
+import type { ItemPricingFormProps } from "../../types";
 
 export default function ItemPricingForm({
   formData,

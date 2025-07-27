@@ -1,18 +1,11 @@
 import React, { useState } from "react";
 import Button from "@/components/button";
 import { FaTimes, FaHistory, FaUndo, FaEye } from "react-icons/fa";
-import { useEntityHistory } from "../../hooks/useEntityHistory";
+import { useEntityHistory } from "../../../hooks/useEntityHistory";
 import VersionDiff from "./VersionDiff";
 import { formatDateTime } from "@/lib/formatters";
-import { HISTORY_DEBUG } from "../../config/debug";
-
-interface HistoryModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  entityTable: string;
-  entityId: string;
-  entityName: string;
-}
+import { HISTORY_DEBUG } from "../../../config/debug";
+import type { HistoryModalProps } from "../../../types";
 
 const HistoryModal: React.FC<HistoryModalProps> = ({
   isOpen,

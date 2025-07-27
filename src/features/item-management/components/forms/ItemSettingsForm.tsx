@@ -1,28 +1,11 @@
-import React, { forwardRef } from "react";
+import { forwardRef } from "react";
 import Dropdown from "@/components/dropdown";
 import Checkbox from "@/components/checkbox";
 import FormSection from "@/components/form-section";
 import FormField from "@/components/form-field";
-import MinStockEditor from "../ui/MinStockEditor";
+import { MinStockEditor } from "../ui";
 import FefoTooltip from "../FefoTooltip";
-
-interface ItemSettingsFormProps {
-  formData: {
-    is_active: boolean;
-    is_medicine: boolean;
-    has_expiry_date: boolean;
-    min_stock: number;
-  };
-  minStockEditing: {
-    isEditing: boolean;
-    value: string;
-  };
-  onFieldChange: (field: string, value: boolean) => void;
-  onStartEditMinStock: () => void;
-  onStopEditMinStock: () => void;
-  onMinStockChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onMinStockKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-}
+import type { ItemSettingsFormProps } from "../../types";
 
 const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
   ({

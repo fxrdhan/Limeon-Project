@@ -10,7 +10,7 @@ import { useUnitConversionLogic } from "../hooks/useUnitConversionLogic";
 import { useInlineEditor } from "@/hooks/useInlineEditor";
 
 // Child components
-import ItemFormHeader from "./ui/ItemFormHeader";
+import { ItemFormHeader } from "./ui";
 import ItemBasicInfoForm from "./forms/ItemBasicInfoForm";
 import ItemSettingsForm from "./forms/ItemSettingsForm";
 import ItemPricingForm from "./forms/ItemPricingForm";

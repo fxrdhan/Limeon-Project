@@ -1,14 +1,14 @@
 import React from "react";
 import { createCharacterDiff, createWordDiff, DiffSegment } from "@/utils/diff";
 
-interface DiffTextProps {
+interface LocalDiffTextProps {
   oldText: string;
   newText: string;
   mode?: "character" | "word";
   className?: string;
 }
 
-const DiffText: React.FC<DiffTextProps> = ({
+const DiffText: React.FC<LocalDiffTextProps> = ({
   oldText,
   newText,
   mode = "character",

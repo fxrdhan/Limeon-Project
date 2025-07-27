@@ -2,7 +2,7 @@ import { FaUndoAlt, FaTimes } from "react-icons/fa";
 import { CardHeader, CardTitle } from "@/components/card";
 import Button from "@/components/button";
 
-interface ItemFormHeaderProps {
+interface LocalItemFormHeaderProps {
   isEditMode: boolean;
   formattedUpdateAt?: string;
   isClosing: boolean;
@@ -18,7 +18,7 @@ export default function ItemFormHeader({
   onReset,
   onClose,
   onHistoryClick,
-}: ItemFormHeaderProps) {
+}: LocalItemFormHeaderProps) {
   return (
     <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-gray-200 mb-6">
       <div className="flex items-center"></div>

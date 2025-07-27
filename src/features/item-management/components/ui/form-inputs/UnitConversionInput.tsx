@@ -3,22 +3,13 @@ import { PiKeyReturnBold } from "react-icons/pi";
 import Dropdown from "@/components/dropdown";
 import FormField from "@/components/form-field";
 import Input from "@/components/input";
+import type { UnitOption, UnitConversionLogicFormData } from "../../../types";
 
-interface UnitOption {
-  id: string;
-  name: string;
-}
-
-interface UnitConversionFormData {
-  unit: string;
-  conversion: number;
-}
-
-interface UnitConversionInputProps {
+interface LocalUnitConversionInputProps {
   baseUnit: string;
   availableUnits: UnitOption[];
-  formData: UnitConversionFormData;
-  onFormDataChange: (data: UnitConversionFormData) => void;
+  formData: UnitConversionLogicFormData;
+  onFormDataChange: (data: UnitConversionLogicFormData) => void;
   onAddConversion: () => void;
   tabIndex?: number;
 }
@@ -30,7 +21,7 @@ export default function UnitConversionInput({
   onFormDataChange,
   onAddConversion,
   tabIndex = 16,
-}: UnitConversionInputProps) {
+}: LocalUnitConversionInputProps) {
   const handleUnitChange = (unitId: string) => {
     const selectedUnit = availableUnits.find((u) => u.id === unitId);
     if (selectedUnit) {

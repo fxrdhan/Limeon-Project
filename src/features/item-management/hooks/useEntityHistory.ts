@@ -1,19 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { HISTORY_DEBUG } from "../config/debug";
-
-export interface EntityHistoryItem {
-  id: string;
-  entity_table: string;
-  entity_id: string;
-  version_number: number;
-  action_type: 'INSERT' | 'UPDATE' | 'DELETE';
-  changed_by: string | null;
-  changed_at: string;
-  entity_data: Record<string, unknown>;
-  changed_fields?: Record<string, { from: unknown; to: unknown }>;
-  change_description?: string;
-}
+import type { EntityHistoryItem } from "../types";
 
 export const useEntityHistory = (entityTable: string, entityId: string) => {
   const [history, setHistory] = useState<EntityHistoryItem[]>([]);

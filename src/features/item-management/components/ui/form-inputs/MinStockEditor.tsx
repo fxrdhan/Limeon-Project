@@ -3,7 +3,7 @@ import { FaPen } from "react-icons/fa";
 import Input from "@/components/input";
 import FormField from "@/components/form-field";
 
-interface MinStockEditorProps {
+interface LocalMinStockEditorProps {
   isEditing: boolean;
   minStockValue: string;
   currentMinStock: number;
@@ -23,7 +23,7 @@ export default function MinStockEditor({
   onStopEdit,
   onChange,
   onKeyDown,
-}: MinStockEditorProps) {
+}: LocalMinStockEditorProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

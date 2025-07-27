@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { FaHistory } from "react-icons/fa";
-import { useEntityModal, VersionData } from "../../contexts/EntityModalContext";
-import { useEntityHistory } from "../../hooks/useEntityHistory";
+import { useEntityModal, VersionData } from "../../../contexts/EntityModalContext";
+import { useEntityHistory } from "../../../hooks/useEntityHistory";
 import { formatDateTime } from "@/lib/formatters";
 
 const HistoryListContent: React.FC = () => {

@@ -1,32 +1,8 @@
-import React from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CardFooter } from "@/components/card";
 import FormAction from "@/components/form-action";
-
-interface ItemModalTemplateProps {
-  isOpen: boolean;
-  isClosing: boolean;
-  onBackdropClick: () => void;
-  onSubmit: (e: React.FormEvent) => void;
-  children: {
-    header: React.ReactNode;
-    basicInfo: React.ReactNode;
-    categoryForm?: React.ReactNode;
-    settingsForm: React.ReactNode;
-    pricingForm: React.ReactNode;
-    unitConversionManager: React.ReactNode;
-    modals: React.ReactNode;
-  };
-  formAction: {
-    onCancel: () => void;
-    onDelete?: () => void;
-    isSaving: boolean;
-    isDeleting: boolean;
-    isEditMode: boolean;
-    isDisabled: boolean;
-  };
-}
+import type { ItemModalTemplateProps } from "../types";
 
 export default function ItemModalTemplate({
   isOpen,

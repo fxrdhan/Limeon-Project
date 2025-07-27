@@ -1,49 +1,33 @@
 import { FaTrash } from "react-icons/fa";
 import Button from "@/components/button";
 import FormSection from "@/components/form-section";
-import UnitConversionInput from "../ui/UnitConversionInput";
+import { UnitConversionInput } from "../ui";
 import {
   DataGrid,
   createTextColumn,
   createCurrencyColumn,
 } from "@/components/ag-grid";
-
-interface UnitOption {
-  id: string;
-  name: string;
-}
-
-interface UnitConversion {
-  id: string;
-  unit: UnitOption;
-  unit_name: string;
-  to_unit_id: string;
-  conversion: number;
-  basePrice: number;
-  sellPrice: number;
-  conversion_rate: number;
-}
-
-interface UnitConversionFormData {
-  unit: string;
-  conversion: number;
-}
-
-interface ItemUnitConversionManagerProps {
-  baseUnit: string;
-  availableUnits: UnitOption[];
-  conversions: UnitConversion[];
-  formData: UnitConversionFormData;
-  onFormDataChange: (data: UnitConversionFormData) => void;
-  onAddConversion: () => void;
-  onRemoveConversion: (id: string) => void;
-}
+import type {
+  UnitOption,
+  UnitConversion,
+  UnitConversionLogicFormData
+} from "../../types";
 
 const DeleteButton = ({ onClick }: { onClick: () => void }) => (
   <Button variant="danger" size="sm" tabIndex={19} onClick={onClick}>
     <FaTrash />
   </Button>
 );
+
+interface LocalItemUnitConversionManagerProps {
+  baseUnit: string;
+  availableUnits: UnitOption[];
+  conversions: UnitConversion[];
+  formData: UnitConversionLogicFormData;
+  onFormDataChange: (data: UnitConversionLogicFormData) => void;
+  onAddConversion: () => void;
+  onRemoveConversion: (id: string) => void;
+}
 
 export default function ItemUnitConversionManager({
   baseUnit,
@@ -53,7 +37,7 @@ export default function ItemUnitConversionManager({
   onFormDataChange,
   onAddConversion,
   onRemoveConversion,
-}: ItemUnitConversionManagerProps) {
+}: LocalItemUnitConversionManagerProps) {
   const filteredAvailableUnits = availableUnits
     .filter((unit) => unit.name !== baseUnit)
     .filter(
