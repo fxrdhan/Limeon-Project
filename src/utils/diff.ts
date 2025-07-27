@@ -112,8 +112,21 @@ export function createSmartDiff(oldText: string, newText: string): DiffSegment[]
     return createWordDiff(oldText, newText);
   }
   
-  // Lower threshold for character diff
-  if (analysis.characterSimilarity > 0.80) {
+  // For single words with very minor character-level changes (like typos)
+  const isSingleWord = !oldText.includes(' ') && !newText.includes(' ');
+  const lengthDiff = Math.abs(oldText.length - newText.length);
+  
+  // Only use character diff for single words if:
+  // 1. Small length difference (≤2 chars)
+  // 2. High character similarity (≥0.8) - indicates minor edit, not word replacement
+  // 3. Not detected as number/unit change or word replacement
+  if (isSingleWord && lengthDiff <= 2 && analysis.characterSimilarity >= 0.8 && 
+      !analysis.hasNumberUnitChanges && !analysis.hasWordReplacements) {
+    return createCharacterDiff(oldText, newText);
+  }
+  
+  // For high character similarity, use character diff
+  if (analysis.characterSimilarity > 0.8) {
     return createCharacterDiff(oldText, newText);
   } else {
     return createWordDiff(oldText, newText);
