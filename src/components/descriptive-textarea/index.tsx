@@ -24,6 +24,10 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    setShowTextarea(showInitially);
+  }, [showInitially]);
+
+  useEffect(() => {
     if (showInitially && textareaRef.current) {
       textareaRef.current.focus();
     }
