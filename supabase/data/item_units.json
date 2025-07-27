@@ -1,0 +1,156 @@
+[
+  {
+    "id": "6727b61b-8063-422d-a89a-16b378d5d76d",
+    "name": "Tube",
+    "created_at": "2025-03-26T14:57:20.368Z",
+    "updated_at": "2025-03-26T14:57:20.368Z",
+    "description": null
+  },
+  {
+    "id": "d7ec80ef-00b0-4b57-8086-d6ad803a68cc",
+    "name": "Strip",
+    "created_at": "2025-03-26T14:57:20.368Z",
+    "updated_at": "2025-03-26T14:57:20.368Z",
+    "description": null
+  },
+  {
+    "id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
+    "name": "Kapsul",
+    "created_at": "2025-03-26T14:57:20.368Z",
+    "updated_at": "2025-03-30T08:31:02.468Z",
+    "description": "Sediaan padat dengan cangkang keras atau lunak"
+  },
+  {
+    "id": "b822686b-f7ec-46d1-8b40-fb69d8bea2f7",
+    "name": "Sirup",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-03-30T08:31:02.468Z",
+    "description": "Sediaan cair dengan kandungan gula atau pemanis"
+  },
+  {
+    "id": "f19ecad4-fec8-4ba9-b987-8f7bfe7f13b8",
+    "name": "Suspensi",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-03-30T08:31:02.468Z",
+    "description": "Sediaan cair dengan partikel padat yang tersuspensi"
+  },
+  {
+    "id": "9d764020-ae97-43c4-ae7e-ae66cb91ff17",
+    "name": "Serbuk",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-03-30T08:31:02.468Z",
+    "description": "Sediaan kering dalam bentuk bubuk"
+  },
+  {
+    "id": "23fd2eb0-16bb-47bb-832e-e201f4c77a57",
+    "name": "Salep",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-03-30T08:31:02.468Z",
+    "description": "Sediaan semi-padat untuk penggunaan luar"
+  },
+  {
+    "id": "bf752bfc-7a5f-4c0f-8f59-65b8c74e7f92",
+    "name": "Krim",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-03-30T08:31:02.468Z",
+    "description": "Sediaan semi-padat untuk penggunaan luar"
+  },
+  {
+    "id": "abc71b3d-55c9-49e8-8730-bb5071d5c835",
+    "name": "Suppositoria",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-03-30T08:31:02.468Z",
+    "description": "Sediaan padat untuk penggunaan rektal"
+  },
+  {
+    "id": "c10825a4-90db-48d5-92f7-e8252e5a28b0",
+    "name": "Tetes",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-03-30T08:31:02.468Z",
+    "description": "Sediaan cair dosis kecil"
+  },
+  {
+    "id": "762913e6-f1e0-4765-a685-122015dc8eaa",
+    "name": "Vial",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-03-30T08:31:02.468Z",
+    "description": "Wadah kaca dengan tutup karet untuk sediaan injeksi"
+  },
+  {
+    "id": "71a78582-1700-4fd8-bc21-6045ca671c56",
+    "name": "Patch",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-03-30T08:31:02.468Z",
+    "description": "Sediaan yang ditempelkan ke kulit"
+  },
+  {
+    "id": "cc8e891c-34ac-4afb-944c-258ad244a96f",
+    "name": "Tablet",
+    "created_at": "2025-03-26T14:57:20.368Z",
+    "updated_at": "2025-03-30T08:33:30.804Z",
+    "description": "Sediaan padat berbentuk bulat, oval, atau persegi"
+  },
+  {
+    "id": "243e80e0-917b-4549-b78c-3c1d27e4ccc4",
+    "name": "Kaplet",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-03-30T08:34:44.259Z",
+    "description": "Tablet yang dibungkus dengan lapisan gula dan berwarna yang berguna dalam menjaga kelembapan serta kontaminasi ketika di lambung."
+  },
+  {
+    "id": "827d5b4f-a057-443f-bf40-8f50bc336857",
+    "name": "Gel",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-05-19T14:11:04.841Z",
+    "description": "Sediaan semi-padat transparan atau translusen"
+  },
+  {
+    "id": "c312bece-96f3-4778-940e-2c3edb86b7e8",
+    "name": "coba aja a",
+    "created_at": "2025-07-26T13:29:08.266Z",
+    "updated_at": "2025-07-27T06:07:23.728Z",
+    "description": ""
+  },
+  {
+    "id": "aebc351d-0608-4643-ac0a-517bfd73aa7a",
+    "name": "Emulsi",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-07-27T07:10:17.901Z",
+    "description": "Sediaan cair dari dua cairan yang tidak saling bercampur"
+  },
+  {
+    "id": "7a50f346-7587-4ad7-9494-3b871e8be246",
+    "name": "Inhaler",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-07-27T07:40:26.221Z",
+    "description": "Alat untuk menghirup obat dalam bentuk aerosol"
+  },
+  {
+    "id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+    "name": "Box",
+    "created_at": "2025-04-18T12:38:28.029Z",
+    "updated_at": "2025-07-26T06:52:35.340Z",
+    "description": "box"
+  },
+  {
+    "id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    "name": "Botol",
+    "created_at": "2025-03-26T14:57:20.368Z",
+    "updated_at": "2025-07-26T12:21:03.487Z",
+    "description": "botol"
+  },
+  {
+    "id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+    "name": "Dus",
+    "created_at": "2025-04-18T12:38:23.494Z",
+    "updated_at": "2025-07-26T12:54:02.594Z",
+    "description": ""
+  },
+  {
+    "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "name": "Ampul",
+    "created_at": "2025-03-26T14:57:20.368Z",
+    "updated_at": "2025-07-26T13:22:32.594Z",
+    "description": "Sediaan steril dalam wadah kaca tertutup."
+  }
+]
