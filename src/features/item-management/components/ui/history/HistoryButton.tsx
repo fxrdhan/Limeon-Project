@@ -2,7 +2,13 @@ import React from "react";
 import Button from "@/components/button";
 import { FaHistory } from "react-icons/fa";
 import { useEntityModal } from "../../../contexts/EntityModalContext";
-import type { HistoryButtonProps } from "../../../types";
+
+interface HistoryButtonProps {
+  entityTable: string;
+  entityId: string;
+  entityName: string;
+  className?: string;
+}
 
 const HistoryButton: React.FC<HistoryButtonProps> = ({
   entityTable,

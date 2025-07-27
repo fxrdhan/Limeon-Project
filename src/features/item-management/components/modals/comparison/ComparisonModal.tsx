@@ -5,7 +5,18 @@ import Button from "@/components/button";
 import Input from "@/components/input";
 import DescriptiveTextarea from "@/components/descriptive-textarea";
 import { DiffText } from "../../ui";
-import type { ComparisonModalProps } from "../../../types";
+import type { VersionData } from "../../../types";
+
+interface ComparisonModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  entityName: string;
+  selectedVersion?: VersionData;
+  currentData: {
+    name: string;
+    description: string;
+  };
+}
 
 const ComparisonModal: React.FC<ComparisonModalProps> = ({
   isOpen,

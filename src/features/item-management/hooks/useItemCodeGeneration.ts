@@ -3,7 +3,18 @@ import {
   generateCompleteItemCode, 
   generateItemCodeForEdit 
 } from "../utils/itemCodeGeneration";
-import type { UseItemCodeGenerationProps } from "../types";
+import type { ItemFormData, UnitData } from "../types";
+
+interface UseItemCodeGenerationProps {
+  isEditMode: boolean;
+  itemId?: string;
+  formData: ItemFormData;
+  initialFormData: ItemFormData | null;
+  categories: Array<{ id: string; name: string }>;
+  types: Array<{ id: string; name: string }>;
+  units: UnitData[];
+  updateFormData: (data: Partial<ItemFormData>) => void;
+}
 
 /**
  * Hook for managing item code generation

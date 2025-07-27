@@ -6,7 +6,33 @@ import FormField from "@/components/form-field";
 import DescriptiveTextarea from "@/components/descriptive-textarea";
 import { ItemCodeField } from "../ui";
 import { itemNameSchema } from "@/schemas/itemValidation";
-import type { ItemBasicInfoFormProps } from "../../types";
+import type { DropdownOption } from "@/types/components";
+
+interface ItemBasicInfoFormProps {
+  formData: {
+    code: string;
+    name: string;
+    manufacturer: string;
+    barcode: string;
+    is_medicine: boolean;
+    category_id: string;
+    type_id: string;
+    unit_id: string;
+    rack: string;
+    description: string;
+  };
+  categories: DropdownOption[];
+  types: DropdownOption[];
+  units: DropdownOption[];
+  loading: boolean;
+  onCodeRegenerate: () => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onFieldChange: (field: string, value: boolean | string) => void;
+  onDropdownChange: (field: string, value: string) => void;
+  onAddNewCategory: (searchTerm?: string) => void;
+  onAddNewType: (searchTerm?: string) => void;
+  onAddNewUnit: (searchTerm?: string) => void;
+}
 
 const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
   ({ 

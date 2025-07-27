@@ -5,7 +5,24 @@ import FormSection from "@/components/form-section";
 import FormField from "@/components/form-field";
 import { MinStockEditor } from "../ui";
 import FefoTooltip from "../FefoTooltip";
-import type { ItemSettingsFormProps } from "../../types";
+
+interface ItemSettingsFormProps {
+  formData: {
+    is_active: boolean;
+    is_medicine: boolean;
+    has_expiry_date: boolean;
+    min_stock: number;
+  };
+  minStockEditing: {
+    isEditing: boolean;
+    value: string;
+  };
+  onFieldChange: (field: string, value: boolean) => void;
+  onStartEditMinStock: () => void;
+  onStopEditMinStock: () => void;
+  onMinStockChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onMinStockKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}
 
 const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
   ({

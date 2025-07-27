@@ -5,7 +5,14 @@ import { useEntityHistory } from "../../../hooks/useEntityHistory";
 import VersionDiff from "./VersionDiff";
 import { formatDateTime } from "@/lib/formatters";
 import { HISTORY_DEBUG } from "../../../config/debug";
-import type { HistoryModalProps } from "../../../types";
+
+interface HistoryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  entityTable: string;
+  entityId: string;
+  entityName: string;
+}
 
 const HistoryModal: React.FC<HistoryModalProps> = ({
   isOpen,
