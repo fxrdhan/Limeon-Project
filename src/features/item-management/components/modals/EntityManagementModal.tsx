@@ -4,6 +4,7 @@ import { EntityModalProvider } from "../../contexts/EntityModalContext";
 import { useEntityModalLogic } from "../../hooks/useEntityModalLogic";
 import EntityModalTemplate from "../EntityModalTemplate";
 import EntityModalContent from "./EntityModalContent";
+import ComparisonModal from "./ComparisonModal";
 import type { AddEditModalProps } from "@/types";
 
 const EntityManagementModal: React.FC<AddEditModalProps> = ({
@@ -36,6 +37,17 @@ const EntityManagementModal: React.FC<AddEditModalProps> = ({
       <EntityModalTemplate>
         <EntityModalContent nameInputRef={nameInputRef} initialData={initialData} />
       </EntityModalTemplate>
+      
+      <ComparisonModal
+        isOpen={contextValue.comparison.isOpen}
+        onClose={contextValue.uiActions.closeComparison}
+        entityName={entityName}
+        selectedVersion={contextValue.comparison.selectedVersion}
+        currentData={{
+          name: contextValue.form.name,
+          description: contextValue.form.description
+        }}
+      />
     </EntityModalProvider>
   );
 };

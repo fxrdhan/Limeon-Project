@@ -154,6 +154,7 @@ export interface DescriptiveTextareaProps
   labelClassName?: string;
   showInitially?: boolean;
   tabIndex?: number;
+  expandOnClick?: boolean;
 }
 
 export interface CheckboxProps {

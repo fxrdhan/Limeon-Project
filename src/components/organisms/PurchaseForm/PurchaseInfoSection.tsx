@@ -147,6 +147,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           onChange={handleChange}
           placeholder="Tambahkan catatan untuk pembelian ini..."
           containerClassName="pt-0!"
+          expandOnClick={true}
         />
       </div>
     </FormSection>

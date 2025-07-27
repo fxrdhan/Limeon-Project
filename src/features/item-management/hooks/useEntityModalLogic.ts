@@ -40,6 +40,10 @@ export const useEntityModalLogic = ({
     entityId: '',
     selectedVersion: undefined as VersionData | undefined,
   });
+  const [comparisonData, setComparisonData] = useState({
+    isOpen: false,
+    selectedVersion: undefined as VersionData | undefined,
+  });
   const [previousMode, setPreviousMode] = useState<ModalMode>('add');
   const nameInputRef = useRef<HTMLInputElement>(null);
   
@@ -96,6 +100,16 @@ export const useEntityModalLogic = ({
     }
   }, [isOpen, initialData, initialNameFromSearch, resetForm, mode]);
 
+  // Reset comparison data when modal closes
+  useEffect(() => {
+    if (!isOpen && comparisonData.isOpen) {
+      setComparisonData({
+        isOpen: false,
+        selectedVersion: undefined,
+      });
+    }
+  }, [isOpen, comparisonData.isOpen]);
+
   const handleSubmit = useCallback(async () => {
     if (!isValid) {
       alert(`Nama ${entityName.toLowerCase()} tidak boleh kosong.`);
@@ -133,7 +147,27 @@ export const useEntityModalLogic = ({
     }));
   }, []);
 
+  const openComparison = useCallback((version: VersionData) => {
+    setComparisonData({
+      isOpen: true,
+      selectedVersion: version,
+    });
+  }, []);
+
+  const closeComparison = useCallback(() => {
+    setComparisonData({
+      isOpen: false,
+      selectedVersion: undefined,
+    });
+  }, []);
+
   const goBack = useCallback(() => {
+    // Close comparison modal when going back
+    setComparisonData({
+      isOpen: false,
+      selectedVersion: undefined,
+    });
+    
     if (mode === 'version-detail') {
       setMode('history');
       setHistoryData(prev => ({
@@ -151,11 +185,19 @@ export const useEntityModalLogic = ({
   }, [mode, previousMode]);
 
   // UI actions
+  const handleClose = useCallback(() => {
+    // Close comparison modal first if it's open
+    if (comparisonData.isOpen) {
+      closeComparison();
+    }
+    onClose();
+  }, [onClose, comparisonData.isOpen, closeComparison]);
+
   const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      handleClose();
     }
-  }, [onClose]);
+  }, [handleClose]);
 
   // Create context value
   const contextValue: EntityModalContextValue = {
@@ -181,6 +223,10 @@ export const useEntityModalLogic = ({
       entityId: historyData.entityId,
       selectedVersion: historyData.selectedVersion,
     },
+    comparison: {
+      isOpen: comparisonData.isOpen,
+      selectedVersion: comparisonData.selectedVersion,
+    },
     formActions: {
       setName,
       setDescription,
@@ -189,11 +235,13 @@ export const useEntityModalLogic = ({
       resetForm,
     },
     uiActions: {
-      handleClose: onClose,
+      handleClose,
       handleBackdropClick,
       setMode,
       openHistory,
       openVersionDetail,
+      openComparison,
+      closeComparison,
       goBack,
     },
   };

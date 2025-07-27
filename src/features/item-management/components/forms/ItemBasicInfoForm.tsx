@@ -207,6 +207,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             value={formData.description}
             onChange={onChange}
             placeholder="Masukkan keterangan atau deskripsi tambahan untuk item ini..."
+            expandOnClick={true}
           />
         </div>
       </FormSection>
