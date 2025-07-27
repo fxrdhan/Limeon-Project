@@ -52,18 +52,13 @@ export const useEntityModalLogic = ({
     setDescription("");
   }, []);
 
-  // Initialize mode when modal opens
+  // Initialize mode and form data when modal opens
   useEffect(() => {
     if (isOpen) {
       const newMode = initialData ? 'edit' : 'add';
       setMode(newMode);
       setPreviousMode(newMode);
-    }
-  }, [isOpen, initialData]);
-
-  // Initialize form data when modal opens
-  useEffect(() => {
-    if (isOpen) {
+      
       if (initialData) {
         setName(initialData.name);
         setDescription(initialData.description || "");
@@ -73,14 +68,13 @@ export const useEntityModalLogic = ({
       } else {
         resetForm();
       }
+      
       // Focus on name input after modal opens (only for form modes)
-      if (mode === 'add' || mode === 'edit') {
-        setTimeout(() => {
-          nameInputRef.current?.focus();
-        }, 100);
-      }
+      setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
     }
-  }, [isOpen, initialData, initialNameFromSearch, resetForm, mode]);
+  }, [isOpen, initialData, initialNameFromSearch, resetForm]);
 
   // Reset comparison data when modal closes
   useEffect(() => {
