@@ -11,7 +11,9 @@ interface EntityModalContentProps {
   initialData?: EntityData | null;
 }
 
-const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({ initialData }) => {
+const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
+  initialData,
+}) => {
   const { ui, uiActions } = useEntityModal();
   const { isEditMode, entityName, formattedUpdateAt, mode } = ui;
   const { goBack } = uiActions;
@@ -19,48 +21,53 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({ init
   // Map entityName to database table name
   const getEntityTable = (entityName: string): string => {
     const tableMap: Record<string, string> = {
-      'Item': 'items',
-      'Kategori': 'item_categories', 
-      'Tipe': 'item_types',
-      'Satuan': 'item_units'
+      Item: "items",
+      Kategori: "item_categories",
+      Tipe: "item_types",
+      Satuan: "item_units",
     };
-    return tableMap[entityName] || 'items';
+    return tableMap[entityName] || "items";
   };
 
   const getTitle = () => {
     switch (mode) {
-      case 'history':
+      case "history":
         return `Riwayat Perubahan ${entityName}`;
-      case 'version-detail':
+      case "version-detail":
         return `Detail Versi ${entityName}`;
-      case 'edit':
+      case "edit":
         return `Edit ${entityName}`;
-      case 'add':
+      case "add":
       default:
         return `Tambah ${entityName} Baru`;
     }
   };
 
-  const showBackButton = mode === 'history' || mode === 'version-detail';
-  const showHistoryButton = (mode === 'add' || mode === 'edit') && isEditMode && initialData?.id;
+  const showBackButton = mode === "history" || mode === "version-detail";
+  const showHistoryButton =
+    (mode === "add" || mode === "edit") && isEditMode && initialData?.id;
 
   return (
     <div className="flex justify-between items-center p-4 border-b-2 border-gray-200 bg-gray-100 rounded-t-xl">
       <div className="flex items-center gap-2">
         {showBackButton && (
-          <Button variant="text" onClick={goBack} className="text-gray-600 hover:text-gray-800 p-1 flex items-center">
+          <Button
+            variant="text"
+            onClick={goBack}
+            className="text-gray-600 hover:text-gray-800 p-1 flex items-center"
+          >
             <FaArrowLeft size={16} />
           </Button>
         )}
-        <h2 className="text-xl font-semibold">
-          {getTitle()}
-        </h2>
+        <h2 className="text-xl font-semibold">{getTitle()}</h2>
       </div>
       <div className="flex items-center gap-2">
         {showHistoryButton && (
           <Button
             variant="text"
-            onClick={() => uiActions.openHistory(getEntityTable(entityName), initialData.id)}
+            onClick={() =>
+              uiActions.openHistory(getEntityTable(entityName), initialData.id)
+            }
             className="text-sm text-gray-500 hover:text-primary italic flex items-center transition-colors"
             title={`Lihat riwayat perubahan ${entityName}`}
           >
@@ -84,7 +91,7 @@ const EntityModalFooter: React.FC = () => {
   const isDisabled = isLoading || !isValid || (isEditMode && !isDirty);
 
   // Don't show footer for history mode
-  if (mode === 'history') {
+  if (mode === "history") {
     return (
       <div className="flex justify-end p-4 border-t-2 border-gray-200 rounded-b-lg">
         <Button type="button" variant="text" onClick={handleClose}>
@@ -95,7 +102,7 @@ const EntityModalFooter: React.FC = () => {
   }
 
   // Special footer for version-detail mode
-  if (mode === 'version-detail') {
+  if (mode === "version-detail") {
     return (
       <div className="flex justify-between items-center p-4 border-t-2 border-gray-200 rounded-b-lg">
         <div>
@@ -153,25 +160,33 @@ const EntityModalFooter: React.FC = () => {
   );
 };
 
-const EntityModalContent: React.FC<EntityModalContentProps> = ({ nameInputRef, initialData }) => {
+const EntityModalContent: React.FC<EntityModalContentProps> = ({
+  nameInputRef,
+  initialData,
+}) => {
   const { ui } = useEntityModal();
-  const { mode } = ui;
+  const { mode, entityName } = ui;
 
   const renderContent = () => {
     switch (mode) {
-      case 'history':
+      case "history":
         return <HistoryListContent />;
-      case 'version-detail':
+      case "version-detail":
         return <VersionDetailContent />;
-      case 'add':
-      case 'edit':
+      case "add":
+      case "edit":
       default:
         return <EntityFormFields nameInputRef={nameInputRef} />;
     }
   };
 
+  // Conditional width: larger for "Jenis Item", default for others
+  const modalWidth = entityName === "Jenis Item" ? "w-112" : "w-96";
+
   return (
-    <div className="relative bg-white rounded-xl shadow-xl w-96 mx-4">
+    <div
+      className={`relative bg-white rounded-xl shadow-xl ${modalWidth} mx-4`}
+    >
       <EntityModalHeader initialData={initialData} />
       {renderContent()}
       <EntityModalFooter />
