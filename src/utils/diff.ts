@@ -304,10 +304,6 @@ function detectPunctuationOnlyChanges(oldText: string, newText: string): boolean
     return true;
   }
   
-  // Check if only spaces and punctuation differ
-  const oldNormalized = oldText.replace(/\s+/g, ' ').trim();
-  const newNormalized = newText.replace(/\s+/g, ' ').trim();
-  
   // Calculate how much differs when ignoring punctuation
   const similarity = calculateCharacterSimilarity(oldWithoutPunc, newWithoutPunc);
   return similarity > 0.95;

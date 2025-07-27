@@ -1,5 +1,6 @@
 // Re-export all services for easy import
 export * from './base.service';
+export * from './diff.service';
 export * from './items.service';
 export * from './purchases.service';
 export * from './sales.service';
