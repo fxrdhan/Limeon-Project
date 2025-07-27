@@ -1,0 +1,2318 @@
+[
+  {
+    "id": "9273526c-7341-4fee-99f3-a95323c07f9e",
+    "entity_table": "item_units",
+    "entity_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T06:05:26.888Z",
+    "entity_data": {
+      "id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "name": "Boxxx",
+      "created_at": "2025-04-18T12:38:28.029972+00:00",
+      "updated_at": "2025-07-26T06:05:26.88887+00:00",
+      "description": ""
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Boxxx",
+        "from": "Boxx"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "bc211ba6-e8e8-4ff2-b098-f359057c29b0",
+    "entity_table": "item_units",
+    "entity_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T06:51:28.855Z",
+    "entity_data": {
+      "id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "name": "Box",
+      "created_at": "2025-04-18T12:38:28.029972+00:00",
+      "updated_at": "2025-07-26T06:51:28.855853+00:00",
+      "description": ""
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Box",
+        "from": "Boxxx"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "c347e1f5-526e-4732-9bc0-780b7306bc95",
+    "entity_table": "item_units",
+    "entity_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T06:52:35.340Z",
+    "entity_data": {
+      "id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "name": "Box",
+      "created_at": "2025-04-18T12:38:28.029972+00:00",
+      "updated_at": "2025-07-26T06:52:35.340921+00:00",
+      "description": "box"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "box",
+        "from": ""
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "d45964e6-7c43-40f6-8a37-98d0116ecf03",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T08:28:07.550Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "123567",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T08:28:07.550965+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharma",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "123567",
+        "from": "12356"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "4e21b8c6-73b2-44f7-97bf-a6147278dbf9",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T08:28:26.421Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "1235678",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T08:28:26.421037+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharma",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "1235678",
+        "from": "123567"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "758d894b-bf01-4c06-838b-83eb3e643abf",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T08:28:41.119Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12356",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T08:28:41.119331+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharma",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "12356",
+        "from": "1235678"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "f55d45ec-8de5-4517-aebb-b2388ae415d6",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T08:29:22.483Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampul",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T08:29:22.483417+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampul",
+        "from": "Ampull"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "f150dbf0-f9ff-4d4e-b45b-53f9b53f1a74",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T08:51:54.407Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampu",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T08:51:54.40736+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampu",
+        "from": "Ampul"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "bf6e276e-b25b-466b-9891-b361d09c2061",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T08:52:02.547Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampuk",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T08:52:02.547939+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampuk",
+        "from": "Ampu"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "0625f8fc-f471-45bb-b8f0-9982b624e7c1",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T08:53:56.945Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampul",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T08:53:56.945859+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampul",
+        "from": "Ampuk"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "be9e0aaa-e3a1-4aef-b435-89d70ace208d",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 5,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T09:13:39.536Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampulll",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T09:13:39.536412+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampulll",
+        "from": "Ampul"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "350afbec-9503-4c51-8165-aa68a13ee04e",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 6,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:13:52.321Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampul",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T09:13:52.321858+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampul",
+        "from": "Ampulll"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "94bedaa8-0ce2-490c-8b50-d72fcfba969d",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 7,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:25:11.776Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampulk",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T09:25:11.776266+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampulk",
+        "from": "Ampul"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "4bb1008d-f890-4368-b7b2-bf6621b4899b",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 8,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T09:25:25.731Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampulj",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T09:25:25.731421+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampulj",
+        "from": "Ampulk"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "743f4932-04d2-41c4-bf0f-ca9b6a6dc8cb",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 9,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T09:25:35.304Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampul",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T09:25:35.304969+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampul",
+        "from": "Ampulj"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "9143bc50-d6c7-4d3f-ba87-ece14602ee16",
+    "entity_table": "item_units",
+    "entity_id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T09:27:19.836Z",
+    "entity_data": {
+      "id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+      "name": "Dusx",
+      "created_at": "2025-04-18T12:38:23.494347+00:00",
+      "updated_at": "2025-07-26T09:27:19.836835+00:00",
+      "description": ""
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Dusx",
+        "from": "Dus"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "3a12dd93-49cd-414d-85a6-97956c0053d4",
+    "entity_table": "item_units",
+    "entity_id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:28:17.978Z",
+    "entity_data": {
+      "id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+      "name": "Dus",
+      "created_at": "2025-04-18T12:38:23.494347+00:00",
+      "updated_at": "2025-07-26T09:28:17.978783+00:00",
+      "description": ""
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Dus",
+        "from": "Dusx"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "0a6844c4-d11d-43e3-872e-688feafc32a1",
+    "entity_table": "item_units",
+    "entity_id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:28:43.041Z",
+    "entity_data": {
+      "id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+      "name": "Duz",
+      "created_at": "2025-04-18T12:38:23.494347+00:00",
+      "updated_at": "2025-07-26T09:28:43.041572+00:00",
+      "description": ""
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Duz",
+        "from": "Dus"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "c288e2c5-8136-48c1-b86d-d9885dc60e3f",
+    "entity_table": "item_units",
+    "entity_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:34:59.227Z",
+    "entity_data": {
+      "id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "name": "Botolv",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T09:34:59.227937+00:00",
+      "description": "botol"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Botolv",
+        "from": "Botol"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "cfe9808d-af47-44ae-b2d7-b03e9da5c96f",
+    "entity_table": "item_units",
+    "entity_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:35:12.394Z",
+    "entity_data": {
+      "id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "name": "Botok",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T09:35:12.394205+00:00",
+      "description": "botol"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Botok",
+        "from": "Botolv"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "3d7b4cc6-60a4-42d3-808c-179830aec777",
+    "entity_table": "item_units",
+    "entity_id": "aebc351d-0608-4643-ac0a-517bfd73aa7a",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T09:35:23.953Z",
+    "entity_data": {
+      "id": "aebc351d-0608-4643-ac0a-517bfd73aa7a",
+      "name": "Emulsim",
+      "created_at": "2025-03-30T08:29:38.937463+00:00",
+      "updated_at": "2025-07-26T09:35:23.953068+00:00",
+      "description": "Sediaan cair yang terdiri dari dua cairan yang tidak saling bercampur"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Emulsim",
+        "from": "Emulsi"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "3d471727-00a0-4ba4-b46c-6b46e3725cb5",
+    "entity_table": "item_units",
+    "entity_id": "7a50f346-7587-4ad7-9494-3b871e8be246",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T09:35:45.983Z",
+    "entity_data": {
+      "id": "7a50f346-7587-4ad7-9494-3b871e8be246",
+      "name": "Inhalerg",
+      "created_at": "2025-03-30T08:29:38.937463+00:00",
+      "updated_at": "2025-07-26T09:35:45.983906+00:00",
+      "description": "Alat untuk menghirup obat dalam bentuk aerosol"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Inhalerg",
+        "from": "Inhaler"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "0da41918-6a33-44b6-88af-66a7df7bd065",
+    "entity_table": "item_units",
+    "entity_id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:40:49.019Z",
+    "entity_data": {
+      "id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+      "name": "Dum",
+      "created_at": "2025-04-18T12:38:23.494347+00:00",
+      "updated_at": "2025-07-26T09:40:49.01919+00:00",
+      "description": ""
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Dum",
+        "from": "Duz"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "53e09b2e-47fd-47f0-8949-cf675f92648f",
+    "entity_table": "item_units",
+    "entity_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:42:53.203Z",
+    "entity_data": {
+      "id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "name": "Botol",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T09:42:53.203074+00:00",
+      "description": "botol"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Botol",
+        "from": "Botok"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "1b89cbe7-6bbf-4e05-bfff-3c39c740e08e",
+    "entity_table": "item_units",
+    "entity_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:46:12.064Z",
+    "entity_data": {
+      "id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "name": "Botolx",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T09:46:12.064621+00:00",
+      "description": "botol"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Botolx",
+        "from": "Botol"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "39111422-b712-4986-8ab3-d9345455475f",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 10,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T09:46:37.506Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampuz",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T09:46:37.506271+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampuz",
+        "from": "Ampul"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "43169863-f75a-40b8-a9bd-e9d3d554fa5a",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:47:56.445Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "123567",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T09:47:56.445223+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharma",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "123567",
+        "from": "12356"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "63e411c3-ca88-48db-9f47-b1513e93aaa6",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 5,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T09:48:09.497Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "1235678",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T09:48:09.497781+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharma",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "1235678",
+        "from": "123567"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "6cfc310b-b8db-4cce-8943-12dbda113052",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 6,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T09:49:53.619Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "123567",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T09:49:53.619605+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharma",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "123567",
+        "from": "1235678"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "7a6e52b4-a28b-425f-9afd-4b68be7b8f0c",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 7,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:51:35.587Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "1235678",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T09:51:35.587743+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharma",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "1235678",
+        "from": "123567"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "addff5ac-a898-40a1-880a-59a63dd92913",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 8,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T09:55:21.504Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12356789",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T09:55:21.504724+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharma",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "12356789",
+        "from": "1235678"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "76d98741-9490-406c-82ff-ba3e181c8255",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 11,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T12:46:30.100Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampul",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T12:46:30.100158+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampul",
+        "from": "Ampuz"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "774f78a2-abdb-4a4c-8eff-63a0643f11f4",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 9,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:05:47.729Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "1235678",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:05:47.72991+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharma",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "1235678",
+        "from": "12356789"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "2e3b299c-2b10-4997-94ac-a24e90112b3c",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 10,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:06:09.769Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "1235678",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:06:09.769797+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "manufacturer": {
+        "to": "Pharmal",
+        "from": "Pharma"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "dff3c799-e9b5-441f-beb9-acde9480886c",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T10:06:20.011Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "ada inik",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-26T10:06:20.011395+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "ada inik",
+        "from": "ada ini"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "a7022734-0a3a-4ee5-8099-1cb2c87f70b1",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:08:11.021Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "ada ini",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-26T10:08:11.021578+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "ada ini",
+        "from": "ada inik"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "9a863b59-202f-4266-b191-995c8415731b",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 11,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:20:08.801Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12356789",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:20:08.801547+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "12356789",
+        "from": "1235678"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "4df03093-b31c-4247-bec4-5de50b87db26",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 12,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:20:19.596Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "123567",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:20:19.596093+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "123567",
+        "from": "12356789"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "eaa54923-ca6e-442f-b904-081cfb47438a",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 13,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:27:47.169Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "1235678",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:27:47.169151+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "1235678",
+        "from": "123567"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "483f5c49-d21a-4601-b816-8ecfa6a14077",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:28:00.470Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "ada inim",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-26T10:28:00.470361+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "ada inim",
+        "from": "ada ini"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "51d4b7f5-4f8b-4766-a75e-943a57c3a9b0",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 14,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:28:19.728Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "123567890",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:28:19.728117+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "123567890",
+        "from": "1235678"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "5bf7ebd7-963c-4908-b594-4222b04599b9",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 15,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:29:16.644Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12356789012",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:29:16.644608+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "12356789012",
+        "from": "123567890"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "d6895aee-eb1a-4a86-abf8-7e4ba3a699d3",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 16,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:29:57.380Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "123567890",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:29:57.38019+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "123567890",
+        "from": "12356789012"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "00586601-9b7c-45ff-80f2-c9950bf791cc",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:30:58.340Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "ada inip",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-26T10:30:58.340296+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "ada inip",
+        "from": "ada inim"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "0be3aa15-de89-43c2-a6c8-52582a378692",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 17,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:31:43.635Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12345",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:31:43.635497+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "12345",
+        "from": "123567890"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "68577dc2-1afc-4464-948b-a3e1959e9c97",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 18,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:35:53.147Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12345678",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:35:53.147621+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "12345678",
+        "from": "12345"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "adf0985e-85e6-4b84-a798-0fb5e6a533f1",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 5,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:36:27.281Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "ada inii",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-26T10:36:27.281871+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "ada inii",
+        "from": "ada inip"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "10167929-8142-4d54-8e7e-39d1c5848a86",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 19,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:37:15.946Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12345",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:37:15.946932+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "12345",
+        "from": "12345678"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "bd634d51-cc70-4343-ade0-7b8190fcffe5",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 20,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:41:20.665Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "1234567",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:41:20.665055+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "1234567",
+        "from": "12345"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "70d5b454-bfc5-40f6-8f15-5d7f9ad0cc62",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 21,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T10:41:31.520Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "123456",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:41:31.520118+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "123456",
+        "from": "1234567"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "ad59e75d-4997-485e-8b17-b472f464884f",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 22,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T10:42:59.065Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "1234567",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:42:59.06532+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "1234567",
+        "from": "123456"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "7c8d73f1-86f5-41d3-809d-1a689363f50f",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 23,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:46:22.924Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12345679",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:46:22.924597+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "12345679",
+        "from": "1234567"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "d6eb92c1-b072-442a-a49f-4935d318e47f",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 6,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T10:46:40.665Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "po ada inii",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-26T10:46:40.665473+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "po ada inii",
+        "from": "ada inii"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "f22fd59f-d137-466d-8032-0b9918384bb8",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 7,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T10:48:06.710Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "op ada inii",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-26T10:48:06.710337+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "op ada inii",
+        "from": "po ada inii"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "bad336f7-6290-43e2-b86c-ec91a9ea1dc9",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 24,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T10:52:14.065Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "123456790",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T10:52:14.065821+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "123456790",
+        "from": "12345679"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "1a00ceac-b45f-4016-a557-26a5801934db",
+    "entity_table": "item_categories",
+    "entity_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T11:05:10.740Z",
+    "entity_data": {
+      "id": "502e0a0c-9a29-4003-b309-979b659b30db",
+      "name": "Analgesi",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T11:05:10.740566+00:00",
+      "description": "Obat pereda nyeri"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Analgesi",
+        "from": "Analgesik"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "933b9d4e-f3d5-41b9-a21b-c0c11c2f3647",
+    "entity_table": "item_categories",
+    "entity_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T11:09:28.754Z",
+    "entity_data": {
+      "id": "502e0a0c-9a29-4003-b309-979b659b30db",
+      "name": "Analgesik",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T11:09:28.754339+00:00",
+      "description": "Obat pereda nyeri"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Analgesik",
+        "from": "Analgesi"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "ad6ed69e-0a1c-40b6-9753-ded20780f0cb",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 25,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T11:11:54.358Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12345679",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T11:11:54.35895+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "12345679",
+        "from": "123456790"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "2869deb1-f58f-45e8-965f-1958f2d20cbc",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 26,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T11:31:32.440Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "123456790",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T11:31:32.440758+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "123456790",
+        "from": "12345679"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "475075d4-b179-44fd-be9a-2903f02c51dd",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 27,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T12:19:00.213Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12345679",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T12:19:00.213135+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharmal",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "12345679",
+        "from": "123456790"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "b2bcbd2d-4cde-4a35-8d32-a3158154f96c",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 8,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T12:19:12.365Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "ada inii",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-26T12:19:12.365417+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "ada inii",
+        "from": "op ada inii"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "ced03bb0-6c1a-48e1-ad0c-b361ef9da4de",
+    "entity_table": "item_units",
+    "entity_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+    "version_number": 5,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T12:21:03.487Z",
+    "entity_data": {
+      "id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "name": "Botol",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T12:21:03.487643+00:00",
+      "description": "botol"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Botol",
+        "from": "Botolx"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "3f35f298-de81-4dc6-8ac0-0989274db5f4",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 9,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T12:42:15.838Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "ada ini",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-26T12:42:15.838778+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "ada ini",
+        "from": "ada inii"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "a7eb2e8a-18f1-46a9-b949-cef3d18f69eb",
+    "entity_table": "item_categories",
+    "entity_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-07-26T12:46:02.869Z",
+    "entity_data": {
+      "id": "502e0a0c-9a29-4003-b309-979b659b30db",
+      "name": "Analgesikk",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T12:46:02.869174+00:00",
+      "description": "Obat pereda nyeri"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Analgesikk",
+        "from": "Analgesik"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "526f2ac8-a024-4dc8-bae9-f554044ae452",
+    "entity_table": "items",
+    "entity_id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+    "version_number": 28,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T12:46:45.076Z",
+    "entity_data": {
+      "id": "a8e6a841-1330-44b8-9096-60ece2d92dd6",
+      "code": "FDAB01",
+      "name": "12345679",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1725d012-3f32-4c70-8856-aeeb6b74ea82",
+      "unit_id": "28dbe949-54a2-4198-baba-ed162a041cbe",
+      "base_unit": "Botol",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 12111,
+      "created_at": "2025-06-24T10:36:16.107056+00:00",
+      "sell_price": 14444,
+      "updated_at": "2025-07-26T12:46:45.076982+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "Pharma",
+      "has_expiry_date": false,
+      "unit_conversions": []
+    },
+    "changed_fields": {
+      "manufacturer": {
+        "to": "Pharma",
+        "from": "Pharmal"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "eba5639b-24bf-474e-98e8-ec4fbd5fde26",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 12,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T12:48:39.440Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampu",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T12:48:39.440931+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampu",
+        "from": "Ampul"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "9a080c53-ceb9-48c4-a50d-335d2702eab1",
+    "entity_table": "item_units",
+    "entity_id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+    "version_number": 5,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T12:54:02.594Z",
+    "entity_data": {
+      "id": "9c18eec7-bd94-4a5c-a1cd-d65e2fb12593",
+      "name": "Dus",
+      "created_at": "2025-04-18T12:38:23.494347+00:00",
+      "updated_at": "2025-07-26T12:54:02.59432+00:00",
+      "description": ""
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Dus",
+        "from": "Dum"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "b03d6b06-6429-4597-9b16-8d3bf2447131",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 13,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T12:54:09.117Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampul",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T12:54:09.117768+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ampul",
+        "from": "Ampu"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "3166d9d2-2c6a-45f0-aceb-c6c66b37aeaa",
+    "entity_table": "item_categories",
+    "entity_id": "502e0a0c-9a29-4003-b309-979b659b30db",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T13:21:44.415Z",
+    "entity_data": {
+      "id": "502e0a0c-9a29-4003-b309-979b659b30db",
+      "name": "Analgesik",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T13:21:44.415619+00:00",
+      "description": "Obat pereda nyeri"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Analgesik",
+        "from": "Analgesikk"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "b8c338d4-ae38-4938-99d1-43b063c7e680",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 14,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T13:22:32.594Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampul",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-26T13:22:32.594186+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan steril dalam wadah kaca tertutup.",
+        "from": "Sediaan steril dalam wadah kaca tertutup"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "44036f8c-eee1-4159-a748-a44dc5884d7e",
+    "entity_table": "item_units",
+    "entity_id": "c312bece-96f3-4778-940e-2c3edb86b7e8",
+    "version_number": 1,
+    "action_type": "INSERT",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-26T13:29:08.266Z",
+    "entity_data": {
+      "id": "c312bece-96f3-4778-940e-2c3edb86b7e8",
+      "name": "acoba aja",
+      "created_at": "2025-07-26T13:29:08.266923+00:00",
+      "updated_at": "2025-07-26T13:29:08.266923+00:00",
+      "description": ""
+    },
+    "changed_fields": null,
+    "change_description": null
+  },
+  {
+    "id": "e4a8b0a1-3592-485d-996c-b34e15be7361",
+    "entity_table": "item_units",
+    "entity_id": "c312bece-96f3-4778-940e-2c3edb86b7e8",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-27T06:07:05.639Z",
+    "entity_data": {
+      "id": "c312bece-96f3-4778-940e-2c3edb86b7e8",
+      "name": "acoba aja a",
+      "created_at": "2025-07-26T13:29:08.266923+00:00",
+      "updated_at": "2025-07-27T06:07:05.639061+00:00",
+      "description": ""
+    },
+    "changed_fields": {
+      "name": {
+        "to": "acoba aja a",
+        "from": "acoba aja"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "50fc4547-bea5-415c-844f-3fa1d08d5c51",
+    "entity_table": "item_units",
+    "entity_id": "c312bece-96f3-4778-940e-2c3edb86b7e8",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-27T06:07:23.728Z",
+    "entity_data": {
+      "id": "c312bece-96f3-4778-940e-2c3edb86b7e8",
+      "name": "coba aja a",
+      "created_at": "2025-07-26T13:29:08.266923+00:00",
+      "updated_at": "2025-07-27T06:07:23.728569+00:00",
+      "description": ""
+    },
+    "changed_fields": {
+      "name": {
+        "to": "coba aja a",
+        "from": "acoba aja a"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "0827b2f2-6d1d-4292-8a32-c79dee2f3614",
+    "entity_table": "item_units",
+    "entity_id": "aebc351d-0608-4643-ac0a-517bfd73aa7a",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-27T07:10:17.901Z",
+    "entity_data": {
+      "id": "aebc351d-0608-4643-ac0a-517bfd73aa7a",
+      "name": "Emulsi",
+      "created_at": "2025-03-30T08:29:38.937463+00:00",
+      "updated_at": "2025-07-27T07:10:17.901488+00:00",
+      "description": "Sediaan cair dari dua cairan yang tidak saling bercampur"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Emulsi",
+        "from": "Emulsim"
+      },
+      "description": {
+        "to": "Sediaan cair dari dua cairan yang tidak saling bercampur",
+        "from": "Sediaan cair yang terdiri dari dua cairan yang tidak saling bercampur"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "3738e56d-9b72-4221-b045-dfc7217de28c",
+    "entity_table": "item_units",
+    "entity_id": "7a50f346-7587-4ad7-9494-3b871e8be246",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-27T07:40:26.221Z",
+    "entity_data": {
+      "id": "7a50f346-7587-4ad7-9494-3b871e8be246",
+      "name": "Inhaler",
+      "created_at": "2025-03-30T08:29:38.937463+00:00",
+      "updated_at": "2025-07-27T07:40:26.22159+00:00",
+      "description": "Alat untuk menghirup obat dalam bentuk aerosol"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Inhaler",
+        "from": "Inhalerg"
+      }
+    },
+    "change_description": null
+  }
+]
