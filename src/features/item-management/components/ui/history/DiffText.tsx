@@ -1,23 +1,25 @@
 import React from "react";
-import { createCharacterDiff, createWordDiff, DiffSegment } from "@/utils/diff";
+import { createCharacterDiff, createWordDiff, createSmartDiff, DiffSegment } from "@/utils/diff";
 
 interface LocalDiffTextProps {
   oldText: string;
   newText: string;
-  mode?: "character" | "word";
+  mode?: "character" | "word" | "smart";
   className?: string;
 }
 
 const DiffText: React.FC<LocalDiffTextProps> = ({
   oldText,
   newText,
-  mode = "character",
+  mode = "smart",
   className = "",
 }) => {
   const segments: DiffSegment[] =
     mode === "character"
       ? createCharacterDiff(oldText, newText)
-      : createWordDiff(oldText, newText);
+      : mode === "word"
+      ? createWordDiff(oldText, newText)
+      : createSmartDiff(oldText, newText);
 
   return (
     <span className={`font-mono text-sm ${className}`}>
