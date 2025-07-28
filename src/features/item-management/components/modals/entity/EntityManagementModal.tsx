@@ -2,6 +2,7 @@ import React from "react";
 import { useConfirmDialog } from "@/components/dialog-box";
 import { EntityModalProvider } from "../../../contexts/EntityModalContext";
 import { useEntityModalLogic } from "../../../hooks/useEntityModalLogic";
+import { useEntityHistory } from "../../../hooks/useEntityHistory";
 import EntityModalTemplate from "../../EntityModalTemplate";
 import EntityModalContent from "./EntityModalContent";
 import { ComparisonModal } from "../comparison";
@@ -20,6 +21,26 @@ const EntityManagementModal: React.FC<AddEditModalProps> = ({
 }) => {
   useConfirmDialog();
   
+  // Determine table name based on entity name
+  const getTableName = (entity: string) => {
+    switch (entity.toLowerCase()) {
+      case 'kategori':
+        return 'item_categories';
+      case 'jenis item':
+        return 'item_types';
+      case 'satuan':
+        return 'item_units';
+      default:
+        return '';
+    }
+  };
+
+  const entityTable = getTableName(entityName);
+  const entityId = initialData?.id || '';
+  
+  // Get restore function from useEntityHistory hook
+  const { restoreVersion } = useEntityHistory(entityTable, entityId);
+  
   const { contextValue, nameInputRef } = useEntityModalLogic({
     isOpen,
     onClose,
@@ -31,6 +52,13 @@ const EntityManagementModal: React.FC<AddEditModalProps> = ({
     isLoading,
     isDeleting,
   });
+
+  // Wrap restoreVersion to handle post-restore actions
+  const handleRestore = async (version: number) => {
+    await restoreVersion(version);
+    // Refresh the page to show restored data
+    window.location.reload();
+  };
 
   return (
     <EntityModalProvider value={contextValue}>
@@ -51,6 +79,7 @@ const EntityManagementModal: React.FC<AddEditModalProps> = ({
         versionA={contextValue.comparison.versionA}
         versionB={contextValue.comparison.versionB}
         onFlipVersions={contextValue.uiActions.flipVersions}
+        onRestore={initialData?.id ? handleRestore : undefined}
       />
     </EntityModalProvider>
   );

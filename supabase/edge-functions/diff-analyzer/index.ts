@@ -28,6 +28,7 @@ interface TextAnalysis {
   hasPunctuationOnlyChanges: boolean;
   hasNumberUnitChanges: boolean;
   hasWordReplacements: boolean;
+  hasRepeatedCharCorrection: boolean;
   changeRatio: number;
 }
 
@@ -375,6 +376,75 @@ function detectWordReplacements(oldWords: string[], newWords: string[]): boolean
   return replacements > 0 && replacements <= oldWords.length / 2;
 }
 
+/**
+ * Detect repeated character corrections (e.g., "ampulll" -> "ampul")
+ * Identifies when the old text has 3+ consecutive identical characters
+ * that are reduced to 1-2 characters in the new text
+ */
+function detectRepeatedCharCorrection(oldText: string, newText: string): boolean {
+  // Only for single words
+  if (oldText.includes(' ') || newText.includes(' ')) return false;
+  
+  // Check if old text has repeated characters (3+ consecutive)
+  const repeatedChars = findRepeatedCharacters(oldText);
+  if (repeatedChars.length === 0) return false;
+  
+  // Check if new text doesn't have the same repeated characters
+  const newRepeatedChars = findRepeatedCharacters(newText);
+  if (newRepeatedChars.length > 0) return false;
+  
+  // Try to generate new text by reducing repeated chars from old text
+  let correctedText = oldText;
+  
+  for (const repeated of repeatedChars) {
+    const pattern = new RegExp(`${escapeRegex(repeated.char)}{3,}`, 'g');
+    
+    // Try reducing to 1 character
+    let candidate1 = correctedText.replace(pattern, repeated.char);
+    if (candidate1 === newText) return true;
+    
+    // Try reducing to 2 characters (for legitimate doubles)
+    let candidate2 = correctedText.replace(pattern, repeated.char.repeat(2));
+    if (candidate2 === newText) return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Find characters that repeat 3+ times consecutively
+ */
+function findRepeatedCharacters(text: string): Array<{ char: string; count: number; position: number }> {
+  const repeated: Array<{ char: string; count: number; position: number }> = [];
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    let count = 1;
+    let j = i + 1;
+    
+    // Count consecutive same characters
+    while (j < text.length && text[j] === char) {
+      count++;
+      j++;
+    }
+    
+    // If found 3+ consecutive same chars
+    if (count >= 3) {
+      repeated.push({ char, count, position: i });
+      i = j - 1; // Skip to end of repeated sequence
+    }
+  }
+  
+  return repeated;
+}
+
+/**
+ * Escape special regex characters
+ */
+function escapeRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function analyzeTextChanges(oldText: string, newText: string): TextAnalysis {
   const oldWords = oldText.split(/\s+/).filter(w => w.length > 0);
   const newWords = newText.split(/\s+/).filter(w => w.length > 0);
@@ -386,6 +456,7 @@ function analyzeTextChanges(oldText: string, newText: string): TextAnalysis {
   const hasPunctuationOnlyChanges = detectPunctuationOnlyChanges(oldText, newText);
   const hasNumberUnitChanges = detectNumberUnitChanges(oldWords, newWords);
   const hasWordReplacements = detectWordReplacements(oldWords, newWords);
+  const hasRepeatedCharCorrection = detectRepeatedCharCorrection(oldText, newText);
   
   const changeRatio = Math.abs(oldText.length - newText.length) / Math.max(oldText.length, newText.length);
   
@@ -397,6 +468,7 @@ function analyzeTextChanges(oldText: string, newText: string): TextAnalysis {
     hasPunctuationOnlyChanges,
     hasNumberUnitChanges,
     hasWordReplacements,
+    hasRepeatedCharCorrection,
     changeRatio
   };
 }
@@ -425,6 +497,11 @@ function createSmartDiff(oldText: string, newText: string): DiffSegment[] {
   // For single words with very minor character-level changes (like typos)
   const isSingleWord = !oldText.includes(' ') && !newText.includes(' ');
   const lengthDiff = Math.abs(oldText.length - newText.length);
+  
+  // Special case: Repeated character corrections (e.g., "ampulll" -> "ampul")
+  if (analysis.hasRepeatedCharCorrection) {
+    return createCharacterDiff(oldText, newText);
+  }
   
   // Only use character diff for single words if:
   // 1. Small length difference (≤2 chars)

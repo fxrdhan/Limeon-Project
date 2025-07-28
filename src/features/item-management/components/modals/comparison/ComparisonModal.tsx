@@ -21,6 +21,8 @@ interface ComparisonModalProps {
   versionA?: VersionData;
   versionB?: VersionData;
   onFlipVersions?: () => void;
+  // Restore functionality
+  onRestore?: (version: number) => void;
 }
 
 const ComparisonModal: React.FC<ComparisonModalProps> = ({
@@ -33,6 +35,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   versionA,
   versionB,
   onFlipVersions,
+  onRestore,
 }) => {
   // Early return for invalid states
   if (!isDualMode && !selectedVersion) return null;
@@ -73,6 +76,26 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
   const compData = getComparisonData();
   if (!compData) return null;
+
+  const handleRestore = async () => {
+    if (!selectedVersion || !onRestore) return;
+    
+    if (confirm(`Yakin ingin mengembalikan data ke versi ${selectedVersion.version_number}?`)) {
+      try {
+        await onRestore(selectedVersion.version_number);
+        onClose(); // Close modal after successful restore
+      } catch (error) {
+        alert("Gagal mengembalikan versi: " + error);
+      }
+    }
+  };
+
+  // Check if restore should be available (only for single mode, not dual mode, and when there are differences)
+  const canRestore = !isDualMode && selectedVersion && onRestore;
+  
+  // Only show restore button if there are actual differences to restore
+  const hasDifferences = compData ? (compData.isNameDifferent || compData.isDescriptionDifferent) : false;
+  const shouldShowRestore = canRestore && hasDifferences;
 
   return createPortal(
     <AnimatePresence>
@@ -333,7 +356,20 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end p-4 border-t-2 border-gray-200 rounded-b-lg">
+            <div className="flex justify-between items-center p-4 border-t-2 border-gray-200 rounded-b-lg">
+              {shouldShowRestore ? (
+                <Button 
+                  type="button" 
+                  variant="text" 
+                  onClick={handleRestore}
+                  className="text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                  title={`Restore ke versi ${selectedVersion?.version_number}`}
+                >
+                  Restore v{selectedVersion?.version_number}
+                </Button>
+              ) : (
+                <div></div>
+              )}
               <Button type="button" variant="text" onClick={onClose}>
                 Tutup
               </Button>

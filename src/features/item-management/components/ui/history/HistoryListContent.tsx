@@ -95,7 +95,7 @@ const HistoryListContent: React.FC = () => {
         onVersionClick={handleVersionClick}
         selectedVersion={selectedVersion}
         selectedVersions={selectedVersion ? [selectedVersion] : []}
-        showRestoreButton={!compareMode}
+        showRestoreButton={false}
         onRestore={handleRestore}
         emptyMessage="Tidak ada riwayat perubahan"
         loadingMessage="Loading history..."
