@@ -16,6 +16,11 @@ interface ComparisonModalProps {
     name: string;
     description: string;
   };
+  // Dual comparison support
+  isDualMode?: boolean;
+  versionA?: VersionData;
+  versionB?: VersionData;
+  onFlipVersions?: () => void;
 }
 
 const ComparisonModal: React.FC<ComparisonModalProps> = ({
@@ -24,19 +29,50 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   entityName,
   selectedVersion,
   currentData,
+  isDualMode = false,
+  versionA,
+  versionB,
+  onFlipVersions,
 }) => {
-  if (!selectedVersion) return null;
+  // Early return for invalid states
+  if (!isDualMode && !selectedVersion) return null;
+  if (isDualMode && (!versionA || !versionB)) return null;
 
-  // Get version data
-  const versionData = selectedVersion.entity_data;
-  const versionName = String(versionData?.name || "");
-  const versionDescription = String(versionData?.description || "");
+  // Get comparison data based on mode
+  const getComparisonData = () => {
+    if (isDualMode && versionA && versionB) {
+      const versionAData = versionA.entity_data;
+      const versionBData = versionB.entity_data;
+      return {
+        leftName: String(versionAData?.name || ""),
+        leftDescription: String(versionAData?.description || ""),
+        rightName: String(versionBData?.name || ""),
+        rightDescription: String(versionBData?.description || ""),
+        leftVersion: versionA,
+        rightVersion: versionB,
+        isNameDifferent: versionAData?.name !== versionBData?.name,
+        isDescriptionDifferent: versionAData?.description !== versionBData?.description,
+      };
+    } else if (selectedVersion) {
+      const versionData = selectedVersion.entity_data;
+      const versionName = String(versionData?.name || "");
+      const versionDescription = String(versionData?.description || "");
+      return {
+        leftName: versionName,
+        leftDescription: versionDescription,
+        rightName: currentData.name,
+        rightDescription: currentData.description,
+        leftVersion: selectedVersion,
+        rightVersion: null,
+        isNameDifferent: currentData.name !== versionName,
+        isDescriptionDifferent: currentData.description !== versionDescription,
+      };
+    }
+    return null;
+  };
 
-  // Check if values are different
-  const isNameDifferent = currentData.name !== versionName;
-  const isDescriptionDifferent = currentData.description !== versionDescription;
-
-  if (!selectedVersion) return null;
+  const compData = getComparisonData();
+  if (!compData) return null;
 
   return createPortal(
     <AnimatePresence>
@@ -64,63 +100,154 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             <div tabIndex={0} className="sr-only" aria-hidden="true"></div>
             {/* Header */}
             <div className="p-2.5 border-b-2 bg-gray-100 border-gray-200 rounded-t-xl">
-              {/* Version Info */}
-              <div className="rounded-lg p-2">
-                <div className="flex items-center gap-3 text-sm">
-                  <span
-                    className={`text-xs px-2 py-1 rounded ${
-                      selectedVersion.action_type === "INSERT"
-                        ? "bg-green-100 text-green-700"
-                        : selectedVersion.action_type === "UPDATE"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {selectedVersion.action_type}
-                  </span>
-                  <span className="text-xs text-gray-600">
-                    {new Date(selectedVersion.changed_at).toLocaleString(
-                      "id-ID",
+              {isDualMode ? (
+                /* Dual Mode Header */
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-700">
+                      Comparison: Two Versions
+                    </h3>
+                    {onFlipVersions && (
+                      <button
+                        onClick={onFlipVersions}
+                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                        title="Flip versions"
+                      >
+                        ⇅ Flip
+                      </button>
                     )}
-                  </span>
-                  <span className="font-mono bg-purple-100 text-purple-700 px-2 py-1 rounded ml-auto">
-                    v{selectedVersion.version_number}
-                  </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Version A */}
+                    <div className="bg-blue-50 rounded-lg p-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-blue-800">Version A</span>
+                        <span className="font-mono bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded text-xs">
+                          v{compData.leftVersion.version_number}
+                        </span>
+                      </div>
+                      <div className="text-xs text-blue-600">
+                        {new Date(compData.leftVersion.changed_at).toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                    
+                    {/* Version B */}
+                    <div className="bg-purple-50 rounded-lg p-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-purple-800">Version B</span>
+                        <span className="font-mono bg-purple-200 text-purple-800 px-1.5 py-0.5 rounded text-xs">
+                          v{compData.rightVersion?.version_number}
+                        </span>
+                      </div>
+                      <div className="text-xs text-purple-600">
+                        {compData.rightVersion && new Date(compData.rightVersion.changed_at).toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* Single Mode Header */
+                <div className="rounded-lg p-2">
+                  <div className="flex items-center gap-3 text-sm">
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${
+                        compData.leftVersion.action_type === "INSERT"
+                          ? "bg-green-100 text-green-700"
+                          : compData.leftVersion.action_type === "UPDATE"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {compData.leftVersion.action_type}
+                    </span>
+                    <span className="text-xs text-gray-600">
+                      {new Date(compData.leftVersion.changed_at).toLocaleString("id-ID")}
+                    </span>
+                    <span className="font-mono bg-purple-100 text-purple-700 px-2 py-1 rounded ml-auto">
+                      v{compData.leftVersion.version_number}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Content */}
             <div className="p-6 space-y-4">
-              {/* Form Fields */}
-              <Input
-                label={`Nama ${entityName}`}
-                value={versionName}
-                placeholder={`Nama ${entityName.toLowerCase()}`}
-                required
-                readOnly
-                tabIndex={-1}
-                className="pointer-events-none select-none"
-              />
+              {isDualMode ? (
+                /* Dual Mode Content - Side by Side Comparison */
+                <div className="space-y-4">
+                  {/* Name Comparison */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nama {entityName}
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="border border-blue-200 rounded-lg p-3 bg-blue-50">
+                        <div className="text-xs text-blue-600 mb-1">Version A</div>
+                        <div className="text-sm font-medium">{compData.leftName || <span className="text-gray-400 italic">Empty</span>}</div>
+                      </div>
+                      <div className="border border-purple-200 rounded-lg p-3 bg-purple-50">
+                        <div className="text-xs text-purple-600 mb-1">Version B</div>
+                        <div className="text-sm font-medium">{compData.rightName || <span className="text-gray-400 italic">Empty</span>}</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Description Comparison */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Deskripsi
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="border border-blue-200 rounded-lg p-3 bg-blue-50">
+                        <div className="text-xs text-blue-600 mb-1">Version A</div>
+                        <div className="text-sm whitespace-pre-wrap min-h-[60px]">
+                          {compData.leftDescription || <span className="text-gray-400 italic">Empty</span>}
+                        </div>
+                      </div>
+                      <div className="border border-purple-200 rounded-lg p-3 bg-purple-50">
+                        <div className="text-xs text-purple-600 mb-1">Version B</div>
+                        <div className="text-sm whitespace-pre-wrap min-h-[60px]">
+                          {compData.rightDescription || <span className="text-gray-400 italic">Empty</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Single Mode Content - Traditional Form with Diff */
+                <div className="space-y-4">
+                  <Input
+                    label={`Nama ${entityName}`}
+                    value={compData.leftName}
+                    placeholder={`Nama ${entityName.toLowerCase()}`}
+                    required
+                    readOnly
+                    tabIndex={-1}
+                    className="pointer-events-none select-none"
+                  />
 
-              <DescriptiveTextarea
-                label="Deskripsi"
-                name="description"
-                value={versionDescription}
-                onChange={() => {}} // No-op since readOnly
-                placeholder="Deskripsi"
-                readOnly
-                autoFocus={false}
-                tabIndex={-1}
-                textareaClassName="text-sm min-h-[80px] resize-none pointer-events-none select-none"
-                rows={3}
-                showInitially={!!versionDescription}
-                expandOnClick={true}
-              />
+                  <DescriptiveTextarea
+                    label="Deskripsi"
+                    name="description"
+                    value={compData.leftDescription}
+                    onChange={() => {}} // No-op since readOnly
+                    placeholder="Deskripsi"
+                    readOnly
+                    autoFocus={false}
+                    tabIndex={-1}
+                    textareaClassName="text-sm min-h-[80px] resize-none pointer-events-none select-none"
+                    rows={3}
+                    showInitially={!!compData.leftDescription}
+                    expandOnClick={true}
+                  />
+                </div>
+              )}
 
               {/* Differences Summary */}
               <AnimatePresence mode="wait">
-                {(isNameDifferent || isDescriptionDifferent) && (
+                {(compData.isNameDifferent || compData.isDescriptionDifferent) && (
                   <motion.div
                     key="differences"
                     initial={{ opacity: 0, height: 0 }}
@@ -131,7 +258,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   >
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                       <h4 className="text-sm font-medium text-yellow-800 mb-3">
-                        Berbeda dari saat ini:
+                        {isDualMode ? "Perbedaan antara kedua versi:" : "Berbeda dari saat ini:"}
                       </h4>
                       <motion.div
                         className="space-y-3"
@@ -140,7 +267,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                         transition={{ delay: 0.1, duration: 0.2 }}
                       >
                         <AnimatePresence>
-                          {isNameDifferent && (
+                          {compData.isNameDifferent && (
                             <motion.div
                               key="name-diff"
                               initial={{ opacity: 0, height: 0 }}
@@ -153,15 +280,15 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                 Nama:
                               </div>
                               <DiffText
-                                oldText={versionName}
-                                newText={currentData.name}
+                                oldText={compData.leftName}
+                                newText={compData.rightName}
                                 className="text-sm"
                               />
                             </motion.div>
                           )}
                         </AnimatePresence>
                         <AnimatePresence>
-                          {isDescriptionDifferent && (
+                          {compData.isDescriptionDifferent && (
                             <motion.div
                               key="description-diff"
                               initial={{ opacity: 0, height: 0 }}
@@ -174,8 +301,8 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                 Deskripsi:
                               </div>
                               <DiffText
-                                oldText={versionDescription}
-                                newText={currentData.description}
+                                oldText={compData.leftDescription}
+                                newText={compData.rightDescription}
                                 className="text-sm leading-relaxed"
                               />
                             </motion.div>
@@ -186,7 +313,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   </motion.div>
                 )}
 
-                {!isNameDifferent && !isDescriptionDifferent && (
+                {!compData.isNameDifferent && !compData.isDescriptionDifferent && (
                   <motion.div
                     key="no-differences"
                     initial={{ opacity: 0, height: 0 }}
@@ -197,7 +324,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   >
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
                       <span className="text-sm text-green-700">
-                        ✓ Sama dengan data saat ini
+                        ✓ {isDualMode ? "Kedua versi identik" : "Sama dengan data saat ini"}
                       </span>
                     </div>
                   </motion.div>

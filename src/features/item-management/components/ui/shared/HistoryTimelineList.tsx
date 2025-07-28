@@ -21,6 +21,10 @@ interface HistoryTimelineListProps {
   onRestore?: (version: number) => void;
   emptyMessage?: string;
   loadingMessage?: string;
+  // New props for dual comparison
+  allowMultiSelect?: boolean;
+  onCompareSelected?: (versions: HistoryItem[]) => void;
+  maxSelections?: number;
 }
 
 const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
@@ -32,10 +36,14 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   showRestoreButton = false,
   onRestore,
   emptyMessage = "Tidak ada riwayat perubahan",
-  loadingMessage = "Loading history..."
+  loadingMessage = "Loading history...",
+  allowMultiSelect = false,
+  onCompareSelected,
+  maxSelections = 2
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [scrollState, setScrollState] = useState({ canScrollUp: false, canScrollDown: false });
+  const [selectedForCompare, setSelectedForCompare] = useState<HistoryItem[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Find the latest version number (current version should not have restore button)
@@ -78,6 +86,67 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     }
   };
 
+  const handleItemClick = (item: HistoryItem) => {
+    if (allowMultiSelect) {
+      const isSelected = selectedForCompare.find(s => s.id === item.id);
+      if (isSelected) {
+        // Remove from selection
+        setSelectedForCompare(prev => prev.filter(s => s.id !== item.id));
+      } else if (selectedForCompare.length < maxSelections) {
+        // Add to selection
+        setSelectedForCompare(prev => [...prev, item]);
+      } else {
+        // Replace oldest selection
+        setSelectedForCompare(prev => [...prev.slice(1), item]);
+      }
+    } else {
+      onVersionClick(item);
+    }
+  };
+
+  const isItemSelected = (item: HistoryItem): boolean => {
+    if (allowMultiSelect) {
+      return selectedForCompare.some(s => s.id === item.id);
+    }
+    return selectedVersions.includes(item.version_number) || selectedVersion === item.version_number;
+  };
+
+  const getItemBorderColor = (item: HistoryItem): string => {
+    if (allowMultiSelect) {
+      const selectionIndex = selectedForCompare.findIndex(s => s.id === item.id);
+      if (selectionIndex >= 0) {
+        return selectionIndex === 0 ? "border-l-blue-500" : "border-l-purple-500";
+      }
+      return "border-l-gray-200 hover:border-l-blue-400";
+    }
+    
+    if (selectedVersions.includes(item.version_number)) {
+      return "border-l-blue-500";
+    }
+    if (selectedVersion === item.version_number) {
+      return "border-l-green-500";
+    }
+    return "border-l-gray-200 hover:border-l-blue-400";
+  };
+
+  const getItemBgColor = (item: HistoryItem): string => {
+    if (allowMultiSelect) {
+      const selectionIndex = selectedForCompare.findIndex(s => s.id === item.id);
+      if (selectionIndex >= 0) {
+        return selectionIndex === 0 ? "bg-blue-50" : "bg-purple-50";
+      }
+      return "hover:bg-gray-50";
+    }
+    
+    if (selectedVersions.includes(item.version_number)) {
+      return "bg-blue-50";
+    }
+    if (selectedVersion === item.version_number) {
+      return "bg-green-50";
+    }
+    return "hover:bg-gray-50";
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 text-center">
@@ -111,39 +180,72 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
         
         <div 
           ref={scrollContainerRef}
-          className="space-y-2 max-h-96 overflow-y-auto"
+          className="relative space-y-3 max-h-96 overflow-y-auto"
         >
-          {history.map((item) => (
-            <div
-              key={item.id}
-              className={`border-l-4 pl-4 py-2 cursor-pointer transition-all duration-200 ${
-                selectedVersions.includes(item.version_number)
-                  ? "border-l-blue-500 bg-blue-50"
-                  : selectedVersion === item.version_number
-                  ? "border-l-green-500 bg-green-50"
-                  : "border-l-gray-200 hover:border-l-blue-400 hover:bg-gray-50"
-              }`}
-              onMouseEnter={() => setHoveredItem(item.id)}
-              onMouseLeave={() => setHoveredItem(null)}
-              onClick={() => onVersionClick(item)}
-            >
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-3">
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${
-                    item.action_type === 'INSERT' ? 'bg-green-100 text-green-700' :
-                    item.action_type === 'UPDATE' ? 'bg-blue-100 text-blue-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {item.action_type}
-                  </span>
-                  <span className="text-gray-500 text-xs">
-                    {formatDateTime(item.changed_at)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
-                    v{item.version_number}
-                  </span>
+          {/* Connecting line for visual continuity */}
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gray-200 via-gray-300 to-gray-200 opacity-30" />
+          
+          {history.map((item) => {
+            const isSelected = isItemSelected(item);
+            const isExpanded = isSelected || hoveredItem === item.id;
+            
+            return (
+              <div key={item.id} className="relative">
+                {/* Connection dot */}
+                <div className={`absolute -left-1 top-4 w-3 h-3 rounded-full border-2 bg-white transition-all duration-200 ${
+                  isSelected 
+                    ? allowMultiSelect
+                      ? selectedForCompare.findIndex(s => s.id === item.id) === 0
+                        ? "border-blue-500 shadow-blue-200" 
+                        : "border-purple-500 shadow-purple-200"
+                      : "border-green-500 shadow-green-200"
+                    : "border-gray-300"
+                } ${isSelected ? 'shadow-lg' : 'shadow-sm'}`} />
+                
+                <div
+                  className={`border-l-4 pl-6 py-3 cursor-pointer transition-all duration-200 rounded-r-lg ${
+                    getItemBorderColor(item)
+                  } ${getItemBgColor(item)} ${
+                    isExpanded ? 'transform scale-[1.02] shadow-md' : ''
+                  }`}
+                  onMouseEnter={() => setHoveredItem(item.id)}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  onClick={() => handleItemClick(item)}
+                >
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs px-2 py-1 rounded font-medium ${
+                        item.action_type === 'INSERT' ? 'bg-green-100 text-green-700' :
+                        item.action_type === 'UPDATE' ? 'bg-blue-100 text-blue-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {item.action_type}
+                      </span>
+                      <span className="text-gray-500 text-xs">
+                        {formatDateTime(item.changed_at)}
+                      </span>
+                      {allowMultiSelect && isSelected && (
+                        <span className={`text-xs px-2 py-1 rounded font-bold ${
+                          selectedForCompare.findIndex(s => s.id === item.id) === 0
+                            ? 'bg-blue-200 text-blue-800'
+                            : 'bg-purple-200 text-purple-800'
+                        }`}>
+                          {selectedForCompare.findIndex(s => s.id === item.id) === 0 ? 'Ver A' : 'Ver B'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`font-mono text-xs px-2 py-1 rounded ${
+                        isSelected
+                          ? allowMultiSelect
+                            ? selectedForCompare.findIndex(s => s.id === item.id) === 0
+                              ? 'bg-blue-200 text-blue-800'
+                              : 'bg-purple-200 text-purple-800'
+                            : 'bg-green-200 text-green-800'
+                          : 'bg-purple-100 text-purple-700'
+                      }`}>
+                        v{item.version_number}
+                      </span>
                   {showRestoreButton && item.version_number < latestVersion && onRestore && (
                     <Button
                       variant="text"
@@ -158,26 +260,55 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
                       </svg>
                     </Button>
                   )}
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      isExpanded && item.changed_fields 
+                        ? 'max-h-24 opacity-100 mt-3' 
+                        : 'max-h-0 opacity-0 mt-0'
+                    }`}
+                  >
+                    {item.changed_fields && (
+                      <div className={`text-xs p-3 rounded-lg border transition-all duration-300 ${
+                        isSelected
+                          ? allowMultiSelect
+                            ? selectedForCompare.findIndex(s => s.id === item.id) === 0
+                              ? 'bg-blue-50 border-blue-200 text-blue-700'
+                              : 'bg-purple-50 border-purple-200 text-purple-700'
+                            : 'bg-green-50 border-green-200 text-green-700'
+                          : 'bg-gray-50 border-gray-200 text-gray-600'
+                      }`}>
+                        <span className="font-medium">Changed fields:</span> {Object.keys(item.changed_fields).join(", ")}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              
-              <div 
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                  hoveredItem === item.id && item.changed_fields 
-                    ? 'max-h-20 opacity-100 mt-2' 
-                    : 'max-h-0 opacity-0 mt-0'
-                }`}
-              >
-                {item.changed_fields && (
-                  <div className="text-xs text-gray-600 bg-gray-100 p-2 rounded transform transition-transform duration-300 ease-in-out">
-                    <span className="font-medium">Changed fields:</span> {Object.keys(item.changed_fields).join(", ")}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
+      
+      {/* Compare Both Button - show when exactly 2 items selected */}
+      {allowMultiSelect && selectedForCompare.length === 2 && onCompareSelected && (
+        <div className="mt-4 p-4 border-t bg-gray-50 rounded-b-lg">
+          <Button
+            variant="primary"
+            onClick={() => onCompareSelected(selectedForCompare)}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" fill="none" />
+            </svg>
+            Compare Both Versions
+          </Button>
+          <div className="text-xs text-gray-500 text-center mt-2">
+            Comparing v{selectedForCompare[0]?.version_number} vs v{selectedForCompare[1]?.version_number}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

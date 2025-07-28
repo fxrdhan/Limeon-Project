@@ -37,6 +37,9 @@ export const useEntityModalLogic = ({
   const [comparisonData, setComparisonData] = useState({
     isOpen: false,
     selectedVersion: undefined as VersionData | undefined,
+    isDualMode: false,
+    versionA: undefined as VersionData | undefined,
+    versionB: undefined as VersionData | undefined,
   });
   const [previousMode, setPreviousMode] = useState<ModalMode>('add');
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -94,6 +97,9 @@ export const useEntityModalLogic = ({
       setComparisonData({
         isOpen: false,
         selectedVersion: undefined,
+        isDualMode: false,
+        versionA: undefined,
+        versionB: undefined,
       });
     }
   }, [isOpen, comparisonData.isOpen]);
@@ -155,13 +161,37 @@ export const useEntityModalLogic = ({
     setComparisonData({
       isOpen: true,
       selectedVersion: version,
+      isDualMode: false,
+      versionA: undefined,
+      versionB: undefined,
     });
+  }, []);
+
+  const openDualComparison = useCallback((versionA: VersionData, versionB: VersionData) => {
+    setComparisonData({
+      isOpen: true,
+      selectedVersion: undefined,
+      isDualMode: true,
+      versionA,
+      versionB,
+    });
+  }, []);
+
+  const flipVersions = useCallback(() => {
+    setComparisonData(prev => ({
+      ...prev,
+      versionA: prev.versionB,
+      versionB: prev.versionA,
+    }));
   }, []);
 
   const closeComparison = useCallback(() => {
     setComparisonData({
       isOpen: false,
       selectedVersion: undefined,
+      isDualMode: false,
+      versionA: undefined,
+      versionB: undefined,
     });
   }, []);
 
@@ -170,6 +200,9 @@ export const useEntityModalLogic = ({
     setComparisonData({
       isOpen: false,
       selectedVersion: undefined,
+      isDualMode: false,
+      versionA: undefined,
+      versionB: undefined,
     });
     
     if (mode === 'version-detail') {
@@ -230,6 +263,9 @@ export const useEntityModalLogic = ({
     comparison: {
       isOpen: comparisonData.isOpen,
       selectedVersion: comparisonData.selectedVersion,
+      isDualMode: comparisonData.isDualMode,
+      versionA: comparisonData.versionA,
+      versionB: comparisonData.versionB,
     },
     formActions: {
       setName,
@@ -248,6 +284,8 @@ export const useEntityModalLogic = ({
       openVersionDetail,
       openComparison,
       closeComparison,
+      openDualComparison,
+      flipVersions,
       goBack,
     },
   };

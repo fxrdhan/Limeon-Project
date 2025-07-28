@@ -159,6 +159,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({
                 fromVersion={fromVersion}
                 toVersion={toVersion}
                 entityName={entityName}
+                entityType={entityTable}
               />
             ) : (
               <div className="p-4 text-center text-gray-500">

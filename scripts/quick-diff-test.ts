@@ -6,6 +6,7 @@
  */
 
 import { createSmartDiff, createCharacterDiff, createWordDiff, DiffSegment } from '../src/utils/diff';
+import * as readline from 'readline';
 
 // ANSI color codes for terminal output
 const colors = {
@@ -153,7 +154,6 @@ function interactiveMode() {
   console.log(`${colors.bold}${colors.cyan}🎮 Interactive Diff Testing Mode${colors.reset}`);
   console.log(`Enter text pairs to compare. Type 'quit' to exit.\n`);
   
-  const readline = require('readline');
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout

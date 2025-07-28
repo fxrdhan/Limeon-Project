@@ -6,12 +6,10 @@
  * algorithm improvement before deploying to edge functions.
  */
 
-import { createSmartDiff, createCharacterDiff, createWordDiff, DiffSegment } from '../src/utils/diff';
+import { createSmartDiff, DiffSegment } from '../src/utils/diff';
 import { 
   DIFF_TEST_DICTIONARY, 
   DiffTestCase,
-  getTestCasesByCategory,
-  getTestCasesByDifficulty,
   getTestStatistics
 } from './diff-test-dictionary';
 
