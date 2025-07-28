@@ -209,6 +209,16 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     difficulty: 'easy',
     notes: 'Should return unchanged segment quickly'
   },
+  {
+    id: 'edge_005',
+    category: 'edge_case',
+    description: 'Typo correction - repeated characters',
+    oldText: 'ampulll',
+    newText: 'ampul',
+    expectedMode: 'character',
+    difficulty: 'medium',
+    notes: 'Should detect character-level deletion, not word replacement'
+  },
 
   // ==================== MEDICAL TERMINOLOGY ====================
   {
