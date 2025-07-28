@@ -1,23 +1,44 @@
 import React from "react";
 import { FaArrowRight } from "react-icons/fa";
 import type { VersionData } from "../../../types";
+import DiffText from "./DiffText";
 
 interface LocalVersionDiffProps {
   fromVersion: VersionData;
   toVersion: VersionData;
   entityName: string;
+  entityType?: string; // Optional entity type for field-specific handling
 }
 
 const VersionDiff: React.FC<LocalVersionDiffProps> = ({
   fromVersion,
   toVersion,
   entityName,
+  entityType = 'generic',
 }) => {
   const changedFields = toVersion.changed_fields || {};
   const allFields = new Set([
     ...Object.keys(fromVersion.entity_data),
     ...Object.keys(toVersion.entity_data),
   ]);
+
+  // Define text fields by entity type
+  const getTextFields = (entityType: string): Set<string> => {
+    switch (entityType) {
+      case 'items':
+        return new Set(['name', 'description', 'code', 'rack', 'base_unit', 'barcode', 'manufacturer']);
+      // Add other entity types as needed
+      default:
+        return new Set();
+    }
+  };
+
+  const textFields = getTextFields(entityType);
+
+  // Helper function to check if field should use diff
+  const shouldUseDiff = (field: string): boolean => {
+    return textFields.has(field);
+  };
 
   const formatValue = (value: unknown): string => {
     if (value === null || value === undefined) return "null";
@@ -72,39 +93,55 @@ const VersionDiff: React.FC<LocalVersionDiffProps> = ({
                   )}
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* From Version */}
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">
-                      v{fromVersion.version_number}
+                {hasChanged && shouldUseDiff(field) ? (
+                  /* Text fields - Use DiffText component */
+                  <div className="bg-white border border-gray-200 rounded p-3">
+                    <div className="text-xs text-gray-500 mb-2">
+                      Perubahan v{fromVersion.version_number} → v{toVersion.version_number}:
                     </div>
-                    <div className={`text-sm p-2 rounded border ${
-                      hasChanged 
-                        ? "bg-red-50 border-red-200 text-red-800" 
-                        : "bg-gray-100 border-gray-200"
-                    }`}>
-                      <code className="whitespace-pre-wrap">
-                        {formatValue(fromValue)}
-                      </code>
-                    </div>
+                    <DiffText 
+                      oldText={formatValue(fromValue)}
+                      newText={formatValue(toValue)}
+                      mode="smart"
+                      className="w-full"
+                    />
                   </div>
+                ) : (
+                  /* Non-text fields or unchanged fields - Use side-by-side comparison */
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* From Version */}
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">
+                        v{fromVersion.version_number}
+                      </div>
+                      <div className={`text-sm p-2 rounded border ${
+                        hasChanged 
+                          ? "bg-red-50 border-red-200 text-red-800" 
+                          : "bg-gray-100 border-gray-200"
+                      }`}>
+                        <code className="whitespace-pre-wrap">
+                          {formatValue(fromValue)}
+                        </code>
+                      </div>
+                    </div>
 
-                  {/* To Version */}
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">
-                      v{toVersion.version_number}
-                    </div>
-                    <div className={`text-sm p-2 rounded border ${
-                      hasChanged 
-                        ? "bg-green-50 border-green-200 text-green-800" 
-                        : "bg-gray-100 border-gray-200"
-                    }`}>
-                      <code className="whitespace-pre-wrap">
-                        {formatValue(toValue)}
-                      </code>
+                    {/* To Version */}
+                    <div>
+                      <div className="text-xs text-gray-500 mb-1">
+                        v{toVersion.version_number}
+                      </div>
+                      <div className={`text-sm p-2 rounded border ${
+                        hasChanged 
+                          ? "bg-green-50 border-green-200 text-green-800" 
+                          : "bg-gray-100 border-gray-200"
+                      }`}>
+                        <code className="whitespace-pre-wrap">
+                          {formatValue(toValue)}
+                        </code>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             );
           })}

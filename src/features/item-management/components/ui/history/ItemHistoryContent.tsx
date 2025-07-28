@@ -6,6 +6,7 @@ import { formatDateTime } from "@/lib/formatters";
 import { HISTORY_DEBUG } from "../../../config/debug";
 import { useItemManagement } from "../../../contexts/useItemManagementContext";
 import { HistoryTimelineList, HistoryItem } from "../shared";
+import DiffText from "./DiffText";
 
 interface ItemHistoryContentProps {
   itemId: string;
@@ -58,6 +59,14 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
 
   const canCompare = selectedVersions.length === 2;
   const selectedVersionData = history?.find(h => h.version_number === selectedVersion);
+
+  // Define text fields that should use diff analysis
+  const textFields = new Set(['name', 'description', 'code', 'rack', 'base_unit', 'barcode', 'manufacturer']);
+
+  // Helper function to check if field should use diff
+  const shouldUseDiff = (field: string) => {
+    return textFields.has(field);
+  };
 
   // Helper function to resolve foreign keys to readable values
   const resolveValue = (field: string, value: unknown) => {
@@ -173,20 +182,35 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
                         <div className="font-medium text-sm mb-2 capitalize">
                           {field.replace(/_/g, ' ')}
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <div className="text-xs text-gray-500 mb-1">Dari:</div>
-                            <div className="text-sm bg-red-50 border border-red-200 rounded p-2">
-                              {resolveValue(field, changes.from)}
+                        
+                        {shouldUseDiff(field) ? (
+                          /* Text fields - Use DiffText component */
+                          <div className="bg-white border border-gray-200 rounded p-3">
+                            <div className="text-xs text-gray-500 mb-2">Perubahan:</div>
+                            <DiffText 
+                              oldText={String(changes.from || '')}
+                              newText={String(changes.to || '')}
+                              mode="smart"
+                              className="w-full"
+                            />
+                          </div>
+                        ) : (
+                          /* Non-text fields - Use side-by-side comparison */
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-gray-500 mb-1">Dari:</div>
+                              <div className="text-sm bg-red-50 border border-red-200 rounded p-2">
+                                {resolveValue(field, changes.from)}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500 mb-1">Ke:</div>
+                              <div className="text-sm bg-green-50 border border-green-200 rounded p-2">
+                                {resolveValue(field, changes.to)}
+                              </div>
                             </div>
                           </div>
-                          <div>
-                            <div className="text-xs text-gray-500 mb-1">Ke:</div>
-                            <div className="text-sm bg-green-50 border border-green-200 rounded p-2">
-                              {resolveValue(field, changes.to)}
-                            </div>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     ))}
                   </div>

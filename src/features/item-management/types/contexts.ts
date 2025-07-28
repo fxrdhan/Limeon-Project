@@ -150,6 +150,10 @@ export interface EntityModalContextValue {
   comparison: {
     isOpen: boolean;
     selectedVersion?: VersionData;
+    // Dual comparison support
+    isDualMode: boolean;
+    versionA?: VersionData;
+    versionB?: VersionData;
   };
 
   // Actions
@@ -170,6 +174,8 @@ export interface EntityModalContextValue {
     openVersionDetail: (version: VersionData) => void;
     openComparison: (version: VersionData) => void;
     closeComparison: () => void;
+    openDualComparison: (versionA: VersionData, versionB: VersionData) => void;
+    flipVersions: () => void;
     goBack: () => void;
   };
 }

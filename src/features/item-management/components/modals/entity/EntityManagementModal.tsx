@@ -47,6 +47,10 @@ const EntityManagementModal: React.FC<AddEditModalProps> = ({
           name: initialData?.name || '',
           description: initialData?.description || ''
         }}
+        isDualMode={contextValue.comparison.isDualMode}
+        versionA={contextValue.comparison.versionA}
+        versionB={contextValue.comparison.versionB}
+        onFlipVersions={contextValue.uiActions.flipVersions}
       />
     </EntityModalProvider>
   );
