@@ -28,8 +28,8 @@ import {
 
 // Additional imports for Items tab
 import SearchToolbar from "@/features/shared/components/SearchToolbar";
-import ItemDataTable from "@/features/item-management/components/ItemDataTable";
-import { useItemGridColumns } from "@/features/item-management/components/ItemGridColumns";
+import { ItemDataTable } from "@/features/item-management";
+import { useItemGridColumns } from "@/features/item-management";
 
 type MasterDataType = "categories" | "types" | "units" | "items";
 type MasterDataEntity = Category | MedicineType | Unit | ItemDataType;
@@ -451,7 +451,7 @@ const ItemMasterNew = () => {
           <EntityManagementModal
             isOpen={isAddModalOpen}
             onClose={() => setIsAddModalOpen(false)}
-            onSubmit={async (formData) => {
+            onSubmit={async (formData: { name: string; description: string }) => {
               await handleModalSubmit({
                 name: String(formData.name || ""),
                 description: String(formData.description || ""),
@@ -467,7 +467,7 @@ const ItemMasterNew = () => {
             onClose={() => {
               setIsEditModalOpen(false);
             }}
-            onSubmit={async (formData) => {
+            onSubmit={async (formData: { name: string; description: string }) => {
               await handleModalSubmit({
                 name: String(formData.name || ""),
                 description: String(formData.description || ""),
