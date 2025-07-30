@@ -410,17 +410,17 @@ function detectRepeatedCharCorrection(oldText: string, newText: string): boolean
   if (newRepeatedChars.length > 0) return false;
   
   // Try to generate new text by reducing repeated chars from old text
-  let correctedText = oldText;
+  const correctedText = oldText;
   
   for (const repeated of repeatedChars) {
     const pattern = new RegExp(`${escapeRegex(repeated.char)}{3,}`, 'g');
     
     // Try reducing to 1 character
-    let candidate1 = correctedText.replace(pattern, repeated.char);
+    const candidate1 = correctedText.replace(pattern, repeated.char);
     if (candidate1 === newText) return true;
     
     // Try reducing to 2 characters (for legitimate doubles)
-    let candidate2 = correctedText.replace(pattern, repeated.char.repeat(2));
+    const candidate2 = correctedText.replace(pattern, repeated.char.repeat(2));
     if (candidate2 === newText) return true;
   }
   

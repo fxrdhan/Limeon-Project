@@ -1,19 +1,25 @@
-// Main component export
-export { default as ItemManagementModal } from "./components/ItemManagementModal";
+// BACKWARD COMPATIBILITY - Keep old interface while having new structure underneath
 
-// Entity component exports
-export { EntityManagementModal } from "./components/modals";
+// Main component exports (compatibility)
+export { default as ItemManagementModal } from "./presentation/templates/item/ItemManagementModal";
+export { EntityManagementModal } from "./presentation/templates/entity";
+
+// Component exports for external usage
+export { ItemDataTable } from "./presentation/organisms";
+export { useItemGridColumns } from "./application/hooks/ui";
+
+// Atomic design components available for optional usage
 
 // Context exports
-export { ItemManagementProvider } from "./contexts/ItemManagementContext";
-export { useItemManagement } from "./contexts/useItemManagementContext";
-export { EntityModalProvider, useEntityModal } from "./contexts/EntityModalContext";
+export { ItemManagementProvider } from "./shared/contexts/ItemFormContext";
+export { useItemManagement } from "./shared/contexts/useItemFormContext";
+export { EntityModalProvider, useEntityModal } from "./shared/contexts/EntityModalContext";
 
-// Hook exports
-export { useAddItemForm } from "./hooks/useItemManagement";
-export { useItemFormValidation } from "./hooks/useItemFormValidation";
-export { useUnitConversion } from "./hooks/unitConversion";
-export { useEntityModalLogic } from "./hooks/useEntityModalLogic";
+// Hook exports (backward compatible)
+export { useAddItemForm } from "./application/hooks/core/useItemCrud";
+export { useItemFormValidation } from "./application/hooks/form/useItemValidation";
+export { useUnitConversion } from "./application/hooks/utils/useUnitConversion";
+export { useEntityModalLogic } from "./application/hooks/entity/useEntityModalLogic";
 
 // Type exports
 export type {
@@ -21,18 +27,18 @@ export type {
   ItemManagementModalProps,
   ItemManagementContextValue,
   UnitConversion,
-} from "./types";
+} from "./shared/types";
 
-// Utility exports
+// Utility exports (backward compatible)
 export {
   generateTypeCode,
   generateUnitCode,
   generateCategoryCode,
-} from "./utils/itemCodeGeneration";
+} from "./domain/use-cases/GenerateItemCode";
 export {
   calculateProfitPercentage,
   calculateSellPriceFromMargin,
-} from "./utils/priceCalculations";
+} from "./shared/utils/PriceCalculator";
 
-// Constant exports
+// Constants
 export { CACHE_KEY, DEFAULT_MIN_STOCK } from "./constants";
