@@ -59,7 +59,7 @@ This project is built with:
 -   **Database:** [Supabase](https://supabase.com/database)
 -   **Serverless Backend:** [Supabase Edge Functions](https://supabase.com/edge-functions)
 -   **Storage:** [Supabase Storage](https://supabase.com/storage)
--   **Caching:** [Upstash Redis](https://upstash.com/)
+-   **Server Side Caching:** [Upstash Redis](https://upstash.com/)
 
 ---
 
