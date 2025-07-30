@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { createCharacterDiff, createWordDiff, createSmartDiff, DiffSegment } from "@/utils/diff";
+import React, { useState, useEffect, useRef } from "react";
+import { DiffSegment, diffCache } from "@/utils/diff";
 import { analyzeDiff } from "@/services/api/diff.service";
 import { ComparisonSkeleton } from "../atoms";
 
@@ -21,53 +21,92 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
   const [segments, setSegments] = useState<DiffSegment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+
+  // Create unique key for current inputs
+  const inputKey = `${oldText}|||${newText}`;
 
   useEffect(() => {
+    mountedRef.current = true; // Reset mounted status
+
     const computeDiff = async () => {
-      // Reset state
-      setError(null);
-      setIsLoading(true);
+      console.log(`🔍 Computing diff for: ${inputKey.substring(0, 30)}...`);
+
+      // L1 Cache check first
+      const cachedResult = diffCache.get(oldText, newText);
+      if (cachedResult) {
+        console.log('🚀 L1 Cache HIT');
+        if (mountedRef.current) {
+          setSegments(cachedResult);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      // Start loading
+      if (mountedRef.current) {
+        setError(null);
+        setIsLoading(true);
+      }
 
       try {
-        if (mode === "smart") {
-          // Try server-side diff analysis first
-          try {
+        // Server request dengan deduplication
+        const segments = await diffCache.getOrCreatePendingRequest(
+          oldText,
+          newText,
+          async () => {
+            console.log('📡 Making server request...');
             const result = await analyzeDiff(oldText, newText);
-            setSegments(result.segments);
-            console.log(`✅ Server-side diff completed in ${result.meta.processingTime}ms ${result.meta.fromCache ? '(cached)' : '(computed)'}`);
-            return;
-          } catch (serverError) {
-            console.warn('Server-side diff failed, falling back to client-side:', serverError);
-            setError('Server analysis failed, using local processing');
-            
-            // Fallback to client-side
-            const clientSegments = createSmartDiff(oldText, newText);
-            setSegments(clientSegments);
-            return;
+            console.log(`✅ Server response: ${result.meta.processingTime}ms ${result.meta.fromCache ? '(cached)' : '(computed)'}`);
+            return result.segments;
           }
+        );
+
+        console.log(`📦 Received ${segments?.length || 0} segments`);
+
+        // Update state jika component masih mounted
+        if (mountedRef.current) {
+          console.log('✅ Updating UI state');
+          setSegments(segments || []);
+          diffCache.set(oldText, newText, segments || []);
+        } else {
+          console.log('⏭️ Component unmounted - skipping UI update');
+          // Still cache the result for future use
+          diffCache.set(oldText, newText, segments || []);
         }
 
-        // Client-side processing for character/word modes or smart fallback
-        const clientSegments = 
-          mode === "character"
-            ? createCharacterDiff(oldText, newText)
-            : mode === "word"
-            ? createWordDiff(oldText, newText)
-            : createSmartDiff(oldText, newText);
-        
-        setSegments(clientSegments);
-      } catch (error) {
-        console.error('Diff computation failed:', error);
-        setError('Failed to compute differences');
-        // Show unchanged text as fallback
-        setSegments([{ type: 'unchanged', text: newText }]);
+      } catch (serverError) {
+        console.error('❌ Server request failed:', serverError);
+        if (mountedRef.current) {
+          setError('Tidak dapat menerima hasil komputasi. Coba lagi nanti.');
+          setSegments([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (mountedRef.current) {
+          setIsLoading(false);
+        }
       }
     };
 
     computeDiff();
-  }, [oldText, newText, mode]);
+
+    // Cleanup: mark as unmounted
+    return () => {
+      console.log(`🧹 Cleanup: unmounting for ${inputKey.substring(0, 30)}...`);
+      mountedRef.current = false;
+    };
+  }, [oldText, newText, inputKey]);
+
+  // Error state
+  if (error) {
+    return (
+      <div className={`text-red-600 text-sm ${className}`}>
+        <span className="inline-flex items-center gap-1">
+          ⚠️ {error}
+        </span>
+      </div>
+    );
+  }
 
   // Loading state
   if (isLoading) {
@@ -78,10 +117,7 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
     );
   }
 
-  // Error state (still show the diff with warning)
-  const showError = error && mode === "smart";
-
-  // Helper function to get segment styling with flip support for colors only
+  // Helper function to get segment styling with flip support
   const getSegmentStyle = (type: 'added' | 'removed' | 'unchanged') => {
     if (type === 'unchanged') {
       return {
@@ -91,7 +127,6 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
       };
     }
     
-    // Flip logic: hanya balik warna highlight, data tetap sama
     const isAddedType = type === 'added';
     const shouldShowGreen = isFlipped ? !isAddedType : isAddedType;
     
@@ -110,13 +145,9 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
     }
   };
 
+  // Normal diff display
   return (
     <span className={`font-mono text-sm ${className}`}>
-      {showError && (
-        <span className="text-xs text-amber-600 block mb-1" title={error || ''}>
-          ⚠️ Fallback mode
-        </span>
-      )}
       {segments.map((segment, index) => {
         const segmentStyle = getSegmentStyle(segment.type as 'added' | 'removed' | 'unchanged');
         

@@ -99,12 +99,14 @@ const VersionDiff: React.FC<LocalVersionDiffProps> = ({
                     <div className="text-xs text-gray-500 mb-2">
                       Perubahan v{fromVersion.version_number} → v{toVersion.version_number}:
                     </div>
-                    <DiffText 
-                      oldText={formatValue(fromValue)}
-                      newText={formatValue(toValue)}
-                      mode="smart"
-                      className="w-full"
-                    />
+                    <div className="bg-gray-50 rounded-md p-2 min-h-[2rem] flex items-center">
+                      <DiffText 
+                        oldText={formatValue(fromValue)}
+                        newText={formatValue(toValue)}
+                        mode="smart"
+                        className="w-full"
+                      />
+                    </div>
                   </div>
                 ) : (
                   /* Non-text fields or unchanged fields - Use side-by-side comparison */

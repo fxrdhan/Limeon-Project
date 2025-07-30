@@ -334,12 +334,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               <div className="text-xs font-medium text-yellow-700 mb-1">
                                 Nama:
                               </div>
-                              <DiffText
-                                oldText={originalData?.originalLeftName || compData.leftName}
-                                newText={originalData?.originalRightName || compData.rightName}
-                                className="text-sm"
-                                isFlipped={isFlipped}
-                              />
+                              <div className="bg-gray-50 rounded p-2">
+                                <DiffText
+                                  oldText={originalData?.originalLeftName || compData.leftName}
+                                  newText={originalData?.originalRightName || compData.rightName}
+                                  className="text-sm"
+                                  isFlipped={isFlipped}
+                                />
+                              </div>
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -356,12 +358,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               <div className="text-xs font-medium text-yellow-700 mb-1">
                                 Deskripsi:
                               </div>
-                              <DiffText
-                                oldText={originalData?.originalLeftDescription || compData.leftDescription}
-                                newText={originalData?.originalRightDescription || compData.rightDescription}
-                                className="text-sm leading-relaxed"
-                                isFlipped={isFlipped}
-                              />
+                              <div className="bg-gray-50 rounded p-2">
+                                <DiffText
+                                  oldText={originalData?.originalLeftDescription || compData.leftDescription}
+                                  newText={originalData?.originalRightDescription || compData.rightDescription}
+                                  className="text-sm leading-relaxed"
+                                  isFlipped={isFlipped}
+                                />
+                              </div>
                             </motion.div>
                           )}
                         </AnimatePresence>

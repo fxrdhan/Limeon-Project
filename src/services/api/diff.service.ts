@@ -32,49 +32,56 @@ export interface DiffAnalysisRequest {
 }
 
 /**
- * Analyze text differences using the server-side diff analyzer
+ * Analyze text differences using server-only computation
+ * ❌ NO fallback - pure server dependency for IP protection
  */
 export async function analyzeDiff(oldText: string, newText: string): Promise<DiffAnalysisResult> {
+  // Input validation
+  if (!oldText || !newText || typeof oldText !== 'string' || typeof newText !== 'string') {
+    throw new Error('Invalid input: both oldText and newText must be non-empty strings');
+  }
+
   try {
     const { data, error } = await supabase.functions.invoke('diff-analyzer', {
-      body: {
-        oldText,
-        newText,
-      },
+      body: { oldText, newText },
     });
 
     if (error) {
-      console.error('Edge function error:', error);
-      throw new Error(`Diff analysis failed: ${error.message}`);
+      console.error('Server computation error:', error);
+      throw new Error(`Server computation failed: ${error.message}`);
     }
 
-    if (!data || !data.segments) {
-      throw new Error('Invalid response from diff analyzer');
+    if (!data || !data.segments || !Array.isArray(data.segments)) {
+      console.error('Invalid server response:', data);
+      throw new Error('Invalid response from computation server');
+    }
+
+    // Validate segments structure
+    const isValidSegments = data.segments.every((segment: any) => 
+      segment && 
+      typeof segment === 'object' && 
+      typeof segment.type === 'string' && 
+      ['unchanged', 'added', 'removed'].includes(segment.type) &&
+      typeof segment.text === 'string'
+    );
+
+    if (!isValidSegments) {
+      throw new Error('Invalid segment structure from server');
     }
 
     return data as DiffAnalysisResult;
-  } catch (error) {
-    console.error('Failed to analyze diff:', error);
     
-    // Re-throw with more context
+  } catch (error) {
+    console.error('Diff analysis failed:', error);
+    
+    // ❌ NO fallback computation - throw error for client to handle
     if (error instanceof Error) {
-      throw new Error(`Diff analysis service error: ${error.message}`);
+      throw new Error(`Computation service unavailable: ${error.message}`);
     } else {
-      throw new Error('Unknown error occurred during diff analysis');
+      throw new Error('Computation service unavailable: Unknown error');
     }
   }
 }
 
-/**
- * Check if diff analyzer service is available
- */
-export async function checkDiffServiceHealth(): Promise<boolean> {
-  try {
-    // Simple test with identical strings (should be fast)
-    const result = await analyzeDiff('test', 'test');
-    return result.segments.length === 1 && result.segments[0].type === 'unchanged';
-  } catch (error) {
-    console.warn('Diff service health check failed:', error);
-    return false;
-  }
-}
+// ❌ REMOVED: checkDiffServiceHealth - tidak diperlukan untuk server-only approach
+// Service health monitoring dilakukan di server-side edge function
