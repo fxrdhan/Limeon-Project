@@ -4,19 +4,14 @@ PharmaSys is a modern web-based application designed to streamline pharmacy and 
 
 ## Key Features
 
--   **Interactive Dashboard:** Get a quick overview of key metrics and activities.
--   **Master Data Management:** Centralized control over essential data:
-    -   Items, Categories, Units, and Types
-    -   Suppliers, Patients, and Doctors
--   **Purchase Management:**
-    -   Automatic invoice data extraction from images.
-    -   Manage purchase orders and track their status.
-    -   View and print purchase details.
--   **Authentication:** Secure login for authorized personnel.
--   **User Profile Management:** Users can manage their own profile information.
--   **Real-time Data Synchronization:** Data is automatically updated across all active user sessions. When one user makes changes, others see updates instantly without needing to refresh the page. This is combined with user presence features to show who is currently online.
--   **Advanced Version Control & Comparison:** Intelligent history tracking with smart diff algorithms for comparing different versions of data entries. Features adaptive text comparison that automatically chooses between character-level and word-level diff based on content context.
--   **Performance Optimized:** Built with code-splitting and lazy loading to ensure fast loading times, enhanced with Redis caching for server-side operations.
+-   **Interactive Dashboard:** Overview of key metrics and activities
+-   **Master Data Management:** Items, Categories, Units, Types, Suppliers, Patients, and Doctors
+-   **Purchase Management:** Invoice data extraction from images, purchase order tracking, and reporting
+-   **Authentication & User Management:** Secure login and profile management
+-   **Real-time Data Synchronization:** Live updates across user sessions with presence tracking
+-   **Version Control System:** Complete entity history tracking with versioning and restoration capabilities
+-   **Text Comparison Engine:** Advanced diff analysis with general pharmaceutical terminology support
+-   **Performance Optimized:** Code-splitting, lazy loading, and multi-layer caching (client + Redis)
 ---
 
 ## Tech Stack
@@ -71,12 +66,12 @@ PharmaSys leverages the full power of [Supabase](https://supabase.com/) as its b
 -   **Authentication:** Manages user authentication and authorization, ensuring secure access to the application.
 -   **User Presence:** Uses Supabase Realtime to track which users are currently active in the application, displaying online user count in real-time.
 -   **Storage:** Used for handling file uploads, specifically for invoice images that are then processed.
--   **Edge Functions:** Serverless functions that execute complex backend logic. Main functions include:
-    -   `extract-invoice`: Processes uploaded invoice images to extract data.
-    -   `confirm-invoice`: Stores extracted invoice data to the database.
-    -   `regenerate-invoice`: Reprocesses existing invoices from storage.
-    -   `diff-analyzer`: Performs intelligent text comparison with smart adaptive algorithms, supporting both character-level and word-level diff with Redis caching for performance.
-    -   `metrics`: Collects and reports function usage and performance.
+-   **Edge Functions:** Serverless functions for backend logic:
+    -   `extract-invoice`: Process invoice images to extract data
+    -   `confirm-invoice`: Store extracted invoice data
+    -   `regenerate-invoice`: Reprocess existing invoices
+    -   `diff-analyzer`: Text comparison with general pharmaceutical support and Redis caching
+    -   `metrics`: Function usage and performance tracking
 
 ### Database Migrations
 
@@ -84,17 +79,26 @@ All database schema changes (e.g., adding tables or columns) are managed through
 
 **Important:** The `supabase/**` directory is used for data export and local development state; it should not be modified directly for schema migrations.
 
-### Diff Analyzer & Caching System
+### Version Control & Diff Analysis System
 
-The application includes an advanced text comparison system powered by server-side processing and Redis caching:
+**Entity History:**
+- Automatic versioning for all entity changes (INSERT/UPDATE/DELETE)
+- Complete data snapshots stored for each version
+- Field-level change tracking and version restoration
+- Database triggers for automated history capture
 
--   **Smart Adaptive Algorithm:** Automatically chooses between character-level and word-level diff based on content analysis (abbreviation expansions, punctuation changes, number/unit changes, word replacements).
--   **Server-side Processing:** The `diff-analyzer` edge function handles complex text comparison operations with optimized performance.
--   **Redis Caching:** Upstash Redis provides high-performance caching for diff results, reducing computation time for repeated comparisons.
--   **Client-side Fallback:** If server-side processing fails, the application gracefully falls back to client-side diff computation.
--   **Pattern Detection:** Intelligent detection of different text change patterns to optimize highlighting accuracy.
+**Diff Analysis Engine:**
+- Heuristic algorithm for optimal diff strategy selection (character vs word level)
+- Pharmaceutical terminology support
+- Pattern detection for abbreviations, numbers, punctuation, and typo corrections
+- Server-side processing via `diff-analyzer` edge function
+- Multi-layer caching: client-side + Redis with request deduplication
 
-This system is primarily used in the item management module for version comparison and history tracking.
+**User Interface:**
+- Dual version comparison with side-by-side view
+- Visual diff highlighting with color coding
+- Interactive timeline browser
+- One-click version restoration
 
 ---
 
@@ -159,24 +163,29 @@ For help with these scripts, you can run `yarn <script-name>:help`.
 
 ## Project Structure
 
-The source code is located in the `src/` directory and follows feature-based organization.
+The source code follows feature-based organization with Clean Architecture principles.
 
 ```
 src/
-├── components/      # Reusable UI components (Alerts, Dialogs, Loaders, etc.)
-├── hooks/           # Custom React hooks
-├── layout/          # Main application layout (sidebar, header)
-├── lib/             # Library configurations (e.g., Supabase client)
-├── pages/           # Page components, organized by feature
-│   ├── auth/
-│   ├── dashboard/
-│   ├── master-data/
-│   └── ...
-├── services/        # API call logic for interacting with Supabase
-├── store/           # Zustand state management stores
-├── types/           # Global TypeScript type definitions
-├── utils/           # Utility functions
-├── App.css          # Main stylesheet for Tailwind CSS
-├── App.tsx          # Root component with routing setup
-└── main.tsx         # Application entry point
+├── components/      # Reusable UI components
+├── hooks/           # Global custom React hooks
+├── layout/          # Main application layout
+├── lib/             # Library configurations
+├── pages/           # Page components by feature
+├── services/        # API logic for Supabase
+├── store/           # Zustand state management
+├── types/           # Global TypeScript definitions
+├── utils/           # Global utility functions
+└── features/        # Feature modules
+    └── item-management/  # Entity management with version control
+        ├── domain/       # Business logic (entities, use-cases)
+        ├── application/  # Hooks (core, entity, form, ui, utils)
+        ├── presentation/ # UI components (atoms, molecules, organisms, templates)
+        └── shared/       # Contexts, types, utilities
 ```
+
+**Architecture Benefits:**
+- Clean separation of concerns
+- Atomic design component hierarchy
+- Testable business logic
+- Scalable feature organization
