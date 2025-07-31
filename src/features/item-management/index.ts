@@ -30,11 +30,8 @@ export type {
 } from "./shared/types";
 
 // Utility exports (backward compatible)
-export {
-  generateTypeCode,
-  generateUnitCode,
-  generateCategoryCode,
-} from "./domain/use-cases/GenerateItemCode";
+// Item code generation functions removed - migrated to edge function
+// Use /supabase/edge-functions/generate-item-code/ instead
 export {
   calculateProfitPercentage,
   calculateSellPriceFromMargin,

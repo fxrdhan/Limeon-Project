@@ -160,18 +160,54 @@ export const useAddItemMutations = ({
       isEditMode: boolean;
       itemId?: string;
     }) => {
+      // Generate item code if missing (for new items) or explicitly requested
+      let finalFormData = { ...formData };
+      
+      if (!isEditMode || !finalFormData.code) {
+        // Generate code for new items or when code is empty
+        if (finalFormData.type_id && finalFormData.unit_id && finalFormData.category_id) {
+          try {
+            const { data, error } = await supabase.functions.invoke('generate-item-code', {
+              body: {
+                type_id: finalFormData.type_id,
+                unit_id: finalFormData.unit_id,
+                category_id: finalFormData.category_id,
+                exclude_item_id: isEditMode && itemId ? itemId : undefined
+              }
+            });
+
+            if (error) {
+              throw new Error(`Code generation failed: ${error.message}`);
+            }
+
+            const response = data as { success: boolean; data?: { code: string }; error?: string };
+            
+            if (!response.success) {
+              throw new Error(response.error || 'Failed to generate item code');
+            }
+
+            finalFormData.code = response.data!.code;
+          } catch (error) {
+            console.error("Error generating item code during save:", error);
+            throw new Error("Gagal generate kode item. Silakan coba lagi.");
+          }
+        } else {
+          throw new Error("Silakan lengkapi jenis, satuan, dan kategori item terlebih dahulu.");
+        }
+      }
+
       if (isEditMode && itemId) {
         // Update existing item
-        const itemUpdateData = prepareItemData(formData, conversions, baseUnit, true);
+        const itemUpdateData = prepareItemData(finalFormData, conversions, baseUnit, true);
         const { error: updateError } = await supabase
           .from("items")
           .update(itemUpdateData)
           .eq("id", itemId);
         if (updateError) throw updateError;
-        return { action: "update", itemId };
+        return { action: "update", itemId, generatedCode: finalFormData.code };
       } else {
         // Create new item
-        const mainItemData = prepareItemData(formData, conversions, baseUnit, false);
+        const mainItemData = prepareItemData(finalFormData, conversions, baseUnit, false);
         const { data: insertedItem, error: mainError } = await supabase
           .from("items")
           .insert(mainItemData)
@@ -181,10 +217,16 @@ export const useAddItemMutations = ({
         if (!insertedItem) {
           throw new Error("Gagal mendapatkan ID item baru setelah insert.");
         }
-        return { action: "create", itemId: insertedItem.id };
+        return { action: "create", itemId: insertedItem.id, generatedCode: finalFormData.code };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      // Show success message with generated code
+      if (result.generatedCode) {
+        const actionText = result.action === "create" ? "dibuat" : "diperbarui";
+        alert(`Item berhasil ${actionText} dengan kode: ${result.generatedCode}`);
+      }
+
       // Invalidate and refetch items
       queryClient.invalidateQueries({
         queryKey: ["items"],
