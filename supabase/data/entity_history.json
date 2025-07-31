@@ -2314,5 +2314,214 @@
       }
     },
     "change_description": null
+  },
+  {
+    "id": "272f62ae-4f61-4d6c-8b97-ec891b5bdf37",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 10,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-27T11:30:52.434Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "ada ini",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-27T11:30:52.434283+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": [
+        {
+          "unit_name": "Emulsi",
+          "base_price": 111,
+          "sell_price": 111,
+          "to_unit_id": "aebc351d-0608-4643-ac0a-517bfd73aa7a",
+          "conversion_rate": 2
+        }
+      ]
+    },
+    "changed_fields": {
+      "unit_conversions": {
+        "to": "[{\"unit_name\": \"Emulsi\", \"base_price\": 111, \"sell_price\": 111, \"to_unit_id\": \"aebc351d-0608-4643-ac0a-517bfd73aa7a\", \"conversion_rate\": 2}]",
+        "from": "[]"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "fd3a11f6-35f7-4002-a4c0-f58d3c12d2d5",
+    "entity_table": "items",
+    "entity_id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "version_number": 11,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-27T13:10:48.180Z",
+    "entity_data": {
+      "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+      "code": "TBAB01",
+      "name": "ada ini",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "1c2068a7-a66c-4a91-820e-354588330ada",
+      "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+      "base_unit": "Box",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-07-17T19:04:32.982085+00:00",
+      "sell_price": 222,
+      "updated_at": "2025-07-27T13:10:48.18059+00:00",
+      "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": null,
+      "has_expiry_date": false,
+      "unit_conversions": [
+        {
+          "unit_name": "Emulsi",
+          "base_price": 111,
+          "sell_price": 111,
+          "to_unit_id": "aebc351d-0608-4643-ac0a-517bfd73aa7a",
+          "conversion_rate": 2
+        }
+      ]
+    },
+    "changed_fields": {
+      "type_id": {
+        "to": "1c2068a7-a66c-4a91-820e-354588330ada",
+        "from": "210574b1-5f18-40dc-a041-3cf33b8f3307"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "948852ca-0255-42f1-8545-df4ccfa3dc7c",
+    "entity_table": "item_units",
+    "entity_id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "version_number": 15,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-27T13:41:59.549Z",
+    "entity_data": {
+      "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+      "name": "Ampul",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-27T13:41:59.549361+00:00",
+      "description": "Sediaan steril dalam wadah kaca tertutup"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan steril dalam wadah kaca tertutup",
+        "from": "Sediaan steril dalam wadah kaca tertutup."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "e963f92a-d528-4d95-8436-ddda6dbdefd1",
+    "entity_table": "item_units",
+    "entity_id": "243e80e0-917b-4549-b78c-3c1d27e4ccc4",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-27T15:23:43.945Z",
+    "entity_data": {
+      "id": "243e80e0-917b-4549-b78c-3c1d27e4ccc4",
+      "name": "Kaplet",
+      "created_at": "2025-03-30T08:29:38.937463+00:00",
+      "updated_at": "2025-07-27T15:23:43.945896+00:00",
+      "description": "Tablet yang dibungkus dgn lapisan gula dan berwarna yang berguna utk menjaga kelembapan serta kontaminasi ketika di lambung"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Tablet yang dibungkus dgn lapisan gula dan berwarna yang berguna utk menjaga kelembapan serta kontaminasi ketika di lambung",
+        "from": "Tablet yang dibungkus dengan lapisan gula dan berwarna yang berguna dalam menjaga kelembapan serta kontaminasi ketika di lambung."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "1bb99252-425f-49fd-a733-eeeb79687756",
+    "entity_table": "item_units",
+    "entity_id": "243e80e0-917b-4549-b78c-3c1d27e4ccc4",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-27T15:24:26.967Z",
+    "entity_data": {
+      "id": "243e80e0-917b-4549-b78c-3c1d27e4ccc4",
+      "name": "Kaplet",
+      "created_at": "2025-03-30T08:29:38.937463+00:00",
+      "updated_at": "2025-07-27T15:24:26.967705+00:00",
+      "description": "Tablet yang dibungkus dengan lapisan gula dan berwarna yang berguna untuk menjaga kelembapan serta kontaminasi ketika di lambung"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Tablet yang dibungkus dengan lapisan gula dan berwarna yang berguna untuk menjaga kelembapan serta kontaminasi ketika di lambung",
+        "from": "Tablet yang dibungkus dgn lapisan gula dan berwarna yang berguna utk menjaga kelembapan serta kontaminasi ketika di lambung"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "160d6cfa-2c88-4c8a-8025-d72b1cf9ffff",
+    "entity_table": "item_units",
+    "entity_id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-28T00:51:01.029Z",
+    "entity_data": {
+      "id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
+      "name": "Kapsul",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-28T00:51:01.029454+00:00",
+      "description": "Sediaan padat bercangkang keras atau lunak"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan padat bercangkang keras atau lunak",
+        "from": "Sediaan padat dengan cangkang keras atau lunak"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "dda24a19-bd9f-496f-8442-f483594271bb",
+    "entity_table": "item_units",
+    "entity_id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-07-28T00:51:10.176Z",
+    "entity_data": {
+      "id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
+      "name": "Kapsul",
+      "created_at": "2025-03-26T14:57:20.368076+00:00",
+      "updated_at": "2025-07-28T00:51:10.176541+00:00",
+      "description": "Sediaan padat dengan cangkang keras atau lunak"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan padat dengan cangkang keras atau lunak",
+        "from": "Sediaan padat bercangkang keras atau lunak"
+      }
+    },
+    "change_description": null
   }
 ]

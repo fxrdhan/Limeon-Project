@@ -1,5 +1,5 @@
 -- Table Definition: entity_history
--- Exported from Supabase on: 2025-07-27T11:16:32.225Z
+-- Exported from Supabase on: 2025-07-30T03:05:46.370Z
 
 CREATE TABLE public.entity_history (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

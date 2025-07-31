@@ -14,13 +14,6 @@
     "description": null
   },
   {
-    "id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
-    "name": "Kapsul",
-    "created_at": "2025-03-26T14:57:20.368Z",
-    "updated_at": "2025-03-30T08:31:02.468Z",
-    "description": "Sediaan padat dengan cangkang keras atau lunak"
-  },
-  {
     "id": "b822686b-f7ec-46d1-8b40-fb69d8bea2f7",
     "name": "Sirup",
     "created_at": "2025-03-30T08:29:38.937Z",
@@ -91,13 +84,6 @@
     "description": "Sediaan padat berbentuk bulat, oval, atau persegi"
   },
   {
-    "id": "243e80e0-917b-4549-b78c-3c1d27e4ccc4",
-    "name": "Kaplet",
-    "created_at": "2025-03-30T08:29:38.937Z",
-    "updated_at": "2025-03-30T08:34:44.259Z",
-    "description": "Tablet yang dibungkus dengan lapisan gula dan berwarna yang berguna dalam menjaga kelembapan serta kontaminasi ketika di lambung."
-  },
-  {
     "id": "827d5b4f-a057-443f-bf40-8f50bc336857",
     "name": "Gel",
     "created_at": "2025-03-30T08:29:38.937Z",
@@ -126,6 +112,27 @@
     "description": "Alat untuk menghirup obat dalam bentuk aerosol"
   },
   {
+    "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
+    "name": "Ampul",
+    "created_at": "2025-03-26T14:57:20.368Z",
+    "updated_at": "2025-07-27T13:41:59.549Z",
+    "description": "Sediaan steril dalam wadah kaca tertutup"
+  },
+  {
+    "id": "243e80e0-917b-4549-b78c-3c1d27e4ccc4",
+    "name": "Kaplet",
+    "created_at": "2025-03-30T08:29:38.937Z",
+    "updated_at": "2025-07-27T15:24:26.967Z",
+    "description": "Tablet yang dibungkus dengan lapisan gula dan berwarna yang berguna untuk menjaga kelembapan serta kontaminasi ketika di lambung"
+  },
+  {
+    "id": "05990da0-faa0-4f5e-92e9-bc1f2ef4defc",
+    "name": "Kapsul",
+    "created_at": "2025-03-26T14:57:20.368Z",
+    "updated_at": "2025-07-28T00:51:10.176Z",
+    "description": "Sediaan padat dengan cangkang keras atau lunak"
+  },
+  {
     "id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
     "name": "Box",
     "created_at": "2025-04-18T12:38:28.029Z",
@@ -145,12 +152,5 @@
     "created_at": "2025-04-18T12:38:23.494Z",
     "updated_at": "2025-07-26T12:54:02.594Z",
     "description": ""
-  },
-  {
-    "id": "1713eeb1-8ca9-4302-be6a-1e9ccde39cf1",
-    "name": "Ampul",
-    "created_at": "2025-03-26T14:57:20.368Z",
-    "updated_at": "2025-07-26T13:22:32.594Z",
-    "description": "Sediaan steril dalam wadah kaca tertutup."
   }
 ]

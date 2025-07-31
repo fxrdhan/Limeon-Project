@@ -1,5 +1,5 @@
 -- Table Definition: secrets
--- Exported from Supabase on: 2025-07-27T11:16:32.225Z
+-- Exported from Supabase on: 2025-07-30T03:05:46.373Z
 
 CREATE TABLE vault.secrets (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
