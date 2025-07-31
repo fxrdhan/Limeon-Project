@@ -1,5 +1,5 @@
 -- Function: process_e_invoice_item
--- Exported from Supabase on: 2025-07-27T11:16:32.138Z
+-- Exported from Supabase on: 2025-07-30T03:05:46.281Z
 
 CREATE OR REPLACE FUNCTION public.process_e_invoice_item()
  RETURNS trigger

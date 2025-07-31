@@ -1,5 +1,5 @@
 -- Table Definition: decrypted_secrets
--- Exported from Supabase on: 2025-07-27T11:16:32.225Z
+-- Exported from Supabase on: 2025-07-30T03:05:46.372Z
 
 CREATE TABLE vault.decrypted_secrets (
   id uuid,

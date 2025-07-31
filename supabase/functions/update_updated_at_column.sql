@@ -1,5 +1,5 @@
 -- Function: update_updated_at_column
--- Exported from Supabase on: 2025-07-27T11:16:32.139Z
+-- Exported from Supabase on: 2025-07-30T03:05:46.283Z
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger

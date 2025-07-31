@@ -1,5 +1,36 @@
 [
   {
+    "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
+    "name": "ada ini",
+    "sell_price": "222.00",
+    "stock": 0,
+    "min_stock": 10,
+    "description": null,
+    "created_at": "2025-07-17T19:04:32.982Z",
+    "updated_at": "2025-07-27T13:10:48.180Z",
+    "is_active": true,
+    "code": "TBAB01",
+    "rack": null,
+    "has_expiry_date": false,
+    "is_medicine": true,
+    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
+    "type_id": "1c2068a7-a66c-4a91-820e-354588330ada",
+    "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
+    "base_unit": "Box",
+    "base_price": "222.00",
+    "unit_conversions": [
+      {
+        "unit_name": "Emulsi",
+        "base_price": 111,
+        "sell_price": 111,
+        "to_unit_id": "aebc351d-0608-4643-ac0a-517bfd73aa7a",
+        "conversion_rate": 2
+      }
+    ],
+    "barcode": null,
+    "manufacturer": null
+  },
+  {
     "id": "1509eb04-c8ac-453b-90e6-e1433ce46f6b",
     "name": "Contoh dua satuan turunan",
     "sell_price": "30000.00",
@@ -34,29 +65,6 @@
         "conversion_rate": 10
       }
     ],
-    "barcode": null,
-    "manufacturer": null
-  },
-  {
-    "id": "09e2626d-485d-4ac8-a936-f1cd1aabf422",
-    "name": "ada ini",
-    "sell_price": "222.00",
-    "stock": 0,
-    "min_stock": 10,
-    "description": null,
-    "created_at": "2025-07-17T19:04:32.982Z",
-    "updated_at": "2025-07-26T12:42:15.838Z",
-    "is_active": true,
-    "code": "TBAB01",
-    "rack": null,
-    "has_expiry_date": false,
-    "is_medicine": true,
-    "category_id": "0d1d6848-96b5-448e-a136-3aba8a9bbbca",
-    "type_id": "210574b1-5f18-40dc-a041-3cf33b8f3307",
-    "unit_id": "bab13433-f1b8-4124-a607-2bf18fa84ee6",
-    "base_unit": "Box",
-    "base_price": "222.00",
-    "unit_conversions": [],
     "barcode": null,
     "manufacturer": null
   },

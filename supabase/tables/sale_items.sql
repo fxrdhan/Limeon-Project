@@ -1,5 +1,5 @@
 -- Table Definition: sale_items
--- Exported from Supabase on: 2025-07-27T11:16:32.225Z
+-- Exported from Supabase on: 2025-07-30T03:05:46.372Z
 
 CREATE TABLE public.sale_items (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
