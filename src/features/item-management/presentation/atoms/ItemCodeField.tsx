@@ -21,6 +21,7 @@ export default function ItemCodeField({ code, onRegenerate }: ItemCodeFieldProps
         <Input
           name="code"
           value={code}
+          placeholder={code ? "" : "Kode akan di-generate otomatis saat simpan"}
           readOnly={true}
           className={`w-full transition-all duration-200 ${isHovered ? "blur-sm" : ""}`}
         />
@@ -28,7 +29,7 @@ export default function ItemCodeField({ code, onRegenerate }: ItemCodeFieldProps
           <div
             className="absolute inset-0 flex items-center justify-center gap-1 cursor-pointer"
             onClick={onRegenerate}
-            title="Regenerate kode item dari digit terendah"
+            title="Generate kode item secara manual (opsional - otomatis saat simpan)"
           >
             <FaRedo size={16} className="text-blue-500" />
             <span className="text-sm text-blue-600 font-medium">

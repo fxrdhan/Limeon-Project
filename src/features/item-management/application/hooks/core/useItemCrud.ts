@@ -17,12 +17,8 @@ import type {
 
 import { CACHE_KEY } from "../../../constants";
 
-// Re-export utility functions for backward compatibility
-export {
-  generateTypeCode,
-  generateUnitCode,
-  generateCategoryCode,
-} from "../../../domain/use-cases/GenerateItemCode";
+// Legacy code generation functions removed - now handled by edge function
+// All item code generation logic moved to: /supabase/edge-functions/generate-item-code/
 
 export const getUnitById = async (unitName: string) => {
   try {
@@ -65,10 +61,6 @@ export const useAddItemForm = ({
     isEditMode: formState.isEditMode,
     itemId,
     formData: formState.formData,
-    initialFormData: formState.initialFormData,
-    categories: formState.categories,
-    types: formState.types,
-    units: formState.units,
     updateFormData: formState.updateFormData,
   });
 
