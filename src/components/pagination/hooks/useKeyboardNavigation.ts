@@ -3,6 +3,7 @@ import type { UseKeyboardNavigationProps } from '../types';
 
 export const useKeyboardNavigation = ({
   showFloating,
+  hideFloatingWhenModalOpen,
   selectedPageSizeIndex,
   pageSizes,
   currentPage,
@@ -13,7 +14,7 @@ export const useKeyboardNavigation = ({
 }: UseKeyboardNavigationProps) => {
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      if (!showFloating) return;
+      if (!showFloating || hideFloatingWhenModalOpen) return;
 
       switch (event.key) {
         case "ArrowUp": {
@@ -56,6 +57,7 @@ export const useKeyboardNavigation = ({
     },
     [
       showFloating,
+      hideFloatingWhenModalOpen,
       selectedPageSizeIndex,
       pageSizes,
       currentPage,
@@ -67,11 +69,11 @@ export const useKeyboardNavigation = ({
   );
 
   useEffect(() => {
-    if (showFloating) {
+    if (showFloating && !hideFloatingWhenModalOpen) {
       document.addEventListener("keydown", handleKeyDown);
       return () => {
         document.removeEventListener("keydown", handleKeyDown);
       };
     }
-  }, [showFloating, handleKeyDown]);
+  }, [showFloating, hideFloatingWhenModalOpen, handleKeyDown]);
 };

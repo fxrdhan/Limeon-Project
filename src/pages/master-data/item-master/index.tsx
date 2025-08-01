@@ -497,7 +497,6 @@ const ItemMasterNew = () => {
             }}
             isLoading={false}
             entityName={currentConfig.entityName}
-            showKodeField={true}
           />
 
           <EntityManagementModal
@@ -522,7 +521,6 @@ const ItemMasterNew = () => {
             }
             onDelete={editingItem ? () => handleDelete(editingItem) : undefined}
             isLoading={false}
-            showKodeField={true}
             isDeleting={deleteMutation.isLoading}
             entityName={currentConfig.entityName}
           />

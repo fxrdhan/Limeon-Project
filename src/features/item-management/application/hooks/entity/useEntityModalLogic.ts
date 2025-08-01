@@ -13,7 +13,6 @@ interface UseEntityModalLogicProps {
   entityName: string;
   isLoading?: boolean;
   isDeleting?: boolean;
-  showKodeField?: boolean;
 }
 
 export const useEntityModalLogic = ({
@@ -26,7 +25,6 @@ export const useEntityModalLogic = ({
   entityName,
   isLoading = false,
   isDeleting = false,
-  showKodeField = false,
 }: UseEntityModalLogicProps) => {
   const [kode, setKode] = useState("");
   const [name, setName] = useState("");
@@ -63,11 +61,8 @@ export const useEntityModalLogic = ({
 
   // Check if form is valid
   const isValid = useMemo(() => {
-    if (showKodeField) {
-      return kode.trim().length > 0 && name.trim().length > 0;
-    }
-    return name.trim().length > 0;
-  }, [kode, name, showKodeField]);
+    return kode.trim().length > 0 && name.trim().length > 0;
+  }, [kode, name]);
 
   // Form actions
   const resetForm = useCallback(() => {
@@ -118,22 +113,17 @@ export const useEntityModalLogic = ({
 
   const handleSubmit = useCallback(async () => {
     if (!isValid) {
-      const message = showKodeField ? 
-        `Kode dan nama ${entityName.toLowerCase()} tidak boleh kosong.` :
-        `Nama ${entityName.toLowerCase()} tidak boleh kosong.`;
-      alert(message);
+      alert(`Kode dan nama ${entityName.toLowerCase()} tidak boleh kosong.`);
       return;
     }
     const submitData: { id?: string; kode?: string; name: string; description: string } = { 
       id: initialData?.id, 
+      kode: kode.trim(),
       name: name.trim(), 
       description: description.trim() 
     };
-    if (showKodeField) {
-      submitData.kode = kode.trim();
-    }
     await onSubmit(submitData);
-  }, [kode, name, description, isValid, entityName, onSubmit, initialData, showKodeField]);
+  }, [kode, name, description, isValid, entityName, onSubmit, initialData]);
 
   const handleDelete = useCallback(() => {
     if (initialData?.id && onDelete) {
@@ -248,7 +238,7 @@ export const useEntityModalLogic = ({
   // Create context value
   const contextValue: EntityModalContextValue = {
     form: {
-      ...(showKodeField && { kode }),
+      kode,
       name,
       description,
       isDirty,
@@ -279,7 +269,7 @@ export const useEntityModalLogic = ({
       isFlipped: comparisonData.isFlipped,
     },
     formActions: {
-      ...(showKodeField && { setKode }),
+      setKode,
       setName,
       setDescription,
       handleSubmit,

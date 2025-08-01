@@ -48,6 +48,7 @@ const Pagination: React.FC<FloatingPaginationProps> = ({
 
   useKeyboardNavigation({
     showFloating,
+    hideFloatingWhenModalOpen,
     selectedPageSizeIndex,
     pageSizes: paginationState.pageSizes,
     currentPage,
