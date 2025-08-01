@@ -5,6 +5,7 @@ import ButtonIcon from './ButtonIcon';
 interface ButtonProps {
   displayText: string;
   titleText?: string;
+  isPlaceholder: boolean;
   isOpen: boolean;
   isClosing: boolean;
   isExpanded: boolean;
@@ -24,6 +25,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     {
       displayText,
       titleText,
+      isPlaceholder,
       isOpen,
       isClosing,
       isExpanded,
@@ -65,6 +67,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         <ButtonText
           displayText={displayText}
           titleText={titleText}
+          isPlaceholder={isPlaceholder}
           isExpanded={isExpanded}
         />
         <ButtonIcon

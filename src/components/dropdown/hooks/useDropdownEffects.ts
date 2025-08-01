@@ -29,10 +29,10 @@ export const useDropdownEffects = ({
       const selectedIndex = value
         ? filteredOptions.findIndex((option) => option.id === value)
         : -1;
-      const initialIndex = selectedIndex >= 0 ? selectedIndex : 0;
+      const initialIndex = selectedIndex >= 0 ? selectedIndex : -1;
       setHighlightedIndex(initialIndex);
 
-      const highlightedOption = filteredOptions[initialIndex];
+      const highlightedOption = initialIndex >= 0 ? filteredOptions[initialIndex] : null;
       if (highlightedOption && buttonRef.current) {
         const buttonWidth = buttonRef.current.getBoundingClientRect().width;
         const maxTextWidth = buttonWidth - DROPDOWN_CONSTANTS.BUTTON_PADDING;

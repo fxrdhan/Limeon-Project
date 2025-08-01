@@ -1,15 +1,17 @@
-import { useState, useCallback, RefObject } from 'react';
+import { useState, useCallback, useEffect, RefObject } from 'react';
 import { shouldTruncateText } from '@/utils/text';
 import { DROPDOWN_CONSTANTS } from '../../constants';
 
 interface UseButtonExpansionProps {
   selectedOption?: { id: string; name: string };
   buttonRef: RefObject<HTMLButtonElement | null>;
+  isOpen?: boolean;
 }
 
 export const useButtonExpansion = ({
   selectedOption,
   buttonRef,
+  isOpen = false,
 }: UseButtonExpansionProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -29,6 +31,20 @@ export const useButtonExpansion = ({
       setIsExpanded(false);
     }
   }, [canExpand]);
+
+  // Reset expansion when selectedOption changes or when it can't expand
+  useEffect(() => {
+    if (!canExpand()) {
+      setIsExpanded(false);
+    }
+  }, [canExpand, selectedOption]);
+
+  // Reset expansion when dropdown is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setIsExpanded(false);
+    }
+  }, [isOpen]);
 
   return {
     isExpanded,
