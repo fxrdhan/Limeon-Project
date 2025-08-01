@@ -9,6 +9,8 @@ import {
   useItems 
 } from '@/hooks/queries';
 import type { Category, MedicineType, Unit, Item } from '@/types/database';
+import type { ItemDosage } from '@/features/item-management/domain/entities/Item';
+import { useQuery } from '@tanstack/react-query';
 
 interface UseMasterDataRealtimeOptions {
   enabled?: boolean;
@@ -426,4 +428,120 @@ export const useItemsRealtime = (options?: UseMasterDataRealtimeOptions) => {
   }, []);
   
   return itemsQuery;
+};
+
+// Dosages Realtime Hook
+export const useDosagesRealtime = (options?: UseMasterDataRealtimeOptions) => {
+  const queryClient = useQueryClient();
+  const subscriptionRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  
+  // Base query for dosages
+  const dosagesQuery = useQuery<ItemDosage[]>({
+    queryKey: QueryKeys.masterData.dosages.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("item_dosages")
+        .select("id, kode, name, description, created_at, updated_at")
+        .order("kode");
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: options?.enabled ?? true,
+  });
+  
+  useEffect(() => {
+    // Always clean up existing subscription first
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe();
+      subscriptionRef.current = null;
+    }
+    
+    // Only set up new subscription if enabled
+    if (options?.enabled === false) return;
+    
+    const channel = supabase
+      .channel('realtime-dosages')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'item_dosages'
+        },
+        (payload: { eventType: string; new?: unknown; old?: unknown }) => {
+          console.log('🔔 Dosages realtime change detected:', payload);
+          
+          switch (payload.eventType) {
+            case 'INSERT': {
+              console.log('➕ New dosage inserted:', payload.new);
+              const insertKeysToInvalidate = getInvalidationKeys.masterData.dosages();
+              insertKeysToInvalidate.forEach((keySet: readonly string[]) => {
+                queryClient.invalidateQueries({ queryKey: keySet });
+              });
+              break;
+            }
+              
+            case 'UPDATE': {
+              console.log('✏️ Dosage updated:', payload.new);
+              const updatedDosage = payload.new as ItemDosage;
+              
+              queryClient.setQueryData(
+                QueryKeys.masterData.dosages.detail(updatedDosage.id), 
+                updatedDosage
+              );
+              
+              const updateKeysToInvalidate = getInvalidationKeys.masterData.dosages();
+              updateKeysToInvalidate.forEach((keySet: readonly string[]) => {
+                queryClient.invalidateQueries({ queryKey: keySet });
+              });
+              break;
+            }
+              
+            case 'DELETE': {
+              console.log('🗑️ Dosage deleted:', payload.old);
+              const deletedDosage = payload.old as ItemDosage;
+              
+              queryClient.removeQueries({
+                queryKey: QueryKeys.masterData.dosages.detail(deletedDosage.id)
+              });
+              
+              const deleteKeysToInvalidate = getInvalidationKeys.masterData.dosages();
+              deleteKeysToInvalidate.forEach((keySet: readonly string[]) => {
+                queryClient.invalidateQueries({ queryKey: keySet });
+              });
+              break;
+            }
+              
+            default:
+              console.log('🔄 Unknown dosage event type:', payload.eventType);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Dosages realtime subscription status:', status);
+      });
+    
+    subscriptionRef.current = channel;
+    
+    return () => {
+      if (subscriptionRef.current) {
+        console.log('🧹 Cleaning up dosages realtime subscription');
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+    };
+  }, [options?.enabled, queryClient]);
+  
+  useEffect(() => {
+    return () => {
+      if (subscriptionRef.current) {
+        console.log('🧹 Component unmounting - cleaning up dosages realtime subscription');
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+    };
+  }, []);
+  
+  return dosagesQuery;
 };

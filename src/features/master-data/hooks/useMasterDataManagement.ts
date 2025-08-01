@@ -353,18 +353,29 @@ export const useMasterDataManagement = (
                                ("updateSupplier" in mutations && mutations.updateSupplier) ||
                                ("updateItem" in mutations && mutations.updateItem) ||
                                ("updatePatient" in mutations && mutations.updatePatient) ||
-                               ("updateDoctor" in mutations && mutations.updateDoctor);
+                               ("updateDoctor" in mutations && mutations.updateDoctor) ||
+                               ("updateMutation" in mutations && mutations.updateMutation);
           
           if (updateMutation && typeof updateMutation === 'object' && 'mutateAsync' in updateMutation) {
             const updateData: Record<string, unknown> = { name: itemData.name, description: itemData.description };
             if (itemData.kode !== undefined) {
               updateData.kode = itemData.kode;
             }
-            // Cast to unknown first to avoid type conflicts, then cast to mutation interface
-            await ((updateMutation as unknown) as { mutateAsync: (params: { id: string; data: Record<string, unknown> }) => Promise<unknown> }).mutateAsync({
-              id: itemData.id,
-              data: updateData,
-            });
+            
+            // Handle different parameter structures for different mutation types
+            if ("updateMutation" in mutations) {
+              // For generic mutations (like dosages), pass parameters directly
+              await ((updateMutation as unknown) as { mutateAsync: (params: { id: string } & Record<string, unknown>) => Promise<unknown> }).mutateAsync({
+                id: itemData.id!,
+                ...updateData,
+              });
+            } else {
+              // For specific mutations (categories, types, units, etc.), use nested data structure
+              await ((updateMutation as unknown) as { mutateAsync: (params: { id: string; data: Record<string, unknown> }) => Promise<unknown> }).mutateAsync({
+                id: itemData.id!,
+                data: updateData,
+              });
+            }
           }
         } else {
           // Create new item
@@ -374,7 +385,8 @@ export const useMasterDataManagement = (
                                ("createSupplier" in mutations && mutations.createSupplier) ||
                                ("createItem" in mutations && mutations.createItem) ||
                                ("createPatient" in mutations && mutations.createPatient) ||
-                               ("createDoctor" in mutations && mutations.createDoctor);
+                               ("createDoctor" in mutations && mutations.createDoctor) ||
+                               ("createMutation" in mutations && mutations.createMutation);
           
           if (createMutation && typeof createMutation === 'object' && 'mutateAsync' in createMutation) {
             const createData: Record<string, unknown> = { name: itemData.name, description: itemData.description };
@@ -407,7 +419,8 @@ export const useMasterDataManagement = (
                              ("deleteSupplier" in mutations && mutations.deleteSupplier) ||
                              ("deleteItem" in mutations && mutations.deleteItem) ||
                              ("deletePatient" in mutations && mutations.deletePatient) ||
-                             ("deleteDoctor" in mutations && mutations.deleteDoctor);
+                             ("deleteDoctor" in mutations && mutations.deleteDoctor) ||
+                             ("deleteMutation" in mutations && mutations.deleteMutation);
         
         if (deleteMutation && typeof deleteMutation === 'object' && 'mutateAsync' in deleteMutation) {
           // Cast to unknown first to avoid type conflicts, then cast to mutation interface
