@@ -15,10 +15,10 @@ export {
   useCategoriesRealtime,
   useMedicineTypesRealtime, 
   useUnitsRealtime,
-  useItemsRealtime
+  useItemsRealtime,
+  useDosagesRealtime
 } from './useMasterDataRealtime';
 export { 
-  useDosagesRealtime,
   useDosageMutations
 } from './useDosages';
 export * from './usePurchases';

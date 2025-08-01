@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { QueryKeys, getInvalidationKeys } from "@/constants/queryKeys";
 import type { ItemDosage } from "@/features/item-management/domain/entities/Item";
 
 // Query hook untuk dosages dengan realtime
 export const useDosagesRealtime = ({ enabled = true }: { enabled?: boolean } = {}) => {
   return useQuery<ItemDosage[]>({
-    queryKey: ["dosages"],
+    queryKey: QueryKeys.masterData.dosages.list(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("item_dosages")
@@ -35,7 +36,10 @@ export const useDosageMutations = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dosages"] });
+      const keysToInvalidate = getInvalidationKeys.masterData.dosages();
+      keysToInvalidate.forEach((keySet: readonly string[]) => {
+        queryClient.invalidateQueries({ queryKey: keySet });
+      });
     },
   });
 
@@ -52,7 +56,10 @@ export const useDosageMutations = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dosages"] });
+      const keysToInvalidate = getInvalidationKeys.masterData.dosages();
+      keysToInvalidate.forEach((keySet: readonly string[]) => {
+        queryClient.invalidateQueries({ queryKey: keySet });
+      });
     },
   });
 
@@ -66,7 +73,10 @@ export const useDosageMutations = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dosages"] });
+      const keysToInvalidate = getInvalidationKeys.masterData.dosages();
+      keysToInvalidate.forEach((keySet: readonly string[]) => {
+        queryClient.invalidateQueries({ queryKey: keySet });
+      });
     },
   });
 
