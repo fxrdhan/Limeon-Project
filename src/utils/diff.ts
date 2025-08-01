@@ -148,7 +148,7 @@ export const diffCache = new ServerResultCache();
 // Development utilities
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   // Global access untuk debugging
-  (window as any).diffCache = diffCache;
+  (window as typeof window & { diffCache: typeof diffCache }).diffCache = diffCache;
   
   // Keyboard shortcut untuk debug info
   document.addEventListener('keydown', (e) => {

@@ -40,6 +40,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     categories,
     types,
     units,
+    dosages,
     saving,
     loading,
     isEditMode,
@@ -57,10 +58,13 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     setIsAddTypeModalOpen,
     isAddUnitModalOpen,
     setIsAddUnitModalOpen,
+    isAddDosageModalOpen,
+    setIsAddDosageModalOpen,
     currentSearchTermForModal,
     handleAddNewCategory,
     handleAddNewType,
     handleAddNewUnit,
+    handleAddNewDosage,
     closeModalAndClearSearch,
     
     // Actions
@@ -69,11 +73,13 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     handleSaveCategory,
     handleSaveType,
     handleSaveUnit,
+    handleSaveDosage,
     
     // Mutations
     addCategoryMutation,
     addTypeMutation,
     addUnitMutation,
+    addDosageMutation,
     deleteItemMutation,
     
     // Price & conversion
@@ -147,6 +153,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       categories,
       types,
       units,
+      dosages,
       loading,
       isDirty,
     },
@@ -161,6 +168,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       isAddEditModalOpen,
       isAddTypeModalOpen,
       isAddUnitModalOpen,
+      isAddDosageModalOpen,
       currentSearchTermForModal: currentSearchTermForModal || "",
     },
     price: {
@@ -175,6 +183,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       addCategoryMutation,
       addTypeMutation,
       addUnitMutation,
+      addDosageMutation,
     },
     
     // Actions
@@ -198,6 +207,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       setIsAddEditModalOpen,
       setIsAddTypeModalOpen,
       setIsAddUnitModalOpen,
+      setIsAddDosageModalOpen,
       closeModalAndClearSearch: (setter: ((open: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>) => {
         if (typeof setter === 'function') {
           closeModalAndClearSearch(setter as React.Dispatch<React.SetStateAction<boolean>>);
@@ -206,6 +216,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       handleAddNewCategory,
       handleAddNewType,
       handleAddNewUnit,
+      handleAddNewDosage,
     },
     businessActions: {
       handleCancel,
@@ -213,6 +224,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       handleSaveCategory,
       handleSaveType,
       handleSaveUnit,
+      handleSaveDosage,
     },
   };
 

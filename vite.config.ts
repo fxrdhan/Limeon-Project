@@ -52,7 +52,7 @@ export default defineConfig({
         },
       },
     },
-    chunkSizeWarningLimit: 1000, // Increase warning limit to 1MB
+    chunkSizeWarningLimit: 1500, // Increase warning limit to 1.5MB for large dependencies
     
     // Optimize for better performance
     target: 'esnext',

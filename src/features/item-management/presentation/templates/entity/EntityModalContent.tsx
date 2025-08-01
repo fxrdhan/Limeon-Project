@@ -3,12 +3,13 @@ import Button from "@/components/button";
 import { FaHistory, FaArrowLeft } from "react-icons/fa";
 import { useEntityModal } from "../../../shared/contexts/EntityModalContext";
 import { EntityFormFields } from "../../molecules";
-import { HistoryListContent, VersionDetailContent } from "../../organisms";
+import { HistoryListContent } from "../../organisms";
 import type { EntityData } from "../../../shared/types";
 
 interface EntityModalContentProps {
   nameInputRef: React.RefObject<HTMLInputElement | null>;
   initialData?: EntityData | null;
+  showKodeField?: boolean;
 }
 
 const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
@@ -23,7 +24,7 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
     const tableMap: Record<string, string> = {
       Item: "items",
       Kategori: "item_categories",
-      Tipe: "item_types",
+      "Jenis Item": "item_types",
       Satuan: "item_units",
     };
     return tableMap[entityName] || "items";
@@ -32,9 +33,7 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
   const getTitle = () => {
     switch (mode) {
       case "history":
-        return `Riwayat Perubahan ${entityName}`;
-      case "version-detail":
-        return `Detail Versi ${entityName}`;
+        return `Riwayat Perubahan`;
       case "edit":
         return `Edit ${entityName}`;
       case "add":
@@ -43,7 +42,7 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
     }
   };
 
-  const showBackButton = mode === "history" || mode === "version-detail";
+  const showBackButton = mode === "history";
   const showHistoryButton =
     (mode === "add" || mode === "edit") && isEditMode && initialData?.id;
 
@@ -80,19 +79,16 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
   );
 };
 
-const EntityModalFooter: React.FC<{ 
-  compareMode?: boolean; 
-  onModeToggle?: () => void; 
-}> = ({ 
-  compareMode = false, 
-  onModeToggle 
-}) => {
+const EntityModalFooter: React.FC<{
+  compareMode?: boolean;
+  onModeToggle?: () => void;
+}> = ({ compareMode = false, onModeToggle }) => {
   const { form, ui, action, formActions, uiActions } = useEntityModal();
   const { isDirty, isValid } = form;
   const { isEditMode, mode } = ui;
   const { isLoading, isDeleting } = action;
   const { handleSubmit, handleDelete } = formActions;
-  const { handleClose, goBack } = uiActions;
+  const { handleClose } = uiActions;
 
   const isDisabled = isLoading || !isValid || (isEditMode && !isDirty);
 
@@ -101,41 +97,13 @@ const EntityModalFooter: React.FC<{
     return (
       <div className="flex justify-between items-center p-4 border-t-2 border-gray-200 rounded-b-lg">
         <div>
-          <Button
-            type="button"
-            variant="text"
-            onClick={onModeToggle}
-          >
-{compareMode ? 'Single View' : 'Compare Mode'}
+          <Button type="button" variant="text" onClick={onModeToggle}>
+            {compareMode ? "Single View" : "Compare Mode"}
           </Button>
         </div>
         <Button type="button" variant="text" onClick={handleClose}>
           Tutup
         </Button>
-      </div>
-    );
-  }
-
-  // Special footer for version-detail mode
-  if (mode === "version-detail") {
-    return (
-      <div className="flex justify-between items-center p-4 border-t-2 border-gray-200 rounded-b-lg">
-        <div>
-          <Button type="button" variant="text" onClick={goBack}>
-            Batal
-          </Button>
-        </div>
-        <div>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={handleSubmit}
-            isLoading={isLoading}
-            disabled={isDisabled}
-          >
-            Update
-          </Button>
-        </div>
       </div>
     );
   }
@@ -178,9 +146,10 @@ const EntityModalFooter: React.FC<{
 const EntityModalContent: React.FC<EntityModalContentProps> = ({
   nameInputRef,
   initialData,
+  showKodeField = false,
 }) => {
   const { ui, uiActions } = useEntityModal();
-  const { mode, entityName } = ui;
+  const { mode } = ui;
   const [compareMode, setCompareMode] = useState(false);
 
   const handleModeToggle = () => {
@@ -193,17 +162,20 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
     switch (mode) {
       case "history":
         return <HistoryListContent compareMode={compareMode} />;
-      case "version-detail":
-        return <VersionDetailContent />;
       case "add":
       case "edit":
       default:
-        return <EntityFormFields nameInputRef={nameInputRef} />;
+        return (
+          <EntityFormFields
+            nameInputRef={nameInputRef}
+            showKodeField={showKodeField}
+          />
+        );
     }
   };
 
-  // Conditional width: larger for "Jenis Item", default for others
-  const modalWidth = entityName === "Jenis Item" ? "w-112" : "w-96";
+  // Consistent width for all entity modals
+  const modalWidth = "w-96";
 
   return (
     <div
@@ -211,9 +183,9 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
     >
       <EntityModalHeader initialData={initialData} />
       {renderContent()}
-      <EntityModalFooter 
-        compareMode={compareMode} 
-        onModeToggle={handleModeToggle} 
+      <EntityModalFooter
+        compareMode={compareMode}
+        onModeToggle={handleModeToggle}
       />
     </div>
   );

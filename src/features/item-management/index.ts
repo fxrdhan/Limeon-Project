@@ -1,27 +1,37 @@
-// BACKWARD COMPATIBILITY - Keep old interface while having new structure underneath
+/**
+ * Item Management Module
+ * 
+ * Main entry point for item management functionality.
+ * Provides core components, hooks, and utilities for managing items,
+ * categories, types, units, and dosages.
+ * 
+ * Architecture: Clean Architecture with Domain-Driven Design
+ * - Domain: Core business entities and use cases
+ * - Application: Hooks and business logic
+ * - Presentation: UI components following atomic design
+ * - Shared: Types, contexts, and utilities
+ */
 
-// Main component exports (compatibility)
+// Core Templates
 export { default as ItemManagementModal } from "./presentation/templates/item/ItemManagementModal";
 export { EntityManagementModal } from "./presentation/templates/entity";
 
-// Component exports for external usage
+// Data Components
 export { ItemDataTable } from "./presentation/organisms";
 export { useItemGridColumns } from "./application/hooks/ui";
 
-// Atomic design components available for optional usage
-
-// Context exports
+// Context Providers
 export { ItemManagementProvider } from "./shared/contexts/ItemFormContext";
 export { useItemManagement } from "./shared/contexts/useItemFormContext";
 export { EntityModalProvider, useEntityModal } from "./shared/contexts/EntityModalContext";
 
-// Hook exports (backward compatible)
+// Core Hooks
 export { useAddItemForm } from "./application/hooks/core/useItemCrud";
 export { useItemFormValidation } from "./application/hooks/form/useItemValidation";
 export { useUnitConversion } from "./application/hooks/utils/useUnitConversion";
 export { useEntityModalLogic } from "./application/hooks/entity/useEntityModalLogic";
 
-// Type exports
+// Type Definitions
 export type {
   ItemFormData,
   ItemManagementModalProps,
@@ -29,9 +39,7 @@ export type {
   UnitConversion,
 } from "./shared/types";
 
-// Utility exports (backward compatible)
-// Item code generation functions removed - migrated to edge function
-// Use /supabase/edge-functions/generate-item-code/ instead
+// Utility Functions
 export {
   calculateProfitPercentage,
   calculateSellPriceFromMargin,

@@ -1,17 +1,20 @@
 // Business Entity Types
 export interface UnitData {
   id: string;
+  kode?: string;
   name: string;
 }
 
 export interface UnitOption {
   id: string;
+  kode?: string;
   name: string;
 }
 
 
 export interface EntityData {
   id: string;
+  kode?: string;
   name: string;
   description?: string | null;
   updated_at?: string | null;

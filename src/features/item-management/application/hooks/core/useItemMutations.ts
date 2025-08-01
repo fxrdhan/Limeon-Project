@@ -80,6 +80,27 @@ export const useAddItemMutations = ({
   });
 
   /**
+   * Mutation for adding new dosages (sediaan)
+   */
+  const addDosageMutation = useMutation({
+    mutationFn: async (newDosage: { kode?: string; name: string; description: string }) => {
+      const { data, error } = await supabase
+        .from("item_dosages")
+        .insert(newDosage)
+        .select("id, kode, name, description")
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dosages"] });
+    },
+    onError: (error) => {
+      console.error("Error adding dosage:", error);
+    },
+  });
+
+  /**
    * Mutation for deleting items
    */
   const deleteItemMutation = useMutation({
@@ -120,7 +141,7 @@ export const useAddItemMutations = ({
       min_stock: formData.min_stock,
       description: formData.description || null,
       is_active: formData.is_active,
-      rack: formData.rack || null,
+      dosage_id: formData.dosage_id || null,
       barcode: formData.barcode || null,
       code: formData.code,
       is_medicine: formData.is_medicine,
@@ -161,7 +182,7 @@ export const useAddItemMutations = ({
       itemId?: string;
     }) => {
       // Generate item code if missing (for new items) or explicitly requested
-      let finalFormData = { ...formData };
+      const finalFormData = { ...formData };
       
       if (!isEditMode || !finalFormData.code) {
         // Generate code for new items or when code is empty
@@ -304,6 +325,21 @@ export const useAddItemMutations = ({
     }
   };
 
+  const saveDosage = async (dosageData: { kode?: string; name: string; description: string }) => {
+    try {
+      const newDosage = await addDosageMutation.mutateAsync(dosageData);
+      const { data: updatedDosages } = await supabase
+        .from("item_dosages")
+        .select("id, kode, name, description, created_at, updated_at")
+        .order("name");
+      
+      return { newDosage, updatedDosages: updatedDosages || [] };
+    } catch (error) {
+      console.error("Error saving dosage:", error);
+      throw new Error("Gagal menyimpan sediaan baru.");
+    }
+  };
+
   return {
     // Core mutations
     saveItemMutation,
@@ -311,11 +347,13 @@ export const useAddItemMutations = ({
     addCategoryMutation,
     addTypeMutation,
     addUnitMutation,
+    addDosageMutation,
     
     // Helper functions
     saveCategory,
     saveType,
     saveUnit,
+    saveDosage,
     prepareItemData,
     
     // Loading states

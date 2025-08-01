@@ -14,7 +14,6 @@ interface LocalDiffTextProps {
 const DiffText: React.FC<LocalDiffTextProps> = ({
   oldText,
   newText,
-  mode: _mode = "smart",
   className = "",
   isFlipped = false,
 }) => {

@@ -8,7 +8,7 @@ import { FaPlus } from "react-icons/fa";
 import { Card } from "@/components/card";
 import { DataGrid, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useRef, useMemo, useCallback } from "react";
 // import { useLocation } from "react-router-dom";
 import type { Supplier as SupplierType, FieldConfig } from "@/types";
 
@@ -22,7 +22,6 @@ const SupplierListNew = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null,
   ) as React.RefObject<HTMLInputElement>;
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Data management hook for server-side operations
   const {
@@ -111,9 +110,6 @@ const SupplierListNew = () => {
     },
   ];
 
-  const handleFirstDataRendered = () => {
-    setIsInitialLoad(false);
-  };
 
   const columnDefs: ColDef[] = useMemo(() => {
     const columns: ColDef[] = [
@@ -216,7 +212,7 @@ const SupplierListNew = () => {
                   : '<span style="padding: 10px; color: #888;">Tidak ada data supplier yang ditemukan</span>'
               }
               autoSizeColumns={["name", "phone", "email", "contact_person"]}
-              onFirstDataRendered={handleFirstDataRendered}
+              onFirstDataRendered={() => {}}
               animateRows={true}
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
@@ -224,8 +220,6 @@ const SupplierListNew = () => {
                 width: "100%",
                 marginTop: "1rem",
                 marginBottom: "1rem",
-                filter: isInitialLoad ? "blur(8px)" : "none",
-                transition: "filter 0.3s ease-out",
               }}
             />
             <Pagination

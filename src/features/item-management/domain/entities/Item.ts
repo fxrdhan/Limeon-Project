@@ -9,7 +9,7 @@ export interface Item {
   category_id: string;
   type_id: string;
   unit_id: string;
-  rack: string;
+  dosage_id: string;
   description: string;
   base_price: number;
   sell_price: number;
@@ -20,6 +20,7 @@ export interface Item {
 
 export interface Category {
   id: string;
+  kode?: string;
   name: string;
   description?: string;
   created_at: string;
@@ -28,6 +29,7 @@ export interface Category {
 
 export interface ItemType {
   id: string;
+  kode?: string;
   name: string;
   description?: string;
   created_at: string;
@@ -36,8 +38,18 @@ export interface ItemType {
 
 export interface ItemUnit {
   id: string;
+  kode?: string;
   name: string;
   abbreviation: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ItemDosage {
+  id: string;
+  kode?: string;
+  name: string;
+  description?: string;
   created_at: string;
   updated_at: string;
 }

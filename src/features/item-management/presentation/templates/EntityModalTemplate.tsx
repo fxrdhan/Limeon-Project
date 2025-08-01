@@ -8,7 +8,9 @@ interface EntityModalTemplateProps {
   children: ReactNode;
 }
 
-const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({ children }) => {
+const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
+  children,
+}) => {
   const { ui, uiActions, comparison } = useEntityModal();
   const { isOpen } = ui;
   const { handleBackdropClick } = uiActions;
@@ -29,10 +31,10 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({ children }) =
 
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ 
-              opacity: 1, 
+            animate={{
+              opacity: 1,
               scale: 1,
-              x: comparison.isOpen ? -208 : 0 // -translate-x-52 = -13rem = -208px
+              x: comparison.isOpen ? -200 : 0,
             }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
@@ -42,7 +44,7 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({ children }) =
         </div>
       )}
     </AnimatePresence>,
-    document.body
+    document.body,
   );
 };
 

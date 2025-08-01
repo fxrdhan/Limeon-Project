@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Category, MedicineType, Unit } from "@/types/database";
+import type { ItemDosage } from "../../domain/entities/Item";
 import type { UseUnitConversionReturn } from "@/types/hooks";
 import type { ItemFormData } from "./FormTypes";
 import type { VersionData } from "./ItemTypes";
@@ -10,6 +11,7 @@ export interface ItemFormState {
   categories: Category[];
   types: MedicineType[];
   units: Unit[];
+  dosages: ItemDosage[];
   loading: boolean;
   isDirty: () => boolean;
 }
@@ -26,6 +28,7 @@ export interface ItemModalState {
   isAddEditModalOpen: boolean;
   isAddTypeModalOpen: boolean;
   isAddUnitModalOpen: boolean;
+  isAddDosageModalOpen: boolean;
   currentSearchTermForModal: string;
 }
 
@@ -42,6 +45,7 @@ export interface ItemActionState {
   addCategoryMutation: { isPending: boolean };
   addTypeMutation: { isPending: boolean };
   addUnitMutation: { isPending: boolean };
+  addDosageMutation: { isPending: boolean };
 }
 
 // Context Action Interfaces (Updated to match actual implementation)
@@ -69,6 +73,7 @@ export interface ItemModalActions {
   setIsAddEditModalOpen: (open: boolean) => void;
   setIsAddTypeModalOpen: (open: boolean) => void;
   setIsAddUnitModalOpen: (open: boolean) => void;
+  setIsAddDosageModalOpen: (open: boolean) => void;
   closeModalAndClearSearch: (
     setter:
       | ((open: boolean) => void)
@@ -77,6 +82,7 @@ export interface ItemModalActions {
   handleAddNewCategory: () => void;
   handleAddNewType: () => void;
   handleAddNewUnit: () => void;
+  handleAddNewDosage: () => void;
 }
 
 export interface ItemBusinessActions {
@@ -85,14 +91,22 @@ export interface ItemBusinessActions {
   ) => void;
   handleDeleteItem: () => void;
   handleSaveCategory: (data: {
+    kode?: string;
     name: string;
     description: string;
   }) => Promise<void>;
   handleSaveType: (data: {
+    kode?: string;
     name: string;
     description: string;
   }) => Promise<void>;
   handleSaveUnit: (data: {
+    kode?: string;
+    name: string;
+    description: string;
+  }) => Promise<void>;
+  handleSaveDosage: (data: {
+    kode?: string;
     name: string;
     description: string;
   }) => Promise<void>;
@@ -121,11 +135,12 @@ export interface ItemManagementProviderProps {
 }
 
 // Entity Modal Context Types
-export type ModalMode = 'add' | 'edit' | 'history' | 'version-detail';
+export type ModalMode = 'add' | 'edit' | 'history';
 
 export interface EntityModalContextValue {
   // State
   form: {
+    kode?: string;
     name: string;
     description: string;
     isDirty: boolean;
@@ -159,6 +174,7 @@ export interface EntityModalContextValue {
 
   // Actions
   formActions: {
+    setKode?: (kode: string) => void;
     setName: (name: string) => void;
     setDescription: (description: string) => void;
     handleSubmit: () => Promise<void>;
@@ -172,7 +188,6 @@ export interface EntityModalContextValue {
     openHistory: (entityTable: string, entityId: string) => void;
     closeHistory: () => void;
     selectVersion: (version: VersionData) => void;
-    openVersionDetail: (version: VersionData) => void;
     openComparison: (version: VersionData) => void;
     closeComparison: () => void;
     openDualComparison: (versionA: VersionData, versionB: VersionData) => void;

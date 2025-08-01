@@ -3,6 +3,7 @@ import { formatRupiah, extractNumericValue } from "@/lib/formatters";
 import { formatMarginPercentage } from "../../../shared/utils/PriceCalculator";
 import type { ItemFormData, UnitConversion } from "../../../shared/types";
 import type { Category, MedicineType, Unit } from "@/types";
+import type { ItemDosage } from "../../../domain/entities/Item";
 
 interface UseAddItemFormStateProps {
   initialSearchQuery?: string;
@@ -20,7 +21,7 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
     type_id: "",
     category_id: "",
     unit_id: "",
-    rack: "",
+    dosage_id: "",
     barcode: "",
     description: "",
     base_price: 0,
@@ -50,6 +51,7 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
   const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
+  const [isAddDosageModalOpen, setIsAddDosageModalOpen] = useState(false);
   const [currentSearchTermForModal, setCurrentSearchTermForModal] = useState<string | undefined>();
 
   // Loading states
@@ -63,6 +65,7 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
   const [categories, setCategories] = useState<Category[]>([]);
   const [types, setTypes] = useState<MedicineType[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
+  const [dosages, setDosages] = useState<ItemDosage[]>([]);
 
   // Initialization tracking
   const hasInitialized = useRef(false);
@@ -177,7 +180,7 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
       type_id: "",
       category_id: "",
       unit_id: "",
-      rack: "",
+      dosage_id: "",
       barcode: "",
       description: "",
       base_price: 0,
@@ -250,6 +253,8 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
     setIsAddTypeModalOpen,
     isAddUnitModalOpen,
     setIsAddUnitModalOpen,
+    isAddDosageModalOpen,
+    setIsAddDosageModalOpen,
     currentSearchTermForModal,
     setCurrentSearchTermForModal,
     
@@ -270,6 +275,8 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
     setTypes,
     units,
     setUnits,
+    dosages,
+    setDosages,
     
     // Initialization tracking
     hasInitialized,

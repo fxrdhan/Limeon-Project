@@ -5,19 +5,31 @@ import { useEntityModal } from "../../shared/contexts/EntityModalContext";
 
 interface EntityFormFieldsProps {
   nameInputRef: React.RefObject<HTMLInputElement | null>;
+  showKodeField?: boolean;
 }
 
-const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef }) => {
+const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef, showKodeField = false }) => {
   const { form, ui, action, formActions } = useEntityModal();
-  const { name, description } = form;
+  const { kode, name, description } = form;
   const { entityName } = ui;
   const { isLoading, isDeleting } = action;
-  const { setName, setDescription } = formActions;
+  const { setKode, setName, setDescription } = formActions;
 
   const isReadOnly = isLoading || isDeleting;
 
   return (
     <div className="p-6 space-y-4">
+      {showKodeField && setKode && (
+        <Input
+          label={`Kode ${entityName}`}
+          value={kode || ''}
+          onChange={(e) => setKode(e.target.value)}
+          placeholder={`Masukkan kode ${entityName.toLowerCase()}`}
+          required
+          readOnly={isReadOnly}
+        />
+      )}
+      
       <Input
         ref={nameInputRef}
         label={`Nama ${entityName}`}

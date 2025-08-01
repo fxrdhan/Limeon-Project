@@ -122,9 +122,9 @@ Deno.serve(async (req: Request) => {
 
     // Fetch type, unit, and category data
     const [typeResponse, unitResponse, categoryResponse] = await Promise.all([
-      supabase.from('item_types').select('id, name').eq('id', type_id).single(),
-      supabase.from('item_units').select('id, name').eq('id', unit_id).single(),
-      supabase.from('item_categories').select('id, name').eq('id', category_id).single()
+      supabase.from('item_types').select('id, kode, name').eq('id', type_id).single(),
+      supabase.from('item_units').select('id, kode, name').eq('id', unit_id).single(),
+      supabase.from('item_categories').select('id, kode, name').eq('id', category_id).single()
     ]);
 
     // Check for errors
@@ -138,10 +138,10 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Category not found: ${categoryResponse.error.message}`);
     }
 
-    // Generate code prefix
-    const typeCode = generateTypeCode(typeResponse.data.name);
-    const unitCode = generateUnitCode(unitResponse.data.name);
-    const categoryCode = generateCategoryCode(categoryResponse.data.name);
+    // Use kode field if available, otherwise generate from name
+    const typeCode = typeResponse.data.kode || generateTypeCode(typeResponse.data.name);
+    const unitCode = unitResponse.data.kode || generateUnitCode(unitResponse.data.name);
+    const categoryCode = categoryResponse.data.kode || generateCategoryCode(categoryResponse.data.name);
     const codePrefix = `${typeCode}${unitCode}${categoryCode}`;
 
     // Query existing codes with same prefix

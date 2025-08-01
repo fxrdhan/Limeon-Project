@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import { FaRedo } from "react-icons/fa";
 import Input from "@/components/input";
 import FormField from "@/components/form-field";
@@ -9,7 +9,7 @@ interface ItemCodeFieldProps {
 }
 
 export default function ItemCodeField({ code, onRegenerate }: ItemCodeFieldProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
 
   return (
     <FormField label="Kode Item" className="md:col-span-1">
@@ -23,7 +23,7 @@ export default function ItemCodeField({ code, onRegenerate }: ItemCodeFieldProps
           value={code}
           placeholder={code ? "" : "Kode akan di-generate otomatis saat simpan"}
           readOnly={true}
-          className={`w-full transition-all duration-200 ${isHovered ? "blur-sm" : ""}`}
+          className="w-full transition-all duration-200"
         />
         {isHovered && (
           <div

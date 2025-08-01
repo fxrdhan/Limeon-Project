@@ -123,9 +123,9 @@ export const validateTextFields = (formData: FormData): ValidationResult => {
     errors.description = "Deskripsi tidak boleh lebih dari 500 karakter";
   }
 
-  // Rack validation
-  if (formData.rack && formData.rack.length > 50) {
-    errors.rack = "Lokasi rak tidak boleh lebih dari 50 karakter";
+  // Dosage validation
+  if (!formData.dosage_id) {
+    errors.dosage_id = "Sediaan harus diisi";
   }
 
   // Code validation

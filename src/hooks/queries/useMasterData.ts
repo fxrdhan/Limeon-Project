@@ -135,7 +135,7 @@ export const useMedicineType = (id: string, options?: { enabled?: boolean }) => 
 export const useMedicineTypeMutations = () => {
   const queryClient = useQueryClient();
 
-  const createType = useMutation({
+  const createMedicineType = useMutation({
     mutationFn: async (data: Omit<MedicineType, 'id' | 'updated_at'>) => {
       const result = await masterDataService.types.create(data);
       if (result.error) throw result.error;
@@ -146,7 +146,7 @@ export const useMedicineTypeMutations = () => {
     },
   });
 
-  const updateType = useMutation({
+  const updateMedicineType = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<MedicineType> }) => {
       const result = await masterDataService.types.update(id, data);
       if (result.error) throw result.error;
@@ -157,7 +157,7 @@ export const useMedicineTypeMutations = () => {
     },
   });
 
-  const deleteType = useMutation({
+  const deleteMedicineType = useMutation({
     mutationFn: async (id: string) => {
       const result = await masterDataService.types.delete(id);
       if (result.error) throw result.error;
@@ -168,7 +168,7 @@ export const useMedicineTypeMutations = () => {
     },
   });
 
-  return { createType, updateType, deleteType };
+  return { createMedicineType, updateMedicineType, deleteMedicineType };
 };
 
 // Unit Hooks

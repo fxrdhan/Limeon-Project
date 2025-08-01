@@ -50,14 +50,21 @@ const BasicInfoSection: React.FC = () => {
     categories,
     types,
     units,
+    dosages,
     loading,
     handleChange,
     updateFormData,
     regenerateItemCode,
   } = useItemForm();
 
-  const { handleAddNewCategory, handleAddNewType, handleAddNewUnit } =
+  const { handleAddNewCategory, handleAddNewType, handleAddNewUnit, handleAddNewDosage } =
     useItemModal();
+
+  // Transform database types to DropdownOption format
+  const transformedCategories = categories.map(cat => ({ id: cat.id, name: cat.name }));
+  const transformedTypes = types.map(type => ({ id: type.id, name: type.name }));
+  const transformedUnits = units.map(unit => ({ id: unit.id, name: unit.name }));
+  const transformedDosages = dosages.map(dosage => ({ id: dosage.id, name: dosage.name }));
 
   const handleFieldChange = (field: string, value: boolean | string) => {
     if (field === "is_medicine" && value === false) {
@@ -81,6 +88,8 @@ const BasicInfoSection: React.FC = () => {
       updateFormData({ type_id: value });
     } else if (field === "unit_id") {
       updateFormData({ unit_id: value });
+    } else if (field === "dosage_id") {
+      updateFormData({ dosage_id: value });
     }
   };
 
@@ -95,12 +104,13 @@ const BasicInfoSection: React.FC = () => {
         category_id: formData.category_id || "",
         type_id: formData.type_id || "",
         unit_id: formData.unit_id || "",
-        rack: formData.rack || "",
+        dosage_id: formData.dosage_id || "",
         description: formData.description || "",
       }}
-      categories={categories}
-      types={types}
-      units={units}
+      categories={transformedCategories}
+      types={transformedTypes}
+      units={transformedUnits}
+      dosages={transformedDosages}
       loading={loading}
       onCodeRegenerate={regenerateItemCode}
       onChange={handleChange}
@@ -109,6 +119,7 @@ const BasicInfoSection: React.FC = () => {
       onAddNewCategory={handleAddNewCategory}
       onAddNewType={handleAddNewType}
       onAddNewUnit={handleAddNewUnit}
+      onAddNewDosage={handleAddNewDosage}
     />
   );
 };
@@ -186,7 +197,9 @@ const PricingSection: React.FC = () => {
   });
 
   const handleSellPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value) || 0;
+    // Extract numeric value from currency format (e.g., "Rp 123" -> "123")
+    const cleanValue = e.target.value.replace(/^Rp\s*/, "").replace(/[^0-9]/g, "");
+    const value = parseFloat(cleanValue) || 0;
     updateFormData({ sell_price: value });
     marginEditor.setValue((calcMargin || 0).toString());
   };
