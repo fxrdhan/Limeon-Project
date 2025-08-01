@@ -1,5 +1,5 @@
 -- Table Definition: patients
--- Exported from Supabase on: 2025-07-30T03:05:46.370Z
+-- Exported from Supabase on: 2025-08-01T12:24:51.109Z
 
 CREATE TABLE public.patients (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

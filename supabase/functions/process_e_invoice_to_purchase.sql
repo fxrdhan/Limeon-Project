@@ -1,5 +1,5 @@
 -- Function: process_e_invoice_to_purchase
--- Exported from Supabase on: 2025-07-30T03:05:46.283Z
+-- Exported from Supabase on: 2025-08-01T12:24:51.035Z
 
 CREATE OR REPLACE FUNCTION public.process_e_invoice_to_purchase(e_invoice_id uuid)
  RETURNS uuid

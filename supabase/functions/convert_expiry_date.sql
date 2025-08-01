@@ -1,5 +1,5 @@
 -- Function: convert_expiry_date
--- Exported from Supabase on: 2025-07-30T03:05:46.282Z
+-- Exported from Supabase on: 2025-08-01T12:24:51.033Z
 
 CREATE OR REPLACE FUNCTION public.convert_expiry_date(month_year text)
  RETURNS date
