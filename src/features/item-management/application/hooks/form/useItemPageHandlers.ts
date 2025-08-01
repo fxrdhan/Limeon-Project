@@ -30,7 +30,7 @@ export const useAddItemPageHandlers = ({
     showFefoTooltip,
     setShowFefoTooltip,
   } = useAddItemUIState();
-  const { categoriesData, typesData, unitsData } = useItemQueries();
+  const { categoriesData, typesData, unitsData, dosagesData } = useItemQueries();
 
 
   const {
@@ -67,6 +67,12 @@ export const useAddItemPageHandlers = ({
     }
   }, [unitsData, addItemForm.setUnits, addItemForm]);
 
+  useEffect(() => {
+    if (dosagesData) {
+      addItemForm.setDosages(dosagesData);
+    }
+  }, [dosagesData, addItemForm.setDosages, addItemForm]);
+
   return {
     ...addItemForm,
     id: itemId,
@@ -101,5 +107,12 @@ export const useAddItemPageHandlers = ({
     isClosing,
     setIsClosing,
     regenerateItemCode: addItemForm.regenerateItemCode,
+    // Explicit dosage-related properties
+    dosages: addItemForm.dosages,
+    isAddDosageModalOpen: addItemForm.isAddDosageModalOpen,
+    setIsAddDosageModalOpen: addItemForm.setIsAddDosageModalOpen,
+    handleAddNewDosage: addItemForm.handleAddNewDosage,
+    handleSaveDosage: addItemForm.handleSaveDosage,
+    addDosageMutation: addItemForm.addDosageMutation,
   };
 };

@@ -23,7 +23,7 @@ export const formatDateTime = (isoString: string | null | undefined): string => 
         const date = new Date(isoString);
         return date.toLocaleString("id-ID", {
             day: "2-digit",
-            month: "long",
+            month: "2-digit",
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",

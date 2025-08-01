@@ -12,6 +12,7 @@ import type {
   Doctor,
   UseMasterDataManagementOptions,
 } from "@/types";
+import type { ItemDosage } from "@/features/item-management/domain/entities/Item";
 
 // Import our new modular services and hooks
 import {
@@ -21,6 +22,8 @@ import {
   useMedicineTypeMutations,
   useUnitsRealtime,
   useUnitMutations,
+  useDosagesRealtime,
+  useDosageMutations,
   useSuppliers,
   useSupplierMutations,
   useItemsRealtime,
@@ -31,7 +34,7 @@ import {
   useDoctorMutations,
 } from "@/hooks/queries";
 
-type MasterDataItem = Category | ItemType | Unit | Item | Supplier | Patient | Doctor;
+type MasterDataItem = Category | ItemType | Unit | ItemDosage | Item | Supplier | Patient | Doctor;
 
 // Hook selector factory to get the right hooks for each table
 // Always use the same hooks to avoid hooks order violations
@@ -58,6 +61,11 @@ const getHooksForTable = (tableName: string, isRealtimeEnabled: boolean) => {
       return {
         useData: (options: QueryOptions) => useUnitsRealtime({ ...options, enabled: isRealtimeEnabled }),
         useMutations: useUnitMutations,
+      };
+    case "item_dosages":
+      return {
+        useData: (options: QueryOptions) => useDosagesRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useMutations: useDosageMutations,
       };
     case "suppliers":
       return {
@@ -248,6 +256,12 @@ export const useMasterDataManagement = (
         // Standard filtering for other master data
         filteredData = filteredData
           .filter((item) => {
+            // Check for kode field if it exists (only for item master data)
+            if (
+              "kode" in item &&
+              typeof item.kode === "string" &&
+              fuzzyMatch(item.kode.toLowerCase(), searchTermLower)
+            ) return true;
             if (item.name && fuzzyMatch(item.name, searchTermLower)) return true;
             if (
               "description" in item &&
@@ -279,15 +293,31 @@ export const useMasterDataManagement = (
             return false;
           })
           .sort((a, b) => {
-            const nameScore = (itemToSort: MasterDataItem) => {
+            const getScore = (itemToSort: MasterDataItem) => {
+              // Check kode first (highest priority)
+              if (
+                "kode" in itemToSort &&
+                typeof itemToSort.kode === "string" &&
+                itemToSort.kode.toLowerCase().startsWith(searchTermLower)
+              ) return 5;
+              if (
+                "kode" in itemToSort &&
+                typeof itemToSort.kode === "string" &&
+                itemToSort.kode.toLowerCase().includes(searchTermLower)
+              ) return 4;
+              // Then check name
               if (itemToSort.name && itemToSort.name.toLowerCase().startsWith(searchTermLower)) return 3;
               if (itemToSort.name && itemToSort.name.toLowerCase().includes(searchTermLower)) return 2;
               if (itemToSort.name && fuzzyMatch(itemToSort.name, searchTermLower)) return 1;
               return 0;
             };
-            const scoreA = nameScore(a);
-            const scoreB = nameScore(b);
+            const scoreA = getScore(a);
+            const scoreB = getScore(b);
             if (scoreA !== scoreB) return scoreB - scoreA;
+            // Secondary sort by kode if available, then name
+            if ("kode" in a && "kode" in b && typeof a.kode === "string" && typeof b.kode === "string") {
+              return a.kode.localeCompare(b.kode);
+            }
             return a.name.localeCompare(b.name);
           });
       }
@@ -313,7 +343,7 @@ export const useMasterDataManagement = (
   }, []);
 
   const handleModalSubmit = useCallback(
-    async (itemData: { id?: string; name: string; description?: string }) => {
+    async (itemData: { id?: string; kode?: string; name: string; description?: string }) => {
       try {
         if (itemData.id) {
           // Update existing item
@@ -326,10 +356,14 @@ export const useMasterDataManagement = (
                                ("updateDoctor" in mutations && mutations.updateDoctor);
           
           if (updateMutation && typeof updateMutation === 'object' && 'mutateAsync' in updateMutation) {
-            const typedMutation = updateMutation as { mutateAsync: (data: { id: string; data: Record<string, unknown> }) => Promise<void> };
-            await typedMutation.mutateAsync({
+            const updateData: Record<string, unknown> = { name: itemData.name, description: itemData.description };
+            if (itemData.kode !== undefined) {
+              updateData.kode = itemData.kode;
+            }
+            // Cast to unknown first to avoid type conflicts, then cast to mutation interface
+            await ((updateMutation as unknown) as { mutateAsync: (params: { id: string; data: Record<string, unknown> }) => Promise<unknown> }).mutateAsync({
               id: itemData.id,
-              data: { name: itemData.name, description: itemData.description },
+              data: updateData,
             });
           }
         } else {
@@ -343,11 +377,12 @@ export const useMasterDataManagement = (
                                ("createDoctor" in mutations && mutations.createDoctor);
           
           if (createMutation && typeof createMutation === 'object' && 'mutateAsync' in createMutation) {
-            const typedMutation = createMutation as { mutateAsync: (data: Record<string, unknown>) => Promise<void> };
-            await typedMutation.mutateAsync({
-              name: itemData.name,
-              description: itemData.description,
-            });
+            const createData: Record<string, unknown> = { name: itemData.name, description: itemData.description };
+            if (itemData.kode !== undefined) {
+              createData.kode = itemData.kode;
+            }
+            // Cast to unknown first to avoid type conflicts, then cast to mutation interface
+            await ((createMutation as unknown) as { mutateAsync: (data: Record<string, unknown>) => Promise<unknown> }).mutateAsync(createData);
           }
         }
         
@@ -375,8 +410,8 @@ export const useMasterDataManagement = (
                              ("deleteDoctor" in mutations && mutations.deleteDoctor);
         
         if (deleteMutation && typeof deleteMutation === 'object' && 'mutateAsync' in deleteMutation) {
-          const typedMutation = deleteMutation as { mutateAsync: (id: string) => Promise<void> };
-          await typedMutation.mutateAsync(itemId);
+          // Cast to unknown first to avoid type conflicts, then cast to mutation interface
+          await ((deleteMutation as unknown) as { mutateAsync: (id: string) => Promise<unknown> }).mutateAsync(itemId);
         }
         
         setIsEditModalOpen(false);
@@ -417,9 +452,9 @@ export const useMasterDataManagement = (
 
   // Create mutation objects with consistent interface for backward compatibility
   const addMutation = {
-    mutate: (data: { name: string; description?: string }) => 
+    mutate: (data: { kode?: string; name: string; description?: string }) => 
       handleModalSubmit(data),
-    mutateAsync: (data: { name: string; description?: string }) => 
+    mutateAsync: (data: { kode?: string; name: string; description?: string }) => 
       handleModalSubmit(data),
     isLoading: Object.values(mutations).some((mutation: unknown) => {
       const m = mutation as { isLoading?: boolean; isPending?: boolean };
@@ -435,9 +470,9 @@ export const useMasterDataManagement = (
   };
 
   const updateMutation = {
-    mutate: (data: { id: string; name: string; description?: string }) => 
+    mutate: (data: { id: string; kode?: string; name: string; description?: string }) => 
       handleModalSubmit(data),
-    mutateAsync: (data: { id: string; name: string; description?: string }) => 
+    mutateAsync: (data: { id: string; kode?: string; name: string; description?: string }) => 
       handleModalSubmit(data),
     isLoading: Object.values(mutations).some((mutation: unknown) => {
       const m = mutation as { isLoading?: boolean; isPending?: boolean };

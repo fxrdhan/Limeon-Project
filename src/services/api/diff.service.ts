@@ -57,7 +57,7 @@ export async function analyzeDiff(oldText: string, newText: string): Promise<Dif
     }
 
     // Validate segments structure
-    const isValidSegments = data.segments.every((segment: any) => 
+    const isValidSegments = data.segments.every((segment: DiffSegment) => 
       segment && 
       typeof segment === 'object' && 
       typeof segment.type === 'string' && 

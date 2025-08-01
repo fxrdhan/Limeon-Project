@@ -61,7 +61,7 @@ export const useItemCodeGeneration = ({
 }: UseItemCodeGenerationProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Auto-generation removed - code will be generated only on save/submit
+  // Code generation is handled manually or during save/submit process
 
   /**
    * Manually regenerates item code with user feedback

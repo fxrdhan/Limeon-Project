@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import { DataGrid } from "@/components/ag-grid";
 import Pagination from "@/components/pagination";
 import { RowClickedEvent, ColDef, GridReadyEvent, IRowNode } from "ag-grid-community";
@@ -43,11 +43,6 @@ export default function ItemDataTable({
   isExternalFilterPresent,
   doesExternalFilterPass,
 }: ItemDataTableProps) {
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-  const handleFirstDataRendered = () => {
-    setIsInitialLoad(false);
-  };
 
   const handleRowClicked = (event: RowClickedEvent) => {
     onRowClick(event.data);
@@ -79,7 +74,7 @@ export default function ItemDataTable({
         loading={isLoading}
         overlayNoRowsTemplate={getOverlayTemplate()}
         autoSizeColumns={columnsToAutoSize}
-        onFirstDataRendered={handleFirstDataRendered}
+        onFirstDataRendered={() => {}}
         animateRows={true}
         isExternalFilterPresent={isExternalFilterPresent}
         doesExternalFilterPass={doesExternalFilterPass}
@@ -87,8 +82,6 @@ export default function ItemDataTable({
           width: "100%",
           marginTop: "1rem",
           marginBottom: "1rem",
-          filter: isInitialLoad ? "blur(8px)" : "none",
-          transition: "filter 0.3s ease-out",
         }}
       />
       <Pagination

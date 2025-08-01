@@ -1,16 +1,18 @@
 import React from "react";
 import { useItemModal, useItemActions } from "../../../shared/contexts/useItemFormContext";
-import { ItemFormModals } from "../entity";
+import ItemFormModals from "../item/ItemFormModals";
 
 const ItemModalContainer: React.FC = () => {
   const {
     isAddEditModalOpen,
     isAddTypeModalOpen,
     isAddUnitModalOpen,
+    isAddDosageModalOpen,
     currentSearchTermForModal,
     setIsAddEditModalOpen,
     setIsAddTypeModalOpen,
     setIsAddUnitModalOpen,
+    setIsAddDosageModalOpen,
     closeModalAndClearSearch,
   } = useItemModal();
 
@@ -18,9 +20,11 @@ const ItemModalContainer: React.FC = () => {
     handleSaveCategory,
     handleSaveType,
     handleSaveUnit,
+    handleSaveDosage,
     addCategoryMutation,
     addTypeMutation,
     addUnitMutation,
+    addDosageMutation,
   } = useItemActions();
 
   return (
@@ -42,6 +46,12 @@ const ItemModalContainer: React.FC = () => {
         onClose: () => closeModalAndClearSearch(setIsAddUnitModalOpen),
         onSubmit: handleSaveUnit,
         mutation: addUnitMutation,
+      }}
+      dosageModal={{
+        isOpen: isAddDosageModalOpen,
+        onClose: () => closeModalAndClearSearch(setIsAddDosageModalOpen),
+        onSubmit: handleSaveDosage,
+        mutation: addDosageMutation,
       }}
       currentSearchTerm={currentSearchTermForModal}
     />

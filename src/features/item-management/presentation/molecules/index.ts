@@ -1,6 +1,4 @@
 // Simple combinations of atoms
-export * from './CategoryDropdown';
-export * from './UnitDropdown';
 export { default as EntityFormFields } from './EntityFormFields';
 
 // History components

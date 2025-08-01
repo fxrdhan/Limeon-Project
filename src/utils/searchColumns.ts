@@ -225,6 +225,13 @@ export const supplierSearchColumns: SearchColumn[] = [
  */
 export const itemMasterSearchColumns: SearchColumn[] = [
   {
+    field: "kode",
+    headerName: "Kode",
+    searchable: true,
+    type: "text",
+    description: "Cari berdasarkan kode"
+  },
+  {
     field: "name",
     headerName: "Nama",
     searchable: true,

@@ -9,7 +9,8 @@ export class CategoryService extends BaseService<Category> {
 
   async getActiveCategories() {
     return this.getAll({
-      orderBy: { column: 'name', ascending: true }
+      select: 'id, kode, name, description, updated_at',
+      orderBy: { column: 'kode', ascending: true }
     });
   }
 }
@@ -22,7 +23,8 @@ export class MedicineTypeService extends BaseService<MedicineType> {
 
   async getActiveTypes() {
     return this.getAll({
-      orderBy: { column: 'name', ascending: true }
+      select: 'id, kode, name, description, updated_at',
+      orderBy: { column: 'kode', ascending: true }
     });
   }
 }
@@ -35,7 +37,8 @@ export class UnitService extends BaseService<Unit> {
 
   async getActiveUnits() {
     return this.getAll({
-      orderBy: { column: 'name', ascending: true }
+      select: 'id, kode, name, description, updated_at',
+      orderBy: { column: 'kode', ascending: true }
     });
   }
 }
@@ -55,6 +58,27 @@ export class SupplierService extends BaseService<Supplier> {
   async searchSuppliers(query: string) {
     return this.search(query, ['name', 'contact_person', 'email', 'phone'], {
       orderBy: { column: 'name', ascending: true }
+    });
+  }
+  
+  async searchCategories(query: string) {
+    return this.search(query, ['kode', 'name', 'description'], {
+      select: 'id, kode, name, description, updated_at',
+      orderBy: { column: 'kode', ascending: true }
+    });
+  }
+  
+  async searchTypes(query: string) {
+    return this.search(query, ['kode', 'name', 'description'], {
+      select: 'id, kode, name, description, updated_at',
+      orderBy: { column: 'kode', ascending: true }
+    });
+  }
+  
+  async searchUnits(query: string) {
+    return this.search(query, ['kode', 'name', 'description'], {
+      select: 'id, kode, name, description, updated_at',
+      orderBy: { column: 'kode', ascending: true }
     });
   }
 }

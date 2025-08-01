@@ -52,6 +52,12 @@ export const useItemGridColumns = () => {
         minWidth: 80,
       }),
       createTextColumn({
+        field: "dosage.name",
+        headerName: "Sediaan",
+        minWidth: 100,
+        valueGetter: (params) => params.data.dosage?.name || "-",
+      }),
+      createTextColumn({
         field: "unit_conversions",
         headerName: "Satuan Turunan",
         minWidth: 140,
@@ -93,6 +99,7 @@ export const useItemGridColumns = () => {
     "category.name",
     "type.name",
     "unit.name",
+    "dosage.name",
     "unit_conversions",
     "base_price",
     "sell_price",

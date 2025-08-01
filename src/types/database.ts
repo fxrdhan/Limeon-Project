@@ -1,6 +1,7 @@
 // Database entity types
 export interface Category {
   id: string;
+  kode?: string;
   name: string;
   description?: string;
   updated_at?: string | null;
@@ -8,12 +9,14 @@ export interface Category {
 
 export interface MedicineType {
   id: string;
+  kode?: string;
   name: string;
   updated_at?: string | null;
 }
 
 export interface Unit {
   id: string;
+  kode?: string;
   name: string;
   description?: string;
   updated_at?: string | null;
@@ -106,6 +109,7 @@ export interface UnitConversion {
   id: string;
   unit: {
     id: string;
+    kode?: string;
     name: string;
   };
   conversion: number;
@@ -152,12 +156,14 @@ export interface RawUnitConversion {
 
 export interface ItemType {
   id: string;
+  kode?: string;
   name: string;
   description: string;
 }
 
 export interface UnitData {
   id: string;
+  kode?: string;
   name: string;
 }
 

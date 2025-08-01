@@ -1,24 +1,31 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useUnitConversion } from "../utils/useUnitConversion";
-import { formatDateTime, extractNumericValue, formatRupiah } from "@/lib/formatters";
+import { formatDateTime, extractNumericValue } from "@/lib/formatters";
 import { useConfirmDialog } from "@/components/dialog-box";
 import { calculateProfitPercentage, calculateSellPriceFromMargin } from "../../../shared/utils/PriceCalculator";
 import { useAddItemFormState } from "../form/useItemFormState";
 import { useItemCodeGeneration } from "../utils/useItemCodeGenerator";
 import { useAddItemMutations } from "./useItemMutations";
 import { useFormCache } from "@/hooks/useFormCache";
+import { useItemData } from "../data/useItemData";
 import type {
   ItemFormData,
-  UnitData,
   UseItemManagementProps,
-  DBUnitConversion,
 } from "../../../shared/types";
 
 import { CACHE_KEY } from "../../../constants";
 
-// Legacy code generation functions removed - now handled by edge function
-// All item code generation logic moved to: /supabase/edge-functions/generate-item-code/
+/**
+ * Core Item CRUD Hook
+ * 
+ * Provides comprehensive item management functionality including:
+ * - Form state management
+ * - Data validation
+ * - CRUD operations
+ * - Unit conversion handling
+ * - Code generation via edge function
+ */
 
 export const getUnitById = async (unitName: string) => {
   try {
@@ -64,19 +71,25 @@ export const useAddItemForm = ({
     updateFormData: formState.updateFormData,
   });
 
-  // Wrapper functions for backward compatibility
-  const calculateProfitPercentageWrapper = (
+  // Initialize data management
+  const itemData = useItemData({
+    formState,
+    unitConversionHook,
+  });
+
+  // Memoized wrapper functions for performance
+  const calculateProfitPercentageWrapper = useCallback((
     base_price?: number,
     sell_price?: number,
   ) => {
     const currentBasePrice = base_price ?? formState.formData.base_price;
     const currentSellPrice = sell_price ?? formState.formData.sell_price;
     return calculateProfitPercentage(currentBasePrice, currentSellPrice);
-  };
+  }, [formState.formData.base_price, formState.formData.sell_price]);
 
-  const isDirtyWrapper = () => {
+  const isDirtyWrapper = useCallback(() => {
     return formState.isDirty(unitConversionHook.conversions);
-  };
+  }, [formState, unitConversionHook.conversions]);
 
   const setInitialDataForForm = (data?: ItemFormData) => {
     formState.setInitialDataForForm(data);
@@ -99,7 +112,7 @@ export const useAddItemForm = ({
 
     if (itemId) {
       formState.setIsEditMode(true);
-      fetchItemData(itemId);
+      itemData.fetchItemData(itemId);
       cache.clearCache();
     } else {
       const cachedData = cache.loadFromCache();
@@ -156,157 +169,8 @@ export const useAddItemForm = ({
     unitConversionHook.setSellPrice(formState.formData.sell_price || 0);
   }, [formState.formData.sell_price, unitConversionHook]);
 
-  const fetchItemData = async (id: string) => {
-    try {
-      formState.setLoading(true);
-      const { data: itemData, error: itemError } = await supabase
-        .from("items")
-        .select(
-          `
-                    *, updated_at,
-                    unit_conversions,
-                    manufacturer
-                `,
-        )
-        .eq("id", id)
-        .single();
-      if (itemError) throw itemError;
-      if (!itemData) throw new Error("Item tidak ditemukan");
-      const fetchedFormData = {
-        code: itemData.code || "",
-        name: itemData.name || "",
-        manufacturer: itemData.manufacturer || "",
-        type_id: itemData.type_id || "",
-        category_id: itemData.category_id || "",
-        unit_id: itemData.unit_id || "",
-        rack: itemData.rack || "",
-        barcode: itemData.barcode || "",
-        description: itemData.description || "",
-        base_price: itemData.base_price || 0,
-        sell_price: itemData.sell_price || 0,
-        min_stock: itemData.min_stock || 10,
-        is_active: itemData.is_active !== undefined ? itemData.is_active : true,
-        is_medicine:
-          itemData.is_medicine !== undefined ? itemData.is_medicine : true,
-        has_expiry_date:
-          itemData.has_expiry_date !== undefined
-            ? itemData.has_expiry_date
-            : false,
-        updated_at: itemData.updated_at,
-      };
-      formState.setFormData(fetchedFormData);
-      formState.setInitialFormData(fetchedFormData);
-
-      let parsedConversionsFromDB = [];
-      if (itemData.unit_conversions) {
-        try {
-          parsedConversionsFromDB =
-            typeof itemData.unit_conversions === "string"
-              ? JSON.parse(itemData.unit_conversions)
-              : itemData.unit_conversions;
-        } catch (e) {
-          console.error("Error parsing unit_conversions from DB:", e);
-          parsedConversionsFromDB = [];
-        }
-      }
-
-      if (Array.isArray(parsedConversionsFromDB)) {
-        const mappedConversions = parsedConversionsFromDB.map(
-          (conv: DBUnitConversion) => {
-            const unitDetail =
-              formState.units.find((u) => u.id === conv.to_unit_id) ||
-              formState.units.find((u) => u.name === conv.unit_name);
-            return {
-              id:
-                conv.id ||
-                `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
-              unit_name: conv.unit_name,
-              to_unit_id: unitDetail ? unitDetail.id : conv.to_unit_id || "",
-              unit: unitDetail
-                ? { id: unitDetail.id, name: unitDetail.name }
-                : {
-                    id: conv.to_unit_id || "",
-                    name: conv.unit_name || "Unknown Unit",
-                  },
-              conversion: conv.conversion_rate || 0,
-              basePrice: conv.base_price || 0,
-              sellPrice: conv.sell_price || 0,
-              conversion_rate: conv.conversion_rate || 0,
-            };
-          },
-        );
-        formState.setInitialUnitConversions(mappedConversions);
-      } else {
-        formState.setInitialUnitConversions([]);
-      }
-      formState.setDisplayBasePrice(formatRupiah(itemData.base_price || 0));
-      formState.setDisplaySellPrice(formatRupiah(itemData.sell_price || 0));
-      unitConversionHook.setBaseUnit(itemData.base_unit || "");
-      unitConversionHook.setBasePrice(itemData.base_price || 0);
-      unitConversionHook.setSellPrice(itemData.sell_price || 0);
-      unitConversionHook.skipNextRecalculation();
-      const currentConversions = [...unitConversionHook.conversions];
-      for (const conv of currentConversions) {
-        unitConversionHook.removeUnitConversion(conv.id);
-      }
-      let conversions = [];
-      if (itemData.unit_conversions) {
-        try {
-          conversions =
-            typeof itemData.unit_conversions === "string"
-              ? JSON.parse(itemData.unit_conversions)
-              : itemData.unit_conversions;
-        } catch (e) {
-          console.error("Error parsing unit_conversions:", e);
-          conversions = [];
-        }
-      }
-      if (Array.isArray(conversions)) {
-        for (const conv of conversions) {
-          const unitDetail = formState.units.find((u) => u.name === conv.unit_name);
-          if (unitDetail && typeof conv.conversion_rate === "number") {
-            unitConversionHook.addUnitConversion({
-              to_unit_id: unitDetail.id,
-              unit_name: unitDetail.name,
-              unit: { id: unitDetail.id, name: unitDetail.name },
-              conversion: conv.conversion_rate || 0,
-              basePrice: conv.base_price || 0,
-              sellPrice: conv.sell_price || 0,
-              conversion_rate: conv.conversion_rate || 0,
-            });
-          } else if (typeof conv.conversion_rate === "number") {
-            console.warn(
-              `Unit dengan nama "${conv.unit_name}" tidak ditemukan di daftar unit utama. Menggunakan placeholder.`,
-            );
-            const placeholderUnit: UnitData = {
-              id:
-                conv.to_unit_id ||
-                `temp_id_${Date.now()}_${Math.random()
-                  .toString(36)
-                  .substr(2, 9)}`,
-              name: conv.unit_name || "Unknown Unit",
-            };
-            unitConversionHook.addUnitConversion({
-              to_unit_id: placeholderUnit.id,
-              unit_name: placeholderUnit.name,
-              unit: placeholderUnit,
-              conversion: conv.conversion_rate || 0,
-              basePrice: conv.base_price || 0,
-              sellPrice: conv.sell_price || 0,
-              conversion_rate: conv.conversion_rate || 0,
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching item data:", error);
-      alert("Gagal memuat data item. Silakan coba lagi.");
-    } finally {
-      formState.setLoading(false);
-    }
-  };
-
-  const handleChange = (
+  // Memoized event handlers for performance
+  const handleChange = useCallback((
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >,
@@ -322,40 +186,48 @@ export const useAddItemForm = ({
       const numericInt = extractNumericValue(value);
       unitConversionHook.setSellPrice(numericInt);
     }
-  };
+  }, [formState, unitConversionHook]);
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSelectChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     formState.handleSelectChange(e);
-  };
+  }, [formState]);
 
-  const handleAddNewCategory = (searchTerm?: string) => {
+  const handleAddNewCategory = useCallback((searchTerm?: string) => {
     formState.setCurrentSearchTermForModal(searchTerm);
     formState.setIsAddEditModalOpen(true);
-  };
+  }, [formState]);
 
-  const handleAddNewType = (searchTerm?: string) => {
+  const handleAddNewType = useCallback((searchTerm?: string) => {
     formState.setCurrentSearchTermForModal(searchTerm);
     formState.setIsAddTypeModalOpen(true);
-  };
+  }, [formState]);
 
-  const handleAddNewUnit = (searchTerm?: string) => {
+  const handleAddNewUnit = useCallback((searchTerm?: string) => {
     formState.setCurrentSearchTermForModal(searchTerm);
     formState.setIsAddUnitModalOpen(true);
-  };
+  }, [formState]);
+
+  const handleAddNewDosage = useCallback((searchTerm?: string) => {
+    formState.setCurrentSearchTermForModal(searchTerm);
+    formState.setIsAddDosageModalOpen(true);
+  }, [formState]);
 
   // Use mutations from the modular hook
   const {
     addCategoryMutation,
     addTypeMutation,
     addUnitMutation,
+    addDosageMutation,
     deleteItemMutation,
     saveItemMutation,
     saveCategory,
     saveType,
     saveUnit,
+    saveDosage,
   } = mutations;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Memoized submit and save handlers
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     formState.setSaving(true);
     
@@ -375,9 +247,21 @@ export const useAddItemForm = ({
     } finally {
       formState.setSaving(false);
     }
-  };
+  }, [
+    formState,
+    unitConversionHook.conversions,
+    unitConversionHook.baseUnit,
+    saveItemMutation,
+    itemId,
+    cache
+  ]);
 
-  const handleSaveCategory = async (categoryData: {
+  // Memoized utility functions
+  const clearSearchTerm = useCallback(() => {
+    formState.setCurrentSearchTermForModal(undefined);
+  }, [formState]);
+
+  const handleSaveCategory = useCallback(async (categoryData: {
     name: string;
     description: string;
   }) => {
@@ -390,9 +274,9 @@ export const useAddItemForm = ({
     } catch {
       alert("Gagal menyimpan kategori baru.");
     }
-  };
+  }, [saveCategory, formState, clearSearchTerm]);
 
-  const handleSaveType = async (typeData: {
+  const handleSaveType = useCallback(async (typeData: {
     name: string;
     description: string;
   }) => {
@@ -405,9 +289,9 @@ export const useAddItemForm = ({
     } catch {
       alert("Gagal menyimpan jenis item baru.");
     }
-  };
+  }, [saveType, formState, clearSearchTerm]);
 
-  const handleSaveUnit = async (unitData: {
+  const handleSaveUnit = useCallback(async (unitData: {
     name: string;
     description: string;
   }) => {
@@ -420,7 +304,23 @@ export const useAddItemForm = ({
     } catch {
       alert("Gagal menyimpan satuan baru.");
     }
-  };
+  }, [saveUnit, formState, clearSearchTerm]);
+
+  const handleSaveDosage = useCallback(async (dosageData: {
+    kode?: string;
+    name: string;
+    description: string;
+  }) => {
+    try {
+      const { newDosage, updatedDosages } = await saveDosage(dosageData);
+      if (updatedDosages) formState.setDosages(updatedDosages);
+      if (newDosage?.id) formState.updateFormData({ dosage_id: newDosage.id });
+      formState.setIsAddDosageModalOpen(false);
+      clearSearchTerm();
+    } catch {
+      alert("Gagal menyimpan sediaan baru.");
+    }
+  }, [saveDosage, formState, clearSearchTerm]);
 
   const handleDeleteItem = () => {
     if (!itemId) return;
@@ -502,20 +402,18 @@ export const useAddItemForm = ({
     }
   };
 
-  const formattedUpdateAt = formState.formData.updated_at
-    ? formatDateTime(formState.formData.updated_at)
-    : "-";
+  // Memoized computed values
+  const formattedUpdateAt = useMemo(() => 
+    formState.formData.updated_at ? formatDateTime(formState.formData.updated_at) : "-",
+    [formState.formData.updated_at]
+  );
 
-  const clearSearchTerm = () => {
-    formState.setCurrentSearchTermForModal(undefined);
-  };
-
-  const closeModalAndClearSearch = (
+  const closeModalAndClearSearch = useCallback((
     modalSetter: React.Dispatch<React.SetStateAction<boolean>>,
   ) => {
     modalSetter(false);
     clearSearchTerm();
-  };
+  }, [clearSearchTerm]);
 
   // Use regenerateItemCode from the modular code generation hook
   const regenerateItemCode = codeGeneration.regenerateItemCode;
@@ -529,6 +427,7 @@ export const useAddItemForm = ({
     categories: formState.categories,
     types: formState.types,
     units: formState.units,
+    dosages: formState.dosages,
     loading: formState.loading,
     saving: formState.saving,
     isEditMode: formState.isEditMode,
@@ -540,6 +439,8 @@ export const useAddItemForm = ({
     setIsAddTypeModalOpen: formState.setIsAddTypeModalOpen,
     isAddUnitModalOpen: formState.isAddUnitModalOpen,
     setIsAddUnitModalOpen: formState.setIsAddUnitModalOpen,
+    isAddDosageModalOpen: formState.isAddDosageModalOpen,
+    setIsAddDosageModalOpen: formState.setIsAddDosageModalOpen,
     
     // Editing states (from formState)
     editingMargin: formState.editingMargin,
@@ -559,10 +460,12 @@ export const useAddItemForm = ({
     handleSaveCategory,
     handleSaveType,
     handleSaveUnit,
+    handleSaveDosage,
     handleDeleteItem,
     handleAddNewCategory,
     handleAddNewType,
     handleAddNewUnit,
+    handleAddNewDosage,
     handleCancel,
     
     // Utility functions
@@ -578,12 +481,14 @@ export const useAddItemForm = ({
     addCategoryMutation,
     addUnitMutation,
     addTypeMutation,
+    addDosageMutation,
     deleteItemMutation,
     
     // Setters (from formState)
     setCategories: formState.setCategories,
     setUnits: formState.setUnits,
     setTypes: formState.setTypes,
+    setDosages: formState.setDosages,
     
     // Unit conversion hook
     unitConversionHook,

@@ -18,12 +18,13 @@ interface ItemBasicInfoFormProps {
     category_id: string;
     type_id: string;
     unit_id: string;
-    rack: string;
+    dosage_id: string;
     description: string;
   };
   categories: DropdownOption[];
   types: DropdownOption[];
   units: DropdownOption[];
+  dosages: DropdownOption[];
   loading: boolean;
   onCodeRegenerate: () => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
@@ -32,6 +33,7 @@ interface ItemBasicInfoFormProps {
   onAddNewCategory: (searchTerm?: string) => void;
   onAddNewType: (searchTerm?: string) => void;
   onAddNewUnit: (searchTerm?: string) => void;
+  onAddNewDosage: (searchTerm?: string) => void;
 }
 
 const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
@@ -40,6 +42,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
     categories,
     types,
     units,
+    dosages,
     loading,
     onCodeRegenerate, 
     onChange,
@@ -47,7 +50,8 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
     onDropdownChange,
     onAddNewCategory,
     onAddNewType,
-    onAddNewUnit
+    onAddNewUnit,
+    onAddNewDosage
   }, ref) => {
     return (
       <FormSection title="Data Umum">
@@ -184,14 +188,25 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             )}
           </FormField>
 
-          <FormField label="Rak">
-            <Input
-              name="rack"
-              tabIndex={8}
-              value={formData.rack}
-              onChange={onChange}
-              className="w-full"
-            />
+          <FormField label="Sediaan" required={true}>
+            {loading && dosages.length === 0 ? (
+              <Input value="Memuat sediaan..." readOnly disabled />
+            ) : (
+              <Dropdown
+                name="dosage_id"
+                tabIndex={8}
+                value={formData.dosage_id}
+                onChange={(value) => onDropdownChange("dosage_id", value)}
+                options={dosages}
+                placeholder="-- Pilih Sediaan --"
+                required
+                validate={true}
+                showValidationOnBlur={true}
+                validationAutoHide={true}
+                validationAutoHideDelay={3000}
+                onAddNew={onAddNewDosage}
+              />
+            )}
           </FormField>
         </div>
 

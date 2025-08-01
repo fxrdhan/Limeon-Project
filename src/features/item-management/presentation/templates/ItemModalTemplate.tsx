@@ -1,3 +1,4 @@
+import React from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CardFooter } from "@/components/card";
@@ -28,14 +29,14 @@ interface ItemModalTemplateProps {
   };
 }
 
-export default function ItemModalTemplate({
+const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(({
   isOpen,
   isClosing,
   onBackdropClick,
   onSubmit,
   children,
   formAction,
-}: ItemModalTemplateProps) {
+}) => {
   const backdropVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1 },
@@ -160,4 +161,8 @@ export default function ItemModalTemplate({
     </AnimatePresence>,
     document.body
   );
-}
+});
+
+ItemModalTemplate.displayName = 'ItemModalTemplate';
+
+export default ItemModalTemplate;

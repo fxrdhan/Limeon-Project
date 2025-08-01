@@ -1,3 +1,4 @@
+import React from "react";
 import { FaUndoAlt, FaTimes, FaArrowLeft, FaHistory } from "react-icons/fa";
 import { CardHeader, CardTitle } from "@/components/card";
 import Button from "@/components/button";
@@ -14,7 +15,7 @@ interface LocalItemFormHeaderProps {
   itemName?: string;
 }
 
-export default function ItemFormHeader({
+const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(({
   isEditMode,
   formattedUpdateAt,
   isClosing,
@@ -24,7 +25,7 @@ export default function ItemFormHeader({
   isHistoryMode = false,
   onBackToForm,
   itemName,
-}: LocalItemFormHeaderProps) {
+}) => {
   return (
     <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-gray-200 mb-6">
       {/* Left section */}
@@ -95,4 +96,8 @@ export default function ItemFormHeader({
       </div>
     </CardHeader>
   );
-}
+});
+
+ItemFormHeader.displayName = 'ItemFormHeader';
+
+export default ItemFormHeader;

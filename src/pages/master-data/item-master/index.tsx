@@ -1,10 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import Pagination from "@/components/pagination";
 import PageTitle from "@/components/page-title";
-import {
-  EntityManagementModal,
-  ItemManagementModal,
-} from "@/features/item-management";
+import { EntityManagementModal } from "@/features/item-management/presentation/templates/entity";
+import ItemManagementModal from "@/features/item-management/presentation/templates/item/ItemManagementModal";
 import { Card } from "@/components/card";
 import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
 import { ColDef, RowClickedEvent } from "ag-grid-community";
@@ -28,10 +26,10 @@ import {
 
 // Additional imports for Items tab
 import SearchToolbar from "@/features/shared/components/SearchToolbar";
-import { ItemDataTable } from "@/features/item-management";
-import { useItemGridColumns } from "@/features/item-management";
+import { ItemDataTable } from "@/features/item-management/presentation/organisms";
+import { useItemGridColumns } from "@/features/item-management/application/hooks/ui";
 
-type MasterDataType = "categories" | "types" | "units" | "items";
+type MasterDataType = "categories" | "types" | "units" | "dosages" | "items";
 type MasterDataEntity = Category | MedicineType | Unit | ItemDataType;
 
 interface TabConfig {
@@ -61,7 +59,7 @@ const tabConfigs: Record<MasterDataType, TabConfig> = {
     label: "Jenis",
     entityName: "Jenis Item",
     addButtonText: "Tambah Jenis Item Baru",
-    searchPlaceholder: "Cari nama atau deskripsi jenis item...",
+    searchPlaceholder: "Cari nama atau deskripsi jenis item",
     nameColumnHeader: "Nama Jenis",
     noDataMessage: "Tidak ada data jenis item yang ditemukan",
     searchNoDataMessage: "Tidak ada jenis item dengan kata kunci",
@@ -71,17 +69,27 @@ const tabConfigs: Record<MasterDataType, TabConfig> = {
     label: "Satuan",
     entityName: "Satuan",
     addButtonText: "Tambah Satuan Baru",
-    searchPlaceholder: "Cari nama atau deskripsi satuan...",
+    searchPlaceholder: "Cari nama atau deskripsi satuan",
     nameColumnHeader: "Nama Satuan",
     noDataMessage: "Tidak ada data satuan yang ditemukan",
     searchNoDataMessage: "Tidak ada satuan dengan kata kunci",
+  },
+  dosages: {
+    key: "dosages",
+    label: "Sediaan",
+    entityName: "Sediaan",
+    addButtonText: "Tambah Sediaan Baru",
+    searchPlaceholder: "Cari nama atau deskripsi sediaan",
+    nameColumnHeader: "Nama Sediaan",
+    noDataMessage: "Tidak ada data sediaan yang ditemukan",
+    searchNoDataMessage: "Tidak ada sediaan dengan kata kunci",
   },
   items: {
     key: "items",
     label: "Item",
     entityName: "Item",
     addButtonText: "Tambah Item Baru",
-    searchPlaceholder: "Cari nama, kode, atau deskripsi item...",
+    searchPlaceholder: "Cari nama, kode, atau deskripsi item",
     nameColumnHeader: "Nama Item",
     noDataMessage: "Tidak ada data item yang ditemukan",
     searchNoDataMessage: "Tidak ada item dengan kata kunci",
@@ -89,7 +97,7 @@ const tabConfigs: Record<MasterDataType, TabConfig> = {
 };
 
 // Define tab order with items first
-const tabOrder: MasterDataType[] = ["items", "categories", "types", "units"];
+const tabOrder: MasterDataType[] = ["items", "categories", "types", "units", "dosages"];
 
 const ItemMasterNew = () => {
   const [activeTab, setActiveTab] = useState<MasterDataType>("items");
@@ -118,10 +126,16 @@ const ItemMasterNew = () => {
   // Map activeTab to table names for realtime control
   const getTableNameFromTab = (tab: MasterDataType) => {
     switch (tab) {
-      case "categories": return "item_categories";
-      case "types": return "item_types";
-      case "units": return "item_units";
-      case "items": return "items";
+      case "categories":
+        return "item_categories";
+      case "types":
+        return "item_types";
+      case "units":
+        return "item_units";
+      case "dosages":
+        return "item_dosages";
+      case "items":
+        return "items";
     }
   };
 
@@ -142,6 +156,10 @@ const ItemMasterNew = () => {
     searchInputRef,
     activeTableName: getTableNameFromTab(activeTab),
   });
+  const dosagesManagement = useMasterDataManagement("item_dosages", "Sediaan", {
+    searchInputRef,
+    activeTableName: getTableNameFromTab(activeTab),
+  });
   const itemsManagement = useMasterDataManagement("items", "Item", {
     searchInputRef,
     activeTableName: getTableNameFromTab(activeTab),
@@ -156,6 +174,8 @@ const ItemMasterNew = () => {
         return typesManagement;
       case "units":
         return unitsManagement;
+      case "dosages":
+        return dosagesManagement;
       case "items":
         return itemsManagement;
     }
@@ -276,6 +296,14 @@ const ItemMasterNew = () => {
   // Column definitions
   const columnDefs: ColDef[] = [
     createTextColumn({
+      field: "kode",
+      headerName: "Kode",
+      minWidth: 80,
+      valueGetter: (params) => {
+        return params.data.kode || "-";
+      },
+    }),
+    createTextColumn({
       field: "name",
       headerName: currentConfig.nameColumnHeader,
       minWidth: 120,
@@ -376,9 +404,13 @@ const ItemMasterNew = () => {
                   ? undefined // Use default items behavior
                   : handleKeyDown
               }
-              items={activeTab === "items" ? (data as ItemDataType[]) : undefined}
+              items={
+                activeTab === "items" ? (data as ItemDataType[]) : undefined
+              }
               onItemSelect={
-                activeTab === "items" ? (item: ItemDataType) => handleItemSelect(item.id) : undefined
+                activeTab === "items"
+                  ? (item: ItemDataType) => handleItemSelect(item.id)
+                  : undefined
               }
             />
           </div>
@@ -422,7 +454,7 @@ const ItemMasterNew = () => {
                   ? `<span style="padding: 10px; color: #888;">${currentConfig.searchNoDataMessage} "${search}"</span>`
                   : `<span style="padding: 10px; color: #888;">${currentConfig.noDataMessage}</span>`
               }
-              autoSizeColumns={["name"]}
+              autoSizeColumns={["kode", "name"]}
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
               style={{
@@ -451,8 +483,13 @@ const ItemMasterNew = () => {
           <EntityManagementModal
             isOpen={isAddModalOpen}
             onClose={() => setIsAddModalOpen(false)}
-            onSubmit={async (formData: { name: string; description: string }) => {
+            onSubmit={async (formData: {
+              kode?: string;
+              name: string;
+              description: string;
+            }) => {
               await handleModalSubmit({
+                kode: String(formData.kode || ""),
                 name: String(formData.name || ""),
                 description: String(formData.description || ""),
                 id: undefined,
@@ -460,6 +497,7 @@ const ItemMasterNew = () => {
             }}
             isLoading={false}
             entityName={currentConfig.entityName}
+            showKodeField={true}
           />
 
           <EntityManagementModal
@@ -467,16 +505,24 @@ const ItemMasterNew = () => {
             onClose={() => {
               setIsEditModalOpen(false);
             }}
-            onSubmit={async (formData: { name: string; description: string }) => {
+            onSubmit={async (formData: {
+              kode?: string;
+              name: string;
+              description: string;
+            }) => {
               await handleModalSubmit({
+                kode: String(formData.kode || ""),
                 name: String(formData.name || ""),
                 description: String(formData.description || ""),
                 id: editingItem?.id,
               });
             }}
-            initialData={editingItem || undefined}
+            initialData={
+              (editingItem as Category | MedicineType | Unit) || undefined
+            }
             onDelete={editingItem ? () => handleDelete(editingItem) : undefined}
             isLoading={false}
+            showKodeField={true}
             isDeleting={deleteMutation.isLoading}
             entityName={currentConfig.entityName}
           />

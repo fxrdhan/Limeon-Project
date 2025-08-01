@@ -1,3 +1,4 @@
+import React from "react";
 import { FaTrash } from "react-icons/fa";
 import Button from "@/components/button";
 import FormSection from "@/components/form-section";
@@ -13,11 +14,13 @@ import type {
   UnitConversionLogicFormData
 } from "../../shared/types";
 
-const DeleteButton = ({ onClick }: { onClick: () => void }) => (
+const DeleteButton = React.memo(({ onClick }: { onClick: () => void }) => (
   <Button variant="danger" size="sm" tabIndex={19} onClick={onClick}>
     <FaTrash />
   </Button>
-);
+));
+
+DeleteButton.displayName = 'DeleteButton';
 
 interface LocalItemUnitConversionManagerProps {
   baseUnit: string;
