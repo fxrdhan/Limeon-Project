@@ -26,6 +26,7 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
       Kategori: "item_categories",
       "Jenis Item": "item_types",
       Satuan: "item_units",
+      Sediaan: "item_dosages",
     };
     return tableMap[entityName] || "items";
   };
