@@ -35,6 +35,8 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
         return 'item_types';
       case 'satuan':
         return 'item_units';
+      case 'sediaan':
+        return 'item_dosages';
       default:
         return '';
     }

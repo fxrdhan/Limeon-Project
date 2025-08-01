@@ -135,7 +135,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 value={formData.category_id}
                 onChange={(value) => onDropdownChange("category_id", value)}
                 options={categories}
-                placeholder="-- Pilih Kategori --"
+                placeholder="Pilih Kategori"
                 required
                 validate={true}
                 showValidationOnBlur={true}
@@ -156,7 +156,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 value={formData.type_id}
                 onChange={(value) => onDropdownChange("type_id", value)}
                 options={types}
-                placeholder="-- Pilih Jenis --"
+                placeholder="Pilih Jenis"
                 required
                 validate={true}
                 showValidationOnBlur={true}
@@ -177,7 +177,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 value={formData.unit_id}
                 onChange={(value) => onDropdownChange("unit_id", value)}
                 options={units}
-                placeholder="-- Pilih Satuan --"
+                placeholder="Pilih Satuan"
                 required
                 validate={true}
                 showValidationOnBlur={true}
@@ -198,7 +198,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 value={formData.dosage_id}
                 onChange={(value) => onDropdownChange("dosage_id", value)}
                 options={dosages}
-                placeholder="-- Pilih Sediaan --"
+                placeholder="Pilih Sediaan"
                 required
                 validate={true}
                 showValidationOnBlur={true}
