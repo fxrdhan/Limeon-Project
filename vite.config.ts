@@ -54,8 +54,8 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 1500, // Increase warning limit to 1.5MB for large dependencies
     
-    // Optimize for better performance
-    target: 'esnext',
+    // Optimize for better performance - updated for Vite v7
+    target: ['chrome107', 'firefox104', 'safari16', 'edge107'],
     minify: 'esbuild',
     sourcemap: false, // Disable sourcemaps in production for smaller bundle
   },
