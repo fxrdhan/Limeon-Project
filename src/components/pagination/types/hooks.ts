@@ -31,6 +31,7 @@ export interface UseFloatingPaginationReturn {
 
 export interface UseKeyboardNavigationProps {
   showFloating: boolean;
+  hideFloatingWhenModalOpen: boolean;
   selectedPageSizeIndex: number;
   pageSizes: number[];
   currentPage: number;

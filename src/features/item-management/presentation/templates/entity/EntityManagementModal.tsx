@@ -8,9 +8,7 @@ import EntityModalContent from "./EntityModalContent";
 import { ComparisonModal } from "../comparison";
 import type { AddEditModalProps } from "@/types";
 
-interface EntityManagementModalProps extends AddEditModalProps {
-  showKodeField?: boolean;
-}
+interface EntityManagementModalProps extends AddEditModalProps {}
 
 const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
   isOpen,
@@ -22,7 +20,6 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
   isDeleting = false,
   entityName,
   initialNameFromSearch,
-  showKodeField = false,
 }) => {
   useConfirmDialog();
   
@@ -58,7 +55,6 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
     entityName,
     isLoading,
     isDeleting,
-    showKodeField,
   });
 
   // Wrap restoreVersion to handle post-restore actions
@@ -71,7 +67,7 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
   return (
     <EntityModalProvider value={contextValue}>
       <EntityModalTemplate>
-        <EntityModalContent nameInputRef={nameInputRef} initialData={initialData} showKodeField={showKodeField} />
+        <EntityModalContent nameInputRef={nameInputRef} initialData={initialData} />
       </EntityModalTemplate>
       
       <ComparisonModal

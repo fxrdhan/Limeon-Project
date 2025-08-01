@@ -5,10 +5,9 @@ import { useEntityModal } from "../../shared/contexts/EntityModalContext";
 
 interface EntityFormFieldsProps {
   nameInputRef: React.RefObject<HTMLInputElement | null>;
-  showKodeField?: boolean;
 }
 
-const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef, showKodeField = false }) => {
+const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef }) => {
   const { form, ui, action, formActions } = useEntityModal();
   const { kode, name, description } = form;
   const { entityName } = ui;
@@ -19,7 +18,7 @@ const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef, showK
 
   return (
     <div className="p-6 space-y-4">
-      {showKodeField && setKode && (
+      {setKode && (
         <Input
           label={`Kode ${entityName}`}
           value={kode || ''}

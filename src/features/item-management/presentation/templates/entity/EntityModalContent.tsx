@@ -9,7 +9,6 @@ import type { EntityData } from "../../../shared/types";
 interface EntityModalContentProps {
   nameInputRef: React.RefObject<HTMLInputElement | null>;
   initialData?: EntityData | null;
-  showKodeField?: boolean;
 }
 
 const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
@@ -147,7 +146,6 @@ const EntityModalFooter: React.FC<{
 const EntityModalContent: React.FC<EntityModalContentProps> = ({
   nameInputRef,
   initialData,
-  showKodeField = false,
 }) => {
   const { ui, uiActions } = useEntityModal();
   const { mode } = ui;
@@ -169,7 +167,6 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
         return (
           <EntityFormFields
             nameInputRef={nameInputRef}
-            showKodeField={showKodeField}
           />
         );
     }
