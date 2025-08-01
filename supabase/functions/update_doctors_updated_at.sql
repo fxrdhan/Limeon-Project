@@ -1,5 +1,5 @@
 -- Function: update_doctors_updated_at
--- Exported from Supabase on: 2025-08-01T12:24:51.032Z
+-- Exported from Supabase on: 2025-08-01T17:43:16.370Z
 
 CREATE OR REPLACE FUNCTION public.update_doctors_updated_at()
  RETURNS trigger

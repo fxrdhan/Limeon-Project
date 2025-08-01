@@ -3675,5 +3675,1577 @@
     },
     "changed_fields": null,
     "change_description": null
+  },
+  {
+    "id": "593d93ee-6abc-42c9-b6d7-ca894d54eec2",
+    "entity_table": "item_units",
+    "entity_id": "4c210af0-65fe-4aae-b948-8d1e4db82668",
+    "version_number": 2,
+    "action_type": "DELETE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T12:44:58.140Z",
+    "entity_data": {
+      "id": "4c210af0-65fe-4aae-b948-8d1e4db82668",
+      "kode": null,
+      "name": "jjj",
+      "created_at": "2025-08-01T08:54:07.847841+00:00",
+      "updated_at": "2025-08-01T08:54:07.847841+00:00",
+      "description": ""
+    },
+    "changed_fields": null,
+    "change_description": null
+  },
+  {
+    "id": "3a36661a-947c-4746-bd63-b75405c473ad",
+    "entity_table": "item_categories",
+    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T12:45:49.442Z",
+    "entity_data": {
+      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+      "kode": "AAN",
+      "name": "Antianginaa",
+      "created_at": "2025-08-01T03:54:49.798644+00:00",
+      "updated_at": "2025-08-01T12:45:49.442714+00:00",
+      "description": "Obat jantung koroner"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Antianginaa",
+        "from": "Antiangina"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "01d36a7f-263b-445b-bfbb-7061651fd3b5",
+    "entity_table": "item_categories",
+    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T12:45:54.657Z",
+    "entity_data": {
+      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+      "kode": "AAN",
+      "name": "Antiangina",
+      "created_at": "2025-08-01T03:54:49.798644+00:00",
+      "updated_at": "2025-08-01T12:45:54.657343+00:00",
+      "description": "Obat jantung koroner"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Antiangina",
+        "from": "Antianginaa"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "d841e61e-1eb1-4613-9e29-6dee8e7ab3fc",
+    "entity_table": "item_dosages",
+    "entity_id": "8dbfee3d-203a-4975-bdd4-e230b6b2ab8f",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T13:24:29.803Z",
+    "entity_data": {
+      "id": "8dbfee3d-203a-4975-bdd4-e230b6b2ab8f",
+      "kode": "DPI",
+      "name": "Dry Powder Inhaler",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T13:24:29.803154+00:00",
+      "description": "Inhaler Bubuk Kering"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Inhaler Bubuk Kering",
+        "from": "Inhaler Bubuk Kering."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "48cf9884-0090-43ec-a747-63cc9e0555d5",
+    "entity_table": "item_dosages",
+    "entity_id": "8dbfee3d-203a-4975-bdd4-e230b6b2ab8f",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T13:25:15.590Z",
+    "entity_data": {
+      "id": "8dbfee3d-203a-4975-bdd4-e230b6b2ab8f",
+      "kode": "DPI",
+      "name": "Dry Powder Inhaler",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T13:25:15.590304+00:00",
+      "description": "Inhaler Bubuk Keringg"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Inhaler Bubuk Keringg",
+        "from": "Inhaler Bubuk Kering"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "0d2c8ac2-8a0e-4f78-8573-d7798ce2bd00",
+    "entity_table": "item_dosages",
+    "entity_id": "257d5105-d248-4bbc-afbb-24b17549aa7d",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:47:46.411Z",
+    "entity_data": {
+      "id": "257d5105-d248-4bbc-afbb-24b17549aa7d",
+      "kode": "TAB",
+      "name": "Tablet",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:47:46.411811+00:00",
+      "description": "Bentuk sediaan padat obat, biasanya bulat atau oval."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Bentuk sediaan padat obat, biasanya bulat atau oval.",
+        "from": "Tablet biasa"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "5b1b40e9-539f-4ce0-be6e-508f7961bfbd",
+    "entity_table": "item_dosages",
+    "entity_id": "257d5105-d248-4bbc-afbb-24b17549aa7d",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:47:49.929Z",
+    "entity_data": {
+      "id": "257d5105-d248-4bbc-afbb-24b17549aa7d",
+      "kode": "TAB",
+      "name": "Tablet",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:47:49.92941+00:00",
+      "description": "Bentuk sediaan padat obat, biasanya bulat atau oval"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Bentuk sediaan padat obat, biasanya bulat atau oval",
+        "from": "Bentuk sediaan padat obat, biasanya bulat atau oval."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "6711c555-3b09-4ac3-a492-6f61110c0cd7",
+    "entity_table": "item_dosages",
+    "entity_id": "1e0eabfb-e5d2-4550-bc57-05068e9b46fe",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:48:16.471Z",
+    "entity_data": {
+      "id": "1e0eabfb-e5d2-4550-bc57-05068e9b46fe",
+      "kode": "CAP",
+      "name": "Kapsul",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:48:16.471699+00:00",
+      "description": "Bentuk sediaan obat yang dibungkus dalam cangkang gelatin atau bahan lain yang mudah dicerna"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Bentuk sediaan obat yang dibungkus dalam cangkang gelatin atau bahan lain yang mudah dicerna",
+        "from": "Kapsul"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "a6dfc58f-590c-44ab-adf4-6505b1cb7bcf",
+    "entity_table": "item_dosages",
+    "entity_id": "1e0eabfb-e5d2-4550-bc57-05068e9b46fe",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:48:27.214Z",
+    "entity_data": {
+      "id": "1e0eabfb-e5d2-4550-bc57-05068e9b46fe",
+      "kode": "CAP",
+      "name": "Kapsul",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:48:27.214637+00:00",
+      "description": "Bentuk sediaan obat yang dibungkus dalam cangkang gelatin atau bahan lain yang mudah dicerna."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Bentuk sediaan obat yang dibungkus dalam cangkang gelatin atau bahan lain yang mudah dicerna.",
+        "from": "Bentuk sediaan obat yang dibungkus dalam cangkang gelatin atau bahan lain yang mudah dicerna"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "e62088be-8ad3-4897-9e40-8396b6d2429d",
+    "entity_table": "item_dosages",
+    "entity_id": "257d5105-d248-4bbc-afbb-24b17549aa7d",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:48:34.019Z",
+    "entity_data": {
+      "id": "257d5105-d248-4bbc-afbb-24b17549aa7d",
+      "kode": "TAB",
+      "name": "Tablet",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:48:34.019185+00:00",
+      "description": "Bentuk sediaan padat obat, biasanya bulat atau oval."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Bentuk sediaan padat obat, biasanya bulat atau oval.",
+        "from": "Bentuk sediaan padat obat, biasanya bulat atau oval"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "856819ee-05d8-4f74-9da2-cc4083072b56",
+    "entity_table": "item_dosages",
+    "entity_id": "24a9812c-b907-420b-9191-019979db1f59",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:49:53.423Z",
+    "entity_data": {
+      "id": "24a9812c-b907-420b-9191-019979db1f59",
+      "kode": "OVU",
+      "name": "Ovula",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:49:53.423888+00:00",
+      "description": "Sediaan berbentuk padat yang dimasukkan ke dalam vagina (intravaginal)."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan berbentuk padat yang dimasukkan ke dalam vagina (intravaginal).",
+        "from": "Ovula"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "3faa513d-013e-4fb5-9d91-1780991118c0",
+    "entity_table": "item_dosages",
+    "entity_id": "9696fadd-7db5-426e-b7bd-60e936743c31",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:50:25.700Z",
+    "entity_data": {
+      "id": "9696fadd-7db5-426e-b7bd-60e936743c31",
+      "kode": "PAS",
+      "name": "Pasta",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:50:25.700804+00:00",
+      "description": "Ssediaan semi padat yang mengandung satu atau lebih bahan obat, ditujukan untuk pemakaian topikal (luar)."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Ssediaan semi padat yang mengandung satu atau lebih bahan obat, ditujukan untuk pemakaian topikal (luar).",
+        "from": "Pasta"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "5084d628-7544-4766-9b74-84773b7087db",
+    "entity_table": "item_dosages",
+    "entity_id": "bff8001b-0f98-41e2-8902-fc1f804d418b",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:51:14.457Z",
+    "entity_data": {
+      "id": "bff8001b-0f98-41e2-8902-fc1f804d418b",
+      "kode": "OIN",
+      "name": "Salep (Ointment)",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:51:14.457358+00:00",
+      "description": "Sediaan setengah padat yang dirancang untuk pemakaian luar pada kulit atau selaput lendir."
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Salep (Ointment)",
+        "from": "Salep"
+      },
+      "description": {
+        "to": "Sediaan setengah padat yang dirancang untuk pemakaian luar pada kulit atau selaput lendir.",
+        "from": "Ointment"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "1cd42b23-7696-4f8c-a87a-35ce7838317c",
+    "entity_table": "item_dosages",
+    "entity_id": "14dc78e3-c894-4326-bc8f-9c3ac446f00a",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:51:45.254Z",
+    "entity_data": {
+      "id": "14dc78e3-c894-4326-bc8f-9c3ac446f00a",
+      "kode": "NSP",
+      "name": "Nasal Spray",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:51:45.254935+00:00",
+      "description": "Obat berbentuk cairan yang disemprotkan ke dalam rongga hidung."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Obat berbentuk cairan yang disemprotkan ke dalam rongga hidung.",
+        "from": "Spray hidung"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "d38040a6-5422-4862-9018-9615fc93ee2a",
+    "entity_table": "item_dosages",
+    "entity_id": "a89026da-028f-4eeb-bd94-c5dac970cf58",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:52:23.567Z",
+    "entity_data": {
+      "id": "a89026da-028f-4eeb-bd94-c5dac970cf58",
+      "kode": "NEB",
+      "name": "Nebulizer",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:52:23.567404+00:00",
+      "description": "Obat dalam bentuk cairan yang diubah menjadi uap halus untuk dihirup menggunakan alat nebulizer, biasanya untuk mengatasi masalah pernapasan seperti asma."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Obat dalam bentuk cairan yang diubah menjadi uap halus untuk dihirup menggunakan alat nebulizer, biasanya untuk mengatasi masalah pernapasan seperti asma.",
+        "from": "Nebulizer"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "5d325c8a-f57a-482c-98fb-a4c06b67299f",
+    "entity_table": "item_dosages",
+    "entity_id": "a89026da-028f-4eeb-bd94-c5dac970cf58",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:52:43.393Z",
+    "entity_data": {
+      "id": "a89026da-028f-4eeb-bd94-c5dac970cf58",
+      "kode": "NEB",
+      "name": "Nebulizer",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:52:43.39386+00:00",
+      "description": "Obat dalam bentuk cairan yang diubah menjadi uap halus untuk dihirup."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Obat dalam bentuk cairan yang diubah menjadi uap halus untuk dihirup.",
+        "from": "Obat dalam bentuk cairan yang diubah menjadi uap halus untuk dihirup menggunakan alat nebulizer, biasanya untuk mengatasi masalah pernapasan seperti asma."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "51078aff-59c8-4122-b56b-40f994ce2100",
+    "entity_table": "item_dosages",
+    "entity_id": "a89026da-028f-4eeb-bd94-c5dac970cf58",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:53:21.327Z",
+    "entity_data": {
+      "id": "a89026da-028f-4eeb-bd94-c5dac970cf58",
+      "kode": "NEB",
+      "name": "Nebulizer",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:53:21.32709+00:00",
+      "description": "Alat medis yang mengubah obat cair menjadi uap yang dihirup melalui mulut atau hidung."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Alat medis yang mengubah obat cair menjadi uap yang dihirup melalui mulut atau hidung.",
+        "from": "Obat dalam bentuk cairan yang diubah menjadi uap halus untuk dihirup."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "6f174088-2c59-4c17-bbc9-760a5a948193",
+    "entity_table": "item_dosages",
+    "entity_id": "a89026da-028f-4eeb-bd94-c5dac970cf58",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:54:27.596Z",
+    "entity_data": {
+      "id": "a89026da-028f-4eeb-bd94-c5dac970cf58",
+      "kode": "NEB",
+      "name": "Nebulizer",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:54:27.596157+00:00",
+      "description": "Obat dalam bentuk cairan yang diubah menjadi uap halus untuk dihirup."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Obat dalam bentuk cairan yang diubah menjadi uap halus untuk dihirup.",
+        "from": "Alat medis yang mengubah obat cair menjadi uap yang dihirup melalui mulut atau hidung."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "1b45bc1e-b133-4f58-a40a-dfb01c3eef6e",
+    "entity_table": "item_dosages",
+    "entity_id": "623ce2cb-1f21-49e6-b323-af0bcc2c2133",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:55:10.898Z",
+    "entity_data": {
+      "id": "623ce2cb-1f21-49e6-b323-af0bcc2c2133",
+      "kode": "ND",
+      "name": "Nasal Drop",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:55:10.898245+00:00",
+      "description": "Sediaan obat berbentuk cair yang digunakan dengan cara diteteskan ke dalam hidung."
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Nasal Drop",
+        "from": "Tetes Hidung"
+      },
+      "description": {
+        "to": "Sediaan obat berbentuk cair yang digunakan dengan cara diteteskan ke dalam hidung.",
+        "from": "Nasal Drop"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "4f263a7e-9335-420d-ac55-968e334f693d",
+    "entity_table": "item_dosages",
+    "entity_id": "caaedbcc-8f32-405f-9c01-e894fd7b6283",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:56:22.261Z",
+    "entity_data": {
+      "id": "caaedbcc-8f32-405f-9c01-e894fd7b6283",
+      "kode": "MDI",
+      "name": "Metered Dose Inhaler",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:56:22.261271+00:00",
+      "description": "Inhaler asma dosis terukur."
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Metered Dose Inhaler",
+        "from": "MDI"
+      },
+      "description": {
+        "to": "Inhaler asma dosis terukur.",
+        "from": "Metered Dose Inhaler"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "c4f54002-50e8-4c42-8eec-600f3b3954f7",
+    "entity_table": "item_dosages",
+    "entity_id": "8ae46854-6e0d-4929-8479-89a396b0ce6d",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:56:56.101Z",
+    "entity_data": {
+      "id": "8ae46854-6e0d-4929-8479-89a396b0ce6d",
+      "kode": "LOT",
+      "name": "Lotion",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:56:56.10105+00:00",
+      "description": "Sediaan cair yang ditujukan untuk pemakaian luar pada kulit."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan cair yang ditujukan untuk pemakaian luar pada kulit.",
+        "from": "Lotion"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "a96af4d4-a3d7-41f7-b648-3280b4216421",
+    "entity_table": "item_dosages",
+    "entity_id": "8de6aaf1-0b62-42a5-9b49-d1c712d3baa6",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:57:19.260Z",
+    "entity_data": {
+      "id": "8de6aaf1-0b62-42a5-9b49-d1c712d3baa6",
+      "kode": "IVF",
+      "name": "Infus",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:57:19.260798+00:00",
+      "description": "Sediaan steril yang masuk dalam tubuh manusia melalui intravena."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan steril yang masuk dalam tubuh manusia melalui intravena.",
+        "from": "Infus"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "4d59d5a0-b617-4826-9939-bfd0079470bb",
+    "entity_table": "item_dosages",
+    "entity_id": "4576b8f5-a03d-4d0f-b83c-f5537930b498",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:57:41.248Z",
+    "entity_data": {
+      "id": "4576b8f5-a03d-4d0f-b83c-f5537930b498",
+      "kode": "IUD",
+      "name": "Intrauterine Device",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:57:41.248788+00:00",
+      "description": "Alat kecil berbentuk T yang dimasukkan ke dalam rahim wanita untuk mencegah kehamilan."
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Intrauterine Device",
+        "from": "IUD"
+      },
+      "description": {
+        "to": "Alat kecil berbentuk T yang dimasukkan ke dalam rahim wanita untuk mencegah kehamilan.",
+        "from": "Intrauterine Device"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "6d26674d-1261-407a-9020-0bc65e6417fb",
+    "entity_table": "item_dosages",
+    "entity_id": "58f34ce8-0ef1-429b-ab92-908627033c6a",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:57:59.214Z",
+    "entity_data": {
+      "id": "58f34ce8-0ef1-429b-ab92-908627033c6a",
+      "kode": "INJ",
+      "name": "Injeksi",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:57:59.214732+00:00",
+      "description": "Sediaan steril yang diberikan melalui suntikan ke dalam tubuh."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan steril yang diberikan melalui suntikan ke dalam tubuh.",
+        "from": "Injeksi"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "03973d36-6bfe-45d5-86ee-bef01d1d75f5",
+    "entity_table": "item_dosages",
+    "entity_id": "556df650-f591-45ed-a16f-fe84d85c5c7b",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:58:26.677Z",
+    "entity_data": {
+      "id": "556df650-f591-45ed-a16f-fe84d85c5c7b",
+      "kode": "IMP",
+      "name": "Implant",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:58:26.67757+00:00",
+      "description": "Sediaan di mana obat terdapat dalam matriks penghantar SR dan dirancang untuk ditempatkan di dalam atau di permukaan tubuh untuk memberikan penghantaran obat yang lebih lama."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan di mana obat terdapat dalam matriks penghantar SR dan dirancang untuk ditempatkan di dalam atau di permukaan tubuh untuk memberikan penghantaran obat yang lebih lama.",
+        "from": "Implant"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "f94835a8-90ac-4415-89a0-a4be6a28328b",
+    "entity_table": "item_dosages",
+    "entity_id": "7d1f53d0-270f-4b9c-bfb7-ad4d83aaa5d2",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:59:18.604Z",
+    "entity_data": {
+      "id": "7d1f53d0-270f-4b9c-bfb7-ad4d83aaa5d2",
+      "kode": "GEL",
+      "name": "Gel",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:59:18.604864+00:00",
+      "description": "Sediaan setengah padat yang terdiri dari suspensi atau dispersi partikel kecil atau molekul besar yang terdispersi dalam cairan."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan setengah padat yang terdiri dari suspensi atau dispersi partikel kecil atau molekul besar yang terdispersi dalam cairan.",
+        "from": "Gel"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "1028efbc-9b02-466c-be54-d0a5d2e33b8d",
+    "entity_table": "item_dosages",
+    "entity_id": "4ee0b988-15a9-489a-af22-7a114309de7d",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T16:59:59.225Z",
+    "entity_data": {
+      "id": "4ee0b988-15a9-489a-af22-7a114309de7d",
+      "kode": "LOZ",
+      "name": "Pastilles/Lozenges",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T16:59:59.225291+00:00",
+      "description": "Permen yang berfungsi untuk melegakan tenggorokan."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Permen yang berfungsi untuk melegakan tenggorokan.",
+        "from": "Tablet hisap"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "d4477e64-58e6-4b2f-94e6-21a54e440f30",
+    "entity_table": "item_dosages",
+    "entity_id": "2b858573-1f39-49c9-9266-fa03cbd70a89",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:00:55.531Z",
+    "entity_data": {
+      "id": "2b858573-1f39-49c9-9266-fa03cbd70a89",
+      "kode": "RNG",
+      "name": "Vaginal Ring",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:00:55.531908+00:00",
+      "description": "Cincin fleksibel yang dimasukkan ke dalam vagina untuk melepaskan obat secara terkendali."
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Vaginal Ring",
+        "from": "Ring"
+      },
+      "description": {
+        "to": "Cincin fleksibel yang dimasukkan ke dalam vagina untuk melepaskan obat secara terkendali.",
+        "from": "Vaginal Ring"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "3b5f4c5b-9faa-43fa-8cb4-f4f9a70d8cb1",
+    "entity_table": "item_dosages",
+    "entity_id": "fd4a0ac3-9cc4-4330-8297-f2de528f73bc",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:01:40.099Z",
+    "entity_data": {
+      "id": "fd4a0ac3-9cc4-4330-8297-f2de528f73bc",
+      "kode": "SBL",
+      "name": "Tablet Sublingual",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:01:40.099763+00:00",
+      "description": "Obat yang digunakan dengan cara menaruhnya didalam mulut (antara pipi dan gusi serta dibawah lidah) tanpa ditelan."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Obat yang digunakan dengan cara menaruhnya didalam mulut (antara pipi dan gusi serta dibawah lidah) tanpa ditelan.",
+        "from": "Di bawah lidah"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "1537d8f0-fed0-48b2-b32a-cbfec1916d3d",
+    "entity_table": "item_dosages",
+    "entity_id": "7d7cd7d1-1978-43d2-90bf-0c8fa56aedc0",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:02:40.211Z",
+    "entity_data": {
+      "id": "7d7cd7d1-1978-43d2-90bf-0c8fa56aedc0",
+      "kode": "SOL",
+      "name": "Solution (Larutan)",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:02:40.211688+00:00",
+      "description": "Sediaan cair yang mengandung satu atau lebih zat kimia yang terlarut secara homogen dalam pelarut, biasanya air."
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Solution (Larutan)",
+        "from": "Larutan"
+      },
+      "description": {
+        "to": "Sediaan cair yang mengandung satu atau lebih zat kimia yang terlarut secara homogen dalam pelarut, biasanya air.",
+        "from": "Solution"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "34937c98-0792-4d84-a4da-df7a5374e9cc",
+    "entity_table": "item_dosages",
+    "entity_id": "bff8001b-0f98-41e2-8902-fc1f804d418b",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:02:56.570Z",
+    "entity_data": {
+      "id": "bff8001b-0f98-41e2-8902-fc1f804d418b",
+      "kode": "OIN",
+      "name": "Ointment (Salep)",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:02:56.570901+00:00",
+      "description": "Sediaan setengah padat yang dirancang untuk pemakaian luar pada kulit atau selaput lendir."
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ointment (Salep)",
+        "from": "Salep (Ointment)"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "13a38b73-c282-4454-b512-08f42dc8b91e",
+    "entity_table": "item_dosages",
+    "entity_id": "5b0eea55-8a57-4b19-8b2a-0749ed8a6a6d",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:03:18.871Z",
+    "entity_data": {
+      "id": "5b0eea55-8a57-4b19-8b2a-0749ed8a6a6d",
+      "kode": "FOM",
+      "name": "Foam",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:03:18.871526+00:00",
+      "description": "Sediaan obat atau produk perawatan kulit yang berwujud busa."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan obat atau produk perawatan kulit yang berwujud busa.",
+        "from": "Foam/busa"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "2e44b292-a1f3-4942-ae6c-a083a8920510",
+    "entity_table": "item_dosages",
+    "entity_id": "2fe18ed2-1007-44ec-a623-c75d63599a0f",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:03:37.912Z",
+    "entity_data": {
+      "id": "2fe18ed2-1007-44ec-a623-c75d63599a0f",
+      "kode": "ENM",
+      "name": "Enema",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:03:37.912601+00:00",
+      "description": "Sediaan cair, baik sebagai larutan, suspensi, atau emulsi, untuk pemberian melalui rektal."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan cair, baik sebagai larutan, suspensi, atau emulsi, untuk pemberian melalui rektal.",
+        "from": "Enema"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "59822954-935d-4df2-b4c7-df94c40d2cb8",
+    "entity_table": "item_dosages",
+    "entity_id": "40b76ca7-01ca-46d9-baf5-370bfa64ad39",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:04:10.474Z",
+    "entity_data": {
+      "id": "40b76ca7-01ca-46d9-baf5-370bfa64ad39",
+      "kode": "EMU",
+      "name": "Emulsi",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:04:10.474153+00:00",
+      "description": "Sediaan cair yang mengandung dua atau lebih cairan yang tidak saling bercampur (misalnya minyak dan air) yang distabilkan dengan zat pengemulsi (emulgator)."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan cair yang mengandung dua atau lebih cairan yang tidak saling bercampur (misalnya minyak dan air) yang distabilkan dengan zat pengemulsi (emulgator).",
+        "from": "Emulsi"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "8d8dfcda-8815-43d0-a405-d95a035a01c7",
+    "entity_table": "item_dosages",
+    "entity_id": "c9030784-fc10-4103-aa50-65c0839c53fd",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:04:44.103Z",
+    "entity_data": {
+      "id": "c9030784-fc10-4103-aa50-65c0839c53fd",
+      "kode": "ELX",
+      "name": "Eliksir",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:04:44.103109+00:00",
+      "description": "Cairan oral yang manis dan jernih, umumnya mengandung alkohol dan air sebagai pelarut, serta zat aktif obat."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Cairan oral yang manis dan jernih, umumnya mengandung alkohol dan air sebagai pelarut, serta zat aktif obat.",
+        "from": "Eliksir"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "7489a160-a4f4-441a-b4d0-3237e2a76ede",
+    "entity_table": "item_dosages",
+    "entity_id": "c9030784-fc10-4103-aa50-65c0839c53fd",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:05:39.539Z",
+    "entity_data": {
+      "id": "c9030784-fc10-4103-aa50-65c0839c53fd",
+      "kode": "ELX",
+      "name": "Eliksir",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:05:39.539979+00:00",
+      "description": "Sediaan berupa cairan oral yang manis dan jernih, umumnya mengandung alkohol dan air sebagai pelarut, serta zat aktif obat."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan berupa cairan oral yang manis dan jernih, umumnya mengandung alkohol dan air sebagai pelarut, serta zat aktif obat.",
+        "from": "Cairan oral yang manis dan jernih, umumnya mengandung alkohol dan air sebagai pelarut, serta zat aktif obat."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "6675cc1e-02c6-4cca-bde0-9e7079b3f685",
+    "entity_table": "item_dosages",
+    "entity_id": "b072be37-e29a-4c23-a346-a983adc9a36b",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:06:14.200Z",
+    "entity_data": {
+      "id": "b072be37-e29a-4c23-a346-a983adc9a36b",
+      "kode": "EFF",
+      "name": "Tablet Effervescent",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:06:14.200476+00:00",
+      "description": "Sediaan obat atau suplemen yang dirancang untuk larut dalam air dan menghasilkan gas karbon dioksida (CO2), menciptakan sensasi bergelembung."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan obat atau suplemen yang dirancang untuk larut dalam air dan menghasilkan gas karbon dioksida (CO2), menciptakan sensasi bergelembung.",
+        "from": "Tablet larut"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "f64ef765-c407-4737-a844-bd60f70a212d",
+    "entity_table": "item_dosages",
+    "entity_id": "d97f4bbf-a432-4071-881a-3bb681e99d6e",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:06:44.670Z",
+    "entity_data": {
+      "id": "d97f4bbf-a432-4071-881a-3bb681e99d6e",
+      "kode": "ED",
+      "name": "Eye Drop",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:06:44.670154+00:00",
+      "description": "Larutan steril atau suspensi yang digunakan dengan cara diteteskan pada selaput lendir mata di sekitar kelopak mata atau bola mata."
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Eye Drop",
+        "from": "Tetes Mata"
+      },
+      "description": {
+        "to": "Larutan steril atau suspensi yang digunakan dengan cara diteteskan pada selaput lendir mata di sekitar kelopak mata atau bola mata.",
+        "from": "Eye Drop"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "492f2da3-aea3-4e5d-ba86-a9f2d4e178a4",
+    "entity_table": "item_dosages",
+    "entity_id": "cdc209ef-306c-4838-ba93-c3a06536df3d",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:07:27.983Z",
+    "entity_data": {
+      "id": "cdc209ef-306c-4838-ba93-c3a06536df3d",
+      "kode": "EAD",
+      "name": "Ear Drop",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:07:27.983315+00:00",
+      "description": "Cairan yang dapat mengencerkan kotoran pada telinga sehingga membuat telinga kembali bersih"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Ear Drop",
+        "from": "Tetes Telinga"
+      },
+      "description": {
+        "to": "Cairan yang dapat mengencerkan kotoran pada telinga sehingga membuat telinga kembali bersih",
+        "from": "Ear Drop"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "30389353-ff6e-4436-ad27-141c00e58ced",
+    "entity_table": "item_dosages",
+    "entity_id": "cdc209ef-306c-4838-ba93-c3a06536df3d",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:07:32.422Z",
+    "entity_data": {
+      "id": "cdc209ef-306c-4838-ba93-c3a06536df3d",
+      "kode": "EAD",
+      "name": "Ear Drop",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:07:32.422983+00:00",
+      "description": "Cairan yang dapat mengencerkan kotoran pada telinga sehingga membuat telinga kembali bersih."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Cairan yang dapat mengencerkan kotoran pada telinga sehingga membuat telinga kembali bersih.",
+        "from": "Cairan yang dapat mengencerkan kotoran pada telinga sehingga membuat telinga kembali bersih"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "b1c63bd6-986f-4cd7-beae-ff2e62cf6711",
+    "entity_table": "item_dosages",
+    "entity_id": "8dbfee3d-203a-4975-bdd4-e230b6b2ab8f",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:08:06.672Z",
+    "entity_data": {
+      "id": "8dbfee3d-203a-4975-bdd4-e230b6b2ab8f",
+      "kode": "DPI",
+      "name": "Dry Powder Inhaler",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:08:06.672607+00:00",
+      "description": "Sediaan yang dapat menghantarkan satu atau lebih obat ke tempat kerja melalui rute inhalasi."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan yang dapat menghantarkan satu atau lebih obat ke tempat kerja melalui rute inhalasi.",
+        "from": "Inhaler Bubuk Keringg"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "e92b5a6f-9fc1-4aa2-b35d-56bf55ac6f71",
+    "entity_table": "item_dosages",
+    "entity_id": "c4429613-51b3-4570-9a08-7dfd284fa3fc",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:08:55.953Z",
+    "entity_data": {
+      "id": "c4429613-51b3-4570-9a08-7dfd284fa3fc",
+      "kode": "DOU",
+      "name": "Douche",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:08:55.953078+00:00",
+      "description": "Larutan pembersih yang digunakan untuk membersihkan vagina."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Larutan pembersih yang digunakan untuk membersihkan vagina.",
+        "from": "Douche"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "edfbab4c-f7df-4707-bc3c-0b2cab5365fe",
+    "entity_table": "item_dosages",
+    "entity_id": "22f78ec3-58f0-4258-9202-426e605b21fe",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:09:42.060Z",
+    "entity_data": {
+      "id": "22f78ec3-58f0-4258-9202-426e605b21fe",
+      "kode": "CRM",
+      "name": "Krim",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:09:42.060602+00:00",
+      "description": "Sediaan setengah padat yang berupa emulsi, baik tipe minyak dalam air (M/A) atau air dalam minyak (A/M), yang mengandung satu atau lebih bahan obat dan digunakan untuk pemakaian luar, terutama pada kulit."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan setengah padat yang berupa emulsi, baik tipe minyak dalam air (M/A) atau air dalam minyak (A/M), yang mengandung satu atau lebih bahan obat dan digunakan untuk pemakaian luar, terutama pada kulit.",
+        "from": "Cream"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "b85e0bb0-4cdc-485a-a675-213193339b23",
+    "entity_table": "item_dosages",
+    "entity_id": "22f78ec3-58f0-4258-9202-426e605b21fe",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:10:09.569Z",
+    "entity_data": {
+      "id": "22f78ec3-58f0-4258-9202-426e605b21fe",
+      "kode": "CRM",
+      "name": "Krim",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:10:09.569357+00:00",
+      "description": "Sediaan setengah padat yang berupa emulsi, baik tipe minyak dalam air (M/A) atau air dalam minyak (A/M) yang digunakan untuk pemakaian luar."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan setengah padat yang berupa emulsi, baik tipe minyak dalam air (M/A) atau air dalam minyak (A/M) yang digunakan untuk pemakaian luar.",
+        "from": "Sediaan setengah padat yang berupa emulsi, baik tipe minyak dalam air (M/A) atau air dalam minyak (A/M), yang mengandung satu atau lebih bahan obat dan digunakan untuk pemakaian luar, terutama pada kulit."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "5c8cb237-7936-4677-b256-221539a0ae72",
+    "entity_table": "item_dosages",
+    "entity_id": "4aa4d10e-a816-4c7d-acfe-bd9a730d3da3",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:11:02.554Z",
+    "entity_data": {
+      "id": "4aa4d10e-a816-4c7d-acfe-bd9a730d3da3",
+      "kode": "CPT",
+      "name": "Kaplet",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:11:02.554889+00:00",
+      "description": "Sediaan padat berbentuk oval atau lonjong, mirip kapsul, tetapi sebenarnya merupakan tablet yang dilapisi."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan padat berbentuk oval atau lonjong, mirip kapsul, tetapi sebenarnya merupakan tablet yang dilapisi.",
+        "from": "Kaplet"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "fddd229c-dd34-4e33-ad80-a0ebadd87221",
+    "entity_table": "item_dosages",
+    "entity_id": "3f46c3ba-d477-4f31-950a-e9f880d9294c",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:11:22.747Z",
+    "entity_data": {
+      "id": "3f46c3ba-d477-4f31-950a-e9f880d9294c",
+      "kode": "BUK",
+      "name": "Tablet Bukal",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:11:22.747571+00:00",
+      "description": "Obat yang diberikan di antara gusi dan lapisan dalam pipi."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Obat yang diberikan di antara gusi dan lapisan dalam pipi.",
+        "from": "Di pipi"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "6b7d4c9b-7969-40d8-950c-7795699d0563",
+    "entity_table": "item_dosages",
+    "entity_id": "f27c863e-71ad-439c-8e44-729b9ac27be6",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:11:45.974Z",
+    "entity_data": {
+      "id": "f27c863e-71ad-439c-8e44-729b9ac27be6",
+      "kode": "SSP",
+      "name": "Skin Spray",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:11:45.97426+00:00",
+      "description": "Sediaan dalam bentuk semprotan (spray) yang diformulasikan untuk diaplikasikan pada kulit."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan dalam bentuk semprotan (spray) yang diformulasikan untuk diaplikasikan pada kulit.",
+        "from": "Spray kulit"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "53d5860e-7a95-4a6c-8af3-2ac9013c8368",
+    "entity_table": "item_dosages",
+    "entity_id": "94a40e6e-6ebe-433f-838f-66e536f894de",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:12:07.581Z",
+    "entity_data": {
+      "id": "94a40e6e-6ebe-433f-838f-66e536f894de",
+      "kode": "SUP",
+      "name": "Suppositoria",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:12:07.581212+00:00",
+      "description": "Sediaan farmasi berbentuk padat, umumnya kerucut atau peluru, yang dimasukkan melalui rektum (dubur), vagina, atau uretra (saluran kemih)."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan farmasi berbentuk padat, umumnya kerucut atau peluru, yang dimasukkan melalui rektum (dubur), vagina, atau uretra (saluran kemih).",
+        "from": "Suppositoria"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "91295d6b-1afd-4a22-ae20-909267759ca7",
+    "entity_table": "item_dosages",
+    "entity_id": "3777dd97-06e1-441b-b943-02d65686d9dd",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:12:29.328Z",
+    "entity_data": {
+      "id": "3777dd97-06e1-441b-b943-02d65686d9dd",
+      "kode": "SUS",
+      "name": "Suspensi",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:12:29.32836+00:00",
+      "description": "Sediaan cair yang mengandung partikel padat yang tidak larut, terdispersi dalam fase cair"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan cair yang mengandung partikel padat yang tidak larut, terdispersi dalam fase cair",
+        "from": "Suspensi"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "2706650b-d9c0-4dc6-921f-17f54a9830ab",
+    "entity_table": "item_dosages",
+    "entity_id": "3777dd97-06e1-441b-b943-02d65686d9dd",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:12:33.846Z",
+    "entity_data": {
+      "id": "3777dd97-06e1-441b-b943-02d65686d9dd",
+      "kode": "SUS",
+      "name": "Suspensi",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:12:33.846465+00:00",
+      "description": "Sediaan cair yang mengandung partikel padat yang tidak larut, terdispersi dalam fase cair."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan cair yang mengandung partikel padat yang tidak larut, terdispersi dalam fase cair.",
+        "from": "Sediaan cair yang mengandung partikel padat yang tidak larut, terdispersi dalam fase cair"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "bc6fc1bb-af31-45ff-b7bd-03e72b26e08d",
+    "entity_table": "item_dosages",
+    "entity_id": "d6c97b0b-96b7-4f23-8c29-c7deccf58f11",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:12:55.238Z",
+    "entity_data": {
+      "id": "d6c97b0b-96b7-4f23-8c29-c7deccf58f11",
+      "kode": "SYR",
+      "name": "Sirup",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:12:55.238316+00:00",
+      "description": "Sediaan cair yang berupa larutan, biasanya manis, yang mengandung satu atau lebih bahan aktif obat yang terlarut dalam larutan gula pekat atau pengganti gula."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan cair yang berupa larutan, biasanya manis, yang mengandung satu atau lebih bahan aktif obat yang terlarut dalam larutan gula pekat atau pengganti gula.",
+        "from": "Sirup"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "978bd59d-01ca-4d58-81c7-5e51ff09a48b",
+    "entity_table": "item_dosages",
+    "entity_id": "8f04108d-589f-40e8-8796-51638eb01bac",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:13:23.927Z",
+    "entity_data": {
+      "id": "8f04108d-589f-40e8-8796-51638eb01bac",
+      "kode": "TDP",
+      "name": "Transdermal Patch",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:13:23.927552+00:00",
+      "description": "Sediaan farmasi yang dirancang untuk menempelkan obat pada kulit dan melepaskan obat secara terkontrol ke dalam tubuh melalui kulit."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan farmasi yang dirancang untuk menempelkan obat pada kulit dan melepaskan obat secara terkontrol ke dalam tubuh melalui kulit.",
+        "from": "Koyo obat"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "31573f38-935b-4536-9732-31ea48519af8",
+    "entity_table": "item_dosages",
+    "entity_id": "05cddbf4-9913-437a-828d-e322ac113ad5",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:13:53.829Z",
+    "entity_data": {
+      "id": "05cddbf4-9913-437a-828d-e322ac113ad5",
+      "kode": "TSP",
+      "name": "Throat Spray",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:13:53.829511+00:00",
+      "description": "Antiseptik yang digunakan di dalam rongga mulut dan tenggorokan."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Antiseptik yang digunakan di dalam rongga mulut dan tenggorokan.",
+        "from": "Spray tenggorokan"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "5a67582a-e50a-4587-967d-8c51c5b113b1",
+    "entity_table": "item_dosages",
+    "entity_id": "b6b8f1b1-1eec-4d7e-9727-902e079f898e",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:14:43.079Z",
+    "entity_data": {
+      "id": "b6b8f1b1-1eec-4d7e-9727-902e079f898e",
+      "kode": "PLT",
+      "name": "Medicated Plaster",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:14:43.079554+00:00",
+      "description": "Sediaan farmasi yang ditempelkan pada kulit untuk memberikan obat secara bertahap ke dalam aliran darah."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Sediaan farmasi yang ditempelkan pada kulit untuk memberikan obat secara bertahap ke dalam aliran darah.",
+        "from": "Plester obat"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "a64bae41-e1ed-499c-9967-540c1ef87110",
+    "entity_table": "item_dosages",
+    "entity_id": "f3dad3e8-90ae-422e-942e-64e08dd48ab8",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:15:45.843Z",
+    "entity_data": {
+      "id": "f3dad3e8-90ae-422e-942e-64e08dd48ab8",
+      "kode": "PEN",
+      "name": "Pen Injector",
+      "created_at": "2025-08-01T05:43:31.274648+00:00",
+      "updated_at": "2025-08-01T17:15:45.843322+00:00",
+      "description": "Perangkat yang berisi kartrid obat cair dan jarum suntik yang terintegrasi, dirancang untuk pemberian obat melalui injeksi subkutan (di bawah kulit)."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Perangkat yang berisi kartrid obat cair dan jarum suntik yang terintegrasi, dirancang untuk pemberian obat melalui injeksi subkutan (di bawah kulit).",
+        "from": "Pen insulin"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "ad4dd361-b48c-4a06-a6c0-223f19df04a1",
+    "entity_table": "item_units",
+    "entity_id": "6dbfbdc5-c8ba-4489-b39c-98acb43d27bd",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:16:12.531Z",
+    "entity_data": {
+      "id": "6dbfbdc5-c8ba-4489-b39c-98acb43d27bd",
+      "kode": "AMP",
+      "name": "Ampul",
+      "created_at": "2025-08-01T05:43:46.372085+00:00",
+      "updated_at": "2025-08-01T17:16:12.531341+00:00",
+      "description": "Wadah takaran tunggal, oleh karena total jumlah cairannya ditentukan pemakainannya untuk satu kali injeksi."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Wadah takaran tunggal, oleh karena total jumlah cairannya ditentukan pemakainannya untuk satu kali injeksi.",
+        "from": "Ampul"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "92b4008f-bb89-4023-9b87-22913260bc78",
+    "entity_table": "item_units",
+    "entity_id": "b572a6a9-de49-4b96-92b5-40f331789912",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:16:44.619Z",
+    "entity_data": {
+      "id": "b572a6a9-de49-4b96-92b5-40f331789912",
+      "kode": "BOX",
+      "name": "Box",
+      "created_at": "2025-08-01T05:43:46.372085+00:00",
+      "updated_at": "2025-08-01T17:16:44.619604+00:00",
+      "description": "Kemasan luar yang berisi beberapa kemasan lebih kecil."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Kemasan luar yang berisi beberapa kemasan lebih kecil.",
+        "from": "Box"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "b5b99bc6-7b88-4fb9-87df-30d1230edd01",
+    "entity_table": "item_units",
+    "entity_id": "849b799c-4841-4e9e-a965-ebcaae811268",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:17:59.175Z",
+    "entity_data": {
+      "id": "849b799c-4841-4e9e-a965-ebcaae811268",
+      "kode": "CTG",
+      "name": "Cartridge",
+      "created_at": "2025-08-01T05:43:46.372085+00:00",
+      "updated_at": "2025-08-01T17:17:59.175937+00:00",
+      "description": "Wadah kecil, biasanya berisi obat atau bahan lain dalam bentuk cairan atau bubuk, yang dirancang untuk digunakan dalam perangkat medis."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Wadah kecil, biasanya berisi obat atau bahan lain dalam bentuk cairan atau bubuk, yang dirancang untuk digunakan dalam perangkat medis.",
+        "from": "Cartridge"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "8f10f223-75eb-47fd-a2ec-5b91a55ced86",
+    "entity_table": "item_units",
+    "entity_id": "274ab125-357c-46d0-8d13-86ead6c9849a",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:18:59.515Z",
+    "entity_data": {
+      "id": "274ab125-357c-46d0-8d13-86ead6c9849a",
+      "kode": "POT",
+      "name": "Pot",
+      "created_at": "2025-08-01T05:43:46.372085+00:00",
+      "updated_at": "2025-08-01T17:18:59.515541+00:00",
+      "description": "Wadah berbentuk silinder kecil (seperti toples mini)."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Wadah berbentuk silinder kecil (seperti toples mini).",
+        "from": "Pot"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "2d2bce1e-12a6-45e3-9a9d-b082b5c8c63f",
+    "entity_table": "item_units",
+    "entity_id": "aa85d1ae-5f08-4eb2-a487-c811eddca6f7",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:19:51.283Z",
+    "entity_data": {
+      "id": "aa85d1ae-5f08-4eb2-a487-c811eddca6f7",
+      "kode": "SCH",
+      "name": "Sachet",
+      "created_at": "2025-08-01T05:43:46.372085+00:00",
+      "updated_at": "2025-08-01T17:19:51.28334+00:00",
+      "description": "Wadah kantong kecil yang biasanya terbuat dari kertas, plastik, atau aluminium foil yang berisi obat dalam bentuk serbuk, granul, atau cairan."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Wadah kantong kecil yang biasanya terbuat dari kertas, plastik, atau aluminium foil yang berisi obat dalam bentuk serbuk, granul, atau cairan.",
+        "from": "Sachet"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "94acfdc8-b05b-42f2-a965-2fe4c84e74df",
+    "entity_table": "item_units",
+    "entity_id": "ab8ed8f4-7f59-4429-955b-1cc959da2b7b",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:20:36.012Z",
+    "entity_data": {
+      "id": "ab8ed8f4-7f59-4429-955b-1cc959da2b7b",
+      "kode": "VIA",
+      "name": "Vial",
+      "created_at": "2025-08-01T05:43:46.372085+00:00",
+      "updated_at": "2025-08-01T17:20:36.012446+00:00",
+      "description": "Wadah kecil berbentuk botol yang terbuat dari kaca atau plastik yang digunakan untuk menyimpan obat-obatan, terutama obat dalam bentuk cair atau serbuk yang akan dilarutkan."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Wadah kecil berbentuk botol yang terbuat dari kaca atau plastik yang digunakan untuk menyimpan obat-obatan, terutama obat dalam bentuk cair atau serbuk yang akan dilarutkan.",
+        "from": "Vial"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "f7951e4e-3aa7-4bf3-9a33-c0550d29e5de",
+    "entity_table": "item_units",
+    "entity_id": "5fd98fba-6d7a-4c8f-93b0-3057ddf7dd0b",
+    "version_number": 1,
+    "action_type": "INSERT",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:23:00.117Z",
+    "entity_data": {
+      "id": "5fd98fba-6d7a-4c8f-93b0-3057ddf7dd0b",
+      "kode": "BLS",
+      "name": "Blister",
+      "created_at": "2025-08-01T17:23:00.117777+00:00",
+      "updated_at": "2025-08-01T17:23:00.117777+00:00",
+      "description": "Kemasan foil, kertas, atau plastik yang sudah dibentuk sebelumnya. Memiliki kantong atau rongga yang terbuat dari plastik thermoformed."
+    },
+    "changed_fields": null,
+    "change_description": null
+  },
+  {
+    "id": "6c7c2f80-e5d5-435d-8e8d-54475091b56e",
+    "entity_table": "item_units",
+    "entity_id": "182618aa-5cc6-4675-abb9-26b11f2c9978",
+    "version_number": 1,
+    "action_type": "INSERT",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:25:12.900Z",
+    "entity_data": {
+      "id": "182618aa-5cc6-4675-abb9-26b11f2c9978",
+      "kode": "STR",
+      "name": "Strip",
+      "created_at": "2025-08-01T17:25:12.900164+00:00",
+      "updated_at": "2025-08-01T17:25:12.900164+00:00",
+      "description": "Kemasan obat berbentuk lembaran fleksibel (biasanya aluminium foil) yang berisi dosis individual."
+    },
+    "changed_fields": null,
+    "change_description": null
+  },
+  {
+    "id": "0f1bd5a3-48a6-480c-8a4f-3224ce2676c1",
+    "entity_table": "item_units",
+    "entity_id": "5fd98fba-6d7a-4c8f-93b0-3057ddf7dd0b",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:25:32.492Z",
+    "entity_data": {
+      "id": "5fd98fba-6d7a-4c8f-93b0-3057ddf7dd0b",
+      "kode": "BLS",
+      "name": "Blister",
+      "created_at": "2025-08-01T17:23:00.117777+00:00",
+      "updated_at": "2025-08-01T17:25:32.492885+00:00",
+      "description": "Kemasan dengan rongga plastik yang dibentuk sebelumnya dan disegel dengan bahan penutup untuk melindungi obat secara individual."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Kemasan dengan rongga plastik yang dibentuk sebelumnya dan disegel dengan bahan penutup untuk melindungi obat secara individual.",
+        "from": "Kemasan foil, kertas, atau plastik yang sudah dibentuk sebelumnya. Memiliki kantong atau rongga yang terbuat dari plastik thermoformed."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "f328624f-0fbe-405c-a759-66dcad4c463a",
+    "entity_table": "item_units",
+    "entity_id": "00e5904f-f02e-4449-a2a8-aa646dc38982",
+    "version_number": 1,
+    "action_type": "INSERT",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-01T17:27:01.273Z",
+    "entity_data": {
+      "id": "00e5904f-f02e-4449-a2a8-aa646dc38982",
+      "kode": "BTL",
+      "name": "Botol",
+      "created_at": "2025-08-01T17:27:01.273626+00:00",
+      "updated_at": "2025-08-01T17:27:01.273626+00:00",
+      "description": "Wadah berbentuk silinder dengan mulut sempit yang terbuat dari kaca atau plastik untuk menyimpan obat cair, tablet, atau kapsul dalam jumlah tertentu."
+    },
+    "changed_fields": null,
+    "change_description": null
   }
 ]

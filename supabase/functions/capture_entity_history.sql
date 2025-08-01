@@ -1,5 +1,5 @@
 -- Function: capture_entity_history
--- Exported from Supabase on: 2025-08-01T12:24:51.032Z
+-- Exported from Supabase on: 2025-08-01T17:43:16.369Z
 
 CREATE OR REPLACE FUNCTION public.capture_entity_history()
  RETURNS trigger

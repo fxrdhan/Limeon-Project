@@ -1,5 +1,5 @@
 -- Table Definition: item_dosages
--- Exported from Supabase on: 2025-08-01T12:24:51.109Z
+-- Exported from Supabase on: 2025-08-01T17:43:16.435Z
 
 CREATE TABLE public.item_dosages (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

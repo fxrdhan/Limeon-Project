@@ -1,314 +1,314 @@
 [
   {
-    "id": "257d5105-d248-4bbc-afbb-24b17549aa7d",
-    "name": "Tablet",
-    "kode": "TAB",
-    "description": "Tablet biasa",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "b072be37-e29a-4c23-a346-a983adc9a36b",
-    "name": "Tablet Effervescent",
-    "kode": "EFF",
-    "description": "Tablet larut",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "fd4a0ac3-9cc4-4330-8297-f2de528f73bc",
-    "name": "Tablet Sublingual",
-    "kode": "SBL",
-    "description": "Di bawah lidah",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "3f46c3ba-d477-4f31-950a-e9f880d9294c",
-    "name": "Tablet Bukal",
-    "kode": "BUK",
-    "description": "Di pipi",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "1e0eabfb-e5d2-4550-bc57-05068e9b46fe",
-    "name": "Kapsul",
-    "kode": "CAP",
-    "description": "Kapsul",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "4aa4d10e-a816-4c7d-acfe-bd9a730d3da3",
-    "name": "Kaplet",
-    "kode": "CPT",
-    "description": "Kaplet",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "4ee0b988-15a9-489a-af22-7a114309de7d",
-    "name": "Pastilles/Lozenges",
-    "kode": "LOZ",
-    "description": "Tablet hisap",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "94a40e6e-6ebe-433f-838f-66e536f894de",
-    "name": "Suppositoria",
-    "kode": "SUP",
-    "description": "Suppositoria",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "24a9812c-b907-420b-9191-019979db1f59",
-    "name": "Ovula",
-    "kode": "OVU",
-    "description": "Ovula",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
     "id": "556df650-f591-45ed-a16f-fe84d85c5c7b",
     "name": "Implant",
     "kode": "IMP",
-    "description": "Implant",
+    "description": "Sediaan di mana obat terdapat dalam matriks penghantar SR dan dirancang untuk ditempatkan di dalam atau di permukaan tubuh untuk memberikan penghantaran obat yang lebih lama.",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "d6c97b0b-96b7-4f23-8c29-c7deccf58f11",
-    "name": "Sirup",
-    "kode": "SYR",
-    "description": "Sirup",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "3777dd97-06e1-441b-b943-02d65686d9dd",
-    "name": "Suspensi",
-    "kode": "SUS",
-    "description": "Suspensi",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "40b76ca7-01ca-46d9-baf5-370bfa64ad39",
-    "name": "Emulsi",
-    "kode": "EMU",
-    "description": "Emulsi",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "7d7cd7d1-1978-43d2-90bf-0c8fa56aedc0",
-    "name": "Larutan",
-    "kode": "SOL",
-    "description": "Solution",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "c9030784-fc10-4103-aa50-65c0839c53fd",
-    "name": "Eliksir",
-    "kode": "ELX",
-    "description": "Eliksir",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "58f34ce8-0ef1-429b-ab92-908627033c6a",
-    "name": "Injeksi",
-    "kode": "INJ",
-    "description": "Injeksi",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "8de6aaf1-0b62-42a5-9b49-d1c712d3baa6",
-    "name": "Infus",
-    "kode": "IVF",
-    "description": "Infus",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "2fe18ed2-1007-44ec-a623-c75d63599a0f",
-    "name": "Enema",
-    "kode": "ENM",
-    "description": "Enema",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "c4429613-51b3-4570-9a08-7dfd284fa3fc",
-    "name": "Douche",
-    "kode": "DOU",
-    "description": "Douche",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "bff8001b-0f98-41e2-8902-fc1f804d418b",
-    "name": "Salep",
-    "kode": "OIN",
-    "description": "Ointment",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "22f78ec3-58f0-4258-9202-426e605b21fe",
-    "name": "Krim",
-    "kode": "CRM",
-    "description": "Cream",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T16:58:26.677Z"
   },
   {
     "id": "7d1f53d0-270f-4b9c-bfb7-ad4d83aaa5d2",
     "name": "Gel",
     "kode": "GEL",
-    "description": "Gel",
+    "description": "Sediaan setengah padat yang terdiri dari suspensi atau dispersi partikel kecil atau molekul besar yang terdispersi dalam cairan.",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T16:59:18.604Z"
   },
   {
-    "id": "8ae46854-6e0d-4929-8479-89a396b0ce6d",
-    "name": "Lotion",
-    "kode": "LOT",
-    "description": "Lotion",
+    "id": "4ee0b988-15a9-489a-af22-7a114309de7d",
+    "name": "Pastilles/Lozenges",
+    "kode": "LOZ",
+    "description": "Permen yang berfungsi untuk melegakan tenggorokan.",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T16:59:59.225Z"
+  },
+  {
+    "id": "2b858573-1f39-49c9-9266-fa03cbd70a89",
+    "name": "Vaginal Ring",
+    "kode": "RNG",
+    "description": "Cincin fleksibel yang dimasukkan ke dalam vagina untuk melepaskan obat secara terkendali.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:00:55.531Z"
+  },
+  {
+    "id": "3777dd97-06e1-441b-b943-02d65686d9dd",
+    "name": "Suspensi",
+    "kode": "SUS",
+    "description": "Sediaan cair yang mengandung partikel padat yang tidak larut, terdispersi dalam fase cair.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:12:33.846Z"
+  },
+  {
+    "id": "fd4a0ac3-9cc4-4330-8297-f2de528f73bc",
+    "name": "Tablet Sublingual",
+    "kode": "SBL",
+    "description": "Obat yang digunakan dengan cara menaruhnya didalam mulut (antara pipi dan gusi serta dibawah lidah) tanpa ditelan.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:01:40.099Z"
+  },
+  {
+    "id": "7d7cd7d1-1978-43d2-90bf-0c8fa56aedc0",
+    "name": "Solution (Larutan)",
+    "kode": "SOL",
+    "description": "Sediaan cair yang mengandung satu atau lebih zat kimia yang terlarut secara homogen dalam pelarut, biasanya air.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:02:40.211Z"
+  },
+  {
+    "id": "bff8001b-0f98-41e2-8902-fc1f804d418b",
+    "name": "Ointment (Salep)",
+    "kode": "OIN",
+    "description": "Sediaan setengah padat yang dirancang untuk pemakaian luar pada kulit atau selaput lendir.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:02:56.570Z"
+  },
+  {
+    "id": "1e0eabfb-e5d2-4550-bc57-05068e9b46fe",
+    "name": "Kapsul",
+    "kode": "CAP",
+    "description": "Bentuk sediaan obat yang dibungkus dalam cangkang gelatin atau bahan lain yang mudah dicerna.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T16:48:27.214Z"
+  },
+  {
+    "id": "257d5105-d248-4bbc-afbb-24b17549aa7d",
+    "name": "Tablet",
+    "kode": "TAB",
+    "description": "Bentuk sediaan padat obat, biasanya bulat atau oval.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T16:48:34.019Z"
+  },
+  {
+    "id": "24a9812c-b907-420b-9191-019979db1f59",
+    "name": "Ovula",
+    "kode": "OVU",
+    "description": "Sediaan berbentuk padat yang dimasukkan ke dalam vagina (intravaginal).",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T16:49:53.423Z"
   },
   {
     "id": "9696fadd-7db5-426e-b7bd-60e936743c31",
     "name": "Pasta",
     "kode": "PAS",
-    "description": "Pasta",
+    "description": "Ssediaan semi padat yang mengandung satu atau lebih bahan obat, ditujukan untuk pemakaian topikal (luar).",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T16:50:25.700Z"
   },
   {
-    "id": "5b0eea55-8a57-4b19-8b2a-0749ed8a6a6d",
-    "name": "Foam",
-    "kode": "FOM",
-    "description": "Foam/busa",
+    "id": "8dbfee3d-203a-4975-bdd4-e230b6b2ab8f",
+    "name": "Dry Powder Inhaler",
+    "kode": "DPI",
+    "description": "Sediaan yang dapat menghantarkan satu atau lebih obat ke tempat kerja melalui rute inhalasi.",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "d97f4bbf-a432-4071-881a-3bb681e99d6e",
-    "name": "Tetes Mata",
-    "kode": "ED",
-    "description": "Eye Drop",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "cdc209ef-306c-4838-ba93-c3a06536df3d",
-    "name": "Tetes Telinga",
-    "kode": "EAD",
-    "description": "Ear Drop",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "623ce2cb-1f21-49e6-b323-af0bcc2c2133",
-    "name": "Tetes Hidung",
-    "kode": "ND",
-    "description": "Nasal Drop",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T17:08:06.672Z"
   },
   {
     "id": "14dc78e3-c894-4326-bc8f-9c3ac446f00a",
     "name": "Nasal Spray",
     "kode": "NSP",
-    "description": "Spray hidung",
+    "description": "Obat berbentuk cairan yang disemprotkan ke dalam rongga hidung.",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T16:51:45.254Z"
   },
   {
-    "id": "05cddbf4-9913-437a-828d-e322ac113ad5",
-    "name": "Throat Spray",
-    "kode": "TSP",
-    "description": "Spray tenggorokan",
+    "id": "5b0eea55-8a57-4b19-8b2a-0749ed8a6a6d",
+    "name": "Foam",
+    "kode": "FOM",
+    "description": "Sediaan obat atau produk perawatan kulit yang berwujud busa.",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T17:03:18.871Z"
   },
   {
-    "id": "f27c863e-71ad-439c-8e44-729b9ac27be6",
-    "name": "Skin Spray",
-    "kode": "SSP",
-    "description": "Spray kulit",
+    "id": "2fe18ed2-1007-44ec-a623-c75d63599a0f",
+    "name": "Enema",
+    "kode": "ENM",
+    "description": "Sediaan cair, baik sebagai larutan, suspensi, atau emulsi, untuk pemberian melalui rektal.",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T17:03:37.912Z"
   },
   {
-    "id": "8f04108d-589f-40e8-8796-51638eb01bac",
-    "name": "Transdermal Patch",
-    "kode": "TDP",
-    "description": "Koyo obat",
+    "id": "40b76ca7-01ca-46d9-baf5-370bfa64ad39",
+    "name": "Emulsi",
+    "kode": "EMU",
+    "description": "Sediaan cair yang mengandung dua atau lebih cairan yang tidak saling bercampur (misalnya minyak dan air) yang distabilkan dengan zat pengemulsi (emulgator).",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "b6b8f1b1-1eec-4d7e-9727-902e079f898e",
-    "name": "Medicated Plaster",
-    "kode": "PLT",
-    "description": "Plester obat",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "caaedbcc-8f32-405f-9c01-e894fd7b6283",
-    "name": "MDI",
-    "kode": "MDI",
-    "description": "Metered Dose Inhaler",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
-  },
-  {
-    "id": "8dbfee3d-203a-4975-bdd4-e230b6b2ab8f",
-    "name": "DPI",
-    "kode": "DPI",
-    "description": "Dry Powder Inhaler",
-    "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T17:04:10.474Z"
   },
   {
     "id": "a89026da-028f-4eeb-bd94-c5dac970cf58",
     "name": "Nebulizer",
     "kode": "NEB",
-    "description": "Nebulizer",
+    "description": "Obat dalam bentuk cairan yang diubah menjadi uap halus untuk dihirup.",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T16:54:27.596Z"
+  },
+  {
+    "id": "623ce2cb-1f21-49e6-b323-af0bcc2c2133",
+    "name": "Nasal Drop",
+    "kode": "ND",
+    "description": "Sediaan obat berbentuk cair yang digunakan dengan cara diteteskan ke dalam hidung.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T16:55:10.898Z"
+  },
+  {
+    "id": "caaedbcc-8f32-405f-9c01-e894fd7b6283",
+    "name": "Metered Dose Inhaler",
+    "kode": "MDI",
+    "description": "Inhaler asma dosis terukur.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T16:56:22.261Z"
+  },
+  {
+    "id": "8ae46854-6e0d-4929-8479-89a396b0ce6d",
+    "name": "Lotion",
+    "kode": "LOT",
+    "description": "Sediaan cair yang ditujukan untuk pemakaian luar pada kulit.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T16:56:56.101Z"
+  },
+  {
+    "id": "8de6aaf1-0b62-42a5-9b49-d1c712d3baa6",
+    "name": "Infus",
+    "kode": "IVF",
+    "description": "Sediaan steril yang masuk dalam tubuh manusia melalui intravena.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T16:57:19.260Z"
   },
   {
     "id": "4576b8f5-a03d-4d0f-b83c-f5537930b498",
-    "name": "IUD",
+    "name": "Intrauterine Device",
     "kode": "IUD",
-    "description": "Intrauterine Device",
+    "description": "Alat kecil berbentuk T yang dimasukkan ke dalam rahim wanita untuk mencegah kehamilan.",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T16:57:41.248Z"
   },
   {
-    "id": "2b858573-1f39-49c9-9266-fa03cbd70a89",
-    "name": "Ring",
-    "kode": "RNG",
-    "description": "Vaginal Ring",
+    "id": "58f34ce8-0ef1-429b-ab92-908627033c6a",
+    "name": "Injeksi",
+    "kode": "INJ",
+    "description": "Sediaan steril yang diberikan melalui suntikan ke dalam tubuh.",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T16:57:59.214Z"
+  },
+  {
+    "id": "c4429613-51b3-4570-9a08-7dfd284fa3fc",
+    "name": "Douche",
+    "kode": "DOU",
+    "description": "Larutan pembersih yang digunakan untuk membersihkan vagina.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:08:55.953Z"
+  },
+  {
+    "id": "c9030784-fc10-4103-aa50-65c0839c53fd",
+    "name": "Eliksir",
+    "kode": "ELX",
+    "description": "Sediaan berupa cairan oral yang manis dan jernih, umumnya mengandung alkohol dan air sebagai pelarut, serta zat aktif obat.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:05:39.539Z"
+  },
+  {
+    "id": "b072be37-e29a-4c23-a346-a983adc9a36b",
+    "name": "Tablet Effervescent",
+    "kode": "EFF",
+    "description": "Sediaan obat atau suplemen yang dirancang untuk larut dalam air dan menghasilkan gas karbon dioksida (CO2), menciptakan sensasi bergelembung.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:06:14.200Z"
+  },
+  {
+    "id": "d97f4bbf-a432-4071-881a-3bb681e99d6e",
+    "name": "Eye Drop",
+    "kode": "ED",
+    "description": "Larutan steril atau suspensi yang digunakan dengan cara diteteskan pada selaput lendir mata di sekitar kelopak mata atau bola mata.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:06:44.670Z"
+  },
+  {
+    "id": "d6c97b0b-96b7-4f23-8c29-c7deccf58f11",
+    "name": "Sirup",
+    "kode": "SYR",
+    "description": "Sediaan cair yang berupa larutan, biasanya manis, yang mengandung satu atau lebih bahan aktif obat yang terlarut dalam larutan gula pekat atau pengganti gula.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:12:55.238Z"
+  },
+  {
+    "id": "cdc209ef-306c-4838-ba93-c3a06536df3d",
+    "name": "Ear Drop",
+    "kode": "EAD",
+    "description": "Cairan yang dapat mengencerkan kotoran pada telinga sehingga membuat telinga kembali bersih.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:07:32.422Z"
+  },
+  {
+    "id": "22f78ec3-58f0-4258-9202-426e605b21fe",
+    "name": "Krim",
+    "kode": "CRM",
+    "description": "Sediaan setengah padat yang berupa emulsi, baik tipe minyak dalam air (M/A) atau air dalam minyak (A/M) yang digunakan untuk pemakaian luar.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:10:09.569Z"
+  },
+  {
+    "id": "4aa4d10e-a816-4c7d-acfe-bd9a730d3da3",
+    "name": "Kaplet",
+    "kode": "CPT",
+    "description": "Sediaan padat berbentuk oval atau lonjong, mirip kapsul, tetapi sebenarnya merupakan tablet yang dilapisi.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:11:02.554Z"
+  },
+  {
+    "id": "3f46c3ba-d477-4f31-950a-e9f880d9294c",
+    "name": "Tablet Bukal",
+    "kode": "BUK",
+    "description": "Obat yang diberikan di antara gusi dan lapisan dalam pipi.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:11:22.747Z"
+  },
+  {
+    "id": "f27c863e-71ad-439c-8e44-729b9ac27be6",
+    "name": "Skin Spray",
+    "kode": "SSP",
+    "description": "Sediaan dalam bentuk semprotan (spray) yang diformulasikan untuk diaplikasikan pada kulit.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:11:45.974Z"
+  },
+  {
+    "id": "94a40e6e-6ebe-433f-838f-66e536f894de",
+    "name": "Suppositoria",
+    "kode": "SUP",
+    "description": "Sediaan farmasi berbentuk padat, umumnya kerucut atau peluru, yang dimasukkan melalui rektum (dubur), vagina, atau uretra (saluran kemih).",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:12:07.581Z"
   },
   {
     "id": "f3dad3e8-90ae-422e-942e-64e08dd48ab8",
     "name": "Pen Injector",
     "kode": "PEN",
-    "description": "Pen insulin",
+    "description": "Perangkat yang berisi kartrid obat cair dan jarum suntik yang terintegrasi, dirancang untuk pemberian obat melalui injeksi subkutan (di bawah kulit).",
     "created_at": "2025-08-01T05:43:31.274Z",
-    "updated_at": "2025-08-01T05:43:31.274Z"
+    "updated_at": "2025-08-01T17:15:45.843Z"
+  },
+  {
+    "id": "8f04108d-589f-40e8-8796-51638eb01bac",
+    "name": "Transdermal Patch",
+    "kode": "TDP",
+    "description": "Sediaan farmasi yang dirancang untuk menempelkan obat pada kulit dan melepaskan obat secara terkontrol ke dalam tubuh melalui kulit.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:13:23.927Z"
+  },
+  {
+    "id": "05cddbf4-9913-437a-828d-e322ac113ad5",
+    "name": "Throat Spray",
+    "kode": "TSP",
+    "description": "Antiseptik yang digunakan di dalam rongga mulut dan tenggorokan.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:13:53.829Z"
+  },
+  {
+    "id": "b6b8f1b1-1eec-4d7e-9727-902e079f898e",
+    "name": "Medicated Plaster",
+    "kode": "PLT",
+    "description": "Sediaan farmasi yang ditempelkan pada kulit untuk memberikan obat secara bertahap ke dalam aliran darah.",
+    "created_at": "2025-08-01T05:43:31.274Z",
+    "updated_at": "2025-08-01T17:14:43.079Z"
   }
 ]
