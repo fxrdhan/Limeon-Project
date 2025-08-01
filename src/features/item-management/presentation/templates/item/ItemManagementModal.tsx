@@ -89,6 +89,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
 
   // UI mode state (after isEditMode is available)
   const [mode, setMode] = useState<'add' | 'edit' | 'history'>(isEditMode ? 'edit' : 'add');
+  const [resetKey, setResetKey] = useState(0);
 
   // Form validation
   const { finalDisabledState } = useItemFormValidation({
@@ -105,6 +106,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
   // UI event handlers
   const handleReset = () => {
     resetForm();
+    setResetKey(prev => prev + 1); // Force re-mount of form sections to clear validation
     nameInputRef.current?.focus();
   };
 
@@ -163,6 +165,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       isEditMode,
       formattedUpdateAt,
       mode,
+      resetKey,
     },
     modal: {
       isAddEditModalOpen,

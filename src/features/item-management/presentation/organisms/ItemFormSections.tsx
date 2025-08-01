@@ -57,6 +57,8 @@ const BasicInfoSection: React.FC = () => {
     regenerateItemCode,
   } = useItemForm();
 
+  const { resetKey } = useItemUI();
+
   const { handleAddNewCategory, handleAddNewType, handleAddNewUnit, handleAddNewDosage } =
     useItemModal();
 
@@ -95,6 +97,7 @@ const BasicInfoSection: React.FC = () => {
 
   return (
     <ItemBasicInfoForm
+      key={resetKey} // Force re-mount on reset to clear validation
       formData={{
         code: formData.code || "",
         name: formData.name || "",
@@ -180,6 +183,8 @@ const PricingSection: React.FC = () => {
   const { formData, updateFormData, handleChange } = useItemForm();
   const { unitConversionHook, displayBasePrice, displaySellPrice } =
     useItemPrice();
+  
+  const { resetKey } = useItemUI();
 
   const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
     basePrice: formData.base_price || 0,
@@ -206,6 +211,7 @@ const PricingSection: React.FC = () => {
 
   return (
     <ItemPricingForm
+      key={resetKey} // Force re-mount on reset to clear validation
       formData={{
         base_price: formData.base_price || 0,
         sell_price: formData.sell_price || 0,

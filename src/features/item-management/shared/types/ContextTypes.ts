@@ -22,6 +22,7 @@ export interface ItemUIState {
   isEditMode: boolean;
   formattedUpdateAt?: string;
   mode: 'add' | 'edit' | 'history';
+  resetKey: number;
 }
 
 export interface ItemModalState {
