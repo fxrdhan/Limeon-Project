@@ -112,14 +112,6 @@
     "kode": "AHT"
   },
   {
-    "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "name": "Antiangina",
-    "description": "Obat jantung koroner",
-    "created_at": "2025-08-01T03:54:49.798Z",
-    "updated_at": "2025-08-01T03:54:49.798Z",
-    "kode": "AAN"
-  },
-  {
     "id": "896548ed-c390-44f5-a637-03edd725487c",
     "name": "Antiaritmia",
     "description": "Mengatur irama jantung",
@@ -750,5 +742,13 @@
     "created_at": "2025-08-01T03:54:49.798Z",
     "updated_at": "2025-08-01T03:54:49.798Z",
     "kode": "SMK"
+  },
+  {
+    "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+    "name": "Antiangina",
+    "description": "Obat jantung koroner",
+    "created_at": "2025-08-01T03:54:49.798Z",
+    "updated_at": "2025-08-01T12:45:54.657Z",
+    "kode": "AAN"
   }
 ]

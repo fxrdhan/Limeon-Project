@@ -1,5 +1,5 @@
 -- Function: handle_new_user
--- Exported from Supabase on: 2025-08-01T12:24:51.033Z
+-- Exported from Supabase on: 2025-08-01T17:43:16.370Z
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger

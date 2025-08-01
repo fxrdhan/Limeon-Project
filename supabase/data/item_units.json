@@ -3,56 +3,72 @@
     "id": "6dbfbdc5-c8ba-4489-b39c-98acb43d27bd",
     "name": "Ampul",
     "created_at": "2025-08-01T05:43:46.372Z",
-    "updated_at": "2025-08-01T05:43:46.372Z",
-    "description": "Ampul",
+    "updated_at": "2025-08-01T17:16:12.531Z",
+    "description": "Wadah takaran tunggal, oleh karena total jumlah cairannya ditentukan pemakainannya untuk satu kali injeksi.",
     "kode": "AMP"
-  },
-  {
-    "id": "ab8ed8f4-7f59-4429-955b-1cc959da2b7b",
-    "name": "Vial",
-    "created_at": "2025-08-01T05:43:46.372Z",
-    "updated_at": "2025-08-01T05:43:46.372Z",
-    "description": "Vial",
-    "kode": "VIA"
-  },
-  {
-    "id": "aa85d1ae-5f08-4eb2-a487-c811eddca6f7",
-    "name": "Sachet",
-    "created_at": "2025-08-01T05:43:46.372Z",
-    "updated_at": "2025-08-01T05:43:46.372Z",
-    "description": "Sachet",
-    "kode": "SCH"
   },
   {
     "id": "b572a6a9-de49-4b96-92b5-40f331789912",
     "name": "Box",
     "created_at": "2025-08-01T05:43:46.372Z",
-    "updated_at": "2025-08-01T05:43:46.372Z",
-    "description": "Box",
+    "updated_at": "2025-08-01T17:16:44.619Z",
+    "description": "Kemasan luar yang berisi beberapa kemasan lebih kecil.",
     "kode": "BOX"
-  },
-  {
-    "id": "274ab125-357c-46d0-8d13-86ead6c9849a",
-    "name": "Pot",
-    "created_at": "2025-08-01T05:43:46.372Z",
-    "updated_at": "2025-08-01T05:43:46.372Z",
-    "description": "Pot",
-    "kode": "POT"
   },
   {
     "id": "849b799c-4841-4e9e-a965-ebcaae811268",
     "name": "Cartridge",
     "created_at": "2025-08-01T05:43:46.372Z",
-    "updated_at": "2025-08-01T05:43:46.372Z",
-    "description": "Cartridge",
+    "updated_at": "2025-08-01T17:17:59.175Z",
+    "description": "Wadah kecil, biasanya berisi obat atau bahan lain dalam bentuk cairan atau bubuk, yang dirancang untuk digunakan dalam perangkat medis.",
     "kode": "CTG"
   },
   {
-    "id": "4c210af0-65fe-4aae-b948-8d1e4db82668",
-    "name": "jjj",
-    "created_at": "2025-08-01T08:54:07.847Z",
-    "updated_at": "2025-08-01T08:54:07.847Z",
-    "description": "",
-    "kode": null
+    "id": "274ab125-357c-46d0-8d13-86ead6c9849a",
+    "name": "Pot",
+    "created_at": "2025-08-01T05:43:46.372Z",
+    "updated_at": "2025-08-01T17:18:59.515Z",
+    "description": "Wadah berbentuk silinder kecil (seperti toples mini).",
+    "kode": "POT"
+  },
+  {
+    "id": "aa85d1ae-5f08-4eb2-a487-c811eddca6f7",
+    "name": "Sachet",
+    "created_at": "2025-08-01T05:43:46.372Z",
+    "updated_at": "2025-08-01T17:19:51.283Z",
+    "description": "Wadah kantong kecil yang biasanya terbuat dari kertas, plastik, atau aluminium foil yang berisi obat dalam bentuk serbuk, granul, atau cairan.",
+    "kode": "SCH"
+  },
+  {
+    "id": "ab8ed8f4-7f59-4429-955b-1cc959da2b7b",
+    "name": "Vial",
+    "created_at": "2025-08-01T05:43:46.372Z",
+    "updated_at": "2025-08-01T17:20:36.012Z",
+    "description": "Wadah kecil berbentuk botol yang terbuat dari kaca atau plastik yang digunakan untuk menyimpan obat-obatan, terutama obat dalam bentuk cair atau serbuk yang akan dilarutkan.",
+    "kode": "VIA"
+  },
+  {
+    "id": "182618aa-5cc6-4675-abb9-26b11f2c9978",
+    "name": "Strip",
+    "created_at": "2025-08-01T17:25:12.900Z",
+    "updated_at": "2025-08-01T17:25:12.900Z",
+    "description": "Kemasan obat berbentuk lembaran fleksibel (biasanya aluminium foil) yang berisi dosis individual.",
+    "kode": "STR"
+  },
+  {
+    "id": "5fd98fba-6d7a-4c8f-93b0-3057ddf7dd0b",
+    "name": "Blister",
+    "created_at": "2025-08-01T17:23:00.117Z",
+    "updated_at": "2025-08-01T17:25:32.492Z",
+    "description": "Kemasan dengan rongga plastik yang dibentuk sebelumnya dan disegel dengan bahan penutup untuk melindungi obat secara individual.",
+    "kode": "BLS"
+  },
+  {
+    "id": "00e5904f-f02e-4449-a2a8-aa646dc38982",
+    "name": "Botol",
+    "created_at": "2025-08-01T17:27:01.273Z",
+    "updated_at": "2025-08-01T17:27:01.273Z",
+    "description": "Wadah berbentuk silinder dengan mulut sempit yang terbuat dari kaca atau plastik untuk menyimpan obat cair, tablet, atau kapsul dalam jumlah tertentu.",
+    "kode": "BTL"
   }
 ]
