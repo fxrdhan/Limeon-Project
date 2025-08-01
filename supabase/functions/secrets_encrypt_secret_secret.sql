@@ -1,5 +1,5 @@
 -- Function: secrets_encrypt_secret_secret
--- Exported from Supabase on: 2025-07-30T03:05:46.283Z
+-- Exported from Supabase on: 2025-08-01T12:24:51.035Z
 
 CREATE OR REPLACE FUNCTION vault.secrets_encrypt_secret_secret()
  RETURNS trigger

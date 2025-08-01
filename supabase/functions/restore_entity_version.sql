@@ -1,5 +1,5 @@
 -- Function: restore_entity_version
--- Exported from Supabase on: 2025-07-30T03:05:46.281Z
+-- Exported from Supabase on: 2025-08-01T12:24:51.032Z
 
 CREATE OR REPLACE FUNCTION public.restore_entity_version(p_entity_table text, p_entity_id uuid, p_version_number integer)
  RETURNS boolean
