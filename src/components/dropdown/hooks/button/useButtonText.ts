@@ -11,7 +11,7 @@ interface UseButtonTextProps {
 
 export const useButtonText = ({
   selectedOption,
-  placeholder = '-- Pilih --',
+  placeholder = 'Pilih',
   isExpanded,
   buttonRef,
 }: UseButtonTextProps) => {
@@ -51,5 +51,6 @@ export const useButtonText = ({
     displayText: getDisplayText(),
     titleText: getTitleText(),
     shouldTruncate: shouldTruncate(),
+    isPlaceholder: !selectedOption,
   };
 };

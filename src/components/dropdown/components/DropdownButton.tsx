@@ -20,7 +20,7 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
   (
     {
       selectedOption,
-      placeholder = '-- Pilih --',
+      placeholder = 'Pilih',
       isOpen,
       isClosing,
       hasError,
@@ -37,9 +37,10 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
     const { isExpanded, handleExpansionChange } = useButtonExpansion({
       selectedOption,
       buttonRef,
+      isOpen,
     });
 
-    const { displayText, titleText } = useButtonText({
+    const { displayText, titleText, isPlaceholder } = useButtonText({
       selectedOption,
       placeholder,
       isExpanded,
@@ -51,6 +52,7 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
         ref={ref}
         displayText={displayText}
         titleText={titleText}
+        isPlaceholder={isPlaceholder}
         isOpen={isOpen}
         isClosing={isClosing}
         isExpanded={isExpanded}
@@ -62,7 +64,10 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
         onMouseEnter={() => handleExpansionChange(true)}
         onMouseLeave={() => handleExpansionChange(false)}
         onFocus={() => handleExpansionChange(true)}
-        onBlur={onBlur}
+        onBlur={() => {
+          handleExpansionChange(false);
+          onBlur();
+        }}
       />
     );
   },
