@@ -37,7 +37,7 @@ export class UnitService extends BaseService<Unit> {
 
   async getActiveUnits() {
     return this.getAll({
-      select: 'id, kode, name, description, updated_at',
+      select: 'id, kode, name, nci_code, description, updated_at',
       orderBy: { column: 'kode', ascending: true },
     });
   }
@@ -77,7 +77,7 @@ export class SupplierService extends BaseService<Supplier> {
 
   async searchUnits(query: string) {
     return this.search(query, ['kode', 'name', 'description'], {
-      select: 'id, kode, name, description, updated_at',
+      select: 'id, kode, name, nci_code, description, updated_at',
       orderBy: { column: 'kode', ascending: true },
     });
   }

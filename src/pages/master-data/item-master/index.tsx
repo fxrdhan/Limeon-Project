@@ -343,6 +343,17 @@ const ItemMasterNew = () => {
       headerName: currentConfig.nameColumnHeader,
       minWidth: 120,
     }),
+    // Add NCI Code column for units and dosages tabs
+    ...(activeTab === 'units' || activeTab === 'dosages' ? [
+      createTextColumn({
+        field: 'nci_code',
+        headerName: 'Kode NCI',
+        minWidth: 120,
+        valueGetter: params => {
+          return params.data.nci_code || '-';
+        },
+      })
+    ] : []),
     createTextColumn({
       field: 'description',
       headerName: activeTab === 'manufacturers' ? 'Alamat' : 'Deskripsi',
@@ -492,7 +503,7 @@ const ItemMasterNew = () => {
                   ? `<span style="padding: 10px; color: #888;">${currentConfig.searchNoDataMessage} "${search}"</span>`
                   : `<span style="padding: 10px; color: #888;">${currentConfig.noDataMessage}</span>`
               }
-              autoSizeColumns={['kode', 'name']}
+              autoSizeColumns={activeTab === 'units' || activeTab === 'dosages' ? ['kode', 'name', 'nci_code'] : ['kode', 'name']}
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
               style={{

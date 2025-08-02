@@ -476,11 +476,11 @@ export const useDosagesRealtime = (options?: UseMasterDataRealtimeOptions) => {
 
   // Base query for dosages
   const dosagesQuery = useQuery<ItemDosage[]>({
-    queryKey: QueryKeys.masterData.dosages.list(),
+    queryKey: ['dosages', 'list', 'nci-only'], // NCI codes only, no FDA duplication
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_dosages')
-        .select('id, kode, name, description, created_at, updated_at')
+        .select('id, kode, name, nci_code, description, created_at, updated_at')
         .order('kode');
 
       if (error) throw error;

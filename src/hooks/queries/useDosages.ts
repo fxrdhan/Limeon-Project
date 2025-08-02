@@ -12,7 +12,7 @@ export const useDosagesRealtime = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_dosages')
-        .select('id, kode, name, description, created_at, updated_at')
+        .select('id, kode, name, nci_code, description, created_at, updated_at')
         .order('kode');
 
       if (error) throw error;

@@ -120,9 +120,7 @@ export const validateTextFields = (formData: FormData): ValidationResult => {
   }
 
   // Manufacturer validation
-  if (formData.manufacturer && formData.manufacturer.length > 100) {
-    errors.manufacturer = 'Nama produsen tidak boleh lebih dari 100 karakter';
-  }
+  // No validation needed for manufacturer_id as it's a UUID selected from dropdown
 
   // Description validation
   if (formData.description && formData.description.length > 500) {

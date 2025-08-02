@@ -11,11 +11,13 @@ const ItemModalContainer: React.FC = () => {
     isAddTypeModalOpen,
     isAddUnitModalOpen,
     isAddDosageModalOpen,
+    isAddManufacturerModalOpen,
     currentSearchTermForModal,
     setIsAddEditModalOpen,
     setIsAddTypeModalOpen,
     setIsAddUnitModalOpen,
     setIsAddDosageModalOpen,
+    setIsAddManufacturerModalOpen,
     closeModalAndClearSearch,
   } = useItemModal();
 
@@ -24,10 +26,12 @@ const ItemModalContainer: React.FC = () => {
     handleSaveType,
     handleSaveUnit,
     handleSaveDosage,
+    handleSaveManufacturer,
     addCategoryMutation,
     addTypeMutation,
     addUnitMutation,
     addDosageMutation,
+    addManufacturerMutation,
   } = useItemActions();
 
   return (
@@ -55,6 +59,12 @@ const ItemModalContainer: React.FC = () => {
         onClose: () => closeModalAndClearSearch(setIsAddDosageModalOpen),
         onSubmit: handleSaveDosage,
         mutation: addDosageMutation,
+      }}
+      manufacturerModal={{
+        isOpen: isAddManufacturerModalOpen,
+        onClose: () => closeModalAndClearSearch(setIsAddManufacturerModalOpen),
+        onSubmit: handleSaveManufacturer,
+        mutation: addManufacturerMutation,
       }}
       currentSearchTerm={currentSearchTermForModal}
     />

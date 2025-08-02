@@ -5,6 +5,15 @@ import type { ItemFormData, UnitConversion } from '../../../shared/types';
 import type { Category, MedicineType, Unit } from '@/types';
 import type { ItemDosage } from '../../../domain/entities/Item';
 
+interface ItemManufacturer {
+  id: string;
+  kode?: string;
+  name: string;
+  address?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 interface UseAddItemFormStateProps {
   initialSearchQuery?: string;
 }
@@ -19,7 +28,7 @@ export const useAddItemFormState = ({
   const [formData, setFormData] = useState<ItemFormData>({
     code: '',
     name: initialSearchQuery || '',
-    manufacturer: '',
+    manufacturer_id: '',
     type_id: '',
     category_id: '',
     unit_id: '',
@@ -58,6 +67,7 @@ export const useAddItemFormState = ({
   const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
   const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
   const [isAddDosageModalOpen, setIsAddDosageModalOpen] = useState(false);
+  const [isAddManufacturerModalOpen, setIsAddManufacturerModalOpen] = useState(false);
   const [currentSearchTermForModal, setCurrentSearchTermForModal] = useState<
     string | undefined
   >();
@@ -74,6 +84,7 @@ export const useAddItemFormState = ({
   const [types, setTypes] = useState<MedicineType[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [dosages, setDosages] = useState<ItemDosage[]>([]);
+  const [manufacturers, setManufacturers] = useState<ItemManufacturer[]>([]);
 
   // Initialization tracking
   const hasInitialized = useRef(false);
@@ -190,7 +201,7 @@ export const useAddItemFormState = ({
     const initialState = data || {
       code: '',
       name: initialSearchQuery || '',
-      manufacturer: '',
+      manufacturer_id: '',
       type_id: '',
       category_id: '',
       unit_id: '',
@@ -276,6 +287,8 @@ export const useAddItemFormState = ({
     setIsAddUnitModalOpen,
     isAddDosageModalOpen,
     setIsAddDosageModalOpen,
+    isAddManufacturerModalOpen,
+    setIsAddManufacturerModalOpen,
     currentSearchTermForModal,
     setCurrentSearchTermForModal,
 
@@ -298,6 +311,8 @@ export const useAddItemFormState = ({
     setUnits,
     dosages,
     setDosages,
+    manufacturers,
+    setManufacturers,
 
     // Initialization tracking
     hasInitialized,

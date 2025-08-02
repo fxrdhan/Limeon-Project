@@ -1,10 +1,8 @@
 import { forwardRef } from 'react';
 import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
-import FormSection from '@/components/form-section';
 import FormField from '@/components/form-field';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
-import { ItemCodeField } from '../atoms';
 import { itemNameSchema } from '@/schemas/itemValidation';
 import type { DropdownOption } from '@/types/components';
 
@@ -12,7 +10,7 @@ interface ItemBasicInfoFormProps {
   formData: {
     code: string;
     name: string;
-    manufacturer: string;
+    manufacturer_id: string;
     barcode: string;
     is_medicine: boolean;
     category_id: string;
@@ -25,8 +23,8 @@ interface ItemBasicInfoFormProps {
   types: DropdownOption[];
   units: DropdownOption[];
   dosages: DropdownOption[];
+  manufacturers: DropdownOption[];
   loading: boolean;
-  onCodeRegenerate: () => void;
   onChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
@@ -36,6 +34,7 @@ interface ItemBasicInfoFormProps {
   onAddNewType: (searchTerm?: string) => void;
   onAddNewUnit: (searchTerm?: string) => void;
   onAddNewDosage: (searchTerm?: string) => void;
+  onAddNewManufacturer: (searchTerm?: string) => void;
 }
 
 const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
@@ -46,8 +45,8 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       types,
       units,
       dosages,
+      manufacturers,
       loading,
-      onCodeRegenerate,
       onChange,
       onFieldChange,
       onDropdownChange,
@@ -55,14 +54,22 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       onAddNewType,
       onAddNewUnit,
       onAddNewDosage,
+      onAddNewManufacturer,
     },
     ref
   ) => {
     return (
-      <FormSection title="Data Umum">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          <ItemCodeField code={formData.code} onRegenerate={onCodeRegenerate} />
-
+      <div className="border-2 border-gray-200 rounded-lg mb-6 overflow-hidden">
+        <div className="bg-gray-100 p-3 border-b-2 border-gray-200 flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Data Umum</h2>
+          {formData.code && (
+            <div className="text-sm text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded border">
+              Kode: {formData.code}
+            </div>
+          )}
+        </div>
+        <div className="p-4 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <FormField
             label="Nama Item"
             className="md:col-span-2"
@@ -96,14 +103,19 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
           </FormField>
 
           <FormField label="Produsen" className="md:col-span-1">
-            <Input
-              name="manufacturer"
-              value={formData.manufacturer}
-              tabIndex={3}
-              onChange={onChange}
-              className="w-full"
-              placeholder="Masukkan nama produsen"
-            />
+            {loading && manufacturers.length === 0 ? (
+              <Input value="Memuat produsen..." readOnly disabled />
+            ) : (
+              <Dropdown
+                name="manufacturer_id"
+                tabIndex={3}
+                value={formData.manufacturer_id}
+                onChange={value => onDropdownChange('manufacturer_id', value)}
+                options={manufacturers}
+                placeholder="Pilih Produsen"
+                onAddNew={onAddNewManufacturer}
+              />
+            )}
           </FormField>
         </div>
 
@@ -230,7 +242,8 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             expandOnClick={true}
           />
         </div>
-      </FormSection>
+        </div>
+      </div>
     );
   }
 );

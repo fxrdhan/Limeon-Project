@@ -4,7 +4,7 @@ import type { CustomerLevelDiscount } from '@/types/database';
 export interface ItemFormData {
   code: string;
   name: string;
-  manufacturer: string;
+  manufacturer_id: string;
   type_id: string;
   category_id: string;
   unit_id: string;
