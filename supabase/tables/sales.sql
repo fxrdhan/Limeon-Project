@@ -1,5 +1,5 @@
 -- Table Definition: sales
--- Exported from Supabase on: 2025-08-01T17:43:16.436Z
+-- Exported from Supabase on: 2025-08-02T13:07:13.935Z
 
 CREATE TABLE public.sales (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

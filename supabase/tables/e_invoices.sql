@@ -1,5 +1,5 @@
 -- Table Definition: e_invoices
--- Exported from Supabase on: 2025-08-01T17:43:16.435Z
+-- Exported from Supabase on: 2025-08-02T13:07:13.933Z
 
 CREATE TABLE public.e_invoices (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
