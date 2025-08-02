@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useConfirmDialog } from "@/components/dialog-box";
-import { fuzzyMatch, getScore } from "@/utils/search";
-import { useAlert } from "@/components/alert/hooks";
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useConfirmDialog } from '@/components/dialog-box';
+import { fuzzyMatch, getScore } from '@/utils/search';
+import { useAlert } from '@/components/alert/hooks';
 import type {
   Category,
   ItemType,
@@ -12,8 +12,8 @@ import type {
   Patient,
   Doctor,
   UseMasterDataManagementOptions,
-} from "@/types";
-import type { ItemDosage } from "@/features/item-management/domain/entities/Item";
+} from '@/types';
+import type { ItemDosage } from '@/features/item-management/domain/entities/Item';
 
 // Import our new modular services and hooks
 import {
@@ -35,9 +35,18 @@ import {
   usePatientMutations,
   useDoctors,
   useDoctorMutations,
-} from "@/hooks/queries";
+} from '@/hooks/queries';
 
-type MasterDataItem = Category | ItemType | Unit | ItemDosage | ItemManufacturer | Item | Supplier | Patient | Doctor;
+type MasterDataItem =
+  | Category
+  | ItemType
+  | Unit
+  | ItemDosage
+  | ItemManufacturer
+  | Item
+  | Supplier
+  | Patient
+  | Doctor;
 
 // Hook selector factory to get the right hooks for each table
 // Always use the same hooks to avoid hooks order violations
@@ -48,49 +57,55 @@ const getHooksForTable = (tableName: string, isRealtimeEnabled: boolean) => {
     filters?: Record<string, unknown>;
     orderBy?: { column: string; ascending?: boolean };
   }
-  
+
   switch (tableName) {
-    case "item_categories":
+    case 'item_categories':
       return {
-        useData: (options: QueryOptions) => useCategoriesRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) =>
+          useCategoriesRealtime({ ...options, enabled: isRealtimeEnabled }),
         useMutations: useCategoryMutations,
       };
-    case "item_types":
+    case 'item_types':
       return {
-        useData: (options: QueryOptions) => useMedicineTypesRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) =>
+          useMedicineTypesRealtime({ ...options, enabled: isRealtimeEnabled }),
         useMutations: useMedicineTypeMutations,
       };
-    case "item_units":
+    case 'item_units':
       return {
-        useData: (options: QueryOptions) => useUnitsRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) =>
+          useUnitsRealtime({ ...options, enabled: isRealtimeEnabled }),
         useMutations: useUnitMutations,
       };
-    case "item_dosages":
+    case 'item_dosages':
       return {
-        useData: (options: QueryOptions) => useDosagesRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) =>
+          useDosagesRealtime({ ...options, enabled: isRealtimeEnabled }),
         useMutations: useDosageMutations,
       };
-    case "item_manufacturers":
+    case 'item_manufacturers':
       return {
-        useData: (options: QueryOptions) => useManufacturersRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) =>
+          useManufacturersRealtime({ ...options, enabled: isRealtimeEnabled }),
         useMutations: useManufacturerMutations,
       };
-    case "suppliers":
+    case 'suppliers':
       return {
         useData: useSuppliers, // No realtime for suppliers yet
         useMutations: useSupplierMutations,
       };
-    case "items":
+    case 'items':
       return {
-        useData: (options: QueryOptions) => useItemsRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) =>
+          useItemsRealtime({ ...options, enabled: isRealtimeEnabled }),
         useMutations: useItemMutations,
       };
-    case "patients":
+    case 'patients':
       return {
         useData: usePatients, // No realtime for patients yet
         useMutations: usePatientMutations,
       };
-    case "doctors":
+    case 'doctors':
       return {
         useData: useDoctors, // No realtime for doctors yet
         useMutations: useDoctorMutations,
@@ -103,7 +118,7 @@ const getHooksForTable = (tableName: string, isRealtimeEnabled: boolean) => {
 export const useMasterDataManagement = (
   tableName: string,
   entityNameLabel: string,
-  options?: UseMasterDataManagementOptions & { activeTableName?: string },
+  options?: UseMasterDataManagementOptions & { activeTableName?: string }
 ) => {
   const { openConfirmDialog } = useConfirmDialog();
   const alert = useAlert();
@@ -119,8 +134,8 @@ export const useMasterDataManagement = (
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MasterDataItem | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -130,30 +145,30 @@ export const useMasterDataManagement = (
   // Debounce search input with special handling for hashtag
   useEffect(() => {
     // Layer: Empty State Cleanup - When search is completely empty
-    if (search === "" || search.trim() === "") {
+    if (search === '' || search.trim() === '') {
       // Immediately clear debounced search when input is empty
-      if (debouncedSearch !== "") {
-        setDebouncedSearch("");
+      if (debouncedSearch !== '') {
+        setDebouncedSearch('');
       }
       return;
     }
-    
+
     // Check if search is in hashtag mode (starts with # but not yet complete)
-    const isHashtagMode = search.startsWith("#") && !search.includes(":");
-    const isHashtagOnly = search === "#";
-    
+    const isHashtagMode = search.startsWith('#') && !search.includes(':');
+    const isHashtagOnly = search === '#';
+
     // Don't apply search for incomplete hashtag modes
     if (isHashtagMode || isHashtagOnly) {
       // Clear previous search results when entering hashtag mode
-      if (debouncedSearch !== "") {
-        setDebouncedSearch("");
+      if (debouncedSearch !== '') {
+        setDebouncedSearch('');
       }
       return;
     }
-    
+
     // Use longer delay for hashtag completion to ensure smooth UX
-    const delay = search.startsWith("#") && search.includes(":") ? 150 : 300;
-    
+    const delay = search.startsWith('#') && search.includes(':') ? 150 : 300;
+
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
     }, delay);
@@ -179,8 +194,8 @@ export const useMasterDataManagement = (
       try {
         const target = e.target as HTMLElement;
         const isInputFocused =
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
           target.isContentEditable;
         const isModalOpen = actualIsModalOpen;
         const isTypeable =
@@ -205,21 +220,26 @@ export const useMasterDataManagement = (
           handleSearchChange(syntheticEvent);
         }
       } catch (error) {
-        console.error("Error in global keydown handler:", error);
+        console.error('Error in global keydown handler:', error);
       }
     };
 
-    document.addEventListener("keydown", handleGlobalKeyDown);
-    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
   }, [searchInputRef, handleSearchChange, actualIsModalOpen]);
 
   // Get the appropriate hooks for this table
   // Only enable realtime for the currently active table
   const isRealtimeEnabled = tableName === activeTableName;
   const hooks = getHooksForTable(tableName, isRealtimeEnabled);
-  
+
   // Use the appropriate data hook
-  const { data: allData = [], isLoading, isError, error } = hooks.useData({
+  const {
+    data: allData = [],
+    isLoading,
+    isError,
+    error,
+  } = hooks.useData({
     enabled: true,
   });
 
@@ -233,24 +253,31 @@ export const useMasterDataManagement = (
     // Apply search filter
     if (debouncedSearch) {
       const searchTermLower = debouncedSearch.toLowerCase();
-      
-      if (tableName === "items") {
+
+      if (tableName === 'items') {
         // Special handling for items with complex search
         filteredData = (allData as Item[])
-          .filter((item) => {
+          .filter(item => {
             return (
               fuzzyMatch(item.name, searchTermLower) ||
               (item.code && fuzzyMatch(item.code, searchTermLower)) ||
               (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
-              (item.category?.name && fuzzyMatch(item.category.name, searchTermLower)) ||
-              (item.type?.name && fuzzyMatch(item.type.name, searchTermLower)) ||
-              (item.unit?.name && fuzzyMatch(item.unit.name, searchTermLower)) ||
-              (item.base_price && fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
-              (item.sell_price && fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
-              (item.stock && fuzzyMatch(item.stock.toString(), searchTermLower)) ||
+              (item.category?.name &&
+                fuzzyMatch(item.category.name, searchTermLower)) ||
+              (item.type?.name &&
+                fuzzyMatch(item.type.name, searchTermLower)) ||
+              (item.unit?.name &&
+                fuzzyMatch(item.unit.name, searchTermLower)) ||
+              (item.base_price &&
+                fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
+              (item.sell_price &&
+                fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
+              (item.stock &&
+                fuzzyMatch(item.stock.toString(), searchTermLower)) ||
               (item.unit_conversions &&
                 item.unit_conversions.some(
-                  (uc) => uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower),
+                  uc =>
+                    uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower)
                 ))
             );
           })
@@ -263,45 +290,84 @@ export const useMasterDataManagement = (
       } else {
         // Standard filtering for other master data
         filteredData = filteredData
-          .filter((item) => {
+          .filter(item => {
             // Check for kode field if it exists (only for item master data)
             if (
-              "kode" in item &&
-              typeof item.kode === "string" &&
+              'kode' in item &&
+              typeof item.kode === 'string' &&
               fuzzyMatch(item.kode.toLowerCase(), searchTermLower)
-            ) return true;
-            if (item.name && fuzzyMatch(item.name, searchTermLower)) return true;
+            )
+              return true;
+            if (item.name && fuzzyMatch(item.name, searchTermLower))
+              return true;
             if (
-              "description" in item &&
-              typeof item.description === "string" &&
+              'description' in item &&
+              typeof item.description === 'string' &&
               fuzzyMatch(item.description, searchTermLower)
-            ) return true;
+            )
+              return true;
             if (
-              "address" in item &&
-              typeof item.address === "string" &&
+              'address' in item &&
+              typeof item.address === 'string' &&
               fuzzyMatch(item.address, searchTermLower)
-            ) return true;
-            
-            if (tableName === "suppliers") {
+            )
+              return true;
+
+            if (tableName === 'suppliers') {
               const supplier = item as Supplier;
-              if (supplier.address && fuzzyMatch(supplier.address, searchTermLower)) return true;
-              if (supplier.phone && fuzzyMatch(supplier.phone, searchTermLower)) return true;
-              if (supplier.email && fuzzyMatch(supplier.email, searchTermLower)) return true;
-              if (supplier.contact_person && fuzzyMatch(supplier.contact_person, searchTermLower)) return true;
-            } else if (tableName === "patients") {
+              if (
+                supplier.address &&
+                fuzzyMatch(supplier.address, searchTermLower)
+              )
+                return true;
+              if (supplier.phone && fuzzyMatch(supplier.phone, searchTermLower))
+                return true;
+              if (supplier.email && fuzzyMatch(supplier.email, searchTermLower))
+                return true;
+              if (
+                supplier.contact_person &&
+                fuzzyMatch(supplier.contact_person, searchTermLower)
+              )
+                return true;
+            } else if (tableName === 'patients') {
               const patient = item as Patient;
-              if (patient.gender && fuzzyMatch(patient.gender, searchTermLower)) return true;
-              if (patient.address && fuzzyMatch(patient.address, searchTermLower)) return true;
-              if (patient.phone && fuzzyMatch(patient.phone, searchTermLower)) return true;
-              if (patient.email && fuzzyMatch(patient.email, searchTermLower)) return true;
-              if (patient.birth_date && fuzzyMatch(patient.birth_date.toString(), searchTermLower)) return true;
-            } else if (tableName === "doctors") {
+              if (patient.gender && fuzzyMatch(patient.gender, searchTermLower))
+                return true;
+              if (
+                patient.address &&
+                fuzzyMatch(patient.address, searchTermLower)
+              )
+                return true;
+              if (patient.phone && fuzzyMatch(patient.phone, searchTermLower))
+                return true;
+              if (patient.email && fuzzyMatch(patient.email, searchTermLower))
+                return true;
+              if (
+                patient.birth_date &&
+                fuzzyMatch(patient.birth_date.toString(), searchTermLower)
+              )
+                return true;
+            } else if (tableName === 'doctors') {
               const doctor = item as Doctor;
-              if (doctor.specialization && fuzzyMatch(doctor.specialization, searchTermLower)) return true;
-              if (doctor.license_number && fuzzyMatch(doctor.license_number, searchTermLower)) return true;
-              if (doctor.phone && fuzzyMatch(doctor.phone, searchTermLower)) return true;
-              if (doctor.email && fuzzyMatch(doctor.email, searchTermLower)) return true;
-              if (doctor.experience_years && fuzzyMatch(doctor.experience_years.toString(), searchTermLower)) return true;
+              if (
+                doctor.specialization &&
+                fuzzyMatch(doctor.specialization, searchTermLower)
+              )
+                return true;
+              if (
+                doctor.license_number &&
+                fuzzyMatch(doctor.license_number, searchTermLower)
+              )
+                return true;
+              if (doctor.phone && fuzzyMatch(doctor.phone, searchTermLower))
+                return true;
+              if (doctor.email && fuzzyMatch(doctor.email, searchTermLower))
+                return true;
+              if (
+                doctor.experience_years &&
+                fuzzyMatch(doctor.experience_years.toString(), searchTermLower)
+              )
+                return true;
             }
             return false;
           })
@@ -309,26 +375,45 @@ export const useMasterDataManagement = (
             const getScore = (itemToSort: MasterDataItem) => {
               // Check kode first (highest priority)
               if (
-                "kode" in itemToSort &&
-                typeof itemToSort.kode === "string" &&
+                'kode' in itemToSort &&
+                typeof itemToSort.kode === 'string' &&
                 itemToSort.kode.toLowerCase().startsWith(searchTermLower)
-              ) return 5;
+              )
+                return 5;
               if (
-                "kode" in itemToSort &&
-                typeof itemToSort.kode === "string" &&
+                'kode' in itemToSort &&
+                typeof itemToSort.kode === 'string' &&
                 itemToSort.kode.toLowerCase().includes(searchTermLower)
-              ) return 4;
+              )
+                return 4;
               // Then check name
-              if (itemToSort.name && itemToSort.name.toLowerCase().startsWith(searchTermLower)) return 3;
-              if (itemToSort.name && itemToSort.name.toLowerCase().includes(searchTermLower)) return 2;
-              if (itemToSort.name && fuzzyMatch(itemToSort.name, searchTermLower)) return 1;
+              if (
+                itemToSort.name &&
+                itemToSort.name.toLowerCase().startsWith(searchTermLower)
+              )
+                return 3;
+              if (
+                itemToSort.name &&
+                itemToSort.name.toLowerCase().includes(searchTermLower)
+              )
+                return 2;
+              if (
+                itemToSort.name &&
+                fuzzyMatch(itemToSort.name, searchTermLower)
+              )
+                return 1;
               return 0;
             };
             const scoreA = getScore(a);
             const scoreB = getScore(b);
             if (scoreA !== scoreB) return scoreB - scoreA;
             // Secondary sort by kode if available, then name
-            if ("kode" in a && "kode" in b && typeof a.kode === "string" && typeof b.kode === "string") {
+            if (
+              'kode' in a &&
+              'kode' in b &&
+              typeof a.kode === 'string' &&
+              typeof b.kode === 'string'
+            ) {
               return a.kode.localeCompare(b.kode);
             }
             return a.name.localeCompare(b.name);
@@ -356,20 +441,32 @@ export const useMasterDataManagement = (
   }, []);
 
   const handleModalSubmit = useCallback(
-    async (itemData: { id?: string; kode?: string; name: string; description?: string; address?: string }) => {
+    async (itemData: {
+      id?: string;
+      kode?: string;
+      name: string;
+      description?: string;
+      address?: string;
+    }) => {
       try {
         if (itemData.id) {
           // Update existing item
-          const updateMutation = ("updateCategory" in mutations && mutations.updateCategory) ||
-                               ("updateMedicineType" in mutations && mutations.updateMedicineType) ||
-                               ("updateUnit" in mutations && mutations.updateUnit) ||
-                               ("updateSupplier" in mutations && mutations.updateSupplier) ||
-                               ("updateItem" in mutations && mutations.updateItem) ||
-                               ("updatePatient" in mutations && mutations.updatePatient) ||
-                               ("updateDoctor" in mutations && mutations.updateDoctor) ||
-                               ("updateMutation" in mutations && mutations.updateMutation);
-          
-          if (updateMutation && typeof updateMutation === 'object' && 'mutateAsync' in updateMutation) {
+          const updateMutation =
+            ('updateCategory' in mutations && mutations.updateCategory) ||
+            ('updateMedicineType' in mutations &&
+              mutations.updateMedicineType) ||
+            ('updateUnit' in mutations && mutations.updateUnit) ||
+            ('updateSupplier' in mutations && mutations.updateSupplier) ||
+            ('updateItem' in mutations && mutations.updateItem) ||
+            ('updatePatient' in mutations && mutations.updatePatient) ||
+            ('updateDoctor' in mutations && mutations.updateDoctor) ||
+            ('updateMutation' in mutations && mutations.updateMutation);
+
+          if (
+            updateMutation &&
+            typeof updateMutation === 'object' &&
+            'mutateAsync' in updateMutation
+          ) {
             const updateData: Record<string, unknown> = { name: itemData.name };
             if (itemData.description !== undefined) {
               updateData.description = itemData.description;
@@ -380,17 +477,30 @@ export const useMasterDataManagement = (
             if (itemData.kode !== undefined) {
               updateData.kode = itemData.kode;
             }
-            
+
             // Handle different parameter structures for different mutation types
-            if ("updateMutation" in mutations) {
+            if ('updateMutation' in mutations) {
               // For generic mutations (like dosages), pass parameters directly
-              await ((updateMutation as unknown) as { mutateAsync: (params: { id: string } & Record<string, unknown>) => Promise<unknown> }).mutateAsync({
+              await (
+                updateMutation as unknown as {
+                  mutateAsync: (
+                    params: { id: string } & Record<string, unknown>
+                  ) => Promise<unknown>;
+                }
+              ).mutateAsync({
                 id: itemData.id!,
                 ...updateData,
               });
             } else {
               // For specific mutations (categories, types, units, etc.), use nested data structure
-              await ((updateMutation as unknown) as { mutateAsync: (params: { id: string; data: Record<string, unknown> }) => Promise<unknown> }).mutateAsync({
+              await (
+                updateMutation as unknown as {
+                  mutateAsync: (params: {
+                    id: string;
+                    data: Record<string, unknown>;
+                  }) => Promise<unknown>;
+                }
+              ).mutateAsync({
                 id: itemData.id!,
                 data: updateData,
               });
@@ -398,16 +508,22 @@ export const useMasterDataManagement = (
           }
         } else {
           // Create new item
-          const createMutation = ("createCategory" in mutations && mutations.createCategory) ||
-                               ("createMedicineType" in mutations && mutations.createMedicineType) ||
-                               ("createUnit" in mutations && mutations.createUnit) ||
-                               ("createSupplier" in mutations && mutations.createSupplier) ||
-                               ("createItem" in mutations && mutations.createItem) ||
-                               ("createPatient" in mutations && mutations.createPatient) ||
-                               ("createDoctor" in mutations && mutations.createDoctor) ||
-                               ("createMutation" in mutations && mutations.createMutation);
-          
-          if (createMutation && typeof createMutation === 'object' && 'mutateAsync' in createMutation) {
+          const createMutation =
+            ('createCategory' in mutations && mutations.createCategory) ||
+            ('createMedicineType' in mutations &&
+              mutations.createMedicineType) ||
+            ('createUnit' in mutations && mutations.createUnit) ||
+            ('createSupplier' in mutations && mutations.createSupplier) ||
+            ('createItem' in mutations && mutations.createItem) ||
+            ('createPatient' in mutations && mutations.createPatient) ||
+            ('createDoctor' in mutations && mutations.createDoctor) ||
+            ('createMutation' in mutations && mutations.createMutation);
+
+          if (
+            createMutation &&
+            typeof createMutation === 'object' &&
+            'mutateAsync' in createMutation
+          ) {
             const createData: Record<string, unknown> = { name: itemData.name };
             if (itemData.description !== undefined) {
               createData.description = itemData.description;
@@ -419,108 +535,148 @@ export const useMasterDataManagement = (
               createData.kode = itemData.kode;
             }
             // Cast to unknown first to avoid type conflicts, then cast to mutation interface
-            await ((createMutation as unknown) as { mutateAsync: (data: Record<string, unknown>) => Promise<unknown> }).mutateAsync(createData);
+            await (
+              createMutation as unknown as {
+                mutateAsync: (
+                  data: Record<string, unknown>
+                ) => Promise<unknown>;
+              }
+            ).mutateAsync(createData);
           }
         }
-        
+
         setIsAddModalOpen(false);
         setIsEditModalOpen(false);
         setEditingItem(null);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        const action = itemData.id ? "memperbarui" : "menambahkan";
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+        const action = itemData.id ? 'memperbarui' : 'menambahkan';
         alert.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
       }
     },
-    [mutations, entityNameLabel, alert],
+    [mutations, entityNameLabel, alert]
   );
 
   const handleDelete = useCallback(
     async (itemId: string) => {
       try {
-        const deleteMutation = ("deleteCategory" in mutations && mutations.deleteCategory) ||
-                             ("deleteMedicineType" in mutations && mutations.deleteMedicineType) ||
-                             ("deleteUnit" in mutations && mutations.deleteUnit) ||
-                             ("deleteSupplier" in mutations && mutations.deleteSupplier) ||
-                             ("deleteItem" in mutations && mutations.deleteItem) ||
-                             ("deletePatient" in mutations && mutations.deletePatient) ||
-                             ("deleteDoctor" in mutations && mutations.deleteDoctor) ||
-                             ("deleteMutation" in mutations && mutations.deleteMutation);
-        
-        if (deleteMutation && typeof deleteMutation === 'object' && 'mutateAsync' in deleteMutation) {
+        const deleteMutation =
+          ('deleteCategory' in mutations && mutations.deleteCategory) ||
+          ('deleteMedicineType' in mutations && mutations.deleteMedicineType) ||
+          ('deleteUnit' in mutations && mutations.deleteUnit) ||
+          ('deleteSupplier' in mutations && mutations.deleteSupplier) ||
+          ('deleteItem' in mutations && mutations.deleteItem) ||
+          ('deletePatient' in mutations && mutations.deletePatient) ||
+          ('deleteDoctor' in mutations && mutations.deleteDoctor) ||
+          ('deleteMutation' in mutations && mutations.deleteMutation);
+
+        if (
+          deleteMutation &&
+          typeof deleteMutation === 'object' &&
+          'mutateAsync' in deleteMutation
+        ) {
           // Cast to unknown first to avoid type conflicts, then cast to mutation interface
-          await ((deleteMutation as unknown) as { mutateAsync: (id: string) => Promise<unknown> }).mutateAsync(itemId);
+          await (
+            deleteMutation as unknown as {
+              mutateAsync: (id: string) => Promise<unknown>;
+            }
+          ).mutateAsync(itemId);
         }
-        
+
         setIsEditModalOpen(false);
         setEditingItem(null);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
         alert.error(`Gagal menghapus ${entityNameLabel}: ${errorMessage}`);
       }
     },
-    [mutations, entityNameLabel, alert],
+    [mutations, entityNameLabel, alert]
   );
 
   const handlePageChange = (newPage: number) => setCurrentPage(newPage);
-  
-  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     setItemsPerPage(Number(e.target.value));
     setCurrentPage(1);
   };
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
 
         if (currentData.length > 0) {
           const firstItem = currentData[0] as MasterDataItem;
           handleEdit(firstItem);
-        } else if (debouncedSearch.trim() !== "") {
+        } else if (debouncedSearch.trim() !== '') {
           setIsAddModalOpen(true);
         }
       }
     },
-    [currentData, handleEdit, debouncedSearch],
+    [currentData, handleEdit, debouncedSearch]
   );
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-
   // Create mutation objects with consistent interface for backward compatibility
   const addMutation = {
-    mutate: (data: { kode?: string; name: string; description?: string; address?: string }) => 
-      handleModalSubmit(data),
-    mutateAsync: (data: { kode?: string; name: string; description?: string; address?: string }) => 
-      handleModalSubmit(data),
+    mutate: (data: {
+      kode?: string;
+      name: string;
+      description?: string;
+      address?: string;
+    }) => handleModalSubmit(data),
+    mutateAsync: (data: {
+      kode?: string;
+      name: string;
+      description?: string;
+      address?: string;
+    }) => handleModalSubmit(data),
     isLoading: Object.values(mutations).some((mutation: unknown) => {
       const m = mutation as { isLoading?: boolean; isPending?: boolean };
       return m?.isLoading || m?.isPending;
     }),
     error: (() => {
-      const mutationWithError = Object.values(mutations).find((mutation: unknown) => {
-        const m = mutation as { error?: Error };
-        return m?.error;
-      }) as { error?: Error } | undefined;
+      const mutationWithError = Object.values(mutations).find(
+        (mutation: unknown) => {
+          const m = mutation as { error?: Error };
+          return m?.error;
+        }
+      ) as { error?: Error } | undefined;
       return mutationWithError?.error || null;
     })(),
   };
 
   const updateMutation = {
-    mutate: (data: { id: string; kode?: string; name: string; description?: string; address?: string }) => 
-      handleModalSubmit(data),
-    mutateAsync: (data: { id: string; kode?: string; name: string; description?: string; address?: string }) => 
-      handleModalSubmit(data),
+    mutate: (data: {
+      id: string;
+      kode?: string;
+      name: string;
+      description?: string;
+      address?: string;
+    }) => handleModalSubmit(data),
+    mutateAsync: (data: {
+      id: string;
+      kode?: string;
+      name: string;
+      description?: string;
+      address?: string;
+    }) => handleModalSubmit(data),
     isLoading: Object.values(mutations).some((mutation: unknown) => {
       const m = mutation as { isLoading?: boolean; isPending?: boolean };
       return m?.isLoading || m?.isPending;
     }),
     error: (() => {
-      const mutationWithError = Object.values(mutations).find((mutation: unknown) => {
-        const m = mutation as { error?: Error };
-        return m?.error;
-      }) as { error?: Error } | undefined;
+      const mutationWithError = Object.values(mutations).find(
+        (mutation: unknown) => {
+          const m = mutation as { error?: Error };
+          return m?.error;
+        }
+      ) as { error?: Error } | undefined;
       return mutationWithError?.error || null;
     })(),
   };
@@ -533,10 +689,12 @@ export const useMasterDataManagement = (
       return m?.isLoading || m?.isPending;
     }),
     error: (() => {
-      const mutationWithError = Object.values(mutations).find((mutation: unknown) => {
-        const m = mutation as { error?: Error };
-        return m?.error;
-      }) as { error?: Error } | undefined;
+      const mutationWithError = Object.values(mutations).find(
+        (mutation: unknown) => {
+          const m = mutation as { error?: Error };
+          return m?.error;
+        }
+      ) as { error?: Error } | undefined;
       return mutationWithError?.error || null;
     })(),
   };

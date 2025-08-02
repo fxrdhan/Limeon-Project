@@ -1,5 +1,5 @@
-import React from "react";
-import { CalendarView, CustomDateValueType } from "./components";
+import React from 'react';
+import { CalendarView, CustomDateValueType } from './components';
 
 // Hook parameter interfaces
 export interface UseDatepickerStateParams {
@@ -25,7 +25,7 @@ export interface UseDatepickerPositionParams {
 export interface UseDatepickerPositionReturn {
   portalStyle: React.CSSProperties;
   isPositionReady: boolean;
-  dropDirection: "down" | "up";
+  dropDirection: 'down' | 'up';
   calculatePosition: () => void;
 }
 
@@ -49,8 +49,8 @@ export interface UseDatepickerKeyboardParams {
   setHighlightedYear: React.Dispatch<React.SetStateAction<number | null>>;
   setDisplayDate: React.Dispatch<React.SetStateAction<Date>>;
   setCurrentView: React.Dispatch<React.SetStateAction<CalendarView>>;
-  navigateViewDate: (direction: "prev" | "next") => void;
-  navigateYear: (direction: "prev" | "next") => void;
+  navigateViewDate: (direction: 'prev' | 'next') => void;
+  navigateYear: (direction: 'prev' | 'next') => void;
   focusPortal: () => void;
 }
 
@@ -66,8 +66,8 @@ export interface UseDatepickerNavigationParams {
 }
 
 export interface UseDatepickerNavigationReturn {
-  navigateViewDate: (direction: "prev" | "next") => void;
-  navigateYear: (direction: "prev" | "next") => void;
+  navigateViewDate: (direction: 'prev' | 'next') => void;
+  navigateYear: (direction: 'prev' | 'next') => void;
 }
 
 export interface UseDatepickerHoverParams {

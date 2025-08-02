@@ -1,15 +1,18 @@
-import React, { useEffect, useRef, useState } from "react";
-import type { ItemManagementModalProps, ItemManagementContextValue } from "../../../shared/types";
-import { useAddItemPageHandlers } from "../../../application/hooks/form/useItemPageHandlers";
-import { useItemFormValidation } from "../../../application/hooks/form/useItemValidation";
-import { ItemManagementProvider } from "../../../shared/contexts/ItemFormContext";
-import { useItemManagement } from "../../../shared/contexts/useItemFormContext";
+import React, { useEffect, useRef, useState } from 'react';
+import type {
+  ItemManagementModalProps,
+  ItemManagementContextValue,
+} from '../../../shared/types';
+import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
+import { useItemFormValidation } from '../../../application/hooks/form/useItemValidation';
+import { ItemManagementProvider } from '../../../shared/contexts/ItemFormContext';
+import { useItemManagement } from '../../../shared/contexts/useItemFormContext';
 
 // Template and Organisms
-import ItemModalTemplate from "../ItemModalTemplate";
-import { ItemFormSections } from "../../organisms/ItemFormSections";
-import ItemModalContainer from "../containers/ItemModalContainer";
-import ItemHistoryContent from "../../organisms/ItemHistoryContent";
+import ItemModalTemplate from '../ItemModalTemplate';
+import { ItemFormSections } from '../../organisms/ItemFormSections';
+import ItemModalContainer from '../containers/ItemModalContainer';
+import ItemHistoryContent from '../../organisms/ItemHistoryContent';
 
 const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
   isOpen,
@@ -22,7 +25,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
 }) => {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
-  
+
   // Main data hook - this is the orchestrator
   const handlers = useAddItemPageHandlers({
     itemId,
@@ -50,7 +53,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     resetForm,
     regenerateItemCode,
     isDirty,
-    
+
     // Modal state
     isAddEditModalOpen,
     setIsAddEditModalOpen,
@@ -66,7 +69,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     handleAddNewUnit,
     handleAddNewDosage,
     closeModalAndClearSearch,
-    
+
     // Actions
     handleCancel,
     handleDeleteItem,
@@ -74,21 +77,23 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     handleSaveType,
     handleSaveUnit,
     handleSaveDosage,
-    
+
     // Mutations
     addCategoryMutation,
     addTypeMutation,
     addUnitMutation,
     addDosageMutation,
     deleteItemMutation,
-    
+
     // Price & conversion
     unitConversionHook,
     formattedUpdateAt,
   } = handlers;
 
   // UI mode state (after isEditMode is available)
-  const [mode, setMode] = useState<'add' | 'edit' | 'history'>(isEditMode ? 'edit' : 'add');
+  const [mode, setMode] = useState<'add' | 'edit' | 'history'>(
+    isEditMode ? 'edit' : 'add'
+  );
   const [resetKey, setResetKey] = useState(0);
 
   // Form validation
@@ -172,7 +177,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       isAddTypeModalOpen,
       isAddUnitModalOpen,
       isAddDosageModalOpen,
-      currentSearchTermForModal: currentSearchTermForModal || "",
+      currentSearchTermForModal: currentSearchTermForModal || '',
     },
     price: {
       unitConversionHook,
@@ -188,7 +193,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       addUnitMutation,
       addDosageMutation,
     },
-    
+
     // Actions
     formActions: {
       updateFormData,
@@ -211,9 +216,15 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       setIsAddTypeModalOpen,
       setIsAddUnitModalOpen,
       setIsAddDosageModalOpen,
-      closeModalAndClearSearch: (setter: ((open: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>) => {
+      closeModalAndClearSearch: (
+        setter:
+          | ((open: boolean) => void)
+          | React.Dispatch<React.SetStateAction<boolean>>
+      ) => {
         if (typeof setter === 'function') {
-          closeModalAndClearSearch(setter as React.Dispatch<React.SetStateAction<boolean>>);
+          closeModalAndClearSearch(
+            setter as React.Dispatch<React.SetStateAction<boolean>>
+          );
         }
       },
       handleAddNewCategory,
@@ -240,7 +251,8 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
 
 // Clean content component - only uses context
 const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
-  const { ui, action, businessActions, uiActions, formActions, form } = useItemManagement();
+  const { ui, action, businessActions, uiActions, formActions, form } =
+    useItemManagement();
 
   // Mode-based content rendering
   if (ui.mode === 'history') {
@@ -249,7 +261,7 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
       uiActions.goBackToForm();
       return null;
     }
-    
+
     return (
       <ItemModalTemplate
         isOpen={ui.isOpen}
@@ -257,11 +269,16 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
         onBackdropClick={uiActions.handleBackdropClick}
         onSubmit={(e: React.FormEvent) => e.preventDefault()} // Disable form submission in history mode
         children={{
-          header: <ItemFormSections.Header onReset={undefined} onClose={uiActions.handleClose} />,
+          header: (
+            <ItemFormSections.Header
+              onReset={undefined}
+              onClose={uiActions.handleClose}
+            />
+          ),
           basicInfo: (
             <ItemHistoryContent
               itemId={itemId}
-              itemName={form.formData.name || "Item"}
+              itemName={form.formData.name || 'Item'}
             />
           ),
           settingsForm: null,
@@ -289,7 +306,12 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
       onBackdropClick={uiActions.handleBackdropClick}
       onSubmit={formActions.handleSubmit}
       children={{
-        header: <ItemFormSections.Header onReset={uiActions.handleReset} onClose={uiActions.handleClose} />,
+        header: (
+          <ItemFormSections.Header
+            onReset={uiActions.handleReset}
+            onClose={uiActions.handleClose}
+          />
+        ),
         basicInfo: <ItemFormSections.BasicInfo />,
         settingsForm: <ItemFormSections.Settings />,
         pricingForm: <ItemFormSections.Pricing />,

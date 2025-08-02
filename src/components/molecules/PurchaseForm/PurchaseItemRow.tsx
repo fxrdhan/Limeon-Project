@@ -1,10 +1,10 @@
-import React from "react";
-import { TableRow, TableCell } from "@/components/table";
-import Button from "@/components/button";
-import Datepicker from "@/components/datepicker";
-import { FaTrash } from "react-icons/fa";
-import { formatRupiah, extractNumericValue } from "@/lib/formatters";
-import type { PurchaseItem, CustomDateValueType } from "@/types";
+import React from 'react';
+import { TableRow, TableCell } from '@/components/table';
+import Button from '@/components/button';
+import Datepicker from '@/components/datepicker';
+import { FaTrash } from 'react-icons/fa';
+import { formatRupiah, extractNumericValue } from '@/lib/formatters';
+import type { PurchaseItem, CustomDateValueType } from '@/types';
 
 interface PurchaseItemRowProps {
   item: PurchaseItem;
@@ -43,10 +43,10 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
     maxValue: number = 100
   ) => {
     let inputValue = value;
-    if (inputValue.endsWith("%")) {
+    if (inputValue.endsWith('%')) {
       inputValue = inputValue.slice(0, -1);
     }
-    const numericValue = parseInt(inputValue.replace(/[^\d]/g, "")) || 0;
+    const numericValue = parseInt(inputValue.replace(/[^\d]/g, '')) || 0;
     onChange(item.id, Math.min(numericValue, maxValue));
   };
 
@@ -56,7 +56,7 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
     onChange: (id: string, value: number) => void
   ) => {
     if (
-      e.key === "Backspace" &&
+      e.key === 'Backspace' &&
       currentValue > 0 &&
       e.currentTarget.selectionStart === e.currentTarget.value.length
     ) {
@@ -68,13 +68,13 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
   return (
     <TableRow>
       <TableCell className="text-center">{index + 1}</TableCell>
-      <TableCell>{itemCode || "-"}</TableCell>
+      <TableCell>{itemCode || '-'}</TableCell>
       <TableCell>{item.item_name}</TableCell>
       <TableCell>
         <input
           type="text"
-          value={item.batch_no || ""}
-          onChange={(e) => onBatchNoChange(item.id, e.target.value)}
+          value={item.batch_no || ''}
+          onChange={e => onBatchNoChange(item.id, e.target.value)}
           className="w-20 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-left"
           placeholder="No. Batch"
         />
@@ -85,7 +85,7 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
           onChange={(newDate: CustomDateValueType) => {
             onExpiryDateChange(
               item.id,
-              newDate ? newDate.toISOString().split("T")[0] : ""
+              newDate ? newDate.toISOString().split('T')[0] : ''
             );
           }}
           inputClassName="w-full text-center text-sm py-[3px]! px-1! bg-transparent border-0! border-b border-gray-300! focus:border-primary! focus:ring-0! rounded-none!"
@@ -97,12 +97,12 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
       <TableCell className="text-center">
         <input
           type="number"
-          onFocus={(e) => e.target.select()}
-          onClick={(e) => (e.target as HTMLInputElement).select()}
+          onFocus={e => e.target.select()}
+          onClick={e => (e.target as HTMLInputElement).select()}
           value={item.quantity}
-          onChange={(e) => {
+          onChange={e => {
             const inputValue = e.target.value;
-            if (inputValue === "") {
+            if (inputValue === '') {
               onQuantityChange(item.id, 0);
               return;
             }
@@ -121,10 +121,10 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
       <TableCell className="text-center">
         <select
           value={item.unit}
-          onChange={(e) => onUnitChange(item.id, e.target.value)}
+          onChange={e => onUnitChange(item.id, e.target.value)}
           className="w-16 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 !text-left appearance-none cursor-pointer"
         >
-          {unitOptions.map((option) => (
+          {unitOptions.map(option => (
             <option key={option.id} value={option.name}>
               {option.name}
             </option>
@@ -134,8 +134,8 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
       <TableCell className="text-right">
         <input
           type="text"
-          value={item.price === 0 ? "" : formatRupiah(item.price)}
-          onChange={(e) => {
+          value={item.price === 0 ? '' : formatRupiah(item.price)}
+          onChange={e => {
             const numericValue = extractNumericValue(e.target.value);
             onPriceChange(item.id, numericValue);
           }}
@@ -146,29 +146,35 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
       <TableCell className="text-right">
         <input
           type="text"
-          value={item.discount === 0 ? "" : `${item.discount}%`}
-          onChange={(e) => handlePercentageInput(e.target.value, onDiscountChange)}
+          value={item.discount === 0 ? '' : `${item.discount}%`}
+          onChange={e =>
+            handlePercentageInput(e.target.value, onDiscountChange)
+          }
           className="w-12 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
           placeholder="0%"
-          onKeyDown={(e) => handleBackspaceOnPercentage(e, item.discount, onDiscountChange)}
+          onKeyDown={e =>
+            handleBackspaceOnPercentage(e, item.discount, onDiscountChange)
+          }
         />
       </TableCell>
       {!isVatIncluded && (
         <TableCell className="text-right">
           <input
             type="text"
-            value={item.vat_percentage === 0 ? "" : `${item.vat_percentage}%`}
-            onChange={(e) => handlePercentageInput(e.target.value, onVatChange)}
+            value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
+            onChange={e => handlePercentageInput(e.target.value, onVatChange)}
             className="w-12 bg-transparent border-b border-gray-300 focus:border-primary focus:outline-hidden px-1 py-0.5 text-right"
             placeholder="0%"
-            onKeyDown={(e) => handleBackspaceOnPercentage(e, item.vat_percentage, onVatChange)}
+            onKeyDown={e =>
+              handleBackspaceOnPercentage(e, item.vat_percentage, onVatChange)
+            }
           />
         </TableCell>
       )}
       <TableCell className="text-right">
-        {item.subtotal.toLocaleString("id-ID", {
-          style: "currency",
-          currency: "IDR",
+        {item.subtotal.toLocaleString('id-ID', {
+          style: 'currency',
+          currency: 'IDR',
         })}
       </TableCell>
       <TableCell className="text-center">

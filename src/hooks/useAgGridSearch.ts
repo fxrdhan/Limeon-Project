@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from "react";
-import { GridApi, GridReadyEvent } from "ag-grid-community";
-import { fuzzySearchMatch } from "@/utils/search";
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { GridApi, GridReadyEvent } from 'ag-grid-community';
+import { fuzzySearchMatch } from '@/utils/search';
 
 interface UseAgGridSearchOptions {
   /**
@@ -50,14 +50,14 @@ export const useAgGridSearch = (
   const {
     enableDebouncedSearch = false,
     onDebouncedSearchChange,
-    initialSearch = "",
+    initialSearch = '',
     useFuzzySearch = true,
   } = options;
 
   const [search, _setSearch] = useState(initialSearch);
   const gridRef = useRef<GridApi>(null);
   const searchRef = useRef(search);
-  
+
   // Wrapper for setSearch that also updates searchRef immediately
   const setSearch = useCallback((value: string) => {
     _setSearch(value);
@@ -99,7 +99,7 @@ export const useAgGridSearch = (
           gridRef.current.onFilterChanged();
         } else {
           // Use built-in quickFilter for exact search
-          gridRef.current.setGridOption("quickFilterText", value);
+          gridRef.current.setGridOption('quickFilterText', value);
         }
       }
 
@@ -112,19 +112,24 @@ export const useAgGridSearch = (
   );
 
   const clearSearch = useCallback(() => {
-    setSearch("");
-    
+    setSearch('');
+
     if (gridRef.current && !gridRef.current.isDestroyed()) {
       if (useFuzzySearch) {
         gridRef.current.onFilterChanged();
       } else {
-        gridRef.current.setGridOption("quickFilterText", "");
+        gridRef.current.setGridOption('quickFilterText', '');
       }
     }
     if (enableDebouncedSearch && onDebouncedSearchChange) {
-      onDebouncedSearchChange("");
+      onDebouncedSearchChange('');
     }
-  }, [enableDebouncedSearch, onDebouncedSearchChange, useFuzzySearch, setSearch]);
+  }, [
+    enableDebouncedSearch,
+    onDebouncedSearchChange,
+    useFuzzySearch,
+    setSearch,
+  ]);
 
   return {
     search,

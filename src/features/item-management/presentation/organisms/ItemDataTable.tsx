@@ -1,8 +1,13 @@
-import React from "react";
-import { DataGrid } from "@/components/ag-grid";
-import Pagination from "@/components/pagination";
-import { RowClickedEvent, ColDef, GridReadyEvent, IRowNode } from "ag-grid-community";
-import type { Item } from "@/types/database";
+import React from 'react';
+import { DataGrid } from '@/components/ag-grid';
+import Pagination from '@/components/pagination';
+import {
+  RowClickedEvent,
+  ColDef,
+  GridReadyEvent,
+  IRowNode,
+} from 'ag-grid-community';
+import type { Item } from '@/types/database';
 
 interface ItemDataTableProps {
   items: Item[];
@@ -43,7 +48,6 @@ export default function ItemDataTable({
   isExternalFilterPresent,
   doesExternalFilterPass,
 }: ItemDataTableProps) {
-
   const handleRowClicked = (event: RowClickedEvent) => {
     onRowClick(event.data);
   };
@@ -58,8 +62,7 @@ export default function ItemDataTable({
   if (isError) {
     return (
       <div className="text-center p-6 text-red-500">
-        Error:{" "}
-        {error instanceof Error ? error.message : "Gagal memuat data"}
+        Error: {error instanceof Error ? error.message : 'Gagal memuat data'}
       </div>
     );
   }
@@ -79,9 +82,9 @@ export default function ItemDataTable({
         isExternalFilterPresent={isExternalFilterPresent}
         doesExternalFilterPass={doesExternalFilterPass}
         style={{
-          width: "100%",
-          marginTop: "1rem",
-          marginBottom: "1rem",
+          width: '100%',
+          marginTop: '1rem',
+          marginBottom: '1rem',
         }}
       />
       <Pagination

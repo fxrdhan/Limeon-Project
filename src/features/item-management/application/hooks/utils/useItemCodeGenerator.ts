@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import type { ItemFormData } from "../../../shared/types";
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import type { ItemFormData } from '../../../shared/types';
 
 interface UseItemCodeGenerationProps {
   isEditMode: boolean;
@@ -28,21 +28,24 @@ const generateItemCodeViaEdgeFunction = async (
   category_id: string,
   exclude_item_id?: string
 ): Promise<string> => {
-  const { data, error } = await supabase.functions.invoke('generate-item-code', {
-    body: {
-      type_id,
-      unit_id,
-      category_id,
-      exclude_item_id
+  const { data, error } = await supabase.functions.invoke(
+    'generate-item-code',
+    {
+      body: {
+        type_id,
+        unit_id,
+        category_id,
+        exclude_item_id,
+      },
     }
-  });
+  );
 
   if (error) {
     throw new Error(`Edge function error: ${error.message}`);
   }
 
   const response = data as EdgeFunctionResponse;
-  
+
   if (!response.success) {
     throw new Error(response.error || 'Failed to generate item code');
   }
@@ -68,7 +71,7 @@ export const useItemCodeGeneration = ({
    */
   const regenerateItemCode = async (): Promise<void> => {
     if (!formData.type_id || !formData.category_id || !formData.unit_id) {
-      alert("Silakan pilih jenis, kategori, dan satuan terlebih dahulu");
+      alert('Silakan pilih jenis, kategori, dan satuan terlebih dahulu');
       return;
     }
 
@@ -85,19 +88,27 @@ export const useItemCodeGeneration = ({
       updateFormData({ code: generatedCode });
       alert(`Kode item berhasil diperbarui: ${generatedCode}`);
     } catch (error) {
-      console.error("Error regenerating item code:", error);
+      console.error('Error regenerating item code:', error);
 
       // Provide specific error messages
       if (error instanceof Error) {
-        if (error.message?.includes("network") || error.message?.includes("fetch")) {
-          alert("Gagal memperbarui kode item: Masalah koneksi internet");
-        } else if (error.message?.includes("permission") || error.message?.includes("unauthorized")) {
-          alert("Gagal memperbarui kode item: Tidak memiliki izin akses");
+        if (
+          error.message?.includes('network') ||
+          error.message?.includes('fetch')
+        ) {
+          alert('Gagal memperbarui kode item: Masalah koneksi internet');
+        } else if (
+          error.message?.includes('permission') ||
+          error.message?.includes('unauthorized')
+        ) {
+          alert('Gagal memperbarui kode item: Tidak memiliki izin akses');
         } else {
-          alert(`Gagal memperbarui kode item: ${error.message || "Terjadi kesalahan tak terduga"}`);
+          alert(
+            `Gagal memperbarui kode item: ${error.message || 'Terjadi kesalahan tak terduga'}`
+          );
         }
       } else {
-        alert("Gagal memperbarui kode item: Terjadi kesalahan tak terduga");
+        alert('Gagal memperbarui kode item: Terjadi kesalahan tak terduga');
       }
     } finally {
       setIsGenerating(false);
@@ -109,9 +120,7 @@ export const useItemCodeGeneration = ({
    */
   const canGenerateCode = (): boolean => {
     return Boolean(
-      formData.type_id &&
-      formData.category_id &&
-      formData.unit_id
+      formData.type_id && formData.category_id && formData.unit_id
     );
   };
 

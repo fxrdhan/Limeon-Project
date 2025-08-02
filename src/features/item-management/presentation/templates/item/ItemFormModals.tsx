@@ -1,4 +1,4 @@
-import EntityManagementModal from "../entity/EntityManagementModal";
+import EntityManagementModal from '../entity/EntityManagementModal';
 
 interface MutationState {
   isPending: boolean;
@@ -8,25 +8,45 @@ interface ItemFormModalsProps {
   categoryModal: {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: { kode?: string; name: string; description?: string; address?: string }) => Promise<void>;
+    onSubmit: (data: {
+      kode?: string;
+      name: string;
+      description?: string;
+      address?: string;
+    }) => Promise<void>;
     mutation: MutationState;
   };
   typeModal: {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: { kode?: string; name: string; description?: string; address?: string }) => Promise<void>;
+    onSubmit: (data: {
+      kode?: string;
+      name: string;
+      description?: string;
+      address?: string;
+    }) => Promise<void>;
     mutation: MutationState;
   };
   unitModal: {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: { kode?: string; name: string; description?: string; address?: string }) => Promise<void>;
+    onSubmit: (data: {
+      kode?: string;
+      name: string;
+      description?: string;
+      address?: string;
+    }) => Promise<void>;
     mutation: MutationState;
   };
   dosageModal: {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: { kode?: string; name: string; description?: string; address?: string }) => Promise<void>;
+    onSubmit: (data: {
+      kode?: string;
+      name: string;
+      description?: string;
+      address?: string;
+    }) => Promise<void>;
     mutation: MutationState;
   };
   currentSearchTerm?: string;

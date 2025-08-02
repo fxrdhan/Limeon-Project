@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import Button from "@/components/button";
-import { FaEye } from "react-icons/fa";
-import { useEntityHistory } from "../../application/hooks/entity/useEntityHistory";
-import { formatDateTime } from "@/lib/formatters";
-import { HISTORY_DEBUG } from "../../config/debug";
-import { useItemManagement } from "../../shared/contexts/useItemFormContext";
-import HistoryTimelineList, { HistoryItem } from "./HistoryTimelineList";
-import DiffText from "../molecules/DiffText";
+import React, { useState } from 'react';
+import Button from '@/components/button';
+import { FaEye } from 'react-icons/fa';
+import { useEntityHistory } from '../../application/hooks/entity/useEntityHistory';
+import { formatDateTime } from '@/lib/formatters';
+import { HISTORY_DEBUG } from '../../config/debug';
+import { useItemManagement } from '../../shared/contexts/useItemFormContext';
+import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
+import DiffText from '../molecules/DiffText';
 
 interface ItemHistoryContentProps {
   itemId: string;
@@ -17,23 +17,30 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
   itemId,
   itemName,
 }) => {
-  if (HISTORY_DEBUG) console.log('🪟 ItemHistoryContent props:', { itemId, itemName });
-  
+  if (HISTORY_DEBUG)
+    console.log('🪟 ItemHistoryContent props:', { itemId, itemName });
+
   const { uiActions } = useItemManagement();
   const { form } = useItemManagement();
-  const { history, isLoading, restoreVersion } = useEntityHistory("items", itemId);
+  const { history, isLoading, restoreVersion } = useEntityHistory(
+    'items',
+    itemId
+  );
   const [selectedVersions, setSelectedVersions] = useState<number[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
 
-  if (HISTORY_DEBUG) console.log('📋 ItemHistoryContent state:', { 
-    historyCount: history?.length || 0, 
-    isLoading, 
-    hasHistory: !!history?.length 
-  });
+  if (HISTORY_DEBUG)
+    console.log('📋 ItemHistoryContent state:', {
+      historyCount: history?.length || 0,
+      isLoading,
+      hasHistory: !!history?.length,
+    });
 
   const handleVersionClick = (item: HistoryItem) => {
     if (selectedVersions.includes(item.version_number)) {
-      setSelectedVersions(selectedVersions.filter(v => v !== item.version_number));
+      setSelectedVersions(
+        selectedVersions.filter(v => v !== item.version_number)
+      );
       setSelectedVersion(null);
     } else if (selectedVersions.length < 2) {
       const newSelected = [...selectedVersions, item.version_number];
@@ -52,16 +59,26 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
         uiActions.goBackToForm();
         window.location.reload(); // Refresh to show restored data
       } catch (error) {
-        alert("Gagal mengembalikan versi: " + error);
+        alert('Gagal mengembalikan versi: ' + error);
       }
     }
   };
 
   const canCompare = selectedVersions.length === 2;
-  const selectedVersionData = history?.find(h => h.version_number === selectedVersion);
+  const selectedVersionData = history?.find(
+    h => h.version_number === selectedVersion
+  );
 
   // Define text fields that should use diff analysis
-  const textFields = new Set(['name', 'description', 'code', 'rack', 'base_unit', 'barcode', 'manufacturer']);
+  const textFields = new Set([
+    'name',
+    'description',
+    'code',
+    'rack',
+    'base_unit',
+    'barcode',
+    'manufacturer',
+  ]);
 
   // Helper function to check if field should use diff
   const shouldUseDiff = (field: string) => {
@@ -79,22 +96,22 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
         const category = form.categories.find(c => c.id === value);
         return category ? category.name : `ID: ${value}`;
       }
-      
+
       case 'type_id': {
         const type = form.types.find(t => t.id === value);
         return type ? type.name : `ID: ${value}`;
       }
-      
+
       case 'unit_id': {
         const unit = form.units.find(u => u.id === value);
         return unit ? unit.name : `ID: ${value}`;
       }
-      
+
       case 'is_active':
         return value ? 'Aktif' : 'Tidak Aktif';
-      
+
       default:
-        return typeof value === 'object' 
+        return typeof value === 'object'
           ? JSON.stringify(value, null, 2)
           : String(value);
     }
@@ -120,7 +137,7 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
               </Button>
             )}
           </div>
-          
+
           <div className="p-0">
             <HistoryTimelineList
               history={history}
@@ -157,7 +174,10 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
                 <h4 className="font-medium mb-3">Data Item</h4>
                 <div className="grid grid-cols-2 gap-4">
                   {Object.entries(selectedVersionData.entity_data)
-                    .filter(([key]) => !['id', 'created_at', 'updated_at'].includes(key))
+                    .filter(
+                      ([key]) =>
+                        !['id', 'created_at', 'updated_at'].includes(key)
+                    )
                     .map(([key, value]) => (
                       <div key={key} className="border-b border-gray-200 pb-2">
                         <div className="text-xs font-medium text-gray-600 capitalize mb-1">
@@ -167,55 +187,66 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
                           {resolveValue(key, value)}
                         </div>
                       </div>
-                    ))
-                  }
+                    ))}
                 </div>
               </div>
 
               {/* Changed Fields (if available) */}
-              {selectedVersionData.changed_fields && Object.keys(selectedVersionData.changed_fields).length > 0 && (
-                <div className="mt-6">
-                  <h4 className="font-medium mb-3">Field yang Berubah</h4>
-                  <div className="space-y-3">
-                    {Object.entries(selectedVersionData.changed_fields).map(([field, changes]) => (
-                      <div key={field} className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                        <div className="font-medium text-sm mb-2 capitalize">
-                          {field.replace(/_/g, ' ')}
-                        </div>
-                        
-                        {shouldUseDiff(field) ? (
-                          /* Text fields - Use DiffText component */
-                          <div className="bg-white border border-gray-200 rounded p-3">
-                            <div className="text-xs text-gray-500 mb-2">Perubahan:</div>
-                            <DiffText 
-                              oldText={String(changes.from || '')}
-                              newText={String(changes.to || '')}
-                              mode="smart"
-                              className="w-full"
-                            />
-                          </div>
-                        ) : (
-                          /* Non-text fields - Use side-by-side comparison */
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <div className="text-xs text-gray-500 mb-1">Dari:</div>
-                              <div className="text-sm bg-red-50 border border-red-200 rounded p-2">
-                                {resolveValue(field, changes.from)}
-                              </div>
+              {selectedVersionData.changed_fields &&
+                Object.keys(selectedVersionData.changed_fields).length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-medium mb-3">Field yang Berubah</h4>
+                    <div className="space-y-3">
+                      {Object.entries(selectedVersionData.changed_fields).map(
+                        ([field, changes]) => (
+                          <div
+                            key={field}
+                            className="bg-yellow-50 border border-yellow-200 rounded-lg p-3"
+                          >
+                            <div className="font-medium text-sm mb-2 capitalize">
+                              {field.replace(/_/g, ' ')}
                             </div>
-                            <div>
-                              <div className="text-xs text-gray-500 mb-1">Ke:</div>
-                              <div className="text-sm bg-green-50 border border-green-200 rounded p-2">
-                                {resolveValue(field, changes.to)}
+
+                            {shouldUseDiff(field) ? (
+                              /* Text fields - Use DiffText component */
+                              <div className="bg-white border border-gray-200 rounded p-3">
+                                <div className="text-xs text-gray-500 mb-2">
+                                  Perubahan:
+                                </div>
+                                <DiffText
+                                  oldText={String(changes.from || '')}
+                                  newText={String(changes.to || '')}
+                                  mode="smart"
+                                  className="w-full"
+                                />
                               </div>
-                            </div>
+                            ) : (
+                              /* Non-text fields - Use side-by-side comparison */
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">
+                                    Dari:
+                                  </div>
+                                  <div className="text-sm bg-red-50 border border-red-200 rounded p-2">
+                                    {resolveValue(field, changes.from)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">
+                                    Ke:
+                                  </div>
+                                  <div className="text-sm bg-green-50 border border-green-200 rounded p-2">
+                                    {resolveValue(field, changes.to)}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                        )
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           ) : (
             <div className="p-6 text-center text-gray-500">
@@ -229,9 +260,7 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
       {/* Footer info - will be handled by ItemModalTemplate footer */}
       {selectedVersions.length > 0 && (
         <div className="mt-4 text-sm text-gray-500">
-          <span>
-            Dipilih: v{selectedVersions.join(", v")}
-          </span>
+          <span>Dipilih: v{selectedVersions.join(', v')}</span>
         </div>
       )}
     </div>

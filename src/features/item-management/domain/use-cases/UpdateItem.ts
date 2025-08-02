@@ -13,7 +13,9 @@ export interface UpdateItemOutput {
 }
 
 // Business validation for updates (reuses create validation)
-export const validateUpdateItemInput = (input: UpdateItemInput): { isValid: boolean; errors: string[] } => {
+export const validateUpdateItemInput = (
+  input: UpdateItemInput
+): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
   if (!input.id?.trim()) {
@@ -25,6 +27,6 @@ export const validateUpdateItemInput = (input: UpdateItemInput): { isValid: bool
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 };

@@ -1,24 +1,30 @@
-import { forwardRef, useRef, useEffect, useImperativeHandle, useMemo } from "react";
-import { AgGridReact } from "ag-grid-react";
+import {
+  forwardRef,
+  useRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+} from 'react';
+import { AgGridReact } from 'ag-grid-react';
 import {
   ColDef,
   ModuleRegistry,
   AllCommunityModule,
   themeQuartz,
   GridReadyEvent,
-} from "ag-grid-community";
-import { DataGridProps, DataGridRef } from "@/types";
+} from 'ag-grid-community';
+import { DataGridProps, DataGridRef } from '@/types';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 // Custom theme with secondary color for input focus border
 const customTheme = themeQuartz.withParams({
   inputFocusBorder: {
-    color: "oklch(59.6% 0.145 163.225)",
-    style: "solid",
+    color: 'oklch(59.6% 0.145 163.225)',
+    style: 'solid',
     width: 1,
   },
-  accentColor: "oklch(84.5% 0.143 164.978)",
+  accentColor: 'oklch(84.5% 0.143 164.978)',
 });
 
 const DataGrid = forwardRef<DataGridRef, DataGridProps>(
@@ -30,7 +36,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       onRowClicked,
       onGridReady,
       onFirstDataRendered,
-      domLayout = "autoHeight",
+      domLayout = 'autoHeight',
       overlayNoRowsTemplate,
       className,
       style,
@@ -38,7 +44,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       autoSizeDelay = 200,
       sizeColumnsToFit = false,
       getRowHeight,
-      rowClass = "cursor-pointer",
+      rowClass = 'cursor-pointer',
       suppressMovableColumns = true,
       cellSelection = false,
       suppressScrollOnNewData = true,
@@ -46,12 +52,12 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       animateRows = true,
       loadThemeGoogleFonts = true,
       rowSelection,
-      colResizeDefault = "shift",
+      colResizeDefault = 'shift',
       isExternalFilterPresent,
       doesExternalFilterPass,
       disableFiltering = false,
     },
-    ref,
+    ref
   ) => {
     const gridRef = useRef<AgGridReact>(null);
 
@@ -128,7 +134,10 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       if (!rowSelection) return undefined;
       if (typeof rowSelection === 'string') {
         return {
-          mode: rowSelection === 'single' ? 'singleRow' as const : 'multiRow' as const
+          mode:
+            rowSelection === 'single'
+              ? ('singleRow' as const)
+              : ('multiRow' as const),
         };
       }
       return rowSelection;
@@ -147,7 +156,9 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           colResizeDefault={colResizeDefault}
           onRowClicked={onRowClicked}
           onGridReady={handleGridReady}
-          {...(normalizedRowSelection && { rowSelection: normalizedRowSelection })}
+          {...(normalizedRowSelection && {
+            rowSelection: normalizedRowSelection,
+          })}
           suppressMovableColumns={suppressMovableColumns}
           cellSelection={cellSelection}
           suppressScrollOnNewData={suppressScrollOnNewData}
@@ -162,10 +173,10 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
         />
       </div>
     );
-  },
+  }
 );
 
-DataGrid.displayName = "DataGrid";
+DataGrid.displayName = 'DataGrid';
 
 export default DataGrid;
 export type { DataGridProps, DataGridRef };

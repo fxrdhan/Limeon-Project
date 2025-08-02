@@ -1,6 +1,6 @@
-import { ReactNode } from "react";
-import { Card } from "@/components/card";
-import PageTitle from "@/components/page-title";
+import { ReactNode } from 'react';
+import { Card } from '@/components/card';
+import PageTitle from '@/components/page-title';
 
 interface ItemListTemplateProps {
   isLoading?: boolean;
@@ -20,19 +20,19 @@ export default function ItemListTemplate({
       <Card
         className={
           isLoading
-            ? "opacity-75 transition-opacity duration-300 flex-1 flex flex-col"
-            : "flex-1 flex flex-col"
+            ? 'opacity-75 transition-opacity duration-300 flex-1 flex flex-col'
+            : 'flex-1 flex flex-col'
         }
       >
         <div className="mb-6">
           <PageTitle title="Daftar Item" />
         </div>
-        
+
         {searchToolbar}
-        
+
         {dataTable}
       </Card>
-      
+
       {modal}
     </>
   );

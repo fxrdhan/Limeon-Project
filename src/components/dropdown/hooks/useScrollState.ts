@@ -1,7 +1,9 @@
 import { useState, useCallback, RefObject } from 'react';
 import { DROPDOWN_CONSTANTS } from '../constants';
 
-export const useScrollState = (optionsContainerRef: RefObject<HTMLDivElement | null>) => {
+export const useScrollState = (
+  optionsContainerRef: RefObject<HTMLDivElement | null>
+) => {
   const [scrollState, setScrollState] = useState({
     isScrollable: false,
     reachedBottom: false,
@@ -15,9 +17,10 @@ export const useScrollState = (optionsContainerRef: RefObject<HTMLDivElement | n
       isScrollable: container.scrollHeight > container.clientHeight,
       reachedBottom:
         Math.abs(
-          container.scrollHeight - container.scrollTop - container.clientHeight,
+          container.scrollHeight - container.scrollTop - container.clientHeight
         ) < DROPDOWN_CONSTANTS.SCROLL_THRESHOLD,
-      scrolledFromTop: container.scrollTop > DROPDOWN_CONSTANTS.SCROLL_THRESHOLD,
+      scrolledFromTop:
+        container.scrollTop > DROPDOWN_CONSTANTS.SCROLL_THRESHOLD,
     });
   }, [optionsContainerRef]);
 

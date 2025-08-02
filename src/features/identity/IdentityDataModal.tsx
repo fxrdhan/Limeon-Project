@@ -1,9 +1,9 @@
-import React from "react";
-import { IdentityModalProvider } from "@/contexts/IdentityModalContext";
-import { useIdentityModalLogic } from "./hooks/useIdentityModalLogic";
-import IdentityModalTemplate from "@/components/templates/IdentitylModalTemplate";
-import IdentityModalContent from "./components/IdentityModalContent";
-import type { GenericIdentityModalProps } from "@/types";
+import React from 'react';
+import { IdentityModalProvider } from '@/contexts/IdentityModalContext';
+import { useIdentityModalLogic } from './hooks/useIdentityModalLogic';
+import IdentityModalTemplate from '@/components/templates/IdentitylModalTemplate';
+import IdentityModalContent from './components/IdentityModalContent';
+import type { GenericIdentityModalProps } from '@/types';
 
 const IdentityDataModal: React.FC<GenericIdentityModalProps> = ({
   title,
@@ -18,14 +18,14 @@ const IdentityDataModal: React.FC<GenericIdentityModalProps> = ({
   imageUrl,
   defaultImageUrl,
   imagePlaceholder,
-  imageUploadText = "Unggah gambar",
-  imageNotAvailableText = "Gambar belum tersedia",
-  imageFormatHint = "Format: JPG, PNG",
+  imageUploadText = 'Unggah gambar',
+  imageNotAvailableText = 'Gambar belum tersedia',
+  imageFormatHint = 'Format: JPG, PNG',
   onDeleteRequest,
-  deleteButtonLabel = "Hapus",
-  mode = "edit",
+  deleteButtonLabel = 'Hapus',
+  mode = 'edit',
   initialNameFromSearch,
-  imageAspectRatio = "default",
+  imageAspectRatio = 'default',
 }) => {
   const { contextValue, resetInternalState } = useIdentityModalLogic({
     title,

@@ -9,12 +9,12 @@ export * from './masterData.service';
 export * from './patients-doctors.service';
 
 // Export dashboard service with different response type name
-export { 
+export {
   DashboardService,
   type DashboardStats,
   type SalesAnalyticsData,
   type TopSellingMedicine,
-  type ServiceResponse as DashboardServiceResponse
+  type ServiceResponse as DashboardServiceResponse,
 } from './dashboard.service';
 
 // Export service instances
@@ -23,15 +23,15 @@ export { purchasesService } from './purchases.service';
 export { salesService } from './sales.service';
 export { authService } from './auth.service';
 export { dashboardService } from './dashboard.service';
-export { 
+export {
   masterDataService,
   categoryService,
   medicineTypeService,
   unitService,
-  supplierService
+  supplierService,
 } from './masterData.service';
 export {
   patientsService,
   doctorsService,
-  patientsDoctorsService
+  patientsDoctorsService,
 } from './patients-doctors.service';

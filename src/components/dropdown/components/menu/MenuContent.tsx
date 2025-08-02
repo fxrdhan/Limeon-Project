@@ -10,10 +10,7 @@ interface MenuContentProps {
   };
 }
 
-const MenuContent: React.FC<MenuContentProps> = ({
-  children,
-  scrollState,
-}) => {
+const MenuContent: React.FC<MenuContentProps> = ({ children, scrollState }) => {
   return (
     <div className="relative">
       {children}

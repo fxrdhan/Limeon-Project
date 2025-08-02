@@ -1,17 +1,17 @@
-import classNames from "classnames";
-import type { TableCellProps, TableRowProps, TableProps } from "@/types";
-import { memo, useMemo, useRef, useState, useEffect } from "react";
-import React from "react";
-import { useTableHeight } from "@/hooks/useTableHeight";
+import classNames from 'classnames';
+import type { TableCellProps, TableRowProps, TableProps } from '@/types';
+import { memo, useMemo, useRef, useState, useEffect } from 'react';
+import React from 'react';
+import { useTableHeight } from '@/hooks/useTableHeight';
 import {
   ChevronUpIcon,
   ChevronDownIcon,
   ArrowsUpDownIcon,
   MagnifyingGlassIcon,
-} from "@heroicons/react/24/outline";
-import { useContainerWidth } from "@/hooks/useContainerWidth";
-import { calculateColumnWidths, sortData, filterData } from "@/utils/table";
-import type { ColumnConfig, SortState } from "@/types/table";
+} from '@heroicons/react/24/outline';
+import { useContainerWidth } from '@/hooks/useContainerWidth';
+import { calculateColumnWidths, sortData, filterData } from '@/utils/table';
+import type { ColumnConfig, SortState } from '@/types/table';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TableData = any;
@@ -47,7 +47,7 @@ export const Table = memo(
     const originalDataRef = useRef<TableData[]>([]);
     const [sortState, setSortState] = useState<SortState>({
       column: null,
-      direction: "original",
+      direction: 'original',
     });
     const [sortedData, setSortedData] = useState<TableData[]>(data || []);
     const searchStateRef = useRef<Record<string, string>>({});
@@ -66,7 +66,7 @@ export const Table = memo(
         const filtered = filterData(
           data,
           searchStateRef.current,
-          columns || [],
+          columns || []
         );
         setFilteredData(filtered);
         onSearch?.(filtered);
@@ -76,12 +76,12 @@ export const Table = memo(
 
     useEffect(() => {
       if (filteredData) {
-        if (sortState.column && sortState.direction !== "original") {
+        if (sortState.column && sortState.direction !== 'original') {
           const sorted = sortData(
             filteredData,
             sortState.column,
             sortState.direction,
-            originalDataRef.current,
+            originalDataRef.current
           );
           setSortedData(sorted);
           onSort?.(sorted);
@@ -96,20 +96,20 @@ export const Table = memo(
     const handleSort = (columnKey: string) => {
       if (!sortable) return;
 
-      const column = columns?.find((col) => col.key === columnKey);
+      const column = columns?.find(col => col.key === columnKey);
       if (column?.sortable === false) return;
 
-      setSortState((prev) => {
+      setSortState(prev => {
         if (prev.column !== columnKey) {
-          return { column: columnKey, direction: "asc" };
+          return { column: columnKey, direction: 'asc' };
         }
 
         const nextDirection =
-          prev.direction === "asc"
-            ? "desc"
-            : prev.direction === "desc"
-              ? "original"
-              : "asc";
+          prev.direction === 'asc'
+            ? 'desc'
+            : prev.direction === 'desc'
+              ? 'original'
+              : 'asc';
         return { column: columnKey, direction: nextDirection };
       });
     };
@@ -129,7 +129,7 @@ export const Table = memo(
         columnKey: string;
         columnHeader: string;
       }) => {
-        const [localValue, setLocalValue] = useState<string>("");
+        const [localValue, setLocalValue] = useState<string>('');
         const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
         const handleChange = (value: string) => {
@@ -145,7 +145,7 @@ export const Table = memo(
               [columnKey]: value,
             };
             // Trigger re-filter
-            setSearchTrigger((prev) => prev + 1);
+            setSearchTrigger(prev => prev + 1);
           }, 300);
         };
 
@@ -163,15 +163,15 @@ export const Table = memo(
             <input
               type="text"
               value={localValue}
-              onChange={(e) => handleChange(e.target.value)}
+              onChange={e => handleChange(e.target.value)}
               placeholder={`Search ${columnHeader.toLowerCase()}...`}
               className="w-full pl-8 pr-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         );
-      },
+      }
     );
-    SearchInput.displayName = "SearchInput";
+    SearchInput.displayName = 'SearchInput';
 
     const SearchBar = () => {
       if (!searchable || !columns) return null;
@@ -185,9 +185,9 @@ export const Table = memo(
               style={
                 columnWidths && Object.keys(columnWidths).length > 0
                   ? {
-                      width: Object.values(columnWidths)[index] + "px",
-                      minWidth: Object.values(columnWidths)[index] + "px",
-                      maxWidth: Object.values(columnWidths)[index] + "px",
+                      width: Object.values(columnWidths)[index] + 'px',
+                      minWidth: Object.values(columnWidths)[index] + 'px',
+                      maxWidth: Object.values(columnWidths)[index] + 'px',
                     }
                   : {}
               }
@@ -207,8 +207,8 @@ export const Table = memo(
         <div
           ref={containerRef}
           className={classNames(
-            "w-full rounded-lg border-2 border-gray-200 overflow-hidden",
-            className,
+            'w-full rounded-lg border-2 border-gray-200 overflow-hidden',
+            className
           )}
           style={{
             maxHeight: tableMaxHeight,
@@ -217,7 +217,7 @@ export const Table = memo(
         >
           <div className="overflow-auto" style={{ maxHeight: tableMaxHeight }}>
             <table className="w-full table-fixed bg-white min-w-full">
-              {React.Children.map(children, (child) => {
+              {React.Children.map(children, child => {
                 if (React.isValidElement(child) && child.type === TableHead) {
                   return (
                     <>
@@ -237,7 +237,7 @@ export const Table = memo(
                           sortState,
                           onSort: handleSort,
                           columns,
-                        },
+                        }
                       )}
                       {searchable && (
                         <thead className="bg-gray-50">
@@ -253,7 +253,7 @@ export const Table = memo(
                       columnWidths?: Record<string, number>;
                       columns?: ColumnConfig[];
                     }>,
-                    { columnWidths, columns },
+                    { columnWidths, columns }
                   );
                 }
                 return child;
@@ -268,12 +268,12 @@ export const Table = memo(
       <div
         ref={containerRef}
         className={classNames(
-          "w-full overflow-hidden rounded-lg shadow-xs border-2 border-gray-200",
-          className,
+          'w-full overflow-hidden rounded-lg shadow-xs border-2 border-gray-200',
+          className
         )}
       >
         <table className="w-full table-fixed bg-white min-w-full">
-          {React.Children.map(children, (child) => {
+          {React.Children.map(children, child => {
             if (React.isValidElement(child) && child.type === TableHead) {
               return (
                 <>
@@ -293,7 +293,7 @@ export const Table = memo(
                       sortState,
                       onSort: handleSort,
                       columns,
-                    },
+                    }
                   )}
                   {searchable && (
                     <thead className="bg-gray-50">
@@ -309,7 +309,7 @@ export const Table = memo(
                   columnWidths?: Record<string, number>;
                   columns?: ColumnConfig[];
                 }>,
-                { columnWidths, columns },
+                { columnWidths, columns }
               );
             }
             return child;
@@ -317,9 +317,9 @@ export const Table = memo(
         </table>
       </div>
     );
-  },
+  }
 );
-Table.displayName = "Table";
+Table.displayName = 'Table';
 
 export const TableHead = ({
   children,
@@ -343,14 +343,14 @@ export const TableHead = ({
   return (
     <thead
       className={classNames(
-        "text-gray-700 border-b-2 border-gray-200 group",
+        'text-gray-700 border-b-2 border-gray-200 group',
         {
-          "sticky top-0 z-20 bg-gray-200": stickyHeader
+          'sticky top-0 z-20 bg-gray-200': stickyHeader,
         },
-        className,
+        className
       )}
     >
-      {React.Children.map(children, (child) => {
+      {React.Children.map(children, child => {
         if (React.isValidElement(child) && child.type === TableRow) {
           return React.cloneElement(
             child as React.ReactElement<{ children: React.ReactNode }>,
@@ -381,13 +381,13 @@ export const TableHead = ({
                         sortState,
                         onSort,
                         columns,
-                      },
+                      }
                     );
                   }
                   return headerChild;
-                },
+                }
               ),
-            },
+            }
           );
         }
         return child;
@@ -409,16 +409,16 @@ export const TableBody = ({
 }) => {
   return (
     <tbody
-      className={classNames("divide-y divide-gray-200 bg-white", className)}
+      className={classNames('divide-y divide-gray-200 bg-white', className)}
     >
-      {React.Children.map(children, (child) => {
+      {React.Children.map(children, child => {
         if (React.isValidElement(child) && child.type === TableRow) {
           return React.cloneElement(
             child as React.ReactElement<{
               columnWidths?: Record<string, number>;
               columns?: ColumnConfig[];
             }>,
-            { columnWidths, columns },
+            { columnWidths, columns }
           );
         }
         return child;
@@ -441,8 +441,8 @@ export const TableRow = memo(
     return (
       <tr
         className={classNames(
-          "transition-colors duration-150 hover:bg-gray-50 even:bg-gray-50/30 group",
-          className,
+          'transition-colors duration-150 hover:bg-gray-50 even:bg-gray-50/30 group',
+          className
         )}
         {...props}
       >
@@ -454,16 +454,16 @@ export const TableRow = memo(
                 columnIndex?: number;
                 columns?: ColumnConfig[];
               }>,
-              { columnWidths, columnIndex: index, columns },
+              { columnWidths, columnIndex: index, columns }
             );
           }
           return child;
         })}
       </tr>
     );
-  },
+  }
 );
-TableRow.displayName = "TableRow";
+TableRow.displayName = 'TableRow';
 
 export const TableCell = memo(
   ({
@@ -487,9 +487,9 @@ export const TableCell = memo(
       ) {
         const width = Object.values(columnWidths)[columnIndex];
         return {
-          width: width + "px",
-          minWidth: width + "px",
-          maxWidth: width + "px",
+          width: width + 'px',
+          minWidth: width + 'px',
+          maxWidth: width + 'px',
         };
       }
       return {};
@@ -499,31 +499,31 @@ export const TableCell = memo(
       if (columns && columnIndex !== undefined && columns[columnIndex]) {
         const align = columns[columnIndex].align;
         switch (align) {
-          case "center":
-            return "text-center";
-          case "right":
-            return "text-right";
-          case "left":
+          case 'center':
+            return 'text-center';
+          case 'right':
+            return 'text-right';
+          case 'left':
           default:
-            return "text-left";
+            return 'text-left';
         }
       }
-      return "";
+      return '';
     }, [columns, columnIndex]);
 
     return (
       <td
         colSpan={colSpan}
         className={classNames(
-          "text-sm py-3 px-2 text-gray-700 align-middle relative",
-          "overflow-hidden whitespace-nowrap text-ellipsis",
-          "group-hover:whitespace-normal group-hover:text-ellipsis-none group-hover:overflow-visible",
-          "max-h-[50px] group-hover:max-h-[400px]",
+          'text-sm py-3 px-2 text-gray-700 align-middle relative',
+          'overflow-hidden whitespace-nowrap text-ellipsis',
+          'group-hover:whitespace-normal group-hover:text-ellipsis-none group-hover:overflow-visible',
+          'max-h-[50px] group-hover:max-h-[400px]',
           alignmentClass,
-          className,
+          className
         )}
         style={dynamicStyle}
-        title={typeof children === "string" ? children : undefined}
+        title={typeof children === 'string' ? children : undefined}
         {...props}
       >
         <div className="overflow-hidden text-ellipsis group-hover:overflow-visible">
@@ -531,9 +531,9 @@ export const TableCell = memo(
         </div>
       </td>
     );
-  },
+  }
 );
-TableCell.displayName = "TableCell";
+TableCell.displayName = 'TableCell';
 
 export const TableHeader = ({
   children,
@@ -564,9 +564,9 @@ export const TableHeader = ({
     ) {
       const width = Object.values(columnWidths)[columnIndex];
       return {
-        width: width + "px",
-        minWidth: width + "px",
-        maxWidth: width + "px",
+        width: width + 'px',
+        minWidth: width + 'px',
+        maxWidth: width + 'px',
       };
     }
     return {};
@@ -585,9 +585,9 @@ export const TableHeader = ({
     }
 
     switch (sortState?.direction) {
-      case "asc":
+      case 'asc':
         return <ChevronUpIcon className="w-4 h-4 text-blue-600" />;
-      case "desc":
+      case 'desc':
         return <ChevronDownIcon className="w-4 h-4 text-blue-600" />;
       default:
         return <ArrowsUpDownIcon className="w-4 h-4 text-gray-400" />;
@@ -603,19 +603,20 @@ export const TableHeader = ({
   return (
     <th
       className={classNames(
-        "py-3 px-2 text-left text-gray-700 uppercase tracking-wider text-sm font-medium",
-        "overflow-hidden whitespace-nowrap text-ellipsis",
-        "group-hover:whitespace-normal group-hover:overflow-visible",
-        "bg-gray-200 border-r border-gray-300 last:border-r-0",
-        "first:rounded-tl-md last:rounded-tr-md",
+        'py-3 px-2 text-left text-gray-700 uppercase tracking-wider text-sm font-medium',
+        'overflow-hidden whitespace-nowrap text-ellipsis',
+        'group-hover:whitespace-normal group-hover:overflow-visible',
+        'bg-gray-200 border-r border-gray-300 last:border-r-0',
+        'first:rounded-tl-md last:rounded-tr-md',
         {
-          "sticky top-0 z-30 bg-gray-200": stickyHeader,
-          "cursor-pointer select-none hover:bg-gray-300 transition-colors duration-150": isColumnSortable
+          'sticky top-0 z-30 bg-gray-200': stickyHeader,
+          'cursor-pointer select-none hover:bg-gray-300 transition-colors duration-150':
+            isColumnSortable,
         },
-        className,
+        className
       )}
       style={dynamicStyle}
-      title={typeof children === "string" ? children : undefined}
+      title={typeof children === 'string' ? children : undefined}
       onClick={handleClick}
     >
       <div className="overflow-hidden text-ellipsis group-hover:overflow-visible flex items-center justify-between">

@@ -1,4 +1,4 @@
-import { CustomerLevelDiscount } from "./database";
+import { CustomerLevelDiscount } from './database';
 
 // Form data types
 export interface FormData {

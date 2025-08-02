@@ -1,5 +1,5 @@
-import React, { createContext, useContext } from "react";
-import type { FieldConfig } from "@/types";
+import React, { createContext, useContext } from 'react';
+import type { FieldConfig } from '@/types';
 
 export interface IdentityModalContextValue {
   // State
@@ -13,9 +13,9 @@ export interface IdentityModalContextValue {
 
   // UI State
   title: string;
-  mode: "edit" | "add";
+  mode: 'edit' | 'add';
   formattedUpdateAt: string;
-  imageAspectRatio: "default" | "square";
+  imageAspectRatio: 'default' | 'square';
 
   // Image Config
   imageUploadText: string;
@@ -39,27 +39,27 @@ export interface IdentityModalContextValue {
 
   // Delete Action
   onDeleteRequest?: (
-    data: Record<string, string | number | boolean | null>,
+    data: Record<string, string | number | boolean | null>
   ) => void;
   deleteButtonLabel: string;
 
   // Refs
   setInputRef: (
     fieldKey: string,
-    element: HTMLInputElement | HTMLTextAreaElement | null,
+    element: HTMLInputElement | HTMLTextAreaElement | null
   ) => void;
 }
 
-const IdentityModalContext = createContext<IdentityModalContextValue | undefined>(
-  undefined,
-);
+const IdentityModalContext = createContext<
+  IdentityModalContextValue | undefined
+>(undefined);
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useIdentityModalContext = () => {
   const context = useContext(IdentityModalContext);
   if (context === undefined) {
     throw new Error(
-      "useIdentityModalContext must be used within an IdentityModalProvider",
+      'useIdentityModalContext must be used within an IdentityModalProvider'
     );
   }
   return context;

@@ -1,30 +1,30 @@
-import { useEffect, useState, useCallback } from "react";
-import { useIdentityForm } from "./identityForm";
-import { formatDateTime } from "@/lib/formatters";
-import type { GenericIdentityModalProps } from "@/types";
-import type { IdentityModalContextValue } from "@/contexts/IdentityModalContext";
+import { useEffect, useState, useCallback } from 'react';
+import { useIdentityForm } from './identityForm';
+import { formatDateTime } from '@/lib/formatters';
+import type { GenericIdentityModalProps } from '@/types';
+import type { IdentityModalContextValue } from '@/contexts/IdentityModalContext';
 
 interface UseIdentityModalLogicProps {
   title: string;
   data: Record<string, string | number | boolean | null>;
-  fields: GenericIdentityModalProps["fields"];
+  fields: GenericIdentityModalProps['fields'];
   isOpen: boolean;
   onClose: () => void;
-  onSave?: GenericIdentityModalProps["onSave"];
-  onFieldSave?: GenericIdentityModalProps["onFieldSave"];
-  onImageSave?: GenericIdentityModalProps["onImageSave"];
-  onImageDelete?: GenericIdentityModalProps["onImageDelete"];
+  onSave?: GenericIdentityModalProps['onSave'];
+  onFieldSave?: GenericIdentityModalProps['onFieldSave'];
+  onImageSave?: GenericIdentityModalProps['onImageSave'];
+  onImageDelete?: GenericIdentityModalProps['onImageDelete'];
   imageUrl?: string;
   defaultImageUrl?: string;
   imagePlaceholder?: string;
   imageUploadText?: string;
   imageNotAvailableText?: string;
   imageFormatHint?: string;
-  onDeleteRequest?: GenericIdentityModalProps["onDeleteRequest"];
+  onDeleteRequest?: GenericIdentityModalProps['onDeleteRequest'];
   deleteButtonLabel?: string;
-  mode?: "edit" | "add";
+  mode?: 'edit' | 'add';
   initialNameFromSearch?: string;
-  imageAspectRatio?: "default" | "square";
+  imageAspectRatio?: 'default' | 'square';
 }
 
 export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
@@ -41,14 +41,14 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     imageUrl,
     defaultImageUrl,
     imagePlaceholder,
-    imageUploadText = "Unggah gambar",
-    imageNotAvailableText = "Gambar belum tersedia",
-    imageFormatHint = "Format: JPG, PNG",
+    imageUploadText = 'Unggah gambar',
+    imageNotAvailableText = 'Gambar belum tersedia',
+    imageFormatHint = 'Format: JPG, PNG',
     onDeleteRequest,
-    deleteButtonLabel = "Hapus",
-    mode = "edit",
+    deleteButtonLabel = 'Hapus',
+    mode = 'edit',
     initialNameFromSearch,
-    imageAspectRatio = "default",
+    imageAspectRatio = 'default',
   } = props;
 
   const [, setIsClosing] = useState(false);
@@ -94,13 +94,13 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
   useEffect(() => {
     if (isOpen) {
       const nameField = fields.find(
-        (field) =>
-          field.key === "name" ||
-          field.key === "nama" ||
-          field.label.toLowerCase().includes("nama"),
+        field =>
+          field.key === 'name' ||
+          field.key === 'nama' ||
+          field.label.toLowerCase().includes('nama')
       );
 
-      if (nameField && (mode === "add" || editMode[nameField.key])) {
+      if (nameField && (mode === 'add' || editMode[nameField.key])) {
         setTimeout(() => {
           const inputElement = document.getElementById(nameField.key) as
             | HTMLInputElement
@@ -118,7 +118,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
 
     requestAnimationFrame(() => {
       const searchInput = document.querySelector(
-        'input[placeholder*="Cari"]',
+        'input[placeholder*="Cari"]'
       ) as HTMLInputElement;
       if (searchInput) {
         searchInput.focus();
@@ -136,7 +136,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
   }, [isOpen]);
 
   const formattedUpdateAt = formatDateTime(
-    typeof data?.updated_at === "string" ? data.updated_at : null,
+    typeof data?.updated_at === 'string' ? data.updated_at : null
   );
 
   const contextValue: IdentityModalContextValue = {
@@ -148,23 +148,23 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     loadingField,
     isSubmitting,
     localData: localData as Record<string, string | number | boolean | null>,
-    
+
     // UI State
     title,
     mode,
     formattedUpdateAt,
     imageAspectRatio,
-    
+
     // Image Config
     imageUploadText,
     imageNotAvailableText,
     imageFormatHint,
     defaultImageUrl,
     imagePlaceholder,
-    
+
     // Field Config
     fields,
-    
+
     // Actions
     toggleEdit,
     handleChange,
@@ -174,11 +174,11 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     handleImageUpload,
     handleImageDeleteInternal,
     handleCloseModal,
-    
+
     // Delete Action
     onDeleteRequest,
     deleteButtonLabel,
-    
+
     // Refs
     setInputRef,
   };

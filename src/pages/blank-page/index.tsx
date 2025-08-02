@@ -1,6 +1,6 @@
-import { useNavigate } from "react-router-dom";
-import { FaArrowLeft, FaClock, FaTools } from "react-icons/fa";
-import Badge from "@/components/badge";
+import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft, FaClock, FaTools } from 'react-icons/fa';
+import Badge from '@/components/badge';
 
 interface ComingSoonProps {
   title: string;
@@ -15,9 +15,9 @@ const ComingSoon = ({
   title,
   description,
   showBackButton = true,
-  backButtonText = "Kembali",
-  statusText = "Dalam Pengembangan",
-  statusDescription = "Fitur ini akan segera tersedia dalam pembaruan mendatang",
+  backButtonText = 'Kembali',
+  statusText = 'Dalam Pengembangan',
+  statusDescription = 'Fitur ini akan segera tersedia dalam pembaruan mendatang',
 }: ComingSoonProps) => {
   const navigate = useNavigate();
 

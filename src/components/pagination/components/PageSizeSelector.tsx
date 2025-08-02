@@ -11,24 +11,26 @@ export const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
   isFloating = false,
 }) => {
   return (
-    <LayoutGroup id={isFloating ? "floating-selector" : "main-selector"}>
+    <LayoutGroup id={isFloating ? 'floating-selector' : 'main-selector'}>
       <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative">
-        {pageSizes.map((size) => (
+        {pageSizes.map(size => (
           <button
-            key={`page-size-${size}-${isFloating ? "floating" : "main"}`}
+            key={`page-size-${size}-${isFloating ? 'floating' : 'main'}`}
             className={classNames(
-              "group px-3 py-1.5 rounded-full focus:outline-hidden select-none relative cursor-pointer z-10",
-              currentSize !== size ? "hover:bg-emerald-100" : "",
+              'group px-3 py-1.5 rounded-full focus:outline-hidden select-none relative cursor-pointer z-10',
+              currentSize !== size ? 'hover:bg-emerald-100' : ''
             )}
-            onClick={(event) => onSizeChange(size, event)}
+            onClick={event => onSizeChange(size, event)}
           >
             {currentSize === size && (
               <motion.div
-                layoutId={`selector-bg-${isFloating ? "floating" : "main"}`}
+                layoutId={`selector-bg-${isFloating ? 'floating' : 'main'}`}
                 className="absolute inset-0 bg-primary rounded-full shadow-xs"
-                style={{ borderRadius: PAGINATION_CONSTANTS.STYLES.BORDER_RADIUS }}
+                style={{
+                  borderRadius: PAGINATION_CONSTANTS.STYLES.BORDER_RADIUS,
+                }}
                 transition={{
-                  type: "spring",
+                  type: 'spring',
                   stiffness: PAGINATION_CONSTANTS.ANIMATION.SPRING_STIFFNESS,
                   damping: PAGINATION_CONSTANTS.ANIMATION.SPRING_DAMPING,
                   duration: PAGINATION_CONSTANTS.ANIMATION.SPRING_DURATION,
@@ -37,10 +39,10 @@ export const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
             )}
             <span
               className={classNames(
-                "relative z-10 select-none",
+                'relative z-10 select-none',
                 currentSize === size
-                  ? "text-white font-medium"
-                  : "text-gray-700 group-hover:text-emerald-700",
+                  ? 'text-white font-medium'
+                  : 'text-gray-700 group-hover:text-emerald-700'
               )}
             >
               {currentSize === size ? `${size} items` : size.toString()}

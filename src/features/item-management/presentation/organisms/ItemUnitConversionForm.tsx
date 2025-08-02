@@ -1,18 +1,18 @@
-import React from "react";
-import { FaTrash } from "react-icons/fa";
-import Button from "@/components/button";
-import FormSection from "@/components/form-section";
-import { UnitConversionInput } from "../atoms";
+import React from 'react';
+import { FaTrash } from 'react-icons/fa';
+import Button from '@/components/button';
+import FormSection from '@/components/form-section';
+import { UnitConversionInput } from '../atoms';
 import {
   DataGrid,
   createTextColumn,
   createCurrencyColumn,
-} from "@/components/ag-grid";
+} from '@/components/ag-grid';
 import type {
   UnitOption,
   UnitConversion,
-  UnitConversionLogicFormData
-} from "../../shared/types";
+  UnitConversionLogicFormData,
+} from '../../shared/types';
 
 const DeleteButton = React.memo(({ onClick }: { onClick: () => void }) => (
   <Button variant="danger" size="sm" tabIndex={19} onClick={onClick}>
@@ -42,16 +42,12 @@ export default function ItemUnitConversionManager({
   onRemoveConversion,
 }: LocalItemUnitConversionManagerProps) {
   const filteredAvailableUnits = availableUnits
-    .filter((unit) => unit.name !== baseUnit)
-    .filter(
-      (unit) =>
-        !conversions.some((uc) => uc.unit.name === unit.name)
-    );
+    .filter(unit => unit.name !== baseUnit)
+    .filter(unit => !conversions.some(uc => uc.unit.name === unit.name));
 
   const filteredConversions = conversions.filter(
     (uc, index, self) =>
-      index ===
-        self.findIndex((u) => u.unit.name === uc.unit.name) && uc.unit
+      index === self.findIndex(u => u.unit.name === uc.unit.name) && uc.unit
   );
 
   return (
@@ -68,44 +64,44 @@ export default function ItemUnitConversionManager({
           />
         </div>
         <div className="md:w-2/3 lg:w-3/5 flex flex-col">
-          <div className="overflow-hidden" style={{ height: "130px" }}>
+          <div className="overflow-hidden" style={{ height: '130px' }}>
             <DataGrid
               disableFiltering={true}
               rowData={filteredConversions}
               columnDefs={[
                 createTextColumn({
-                  field: "unit.name",
-                  headerName: "Turunan",
+                  field: 'unit.name',
+                  headerName: 'Turunan',
                   minWidth: 100,
                   flex: 1,
                 }),
                 createTextColumn({
-                  field: "conversion",
-                  headerName: "Konversi",
+                  field: 'conversion',
+                  headerName: 'Konversi',
                   minWidth: 140,
                   flex: 2,
-                  cellStyle: { textAlign: "center" },
+                  cellStyle: { textAlign: 'center' },
                 }),
                 createCurrencyColumn({
-                  field: "basePrice",
-                  headerName: "H. Pokok",
+                  field: 'basePrice',
+                  headerName: 'H. Pokok',
                   minWidth: 100,
                   flex: 1,
                 }),
                 createCurrencyColumn({
-                  field: "sellPrice",
-                  headerName: "H. Jual",
+                  field: 'sellPrice',
+                  headerName: 'H. Jual',
                   minWidth: 100,
                   flex: 1,
                 }),
                 {
-                  field: "actions",
-                  headerName: "",
+                  field: 'actions',
+                  headerName: '',
                   minWidth: 80,
                   maxWidth: 80,
                   sortable: false,
                   resizable: false,
-                  cellStyle: { textAlign: "center" },
+                  cellStyle: { textAlign: 'center' },
                   cellRenderer: (params: { data?: { id: string } }) =>
                     params.data ? (
                       <DeleteButton
@@ -123,7 +119,7 @@ export default function ItemUnitConversionManager({
               rowSelection={undefined}
               sizeColumnsToFit={true}
               className="ag-theme-quartz h-full"
-              style={{ height: "100%" }}
+              style={{ height: '100%' }}
             />
           </div>
         </div>

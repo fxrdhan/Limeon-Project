@@ -9,27 +9,27 @@ export class PatientsService extends BaseService<Patient> {
 
   async getActivePatients() {
     return this.getAll({
-      orderBy: { column: 'name', ascending: true }
+      orderBy: { column: 'name', ascending: true },
     });
   }
 
   async searchPatients(query: string) {
     return this.search(query, ['name', 'phone', 'email'], {
-      orderBy: { column: 'name', ascending: true }
+      orderBy: { column: 'name', ascending: true },
     });
   }
 
   async getPatientsByGender(gender: string) {
     return this.getAll({
       filters: { gender },
-      orderBy: { column: 'name', ascending: true }
+      orderBy: { column: 'name', ascending: true },
     });
   }
 
   async getRecentPatients(limit: number = 10) {
     return this.getAll({
       orderBy: { column: 'updated_at', ascending: false },
-      limit
+      limit,
     });
   }
 }
@@ -42,34 +42,38 @@ export class DoctorsService extends BaseService<Doctor> {
 
   async getActiveDoctors() {
     return this.getAll({
-      orderBy: { column: 'name', ascending: true }
+      orderBy: { column: 'name', ascending: true },
     });
   }
 
   async searchDoctors(query: string) {
-    return this.search(query, ['name', 'specialization', 'license_number', 'phone', 'email'], {
-      orderBy: { column: 'name', ascending: true }
-    });
+    return this.search(
+      query,
+      ['name', 'specialization', 'license_number', 'phone', 'email'],
+      {
+        orderBy: { column: 'name', ascending: true },
+      }
+    );
   }
 
   async getDoctorsBySpecialization(specialization: string) {
     return this.getAll({
       filters: { specialization },
-      orderBy: { column: 'name', ascending: true }
+      orderBy: { column: 'name', ascending: true },
     });
   }
 
   async getDoctorsByExperience(minYears: number) {
     return this.getAll({
       filters: { experience_years: { gte: minYears } },
-      orderBy: { column: 'experience_years', ascending: false }
+      orderBy: { column: 'experience_years', ascending: false },
     });
   }
 
   async getRecentDoctors(limit: number = 10) {
     return this.getAll({
       orderBy: { column: 'updated_at', ascending: false },
-      limit
+      limit,
     });
   }
 }
@@ -87,7 +91,7 @@ export class PatientsDoctorsService {
   async getAllPatientsDoctors() {
     const [patients, doctors] = await Promise.all([
       this.patients.getActivePatients(),
-      this.doctors.getActiveDoctors()
+      this.doctors.getActiveDoctors(),
     ]);
 
     return {
@@ -95,8 +99,8 @@ export class PatientsDoctorsService {
       doctors: doctors.data || [],
       errors: {
         patients: patients.error,
-        doctors: doctors.error
-      }
+        doctors: doctors.error,
+      },
     };
   }
 
@@ -104,7 +108,7 @@ export class PatientsDoctorsService {
   async searchAll(query: string) {
     const [patients, doctors] = await Promise.all([
       this.patients.searchPatients(query),
-      this.doctors.searchDoctors(query)
+      this.doctors.searchDoctors(query),
     ]);
 
     return {
@@ -112,8 +116,8 @@ export class PatientsDoctorsService {
       doctors: doctors.data || [],
       errors: {
         patients: patients.error,
-        doctors: doctors.error
-      }
+        doctors: doctors.error,
+      },
     };
   }
 }

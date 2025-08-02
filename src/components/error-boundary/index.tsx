@@ -31,7 +31,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     this.setState({
       error,
       errorInfo,
@@ -63,7 +63,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               Oops! Terjadi Kesalahan
             </h2>
             <p className="text-gray-600 mb-4">
-              Aplikasi mengalami masalah yang tidak terduga. Silakan coba lagi atau hubungi tim support jika masalah berlanjut.
+              Aplikasi mengalami masalah yang tidak terduga. Silakan coba lagi
+              atau hubungi tim support jika masalah berlanjut.
             </p>
           </div>
 
@@ -76,7 +77,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               <FaSync className="h-4 w-4" />
               Coba Lagi
             </Button>
-            
+
             <Button
               onClick={() => window.location.reload()}
               variant="secondary"
@@ -143,7 +144,7 @@ interface QueryErrorBoundaryProps extends Omit<ErrorBoundaryProps, 'fallback'> {
 
 export const QueryErrorBoundary: React.FC<QueryErrorBoundaryProps> = ({
   children,
-  fallbackMessage = "Gagal memuat data. Silakan coba lagi.",
+  fallbackMessage = 'Gagal memuat data. Silakan coba lagi.',
   ...props
 }) => {
   const queryFallback = (

@@ -1,4 +1,4 @@
-import type { PageTitleProps } from "@/types";
+import type { PageTitleProps } from '@/types';
 
 const PageTitle: React.FC<PageTitleProps> = ({ title }) => (
   <h1 className="text-2xl! font-semibold text-gray-800 text-center grow">

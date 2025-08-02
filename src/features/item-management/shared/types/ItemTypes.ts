@@ -11,7 +11,6 @@ export interface UnitOption {
   name: string;
 }
 
-
 export interface EntityData {
   id: string;
   kode?: string;
@@ -49,4 +48,3 @@ export interface DBUnitConversion {
   base_price?: number;
   sell_price?: number;
 }
-

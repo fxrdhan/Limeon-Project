@@ -1,10 +1,10 @@
-import { forwardRef } from "react";
-import Dropdown from "@/components/dropdown";
-import Checkbox from "@/components/checkbox";
-import FormSection from "@/components/form-section";
-import FormField from "@/components/form-field";
-import { MinStockEditor } from "../atoms";
-import FefoTooltip from "../molecules/FefoTooltip";
+import { forwardRef } from 'react';
+import Dropdown from '@/components/dropdown';
+import Checkbox from '@/components/checkbox';
+import FormSection from '@/components/form-section';
+import FormField from '@/components/form-field';
+import { MinStockEditor } from '../atoms';
+import FefoTooltip from '../molecules/FefoTooltip';
 
 interface ItemSettingsFormProps {
   formData: {
@@ -25,15 +25,18 @@ interface ItemSettingsFormProps {
 }
 
 const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
-  ({
-    formData,
-    minStockEditing,
-    onFieldChange,
-    onStartEditMinStock,
-    onStopEditMinStock,
-    onMinStockChange,
-    onMinStockKeyDown,
-  }, ref) => {
+  (
+    {
+      formData,
+      minStockEditing,
+      onFieldChange,
+      onStartEditMinStock,
+      onStopEditMinStock,
+      onMinStockChange,
+      onMinStockKeyDown,
+    },
+    ref
+  ) => {
     return (
       <FormSection title="Pengaturan Tambahan">
         <div className="grid grid-cols-1 gap-6">
@@ -41,13 +44,13 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
             <Dropdown
               name="is_active"
               tabIndex={10}
-              value={formData.is_active ? "true" : "false"}
-              onChange={(value) => {
-                onFieldChange("is_active", value === "true");
+              value={formData.is_active ? 'true' : 'false'}
+              onChange={value => {
+                onFieldChange('is_active', value === 'true');
               }}
               options={[
-                { id: "true", name: "Masih dijual" },
-                { id: "false", name: "Tidak Dijual" },
+                { id: 'true', name: 'Masih dijual' },
+                { id: 'false', name: 'Tidak Dijual' },
               ]}
               withRadio
               searchList={false}
@@ -66,9 +69,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
 
           <div
             className={
-              formData.is_medicine
-                ? ""
-                : "opacity-50 pointer-events-none"
+              formData.is_medicine ? '' : 'opacity-50 pointer-events-none'
             }
           >
             <Checkbox
@@ -78,8 +79,8 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
               label="Memiliki Tanggal Kadaluarsa"
               checked={formData.has_expiry_date}
               disabled={!formData.is_medicine}
-              onChange={(isChecked) =>
-                onFieldChange("has_expiry_date", isChecked)
+              onChange={isChecked =>
+                onFieldChange('has_expiry_date', isChecked)
               }
               className="py-1"
             />
@@ -94,6 +95,6 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
   }
 );
 
-ItemSettingsForm.displayName = "ItemSettingsForm";
+ItemSettingsForm.displayName = 'ItemSettingsForm';
 
 export default ItemSettingsForm;

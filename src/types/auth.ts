@@ -1,5 +1,5 @@
-import { Session } from "@supabase/supabase-js";
-import { UserDetails } from "./database";
+import { Session } from '@supabase/supabase-js';
+import { UserDetails } from './database';
 
 // Authentication types
 export interface AuthState {
@@ -13,4 +13,4 @@ export interface AuthState {
   initialize: () => Promise<void>;
 }
 
-export type ProfileKey = keyof import("./database").CompanyProfile;
+export type ProfileKey = keyof import('./database').CompanyProfile;

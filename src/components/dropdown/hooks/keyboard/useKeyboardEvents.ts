@@ -11,7 +11,10 @@ interface UseKeyboardEventsProps {
   onAddNew?: (term: string) => void;
   onCloseDropdown: () => void;
   onCloseValidation: () => void;
-  onNavigate: (direction: 'up' | 'down' | 'pageUp' | 'pageDown' | 'tab', shiftKey?: boolean) => void;
+  onNavigate: (
+    direction: 'up' | 'down' | 'pageUp' | 'pageDown' | 'tab',
+    shiftKey?: boolean
+  ) => void;
   onEscape: () => void;
   onEnter: () => void;
 }
@@ -30,13 +33,22 @@ export const useKeyboardEvents = ({
   onEscape,
   onEnter,
 }: UseKeyboardEventsProps) => {
-  
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
       if (!isOpen) return;
 
       const items = currentFilteredOptions;
-      if (!items.length && !([KEYBOARD_KEYS.ESCAPE, KEYBOARD_KEYS.TAB, KEYBOARD_KEYS.ENTER] as string[]).includes(e.key)) return;
+      if (
+        !items.length &&
+        !(
+          [
+            KEYBOARD_KEYS.ESCAPE,
+            KEYBOARD_KEYS.TAB,
+            KEYBOARD_KEYS.ENTER,
+          ] as string[]
+        ).includes(e.key)
+      )
+        return;
 
       const keyActions: Record<string, () => void> = {
         [KEYBOARD_KEYS.ARROW_DOWN]: () => onNavigate('down'),
@@ -84,7 +96,7 @@ export const useKeyboardEvents = ({
       onNavigate,
       onEscape,
       onEnter,
-    ],
+    ]
   );
 
   return {

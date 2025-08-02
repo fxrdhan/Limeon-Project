@@ -1,6 +1,6 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { config } from "dotenv";
-import readline from "readline";
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+import readline from 'readline';
 
 // Load environment variables
 config();
@@ -13,7 +13,7 @@ const rl = readline.createInterface({
 
 // Helper function to get user input
 const askQuestion = (question: string): Promise<string> => {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     rl.question(question, (answer: string) => {
       resolve(answer);
     });
@@ -26,12 +26,12 @@ const supabaseServiceKey =
   process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error("Error: Missing Supabase URL or Service Role Key");
+  console.error('Error: Missing Supabase URL or Service Role Key');
   console.error(
-    "Please set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or VITE_SUPABASE_SERVICE_ROLE_KEY) in your .env file",
+    'Please set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or VITE_SUPABASE_SERVICE_ROLE_KEY) in your .env file'
   );
   console.error(
-    "Note: You need the SERVICE ROLE key, not the anon key, to create users",
+    'Note: You need the SERVICE ROLE key, not the anon key, to create users'
   );
   process.exit(1);
 }
@@ -49,37 +49,37 @@ interface UserData {
 
 async function addAdminUser(): Promise<void> {
   try {
-    console.log("=== Create Admin User ===\n");
+    console.log('=== Create Admin User ===\n');
 
     // Get email from user input or command line args
     let email: string = process.argv[2];
     if (!email) {
-      email = await askQuestion("Enter email address: ");
+      email = await askQuestion('Enter email address: ');
     }
 
     // Get password from user input or command line args
     let password: string = process.argv[3];
     if (!password) {
-      password = await askQuestion("Enter password: ");
+      password = await askQuestion('Enter password: ');
     }
 
     // Get name from user input or command line args
     let name: string = process.argv[4];
     if (!name) {
       name = await askQuestion(
-        "Enter display name (optional, press Enter to skip): ",
+        'Enter display name (optional, press Enter to skip): '
       );
       if (!name.trim()) {
-        name = "Admin User";
+        name = 'Admin User';
       }
     }
 
     // Get role from user input or command line args
     let role: string = process.argv[5];
     if (!role) {
-      role = await askQuestion("Enter role (default: admin): ");
+      role = await askQuestion('Enter role (default: admin): ');
       if (!role.trim()) {
-        role = "admin";
+        role = 'admin';
       }
     }
 
@@ -87,7 +87,7 @@ async function addAdminUser(): Promise<void> {
     console.log(`- Email: ${email}`);
     console.log(`- Name: ${name}`);
     console.log(`- Role: ${role}`);
-    console.log(`- Password: ${"*".repeat(password.length)}\n`);
+    console.log(`- Password: ${'*'.repeat(password.length)}\n`);
 
     // Create user with email and password
     const { data: authData, error: authError } =
@@ -101,11 +101,11 @@ async function addAdminUser(): Promise<void> {
       throw authError;
     }
 
-    console.log("User created in auth:", authData.user.id);
+    console.log('User created in auth:', authData.user.id);
 
     // Insert user into users table
     try {
-      const userData: Omit<UserData, "id"> & { id: string } = {
+      const userData: Omit<UserData, 'id'> & { id: string } = {
         id: authData.user.id,
         name: name,
         email: email,
@@ -115,32 +115,32 @@ async function addAdminUser(): Promise<void> {
       };
 
       const { error: userError } = await supabase
-        .from("users")
+        .from('users')
         .insert(userData);
 
       if (userError) {
-        console.warn("Could not create user record:", userError.message);
-        console.warn("The user was created in auth but not in the users table");
+        console.warn('Could not create user record:', userError.message);
+        console.warn('The user was created in auth but not in the users table');
       } else {
-        console.log("User record created in users table with admin role");
+        console.log('User record created in users table with admin role');
       }
     } catch (userErr: unknown) {
       console.warn(
-        "Users table might not exist or have different structure, skipping user record creation:",
-        userErr instanceof Error ? userErr.message : String(userErr),
+        'Users table might not exist or have different structure, skipping user record creation:',
+        userErr instanceof Error ? userErr.message : String(userErr)
       );
     }
 
-    console.log("✅ User created successfully!");
-    console.log("Email:", email);
-    console.log("Name:", name);
-    console.log("Role:", role);
-    console.log("Password:", password);
-    console.log("User ID:", authData.user.id);
+    console.log('✅ User created successfully!');
+    console.log('Email:', email);
+    console.log('Name:', name);
+    console.log('Role:', role);
+    console.log('Password:', password);
+    console.log('User ID:', authData.user.id);
   } catch (error: unknown) {
     console.error(
-      "❌ Error creating user:",
-      error instanceof Error ? error.message : String(error),
+      '❌ Error creating user:',
+      error instanceof Error ? error.message : String(error)
     );
     process.exit(1);
   } finally {
@@ -149,7 +149,7 @@ async function addAdminUser(): Promise<void> {
 }
 
 // Show usage help
-if (process.argv.includes("--help") || process.argv.includes("-h")) {
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(`
 Usage: yarn add-admin [email] [password] [name] [role]
 

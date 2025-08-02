@@ -17,18 +17,18 @@ export interface UseUnifiedSearchOptions {
 export interface UnifiedSearchReturn {
   // Search state
   search: string;
-  
+
   // AG Grid integration - with automatic empty search handling
   onGridReady: (params: GridReadyEvent) => void;
   isExternalFilterPresent: () => boolean;
   doesExternalFilterPass: (node: IRowNode) => boolean;
-  
+
   // Search handlers
   handleSearchChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleTargetedSearch: (targetedSearch: TargetedSearch | null) => void;
   handleGlobalSearch: (searchValue: string) => void;
   handleClearSearch: () => void;
-  
+
   // Enhanced search bar integration
   searchBarProps: {
     value: string;
@@ -40,7 +40,7 @@ export interface UnifiedSearchReturn {
     columns: SearchColumn[];
     placeholder?: string;
   };
-  
+
   // For external integrations
   clearSearch: () => void;
 }
@@ -59,7 +59,6 @@ export function useUnifiedSearch({
   onClear,
   externalSearchHandler,
 }: UseUnifiedSearchOptions): UnifiedSearchReturn {
-  
   const {
     search,
     handleSearchChange: originalHandleSearchChange,
@@ -80,18 +79,24 @@ export function useUnifiedSearch({
     return hasSearch && (originalIsExternalFilterPresent?.() ?? false);
   }, [search, originalIsExternalFilterPresent]);
 
-  const doesExternalFilterPass = useCallback((node: IRowNode) => {
-    // Always show all data when search is empty
-    if (search.trim() === '') {
-      return true;
-    }
-    return originalDoesExternalFilterPass?.(node) ?? true;
-  }, [search, originalDoesExternalFilterPass]);
+  const doesExternalFilterPass = useCallback(
+    (node: IRowNode) => {
+      // Always show all data when search is empty
+      if (search.trim() === '') {
+        return true;
+      }
+      return originalDoesExternalFilterPass?.(node) ?? true;
+    },
+    [search, originalDoesExternalFilterPass]
+  );
 
-  // Stable references for onSearch and onClear  
-  const stableOnSearch = useCallback((searchValue: string) => {
-    onSearch?.(searchValue);
-  }, [onSearch]);
+  // Stable references for onSearch and onClear
+  const stableOnSearch = useCallback(
+    (searchValue: string) => {
+      onSearch?.(searchValue);
+    },
+    [onSearch]
+  );
 
   const stableOnClear = useCallback(() => {
     onClear?.();
@@ -99,81 +104,103 @@ export function useUnifiedSearch({
 
   // Check if value is in hashtag mode (incomplete hashtag search)
   const isHashtagMode = useCallback((value: string) => {
-    if (value === "#") return true;
-    if (value.startsWith("#") && !value.includes(":")) return true;
+    if (value === '#') return true;
+    if (value.startsWith('#') && !value.includes(':')) return true;
     return false;
   }, []);
 
   // Unified search change handler
-  const handleSearchChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    originalHandleSearchChange(e);
-    
-    // Layer: Empty State Cleanup - When input is completely empty
-    if (value === "" || value.trim() === "") {
-      // Clear all search states immediately
-      if (searchMode === 'server' || searchMode === 'hybrid') {
-        stableOnSearch("");
-      }
-      stableOnClear(); // Trigger clear callback
-      return; // Early return
-    }
-    
-    // Call external search handler if provided (for integration with existing hooks)
-    externalSearchHandler?.(e);
-    
-    // For server-side search, call the external handler
-    // But skip if we're in hashtag mode (incomplete hashtag search)
-    if (searchMode === 'server' || searchMode === 'hybrid') {
-      if (!isHashtagMode(value)) {
-        stableOnSearch(value);
-      }
-    }
-  }, [originalHandleSearchChange, externalSearchHandler, stableOnSearch, stableOnClear, searchMode, isHashtagMode]);
+  const handleSearchChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      originalHandleSearchChange(e);
 
-  // Unified global search handler  
-  const handleGlobalSearch = useCallback((searchValue: string) => {
-    originalHandleGlobalSearch(searchValue);
-    
-    // Layer: Empty State Cleanup - When global search is empty
-    if (searchValue === "" || searchValue.trim() === "") {
-      // Clear all search states immediately
+      // Layer: Empty State Cleanup - When input is completely empty
+      if (value === '' || value.trim() === '') {
+        // Clear all search states immediately
+        if (searchMode === 'server' || searchMode === 'hybrid') {
+          stableOnSearch('');
+        }
+        stableOnClear(); // Trigger clear callback
+        return; // Early return
+      }
+
+      // Call external search handler if provided (for integration with existing hooks)
+      externalSearchHandler?.(e);
+
+      // For server-side search, call the external handler
+      // But skip if we're in hashtag mode (incomplete hashtag search)
       if (searchMode === 'server' || searchMode === 'hybrid') {
-        stableOnSearch("");
+        if (!isHashtagMode(value)) {
+          stableOnSearch(value);
+        }
       }
-      stableOnClear(); // Trigger clear callback
-      return; // Early return
-    }
-    
-    // For server-side search, call the external handler
-    // But skip if we're in hashtag mode (incomplete hashtag search)
-    if (searchMode === 'server' || searchMode === 'hybrid') {
-      if (!isHashtagMode(searchValue)) {
-        stableOnSearch(searchValue);
+    },
+    [
+      originalHandleSearchChange,
+      externalSearchHandler,
+      stableOnSearch,
+      stableOnClear,
+      searchMode,
+      isHashtagMode,
+    ]
+  );
+
+  // Unified global search handler
+  const handleGlobalSearch = useCallback(
+    (searchValue: string) => {
+      originalHandleGlobalSearch(searchValue);
+
+      // Layer: Empty State Cleanup - When global search is empty
+      if (searchValue === '' || searchValue.trim() === '') {
+        // Clear all search states immediately
+        if (searchMode === 'server' || searchMode === 'hybrid') {
+          stableOnSearch('');
+        }
+        stableOnClear(); // Trigger clear callback
+        return; // Early return
       }
-    }
-  }, [originalHandleGlobalSearch, stableOnSearch, stableOnClear, searchMode, isHashtagMode]);
+
+      // For server-side search, call the external handler
+      // But skip if we're in hashtag mode (incomplete hashtag search)
+      if (searchMode === 'server' || searchMode === 'hybrid') {
+        if (!isHashtagMode(searchValue)) {
+          stableOnSearch(searchValue);
+        }
+      }
+    },
+    [
+      originalHandleGlobalSearch,
+      stableOnSearch,
+      stableOnClear,
+      searchMode,
+      isHashtagMode,
+    ]
+  );
 
   // Unified targeted search handler
-  const handleTargetedSearch = useCallback((targetedSearch: TargetedSearch | null) => {
-    originalHandleTargetedSearch(targetedSearch);
-    
-    // For targeted search, we typically want to clear server-side search
-    // since AG Grid will handle the filtering
-    if (searchMode === 'server' || searchMode === 'hybrid') {
-      stableOnSearch('');
-    }
-  }, [originalHandleTargetedSearch, stableOnSearch, searchMode]);
+  const handleTargetedSearch = useCallback(
+    (targetedSearch: TargetedSearch | null) => {
+      originalHandleTargetedSearch(targetedSearch);
+
+      // For targeted search, we typically want to clear server-side search
+      // since AG Grid will handle the filtering
+      if (searchMode === 'server' || searchMode === 'hybrid') {
+        stableOnSearch('');
+      }
+    },
+    [originalHandleTargetedSearch, stableOnSearch, searchMode]
+  );
 
   // Unified clear search handler
   const handleClearSearch = useCallback(() => {
     originalClearSearch();
-    
+
     // Call external clear handler if provided
     if (searchMode === 'server' || searchMode === 'hybrid') {
       stableOnSearch('');
     }
-    
+
     stableOnClear();
   }, [originalClearSearch, stableOnSearch, stableOnClear, searchMode]);
 
@@ -183,23 +210,26 @@ export function useUnifiedSearch({
   }, [search, data]);
 
   // Search bar props for easy integration
-  const searchBarProps = useMemo(() => ({
-    value: search,
-    onChange: handleSearchChange,
-    onTargetedSearch: handleTargetedSearch,
-    onGlobalSearch: handleGlobalSearch,
-    onClearSearch: handleClearSearch,
-    searchState,
-    columns,
-  }), [
-    search,
-    handleSearchChange,
-    handleTargetedSearch,
-    handleGlobalSearch,
-    handleClearSearch,
-    searchState,
-    columns,
-  ]);
+  const searchBarProps = useMemo(
+    () => ({
+      value: search,
+      onChange: handleSearchChange,
+      onTargetedSearch: handleTargetedSearch,
+      onGlobalSearch: handleGlobalSearch,
+      onClearSearch: handleClearSearch,
+      searchState,
+      columns,
+    }),
+    [
+      search,
+      handleSearchChange,
+      handleTargetedSearch,
+      handleGlobalSearch,
+      handleClearSearch,
+      searchState,
+      columns,
+    ]
+  );
 
   return {
     search,

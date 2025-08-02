@@ -1,1 +1,1 @@
-export { default as AddPurchasePortal } from "./components/AddPurchasePortal";
+export { default as AddPurchasePortal } from './components/AddPurchasePortal';

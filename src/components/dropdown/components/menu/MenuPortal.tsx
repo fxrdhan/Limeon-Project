@@ -25,7 +25,7 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
       onMouseLeave,
       children,
     },
-    ref,
+    ref
   ) => {
     if (!isOpen && !isClosing) return null;
 
@@ -44,21 +44,23 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
                   : isOpen && applyOpenStyles
                     ? 'opacity-100 scale-y-100 translate-y-0'
                     : `opacity-0 scale-y-0 ${
-                        dropDirection === 'down' ? 'translate-y-2' : '-translate-y-2'
+                        dropDirection === 'down'
+                          ? 'translate-y-2'
+                          : '-translate-y-2'
                       } pointer-events-none`
               }
           `}
             role="menu"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
           >
             {children}
           </div>,
-          document.body,
+          document.body
         )
       : null;
-  },
+  }
 );
 
 MenuPortal.displayName = 'MenuPortal';

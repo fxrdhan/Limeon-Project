@@ -1,22 +1,22 @@
-import { lazy, Suspense, ComponentProps } from "react";
+import { lazy, Suspense, ComponentProps } from 'react';
 
 // Lazy load individual chart components
 const LineChart = lazy(() =>
-  import("react-chartjs-2").then((module) => ({ default: module.Line })),
+  import('react-chartjs-2').then(module => ({ default: module.Line }))
 );
 const PieChart = lazy(() =>
-  import("react-chartjs-2").then((module) => ({ default: module.Pie })),
+  import('react-chartjs-2').then(module => ({ default: module.Pie }))
 );
 const BarChart = lazy(() =>
-  import("react-chartjs-2").then((module) => ({ default: module.Bar })),
+  import('react-chartjs-2').then(module => ({ default: module.Bar }))
 );
 const DoughnutChart = lazy(() =>
-  import("react-chartjs-2").then((module) => ({ default: module.Doughnut })),
+  import('react-chartjs-2').then(module => ({ default: module.Doughnut }))
 );
 
 // Lazy load Chart.js registration
 const ChartRegistration = lazy(() =>
-  import("./ChartComponents").then(() => ({ default: () => null })),
+  import('./ChartComponents').then(() => ({ default: () => null }))
 );
 
 const ChartLoadingFallback = () => (
@@ -26,7 +26,7 @@ const ChartLoadingFallback = () => (
 );
 
 export const Line = (
-  props: ComponentProps<(typeof import("react-chartjs-2"))["Line"]>,
+  props: ComponentProps<(typeof import('react-chartjs-2'))['Line']>
 ) => (
   <Suspense fallback={<ChartLoadingFallback />}>
     <ChartRegistration />
@@ -35,7 +35,7 @@ export const Line = (
 );
 
 export const Pie = (
-  props: ComponentProps<(typeof import("react-chartjs-2"))["Pie"]>,
+  props: ComponentProps<(typeof import('react-chartjs-2'))['Pie']>
 ) => (
   <Suspense fallback={<ChartLoadingFallback />}>
     <ChartRegistration />
@@ -44,7 +44,7 @@ export const Pie = (
 );
 
 export const Bar = (
-  props: ComponentProps<(typeof import("react-chartjs-2"))["Bar"]>,
+  props: ComponentProps<(typeof import('react-chartjs-2'))['Bar']>
 ) => (
   <Suspense fallback={<ChartLoadingFallback />}>
     <ChartRegistration />
@@ -53,7 +53,7 @@ export const Bar = (
 );
 
 export const Doughnut = (
-  props: ComponentProps<(typeof import("react-chartjs-2"))["Doughnut"]>,
+  props: ComponentProps<(typeof import('react-chartjs-2'))['Doughnut']>
 ) => (
   <Suspense fallback={<ChartLoadingFallback />}>
     <ChartRegistration />

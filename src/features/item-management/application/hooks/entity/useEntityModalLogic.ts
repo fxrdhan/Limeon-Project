@@ -1,12 +1,22 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { formatDateTime } from "@/lib/formatters";
-import type { EntityModalContextValue, ModalMode, VersionData } from "../../../shared/contexts/EntityModalContext";
-import type { EntityData } from "../../../shared/types";
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { formatDateTime } from '@/lib/formatters';
+import type {
+  EntityModalContextValue,
+  ModalMode,
+  VersionData,
+} from '../../../shared/contexts/EntityModalContext';
+import type { EntityData } from '../../../shared/types';
 
 interface UseEntityModalLogicProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { id?: string; kode?: string; name: string; description?: string; address?: string }) => Promise<void>;
+  onSubmit: (data: {
+    id?: string;
+    kode?: string;
+    name: string;
+    description?: string;
+    address?: string;
+  }) => Promise<void>;
   onDelete?: (id: string) => void;
   initialData?: EntityData | null;
   initialNameFromSearch?: string;
@@ -26,10 +36,10 @@ export const useEntityModalLogic = ({
   isLoading = false,
   isDeleting = false,
 }: UseEntityModalLogicProps) => {
-  const [kode, setKode] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [address, setAddress] = useState("");
+  const [kode, setKode] = useState('');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [address, setAddress] = useState('');
   const [mode, setMode] = useState<ModalMode>('add');
   const [historyData, setHistoryData] = useState({
     entityTable: '',
@@ -46,7 +56,7 @@ export const useEntityModalLogic = ({
   });
   const [previousMode, setPreviousMode] = useState<ModalMode>('add');
   const nameInputRef = useRef<HTMLInputElement>(null);
-  
+
   const isEditMode = Boolean(initialData);
   const formattedUpdateAt = formatDateTime(initialData?.updated_at);
 
@@ -54,10 +64,10 @@ export const useEntityModalLogic = ({
   const isDirty = useMemo(() => {
     if (!isEditMode) return true;
     return (
-      kode !== (initialData?.kode || "") ||
-      name !== (initialData?.name || "") ||
-      description !== (initialData?.description || "") ||
-      address !== (initialData?.address || "")
+      kode !== (initialData?.kode || '') ||
+      name !== (initialData?.name || '') ||
+      description !== (initialData?.description || '') ||
+      address !== (initialData?.address || '')
     );
   }, [kode, name, description, address, isEditMode, initialData]);
 
@@ -68,10 +78,10 @@ export const useEntityModalLogic = ({
 
   // Form actions
   const resetForm = useCallback(() => {
-    setKode("");
-    setName("");
-    setDescription("");
-    setAddress("");
+    setKode('');
+    setName('');
+    setDescription('');
+    setAddress('');
   }, []);
 
   // Initialize mode and form data when modal opens
@@ -80,21 +90,21 @@ export const useEntityModalLogic = ({
       const newMode = initialData ? 'edit' : 'add';
       setMode(newMode);
       setPreviousMode(newMode);
-      
+
       if (initialData) {
-        setKode(initialData.kode || "");
+        setKode(initialData.kode || '');
         setName(initialData.name);
-        setDescription(initialData.description || "");
-        setAddress(initialData.address || "");
+        setDescription(initialData.description || '');
+        setAddress(initialData.address || '');
       } else if (initialNameFromSearch) {
-        setKode("");
+        setKode('');
         setName(initialNameFromSearch);
-        setDescription("");
-        setAddress("");
+        setDescription('');
+        setAddress('');
       } else {
         resetForm();
       }
-      
+
       // Focus on name input after modal opens (only for form modes)
       setTimeout(() => {
         nameInputRef.current?.focus();
@@ -121,22 +131,37 @@ export const useEntityModalLogic = ({
       alert(`Kode dan nama ${entityName.toLowerCase()} tidak boleh kosong.`);
       return;
     }
-    const submitData: { id?: string; kode?: string; name: string; description?: string; address?: string } = { 
-      id: initialData?.id, 
+    const submitData: {
+      id?: string;
+      kode?: string;
+      name: string;
+      description?: string;
+      address?: string;
+    } = {
+      id: initialData?.id,
       kode: kode.trim(),
-      name: name.trim()
+      name: name.trim(),
     };
-    
+
     if (description.trim()) {
       submitData.description = description.trim();
     }
-    
+
     if (address.trim()) {
       submitData.address = address.trim();
     }
-    
+
     await onSubmit(submitData);
-  }, [kode, name, description, address, isValid, entityName, onSubmit, initialData]);
+  }, [
+    kode,
+    name,
+    description,
+    address,
+    isValid,
+    entityName,
+    onSubmit,
+    initialData,
+  ]);
 
   const handleDelete = useCallback(() => {
     if (initialData?.id && onDelete) {
@@ -145,15 +170,18 @@ export const useEntityModalLogic = ({
   }, [initialData, onDelete]);
 
   // History actions
-  const openHistory = useCallback((entityTable: string, entityId: string) => {
-    setPreviousMode(mode);
-    setMode('history');
-    setHistoryData({
-      entityTable,
-      entityId,
-      selectedVersion: undefined,
-    });
-  }, [mode]);
+  const openHistory = useCallback(
+    (entityTable: string, entityId: string) => {
+      setPreviousMode(mode);
+      setMode('history');
+      setHistoryData({
+        entityTable,
+        entityId,
+        selectedVersion: undefined,
+      });
+    },
+    [mode]
+  );
 
   const selectVersion = useCallback((version: VersionData) => {
     setHistoryData(prev => ({
@@ -171,7 +199,6 @@ export const useEntityModalLogic = ({
     });
   }, [previousMode]);
 
-
   const openComparison = useCallback((version: VersionData) => {
     setComparisonData({
       isOpen: true,
@@ -183,16 +210,19 @@ export const useEntityModalLogic = ({
     });
   }, []);
 
-  const openDualComparison = useCallback((versionA: VersionData, versionB: VersionData) => {
-    setComparisonData({
-      isOpen: true,
-      selectedVersion: undefined,
-      isDualMode: true,
-      versionA,
-      versionB,
-      isFlipped: false,
-    });
-  }, []);
+  const openDualComparison = useCallback(
+    (versionA: VersionData, versionB: VersionData) => {
+      setComparisonData({
+        isOpen: true,
+        selectedVersion: undefined,
+        isDualMode: true,
+        versionA,
+        versionB,
+        isFlipped: false,
+      });
+    },
+    []
+  );
 
   const flipVersions = useCallback(() => {
     setComparisonData(prev => ({
@@ -222,7 +252,7 @@ export const useEntityModalLogic = ({
       versionB: undefined,
       isFlipped: false,
     });
-    
+
     if (mode === 'history') {
       setMode(previousMode);
       setHistoryData({
@@ -242,11 +272,14 @@ export const useEntityModalLogic = ({
     onClose();
   }, [onClose, comparisonData.isOpen, closeComparison]);
 
-  const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
-  }, [handleClose]);
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === e.currentTarget) {
+        handleClose();
+      }
+    },
+    [handleClose]
+  );
 
   // Create context value
   const contextValue: EntityModalContextValue = {

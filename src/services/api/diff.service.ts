@@ -35,10 +35,20 @@ export interface DiffAnalysisRequest {
  * Analyze text differences using server-only computation
  * ❌ NO fallback - pure server dependency for IP protection
  */
-export async function analyzeDiff(oldText: string, newText: string): Promise<DiffAnalysisResult> {
+export async function analyzeDiff(
+  oldText: string,
+  newText: string
+): Promise<DiffAnalysisResult> {
   // Input validation
-  if (!oldText || !newText || typeof oldText !== 'string' || typeof newText !== 'string') {
-    throw new Error('Invalid input: both oldText and newText must be non-empty strings');
+  if (
+    !oldText ||
+    !newText ||
+    typeof oldText !== 'string' ||
+    typeof newText !== 'string'
+  ) {
+    throw new Error(
+      'Invalid input: both oldText and newText must be non-empty strings'
+    );
   }
 
   try {
@@ -57,12 +67,13 @@ export async function analyzeDiff(oldText: string, newText: string): Promise<Dif
     }
 
     // Validate segments structure
-    const isValidSegments = data.segments.every((segment: DiffSegment) => 
-      segment && 
-      typeof segment === 'object' && 
-      typeof segment.type === 'string' && 
-      ['unchanged', 'added', 'removed'].includes(segment.type) &&
-      typeof segment.text === 'string'
+    const isValidSegments = data.segments.every(
+      (segment: DiffSegment) =>
+        segment &&
+        typeof segment === 'object' &&
+        typeof segment.type === 'string' &&
+        ['unchanged', 'added', 'removed'].includes(segment.type) &&
+        typeof segment.text === 'string'
     );
 
     if (!isValidSegments) {
@@ -70,10 +81,9 @@ export async function analyzeDiff(oldText: string, newText: string): Promise<Dif
     }
 
     return data as DiffAnalysisResult;
-    
   } catch (error) {
     console.error('Diff analysis failed:', error);
-    
+
     // ❌ NO fallback computation - throw error for client to handle
     if (error instanceof Error) {
       throw new Error(`Computation service unavailable: ${error.message}`);

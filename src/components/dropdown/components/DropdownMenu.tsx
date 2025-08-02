@@ -73,7 +73,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                     isSelected={option.id === value}
                     isHighlighted={highlightedIndex === index}
                     isExpanded={expandedId === option.id}
-                    onHighlight={(index) => {
+                    onHighlight={index => {
                       onSetIsKeyboardNavigation(false);
                       onSetHighlightedIndex(index);
                     }}
@@ -92,7 +92,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         </div>
       </MenuPortal>
     );
-  },
+  }
 );
 
 DropdownMenu.displayName = 'DropdownMenu';

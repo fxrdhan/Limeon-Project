@@ -3,7 +3,7 @@
  */
 export const calculateProfitPercentage = (
   basePrice: number,
-  sellPrice: number,
+  sellPrice: number
 ): number | null => {
   if (basePrice > 0 && sellPrice >= 0) {
     return ((sellPrice - basePrice) / basePrice) * 100;
@@ -16,7 +16,7 @@ export const calculateProfitPercentage = (
  */
 export const calculateSellPriceFromMargin = (
   basePrice: number,
-  marginPercentage: number,
+  marginPercentage: number
 ): number => {
   if (basePrice > 0) {
     const sellPrice = basePrice * (1 + marginPercentage / 100);
@@ -30,10 +30,10 @@ export const calculateSellPriceFromMargin = (
  */
 export const formatMarginPercentage = (
   basePrice: number,
-  sellPrice: number,
+  sellPrice: number
 ): string => {
   const profit = calculateProfitPercentage(basePrice, sellPrice);
-  return profit !== null ? profit.toFixed(1) : "0";
+  return profit !== null ? profit.toFixed(1) : '0';
 };
 
 /**
@@ -48,15 +48,15 @@ export const validatePriceInput = (value: string): number => {
  * Calculates price suggestions based on margin ranges
  */
 export const generatePriceSuggestions = (
-  basePrice: number,
+  basePrice: number
 ): Array<{ margin: number; price: number; label: string }> => {
   if (basePrice <= 0) return [];
 
   const suggestions = [
-    { margin: 10, label: "Margin Rendah (10%)" },
-    { margin: 20, label: "Margin Standar (20%)" },
-    { margin: 30, label: "Margin Tinggi (30%)" },
-    { margin: 50, label: "Margin Premium (50%)" },
+    { margin: 10, label: 'Margin Rendah (10%)' },
+    { margin: 20, label: 'Margin Standar (20%)' },
+    { margin: 30, label: 'Margin Tinggi (30%)' },
+    { margin: 50, label: 'Margin Premium (50%)' },
   ];
 
   return suggestions.map(suggestion => ({
@@ -69,26 +69,26 @@ export const generatePriceSuggestions = (
  * Validates if margin percentage is within acceptable range
  */
 export const validateMarginRange = (
-  marginPercentage: number,
+  marginPercentage: number
 ): { isValid: boolean; warning?: string } => {
   if (marginPercentage < 0) {
     return {
       isValid: false,
-      warning: "Margin tidak boleh negatif",
+      warning: 'Margin tidak boleh negatif',
     };
   }
 
   if (marginPercentage > 200) {
     return {
       isValid: true,
-      warning: "Margin sangat tinggi (>200%), pastikan harga kompetitif",
+      warning: 'Margin sangat tinggi (>200%), pastikan harga kompetitif',
     };
   }
 
   if (marginPercentage < 5) {
     return {
       isValid: true,
-      warning: "Margin sangat rendah (<5%), periksa profitabilitas",
+      warning: 'Margin sangat rendah (<5%), periksa profitabilitas',
     };
   }
 
@@ -100,7 +100,7 @@ export const validateMarginRange = (
  */
 export const calculateBreakEven = (
   basePrice: number,
-  fixedCosts: number = 0,
+  fixedCosts: number = 0
 ): { breakEvenPrice: number; minimumMargin: number } => {
   const breakEvenPrice = basePrice + fixedCosts;
   const minimumMargin = fixedCosts > 0 ? (fixedCosts / basePrice) * 100 : 0;

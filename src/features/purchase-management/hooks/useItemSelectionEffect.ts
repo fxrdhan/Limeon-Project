@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import type { PurchaseItem, Item } from "@/types";
+import { useEffect } from 'react';
+import type { PurchaseItem, Item } from '@/types';
 
 interface UseItemSelectionEffectProps {
   selectedItem: Item | null;
@@ -28,19 +28,19 @@ export const useItemSelectionEffect = ({
           price: itemData.base_price,
           discount: 0,
           subtotal: itemData.base_price,
-          unit: itemData.unit?.name || itemData.base_unit || "Unit",
+          unit: itemData.unit?.name || itemData.base_unit || 'Unit',
           vat_percentage: 0,
           batch_no: null,
           expiry_date: null,
           unit_conversion_rate: 1,
           item: {
             name: itemData.name,
-            code: itemData.code || "",
+            code: itemData.code || '',
           },
         };
         addItem(newPurchaseItem);
         setSelectedItem(null);
-        setSearchItem("");
+        setSearchItem('');
       }
     }
   }, [selectedItem, addItem, setSelectedItem, setSearchItem, getItemByID]);

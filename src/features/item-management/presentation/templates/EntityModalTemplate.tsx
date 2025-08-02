@@ -1,8 +1,8 @@
-import React from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { useEntityModal } from "../../shared/contexts/EntityModalContext";
-import type { ReactNode } from "react";
+import React from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useEntityModal } from '../../shared/contexts/EntityModalContext';
+import type { ReactNode } from 'react';
 
 interface EntityModalTemplateProps {
   children: ReactNode;
@@ -37,14 +37,14 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
               x: comparison.isOpen ? -200 : 0,
             }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
           >
             {children}
           </motion.div>
         </div>
       )}
     </AnimatePresence>,
-    document.body,
+    document.body
   );
 };
 

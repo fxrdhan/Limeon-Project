@@ -1,4 +1,3 @@
-
 // Hook Parameter Interfaces
 export interface UseItemManagementProps {
   itemId?: string;
@@ -8,5 +7,3 @@ export interface UseItemManagementProps {
 }
 
 export type AddItemPageHandlersProps = UseItemManagementProps;
-
-

@@ -1,7 +1,7 @@
-import React from "react";
-import classNames from "classnames";
-import { getYearsToDisplay } from "../constants";
-import type { YearsGridProps } from "../types";
+import React from 'react';
+import classNames from 'classnames';
+import { getYearsToDisplay } from '../constants';
+import type { YearsGridProps } from '../types';
 
 const YearsGrid: React.FC<YearsGridProps> = ({
   displayDate,
@@ -16,7 +16,7 @@ const YearsGrid: React.FC<YearsGridProps> = ({
 
   return (
     <div className="grid grid-cols-3 gap-2 py-1">
-      {yearsToDisplay.map((yearVal) => {
+      {yearsToDisplay.map(yearVal => {
         let isDisabled = false;
         if (minDate) {
           const minD = new Date(minDate);
@@ -38,16 +38,16 @@ const YearsGrid: React.FC<YearsGridProps> = ({
             onMouseLeave={() => onYearHighlight(null)}
             disabled={isDisabled}
             className={classNames(
-              "p-2 rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-1 focus:ring-primary/50",
+              'p-2 rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-1 focus:ring-primary/50',
               isDisabled
-                ? "text-gray-300 cursor-not-allowed"
-                : "hover:bg-emerald-100 text-gray-700",
+                ? 'text-gray-300 cursor-not-allowed'
+                : 'hover:bg-emerald-100 text-gray-700',
               !isDisabled &&
                 (isSelected
-                  ? "bg-primary text-white hover:text-primary"
+                  ? 'bg-primary text-white hover:text-primary'
                   : isHighlighted
-                    ? "bg-primary/30 text-primary-dark ring-2 ring-primary/50"
-                    : "")
+                    ? 'bg-primary/30 text-primary-dark ring-2 ring-primary/50'
+                    : '')
             )}
           >
             {yearVal}

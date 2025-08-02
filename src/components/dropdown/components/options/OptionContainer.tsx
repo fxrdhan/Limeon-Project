@@ -8,7 +8,11 @@ interface OptionContainerProps {
   isKeyboardNavigation: boolean;
   onSelect: (optionId: string) => void;
   onHighlight: (index: number) => void;
-  onExpansion: (optionId: string, optionName: string, shouldExpand: boolean) => void;
+  onExpansion: (
+    optionId: string,
+    optionName: string,
+    shouldExpand: boolean
+  ) => void;
   dropdownMenuRef: RefObject<HTMLDivElement | null>;
   optionName: string;
   children: ReactNode;

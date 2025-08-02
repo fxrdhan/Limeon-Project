@@ -26,7 +26,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       onFocus,
       leaveTimeoutRef,
     },
-    ref,
+    ref
   ) => {
     return (
       <input
@@ -41,7 +41,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         value={searchTerm}
         onChange={onSearchChange}
         onKeyDown={onKeyDown}
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         onFocus={() => {
           if (leaveTimeoutRef.current) {
             clearTimeout(leaveTimeoutRef.current);
@@ -59,7 +59,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         }
       />
     );
-  },
+  }
 );
 
 SearchInput.displayName = 'SearchInput';

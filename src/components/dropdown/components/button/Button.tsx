@@ -39,7 +39,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       onFocus,
       onBlur,
     },
-    ref,
+    ref
   ) => {
     return (
       <button
@@ -77,7 +77,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         />
       </button>
     );
-  },
+  }
 );
 
 Button.displayName = 'Button';

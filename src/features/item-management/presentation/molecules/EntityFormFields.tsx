@@ -1,13 +1,15 @@
-import React from "react";
-import Input from "@/components/input";
-import DescriptiveTextarea from "@/components/descriptive-textarea";
-import { useEntityModal } from "../../shared/contexts/EntityModalContext";
+import React from 'react';
+import Input from '@/components/input';
+import DescriptiveTextarea from '@/components/descriptive-textarea';
+import { useEntityModal } from '../../shared/contexts/EntityModalContext';
 
 interface EntityFormFieldsProps {
   nameInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
-const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef }) => {
+const EntityFormFields: React.FC<EntityFormFieldsProps> = ({
+  nameInputRef,
+}) => {
   const { form, ui, action, formActions } = useEntityModal();
   const { kode, name, description, address } = form;
   const { entityName } = ui;
@@ -22,29 +24,29 @@ const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef }) => 
         <Input
           label={`Kode ${entityName}`}
           value={kode || ''}
-          onChange={(e) => setKode(e.target.value)}
+          onChange={e => setKode(e.target.value)}
           placeholder={`Masukkan kode ${entityName.toLowerCase()}`}
           required
           readOnly={isReadOnly}
         />
       )}
-      
+
       <Input
         ref={nameInputRef}
         label={`Nama ${entityName}`}
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        onChange={e => setName(e.target.value)}
         placeholder={`Masukkan nama ${entityName.toLowerCase()}`}
         required
         readOnly={isReadOnly}
       />
 
-      {entityName === "Produsen" ? (
+      {entityName === 'Produsen' ? (
         <DescriptiveTextarea
           label="Alamat"
           name="address"
           value={address || ''}
-          onChange={(e) => setAddress && setAddress(e.target.value)}
+          onChange={e => setAddress && setAddress(e.target.value)}
           placeholder="Masukkan alamat produsen"
           readOnly={isReadOnly}
           textareaClassName="text-sm min-h-[80px] resize-none"
@@ -57,7 +59,7 @@ const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef }) => 
           label="Deskripsi"
           name="description"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={e => setDescription(e.target.value)}
           placeholder="Masukkan deskripsi singkat"
           readOnly={isReadOnly}
           textareaClassName="text-sm min-h-[80px] resize-none"

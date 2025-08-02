@@ -1,7 +1,7 @@
-import Button from "@/components/button";
-import { createPortal } from "react-dom";
-import { Transition, TransitionChild } from "@headlessui/react";
-import type { ConfirmDialogContextType, ConfirmDialogOptions } from "@/types";
+import Button from '@/components/button';
+import { createPortal } from 'react-dom';
+import { Transition, TransitionChild } from '@headlessui/react';
+import type { ConfirmDialogContextType, ConfirmDialogOptions } from '@/types';
 import React, {
   createContext,
   useState,
@@ -10,17 +10,17 @@ import React, {
   Fragment,
   useRef,
   useEffect,
-} from "react";
+} from 'react';
 
 const initialState: ConfirmDialogContextType = {
   isOpen: false,
-  title: "",
-  message: "",
-  confirmText: "Ya",
-  cancelText: "Batal",
+  title: '',
+  message: '',
+  confirmText: 'Ya',
+  cancelText: 'Batal',
   onConfirm: () => {},
   onCancel: () => {},
-  variant: "primary",
+  variant: 'primary',
   openConfirmDialog: () => {},
   closeConfirmDialog: () => {},
 };
@@ -33,7 +33,7 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [dialogState, setDialogState] =
     useState<
-      Omit<ConfirmDialogContextType, "openConfirmDialog" | "closeConfirmDialog">
+      Omit<ConfirmDialogContextType, 'openConfirmDialog' | 'closeConfirmDialog'>
     >(initialState);
 
   const openConfirmDialog = useCallback((options: ConfirmDialogOptions) => {
@@ -41,16 +41,16 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
       isOpen: true,
       title: options.title,
       message: options.message,
-      confirmText: options.confirmText || "Ya",
-      cancelText: options.cancelText || "Batal",
+      confirmText: options.confirmText || 'Ya',
+      cancelText: options.cancelText || 'Batal',
       onConfirm: options.onConfirm,
       onCancel: options.onCancel || (() => {}),
-      variant: options.variant || "primary",
+      variant: options.variant || 'primary',
     });
   }, []);
 
   const closeConfirmDialog = useCallback(() => {
-    setDialogState((state) => ({
+    setDialogState(state => ({
       ...state,
       isOpen: false,
     }));
@@ -75,7 +75,7 @@ export const useConfirmDialog = () => {
   const context = useContext(ConfirmDialogContext);
   if (!context) {
     throw new Error(
-      "useConfirmDialog must be used within a ConfirmDialogProvider",
+      'useConfirmDialog must be used within a ConfirmDialogProvider'
     );
   }
   return context;
@@ -119,14 +119,14 @@ export const ConfirmDialogComponent: React.FC = () => {
   }, [isOpen]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Tab") {
+    if (event.key === 'Tab') {
       if (!dialogRef.current) return;
 
       const focusableElements = Array.from(
         dialogRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => el.offsetParent !== null);
+          'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter(el => el.offsetParent !== null);
 
       if (focusableElements.length === 0) return;
 
@@ -209,6 +209,6 @@ export const ConfirmDialogComponent: React.FC = () => {
         </TransitionChild>
       </div>
     </Transition>,
-    document.body,
+    document.body
   );
 };

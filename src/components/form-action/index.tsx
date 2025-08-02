@@ -1,5 +1,5 @@
-import Button from "@/components/button";
-import type { FormActionProps } from "@/types";
+import Button from '@/components/button';
+import type { FormActionProps } from '@/types';
 
 const FormAction: React.FC<FormActionProps> = ({
   onCancel,
@@ -7,10 +7,10 @@ const FormAction: React.FC<FormActionProps> = ({
   isSaving,
   isDeleting,
   isDisabled = false,
-  cancelText = "Batal",
-  saveText = "Simpan",
-  updateText = "Update",
-  deleteText = "Hapus",
+  cancelText = 'Batal',
+  saveText = 'Simpan',
+  updateText = 'Update',
+  deleteText = 'Hapus',
   isEditMode = false,
   cancelTabIndex,
   saveTabIndex,

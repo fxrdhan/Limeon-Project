@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { z } from "zod";
+import { useState, useCallback } from 'react';
+import { z } from 'zod';
 
 interface ValidationState {
   isValid: boolean;
@@ -24,25 +24,28 @@ export const useFieldValidation = <T extends z.ZodSchema>({
     showError: false,
   });
 
-  const validateField = useCallback((showError: boolean = false) => {
-    try {
-      schema.parse(value);
-      setValidation({
-        isValid: true,
-        error: null,
-        showError: false,
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const firstError = error.issues[0];
+  const validateField = useCallback(
+    (showError: boolean = false) => {
+      try {
+        schema.parse(value);
         setValidation({
-          isValid: false,
-          error: firstError.message,
-          showError,
+          isValid: true,
+          error: null,
+          showError: false,
         });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          const firstError = error.issues[0];
+          setValidation({
+            isValid: false,
+            error: firstError.message,
+            showError,
+          });
+        }
       }
-    }
-  }, [schema, value]);
+    },
+    [schema, value]
+  );
 
   const handleBlur = useCallback(() => {
     if (showOnBlur) {

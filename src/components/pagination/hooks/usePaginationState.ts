@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PAGINATION_CONSTANTS } from '../constants';
-import type { UsePaginationStateProps, UsePaginationStateReturn } from '../types';
+import type {
+  UsePaginationStateProps,
+  UsePaginationStateReturn,
+} from '../types';
 
 export const usePaginationState = ({
   currentPage,
@@ -10,7 +13,7 @@ export const usePaginationState = ({
   onItemsPerPageChange,
 }: UsePaginationStateProps): UsePaginationStateReturn => {
   const [selectedPageSizeIndex, setSelectedPageSizeIndex] = useState(0);
-  
+
   const pageSizes = useMemo(() => [...PAGINATION_CONSTANTS.PAGE_SIZES], []);
 
   useEffect(() => {
@@ -28,7 +31,7 @@ export const usePaginationState = ({
         } as React.ChangeEvent<HTMLSelectElement>);
       }
     },
-    [itemsPerPage, onItemsPerPageChange],
+    [itemsPerPage, onItemsPerPageChange]
   );
 
   return {

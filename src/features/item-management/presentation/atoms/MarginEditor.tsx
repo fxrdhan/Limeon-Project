@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from "react";
-import { FaPen } from "react-icons/fa";
-import Input from "@/components/input";
-import FormField from "@/components/form-field";
+import React, { useRef, useEffect } from 'react';
+import { FaPen } from 'react-icons/fa';
+import Input from '@/components/input';
+import FormField from '@/components/form-field';
 
 interface LocalMarginEditorProps {
   isEditing: boolean;
@@ -56,14 +56,14 @@ export default function MarginEditor({
             className={`group w-full py-2 cursor-pointer font-semibold flex items-center ${
               calculatedMargin !== null
                 ? calculatedMargin >= 0
-                  ? "text-green-600"
-                  : "text-red-600"
-                : "text-gray-500"
+                  ? 'text-green-600'
+                  : 'text-red-600'
+                : 'text-gray-500'
             } focus:outline-hidden`}
             onClick={onStartEdit}
             title="Klik untuk mengubah margin"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 onStartEdit();
               }
@@ -71,11 +71,11 @@ export default function MarginEditor({
           >
             {calculatedMargin !== null
               ? `${calculatedMargin.toFixed(1)} %`
-              : "-"}
+              : '-'}
             <FaPen
               className="ml-4 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors"
               size={14}
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onStartEdit();
               }}

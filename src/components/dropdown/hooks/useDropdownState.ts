@@ -44,7 +44,7 @@ export const useDropdownState = () => {
         openThisDropdown();
       }
     },
-    [isOpen, actualCloseDropdown, openThisDropdown],
+    [isOpen, actualCloseDropdown, openThisDropdown]
   );
 
   return {

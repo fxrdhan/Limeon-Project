@@ -1,20 +1,25 @@
-import { useState, useRef, useCallback } from "react";
-import { DATEPICKER_CONSTANTS } from "../constants";
-import type { UseDatepickerStateParams, UseDatepickerStateReturn } from "../types";
+import { useState, useRef, useCallback } from 'react';
+import { DATEPICKER_CONSTANTS } from '../constants';
+import type {
+  UseDatepickerStateParams,
+  UseDatepickerStateReturn,
+} from '../types';
 
-export const useDatepickerState = (params: UseDatepickerStateParams): UseDatepickerStateReturn => {
+export const useDatepickerState = (
+  params: UseDatepickerStateParams
+): UseDatepickerStateReturn => {
   const { onOpen, onClose } = params;
-  
+
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  
+
   const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const openCalendar = useCallback(() => {
     if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-    
+
     setIsOpen(true);
     setIsClosing(false);
     onOpen?.();
@@ -23,7 +28,7 @@ export const useDatepickerState = (params: UseDatepickerStateParams): UseDatepic
   const closeCalendar = useCallback(() => {
     if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-    
+
     setIsClosing(true);
     setTimeout(() => {
       setIsOpen(false);

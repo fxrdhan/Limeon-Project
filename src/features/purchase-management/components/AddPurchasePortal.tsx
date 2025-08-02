@@ -1,17 +1,17 @@
-import React, { useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import FormAction from "@/components/form-action";
-import ItemManagementModal from "@/features/item-management/presentation/templates/item/ItemManagementModal";
-import { CardContent, CardFooter } from "@/components/card";
-import PurchaseModalHeader from "@/components/molecules/PurchaseForm/PurchaseModalHeader";
-import PurchaseInfoSection from "@/components/organisms/PurchaseForm/PurchaseInfoSection";
-import PurchaseItemsSection from "@/components/organisms/PurchaseForm/PurchaseItemsSection";
-import type { ItemSearchBarRef, AddPurchasePortalProps } from "@/types";
-import { usePurchaseForm } from "@/features/purchase-management/hooks/purchaseForm";
-import { useItemSelection } from "@/features/item-management/application/hooks/entity/useItemSelection";
-import { useItemSelectionEffect } from "@/features/purchase-management/hooks/useItemSelectionEffect";
-import { usePurchaseModalAnimation } from "@/features/purchase-management/hooks/usePurchaseModalAnimation";
+import React, { useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import FormAction from '@/components/form-action';
+import ItemManagementModal from '@/features/item-management/presentation/templates/item/ItemManagementModal';
+import { CardContent, CardFooter } from '@/components/card';
+import PurchaseModalHeader from '@/components/molecules/PurchaseForm/PurchaseModalHeader';
+import PurchaseInfoSection from '@/components/organisms/PurchaseForm/PurchaseInfoSection';
+import PurchaseItemsSection from '@/components/organisms/PurchaseForm/PurchaseItemsSection';
+import type { ItemSearchBarRef, AddPurchasePortalProps } from '@/types';
+import { usePurchaseForm } from '@/features/purchase-management/hooks/purchaseForm';
+import { useItemSelection } from '@/features/item-management/application/hooks/entity/useItemSelection';
+import { useItemSelectionEffect } from '@/features/purchase-management/hooks/useItemSelectionEffect';
+import { usePurchaseModalAnimation } from '@/features/purchase-management/hooks/usePurchaseModalAnimation';
 
 const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
   isOpen,
@@ -56,10 +56,11 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     enabled: isOpen,
   });
 
-  const { backdropVariants, modalVariants, contentVariants } = usePurchaseModalAnimation();
+  const { backdropVariants, modalVariants, contentVariants } =
+    usePurchaseModalAnimation();
 
   const isAddNewItemDisabled = !(
-    searchItem.trim() !== "" && filteredItems.length === 0
+    searchItem.trim() !== '' && filteredItems.length === 0
   );
 
   const onHandleSubmit = (e: React.FormEvent) => {
@@ -101,7 +102,6 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     }, 300);
   };
 
-
   return createPortal(
     <AnimatePresence>
       {isOpen && (
@@ -109,11 +109,11 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
           key="modal-backdrop"
           variants={backdropVariants}
           initial="hidden"
-          animate={isClosing ? "exit" : "visible"}
+          animate={isClosing ? 'exit' : 'visible'}
           exit="exit"
           transition={{ duration: 0.15 }}
           className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
-          onClick={(e) => {
+          onClick={e => {
             if (e.target === e.currentTarget && !isClosing) {
               setIsClosing(true);
               onClose();
@@ -124,17 +124,17 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
             key="modal-content"
             variants={modalVariants}
             initial="hidden"
-            animate={isClosing ? "exit" : "visible"}
+            animate={isClosing ? 'exit' : 'visible'}
             exit="exit"
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             className="rounded-xl bg-white shadow-xl max-w-7xl max-h-[90vh] flex flex-col"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <motion.div
               key="modal-header"
               variants={contentVariants}
               initial="hidden"
-              animate={isClosing ? "exit" : "visible"}
+              animate={isClosing ? 'exit' : 'visible'}
               exit="exit"
               transition={{ duration: 0.2, delay: 0.05 }}
             >
@@ -150,7 +150,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
               key="modal-form"
               variants={contentVariants}
               initial="hidden"
-              animate={isClosing ? "exit" : "visible"}
+              animate={isClosing ? 'exit' : 'visible'}
               exit="exit"
               transition={{ duration: 0.2, delay: 0.1 }}
               onSubmit={onHandleSubmit}
@@ -175,7 +175,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                     isAddNewItemDisabled={isAddNewItemDisabled}
                     onOpenAddItemPortal={() => {
                       setIsAddItemPortalOpen(true);
-                      setPortalRenderId((prev) => prev + 1);
+                      setPortalRenderId(prev => prev + 1);
                     }}
                     itemSearchBarRef={itemSearchBarRef}
                     formData={formData}
@@ -208,7 +208,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
       )}
 
       <ItemManagementModal
-        key={`${searchItem ?? ""}-${portalRenderId}`}
+        key={`${searchItem ?? ''}-${portalRenderId}`}
         isOpen={isAddItemPortalOpen}
         onClose={handleCloseAddItemPortal}
         initialSearchQuery={searchItem}
@@ -217,7 +217,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
         refetchItems={refetchItems}
       />
     </AnimatePresence>,
-    document.body,
+    document.body
   );
 };
 

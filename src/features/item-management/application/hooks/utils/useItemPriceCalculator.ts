@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo } from 'react';
 
 interface UseItemPriceCalculationsProps {
   basePrice: number;
@@ -12,7 +12,7 @@ export const useItemPriceCalculations = ({
   const calculateProfitPercentage = useMemo(() => {
     if (!basePrice || basePrice <= 0) return null;
     if (!sellPrice || sellPrice <= 0) return null;
-    
+
     const profit = sellPrice - basePrice;
     const profitPercentage = (profit / basePrice) * 100;
     return profitPercentage;
@@ -24,11 +24,11 @@ export const useItemPriceCalculations = ({
   };
 
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat("id-ID").format(amount);
+    return new Intl.NumberFormat('id-ID').format(amount);
   };
 
   const parseCurrency = (currencyString: string): number => {
-    const numericString = currencyString.replace(/[^\d]/g, "");
+    const numericString = currencyString.replace(/[^\d]/g, '');
     return parseInt(numericString) || 0;
   };
 

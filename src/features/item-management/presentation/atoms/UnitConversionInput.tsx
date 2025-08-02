@@ -1,9 +1,12 @@
-import React from "react";
-import { PiKeyReturnBold } from "react-icons/pi";
-import Dropdown from "@/components/dropdown";
-import FormField from "@/components/form-field";
-import Input from "@/components/input";
-import type { UnitOption, UnitConversionLogicFormData } from "../../shared/types";
+import React from 'react';
+import { PiKeyReturnBold } from 'react-icons/pi';
+import Dropdown from '@/components/dropdown';
+import FormField from '@/components/form-field';
+import Input from '@/components/input';
+import type {
+  UnitOption,
+  UnitConversionLogicFormData,
+} from '../../shared/types';
 
 interface LocalUnitConversionInputProps {
   baseUnit: string;
@@ -23,7 +26,7 @@ export default function UnitConversionInput({
   tabIndex = 16,
 }: LocalUnitConversionInputProps) {
   const handleUnitChange = (unitId: string) => {
-    const selectedUnit = availableUnits.find((u) => u.id === unitId);
+    const selectedUnit = availableUnits.find(u => u.id === unitId);
     if (selectedUnit) {
       onFormDataChange({
         ...formData,
@@ -41,31 +44,29 @@ export default function UnitConversionInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       onAddConversion();
     }
   };
 
-  const isAddButtonActive = 
+  const isAddButtonActive =
     formData.unit && formData.conversion > 0 && baseUnit;
 
   return (
     <div>
       <h3 className="text-lg font-medium mb-3">Tambah Konversi Satuan</h3>
       <p className="text-sm text-gray-600 mb-2">
-        1 {baseUnit || "Satuan Dasar"} setara berapa satuan turunan?
+        1 {baseUnit || 'Satuan Dasar'} setara berapa satuan turunan?
       </p>
       <div className="flex flex-row gap-4 mb-3">
         <FormField label="Satuan Turunan" className="flex-1" required={true}>
           <Dropdown
             name="unit_conversion"
             tabIndex={tabIndex}
-            value={
-              availableUnits.find((u) => u.name === formData.unit)?.id || ""
-            }
+            value={availableUnits.find(u => u.name === formData.unit)?.id || ''}
             onChange={handleUnitChange}
-            options={availableUnits.map((unit) => ({
+            options={availableUnits.map(unit => ({
               id: unit.id,
               name: unit.name,
             }))}
@@ -80,8 +81,8 @@ export default function UnitConversionInput({
         <FormField
           label={
             formData.unit
-              ? `1 ${baseUnit || "Satuan Dasar"} = ? ${formData.unit}`
-              : "Nilai Konversi"
+              ? `1 ${baseUnit || 'Satuan Dasar'} = ? ${formData.unit}`
+              : 'Nilai Konversi'
           }
           className="flex-1"
         >
@@ -89,18 +90,18 @@ export default function UnitConversionInput({
             <Input
               name="conversion"
               tabIndex={tabIndex + 1}
-              value={formData.conversion?.toString() || ""}
+              value={formData.conversion?.toString() || ''}
               onChange={handleConversionChange}
               type="number"
-              min={formData.unit ? "1" : undefined}
+              min={formData.unit ? '1' : undefined}
               className="w-full pr-10"
               onKeyDown={handleKeyDown}
             />
             <div
               className={`absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer font-bold tracking-widest transition-colors duration-300 focus:outline-hidden ${
-                isAddButtonActive ? "text-primary" : "text-gray-300"
+                isAddButtonActive ? 'text-primary' : 'text-gray-300'
               }`}
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 onAddConversion();
               }}

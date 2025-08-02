@@ -11,8 +11,6 @@ export { default as ItemFormHeader } from './ItemFormHeader';
 
 // History organisms
 export { default as HistoryListContent } from './HistoryListContent';
-export { default as HistoryModal } from './HistoryModal';
 export { default as ItemHistoryContent } from './ItemHistoryContent';
-export { default as VersionDiff } from './VersionDiff';
 export { default as HistoryTimelineList } from './HistoryTimelineList';
 export type { HistoryItem } from './HistoryTimelineList';

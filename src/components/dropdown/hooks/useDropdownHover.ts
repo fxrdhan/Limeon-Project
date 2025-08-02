@@ -6,7 +6,7 @@ export const useDropdownHover = (
   isOpen: boolean,
   isClosing: boolean,
   openThisDropdown: () => void,
-  actualCloseDropdown: () => void,
+  actualCloseDropdown: () => void
 ) => {
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -26,7 +26,7 @@ export const useDropdownHover = (
   }, [hoverToOpen, openThisDropdown, isOpen, isClosing]);
 
   const handleMenuEnter = useCallback(() => {
-    [leaveTimeoutRef, hoverTimeoutRef].forEach((ref) => {
+    [leaveTimeoutRef, hoverTimeoutRef].forEach(ref => {
       if (ref.current) {
         clearTimeout(ref.current);
         ref.current = null;
@@ -41,7 +41,10 @@ export const useDropdownHover = (
     }
     // Only set close timeout if hover-to-open is enabled and dropdown is actually open
     if (hoverToOpen && isOpen) {
-      leaveTimeoutRef.current = setTimeout(actualCloseDropdown, DROPDOWN_CONSTANTS.CLOSE_TIMEOUT);
+      leaveTimeoutRef.current = setTimeout(
+        actualCloseDropdown,
+        DROPDOWN_CONSTANTS.CLOSE_TIMEOUT
+      );
     }
   }, [actualCloseDropdown, hoverToOpen, isOpen]);
 

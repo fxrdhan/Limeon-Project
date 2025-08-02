@@ -1,9 +1,9 @@
-import React from "react";
-import { FaHistory, FaSpinner } from "react-icons/fa";
-import Button from "@/components/button";
-import IdentityImageUploader from "./IdentityImageUploader";
-import IdentityFormField from "./IdentityFormField";
-import { useIdentityModalContext } from "@/contexts/IdentityModalContext";
+import React from 'react';
+import { FaHistory, FaSpinner } from 'react-icons/fa';
+import Button from '@/components/button';
+import IdentityImageUploader from './IdentityImageUploader';
+import IdentityFormField from './IdentityFormField';
+import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
 
 const IdentityModalContent: React.FC = () => {
   const {
@@ -25,7 +25,7 @@ const IdentityModalContent: React.FC = () => {
       <div className="flex justify-between items-center p-4 border-b">
         <div className="flex flex-col">
           <h2 className="text-xl font-semibold">{title}</h2>
-          {mode === "edit" && formattedUpdateAt !== "-" && (
+          {mode === 'edit' && formattedUpdateAt !== '-' && (
             <span className="text-sm text-gray-500 italic flex items-center mt-1">
               <FaHistory className="mr-1" size={12} />
               {formattedUpdateAt}
@@ -39,14 +39,14 @@ const IdentityModalContent: React.FC = () => {
         <IdentityImageUploader />
 
         <div className="space-y-4">
-          {fields.map((field) => (
+          {fields.map(field => (
             <IdentityFormField key={field.key} field={field} />
           ))}
         </div>
       </div>
 
       {/* Footer */}
-      {mode === "edit" ? (
+      {mode === 'edit' ? (
         <div className="p-4 border-t flex justify-between items-center bg-white">
           {onDeleteRequest && (
             <Button variant="danger" onClick={() => onDeleteRequest(localData)}>
@@ -74,7 +74,7 @@ const IdentityModalContent: React.FC = () => {
                 Menyimpan...
               </span>
             ) : (
-              "Simpan"
+              'Simpan'
             )}
           </Button>
         </div>

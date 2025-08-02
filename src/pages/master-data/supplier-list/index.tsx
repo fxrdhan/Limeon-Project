@@ -1,26 +1,26 @@
-import IdentityDataModal from "@/features/identity/IdentityDataModal";
-import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
-import Button from "@/components/button";
-import Pagination from "@/components/pagination";
-import PageTitle from "@/components/page-title";
+import IdentityDataModal from '@/features/identity/IdentityDataModal';
+import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
+import Button from '@/components/button';
+import Pagination from '@/components/pagination';
+import PageTitle from '@/components/page-title';
 
-import { FaPlus } from "react-icons/fa";
-import { Card } from "@/components/card";
-import { DataGrid, createTextColumn } from "@/components/ag-grid";
-import { ColDef, RowClickedEvent } from "ag-grid-community";
-import { useRef, useMemo, useCallback } from "react";
+import { FaPlus } from 'react-icons/fa';
+import { Card } from '@/components/card';
+import { DataGrid, createTextColumn } from '@/components/ag-grid';
+import { ColDef, RowClickedEvent } from 'ag-grid-community';
+import { useRef, useMemo, useCallback } from 'react';
 // import { useLocation } from "react-router-dom";
-import type { Supplier as SupplierType, FieldConfig } from "@/types";
+import type { Supplier as SupplierType, FieldConfig } from '@/types';
 
 // Use the new modular architecture
-import { useMasterDataManagement } from "@/features/master-data/hooks/useMasterDataManagement";
+import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
 
-import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
-import { supplierSearchColumns } from "@/utils/searchColumns";
+import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
+import { supplierSearchColumns } from '@/utils/searchColumns';
 
 const SupplierListNew = () => {
   const searchInputRef = useRef<HTMLInputElement>(
-    null,
+    null
   ) as React.RefObject<HTMLInputElement>;
 
   // Data management hook for server-side operations
@@ -48,7 +48,7 @@ const SupplierListNew = () => {
     debouncedSearch,
     handleKeyDown,
     setSearch: setDataSearch,
-  } = useMasterDataManagement("suppliers", "Supplier", {
+  } = useMasterDataManagement('suppliers', 'Supplier', {
     searchInputRef,
   });
 
@@ -57,11 +57,11 @@ const SupplierListNew = () => {
     (searchValue: string) => {
       setDataSearch(searchValue);
     },
-    [setDataSearch],
+    [setDataSearch]
   );
 
   const handleClear = useCallback(() => {
-    setDataSearch("");
+    setDataSearch('');
   }, [setDataSearch]);
 
   // Unified search functionality with hybrid mode
@@ -73,7 +73,7 @@ const SupplierListNew = () => {
     searchBarProps,
   } = useUnifiedSearch({
     columns: supplierSearchColumns,
-    searchMode: "hybrid",
+    searchMode: 'hybrid',
     useFuzzySearch: true,
     data: suppliersData,
     onSearch: handleSearch,
@@ -84,64 +84,63 @@ const SupplierListNew = () => {
 
   const supplierFields: FieldConfig[] = [
     {
-      key: "name",
-      label: "Nama Supplier",
-      type: "text",
+      key: 'name',
+      label: 'Nama Supplier',
+      type: 'text',
     },
     {
-      key: "address",
-      label: "Alamat",
-      type: "textarea",
+      key: 'address',
+      label: 'Alamat',
+      type: 'textarea',
     },
     {
-      key: "phone",
-      label: "Telepon",
-      type: "tel",
+      key: 'phone',
+      label: 'Telepon',
+      type: 'tel',
     },
     {
-      key: "email",
-      label: "Email",
-      type: "email",
+      key: 'email',
+      label: 'Email',
+      type: 'email',
     },
     {
-      key: "contact_person",
-      label: "Kontak Person",
-      type: "text",
+      key: 'contact_person',
+      label: 'Kontak Person',
+      type: 'text',
     },
   ];
-
 
   const columnDefs: ColDef[] = useMemo(() => {
     const columns: ColDef[] = [
       createTextColumn({
-        field: "name",
-        headerName: "Nama Supplier",
+        field: 'name',
+        headerName: 'Nama Supplier',
         minWidth: 200,
       }),
       createTextColumn({
-        field: "address",
-        headerName: "Alamat",
+        field: 'address',
+        headerName: 'Alamat',
         minWidth: 150,
         flex: 1,
-        valueGetter: (params) => params.data.address || "-",
+        valueGetter: params => params.data.address || '-',
       }),
       createTextColumn({
-        field: "phone",
-        headerName: "Telepon",
+        field: 'phone',
+        headerName: 'Telepon',
         minWidth: 120,
-        valueGetter: (params) => params.data.phone || "-",
+        valueGetter: params => params.data.phone || '-',
       }),
       createTextColumn({
-        field: "email",
-        headerName: "Email",
+        field: 'email',
+        headerName: 'Email',
         minWidth: 150,
-        valueGetter: (params) => params.data.email || "-",
+        valueGetter: params => params.data.email || '-',
       }),
       createTextColumn({
-        field: "contact_person",
-        headerName: "Kontak Person",
+        field: 'contact_person',
+        headerName: 'Kontak Person',
         minWidth: 150,
-        valueGetter: (params) => params.data.contact_person || "-",
+        valueGetter: params => params.data.contact_person || '-',
       }),
     ];
 
@@ -165,8 +164,8 @@ const SupplierListNew = () => {
       <Card
         className={
           isFetching
-            ? "opacity-75 transition-opacity duration-300 flex-1 flex flex-col"
-            : "flex-1 flex flex-col"
+            ? 'opacity-75 transition-opacity duration-300 flex-1 flex flex-col'
+            : 'flex-1 flex flex-col'
         }
       >
         <div className="mb-6">
@@ -192,10 +191,10 @@ const SupplierListNew = () => {
         </div>
         {isError && (
           <div className="text-center p-6 text-red-500">
-            Error:{" "}
+            Error:{' '}
             {queryError instanceof Error
               ? queryError.message
-              : "Gagal memuat data"}
+              : 'Gagal memuat data'}
           </div>
         )}
         {!isError && (
@@ -211,15 +210,15 @@ const SupplierListNew = () => {
                   ? `<span style="padding: 10px; color: #888;">Tidak ada supplier dengan nama "${search}"</span>`
                   : '<span style="padding: 10px; color: #888;">Tidak ada data supplier yang ditemukan</span>'
               }
-              autoSizeColumns={["name", "phone", "email", "contact_person"]}
+              autoSizeColumns={['name', 'phone', 'email', 'contact_person']}
               onFirstDataRendered={() => {}}
               animateRows={true}
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
               style={{
-                width: "100%",
-                marginTop: "1rem",
-                marginBottom: "1rem",
+                width: '100%',
+                marginTop: '1rem',
+                marginBottom: '1rem',
               }}
             />
             <Pagination
@@ -242,10 +241,10 @@ const SupplierListNew = () => {
         fields={supplierFields}
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSave={async (data) => {
+        onSave={async data => {
           await handleModalSubmit({
-            name: String(data.name || ""),
-            description: String(data.address || ""),
+            name: String(data.name || ''),
+            description: String(data.address || ''),
             id: undefined,
           });
         }}
@@ -264,10 +263,10 @@ const SupplierListNew = () => {
         fields={supplierFields}
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
-        onSave={async (data) => {
+        onSave={async data => {
           await handleModalSubmit({
-            name: String(data.name || ""),
-            description: String(data.address || ""),
+            name: String(data.name || ''),
+            description: String(data.address || ''),
             id: editingItem?.id,
           });
         }}
@@ -275,10 +274,10 @@ const SupplierListNew = () => {
           editingItem
             ? () => {
                 openConfirmDialog({
-                  title: "Konfirmasi Hapus",
+                  title: 'Konfirmasi Hapus',
                   message: `Apakah Anda yakin ingin menghapus supplier "${editingItem.name}"?`,
-                  variant: "danger",
-                  confirmText: "Ya, Hapus",
+                  variant: 'danger',
+                  confirmText: 'Ya, Hapus',
                   onConfirm: async () => {
                     await deleteMutation.mutateAsync(editingItem.id);
                   },

@@ -1,11 +1,11 @@
-import React from "react";
-import Input from "@/components/input";
-import Dropdown from "@/components/dropdown";
-import Datepicker from "@/components/datepicker";
-import Button from "@/components/button";
-import { FaPencilAlt, FaSave, FaBan } from "react-icons/fa";
-import { useIdentityModalContext } from "@/contexts/IdentityModalContext";
-import type { FieldConfig, CustomDateValueType } from "@/types";
+import React from 'react';
+import Input from '@/components/input';
+import Dropdown from '@/components/dropdown';
+import Datepicker from '@/components/datepicker';
+import Button from '@/components/button';
+import { FaPencilAlt, FaSave, FaBan } from 'react-icons/fa';
+import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
+import type { FieldConfig, CustomDateValueType } from '@/types';
 
 interface IdentityFormFieldProps {
   field: FieldConfig;
@@ -25,12 +25,12 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
     setInputRef,
   } = useIdentityModalContext();
 
-  const isInEditMode = editMode[field.key] || mode === "add";
+  const isInEditMode = editMode[field.key] || mode === 'add';
   const fieldValue = editValues[field.key];
   const displayValue = localData[field.key];
 
   const renderEditModeActions = () => {
-    if (field.editable === false || mode !== "edit") {
+    if (field.editable === false || mode !== 'edit') {
       return null;
     }
 
@@ -83,8 +83,8 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
         <Dropdown
           name={field.key}
           options={field.options}
-          value={String(fieldValue ?? "")}
-          onChange={(selectedValue) => handleChange(field.key, selectedValue)}
+          value={String(fieldValue ?? '')}
+          onChange={selectedValue => handleChange(field.key, selectedValue)}
           placeholder={`Pilih ${field.label.toLowerCase()}`}
           withRadio={true}
           searchList={false}
@@ -92,13 +92,13 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
       );
     }
 
-    if (field.type === "date") {
+    if (field.type === 'date') {
       return (
         <Datepicker
           value={fieldValue ? new Date(String(fieldValue)) : null}
           onChange={(date: CustomDateValueType) => {
             const formattedDate = date
-              ? date.toISOString().split("T")[0]
+              ? date.toISOString().split('T')[0]
               : null;
             handleChange(field.key, formattedDate as string | number | boolean);
           }}
@@ -109,13 +109,13 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
       );
     }
 
-    if (field.type === "textarea") {
+    if (field.type === 'textarea') {
       return (
         <textarea
-          ref={(el) => setInputRef(field.key, el as HTMLTextAreaElement)}
+          ref={el => setInputRef(field.key, el as HTMLTextAreaElement)}
           id={field.key}
           className="text-sm w-full p-2 border border-gray-300 rounded-lg focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"
-          value={String(fieldValue ?? "")}
+          value={String(fieldValue ?? '')}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
             handleChange(field.key, e.target.value)
           }
@@ -126,10 +126,10 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
 
     return (
       <Input
-        ref={(el) => setInputRef(field.key, el as HTMLInputElement)}
+        ref={el => setInputRef(field.key, el as HTMLInputElement)}
         id={field.key}
-        type={field.type || "text"}
-        value={String(fieldValue ?? "")}
+        type={field.type || 'text'}
+        value={String(fieldValue ?? '')}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
           handleChange(field.key, e.target.value)
         }
@@ -139,15 +139,15 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
   };
 
   const renderDisplayValue = () => {
-    if (field.type === "date" && displayValue) {
-      return new Date(String(displayValue)).toLocaleDateString("id-ID", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
+    if (field.type === 'date' && displayValue) {
+      return new Date(String(displayValue)).toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
       });
     }
 
-    const value = String(displayValue ?? "");
+    const value = String(displayValue ?? '');
     return (
       value || <span className="text-gray-400 italic">Tidak ada data</span>
     );

@@ -1,35 +1,41 @@
-import { useState, useRef, useCallback } from "react";
-import Pagination from "@/components/pagination";
-import PageTitle from "@/components/page-title";
-import { EntityManagementModal } from "@/features/item-management/presentation/templates/entity";
-import ItemManagementModal from "@/features/item-management/presentation/templates/item/ItemManagementModal";
-import { Card } from "@/components/card";
-import { DataGrid, DataGridRef, createTextColumn } from "@/components/ag-grid";
-import { ColDef, RowClickedEvent } from "ag-grid-community";
-import { motion, LayoutGroup } from "framer-motion";
-import classNames from "classnames";
+import { useState, useRef, useCallback } from 'react';
+import Pagination from '@/components/pagination';
+import PageTitle from '@/components/page-title';
+import { EntityManagementModal } from '@/features/item-management/presentation/templates/entity';
+import ItemManagementModal from '@/features/item-management/presentation/templates/item/ItemManagementModal';
+import { Card } from '@/components/card';
+import { DataGrid, DataGridRef, createTextColumn } from '@/components/ag-grid';
+import { ColDef, RowClickedEvent } from 'ag-grid-community';
+import { motion, LayoutGroup } from 'framer-motion';
+import classNames from 'classnames';
 
 // Use the new modular architecture
-import { useMasterDataManagement } from "@/features/master-data/hooks/useMasterDataManagement";
+import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
 
 import type {
   Category,
   MedicineType,
   Unit,
   Item as ItemDataType,
-} from "@/types/database";
-import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
+} from '@/types/database';
+import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import {
   itemMasterSearchColumns,
   itemSearchColumns,
-} from "@/utils/searchColumns";
+} from '@/utils/searchColumns';
 
 // Additional imports for Items tab
-import SearchToolbar from "@/features/shared/components/SearchToolbar";
-import { ItemDataTable } from "@/features/item-management/presentation/organisms";
-import { useItemGridColumns } from "@/features/item-management/application/hooks/ui";
+import SearchToolbar from '@/features/shared/components/SearchToolbar';
+import { ItemDataTable } from '@/features/item-management/presentation/organisms';
+import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
 
-type MasterDataType = "categories" | "types" | "units" | "dosages" | "manufacturers" | "items";
+type MasterDataType =
+  | 'categories'
+  | 'types'
+  | 'units'
+  | 'dosages'
+  | 'manufacturers'
+  | 'items';
 type MasterDataEntity = Category | MedicineType | Unit | ItemDataType;
 
 interface TabConfig {
@@ -45,74 +51,81 @@ interface TabConfig {
 
 const tabConfigs: Record<MasterDataType, TabConfig> = {
   categories: {
-    key: "categories",
-    label: "Kategori",
-    entityName: "Kategori",
-    addButtonText: "Tambah Kategori Baru",
-    searchPlaceholder: "Cari nama atau deskripsi kategori item",
-    nameColumnHeader: "Nama Kategori",
-    noDataMessage: "Tidak ada data kategori yang ditemukan",
-    searchNoDataMessage: "Tidak ada kategori dengan kata kunci",
+    key: 'categories',
+    label: 'Kategori',
+    entityName: 'Kategori',
+    addButtonText: 'Tambah Kategori Baru',
+    searchPlaceholder: 'Cari nama atau deskripsi kategori item',
+    nameColumnHeader: 'Nama Kategori',
+    noDataMessage: 'Tidak ada data kategori yang ditemukan',
+    searchNoDataMessage: 'Tidak ada kategori dengan kata kunci',
   },
   types: {
-    key: "types",
-    label: "Jenis",
-    entityName: "Jenis Item",
-    addButtonText: "Tambah Jenis Item Baru",
-    searchPlaceholder: "Cari nama atau deskripsi jenis item",
-    nameColumnHeader: "Nama Jenis",
-    noDataMessage: "Tidak ada data jenis item yang ditemukan",
-    searchNoDataMessage: "Tidak ada jenis item dengan kata kunci",
+    key: 'types',
+    label: 'Jenis',
+    entityName: 'Jenis Item',
+    addButtonText: 'Tambah Jenis Item Baru',
+    searchPlaceholder: 'Cari nama atau deskripsi jenis item',
+    nameColumnHeader: 'Nama Jenis',
+    noDataMessage: 'Tidak ada data jenis item yang ditemukan',
+    searchNoDataMessage: 'Tidak ada jenis item dengan kata kunci',
   },
   units: {
-    key: "units",
-    label: "Satuan",
-    entityName: "Satuan",
-    addButtonText: "Tambah Satuan Baru",
-    searchPlaceholder: "Cari nama atau deskripsi satuan",
-    nameColumnHeader: "Nama Satuan",
-    noDataMessage: "Tidak ada data satuan yang ditemukan",
-    searchNoDataMessage: "Tidak ada satuan dengan kata kunci",
+    key: 'units',
+    label: 'Satuan',
+    entityName: 'Satuan',
+    addButtonText: 'Tambah Satuan Baru',
+    searchPlaceholder: 'Cari nama atau deskripsi satuan',
+    nameColumnHeader: 'Nama Satuan',
+    noDataMessage: 'Tidak ada data satuan yang ditemukan',
+    searchNoDataMessage: 'Tidak ada satuan dengan kata kunci',
   },
   dosages: {
-    key: "dosages",
-    label: "Sediaan",
-    entityName: "Sediaan",
-    addButtonText: "Tambah Sediaan Baru",
-    searchPlaceholder: "Cari nama atau deskripsi sediaan",
-    nameColumnHeader: "Nama Sediaan",
-    noDataMessage: "Tidak ada data sediaan yang ditemukan",
-    searchNoDataMessage: "Tidak ada sediaan dengan kata kunci",
+    key: 'dosages',
+    label: 'Sediaan',
+    entityName: 'Sediaan',
+    addButtonText: 'Tambah Sediaan Baru',
+    searchPlaceholder: 'Cari nama atau deskripsi sediaan',
+    nameColumnHeader: 'Nama Sediaan',
+    noDataMessage: 'Tidak ada data sediaan yang ditemukan',
+    searchNoDataMessage: 'Tidak ada sediaan dengan kata kunci',
   },
   manufacturers: {
-    key: "manufacturers",
-    label: "Produsen",
-    entityName: "Produsen",
-    addButtonText: "Tambah Produsen Baru",
-    searchPlaceholder: "Cari nama atau alamat produsen",
-    nameColumnHeader: "Nama Produsen",
-    noDataMessage: "Tidak ada data produsen yang ditemukan",
-    searchNoDataMessage: "Tidak ada produsen dengan kata kunci",
+    key: 'manufacturers',
+    label: 'Produsen',
+    entityName: 'Produsen',
+    addButtonText: 'Tambah Produsen Baru',
+    searchPlaceholder: 'Cari nama atau alamat produsen',
+    nameColumnHeader: 'Nama Produsen',
+    noDataMessage: 'Tidak ada data produsen yang ditemukan',
+    searchNoDataMessage: 'Tidak ada produsen dengan kata kunci',
   },
   items: {
-    key: "items",
-    label: "Item",
-    entityName: "Item",
-    addButtonText: "Tambah Item Baru",
-    searchPlaceholder: "Cari nama, kode, atau deskripsi item",
-    nameColumnHeader: "Nama Item",
-    noDataMessage: "Tidak ada data item yang ditemukan",
-    searchNoDataMessage: "Tidak ada item dengan kata kunci",
+    key: 'items',
+    label: 'Item',
+    entityName: 'Item',
+    addButtonText: 'Tambah Item Baru',
+    searchPlaceholder: 'Cari nama, kode, atau deskripsi item',
+    nameColumnHeader: 'Nama Item',
+    noDataMessage: 'Tidak ada data item yang ditemukan',
+    searchNoDataMessage: 'Tidak ada item dengan kata kunci',
   },
 };
 
 // Define tab order with items first
-const tabOrder: MasterDataType[] = ["items", "categories", "types", "units", "dosages", "manufacturers"];
+const tabOrder: MasterDataType[] = [
+  'items',
+  'categories',
+  'types',
+  'units',
+  'dosages',
+  'manufacturers',
+];
 
 const ItemMasterNew = () => {
-  const [activeTab, setActiveTab] = useState<MasterDataType>("items");
+  const [activeTab, setActiveTab] = useState<MasterDataType>('items');
   const searchInputRef = useRef<HTMLInputElement>(
-    null,
+    null
   ) as React.RefObject<HTMLInputElement>;
   const dataGridRef = useRef<DataGridRef>(null);
 
@@ -120,7 +133,7 @@ const ItemMasterNew = () => {
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isItemModalClosing, setIsItemModalClosing] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | undefined>(
-    undefined,
+    undefined
   );
   const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<
     string | undefined
@@ -136,47 +149,51 @@ const ItemMasterNew = () => {
   // Map activeTab to table names for realtime control
   const getTableNameFromTab = (tab: MasterDataType) => {
     switch (tab) {
-      case "categories":
-        return "item_categories";
-      case "types":
-        return "item_types";
-      case "units":
-        return "item_units";
-      case "dosages":
-        return "item_dosages";
-      case "manufacturers":
-        return "item_manufacturers";
-      case "items":
-        return "items";
+      case 'categories':
+        return 'item_categories';
+      case 'types':
+        return 'item_types';
+      case 'units':
+        return 'item_units';
+      case 'dosages':
+        return 'item_dosages';
+      case 'manufacturers':
+        return 'item_manufacturers';
+      case 'items':
+        return 'items';
     }
   };
 
   // Data management hooks for each tab - only active tab subscribes to realtime
   const categoriesManagement = useMasterDataManagement(
-    "item_categories",
-    "Kategori",
+    'item_categories',
+    'Kategori',
     {
       searchInputRef,
       activeTableName: getTableNameFromTab(activeTab),
-    },
+    }
   );
-  const typesManagement = useMasterDataManagement("item_types", "Jenis Item", {
+  const typesManagement = useMasterDataManagement('item_types', 'Jenis Item', {
     searchInputRef,
     activeTableName: getTableNameFromTab(activeTab),
   });
-  const unitsManagement = useMasterDataManagement("item_units", "Satuan", {
+  const unitsManagement = useMasterDataManagement('item_units', 'Satuan', {
     searchInputRef,
     activeTableName: getTableNameFromTab(activeTab),
   });
-  const dosagesManagement = useMasterDataManagement("item_dosages", "Sediaan", {
+  const dosagesManagement = useMasterDataManagement('item_dosages', 'Sediaan', {
     searchInputRef,
     activeTableName: getTableNameFromTab(activeTab),
   });
-  const manufacturersManagement = useMasterDataManagement("item_manufacturers", "Produsen", {
-    searchInputRef,
-    activeTableName: getTableNameFromTab(activeTab),
-  });
-  const itemsManagement = useMasterDataManagement("items", "Item", {
+  const manufacturersManagement = useMasterDataManagement(
+    'item_manufacturers',
+    'Produsen',
+    {
+      searchInputRef,
+      activeTableName: getTableNameFromTab(activeTab),
+    }
+  );
+  const itemsManagement = useMasterDataManagement('items', 'Item', {
     searchInputRef,
     activeTableName: getTableNameFromTab(activeTab),
   });
@@ -184,17 +201,17 @@ const ItemMasterNew = () => {
   // Get current management based on active tab
   const getCurrentManagement = () => {
     switch (activeTab) {
-      case "categories":
+      case 'categories':
         return categoriesManagement;
-      case "types":
+      case 'types':
         return typesManagement;
-      case "units":
+      case 'units':
         return unitsManagement;
-      case "dosages":
+      case 'dosages':
         return dosagesManagement;
-      case "manufacturers":
+      case 'manufacturers':
         return manufacturersManagement;
-      case "items":
+      case 'items':
         return itemsManagement;
     }
   };
@@ -229,11 +246,11 @@ const ItemMasterNew = () => {
     (searchValue: string) => {
       setDataSearch(searchValue);
     },
-    [setDataSearch],
+    [setDataSearch]
   );
 
   const handleClear = useCallback(() => {
-    setDataSearch("");
+    setDataSearch('');
   }, [setDataSearch]);
 
   // Unified search functionality with hybrid mode
@@ -245,8 +262,8 @@ const ItemMasterNew = () => {
     searchBarProps,
   } = useUnifiedSearch({
     columns:
-      activeTab === "items" ? itemSearchColumns : itemMasterSearchColumns,
-    searchMode: "hybrid",
+      activeTab === 'items' ? itemSearchColumns : itemMasterSearchColumns,
+    searchMode: 'hybrid',
     useFuzzySearch: true,
     data: data,
     onSearch: handleSearch,
@@ -259,7 +276,7 @@ const ItemMasterNew = () => {
     setCurrentSearchQueryForModal(searchQuery);
     setIsItemModalClosing(false);
     setIsAddItemModalOpen(true);
-    setModalRenderId((prevId) => prevId + 1);
+    setModalRenderId(prevId => prevId + 1);
   };
 
   const closeAddItemModal = () => {
@@ -287,10 +304,10 @@ const ItemMasterNew = () => {
   // Event handlers for other tabs
   const handleDelete = async (item: MasterDataEntity) => {
     openConfirmDialog({
-      title: "Konfirmasi Hapus",
+      title: 'Konfirmasi Hapus',
       message: `Apakah Anda yakin ingin menghapus ${currentConfig.entityName.toLowerCase()} "${item.name}"?`,
-      variant: "danger",
-      confirmText: "Ya, Hapus",
+      variant: 'danger',
+      confirmText: 'Ya, Hapus',
       onConfirm: async () => {
         await deleteMutation.mutateAsync(item.id);
       },
@@ -302,7 +319,7 @@ const ItemMasterNew = () => {
       setActiveTab(newTab);
       // Clear search when switching tabs
       if (searchInputRef.current) {
-        searchInputRef.current.value = "";
+        searchInputRef.current.value = '';
       }
       // Reset item modal state when switching tabs
       if (isAddItemModalOpen) {
@@ -314,28 +331,28 @@ const ItemMasterNew = () => {
   // Column definitions
   const columnDefs: ColDef[] = [
     createTextColumn({
-      field: "kode",
-      headerName: "Kode",
+      field: 'kode',
+      headerName: 'Kode',
       minWidth: 80,
-      valueGetter: (params) => {
-        return params.data.kode || "-";
+      valueGetter: params => {
+        return params.data.kode || '-';
       },
     }),
     createTextColumn({
-      field: "name",
+      field: 'name',
       headerName: currentConfig.nameColumnHeader,
       minWidth: 120,
     }),
     createTextColumn({
-      field: "description",
-      headerName: activeTab === "manufacturers" ? "Alamat" : "Deskripsi",
+      field: 'description',
+      headerName: activeTab === 'manufacturers' ? 'Alamat' : 'Deskripsi',
       minWidth: 200,
       flex: 1,
-      valueGetter: (params) => {
-        if (activeTab === "manufacturers") {
-          return params.data.address || "-";
+      valueGetter: params => {
+        if (activeTab === 'manufacturers') {
+          return params.data.address || '-';
         }
-        return params.data.description || "-";
+        return params.data.description || '-';
       },
     }),
   ];
@@ -348,24 +365,24 @@ const ItemMasterNew = () => {
     <>
       <Card
         className={
-          isFetching ? "opacity-75 transition-opacity duration-300" : ""
+          isFetching ? 'opacity-75 transition-opacity duration-300' : ''
         }
       >
         <div className="relative flex items-center justify-center mb-0 pt-0">
           <div className="absolute left-0 pb-4 pt-6">
             <LayoutGroup id="item-master-tabs">
               <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
-                {tabOrder.map((tabKey) => {
+                {tabOrder.map(tabKey => {
                   const config = tabConfigs[tabKey];
                   return (
                     <button
                       key={config.key}
                       className={classNames(
-                        "group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
+                        'group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150',
                         {
-                          "hover:bg-emerald-100 hover:text-emerald-700":
+                          'hover:bg-emerald-100 hover:text-emerald-700':
                             activeTab !== config.key,
-                        },
+                        }
                       )}
                       onClick={() => handleTabChange(config.key)}
                     >
@@ -374,7 +391,7 @@ const ItemMasterNew = () => {
                           layoutId="tab-selector-bg"
                           className="absolute inset-0 bg-primary rounded-lg shadow-xs"
                           transition={{
-                            type: "spring",
+                            type: 'spring',
                             stiffness: 500,
                             damping: 30,
                             duration: 0.3,
@@ -383,17 +400,17 @@ const ItemMasterNew = () => {
                       )}
                       <span
                         className={classNames(
-                          "relative z-10 select-none font-medium",
+                          'relative z-10 select-none font-medium',
                           {
-                            "text-white": activeTab === config.key,
-                            "text-gray-700 group-hover:text-emerald-700":
+                            'text-white': activeTab === config.key,
+                            'text-gray-700 group-hover:text-emerald-700':
                               activeTab !== config.key,
-                          },
+                          }
                         )}
                       >
                         {activeTab === config.key
-                          ? config.key === "items"
-                            ? "Daftar Item"
+                          ? config.key === 'items'
+                            ? 'Daftar Item'
                             : `${config.label} Item`
                           : config.label}
                       </span>
@@ -416,20 +433,20 @@ const ItemMasterNew = () => {
               buttonText={currentConfig.addButtonText}
               placeholder={`${currentConfig.searchPlaceholder} atau ketik # untuk pencarian kolom spesifik`}
               onAdd={
-                activeTab === "items"
+                activeTab === 'items'
                   ? () => handleAddItem(undefined, search)
                   : () => setIsAddModalOpen(true)
               }
               onKeyDown={
-                activeTab === "items"
+                activeTab === 'items'
                   ? undefined // Use default items behavior
                   : handleKeyDown
               }
               items={
-                activeTab === "items" ? (data as ItemDataType[]) : undefined
+                activeTab === 'items' ? (data as ItemDataType[]) : undefined
               }
               onItemSelect={
-                activeTab === "items"
+                activeTab === 'items'
                   ? (item: ItemDataType) => handleItemSelect(item.id)
                   : undefined
               }
@@ -439,9 +456,9 @@ const ItemMasterNew = () => {
 
         {isError ? (
           <div className="text-center p-6 text-red-500">
-            Error: {error?.message || "Gagal memuat data"}
+            Error: {error?.message || 'Gagal memuat data'}
           </div>
-        ) : activeTab === "items" ? (
+        ) : activeTab === 'items' ? (
           <ItemDataTable
             items={data as ItemDataType[]}
             columnDefs={itemColumnDefs}
@@ -475,13 +492,13 @@ const ItemMasterNew = () => {
                   ? `<span style="padding: 10px; color: #888;">${currentConfig.searchNoDataMessage} "${search}"</span>`
                   : `<span style="padding: 10px; color: #888;">${currentConfig.noDataMessage}</span>`
               }
-              autoSizeColumns={["kode", "name"]}
+              autoSizeColumns={['kode', 'name']}
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
               style={{
-                width: "100%",
-                marginTop: "1rem",
-                marginBottom: "1rem",
+                width: '100%',
+                marginTop: '1rem',
+                marginBottom: '1rem',
               }}
             />
             <Pagination
@@ -499,7 +516,7 @@ const ItemMasterNew = () => {
       </Card>
 
       {/* Modals for non-items tabs */}
-      {activeTab !== "items" && (
+      {activeTab !== 'items' && (
         <>
           <EntityManagementModal
             isOpen={isAddModalOpen}
@@ -517,17 +534,17 @@ const ItemMasterNew = () => {
                 address?: string;
                 id?: string;
               } = {
-                kode: String(formData.kode || ""),
-                name: String(formData.name || ""),
+                kode: String(formData.kode || ''),
+                name: String(formData.name || ''),
                 id: undefined,
               };
-              
-              if (activeTab === "manufacturers") {
-                submitData.address = String(formData.address || "");
+
+              if (activeTab === 'manufacturers') {
+                submitData.address = String(formData.address || '');
               } else {
-                submitData.description = String(formData.description || "");
+                submitData.description = String(formData.description || '');
               }
-              
+
               await handleModalSubmit(submitData);
             }}
             isLoading={false}
@@ -552,17 +569,17 @@ const ItemMasterNew = () => {
                 address?: string;
                 id?: string;
               } = {
-                kode: String(formData.kode || ""),
-                name: String(formData.name || ""),
+                kode: String(formData.kode || ''),
+                name: String(formData.name || ''),
                 id: editingItem?.id,
               };
-              
-              if (activeTab === "manufacturers") {
-                submitData.address = String(formData.address || "");
+
+              if (activeTab === 'manufacturers') {
+                submitData.address = String(formData.address || '');
               } else {
-                submitData.description = String(formData.description || "");
+                submitData.description = String(formData.description || '');
               }
-              
+
               await handleModalSubmit(submitData);
             }}
             initialData={
@@ -577,9 +594,9 @@ const ItemMasterNew = () => {
       )}
 
       {/* Modal for items tab */}
-      {activeTab === "items" && (
+      {activeTab === 'items' && (
         <ItemManagementModal
-          key={`${editingItemId ?? "new"}-${currentSearchQueryForModal ?? ""}-${modalRenderId}`}
+          key={`${editingItemId ?? 'new'}-${currentSearchQueryForModal ?? ''}-${modalRenderId}`}
           isOpen={isAddItemModalOpen}
           onClose={closeAddItemModal}
           itemId={editingItemId}

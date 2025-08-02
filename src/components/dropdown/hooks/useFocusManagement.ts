@@ -19,7 +19,9 @@ export const useFocusManagement = ({
         () => {
           (searchList ? searchInputRef : optionsContainerRef).current?.focus();
         },
-        searchList ? DROPDOWN_CONSTANTS.SEARCH_FOCUS_DELAY : DROPDOWN_CONSTANTS.FOCUS_DELAY,
+        searchList
+          ? DROPDOWN_CONSTANTS.SEARCH_FOCUS_DELAY
+          : DROPDOWN_CONSTANTS.FOCUS_DELAY
       );
     }
   }, [isOpen, searchList, searchInputRef, optionsContainerRef]);
@@ -40,7 +42,14 @@ export const useFocusManagement = ({
         }
       }
     }, 0);
-  }, [isOpen, actualCloseDropdown, touched, setTouched, dropdownRef, dropdownMenuRef]);
+  }, [
+    isOpen,
+    actualCloseDropdown,
+    touched,
+    setTouched,
+    dropdownRef,
+    dropdownMenuRef,
+  ]);
 
   return {
     manageFocusOnOpen,

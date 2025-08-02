@@ -1,13 +1,13 @@
-import React from "react";
-import classNames from "classnames";
-import Input from "@/components/input";
-import { useDatepickerContext } from "../hooks";
-import { DATE_FORMAT_CONFIG } from "../constants";
-import type { CalendarButtonProps } from "../types";
+import React from 'react';
+import classNames from 'classnames';
+import Input from '@/components/input';
+import { useDatepickerContext } from '../hooks';
+import { DATE_FORMAT_CONFIG } from '../constants';
+import type { CalendarButtonProps } from '../types';
 
 const CalendarButton: React.FC<CalendarButtonProps> = ({
   value,
-  placeholder = "Pilih tanggal",
+  placeholder = 'Pilih tanggal',
   inputClassName,
   label,
 }) => {
@@ -26,7 +26,7 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
         DATE_FORMAT_CONFIG.dayMonthYear
       );
     }
-    return "";
+    return '';
   };
 
   return (
@@ -42,12 +42,12 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
           type="text"
           value={formattedDisplayValue()}
           placeholder={placeholder}
-          className={classNames("cursor-pointer", inputClassName)}
+          className={classNames('cursor-pointer', inputClassName)}
           onClick={handleTriggerClick}
           onKeyDown={handleInputKeyDown}
           onMouseEnter={handleTriggerMouseEnter}
           onMouseLeave={handleTriggerMouseLeave}
-          onChange={(e) => e.preventDefault()}
+          onChange={e => e.preventDefault()}
         />
       </div>
     </div>

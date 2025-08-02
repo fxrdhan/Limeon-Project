@@ -37,7 +37,17 @@ export const useKeyboardNavigation = ({
       if (!isOpen) return;
 
       const items = currentFilteredOptions;
-      if (!items.length && !([KEYBOARD_KEYS.ESCAPE, KEYBOARD_KEYS.TAB, KEYBOARD_KEYS.ENTER] as string[]).includes(e.key)) return;
+      if (
+        !items.length &&
+        !(
+          [
+            KEYBOARD_KEYS.ESCAPE,
+            KEYBOARD_KEYS.TAB,
+            KEYBOARD_KEYS.ENTER,
+          ] as string[]
+        ).includes(e.key)
+      )
+        return;
 
       let newIndex = highlightedIndex;
       const keyActions: Record<string, () => void> = {
@@ -63,15 +73,19 @@ export const useKeyboardNavigation = ({
         [KEYBOARD_KEYS.PAGE_DOWN]: () => {
           if (items.length) {
             newIndex = Math.min(
-              highlightedIndex === -1 ? DROPDOWN_CONSTANTS.PAGE_SIZE - 1 : highlightedIndex + DROPDOWN_CONSTANTS.PAGE_SIZE,
-              items.length - 1,
+              highlightedIndex === -1
+                ? DROPDOWN_CONSTANTS.PAGE_SIZE - 1
+                : highlightedIndex + DROPDOWN_CONSTANTS.PAGE_SIZE,
+              items.length - 1
             );
           }
         },
         [KEYBOARD_KEYS.PAGE_UP]: () => {
           if (items.length) {
             newIndex =
-              highlightedIndex === -1 ? 0 : Math.max(highlightedIndex - DROPDOWN_CONSTANTS.PAGE_SIZE, 0);
+              highlightedIndex === -1
+                ? 0
+                : Math.max(highlightedIndex - DROPDOWN_CONSTANTS.PAGE_SIZE, 0);
           }
         },
         [KEYBOARD_KEYS.ENTER]: () => {
@@ -99,12 +113,20 @@ export const useKeyboardNavigation = ({
 
       if (keyActions[e.key]) {
         e.preventDefault();
-        if (!([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(e.key)) {
+        if (
+          !([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(
+            e.key
+          )
+        ) {
           setIsKeyboardNavigation(true);
           setExpandedId(null);
         }
         keyActions[e.key]();
-        if (!([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(e.key)) {
+        if (
+          !([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(
+            e.key
+          )
+        ) {
           setHighlightedIndex(newIndex);
           if (newIndex >= 0 && items[newIndex]) {
             setExpandedId(items[newIndex].id);
@@ -124,17 +146,19 @@ export const useKeyboardNavigation = ({
       onCloseValidation,
       setHighlightedIndex,
       setExpandedId,
-    ],
+    ]
   );
 
   const scrollToHighlightedOption = useCallback(() => {
     if (isOpen && highlightedIndex >= 0 && optionsContainerRef.current) {
-      const optionElements = optionsContainerRef.current.querySelectorAll('[role="option"]');
+      const optionElements =
+        optionsContainerRef.current.querySelectorAll('[role="option"]');
       if (optionElements[highlightedIndex]) {
         if (highlightedIndex === 0) {
           optionsContainerRef.current.scrollTop = 0;
         } else if (highlightedIndex === currentFilteredOptions.length - 1) {
-          optionsContainerRef.current.scrollTop = optionsContainerRef.current.scrollHeight;
+          optionsContainerRef.current.scrollTop =
+            optionsContainerRef.current.scrollHeight;
         } else {
           (optionElements[highlightedIndex] as HTMLElement).scrollIntoView({
             block: 'nearest',

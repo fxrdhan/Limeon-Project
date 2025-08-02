@@ -1,12 +1,12 @@
-import { forwardRef } from "react";
-import Input from "@/components/input";
-import Dropdown from "@/components/dropdown";
-import FormSection from "@/components/form-section";
-import FormField from "@/components/form-field";
-import DescriptiveTextarea from "@/components/descriptive-textarea";
-import { ItemCodeField } from "../atoms";
-import { itemNameSchema } from "@/schemas/itemValidation";
-import type { DropdownOption } from "@/types/components";
+import { forwardRef } from 'react';
+import Input from '@/components/input';
+import Dropdown from '@/components/dropdown';
+import FormSection from '@/components/form-section';
+import FormField from '@/components/form-field';
+import DescriptiveTextarea from '@/components/descriptive-textarea';
+import { ItemCodeField } from '../atoms';
+import { itemNameSchema } from '@/schemas/itemValidation';
+import type { DropdownOption } from '@/types/components';
 
 interface ItemBasicInfoFormProps {
   formData: {
@@ -27,7 +27,9 @@ interface ItemBasicInfoFormProps {
   dosages: DropdownOption[];
   loading: boolean;
   onCodeRegenerate: () => void;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
   onFieldChange: (field: string, value: boolean | string) => void;
   onDropdownChange: (field: string, value: string) => void;
   onAddNewCategory: (searchTerm?: string) => void;
@@ -37,28 +39,35 @@ interface ItemBasicInfoFormProps {
 }
 
 const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
-  ({ 
-    formData, 
-    categories,
-    types,
-    units,
-    dosages,
-    loading,
-    onCodeRegenerate, 
-    onChange,
-    onFieldChange,
-    onDropdownChange,
-    onAddNewCategory,
-    onAddNewType,
-    onAddNewUnit,
-    onAddNewDosage
-  }, ref) => {
+  (
+    {
+      formData,
+      categories,
+      types,
+      units,
+      dosages,
+      loading,
+      onCodeRegenerate,
+      onChange,
+      onFieldChange,
+      onDropdownChange,
+      onAddNewCategory,
+      onAddNewType,
+      onAddNewUnit,
+      onAddNewDosage,
+    },
+    ref
+  ) => {
     return (
       <FormSection title="Data Umum">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <ItemCodeField code={formData.code} onRegenerate={onCodeRegenerate} />
 
-          <FormField label="Nama Item" className="md:col-span-2" required={true}>
+          <FormField
+            label="Nama Item"
+            className="md:col-span-2"
+            required={true}
+          >
             <Input
               name="name"
               ref={ref}
@@ -107,18 +116,18 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             <Dropdown
               name="is_medicine"
               tabIndex={4}
-              value={formData.is_medicine ? "obat" : "non-obat"}
-              onChange={(value) => {
-                if (value === "obat") {
-                  onFieldChange("is_medicine", true);
+              value={formData.is_medicine ? 'obat' : 'non-obat'}
+              onChange={value => {
+                if (value === 'obat') {
+                  onFieldChange('is_medicine', true);
                 } else {
-                  onFieldChange("is_medicine", false);
-                  onFieldChange("has_expiry_date", false);
+                  onFieldChange('is_medicine', false);
+                  onFieldChange('has_expiry_date', false);
                 }
               }}
               options={[
-                { id: "obat", name: "Obat" },
-                { id: "non-obat", name: "Non-Obat" },
+                { id: 'obat', name: 'Obat' },
+                { id: 'non-obat', name: 'Non-Obat' },
               ]}
               withRadio
               searchList={false}
@@ -133,7 +142,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 name="category_id"
                 tabIndex={5}
                 value={formData.category_id}
-                onChange={(value) => onDropdownChange("category_id", value)}
+                onChange={value => onDropdownChange('category_id', value)}
                 options={categories}
                 placeholder="Pilih Kategori"
                 required
@@ -154,7 +163,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 name="type_id"
                 tabIndex={6}
                 value={formData.type_id}
-                onChange={(value) => onDropdownChange("type_id", value)}
+                onChange={value => onDropdownChange('type_id', value)}
                 options={types}
                 placeholder="Pilih Jenis"
                 required
@@ -175,7 +184,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 name="unit_id"
                 tabIndex={7}
                 value={formData.unit_id}
-                onChange={(value) => onDropdownChange("unit_id", value)}
+                onChange={value => onDropdownChange('unit_id', value)}
                 options={units}
                 placeholder="Pilih Satuan"
                 required
@@ -196,7 +205,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 name="dosage_id"
                 tabIndex={8}
                 value={formData.dosage_id}
-                onChange={(value) => onDropdownChange("dosage_id", value)}
+                onChange={value => onDropdownChange('dosage_id', value)}
                 options={dosages}
                 placeholder="Pilih Sediaan"
                 required
@@ -226,6 +235,6 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
   }
 );
 
-ItemBasicInfoForm.displayName = "ItemBasicInfoForm";
+ItemBasicInfoForm.displayName = 'ItemBasicInfoForm';
 
 export default ItemBasicInfoForm;

@@ -4,8 +4,8 @@ import { itemsService } from '@/services/api/items.service';
 import type { DBItem, DBUnitConversion } from '@/types/database';
 
 // Item Query Hooks
-export const useItems = (options?: { 
-  enabled?: boolean; 
+export const useItems = (options?: {
+  enabled?: boolean;
   filters?: Record<string, unknown>;
   orderBy?: { column: string; ascending?: boolean };
 }) => {
@@ -14,7 +14,7 @@ export const useItems = (options?: {
     queryFn: async () => {
       const result = await itemsService.getAll({
         filters: options?.filters,
-        orderBy: options?.orderBy || { column: 'name', ascending: true }
+        orderBy: options?.orderBy || { column: 'name', ascending: true },
       });
       if (result.error) throw result.error;
       return result.data;
@@ -39,16 +39,19 @@ export const useItem = (id: string, options?: { enabled?: boolean }) => {
   });
 };
 
-export const useSearchItems = (query: string, options?: { 
-  enabled?: boolean;
-  filters?: Record<string, unknown>;
-}) => {
+export const useSearchItems = (
+  query: string,
+  options?: {
+    enabled?: boolean;
+    filters?: Record<string, unknown>;
+  }
+) => {
   return useQuery({
     queryKey: QueryKeys.items.search(query, options?.filters),
     queryFn: async () => {
       const result = await itemsService.searchItems(query, {
         filters: options?.filters,
-        orderBy: { column: 'name', ascending: true }
+        orderBy: { column: 'name', ascending: true },
       });
       if (result.error) throw result.error;
       return result.data;
@@ -57,7 +60,10 @@ export const useSearchItems = (query: string, options?: {
   });
 };
 
-export const useItemsByCategory = (categoryId: string, options?: { enabled?: boolean }) => {
+export const useItemsByCategory = (
+  categoryId: string,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: ['items', 'byCategory', categoryId],
     queryFn: async () => {
@@ -71,7 +77,10 @@ export const useItemsByCategory = (categoryId: string, options?: { enabled?: boo
   });
 };
 
-export const useItemsByType = (typeId: string, options?: { enabled?: boolean }) => {
+export const useItemsByType = (
+  typeId: string,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: ['items', 'byType', typeId],
     queryFn: async () => {
@@ -85,7 +94,10 @@ export const useItemsByType = (typeId: string, options?: { enabled?: boolean }) 
   });
 };
 
-export const useLowStockItems = (threshold: number = 10, options?: { enabled?: boolean }) => {
+export const useLowStockItems = (
+  threshold: number = 10,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: ['items', 'lowStock', threshold],
     queryFn: async () => {
@@ -104,15 +116,23 @@ export const useItemMutations = () => {
   const queryClient = useQueryClient();
 
   const createItem = useMutation({
-    mutationFn: async ({ 
-      itemData, 
-      unitConversions 
-    }: { 
+    mutationFn: async ({
+      itemData,
+      unitConversions,
+    }: {
       itemData: Omit<DBItem, 'id' | 'created_at' | 'updated_at'>;
       unitConversions?: DBUnitConversion[];
     }) => {
-      console.log(`🚀 CREATE ITEM CALLED with itemData:`, itemData, `unitConversions:`, unitConversions);
-      const result = await itemsService.createItemWithConversions(itemData, unitConversions);
+      console.log(
+        `🚀 CREATE ITEM CALLED with itemData:`,
+        itemData,
+        `unitConversions:`,
+        unitConversions
+      );
+      const result = await itemsService.createItemWithConversions(
+        itemData,
+        unitConversions
+      );
       console.log(`📝 CREATE ITEM API result:`, result);
       if (result.error) {
         console.error(`❌ CREATE ITEM failed:`, result.error);
@@ -121,9 +141,9 @@ export const useItemMutations = () => {
       console.log(`✅ CREATE ITEM API success, returning:`, result.data);
       return result.data;
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       console.log(`🎉 CREATE ITEM SUCCESS! Data:`, data);
-      
+
       // Local cache update
       console.log(`💾 Updating local cache...`);
       const keysToInvalidate = getInvalidationKeys.items.all();
@@ -132,27 +152,35 @@ export const useItemMutations = () => {
         queryClient.refetchQueries({ queryKey: keySet });
       });
       console.log(`✅ Local cache updated`);
-      
     },
   });
 
   const updateItem = useMutation({
-    mutationFn: async ({ 
-      id, 
-      itemData, 
-      unitConversions 
-    }: { 
+    mutationFn: async ({
+      id,
+      itemData,
+      unitConversions,
+    }: {
       id: string;
       itemData: Partial<Omit<DBItem, 'id' | 'created_at'>>;
       unitConversions?: DBUnitConversion[];
     }) => {
-      const result = await itemsService.updateItemWithConversions(id, itemData, unitConversions);
+      const result = await itemsService.updateItemWithConversions(
+        id,
+        itemData,
+        unitConversions
+      );
       if (result.error) throw result.error;
       return result.data;
     },
     onSuccess: (data, variables) => {
-      console.log(`🎉 UPDATE ITEM SUCCESS! Data:`, data, `Variables:`, variables);
-      
+      console.log(
+        `🎉 UPDATE ITEM SUCCESS! Data:`,
+        data,
+        `Variables:`,
+        variables
+      );
+
       // Local cache update
       console.log(`💾 Updating local cache...`);
       const keysToInvalidate = getInvalidationKeys.items.all();
@@ -160,9 +188,10 @@ export const useItemMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
         queryClient.refetchQueries({ queryKey: keySet });
       });
-      queryClient.invalidateQueries({ queryKey: QueryKeys.items.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.items.detail(variables.id),
+      });
       console.log(`✅ Local cache updated`);
-      
     },
   });
 
@@ -179,7 +208,6 @@ export const useItemMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
         queryClient.refetchQueries({ queryKey: keySet });
       });
-      
     },
   });
 
@@ -190,8 +218,12 @@ export const useItemMutations = () => {
       return result.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.items.all() });
-      queryClient.invalidateQueries({ queryKey: QueryKeys.items.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.items.all(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.items.detail(variables.id),
+      });
     },
   });
 
@@ -202,7 +234,9 @@ export const useItemMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.items.all() });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.items.all(),
+      });
     },
   });
 
@@ -216,7 +250,11 @@ export const useItemMutations = () => {
 };
 
 // Validation Hooks
-export const useCheckCodeUniqueness = (code: string, excludeId?: string, options?: { enabled?: boolean }) => {
+export const useCheckCodeUniqueness = (
+  code: string,
+  excludeId?: string,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: ['items', 'checkCode', code, excludeId],
     queryFn: () => itemsService.isCodeUnique(code, excludeId),
@@ -224,7 +262,11 @@ export const useCheckCodeUniqueness = (code: string, excludeId?: string, options
   });
 };
 
-export const useCheckBarcodeUniqueness = (barcode: string, excludeId?: string, options?: { enabled?: boolean }) => {
+export const useCheckBarcodeUniqueness = (
+  barcode: string,
+  excludeId?: string,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: ['items', 'checkBarcode', barcode, excludeId],
     queryFn: () => itemsService.isBarcodeUnique(barcode, excludeId),

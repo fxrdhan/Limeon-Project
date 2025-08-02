@@ -1,5 +1,5 @@
-import Button from "@/components/button";
-import Loading from "@/components/loading";
+import Button from '@/components/button';
+import Loading from '@/components/loading';
 
 import {
   Card,
@@ -7,7 +7,7 @@ import {
   CardTitle,
   CardContent,
   CardFooter,
-} from "@/components/card";
+} from '@/components/card';
 import {
   Table,
   TableHead,
@@ -15,21 +15,21 @@ import {
   TableRow,
   TableCell,
   TableHeader,
-} from "@/components/table";
-import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { FaArrowLeft, FaCheck, FaClock, FaRedo } from "react-icons/fa";
+} from '@/components/table';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { FaArrowLeft, FaCheck, FaClock, FaRedo } from 'react-icons/fa';
 import {
   saveInvoiceToDatabase,
   regenerateInvoiceData,
-} from "@/services/invoiceExtractor";
-import type { ExtractedInvoiceData } from "@/types";
+} from '@/services/invoiceExtractor';
+import type { ExtractedInvoiceData } from '@/types';
 
 const ConfirmInvoicePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [invoiceData, setInvoiceData] = useState<ExtractedInvoiceData | null>(
-    null,
+    null
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -48,21 +48,21 @@ const ConfirmInvoicePage = () => {
       }
     } else {
       console.warn(
-        "Tidak ada data faktur yang diterima. Kembali ke halaman purchase list.",
+        'Tidak ada data faktur yang diterima. Kembali ke halaman purchase list.'
       );
-      navigate("/purchases");
+      navigate('/purchases');
     }
   }, [location.state, navigate]);
 
   const formatCurrency = (
     value: number | string | undefined | null,
-    prefix = "",
+    prefix = ''
   ) => {
-    if (value === null || value === undefined) return "-";
-    const numValue = typeof value === "string" ? parseFloat(value) : value;
-    if (isNaN(numValue)) return "-";
+    if (value === null || value === undefined) return '-';
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(numValue)) return '-';
 
-    const formatter = new Intl.NumberFormat("id-ID", {
+    const formatter = new Intl.NumberFormat('id-ID', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
@@ -72,7 +72,7 @@ const ConfirmInvoicePage = () => {
   const handleRegenerate = async () => {
     if (!imageIdentifier) {
       setError(
-        "Tidak dapat memproses ulang: Identifier gambar tidak ditemukan.",
+        'Tidak dapat memproses ulang: Identifier gambar tidak ditemukan.'
       );
       return;
     }
@@ -86,11 +86,9 @@ const ConfirmInvoicePage = () => {
       setProcessingTime(newProcessingTime.toFixed(1));
     } catch (err: unknown) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Gagal memproses ulang data faktur",
+        err instanceof Error ? err.message : 'Gagal memproses ulang data faktur'
       );
-      console.error("Error regenerating invoice:", err);
+      console.error('Error regenerating invoice:', err);
     } finally {
       setIsRegenerating(false);
     }
@@ -102,13 +100,13 @@ const ConfirmInvoicePage = () => {
       setIsSaving(true);
       setError(null);
       await saveInvoiceToDatabase(invoiceData, imageIdentifier);
-      alert("Faktur berhasil disimpan!");
-      navigate("/purchases");
+      alert('Faktur berhasil disimpan!');
+      navigate('/purchases');
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : "Gagal menyimpan data faktur",
+        err instanceof Error ? err.message : 'Gagal menyimpan data faktur'
       );
-      console.error("Error saving invoice:", err);
+      console.error('Error saving invoice:', err);
     } finally {
       setIsSaving(false);
     }
@@ -120,12 +118,12 @@ const ConfirmInvoicePage = () => {
 
   const renderField = (
     label: string,
-    value: string | number | undefined | null,
+    value: string | number | undefined | null
   ) => {
-    const displayValue = value ?? "-";
+    const displayValue = value ?? '-';
     return (
       <div className="mb-2">
-        <span className="font-medium text-gray-600">{label}:</span>{" "}
+        <span className="font-medium text-gray-600">{label}:</span>{' '}
         <span className="text-gray-800">{displayValue}</span>
       </div>
     );
@@ -133,21 +131,21 @@ const ConfirmInvoicePage = () => {
 
   const renderProductField = (
     value: string | number | undefined | null | boolean,
-    isDiscount = false,
+    isDiscount = false
   ) => {
-    const displayValue = value ?? "-";
-    return isDiscount && displayValue !== "-"
+    const displayValue = value ?? '-';
+    return isDiscount && displayValue !== '-'
       ? `${displayValue}%`
       : displayValue.toLocaleString();
   };
 
   const renderCurrencyField = (
     label: string,
-    value: number | string | undefined | null,
+    value: number | string | undefined | null
   ) => {
     return (
       <div className="mb-2">
-        <span className="font-medium text-gray-600">{label}:</span>{" "}
+        <span className="font-medium text-gray-600">{label}:</span>{' '}
         <span className="text-gray-800">Rp {formatCurrency(value)}</span>
       </div>
     );
@@ -218,10 +216,10 @@ const ConfirmInvoicePage = () => {
                 <SectionTitle number="1" title="Informasi Perusahaan" />
                 <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
                   <div className="space-y-1 text-sm">
-                    {renderField("Nama", invoiceData.company_details?.name)}
+                    {renderField('Nama', invoiceData.company_details?.name)}
                     {renderField(
-                      "Alamat",
-                      invoiceData.company_details?.address,
+                      'Alamat',
+                      invoiceData.company_details?.address
                     )}
                   </div>
                 </div>
@@ -231,16 +229,16 @@ const ConfirmInvoicePage = () => {
                 <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
                   <div className="space-y-1 text-sm">
                     {renderField(
-                      "No. Faktur",
-                      invoiceData.invoice_information?.invoice_number,
+                      'No. Faktur',
+                      invoiceData.invoice_information?.invoice_number
                     )}
                     {renderField(
-                      "Tanggal",
-                      invoiceData.invoice_information?.invoice_date,
+                      'Tanggal',
+                      invoiceData.invoice_information?.invoice_date
                     )}
                     {renderField(
-                      "Jatuh Tempo",
-                      invoiceData.invoice_information?.due_date,
+                      'Jatuh Tempo',
+                      invoiceData.invoice_information?.due_date
                     )}
                   </div>
                 </div>
@@ -251,12 +249,12 @@ const ConfirmInvoicePage = () => {
               <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
                 <div className="space-y-1 text-sm">
                   {renderField(
-                    "Nama",
-                    invoiceData.customer_information?.customer_name,
+                    'Nama',
+                    invoiceData.customer_information?.customer_name
                   )}
                   {renderField(
-                    "Alamat",
-                    invoiceData.customer_information?.customer_address,
+                    'Alamat',
+                    invoiceData.customer_information?.customer_address
                   )}
                 </div>
               </div>
@@ -266,15 +264,50 @@ const ConfirmInvoicePage = () => {
               <Table
                 autoSize={true}
                 columns={[
-                  { key: "sku", header: "SKU", minWidth: 100 },
-                  { key: "product_name", header: "Nama Produk", minWidth: 200 },
-                  { key: "quantity", header: "Qty", minWidth: 60, align: "center" },
-                  { key: "unit", header: "Satuan", minWidth: 80, align: "center" },
-                  { key: "batch_number", header: "No. Batch", minWidth: 100, align: "center" },
-                  { key: "expiry_date", header: "Exp", minWidth: 100, align: "center" },
-                  { key: "unit_price", header: "Harga", minWidth: 80, align: "right" },
-                  { key: "discount", header: "Disk", minWidth: 70, align: "right" },
-                  { key: "total_price", header: "Total", minWidth: 100, align: "right" },
+                  { key: 'sku', header: 'SKU', minWidth: 100 },
+                  { key: 'product_name', header: 'Nama Produk', minWidth: 200 },
+                  {
+                    key: 'quantity',
+                    header: 'Qty',
+                    minWidth: 60,
+                    align: 'center',
+                  },
+                  {
+                    key: 'unit',
+                    header: 'Satuan',
+                    minWidth: 80,
+                    align: 'center',
+                  },
+                  {
+                    key: 'batch_number',
+                    header: 'No. Batch',
+                    minWidth: 100,
+                    align: 'center',
+                  },
+                  {
+                    key: 'expiry_date',
+                    header: 'Exp',
+                    minWidth: 100,
+                    align: 'center',
+                  },
+                  {
+                    key: 'unit_price',
+                    header: 'Harga',
+                    minWidth: 80,
+                    align: 'right',
+                  },
+                  {
+                    key: 'discount',
+                    header: 'Disk',
+                    minWidth: 70,
+                    align: 'right',
+                  },
+                  {
+                    key: 'total_price',
+                    header: 'Total',
+                    minWidth: 100,
+                    align: 'right',
+                  },
                 ]}
                 data={invoiceData.product_list ?? []}
               >
@@ -282,13 +315,27 @@ const ConfirmInvoicePage = () => {
                   <TableRow>
                     <TableHeader className="text-xs">SKU</TableHeader>
                     <TableHeader className="text-xs">Nama Produk</TableHeader>
-                    <TableHeader className="text-xs text-center">Qty</TableHeader>
-                    <TableHeader className="text-xs text-center">Satuan</TableHeader>
-                    <TableHeader className="text-xs text-center">No. Batch</TableHeader>
-                    <TableHeader className="text-xs text-center">Exp</TableHeader>
-                    <TableHeader className="text-xs text-right">Harga</TableHeader>
-                    <TableHeader className="text-xs text-right">Disk</TableHeader>
-                    <TableHeader className="text-xs text-right">Total</TableHeader>
+                    <TableHeader className="text-xs text-center">
+                      Qty
+                    </TableHeader>
+                    <TableHeader className="text-xs text-center">
+                      Satuan
+                    </TableHeader>
+                    <TableHeader className="text-xs text-center">
+                      No. Batch
+                    </TableHeader>
+                    <TableHeader className="text-xs text-center">
+                      Exp
+                    </TableHeader>
+                    <TableHeader className="text-xs text-right">
+                      Harga
+                    </TableHeader>
+                    <TableHeader className="text-xs text-right">
+                      Disk
+                    </TableHeader>
+                    <TableHeader className="text-xs text-right">
+                      Total
+                    </TableHeader>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -329,7 +376,7 @@ const ConfirmInvoicePage = () => {
                           {renderProductField(product.total_price)}
                         </TableCell>
                       </TableRow>
-                    ),
+                    )
                   )}
                 </TableBody>
               </Table>
@@ -340,8 +387,8 @@ const ConfirmInvoicePage = () => {
                 <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
                   <div className="space-y-1 text-sm">
                     {renderField(
-                      "Diperiksa oleh",
-                      invoiceData.additional_information?.checked_by,
+                      'Diperiksa oleh',
+                      invoiceData.additional_information?.checked_by
                     )}
                   </div>
                 </div>
@@ -351,19 +398,19 @@ const ConfirmInvoicePage = () => {
                 <div className="border rounded-md p-4 hover:shadow-md transition-shadow">
                   <div className="space-y-1 text-sm">
                     {renderCurrencyField(
-                      "Total Harga",
-                      invoiceData.payment_summary?.total_price,
+                      'Total Harga',
+                      invoiceData.payment_summary?.total_price
                     )}
                     {renderCurrencyField(
-                      "PPN",
-                      invoiceData.payment_summary?.vat,
+                      'PPN',
+                      invoiceData.payment_summary?.vat
                     )}
                     <p className="font-medium text-base">
                       Total Faktur:
                       <span className="text-blue-600 ml-2">
-                        Rp{" "}
+                        Rp{' '}
                         {formatCurrency(
-                          invoiceData.payment_summary?.invoice_total,
+                          invoiceData.payment_summary?.invoice_total
                         )}
                       </span>
                     </p>
@@ -378,7 +425,7 @@ const ConfirmInvoicePage = () => {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => navigate("/purchases")}
+          onClick={() => navigate('/purchases')}
         >
           <span className="flex items-center">
             <FaArrowLeft className="mr-2" />

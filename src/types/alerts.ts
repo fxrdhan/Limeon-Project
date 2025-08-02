@@ -1,13 +1,13 @@
-import React from "react";
+import React from 'react';
 
 // Alert system types
 export type AlertType =
-  | "success"
-  | "error"
-  | "warning"
-  | "info"
-  | "offline"
-  | "online";
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'info'
+  | 'offline'
+  | 'online';
 
 export interface AlertMessage {
   id: string;
@@ -23,7 +23,7 @@ export interface AlertContextType {
   addAlert: (
     message: string,
     type: AlertType,
-    options?: { duration?: number; icon?: React.ReactNode },
+    options?: { duration?: number; icon?: React.ReactNode }
   ) => void;
   removeAlert: (id: string) => void;
 }
@@ -35,18 +35,18 @@ export interface AlertItemProps extends AlertMessage {
 export interface AlertHook {
   success: (
     message: string,
-    options?: { duration?: number; icon?: React.ReactNode },
+    options?: { duration?: number; icon?: React.ReactNode }
   ) => void;
   error: (
     message: string,
-    options?: { duration?: number; icon?: React.ReactNode },
+    options?: { duration?: number; icon?: React.ReactNode }
   ) => void;
   warning: (
     message: string,
-    options?: { duration?: number; icon?: React.ReactNode },
+    options?: { duration?: number; icon?: React.ReactNode }
   ) => void;
   info: (
     message: string,
-    options?: { duration?: number; icon?: React.ReactNode },
+    options?: { duration?: number; icon?: React.ReactNode }
   ) => void;
 }

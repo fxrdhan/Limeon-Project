@@ -1,14 +1,14 @@
-import React from "react";
-import { AnimatePresence } from "framer-motion";
-import { ValidationOverlayProps } from "./types";
-import { DEFAULT_AUTO_HIDE_DELAY } from "./constants";
-import { useOverlayPosition } from "./hooks/useOverlayPosition";
-import { useOverlayVisibility } from "./hooks/useOverlayVisibility";
-import { useAutoHide } from "./hooks/useAutoHide";
-import ValidationPortal from "./components/ValidationPortal";
-import ValidationOverlayContent from "./components/ValidationOverlayContent";
+import React from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { ValidationOverlayProps } from './types';
+import { DEFAULT_AUTO_HIDE_DELAY } from './constants';
+import { useOverlayPosition } from './hooks/useOverlayPosition';
+import { useOverlayVisibility } from './hooks/useOverlayVisibility';
+import { useAutoHide } from './hooks/useAutoHide';
+import ValidationPortal from './components/ValidationPortal';
+import ValidationOverlayContent from './components/ValidationOverlayContent';
 
-export type { ValidationOverlayProps } from "./types";
+export type { ValidationOverlayProps } from './types';
 
 const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
   error,
@@ -55,10 +55,7 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
     <ValidationPortal>
       <AnimatePresence>
         {showOverlay && (
-          <ValidationOverlayContent
-            error={error}
-            position={position}
-          />
+          <ValidationOverlayContent error={error} position={position} />
         )}
       </AnimatePresence>
     </ValidationPortal>

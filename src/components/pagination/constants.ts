@@ -15,29 +15,29 @@ export const PAGINATION_CONSTANTS = {
     FLOATING_SPRING_STIFFNESS: 400,
     FLOATING_SPRING_DAMPING: 25,
   },
-  
+
   // Intersection Observer settings
   FLOATING: {
     THRESHOLD: 0.5,
-    ROOT_MARGIN: "0px",
-    MIN_WIDTH: "400px",
+    ROOT_MARGIN: '0px',
+    MIN_WIDTH: '400px',
     Z_INDEX: 9998,
   },
-  
+
   // Page sizes
   PAGE_SIZES: [10, 20, 50, 100] as const,
-  
+
   // Styling
   STYLES: {
-    FLOATING_BACKGROUND: "oklch(1 0 57 / 30%)",
-    BACKDROP_FILTER: "blur(4px)",
-    WEBKIT_BACKDROP_FILTER: "blur(4px)",
-    BORDER_RADIUS: "9999px",
+    FLOATING_BACKGROUND: 'oklch(1 0 57 / 30%)',
+    BACKDROP_FILTER: 'blur(4px)',
+    WEBKIT_BACKDROP_FILTER: 'blur(4px)',
+    BORDER_RADIUS: '9999px',
   },
-  
+
   // Aria labels
   ARIA_LABELS: {
-    PREVIOUS_PAGE: "Halaman sebelumnya",
-    NEXT_PAGE: "Halaman berikutnya",
+    PREVIOUS_PAGE: 'Halaman sebelumnya',
+    NEXT_PAGE: 'Halaman berikutnya',
   },
 } as const;

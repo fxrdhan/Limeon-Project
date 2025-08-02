@@ -5,13 +5,13 @@ import React, {
   useCallback,
   forwardRef,
   useImperativeHandle,
-} from "react";
-import { createPortal } from "react-dom";
-import { FaPlus } from "react-icons/fa";
-import Button from "@/components/button";
-import { SearchBar } from "@/components/search-bar";
-import type { ItemSearchBarProps, Item, ItemSearchBarRef } from "@/types";
-import classNames from "classnames";
+} from 'react';
+import { createPortal } from 'react-dom';
+import { FaPlus } from 'react-icons/fa';
+import Button from '@/components/button';
+import { SearchBar } from '@/components/search-bar';
+import type { ItemSearchBarProps, Item, ItemSearchBarRef } from '@/types';
+import classNames from 'classnames';
 
 const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
   (
@@ -24,13 +24,13 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
       onOpenAddItemPortal,
       isAddItemButtonDisabled = true,
     },
-    ref,
+    ref
   ) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [applyOpenStyles, setApplyOpenStyles] = useState(false);
     const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
-    const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
+    const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
     const searchBarRef = useRef<HTMLDivElement>(null);
@@ -49,10 +49,10 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
       const shouldDropUp =
         spaceBelow < dropdownActualHeight + 10 &&
         inputRect.top > dropdownActualHeight + 10;
-      setDropDirection(shouldDropUp ? "up" : "down");
+      setDropDirection(shouldDropUp ? 'up' : 'down');
 
       const newMenuStyle: React.CSSProperties = {
-        position: "fixed",
+        position: 'fixed',
         left: `${inputRect.left}px`,
         width: `${inputRect.width}px`,
         zIndex: 1050,
@@ -156,9 +156,9 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
           closeDropdown();
         }
       };
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
       return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener('mousedown', handleClickOutside);
         if (currentOpenTimeout) clearTimeout(currentOpenTimeout);
       };
     }, [isOpen, closeDropdown, searchBarRef, itemDropdownRef]);
@@ -202,20 +202,20 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
     };
 
     const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         if (highlightedIndex >= 0 && highlightedIndex < filteredItems.length) {
           handleItemSelect(filteredItems[highlightedIndex]);
           closeDropdown();
         } else if (
           filteredItems.length === 0 &&
-          searchItem.trim() !== "" &&
+          searchItem.trim() !== '' &&
           !isAddItemButtonDisabled
         ) {
           // Open add item portal directly when no items found and Enter is pressed
           onOpenAddItemPortal();
         }
-      } else if (e.key === "ArrowDown") {
+      } else if (e.key === 'ArrowDown') {
         e.preventDefault();
         if (isOpen && filteredItems.length > 0) {
           const newIndex =
@@ -225,7 +225,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
           setHighlightedIndex(newIndex);
           scrollToHighlightedItem(newIndex);
         }
-      } else if (e.key === "ArrowUp") {
+      } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         if (isOpen && filteredItems.length > 0) {
           const newIndex =
@@ -235,18 +235,18 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
           setHighlightedIndex(newIndex);
           scrollToHighlightedItem(newIndex);
         }
-      } else if (e.key === "PageDown") {
+      } else if (e.key === 'PageDown') {
         e.preventDefault();
         if (isOpen && filteredItems.length > 0) {
           const pageSize = 5;
           const newIndex = Math.min(
             highlightedIndex + pageSize,
-            filteredItems.length - 1,
+            filteredItems.length - 1
           );
           setHighlightedIndex(newIndex);
           scrollToHighlightedItem(newIndex);
         }
-      } else if (e.key === "PageUp") {
+      } else if (e.key === 'PageUp') {
         e.preventDefault();
         if (isOpen && filteredItems.length > 0) {
           const pageSize = 5;
@@ -254,7 +254,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
           setHighlightedIndex(newIndex);
           scrollToHighlightedItem(newIndex);
         }
-      } else if (e.key === "Escape") {
+      } else if (e.key === 'Escape') {
         if (isOpen) {
           closeDropdown();
         }
@@ -262,12 +262,12 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
     };
 
     const handleAddItemButtonKeyDown = (
-      e: React.KeyboardEvent<HTMLButtonElement>,
+      e: React.KeyboardEvent<HTMLButtonElement>
     ) => {
-      if (e.key === "Enter" && !isAddItemButtonDisabled) {
+      if (e.key === 'Enter' && !isAddItemButtonDisabled) {
         e.preventDefault();
         onOpenAddItemPortal();
-      } else if (e.key === "Escape") {
+      } else if (e.key === 'Escape') {
         // Return focus to input when Escape is pressed
         inputRef.current?.focus();
       }
@@ -280,7 +280,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
           inputRef.current?.focus();
         },
       }),
-      [],
+      []
     );
 
     return (
@@ -311,12 +311,12 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
               className="mb-0"
               searchState={
                 filteredItems.length === 0 && searchItem
-                  ? "not-found"
+                  ? 'not-found'
                   : filteredItems.length > 0
-                    ? "found"
+                    ? 'found'
                     : searchItem
-                      ? "typing"
-                      : "idle"
+                      ? 'typing'
+                      : 'idle'
               }
               onKeyDown={handleInputKeyDown}
               onFocus={handleInputFocus}
@@ -330,16 +330,25 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                   ref={itemDropdownRef}
                   style={portalStyle}
                   className={classNames(
-                    "bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto",
-                    "transition-all duration-200 ease-out",
+                    'bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-y-auto',
+                    'transition-all duration-200 ease-out',
                     {
-                      "origin-top": dropDirection === "down",
-                      "origin-bottom": dropDirection === "up",
-                      "opacity-0 scale-y-95": isClosing || (!isOpen || !applyOpenStyles),
-                      "opacity-100 scale-y-100": isOpen && applyOpenStyles && !isClosing,
-                      "translate-y-1": !isClosing && (!isOpen || !applyOpenStyles) && dropDirection === "down",
-                      "-translate-y-1": !isClosing && (!isOpen || !applyOpenStyles) && dropDirection === "up",
-                      "pointer-events-none": !isClosing && (!isOpen || !applyOpenStyles)
+                      'origin-top': dropDirection === 'down',
+                      'origin-bottom': dropDirection === 'up',
+                      'opacity-0 scale-y-95':
+                        isClosing || !isOpen || !applyOpenStyles,
+                      'opacity-100 scale-y-100':
+                        isOpen && applyOpenStyles && !isClosing,
+                      'translate-y-1':
+                        !isClosing &&
+                        (!isOpen || !applyOpenStyles) &&
+                        dropDirection === 'down',
+                      '-translate-y-1':
+                        !isClosing &&
+                        (!isOpen || !applyOpenStyles) &&
+                        dropDirection === 'up',
+                      'pointer-events-none':
+                        !isClosing && (!isOpen || !applyOpenStyles),
                     }
                   )}
                   onMouseEnter={() => {
@@ -359,31 +368,32 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                           index === highlightedIndex ? highlightedItemRef : null
                         }
                         className={classNames(
-                          "p-3 cursor-pointer text-sm transition-colors duration-150",
+                          'p-3 cursor-pointer text-sm transition-colors duration-150',
                           {
-                            "bg-primary/10 border-l-4 border-primary": index === highlightedIndex,
-                            "hover:bg-gray-100": index !== highlightedIndex
+                            'bg-primary/10 border-l-4 border-primary':
+                              index === highlightedIndex,
+                            'hover:bg-gray-100': index !== highlightedIndex,
                           }
                         )}
                         onClick={() => handleItemSelect(item)}
                         onMouseEnter={() => setHighlightedIndex(index)}
                       >
                         <div>
-                          <span className="font-semibold">{item.code}</span> -{" "}
+                          <span className="font-semibold">{item.code}</span> -{' '}
                           {item.name}
                         </div>
                         <div className="text-xs text-gray-500">
-                          Harga:{" "}
-                          {item.base_price.toLocaleString("id-ID", {
-                            style: "currency",
-                            currency: "IDR",
+                          Harga:{' '}
+                          {item.base_price.toLocaleString('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
                           })}
                         </div>
                       </div>
                     ))
                   )}
                 </div>,
-                document.body,
+                document.body
               )}
           </div>
           <Button
@@ -401,7 +411,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
         </div>
       </div>
     );
-  },
+  }
 );
 
 export default ItemSearchBar;

@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
@@ -14,7 +14,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      "X-Client-Info": "apotek-klinik-app",
+      'X-Client-Info': 'apotek-klinik-app',
     },
   },
   auth: {
@@ -22,7 +22,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
   },
   db: {
-    schema: "public",
+    schema: 'public',
   },
 });
 
@@ -32,13 +32,15 @@ let connectionHealthCheck: NodeJS.Timeout | null = null;
 // Monitor connection health and attempt reconnection if needed
 const startConnectionHealthCheck = () => {
   if (connectionHealthCheck) return;
-  
+
   connectionHealthCheck = setInterval(async () => {
     try {
       // Simple health check by testing connection
       const { error } = await supabase.from('users').select('count').limit(1);
       if (error && error.message.includes('network')) {
-        console.warn('🔍 Network issue detected, realtime may need reconnection');
+        console.warn(
+          '🔍 Network issue detected, realtime may need reconnection'
+        );
       }
     } catch (err) {
       console.warn('🔍 Connection health check failed:', err);
@@ -63,7 +65,7 @@ if (typeof window !== 'undefined') {
       }
     }
   });
-  
+
   // Start health check when page loads
   startConnectionHealthCheck();
 }
@@ -80,7 +82,7 @@ if (import.meta.env.DEV) {
         }
         supabase.removeAllChannels();
       } catch (error) {
-        console.warn("Error cleaning up Supabase channels:", error);
+        console.warn('Error cleaning up Supabase channels:', error);
       }
     });
   }

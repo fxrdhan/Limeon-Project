@@ -1,5 +1,5 @@
-import { createPortal } from "react-dom";
-import { ValidationPortalProps } from "../types";
+import { createPortal } from 'react-dom';
+import { ValidationPortalProps } from '../types';
 
 const ValidationPortal: React.FC<ValidationPortalProps> = ({ children }) => {
   return createPortal(children, document.body);

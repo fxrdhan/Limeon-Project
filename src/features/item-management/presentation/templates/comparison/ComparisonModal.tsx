@@ -1,13 +1,13 @@
-import React from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import { FaExchangeAlt } from "react-icons/fa";
-import Button from "@/components/button";
-import Input from "@/components/input";
-import DescriptiveTextarea from "@/components/descriptive-textarea";
-import { DiffText } from "../../molecules";
-import { useEntityModal } from "../../../shared/contexts/EntityModalContext";
-import type { VersionData } from "../../../shared/types";
+import React from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { FaExchangeAlt } from 'react-icons/fa';
+import Button from '@/components/button';
+import Input from '@/components/input';
+import DescriptiveTextarea from '@/components/descriptive-textarea';
+import { DiffText } from '../../molecules';
+import { useEntityModal } from '../../../shared/contexts/EntityModalContext';
+import type { VersionData } from '../../../shared/types';
 
 interface ComparisonModalProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ interface ComparisonModalProps {
   entityName: string;
   selectedVersion?: VersionData;
   currentData: {
+    kode?: string;
     name: string;
     description: string;
   };
@@ -55,10 +56,12 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
       const versionAData = versionA.entity_data;
       const versionBData = versionB.entity_data;
       return {
-        originalLeftName: String(versionAData?.name || ""),
-        originalLeftDescription: String(versionAData?.description || ""),
-        originalRightName: String(versionBData?.name || ""),
-        originalRightDescription: String(versionBData?.description || ""),
+        originalLeftKode: String(versionAData?.kode || ''),
+        originalLeftName: String(versionAData?.name || ''),
+        originalLeftDescription: String(versionAData?.description || ''),
+        originalRightKode: String(versionBData?.kode || ''),
+        originalRightName: String(versionBData?.name || ''),
+        originalRightDescription: String(versionBData?.description || ''),
       };
     }
     return null;
@@ -72,12 +75,16 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
       const versionAData = effectiveVersionA?.entity_data;
       const versionBData = effectiveVersionB?.entity_data;
       return {
-        leftName: String(versionAData?.name || ""),
-        leftDescription: String(versionAData?.description || ""),
-        rightName: String(versionBData?.name || ""),
-        rightDescription: String(versionBData?.description || ""),
+        leftKode: String(versionAData?.kode || ''),
+        leftName: String(versionAData?.name || ''),
+        leftDescription: String(versionAData?.description || ''),
+        rightKode: String(versionBData?.kode || ''),
+        rightName: String(versionBData?.name || ''),
+        rightDescription: String(versionBData?.description || ''),
         leftVersion: effectiveVersionA,
         rightVersion: effectiveVersionB,
+        isKodeDifferent:
+          versionA.entity_data?.kode !== versionB.entity_data?.kode,
         isNameDifferent:
           versionA.entity_data?.name !== versionB.entity_data?.name,
         isDescriptionDifferent:
@@ -86,15 +93,19 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
       };
     } else if (selectedVersion) {
       const versionData = selectedVersion.entity_data;
-      const versionName = String(versionData?.name || "");
-      const versionDescription = String(versionData?.description || "");
+      const versionKode = String(versionData?.kode || '');
+      const versionName = String(versionData?.name || '');
+      const versionDescription = String(versionData?.description || '');
       return {
+        leftKode: versionKode,
         leftName: versionName,
         leftDescription: versionDescription,
+        rightKode: currentData.kode || '',
         rightName: currentData.name,
         rightDescription: currentData.description,
         leftVersion: selectedVersion,
         rightVersion: null,
+        isKodeDifferent: (currentData.kode || '') !== versionKode,
         isNameDifferent: currentData.name !== versionName,
         isDescriptionDifferent: currentData.description !== versionDescription,
       };
@@ -111,14 +122,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
     if (
       confirm(
-        `Yakin ingin mengembalikan data ke versi ${selectedVersion.version_number}?`,
+        `Yakin ingin mengembalikan data ke versi ${selectedVersion.version_number}?`
       )
     ) {
       try {
         await onRestore(selectedVersion.version_number);
         onClose(); // Close modal after successful restore
       } catch (error) {
-        alert("Gagal mengembalikan versi: " + error);
+        alert('Gagal mengembalikan versi: ' + error);
       }
     }
   };
@@ -128,7 +139,9 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
   // Only show restore button if there are actual differences to restore
   const hasDifferences = compData
-    ? compData.isNameDifferent || compData.isDescriptionDifferent
+    ? compData.isKodeDifferent ||
+      compData.isNameDifferent ||
+      compData.isDescriptionDifferent
     : false;
   const shouldShowRestore = canRestore && hasDifferences;
 
@@ -142,7 +155,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{
-            type: "tween",
+            type: 'tween',
             duration: 0.25,
             ease: [0.25, 0.46, 0.45, 0.94], // Custom easing for smooth enter/exit
           }}
@@ -164,26 +177,26 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   <div className="grid grid-cols-5 gap-2 items-center">
                     {/* Left Version */}
                     <div
-                      className={`col-span-2 ${isFlipped ? "bg-purple-50 rounded-lg p-2" : "bg-blue-50 rounded-lg p-2"}`}
+                      className={`col-span-2 ${isFlipped ? 'bg-purple-50 rounded-lg p-2' : 'bg-blue-50 rounded-lg p-2'}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <span
                           className={`font-mono px-1.5 py-0.5 rounded text-xs ${
                             isFlipped
-                              ? "bg-purple-200 text-purple-800"
-                              : "bg-blue-200 text-blue-800"
+                              ? 'bg-purple-200 text-purple-800'
+                              : 'bg-blue-200 text-blue-800'
                           }`}
                         >
                           v{compData.leftVersion?.version_number}
                         </span>
                       </div>
                       <div
-                        className={`text-xs ${isFlipped ? "text-purple-600" : "text-blue-600"}`}
+                        className={`text-xs ${isFlipped ? 'text-purple-600' : 'text-blue-600'}`}
                       >
                         {compData.leftVersion &&
                           new Date(
-                            compData.leftVersion.changed_at,
-                          ).toLocaleString("id-ID")}
+                            compData.leftVersion.changed_at
+                          ).toLocaleString('id-ID')}
                       </div>
                     </div>
 
@@ -200,26 +213,26 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
                     {/* Right Version */}
                     <div
-                      className={`col-span-2 ${isFlipped ? "bg-blue-50 rounded-lg p-2" : "bg-purple-50 rounded-lg p-2"}`}
+                      className={`col-span-2 ${isFlipped ? 'bg-blue-50 rounded-lg p-2' : 'bg-purple-50 rounded-lg p-2'}`}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <span
                           className={`font-mono px-1.5 py-0.5 rounded text-xs ${
                             isFlipped
-                              ? "bg-blue-200 text-blue-800"
-                              : "bg-purple-200 text-purple-800"
+                              ? 'bg-blue-200 text-blue-800'
+                              : 'bg-purple-200 text-purple-800'
                           }`}
                         >
                           v{compData.rightVersion?.version_number}
                         </span>
                       </div>
                       <div
-                        className={`text-xs ${isFlipped ? "text-blue-600" : "text-purple-600"}`}
+                        className={`text-xs ${isFlipped ? 'text-blue-600' : 'text-purple-600'}`}
                       >
                         {compData.rightVersion &&
                           new Date(
-                            compData.rightVersion.changed_at,
-                          ).toLocaleString("id-ID")}
+                            compData.rightVersion.changed_at
+                          ).toLocaleString('id-ID')}
                       </div>
                     </div>
                   </div>
@@ -230,11 +243,11 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   <div className="flex items-center gap-3 text-sm">
                     <span
                       className={`text-xs px-2 py-1 rounded ${
-                        compData.leftVersion?.action_type === "INSERT"
-                          ? "bg-green-100 text-green-700"
-                          : compData.leftVersion?.action_type === "UPDATE"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-red-100 text-red-700"
+                        compData.leftVersion?.action_type === 'INSERT'
+                          ? 'bg-green-100 text-green-700'
+                          : compData.leftVersion?.action_type === 'UPDATE'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-red-100 text-red-700'
                       }`}
                     >
                       {compData.leftVersion?.action_type}
@@ -242,8 +255,8 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                     <span className="text-xs text-gray-600">
                       {compData.leftVersion &&
                         new Date(
-                          compData.leftVersion.changed_at,
-                        ).toLocaleString("id-ID")}
+                          compData.leftVersion.changed_at
+                        ).toLocaleString('id-ID')}
                     </span>
                     <span className="font-mono bg-purple-100 text-purple-700 px-2 py-1 rounded ml-auto">
                       v{compData.leftVersion?.version_number}
@@ -258,6 +271,51 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
               {isDualMode ? (
                 /* Dual Mode Content - Side by Side Comparison */
                 <div className="space-y-4">
+                  {/* Kode Comparison */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Kode
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div
+                        className={`border rounded-lg p-3 ${
+                          isFlipped
+                            ? 'border-purple-200 bg-purple-50'
+                            : 'border-blue-200 bg-blue-50'
+                        }`}
+                      >
+                        <div
+                          className={`text-xs mb-1 font-mono ${isFlipped ? 'text-purple-600' : 'text-blue-600'}`}
+                        >
+                          v{compData.leftVersion?.version_number}
+                        </div>
+                        <div className="text-sm font-mono">
+                          {compData.leftKode || (
+                            <span className="text-gray-400 italic">Empty</span>
+                          )}
+                        </div>
+                      </div>
+                      <div
+                        className={`border rounded-lg p-3 ${
+                          isFlipped
+                            ? 'border-blue-200 bg-blue-50'
+                            : 'border-purple-200 bg-purple-50'
+                        }`}
+                      >
+                        <div
+                          className={`text-xs mb-1 font-mono ${isFlipped ? 'text-blue-600' : 'text-purple-600'}`}
+                        >
+                          v{compData.rightVersion?.version_number}
+                        </div>
+                        <div className="text-sm font-mono">
+                          {compData.rightKode || (
+                            <span className="text-gray-400 italic">Empty</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Name Comparison */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -267,12 +325,12 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                       <div
                         className={`border rounded-lg p-3 ${
                           isFlipped
-                            ? "border-purple-200 bg-purple-50"
-                            : "border-blue-200 bg-blue-50"
+                            ? 'border-purple-200 bg-purple-50'
+                            : 'border-blue-200 bg-blue-50'
                         }`}
                       >
                         <div
-                          className={`text-xs mb-1 font-mono ${isFlipped ? "text-purple-600" : "text-blue-600"}`}
+                          className={`text-xs mb-1 font-mono ${isFlipped ? 'text-purple-600' : 'text-blue-600'}`}
                         >
                           v{compData.leftVersion?.version_number}
                         </div>
@@ -285,12 +343,12 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                       <div
                         className={`border rounded-lg p-3 ${
                           isFlipped
-                            ? "border-blue-200 bg-blue-50"
-                            : "border-purple-200 bg-purple-50"
+                            ? 'border-blue-200 bg-blue-50'
+                            : 'border-purple-200 bg-purple-50'
                         }`}
                       >
                         <div
-                          className={`text-xs mb-1 font-mono ${isFlipped ? "text-blue-600" : "text-purple-600"}`}
+                          className={`text-xs mb-1 font-mono ${isFlipped ? 'text-blue-600' : 'text-purple-600'}`}
                         >
                           v{compData.rightVersion?.version_number}
                         </div>
@@ -312,12 +370,12 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                       <div
                         className={`border rounded-lg p-3 ${
                           isFlipped
-                            ? "border-purple-200 bg-purple-50"
-                            : "border-blue-200 bg-blue-50"
+                            ? 'border-purple-200 bg-purple-50'
+                            : 'border-blue-200 bg-blue-50'
                         }`}
                       >
                         <div
-                          className={`text-xs mb-1 font-mono ${isFlipped ? "text-purple-600" : "text-blue-600"}`}
+                          className={`text-xs mb-1 font-mono ${isFlipped ? 'text-purple-600' : 'text-blue-600'}`}
                         >
                           v{compData.leftVersion?.version_number}
                         </div>
@@ -330,12 +388,12 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                       <div
                         className={`border rounded-lg p-3 ${
                           isFlipped
-                            ? "border-blue-200 bg-blue-50"
-                            : "border-purple-200 bg-purple-50"
+                            ? 'border-blue-200 bg-blue-50'
+                            : 'border-purple-200 bg-purple-50'
                         }`}
                       >
                         <div
-                          className={`text-xs mb-1 font-mono ${isFlipped ? "text-blue-600" : "text-purple-600"}`}
+                          className={`text-xs mb-1 font-mono ${isFlipped ? 'text-blue-600' : 'text-purple-600'}`}
                         >
                           v{compData.rightVersion?.version_number}
                         </div>
@@ -351,6 +409,15 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
               ) : (
                 /* Single Mode Content - Traditional Form with Diff */
                 <div className="space-y-4">
+                  <Input
+                    label="Kode"
+                    value={compData.leftKode}
+                    placeholder="Kode"
+                    readOnly
+                    tabIndex={-1}
+                    className="pointer-events-none select-none font-mono"
+                  />
+
                   <Input
                     label={`Nama ${entityName}`}
                     value={compData.leftName}
@@ -380,21 +447,22 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
               {/* Differences Summary */}
               <AnimatePresence mode="wait">
-                {(compData.isNameDifferent ||
+                {(compData.isKodeDifferent ||
+                  compData.isNameDifferent ||
                   compData.isDescriptionDifferent) && (
                   <motion.div
                     key="differences"
                     initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
+                    animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                       <h4 className="text-sm font-medium text-yellow-800 mb-3">
                         {isDualMode
-                          ? "Perbedaan antara kedua versi:"
-                          : "Berbeda dari saat ini:"}
+                          ? 'Perbedaan antara kedua versi:'
+                          : 'Berbeda dari saat ini:'}
                       </h4>
                       <motion.div
                         className="space-y-3"
@@ -403,11 +471,41 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                         transition={{ delay: 0.1, duration: 0.2 }}
                       >
                         <AnimatePresence>
+                          {compData.isKodeDifferent && (
+                            <motion.div
+                              key="kode-diff"
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="text-xs font-medium text-yellow-700 mb-1">
+                                Kode:
+                              </div>
+                              <div className="bg-gray-50 rounded p-2">
+                                <DiffText
+                                  oldText={
+                                    originalData?.originalLeftKode ||
+                                    compData.leftKode
+                                  }
+                                  newText={
+                                    originalData?.originalRightKode ||
+                                    compData.rightKode
+                                  }
+                                  className="text-sm font-mono"
+                                  isFlipped={isFlipped}
+                                />
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        <AnimatePresence>
                           {compData.isNameDifferent && (
                             <motion.div
                               key="name-diff"
                               initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
+                              animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
@@ -437,7 +535,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                             <motion.div
                               key="description-diff"
                               initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
+                              animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
@@ -467,22 +565,23 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   </motion.div>
                 )}
 
-                {!compData.isNameDifferent &&
+                {!compData.isKodeDifferent &&
+                  !compData.isNameDifferent &&
                   !compData.isDescriptionDifferent && (
                     <motion.div
                       key="no-differences"
                       initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
+                      animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
                       className="overflow-hidden"
                     >
                       <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
                         <span className="text-sm text-green-700">
-                          ✓{" "}
+                          ✓{' '}
                           {isDualMode
-                            ? "Kedua versi identik"
-                            : "Sama dengan data saat ini"}
+                            ? 'Kedua versi identik'
+                            : 'Sama dengan data saat ini'}
                         </span>
                       </div>
                     </motion.div>
@@ -513,7 +612,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body,
+    document.body
   );
 };
 

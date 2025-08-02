@@ -1,6 +1,6 @@
-import React from "react";
-import PageTitle from "@/components/page-title";
-import { Line, Doughnut } from "@/components/charts/LazyCharts";
+import React from 'react';
+import PageTitle from '@/components/page-title';
+import { Line, Doughnut } from '@/components/charts/LazyCharts';
 import {
   FaShoppingBag,
   FaShoppingCart,
@@ -9,9 +9,9 @@ import {
   FaSync,
   FaArrowUp,
   FaArrowDown,
-} from "react-icons/fa";
-import { Card } from "@/components/card";
-import Button from "@/components/button";
+} from 'react-icons/fa';
+import { Card } from '@/components/card';
+import Button from '@/components/button';
 
 // Import our new dashboard hooks
 import {
@@ -21,7 +21,7 @@ import {
   useLowStockItems,
   useRecentTransactions,
   useMonthlyRevenueComparison,
-} from "@/hooks/queries/useDashboard";
+} from '@/hooks/queries/useDashboard';
 
 // Utility function to format currency
 const formatCurrency = (amount: number) => {
@@ -45,7 +45,13 @@ interface StatsCardProps {
   isLoading?: boolean;
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, isLoading }) => (
+const StatsCard: React.FC<StatsCardProps> = ({
+  title,
+  value,
+  icon,
+  color,
+  isLoading,
+}) => (
   <Card className="p-6">
     <div className="flex items-center justify-between">
       <div>
@@ -56,9 +62,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, isLoad
           <p className="text-2xl font-bold text-gray-900">{value}</p>
         )}
       </div>
-      <div className={`p-3 rounded-full ${color}`}>
-        {icon}
-      </div>
+      <div className={`p-3 rounded-full ${color}`}>{icon}</div>
     </div>
   </Card>
 );
@@ -71,7 +75,12 @@ interface ChartCardProps {
   onRefresh?: () => void;
 }
 
-const ChartCard: React.FC<ChartCardProps> = ({ title, children, isLoading, onRefresh }) => (
+const ChartCard: React.FC<ChartCardProps> = ({
+  title,
+  children,
+  isLoading,
+  onRefresh,
+}) => (
   <Card className="p-6">
     <div className="flex items-center justify-between mb-4">
       <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
@@ -106,15 +115,15 @@ const DashboardNew = () => {
   // Prepare chart data
   const salesChartData = React.useMemo(() => {
     if (!salesQuery.data) return { labels: [], datasets: [] };
-    
+
     return {
       labels: salesQuery.data.labels,
       datasets: [
         {
-          label: "Penjualan Harian",
+          label: 'Penjualan Harian',
           data: salesQuery.data.values,
-          borderColor: "rgb(53, 162, 235)",
-          backgroundColor: "rgba(53, 162, 235, 0.5)",
+          borderColor: 'rgb(53, 162, 235)',
+          backgroundColor: 'rgba(53, 162, 235, 0.5)',
           tension: 0.4,
         },
       ],
@@ -123,28 +132,28 @@ const DashboardNew = () => {
 
   const topMedicinesChartData = React.useMemo(() => {
     if (!topMedicinesQuery.data) return { labels: [], datasets: [] };
-    
+
     const colors = [
-      "rgba(255, 99, 132, 0.6)",
-      "rgba(54, 162, 235, 0.6)",
-      "rgba(255, 205, 86, 0.6)",
-      "rgba(75, 192, 192, 0.6)",
-      "rgba(153, 102, 255, 0.6)",
+      'rgba(255, 99, 132, 0.6)',
+      'rgba(54, 162, 235, 0.6)',
+      'rgba(255, 205, 86, 0.6)',
+      'rgba(75, 192, 192, 0.6)',
+      'rgba(153, 102, 255, 0.6)',
     ];
 
     const borderColors = [
-      "rgba(255, 99, 132, 1)",
-      "rgba(54, 162, 235, 1)",
-      "rgba(255, 205, 86, 1)",
-      "rgba(75, 192, 192, 1)",
-      "rgba(153, 102, 255, 1)",
+      'rgba(255, 99, 132, 1)',
+      'rgba(54, 162, 235, 1)',
+      'rgba(255, 205, 86, 1)',
+      'rgba(75, 192, 192, 1)',
+      'rgba(153, 102, 255, 1)',
     ];
 
     return {
       labels: topMedicinesQuery.data.map(item => item.name),
       datasets: [
         {
-          label: "Obat Terlaris",
+          label: 'Obat Terlaris',
           data: topMedicinesQuery.data.map(item => item.total_quantity),
           backgroundColor: colors,
           borderColor: borderColors,
@@ -191,17 +200,27 @@ const DashboardNew = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Revenue Perbandingan</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Revenue Perbandingan
+              </h3>
               <p className="text-3xl font-bold text-gray-900">
                 {formatCurrency(monthlyRevenueQuery.data.currentMonth)}
               </p>
               <p className="text-sm text-gray-600">Bulan ini</p>
             </div>
             <div className="text-right">
-              <div className={`flex items-center gap-2 ${
-                monthlyRevenueQuery.data.isIncrease ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {monthlyRevenueQuery.data.isIncrease ? <FaArrowUp /> : <FaArrowDown />}
+              <div
+                className={`flex items-center gap-2 ${
+                  monthlyRevenueQuery.data.isIncrease
+                    ? 'text-green-600'
+                    : 'text-red-600'
+                }`}
+              >
+                {monthlyRevenueQuery.data.isIncrease ? (
+                  <FaArrowUp />
+                ) : (
+                  <FaArrowDown />
+                )}
                 <span className="font-semibold">
                   {formatPercentage(monthlyRevenueQuery.data.percentageChange)}
                 </span>
@@ -216,14 +235,18 @@ const DashboardNew = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Total Penjualan"
-          value={statsQuery.data ? formatCurrency(statsQuery.data.totalSales) : 0}
+          value={
+            statsQuery.data ? formatCurrency(statsQuery.data.totalSales) : 0
+          }
           icon={<FaShoppingBag className="h-6 w-6 text-white" />}
           color="bg-blue-500"
           isLoading={statsQuery.isLoading}
         />
         <StatsCard
           title="Total Pembelian"
-          value={statsQuery.data ? formatCurrency(statsQuery.data.totalPurchases) : 0}
+          value={
+            statsQuery.data ? formatCurrency(statsQuery.data.totalPurchases) : 0
+          }
           icon={<FaShoppingCart className="h-6 w-6 text-white" />}
           color="bg-green-500"
           isLoading={statsQuery.isLoading}
@@ -272,10 +295,10 @@ const DashboardNew = () => {
                     y: {
                       beginAtZero: true,
                       ticks: {
-                        callback: function(value) {
+                        callback: function (value) {
                           return formatCurrency(Number(value));
-                        }
-                      }
+                        },
+                      },
                     },
                   },
                 }}
@@ -318,37 +341,57 @@ const DashboardNew = () => {
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <FaExclamationTriangle className="h-5 w-5 text-red-500" />
-            <h3 className="text-lg font-semibold text-gray-900">Peringatan Stok Menipis</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Peringatan Stok Menipis
+            </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lowStockQuery.data.slice(0, 6).map((item: { id: string; name: string; stock: number; item_categories?: { name: string }[]; item_units?: { name: string }[] }) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200"
-              >
-                <div>
-                  <p className="font-medium text-gray-900">{item.name}</p>
-                  <p className="text-sm text-gray-600">
-                    {item.item_categories?.[0]?.name} • {item.item_units?.[0]?.name}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-red-600">{item.stock}</p>
-                  <p className="text-xs text-gray-500">tersisa</p>
-                </div>
-              </div>
-            ))}
+            {lowStockQuery.data
+              .slice(0, 6)
+              .map(
+                (item: {
+                  id: string;
+                  name: string;
+                  stock: number;
+                  item_categories?: { name: string }[];
+                  item_units?: { name: string }[];
+                }) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">{item.name}</p>
+                      <p className="text-sm text-gray-600">
+                        {item.item_categories?.[0]?.name} •{' '}
+                        {item.item_units?.[0]?.name}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-red-600">
+                        {item.stock}
+                      </p>
+                      <p className="text-xs text-gray-500">tersisa</p>
+                    </div>
+                  </div>
+                )
+              )}
           </div>
         </Card>
       )}
 
       {/* Recent Transactions */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Transaksi Terbaru</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Transaksi Terbaru
+        </h3>
         {recentTransactionsQuery.isLoading ? (
           <div className="space-y-2">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-12 bg-gray-200 animate-pulse rounded"></div>
+              <div
+                key={i}
+                className="h-12 bg-gray-200 animate-pulse rounded"
+              ></div>
             ))}
           </div>
         ) : recentTransactionsQuery.error ? (
@@ -357,42 +400,71 @@ const DashboardNew = () => {
           </div>
         ) : (
           <div className="space-y-2">
-            {recentTransactionsQuery.data?.slice(0, 8).map((transaction: { id: string; type: 'sale' | 'purchase'; invoice_number?: string; counterparty: string; date: string; total: number }) => (
-              <div
-                key={`${transaction.type}-${transaction.id}`}
-                className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${
-                    transaction.type === 'sale' ? 'bg-green-100' : 'bg-blue-100'
-                  }`}>
-                    {transaction.type === 'sale' ? (
-                      <FaShoppingBag className={`h-4 w-4 ${
-                        transaction.type === 'sale' ? 'text-green-600' : 'text-blue-600'
-                      }`} />
-                    ) : (
-                      <FaShoppingCart className="h-4 w-4 text-blue-600" />
-                    )}
+            {recentTransactionsQuery.data
+              ?.slice(0, 8)
+              .map(
+                (transaction: {
+                  id: string;
+                  type: 'sale' | 'purchase';
+                  invoice_number?: string;
+                  counterparty: string;
+                  date: string;
+                  total: number;
+                }) => (
+                  <div
+                    key={`${transaction.type}-${transaction.id}`}
+                    className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-full ${
+                          transaction.type === 'sale'
+                            ? 'bg-green-100'
+                            : 'bg-blue-100'
+                        }`}
+                      >
+                        {transaction.type === 'sale' ? (
+                          <FaShoppingBag
+                            className={`h-4 w-4 ${
+                              transaction.type === 'sale'
+                                ? 'text-green-600'
+                                : 'text-blue-600'
+                            }`}
+                          />
+                        ) : (
+                          <FaShoppingCart className="h-4 w-4 text-blue-600" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {transaction.invoice_number ||
+                            `${transaction.type === 'sale' ? 'Sale' : 'Purchase'} #${transaction.id.slice(0, 8)}`}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {transaction.counterparty} •{' '}
+                          {new Date(transaction.date).toLocaleDateString(
+                            'id-ID'
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p
+                        className={`font-semibold ${
+                          transaction.type === 'sale'
+                            ? 'text-green-600'
+                            : 'text-blue-600'
+                        }`}
+                      >
+                        {formatCurrency(transaction.total)}
+                      </p>
+                      <p className="text-xs text-gray-500 capitalize">
+                        {transaction.type}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {transaction.invoice_number || `${transaction.type === 'sale' ? 'Sale' : 'Purchase'} #${transaction.id.slice(0, 8)}`}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {transaction.counterparty} • {new Date(transaction.date).toLocaleDateString('id-ID')}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`font-semibold ${
-                    transaction.type === 'sale' ? 'text-green-600' : 'text-blue-600'
-                  }`}>
-                    {formatCurrency(transaction.total)}
-                  </p>
-                  <p className="text-xs text-gray-500 capitalize">{transaction.type}</p>
-                </div>
-              </div>
-            ))}
+                )
+              )}
           </div>
         )}
       </Card>

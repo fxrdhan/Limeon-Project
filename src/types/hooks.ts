@@ -1,5 +1,5 @@
-import React from "react";
-import { UnitConversion, UnitData } from "./database";
+import React from 'react';
+import { UnitConversion, UnitData } from './database';
 
 // Hook-related types
 export interface UseUnitConversionReturn {
@@ -11,10 +11,10 @@ export interface UseUnitConversionReturn {
   sellPrice: number;
   setSellPrice: React.Dispatch<React.SetStateAction<number>>;
   addUnitConversion: (
-    unitConversion: Omit<UnitConversion, "id"> & {
+    unitConversion: Omit<UnitConversion, 'id'> & {
       basePrice?: number;
       sellPrice?: number;
-    },
+    }
   ) => void;
   removeUnitConversion: (id: string) => void;
   unitConversionFormData: {

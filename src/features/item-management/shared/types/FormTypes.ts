@@ -1,4 +1,4 @@
-import type { CustomerLevelDiscount } from "@/types/database";
+import type { CustomerLevelDiscount } from '@/types/database';
 
 // Main Item Form Data
 export interface ItemFormData {
@@ -34,4 +34,3 @@ export interface UnitConversionLogicFormData {
   unit: string;
   conversion: number;
 }
-

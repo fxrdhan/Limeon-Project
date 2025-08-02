@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import Button from "@/components/button";
-import { FaHistory, FaArrowLeft } from "react-icons/fa";
-import { useEntityModal } from "../../../shared/contexts/EntityModalContext";
-import { EntityFormFields } from "../../molecules";
-import { HistoryListContent } from "../../organisms";
-import type { EntityData } from "../../../shared/types";
+import React, { useState } from 'react';
+import Button from '@/components/button';
+import { FaHistory, FaArrowLeft } from 'react-icons/fa';
+import { useEntityModal } from '../../../shared/contexts/EntityModalContext';
+import { EntityFormFields } from '../../molecules';
+import { HistoryListContent } from '../../organisms';
+import type { EntityData } from '../../../shared/types';
 
 interface EntityModalContentProps {
   nameInputRef: React.RefObject<HTMLInputElement | null>;
@@ -21,31 +21,31 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
   // Map entityName to database table name
   const getEntityTable = (entityName: string): string => {
     const tableMap: Record<string, string> = {
-      Item: "items",
-      Kategori: "item_categories",
-      "Jenis Item": "item_types",
-      Satuan: "item_units",
-      Sediaan: "item_dosages",
-      Produsen: "item_manufacturers",
+      Item: 'items',
+      Kategori: 'item_categories',
+      'Jenis Item': 'item_types',
+      Satuan: 'item_units',
+      Sediaan: 'item_dosages',
+      Produsen: 'item_manufacturers',
     };
-    return tableMap[entityName] || "items";
+    return tableMap[entityName] || 'items';
   };
 
   const getTitle = () => {
     switch (mode) {
-      case "history":
+      case 'history':
         return `Riwayat Perubahan`;
-      case "edit":
+      case 'edit':
         return `Edit ${entityName}`;
-      case "add":
+      case 'add':
       default:
         return `Tambah ${entityName} Baru`;
     }
   };
 
-  const showBackButton = mode === "history";
+  const showBackButton = mode === 'history';
   const showHistoryButton =
-    (mode === "add" || mode === "edit") && isEditMode && initialData?.id;
+    (mode === 'add' || mode === 'edit') && isEditMode && initialData?.id;
 
   return (
     <div className="flex justify-between items-center p-4 border-b-2 border-gray-200 bg-gray-100 rounded-t-xl">
@@ -94,12 +94,12 @@ const EntityModalFooter: React.FC<{
   const isDisabled = isLoading || !isValid || (isEditMode && !isDirty);
 
   // Special footer for history mode with toggle button
-  if (mode === "history") {
+  if (mode === 'history') {
     return (
       <div className="flex justify-between items-center p-4 border-t-2 border-gray-200 rounded-b-lg">
         <div>
           <Button type="button" variant="text" onClick={onModeToggle}>
-            {compareMode ? "Single View" : "Compare Mode"}
+            {compareMode ? 'Single View' : 'Compare Mode'}
           </Button>
         </div>
         <Button type="button" variant="text" onClick={handleClose}>
@@ -137,7 +137,7 @@ const EntityModalFooter: React.FC<{
           isLoading={isLoading}
           disabled={isDisabled}
         >
-          {isEditMode ? "Update" : "Simpan"}
+          {isEditMode ? 'Update' : 'Simpan'}
         </Button>
       </div>
     </div>
@@ -160,21 +160,17 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
 
   const renderContent = () => {
     switch (mode) {
-      case "history":
+      case 'history':
         return <HistoryListContent compareMode={compareMode} />;
-      case "add":
-      case "edit":
+      case 'add':
+      case 'edit':
       default:
-        return (
-          <EntityFormFields
-            nameInputRef={nameInputRef}
-          />
-        );
+        return <EntityFormFields nameInputRef={nameInputRef} />;
     }
   };
 
   // Consistent width for all entity modals
-  const modalWidth = "w-96";
+  const modalWidth = 'w-96';
 
   return (
     <div

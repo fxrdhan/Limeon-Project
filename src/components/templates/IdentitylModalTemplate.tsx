@@ -1,6 +1,6 @@
-import React, { useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface IdentityModalTemplateProps {
   isOpen: boolean;
@@ -23,7 +23,7 @@ const IdentityModalTemplate: React.FC<IdentityModalTemplateProps> = ({
 
     requestAnimationFrame(() => {
       const searchInput = document.querySelector(
-        'input[placeholder*="Cari"]',
+        'input[placeholder*="Cari"]'
       ) as HTMLInputElement;
       if (searchInput) {
         searchInput.focus();
@@ -41,7 +41,7 @@ const IdentityModalTemplate: React.FC<IdentityModalTemplateProps> = ({
 
         setTimeout(() => {
           const searchInput = document.querySelector(
-            'input[placeholder*="Cari"]',
+            'input[placeholder*="Cari"]'
           ) as HTMLInputElement;
           if (searchInput) {
             searchInput.focus();
@@ -63,18 +63,18 @@ const IdentityModalTemplate: React.FC<IdentityModalTemplateProps> = ({
 
           <motion.div
             ref={dialogPanelRef}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
           >
             {children}
           </motion.div>
         </div>
       )}
     </AnimatePresence>,
-    document.body,
+    document.body
   );
 };
 

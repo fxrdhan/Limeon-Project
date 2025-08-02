@@ -27,12 +27,13 @@ export const useDropdownEffects = ({
   useEffect(() => {
     if (isOpen && filteredOptions.length > 0) {
       const selectedIndex = value
-        ? filteredOptions.findIndex((option) => option.id === value)
+        ? filteredOptions.findIndex(option => option.id === value)
         : -1;
       const initialIndex = selectedIndex >= 0 ? selectedIndex : -1;
       setHighlightedIndex(initialIndex);
 
-      const highlightedOption = initialIndex >= 0 ? filteredOptions[initialIndex] : null;
+      const highlightedOption =
+        initialIndex >= 0 ? filteredOptions[initialIndex] : null;
       if (highlightedOption && buttonRef.current) {
         const buttonWidth = buttonRef.current.getBoundingClientRect().width;
         const maxTextWidth = buttonWidth - DROPDOWN_CONSTANTS.BUTTON_PADDING;
@@ -41,14 +42,16 @@ export const useDropdownEffects = ({
           tempSpan.style.visibility = 'hidden';
           tempSpan.style.position = 'absolute';
           tempSpan.style.fontSize = '14px';
-          tempSpan.style.fontFamily = getComputedStyle(buttonRef.current!).fontFamily;
+          tempSpan.style.fontFamily = getComputedStyle(
+            buttonRef.current!
+          ).fontFamily;
           tempSpan.textContent = highlightedOption.name;
           document.body.appendChild(tempSpan);
           const textWidth = tempSpan.offsetWidth;
           document.body.removeChild(tempSpan);
           return textWidth > maxTextWidth;
         };
-        
+
         if (shouldTruncate()) {
           setExpandedId(highlightedOption.id);
         }
@@ -56,7 +59,14 @@ export const useDropdownEffects = ({
     } else {
       setHighlightedIndex(-1);
     }
-  }, [filteredOptions, isOpen, value, setExpandedId, setHighlightedIndex, buttonRef]);
+  }, [
+    filteredOptions,
+    isOpen,
+    value,
+    setExpandedId,
+    setHighlightedIndex,
+    buttonRef,
+  ]);
 
   // Manage open/close states and event listeners
   useEffect(() => {
@@ -84,14 +94,14 @@ export const useDropdownEffects = ({
       ] as const;
 
       events.forEach(([event, handler, capture]) =>
-        window.addEventListener(event, handler as EventListener, capture),
+        window.addEventListener(event, handler as EventListener, capture)
       );
 
       return () => {
         document.body.style.overflow = '';
         if (openStyleTimerId) clearTimeout(openStyleTimerId);
         events.forEach(([event, handler, capture]) =>
-          window.removeEventListener(event, handler as EventListener, capture),
+          window.removeEventListener(event, handler as EventListener, capture)
         );
       };
     } else {
@@ -99,7 +109,7 @@ export const useDropdownEffects = ({
       setApplyOpenStyles(false);
       resetPosition();
       resetSearch();
-      
+
       // Clear hover timeout when dropdown is closed
       clearTimeouts();
     }
@@ -121,12 +131,7 @@ export const useDropdownEffects = ({
       const timer = setTimeout(calculateDropdownPosition, 10);
       return () => clearTimeout(timer);
     }
-  }, [
-    filteredOptions,
-    isOpen,
-    applyOpenStyles,
-    calculateDropdownPosition,
-  ]);
+  }, [filteredOptions, isOpen, applyOpenStyles, calculateDropdownPosition]);
 
   // Scroll state management
   useEffect(() => {

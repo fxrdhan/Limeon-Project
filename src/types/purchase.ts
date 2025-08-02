@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 // Purchase-related types
 export interface PurchaseItem {
