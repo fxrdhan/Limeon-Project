@@ -398,6 +398,11 @@ export const useAddItemForm = ({
         }
       });
     } else {
+      // Reset unit conversions for add mode
+      unitConversionHook.resetConversions();
+      unitConversionHook.setBaseUnit("");
+      unitConversionHook.setBasePrice(0);
+      unitConversionHook.setSellPrice(0);
       cache.clearCache();
     }
   };
