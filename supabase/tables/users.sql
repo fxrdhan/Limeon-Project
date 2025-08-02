@@ -1,5 +1,5 @@
 -- Table Definition: users
--- Exported from Supabase on: 2025-08-01T17:43:16.437Z
+-- Exported from Supabase on: 2025-08-02T13:07:13.935Z
 
 CREATE TABLE public.users (
   id uuid NOT NULL,
