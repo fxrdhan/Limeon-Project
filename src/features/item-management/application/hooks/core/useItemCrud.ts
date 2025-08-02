@@ -262,8 +262,10 @@ export const useAddItemForm = ({
   }, [formState]);
 
   const handleSaveCategory = useCallback(async (categoryData: {
+    kode?: string;
     name: string;
-    description: string;
+    description?: string;
+    address?: string;
   }) => {
     try {
       const { newCategory, updatedCategories } = await saveCategory(categoryData);
@@ -277,8 +279,10 @@ export const useAddItemForm = ({
   }, [saveCategory, formState, clearSearchTerm]);
 
   const handleSaveType = useCallback(async (typeData: {
+    kode?: string;
     name: string;
-    description: string;
+    description?: string;
+    address?: string;
   }) => {
     try {
       const { newType, updatedTypes } = await saveType(typeData);
@@ -292,8 +296,10 @@ export const useAddItemForm = ({
   }, [saveType, formState, clearSearchTerm]);
 
   const handleSaveUnit = useCallback(async (unitData: {
+    kode?: string;
     name: string;
-    description: string;
+    description?: string;
+    address?: string;
   }) => {
     try {
       const { newUnit, updatedUnits } = await saveUnit(unitData);
@@ -309,7 +315,8 @@ export const useAddItemForm = ({
   const handleSaveDosage = useCallback(async (dosageData: {
     kode?: string;
     name: string;
-    description: string;
+    description?: string;
+    address?: string;
   }) => {
     try {
       const { newDosage, updatedDosages } = await saveDosage(dosageData);

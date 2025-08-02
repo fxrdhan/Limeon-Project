@@ -22,6 +22,14 @@ export interface Unit {
   updated_at?: string | null;
 }
 
+export interface ItemManufacturer {
+  id: string;
+  kode?: string;
+  name: string;
+  address?: string;
+  updated_at?: string | null;
+}
+
 export interface Supplier {
   id: string;
   name: string;
