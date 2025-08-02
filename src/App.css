@@ -10,7 +10,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --color-primary: oklch(43.2% 0.095 166.913);
+  --color-primary: oklch(50.8% 0.118 165.612);
 }
 
 .logo {
