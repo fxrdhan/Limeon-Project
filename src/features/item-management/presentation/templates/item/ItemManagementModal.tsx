@@ -44,6 +44,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     types,
     units,
     dosages,
+    manufacturers,
     saving,
     loading,
     isEditMode,
@@ -51,7 +52,6 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     handleSubmit,
     updateFormData,
     resetForm,
-    regenerateItemCode,
     isDirty,
 
     // Modal state
@@ -63,11 +63,14 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     setIsAddUnitModalOpen,
     isAddDosageModalOpen,
     setIsAddDosageModalOpen,
+    isAddManufacturerModalOpen,
+    setIsAddManufacturerModalOpen,
     currentSearchTermForModal,
     handleAddNewCategory,
     handleAddNewType,
     handleAddNewUnit,
     handleAddNewDosage,
+    handleAddNewManufacturer,
     closeModalAndClearSearch,
 
     // Actions
@@ -77,12 +80,14 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     handleSaveType,
     handleSaveUnit,
     handleSaveDosage,
+    handleSaveManufacturer,
 
     // Mutations
     addCategoryMutation,
     addTypeMutation,
     addUnitMutation,
     addDosageMutation,
+    addManufacturerMutation,
     deleteItemMutation,
 
     // Price & conversion
@@ -105,6 +110,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       addTypeMutation.isPending ||
       addUnitMutation.isPending ||
       addCategoryMutation.isPending ||
+      addManufacturerMutation.isPending ||
       deleteItemMutation.isPending,
   });
 
@@ -161,6 +167,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       types,
       units,
       dosages,
+      manufacturers,
       loading,
       isDirty,
     },
@@ -177,6 +184,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       isAddTypeModalOpen,
       isAddUnitModalOpen,
       isAddDosageModalOpen,
+      isAddManufacturerModalOpen,
       currentSearchTermForModal: currentSearchTermForModal || '',
     },
     price: {
@@ -192,6 +200,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       addTypeMutation,
       addUnitMutation,
       addDosageMutation,
+      addManufacturerMutation,
     },
 
     // Actions
@@ -200,7 +209,6 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       handleChange,
       handleSubmit,
       resetForm,
-      regenerateItemCode,
     },
     uiActions: {
       handleBackdropClick,
@@ -216,6 +224,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       setIsAddTypeModalOpen,
       setIsAddUnitModalOpen,
       setIsAddDosageModalOpen,
+      setIsAddManufacturerModalOpen,
       closeModalAndClearSearch: (
         setter:
           | ((open: boolean) => void)
@@ -231,6 +240,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       handleAddNewType,
       handleAddNewUnit,
       handleAddNewDosage,
+      handleAddNewManufacturer,
     },
     businessActions: {
       handleCancel,
@@ -239,6 +249,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       handleSaveType,
       handleSaveUnit,
       handleSaveDosage,
+      handleSaveManufacturer,
     },
   };
 

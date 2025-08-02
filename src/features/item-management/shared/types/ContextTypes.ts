@@ -5,6 +5,15 @@ import type { UseUnitConversionReturn } from '@/types/hooks';
 import type { ItemFormData } from './FormTypes';
 import type { VersionData } from './ItemTypes';
 
+interface ItemManufacturer {
+  id: string;
+  kode?: string;
+  name: string;
+  address?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Context State Interfaces (Updated to match actual implementation)
 export interface ItemFormState {
   formData: Partial<ItemFormData>;
@@ -12,6 +21,7 @@ export interface ItemFormState {
   types: MedicineType[];
   units: Unit[];
   dosages: ItemDosage[];
+  manufacturers: ItemManufacturer[];
   loading: boolean;
   isDirty: () => boolean;
 }
@@ -30,6 +40,7 @@ export interface ItemModalState {
   isAddTypeModalOpen: boolean;
   isAddUnitModalOpen: boolean;
   isAddDosageModalOpen: boolean;
+  isAddManufacturerModalOpen: boolean;
   currentSearchTermForModal: string;
 }
 
@@ -47,6 +58,7 @@ export interface ItemActionState {
   addTypeMutation: { isPending: boolean };
   addUnitMutation: { isPending: boolean };
   addDosageMutation: { isPending: boolean };
+  addManufacturerMutation: { isPending: boolean };
 }
 
 // Context Action Interfaces (Updated to match actual implementation)
@@ -57,7 +69,6 @@ export interface ItemFormActions {
   ) => void;
   handleSubmit: (e: React.FormEvent) => void;
   resetForm: () => void;
-  regenerateItemCode: () => void;
 }
 
 export interface ItemUIActions {
@@ -75,6 +86,7 @@ export interface ItemModalActions {
   setIsAddTypeModalOpen: (open: boolean) => void;
   setIsAddUnitModalOpen: (open: boolean) => void;
   setIsAddDosageModalOpen: (open: boolean) => void;
+  setIsAddManufacturerModalOpen: (open: boolean) => void;
   closeModalAndClearSearch: (
     setter:
       | ((open: boolean) => void)
@@ -84,6 +96,7 @@ export interface ItemModalActions {
   handleAddNewType: () => void;
   handleAddNewUnit: () => void;
   handleAddNewDosage: () => void;
+  handleAddNewManufacturer: () => void;
 }
 
 export interface ItemBusinessActions {
@@ -115,6 +128,11 @@ export interface ItemBusinessActions {
     kode?: string;
     name: string;
     description?: string;
+    address?: string;
+  }) => Promise<void>;
+  handleSaveManufacturer: (data: {
+    kode?: string;
+    name: string;
     address?: string;
   }) => Promise<void>;
 }

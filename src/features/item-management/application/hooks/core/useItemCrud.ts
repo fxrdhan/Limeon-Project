@@ -8,7 +8,6 @@ import {
   calculateSellPriceFromMargin,
 } from '../../../shared/utils/PriceCalculator';
 import { useAddItemFormState } from '../form/useItemFormState';
-import { useItemCodeGeneration } from '../utils/useItemCodeGenerator';
 import { useAddItemMutations } from './useItemMutations';
 import { useFormCache } from '@/hooks/useFormCache';
 import { useItemData } from '../data/useItemData';
@@ -66,13 +65,6 @@ export const useAddItemForm = ({
     isSaving: formState.saving,
   });
 
-  // Initialize code generation
-  const codeGeneration = useItemCodeGeneration({
-    isEditMode: formState.isEditMode,
-    itemId,
-    formData: formState.formData,
-    updateFormData: formState.updateFormData,
-  });
 
   // Initialize data management
   const itemData = useItemData({
@@ -235,18 +227,28 @@ export const useAddItemForm = ({
     [formState]
   );
 
+  const handleAddNewManufacturer = useCallback(
+    (searchTerm?: string) => {
+      formState.setCurrentSearchTermForModal(searchTerm);
+      formState.setIsAddManufacturerModalOpen(true);
+    },
+    [formState]
+  );
+
   // Use mutations from the modular hook
   const {
     addCategoryMutation,
     addTypeMutation,
     addUnitMutation,
     addDosageMutation,
+    addManufacturerMutation,
     deleteItemMutation,
     saveItemMutation,
     saveCategory,
     saveType,
     saveUnit,
     saveDosage,
+    saveManufacturer,
   } = mutations;
 
   // Memoized submit and save handlers
@@ -370,6 +372,26 @@ export const useAddItemForm = ({
     [saveDosage, formState, clearSearchTerm]
   );
 
+  const handleSaveManufacturer = useCallback(
+    async (manufacturerData: {
+      kode?: string;
+      name: string;
+      address?: string;
+    }) => {
+      try {
+        const { newManufacturer, updatedManufacturers } = await saveManufacturer(manufacturerData);
+        if (updatedManufacturers) formState.setManufacturers(updatedManufacturers);
+        if (newManufacturer?.id)
+          formState.updateFormData({ manufacturer_id: newManufacturer.id });
+        formState.setIsAddManufacturerModalOpen(false);
+        clearSearchTerm();
+      } catch {
+        alert('Gagal menyimpan produsen baru.');
+      }
+    },
+    [saveManufacturer, formState, clearSearchTerm]
+  );
+
   const handleDeleteItem = () => {
     if (!itemId) return;
     confirmDialog.openConfirmDialog({
@@ -483,8 +505,6 @@ export const useAddItemForm = ({
     [clearSearchTerm]
   );
 
-  // Use regenerateItemCode from the modular code generation hook
-  const regenerateItemCode = codeGeneration.regenerateItemCode;
 
   return {
     // Form data and state (from formState)
@@ -495,6 +515,7 @@ export const useAddItemForm = ({
     types: formState.types,
     units: formState.units,
     dosages: formState.dosages,
+    manufacturers: formState.manufacturers,
     loading: formState.loading,
     saving: formState.saving,
     isEditMode: formState.isEditMode,
@@ -508,6 +529,8 @@ export const useAddItemForm = ({
     setIsAddUnitModalOpen: formState.setIsAddUnitModalOpen,
     isAddDosageModalOpen: formState.isAddDosageModalOpen,
     setIsAddDosageModalOpen: formState.setIsAddDosageModalOpen,
+    isAddManufacturerModalOpen: formState.isAddManufacturerModalOpen,
+    setIsAddManufacturerModalOpen: formState.setIsAddManufacturerModalOpen,
 
     // Editing states (from formState)
     editingMargin: formState.editingMargin,
@@ -528,11 +551,13 @@ export const useAddItemForm = ({
     handleSaveType,
     handleSaveUnit,
     handleSaveDosage,
+    handleSaveManufacturer,
     handleDeleteItem,
     handleAddNewCategory,
     handleAddNewType,
     handleAddNewUnit,
     handleAddNewDosage,
+    handleAddNewManufacturer,
     handleCancel,
 
     // Utility functions
@@ -542,13 +567,13 @@ export const useAddItemForm = ({
     calculateSellPriceFromMargin: calculateSellPriceFromMarginWrapper,
     closeModalAndClearSearch,
     resetForm: resetFormWrapper,
-    regenerateItemCode,
 
     // Mutations (from mutations)
     addCategoryMutation,
     addUnitMutation,
     addTypeMutation,
     addDosageMutation,
+    addManufacturerMutation,
     deleteItemMutation,
 
     // Setters (from formState)
@@ -556,6 +581,7 @@ export const useAddItemForm = ({
     setUnits: formState.setUnits,
     setTypes: formState.setTypes,
     setDosages: formState.setDosages,
+    setManufacturers: formState.setManufacturers,
 
     // Unit conversion hook
     unitConversionHook,

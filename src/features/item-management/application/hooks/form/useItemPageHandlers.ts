@@ -35,7 +35,7 @@ export const useAddItemPageHandlers = ({
     showFefoTooltip,
     setShowFefoTooltip,
   } = useAddItemUIState();
-  const { categoriesData, typesData, unitsData, dosagesData } =
+  const { categoriesData, typesData, unitsData, dosagesData, manufacturersData } =
     useItemQueries();
 
   const {
@@ -78,6 +78,12 @@ export const useAddItemPageHandlers = ({
     }
   }, [dosagesData, addItemForm.setDosages, addItemForm]);
 
+  useEffect(() => {
+    if (manufacturersData) {
+      addItemForm.setManufacturers(manufacturersData);
+    }
+  }, [manufacturersData, addItemForm.setManufacturers, addItemForm]);
+
   return {
     ...addItemForm,
     id: itemId,
@@ -114,7 +120,6 @@ export const useAddItemPageHandlers = ({
     ) => handleActualCancel(closingStateSetter || setIsClosing),
     isClosing,
     setIsClosing,
-    regenerateItemCode: addItemForm.regenerateItemCode,
     // Explicit dosage-related properties
     dosages: addItemForm.dosages,
     isAddDosageModalOpen: addItemForm.isAddDosageModalOpen,
@@ -122,5 +127,12 @@ export const useAddItemPageHandlers = ({
     handleAddNewDosage: addItemForm.handleAddNewDosage,
     handleSaveDosage: addItemForm.handleSaveDosage,
     addDosageMutation: addItemForm.addDosageMutation,
+    // Explicit manufacturer-related properties
+    manufacturers: addItemForm.manufacturers,
+    isAddManufacturerModalOpen: addItemForm.isAddManufacturerModalOpen,
+    setIsAddManufacturerModalOpen: addItemForm.setIsAddManufacturerModalOpen,
+    handleAddNewManufacturer: addItemForm.handleAddNewManufacturer,
+    handleSaveManufacturer: addItemForm.handleSaveManufacturer,
+    addManufacturerMutation: addItemForm.addManufacturerMutation,
   };
 };

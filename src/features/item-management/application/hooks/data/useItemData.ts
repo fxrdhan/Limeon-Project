@@ -64,7 +64,7 @@ export const useItemData = ({
         const fetchedFormData: ItemFormData = {
           code: itemData.code || '',
           name: itemData.name || '',
-          manufacturer: itemData.manufacturer || '',
+          manufacturer_id: itemData.manufacturer || '',
           type_id: itemData.type_id || '',
           category_id: itemData.category_id || '',
           unit_id: itemData.unit_id || '',

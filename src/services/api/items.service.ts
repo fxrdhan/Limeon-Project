@@ -32,6 +32,15 @@ export class ItemsService extends BaseService<DBItem> {
         return result;
       }
 
+      // Get manufacturer data separately
+      const { data: manufacturers } = await supabase
+        .from('item_manufacturers')
+        .select('id, name');
+
+      const manufacturerMap = new Map(
+        manufacturers?.map(m => [m.id, m.name]) || []
+      );
+
       // Transform the data to the expected format
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformedData = (result.data as any[]).map((item: any) => {
@@ -49,12 +58,18 @@ export class ItemsService extends BaseService<DBItem> {
           }
         }
 
+        // Get manufacturer name from map
+        const manufacturerName = item.manufacturer 
+          ? manufacturerMap.get(item.manufacturer) || '' 
+          : '';
+
         // Transform to Item interface
         return {
           ...item,
           category: item.item_categories || { name: '' },
           type: item.item_types || { name: '' },
           unit: item.item_units || { name: '' },
+          manufacturer: manufacturerName,
           unit_conversions: unitConversions,
           base_unit: item.item_units?.name || '',
         };
@@ -89,6 +104,17 @@ export class ItemsService extends BaseService<DBItem> {
         return { data: null, error };
       }
 
+      // Get manufacturer name if exists
+      let manufacturerName = '';
+      if (item.manufacturer) {
+        const { data: manufacturer } = await supabase
+          .from('item_manufacturers')
+          .select('name')
+          .eq('id', item.manufacturer)
+          .single();
+        manufacturerName = manufacturer?.name || '';
+      }
+
       // Parse unit conversions
       let unitConversions: UnitConversion[] = [];
       if (item.unit_conversions) {
@@ -109,6 +135,7 @@ export class ItemsService extends BaseService<DBItem> {
         category: item.item_categories || { name: '' },
         type: item.item_types || { name: '' },
         unit: item.item_units || { name: '' },
+        manufacturer: manufacturerName,
         unit_conversions: unitConversions,
         base_unit: item.item_units?.name || '',
       };
@@ -145,6 +172,15 @@ export class ItemsService extends BaseService<DBItem> {
         return result;
       }
 
+      // Get manufacturer data separately
+      const { data: manufacturers } = await supabase
+        .from('item_manufacturers')
+        .select('id, name');
+
+      const manufacturerMap = new Map(
+        manufacturers?.map(m => [m.id, m.name]) || []
+      );
+
       // Transform the data to the expected format
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformedData = (result.data as any[]).map((item: any) => {
@@ -162,12 +198,18 @@ export class ItemsService extends BaseService<DBItem> {
           }
         }
 
+        // Get manufacturer name from map
+        const manufacturerName = item.manufacturer 
+          ? manufacturerMap.get(item.manufacturer) || '' 
+          : '';
+
         // Transform to Item interface
         return {
           ...item,
           category: item.item_categories || { name: '' },
           type: item.item_types || { name: '' },
           unit: item.item_units || { name: '' },
+          manufacturer: manufacturerName,
           unit_conversions: unitConversions,
           base_unit: item.item_units?.name || '',
         };
@@ -218,6 +260,15 @@ export class ItemsService extends BaseService<DBItem> {
         return { data, error };
       }
 
+      // Get manufacturer data separately
+      const { data: manufacturers } = await supabase
+        .from('item_manufacturers')
+        .select('id, name');
+
+      const manufacturerMap = new Map(
+        manufacturers?.map(m => [m.id, m.name]) || []
+      );
+
       // Transform the data to the expected format
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformedData = (data as any[]).map((item: any) => {
@@ -235,12 +286,18 @@ export class ItemsService extends BaseService<DBItem> {
           }
         }
 
+        // Get manufacturer name from map
+        const manufacturerName = item.manufacturer 
+          ? manufacturerMap.get(item.manufacturer) || '' 
+          : '';
+
         // Transform to Item interface
         return {
           ...item,
           category: item.item_categories || { name: '' },
           type: item.item_types || { name: '' },
           unit: item.item_units || { name: '' },
+          manufacturer: manufacturerName,
           unit_conversions: unitConversions,
           base_unit: item.item_units?.name || '',
         };

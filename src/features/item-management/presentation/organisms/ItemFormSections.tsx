@@ -58,10 +58,10 @@ const BasicInfoSection: React.FC = () => {
     types,
     units,
     dosages,
+    manufacturers,
     loading,
     handleChange,
     updateFormData,
-    regenerateItemCode,
   } = useItemForm();
 
   const { resetKey } = useItemUI();
@@ -72,6 +72,7 @@ const BasicInfoSection: React.FC = () => {
     handleAddNewType,
     handleAddNewUnit,
     handleAddNewDosage,
+    handleAddNewManufacturer,
   } = useItemModal();
 
   // Transform database types to DropdownOption format
@@ -90,6 +91,10 @@ const BasicInfoSection: React.FC = () => {
   const transformedDosages = dosages.map(dosage => ({
     id: dosage.id,
     name: dosage.name,
+  }));
+  const transformedManufacturers = manufacturers.map(manufacturer => ({
+    id: manufacturer.id,
+    name: manufacturer.name,
   }));
 
   const handleFieldChange = (field: string, value: boolean | string) => {
@@ -121,6 +126,8 @@ const BasicInfoSection: React.FC = () => {
       }
     } else if (field === 'dosage_id') {
       updateFormData({ dosage_id: value });
+    } else if (field === 'manufacturer_id') {
+      updateFormData({ manufacturer_id: value });
     }
   };
 
@@ -130,7 +137,7 @@ const BasicInfoSection: React.FC = () => {
       formData={{
         code: formData.code || '',
         name: formData.name || '',
-        manufacturer: formData.manufacturer || '',
+        manufacturer_id: formData.manufacturer_id || '',
         barcode: formData.barcode || '',
         is_medicine: formData.is_medicine || false,
         category_id: formData.category_id || '',
@@ -143,8 +150,8 @@ const BasicInfoSection: React.FC = () => {
       types={transformedTypes}
       units={transformedUnits}
       dosages={transformedDosages}
+      manufacturers={transformedManufacturers}
       loading={loading}
-      onCodeRegenerate={regenerateItemCode}
       onChange={handleChange}
       onFieldChange={handleFieldChange}
       onDropdownChange={handleDropdownChange}
@@ -152,6 +159,7 @@ const BasicInfoSection: React.FC = () => {
       onAddNewType={handleAddNewType}
       onAddNewUnit={handleAddNewUnit}
       onAddNewDosage={handleAddNewDosage}
+      onAddNewManufacturer={handleAddNewManufacturer}
     />
   );
 };

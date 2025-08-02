@@ -121,6 +121,31 @@ export const useAddItemMutations = ({
   });
 
   /**
+   * Mutation for adding new manufacturers
+   */
+  const addManufacturerMutation = useMutation({
+    mutationFn: async (newManufacturer: {
+      kode?: string;
+      name: string;
+      address?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('item_manufacturers')
+        .insert(newManufacturer)
+        .select('id, kode, name, address')
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['manufacturers'] });
+    },
+    onError: error => {
+      console.error('Error adding manufacturer:', error);
+    },
+  });
+
+  /**
    * Mutation for deleting items
    */
   const deleteItemMutation = useMutation({
@@ -152,7 +177,7 @@ export const useAddItemMutations = ({
   ) => {
     const baseData = {
       name: formData.name,
-      manufacturer: formData.manufacturer || null,
+      manufacturer: formData.manufacturer_id || null,
       category_id: formData.category_id,
       type_id: formData.type_id,
       unit_id: formData.unit_id,
@@ -409,6 +434,25 @@ export const useAddItemMutations = ({
     }
   };
 
+  const saveManufacturer = async (manufacturerData: {
+    kode?: string;
+    name: string;
+    address?: string;
+  }) => {
+    try {
+      const newManufacturer = await addManufacturerMutation.mutateAsync(manufacturerData);
+      const { data: updatedManufacturers } = await supabase
+        .from('item_manufacturers')
+        .select('id, kode, name, address, created_at, updated_at')
+        .order('name');
+
+      return { newManufacturer, updatedManufacturers: updatedManufacturers || [] };
+    } catch (error) {
+      console.error('Error saving manufacturer:', error);
+      throw new Error('Gagal menyimpan produsen baru.');
+    }
+  };
+
   return {
     // Core mutations
     saveItemMutation,
@@ -417,12 +461,14 @@ export const useAddItemMutations = ({
     addTypeMutation,
     addUnitMutation,
     addDosageMutation,
+    addManufacturerMutation,
 
     // Helper functions
     saveCategory,
     saveType,
     saveUnit,
     saveDosage,
+    saveManufacturer,
     prepareItemData,
 
     // Loading states

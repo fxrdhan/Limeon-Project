@@ -49,6 +49,16 @@ interface ItemFormModalsProps {
     }) => Promise<void>;
     mutation: MutationState;
   };
+  manufacturerModal: {
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (data: {
+      kode?: string;
+      name: string;
+      address?: string;
+    }) => Promise<void>;
+    mutation: MutationState;
+  };
   currentSearchTerm?: string;
 }
 
@@ -57,6 +67,7 @@ export default function ItemFormModals({
   typeModal,
   unitModal,
   dosageModal,
+  manufacturerModal,
   currentSearchTerm,
 }: ItemFormModalsProps) {
   return (
@@ -94,6 +105,15 @@ export default function ItemFormModals({
         onSubmit={dosageModal.onSubmit}
         isLoading={dosageModal.mutation.isPending}
         entityName="Sediaan"
+        initialNameFromSearch={currentSearchTerm}
+      />
+
+      <EntityManagementModal
+        isOpen={manufacturerModal.isOpen}
+        onClose={manufacturerModal.onClose}
+        onSubmit={manufacturerModal.onSubmit}
+        isLoading={manufacturerModal.mutation.isPending}
+        entityName="Produsen"
         initialNameFromSearch={currentSearchTerm}
       />
     </>

@@ -49,6 +49,7 @@ export interface ItemDosage {
   id: string;
   kode?: string;
   name: string;
+  nci_code?: string;
   description?: string;
   created_at: string;
   updated_at: string;

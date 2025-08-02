@@ -99,7 +99,7 @@ export const useEntityModalLogic = ({
       } else if (initialNameFromSearch) {
         setKode('');
         setName(initialNameFromSearch);
-        setDescription('');
+            setDescription('');
         setAddress('');
       } else {
         resetForm();
@@ -135,6 +135,7 @@ export const useEntityModalLogic = ({
       id?: string;
       kode?: string;
       name: string;
+      fda_code?: string;
       description?: string;
       address?: string;
     } = {
@@ -142,6 +143,7 @@ export const useEntityModalLogic = ({
       kode: kode.trim(),
       name: name.trim(),
     };
+
 
     if (description.trim()) {
       submitData.description = description.trim();
