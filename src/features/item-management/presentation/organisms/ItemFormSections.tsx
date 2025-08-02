@@ -239,6 +239,7 @@ const PricingSection: React.FC = () => {
 // eslint-disable-next-line react-refresh/only-export-components
 const UnitConversionSection: React.FC = () => {
   const { unitConversionHook } = useItemPrice();
+  const { resetKey } = useItemUI();
 
   const unitConversionLogic = useUnitConversionLogic({
     conversions: unitConversionHook.conversions,
@@ -258,6 +259,7 @@ const UnitConversionSection: React.FC = () => {
 
   return (
     <ItemUnitConversionManager
+      key={resetKey} // Force re-mount on reset to clear validation and input states
       baseUnit={unitConversionHook.baseUnit}
       availableUnits={unitConversionHook.availableUnits}
       conversions={unitConversionHook.conversions}
