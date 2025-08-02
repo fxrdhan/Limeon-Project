@@ -88,6 +88,11 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
 
     const resetConversions = useCallback(() => {
         setUnitConversions([]);
+        // Also reset the form data to clear input fields
+        setUnitConversionFormData({
+            unit: "",
+            conversion: 0,
+        });
     }, []);
 
     return {
