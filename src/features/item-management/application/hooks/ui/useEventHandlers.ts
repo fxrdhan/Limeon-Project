@@ -1,4 +1,4 @@
-import type { ChangeEvent, RefObject } from "react";
+import type { ChangeEvent, RefObject } from 'react';
 
 interface AddItemFormType {
   handleSelectChange: (e: ChangeEvent<HTMLSelectElement>) => void;
@@ -15,7 +15,11 @@ interface AddItemFormType {
   setMinStockValue: (value: string) => void;
   setEditingMinStock: (editing: boolean) => void;
   minStockValue: string;
-  handleCancel: (closingStateSetter?: ((value: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>) => void;
+  handleCancel: (
+    closingStateSetter?:
+      | ((value: boolean) => void)
+      | React.Dispatch<React.SetStateAction<boolean>>
+  ) => void;
 }
 
 interface AddItemEventHandlersProps {
@@ -31,13 +35,12 @@ export const useAddItemEventHandlers = ({
   minStockInputRef,
   expiryCheckboxRef,
 }: AddItemEventHandlersProps) => {
-
   const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     addItemForm.handleSelectChange(e);
 
-    if (name === "unit_id" && value) {
-      const selectedUnit = addItemForm.units.find((unit) => unit.id === value);
+    if (name === 'unit_id' && value) {
+      const selectedUnit = addItemForm.units.find(unit => unit.id === value);
       if (selectedUnit)
         addItemForm.unitConversionHook.setBaseUnit(selectedUnit.name);
     }
@@ -72,7 +75,7 @@ export const useAddItemEventHandlers = ({
   const startEditingMargin = () => {
     const currentMargin = addItemForm.calculateProfitPercentage();
     addItemForm.setMarginPercentage(
-      currentMargin !== null ? currentMargin.toFixed(1) : "0",
+      currentMargin !== null ? currentMargin.toFixed(1) : '0'
     );
     addItemForm.setEditingMargin(true);
 
@@ -96,7 +99,7 @@ export const useAddItemEventHandlers = ({
   };
 
   const handleMarginKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       stopEditingMargin();
 
@@ -137,7 +140,7 @@ export const useAddItemEventHandlers = ({
   };
 
   const handleMinStockKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       stopEditingMinStock();
       if (addItemForm.formData.is_medicine && expiryCheckboxRef?.current) {
@@ -149,7 +152,9 @@ export const useAddItemEventHandlers = ({
   };
 
   const handleActualCancel = (
-    closingStateSetter?: ((value: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>,
+    closingStateSetter?:
+      | ((value: boolean) => void)
+      | React.Dispatch<React.SetStateAction<boolean>>
   ) => {
     addItemForm.handleCancel(closingStateSetter);
   };

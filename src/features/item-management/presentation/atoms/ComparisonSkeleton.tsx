@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 interface ComparisonSkeletonProps {
   className?: string;
@@ -6,7 +6,7 @@ interface ComparisonSkeletonProps {
 }
 
 const ComparisonSkeleton: React.FC<ComparisonSkeletonProps> = ({
-  className = "",
+  className = '',
   lines = 1,
 }) => {
   return (

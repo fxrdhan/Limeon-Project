@@ -1,6 +1,6 @@
-import Input from "@/components/input";
-import FormField from "@/components/form-field";
-import type { z } from "zod";
+import Input from '@/components/input';
+import FormField from '@/components/form-field';
+import type { z } from 'zod';
 
 interface PriceInputProps {
   label: string;
@@ -22,8 +22,8 @@ export default function PriceInput({
   tabIndex,
   validationSchema,
   required = false,
-  min = "0",
-  className = "w-full",
+  min = '0',
+  className = 'w-full',
 }: PriceInputProps) {
   return (
     <FormField label={label} required={required}>

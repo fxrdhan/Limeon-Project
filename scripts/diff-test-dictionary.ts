@@ -1,6 +1,6 @@
 /**
  * Test Dictionary for Diff Analyzer
- * 
+ *
  * Comprehensive collection of test cases for evaluating and improving
  * the smart adaptive diff algorithm. Each test case includes expected
  * behavior and difficulty level.
@@ -27,7 +27,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Tablet dengan kandungan aktif',
     expectedMode: 'character',
     difficulty: 'easy',
-    notes: 'Should highlight only "dgn" -> "dengan"'
+    notes: 'Should highlight only "dgn" -> "dengan"',
   },
   {
     id: 'abbrev_002',
@@ -37,7 +37,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Sediaan untuk pasien yang membutuhkan',
     expectedMode: 'character',
     difficulty: 'medium',
-    notes: 'Should handle multiple abbreviations correctly'
+    notes: 'Should handle multiple abbreviations correctly',
   },
   {
     id: 'abbrev_003',
@@ -47,7 +47,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Obat dengan efek samping berat',
     expectedMode: 'smart',
     difficulty: 'hard',
-    notes: 'Should detect abbreviation expansion AND word replacement'
+    notes: 'Should detect abbreviation expansion AND word replacement',
   },
 
   // ==================== WORD REPLACEMENTS ====================
@@ -59,7 +59,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Tablet berwarna merah',
     expectedMode: 'word',
     difficulty: 'easy',
-    notes: 'Clean word-level change'
+    notes: 'Clean word-level change',
   },
   {
     id: 'word_002',
@@ -69,17 +69,18 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Sediaan cair dari dua cairan',
     expectedMode: 'word',
     difficulty: 'medium',
-    notes: 'Should remove "yang terdiri" cleanly'
+    notes: 'Should remove "yang terdiri" cleanly',
   },
   {
     id: 'word_003',
     category: 'word_replacement',
     description: 'Complex sentence restructuring',
-    oldText: 'Sediaan cair yang terdiri dari dua cairan yang tidak saling bercampur',
+    oldText:
+      'Sediaan cair yang terdiri dari dua cairan yang tidak saling bercampur',
     newText: 'Sediaan cair dari dua cairan yang tidak saling bercampur',
     expectedMode: 'word',
     difficulty: 'hard',
-    notes: 'LCS might over-fragment this - should use word-level'
+    notes: 'LCS might over-fragment this - should use word-level',
   },
 
   // ==================== PUNCTUATION CHANGES ====================
@@ -91,7 +92,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Sediaan tablet, oral',
     expectedMode: 'character',
     difficulty: 'easy',
-    notes: 'Only punctuation change'
+    notes: 'Only punctuation change',
   },
   {
     id: 'punct_002',
@@ -101,7 +102,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Obat untuk diabetes, hipertensi, dan kolesterol',
     expectedMode: 'character',
     difficulty: 'medium',
-    notes: 'Should handle multiple comma insertions'
+    notes: 'Should handle multiple comma insertions',
   },
   {
     id: 'punct_003',
@@ -111,7 +112,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Tablet dengan bahan aktif, utama',
     expectedMode: 'character',
     difficulty: 'hard',
-    notes: 'Mixed punctuation and abbreviation changes'
+    notes: 'Mixed punctuation and abbreviation changes',
   },
 
   // ==================== NUMBER AND UNIT CHANGES ====================
@@ -123,7 +124,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Tablet 250mg sekali sehari',
     expectedMode: 'word',
     difficulty: 'easy',
-    notes: 'Number change should use word-level'
+    notes: 'Number change should use word-level',
   },
   {
     id: 'number_002',
@@ -133,7 +134,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Dosis 5mg pagi dan 15mg malam',
     expectedMode: 'word',
     difficulty: 'medium',
-    notes: 'Multiple number changes'
+    notes: 'Multiple number changes',
   },
   {
     id: 'number_003',
@@ -143,7 +144,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Larutan 1l',
     expectedMode: 'word',
     difficulty: 'hard',
-    notes: 'Unit conversion - should be treated as word change'
+    notes: 'Unit conversion - should be treated as word change',
   },
 
   // ==================== MIXED COMPLEX CASES ====================
@@ -155,17 +156,19 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Tablet dengan dosis 250mg untuk anak',
     expectedMode: 'smart',
     difficulty: 'extreme',
-    notes: 'Multiple types of changes - algorithm should adapt'
+    notes: 'Multiple types of changes - algorithm should adapt',
   },
   {
     id: 'mixed_002',
     category: 'mixed_complex',
     description: 'Long text with various changes',
-    oldText: 'Sediaan farmasi berupa tablet salut selaput yg mengandung bahan aktif 500mg utk pengobatan infeksi bakteri pada dewasa',
-    newText: 'Sediaan farmasi berupa tablet salut selaput yang mengandung bahan aktif 250mg untuk pengobatan infeksi virus pada anak',
+    oldText:
+      'Sediaan farmasi berupa tablet salut selaput yg mengandung bahan aktif 500mg utk pengobatan infeksi bakteri pada dewasa',
+    newText:
+      'Sediaan farmasi berupa tablet salut selaput yang mengandung bahan aktif 250mg untuk pengobatan infeksi virus pada anak',
     expectedMode: 'smart',
     difficulty: 'extreme',
-    notes: 'Complex mix requiring intelligent mode selection'
+    notes: 'Complex mix requiring intelligent mode selection',
   },
 
   // ==================== EDGE CASES ====================
@@ -177,7 +180,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Tidak',
     expectedMode: 'word',
     difficulty: 'easy',
-    notes: 'Short text should prefer word-level'
+    notes: 'Short text should prefer word-level',
   },
   {
     id: 'edge_002',
@@ -187,7 +190,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Tablets',
     expectedMode: 'character',
     difficulty: 'medium',
-    notes: 'Single character addition'
+    notes: 'Single character addition',
   },
   {
     id: 'edge_003',
@@ -197,7 +200,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Sirup untuk batuk pilek',
     expectedMode: 'word',
     difficulty: 'hard',
-    notes: 'Very low similarity - should use word-level'
+    notes: 'Very low similarity - should use word-level',
   },
   {
     id: 'edge_004',
@@ -207,7 +210,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Tablet dengan kandungan aktif',
     expectedMode: 'smart',
     difficulty: 'easy',
-    notes: 'Should return unchanged segment quickly'
+    notes: 'Should return unchanged segment quickly',
   },
   {
     id: 'edge_005',
@@ -217,7 +220,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'ampul',
     expectedMode: 'character',
     difficulty: 'medium',
-    notes: 'Should detect character-level deletion, not word replacement'
+    notes: 'Should detect character-level deletion, not word replacement',
   },
 
   // ==================== MEDICAL TERMINOLOGY ====================
@@ -229,7 +232,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Injeksi intravena 10ml',
     expectedMode: 'character',
     difficulty: 'medium',
-    notes: 'Medical abbreviation should be character-level'
+    notes: 'Medical abbreviation should be character-level',
   },
   {
     id: 'medical_002',
@@ -239,7 +242,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Mengandung ibuprofen 400mg',
     expectedMode: 'word',
     difficulty: 'medium',
-    notes: 'Drug name and dosage change'
+    notes: 'Drug name and dosage change',
   },
   {
     id: 'medical_003',
@@ -249,7 +252,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Pemberian secara rektal',
     expectedMode: 'word',
     difficulty: 'easy',
-    notes: 'Simple medical term replacement'
+    notes: 'Simple medical term replacement',
   },
 
   // ==================== INDONESIAN LANGUAGE SPECIFICS ====================
@@ -261,7 +264,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Obat ini dipake sama pasien',
     expectedMode: 'word',
     difficulty: 'medium',
-    notes: 'Formal to informal Indonesian'
+    notes: 'Formal to informal Indonesian',
   },
   {
     id: 'indo_002',
@@ -271,7 +274,7 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     newText: 'Pemakaian obat ini',
     expectedMode: 'word',
     difficulty: 'hard',
-    notes: 'Indonesian morphological changes'
+    notes: 'Indonesian morphological changes',
   },
 
   // ==================== PERFORMANCE TEST CASES ====================
@@ -279,12 +282,14 @@ export const DIFF_TEST_DICTIONARY: DiffTestCase[] = [
     id: 'perf_001',
     category: 'performance',
     description: 'Long pharmaceutical description',
-    oldText: 'Tablet salut selaput yang mengandung bahan aktif acetaminophen 500mg dengan eksipien microcrystalline cellulose, croscarmellose sodium, povidone, magnesium stearate, dan coating material HPMC untuk pengobatan demam dan nyeri ringan hingga sedang pada pasien dewasa dengan dosis maksimal 4000mg per hari yang harus diminum sesudah makan',
-    newText: 'Tablet salut selaput yang mengandung bahan aktif paracetamol 650mg dengan eksipien microcrystalline cellulose, croscarmellose sodium, povidone, magnesium stearate, dan coating material HPMC untuk pengobatan demam dan nyeri ringan hingga sedang pada pasien dewasa dengan dosis maksimal 3900mg per hari yang harus diminum sesudah makan',
+    oldText:
+      'Tablet salut selaput yang mengandung bahan aktif acetaminophen 500mg dengan eksipien microcrystalline cellulose, croscarmellose sodium, povidone, magnesium stearate, dan coating material HPMC untuk pengobatan demam dan nyeri ringan hingga sedang pada pasien dewasa dengan dosis maksimal 4000mg per hari yang harus diminum sesudah makan',
+    newText:
+      'Tablet salut selaput yang mengandung bahan aktif paracetamol 650mg dengan eksipien microcrystalline cellulose, croscarmellose sodium, povidone, magnesium stearate, dan coating material HPMC untuk pengobatan demam dan nyeri ringan hingga sedang pada pasien dewasa dengan dosis maksimal 3900mg per hari yang harus diminum sesudah makan',
     expectedMode: 'smart',
     difficulty: 'extreme',
-    notes: 'Long text with multiple changes - tests performance and accuracy'
-  }
+    notes: 'Long text with multiple changes - tests performance and accuracy',
+  },
 ];
 
 // Helper function to get test cases by category
@@ -305,19 +310,25 @@ export function getAllCategories(): string[] {
 // Helper function to get test statistics
 export function getTestStatistics() {
   const total = DIFF_TEST_DICTIONARY.length;
-  const byCategory = getAllCategories().reduce((acc, category) => {
-    acc[category] = getTestCasesByCategory(category).length;
-    return acc;
-  }, {} as Record<string, number>);
-  
-  const byDifficulty = ['easy', 'medium', 'hard', 'extreme'].reduce((acc, difficulty) => {
-    acc[difficulty] = getTestCasesByDifficulty(difficulty).length;
-    return acc;
-  }, {} as Record<string, number>);
+  const byCategory = getAllCategories().reduce(
+    (acc, category) => {
+      acc[category] = getTestCasesByCategory(category).length;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  const byDifficulty = ['easy', 'medium', 'hard', 'extreme'].reduce(
+    (acc, difficulty) => {
+      acc[difficulty] = getTestCasesByDifficulty(difficulty).length;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   return {
     total,
     byCategory,
-    byDifficulty
+    byDifficulty,
   };
 }

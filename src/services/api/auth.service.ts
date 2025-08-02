@@ -31,7 +31,9 @@ export class AuthService {
   }
 
   // Get user profile from database
-  async getUserProfile(userId: string): Promise<AuthServiceResponse<UserDetails>> {
+  async getUserProfile(
+    userId: string
+  ): Promise<AuthServiceResponse<UserDetails>> {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -46,23 +48,31 @@ export class AuthService {
   }
 
   // Sign in with email and password
-  async signInWithPassword(email: string, password: string): Promise<AuthServiceResponse<{
-    session: Session;
-    user: UserDetails;
-  }>> {
+  async signInWithPassword(
+    email: string,
+    password: string
+  ): Promise<
+    AuthServiceResponse<{
+      session: Session;
+      user: UserDetails;
+    }>
+  > {
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
       if (authError || !authData.session || !authData.user) {
         return { data: null, error: authError };
       }
 
       // Get user profile
-      const { data: userData, error: userError } = await this.getUserProfile(authData.user.id);
-      
+      const { data: userData, error: userError } = await this.getUserProfile(
+        authData.user.id
+      );
+
       if (userError || !userData) {
         return { data: null, error: userError };
       }
@@ -70,9 +80,9 @@ export class AuthService {
       return {
         data: {
           session: authData.session,
-          user: userData
+          user: userData,
         },
-        error: null
+        error: null,
       };
     } catch (error) {
       return { data: null, error: error as Error };
@@ -90,13 +100,19 @@ export class AuthService {
   }
 
   // Sign up new user
-  async signUp(email: string, password: string, options?: {
-    name?: string;
-    role?: string;
-  }): Promise<AuthServiceResponse<{
-    session: Session | null;
-    user: User;
-  }>> {
+  async signUp(
+    email: string,
+    password: string,
+    options?: {
+      name?: string;
+      role?: string;
+    }
+  ): Promise<
+    AuthServiceResponse<{
+      session: Session | null;
+      user: User;
+    }>
+  > {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -104,9 +120,9 @@ export class AuthService {
         options: {
           data: {
             name: options?.name,
-            role: options?.role || 'user'
-          }
-        }
+            role: options?.role || 'user',
+          },
+        },
       });
 
       if (error) {
@@ -116,9 +132,9 @@ export class AuthService {
       return {
         data: {
           session: data.session,
-          user: data.user!
+          user: data.user!,
         },
-        error: null
+        error: null,
       };
     } catch (error) {
       return { data: null, error: error as Error };
@@ -126,7 +142,10 @@ export class AuthService {
   }
 
   // Update user profile
-  async updateUserProfile(userId: string, updates: Partial<UserDetails>): Promise<AuthServiceResponse<UserDetails>> {
+  async updateUserProfile(
+    userId: string,
+    updates: Partial<UserDetails>
+  ): Promise<AuthServiceResponse<UserDetails>> {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -142,26 +161,40 @@ export class AuthService {
   }
 
   // Update profile photo
-  async updateProfilePhoto(userId: string, file: File, currentPhotoUrl?: string): Promise<AuthServiceResponse<{
-    user: UserDetails;
-    photoUrl: string;
-  }>> {
+  async updateProfilePhoto(
+    userId: string,
+    file: File,
+    currentPhotoUrl?: string
+  ): Promise<
+    AuthServiceResponse<{
+      user: UserDetails;
+      photoUrl: string;
+    }>
+  > {
     try {
       // Delete old photo if exists
       if (currentPhotoUrl) {
-        const oldPath = StorageService.extractPathFromUrl(currentPhotoUrl, 'profiles');
+        const oldPath = StorageService.extractPathFromUrl(
+          currentPhotoUrl,
+          'profiles'
+        );
         if (oldPath) {
           await StorageService.deleteEntityImage('profiles', oldPath);
         }
       }
 
       // Upload new photo
-      const { publicUrl } = await StorageService.uploadEntityImage('profiles', userId, file);
+      const { publicUrl } = await StorageService.uploadEntityImage(
+        'profiles',
+        userId,
+        file
+      );
 
       // Update user record
-      const { data: userData, error: updateError } = await this.updateUserProfile(userId, {
-        profilephoto: publicUrl
-      });
+      const { data: userData, error: updateError } =
+        await this.updateUserProfile(userId, {
+          profilephoto: publicUrl,
+        });
 
       if (updateError || !userData) {
         return { data: null, error: updateError };
@@ -170,9 +203,9 @@ export class AuthService {
       return {
         data: {
           user: userData,
-          photoUrl: publicUrl
+          photoUrl: publicUrl,
         },
-        error: null
+        error: null,
       };
     } catch (error) {
       return { data: null, error: error as Error };
@@ -190,10 +223,12 @@ export class AuthService {
   }
 
   // Update password
-  async updatePassword(newPassword: string): Promise<AuthServiceResponse<User>> {
+  async updatePassword(
+    newPassword: string
+  ): Promise<AuthServiceResponse<User>> {
     try {
       const { data, error } = await supabase.auth.updateUser({
-        password: newPassword
+        password: newPassword,
       });
 
       return { data: data.user, error };
@@ -203,7 +238,9 @@ export class AuthService {
   }
 
   // Listen to auth state changes
-  onAuthStateChange(callback: (event: string, session: Session | null) => void) {
+  onAuthStateChange(
+    callback: (event: string, session: Session | null) => void
+  ) {
     return supabase.auth.onAuthStateChange(callback);
   }
 

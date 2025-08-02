@@ -10,7 +10,10 @@ export const CurrentPageDisplay: React.FC<CurrentPageDisplayProps> = ({
 }) => {
   const variants = {
     enter: (direction: number) => ({
-      x: direction > 0 ? PAGINATION_CONSTANTS.ANIMATION.ENTER_X : -PAGINATION_CONSTANTS.ANIMATION.ENTER_X,
+      x:
+        direction > 0
+          ? PAGINATION_CONSTANTS.ANIMATION.ENTER_X
+          : -PAGINATION_CONSTANTS.ANIMATION.ENTER_X,
       opacity: 0,
     }),
     center: {
@@ -20,7 +23,10 @@ export const CurrentPageDisplay: React.FC<CurrentPageDisplayProps> = ({
     },
     exit: (direction: number) => ({
       zIndex: 0,
-      x: direction > 0 ? -PAGINATION_CONSTANTS.ANIMATION.EXIT_X : PAGINATION_CONSTANTS.ANIMATION.EXIT_X,
+      x:
+        direction > 0
+          ? -PAGINATION_CONSTANTS.ANIMATION.EXIT_X
+          : PAGINATION_CONSTANTS.ANIMATION.EXIT_X,
       opacity: 0,
     }),
   };
@@ -29,16 +35,16 @@ export const CurrentPageDisplay: React.FC<CurrentPageDisplayProps> = ({
     <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-primary text-white font-medium shadow-xs px-3 mx-1 overflow-hidden select-none">
       <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <motion.span
-          key={`${currentPage}-${isFloating ? "floating" : "main"}`}
+          key={`${currentPage}-${isFloating ? 'floating' : 'main'}`}
           custom={direction}
           variants={variants}
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ 
-            type: "spring", 
-            stiffness: PAGINATION_CONSTANTS.ANIMATION.PAGE_SPRING_STIFFNESS, 
-            damping: PAGINATION_CONSTANTS.ANIMATION.PAGE_SPRING_DAMPING 
+          transition={{
+            type: 'spring',
+            stiffness: PAGINATION_CONSTANTS.ANIMATION.PAGE_SPRING_STIFFNESS,
+            damping: PAGINATION_CONSTANTS.ANIMATION.PAGE_SPRING_DAMPING,
           }}
           className="flex items-center justify-center select-none"
         >

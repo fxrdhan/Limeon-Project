@@ -20,7 +20,9 @@ const OptionText: React.FC<OptionTextProps> = ({
   return (
     <span
       className={`${
-        isExpanded ? 'whitespace-normal break-words leading-relaxed' : 'truncate'
+        isExpanded
+          ? 'whitespace-normal break-words leading-relaxed'
+          : 'truncate'
       } transition-all duration-200 text-left ${
         isSelected
           ? 'text-primary font-semibold'

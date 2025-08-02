@@ -76,7 +76,9 @@ export class SalesService extends BaseService<DBSale> {
   }
 
   // Get all sales with related data
-  async getAllWithDetails(options: Parameters<BaseService<DBSale>['getAll']>[0] = {}): Promise<ServiceResponse<SaleWithDetails[]>> {
+  async getAllWithDetails(
+    options: Parameters<BaseService<DBSale>['getAll']>[0] = {}
+  ): Promise<ServiceResponse<SaleWithDetails[]>> {
     try {
       const defaultSelect = `
         *,
@@ -98,7 +100,7 @@ export class SalesService extends BaseService<DBSale> {
 
       const result = await super.getAll({
         ...options,
-        select: options.select || defaultSelect
+        select: options.select || defaultSelect,
       });
 
       if (result.error || !result.data) {
@@ -110,16 +112,22 @@ export class SalesService extends BaseService<DBSale> {
         const saleData = sale as Record<string, unknown>;
         return {
           ...saleData,
-          patient: saleData.patients as { id: string; name: string; phone?: string } | undefined,
-          doctor: saleData.doctors as { id: string; name: string; specialization?: string } | undefined,
-          created_by_user: saleData.users as { id: string; name: string } | undefined
+          patient: saleData.patients as
+            | { id: string; name: string; phone?: string }
+            | undefined,
+          doctor: saleData.doctors as
+            | { id: string; name: string; specialization?: string }
+            | undefined,
+          created_by_user: saleData.users as
+            | { id: string; name: string }
+            | undefined,
         };
       }) as SaleWithDetails[];
 
       return {
         data: transformedData,
         error: null,
-        count: result.count
+        count: result.count,
       };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
@@ -127,11 +135,14 @@ export class SalesService extends BaseService<DBSale> {
   }
 
   // Get sale with full details
-  async getSaleWithDetails(id: string): Promise<ServiceResponse<SaleWithDetails>> {
+  async getSaleWithDetails(
+    id: string
+  ): Promise<ServiceResponse<SaleWithDetails>> {
     try {
       const { data: sale, error } = await supabase
         .from('sales')
-        .select(`
+        .select(
+          `
           *,
           patients (
             id,
@@ -147,7 +158,8 @@ export class SalesService extends BaseService<DBSale> {
             id,
             name
           )
-        `)
+        `
+        )
         .eq('id', id)
         .single();
 
@@ -160,7 +172,7 @@ export class SalesService extends BaseService<DBSale> {
         ...sale,
         patient: sale.patients,
         doctor: sale.doctors,
-        created_by_user: sale.users
+        created_by_user: sale.users,
       };
 
       return { data: transformedSale, error: null };
@@ -170,11 +182,14 @@ export class SalesService extends BaseService<DBSale> {
   }
 
   // Get sale items
-  async getSaleItems(saleId: string): Promise<ServiceResponse<SaleItemWithDetails[]>> {
+  async getSaleItems(
+    saleId: string
+  ): Promise<ServiceResponse<SaleItemWithDetails[]>> {
     try {
       const { data, error } = await supabase
         .from('sale_items')
-        .select(`
+        .select(
+          `
           *,
           items (
             id,
@@ -182,7 +197,8 @@ export class SalesService extends BaseService<DBSale> {
             code,
             manufacturer
           )
-        `)
+        `
+        )
         .eq('sale_id', saleId)
         .order('created_at', { ascending: true });
 
@@ -197,8 +213,8 @@ export class SalesService extends BaseService<DBSale> {
           id: item.items?.id || '',
           name: item.items?.name || '',
           code: item.items?.code || '',
-          manufacturer: item.items?.manufacturer || ''
-        }
+          manufacturer: item.items?.manufacturer || '',
+        },
       }));
 
       return { data: transformedItems, error: null };
@@ -227,7 +243,7 @@ export class SalesService extends BaseService<DBSale> {
       // Insert sale items
       const saleItems = items.map(item => ({
         ...item,
-        sale_id: sale.id
+        sale_id: sale.id,
       }));
 
       const { data: insertedItems, error: itemsError } = await supabase
@@ -244,14 +260,14 @@ export class SalesService extends BaseService<DBSale> {
       // Update item stocks (decrease)
       const stockUpdates = items.map(item => ({
         id: item.item_id,
-        decrement: item.quantity
+        decrement: item.quantity,
       }));
 
       await this.updateItemStocks(stockUpdates);
 
       return {
         data: { sale, items: insertedItems || [] },
-        error: null
+        error: null,
       };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
@@ -277,15 +293,12 @@ export class SalesService extends BaseService<DBSale> {
         const { data: existingItems } = await this.getSaleItems(id);
 
         // Delete existing items
-        await supabase
-          .from('sale_items')
-          .delete()
-          .eq('sale_id', id);
+        await supabase.from('sale_items').delete().eq('sale_id', id);
 
         // Insert new items
         const saleItems = items.map(item => ({
           ...item,
-          sale_id: id
+          sale_id: id,
         }));
 
         const { data: insertedItems, error: itemsError } = await supabase
@@ -302,7 +315,7 @@ export class SalesService extends BaseService<DBSale> {
 
         return {
           data: { sale, items: insertedItems || [] },
-          error: null
+          error: null,
         };
       }
 
@@ -322,7 +335,7 @@ export class SalesService extends BaseService<DBSale> {
         // Restore stocks (add back the quantities)
         const stockUpdates = items.map(item => ({
           id: item.item_id,
-          increment: item.quantity
+          increment: item.quantity,
         }));
 
         await this.updateItemStocks(stockUpdates);
@@ -339,7 +352,7 @@ export class SalesService extends BaseService<DBSale> {
   async getSalesByPatient(patientId: string) {
     return this.getAllWithDetails({
       filters: { patient_id: patientId },
-      orderBy: { column: 'date', ascending: false }
+      orderBy: { column: 'date', ascending: false },
     });
   }
 
@@ -347,7 +360,7 @@ export class SalesService extends BaseService<DBSale> {
   async getSalesByDoctor(doctorId: string) {
     return this.getAllWithDetails({
       filters: { doctor_id: doctorId },
-      orderBy: { column: 'date', ascending: false }
+      orderBy: { column: 'date', ascending: false },
     });
   }
 
@@ -356,7 +369,8 @@ export class SalesService extends BaseService<DBSale> {
     try {
       const { data, error } = await supabase
         .from('sales')
-        .select(`
+        .select(
+          `
           *,
           patients (
             id,
@@ -368,7 +382,8 @@ export class SalesService extends BaseService<DBSale> {
             name,
             specialization
           )
-        `)
+        `
+        )
         .gte('date', startDate)
         .lte('date', endDate)
         .order('date', { ascending: false });
@@ -383,16 +398,14 @@ export class SalesService extends BaseService<DBSale> {
   async getSalesByPaymentMethod(paymentMethod: string) {
     return this.getAllWithDetails({
       filters: { payment_method: paymentMethod },
-      orderBy: { column: 'date', ascending: false }
+      orderBy: { column: 'date', ascending: false },
     });
   }
 
   // Get sales analytics
   async getSalesAnalytics(startDate?: string, endDate?: string) {
     try {
-      let query = supabase
-        .from('sales')
-        .select('date, total, payment_method');
+      let query = supabase.from('sales').select('date, total, payment_method');
 
       if (startDate && endDate) {
         query = query.gte('date', startDate).lte('date', endDate);
@@ -405,23 +418,30 @@ export class SalesService extends BaseService<DBSale> {
       }
 
       // Calculate analytics
-      const totalRevenue = data.reduce((sum, sale) => sum + Number(sale.total), 0);
+      const totalRevenue = data.reduce(
+        (sum, sale) => sum + Number(sale.total),
+        0
+      );
       const totalSales = data.length;
       const averageSale = totalSales > 0 ? totalRevenue / totalSales : 0;
 
-      const paymentMethods = data.reduce((acc, sale) => {
-        acc[sale.payment_method] = (acc[sale.payment_method] || 0) + Number(sale.total);
-        return acc;
-      }, {} as Record<string, number>);
+      const paymentMethods = data.reduce(
+        (acc, sale) => {
+          acc[sale.payment_method] =
+            (acc[sale.payment_method] || 0) + Number(sale.total);
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
       return {
         data: {
           totalRevenue,
           totalSales,
           averageSale,
-          paymentMethods
+          paymentMethods,
         },
-        error: null
+        error: null,
       };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
@@ -429,7 +449,10 @@ export class SalesService extends BaseService<DBSale> {
   }
 
   // Check if invoice number exists
-  async isInvoiceNumberUnique(invoiceNumber: string, excludeId?: string): Promise<boolean> {
+  async isInvoiceNumberUnique(
+    invoiceNumber: string,
+    excludeId?: string
+  ): Promise<boolean> {
     try {
       let query = supabase
         .from('sales')
@@ -441,7 +464,7 @@ export class SalesService extends BaseService<DBSale> {
       }
 
       const { data, error } = await query;
-      
+
       if (error) {
         console.error('Error checking invoice uniqueness:', error);
         return false;
@@ -454,7 +477,9 @@ export class SalesService extends BaseService<DBSale> {
   }
 
   // Private helper methods
-  private async updateItemStocks(updates: { id: string; increment?: number; decrement?: number }[]) {
+  private async updateItemStocks(
+    updates: { id: string; increment?: number; decrement?: number }[]
+  ) {
     try {
       for (const update of updates) {
         const { data: item } = await supabase
@@ -507,7 +532,7 @@ export class SalesService extends BaseService<DBSale> {
       .map(([id, difference]) => ({
         id,
         increment: difference > 0 ? difference : undefined,
-        decrement: difference < 0 ? Math.abs(difference) : undefined
+        decrement: difference < 0 ? Math.abs(difference) : undefined,
       }));
 
     await this.updateItemStocks(updates);

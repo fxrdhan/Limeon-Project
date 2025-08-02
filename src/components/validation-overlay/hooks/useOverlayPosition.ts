@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { OverlayPosition } from "../types";
-import { POSITION_OFFSET } from "../constants";
+import { useEffect, useState } from 'react';
+import { OverlayPosition } from '../types';
+import { POSITION_OFFSET } from '../constants';
 
 interface UseOverlayPositionProps {
   showError: boolean;

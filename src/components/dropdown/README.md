@@ -25,7 +25,7 @@ const MyComponent = () => {
   const options = [
     { id: '1', name: 'Option 1' },
     { id: '2', name: 'Option 2' },
-    { id: '3', name: 'Option 3' }
+    { id: '3', name: 'Option 3' },
   ];
 
   return (
@@ -43,28 +43,28 @@ const MyComponent = () => {
 
 ### Required Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `options` | `Array<{id: string, name: string}>` | List of selectable options |
-| `value` | `string` | Currently selected option ID |
-| `onChange` | `(optionId: string) => void` | Handler for option selection |
+| Prop       | Type                                | Description                  |
+| ---------- | ----------------------------------- | ---------------------------- |
+| `options`  | `Array<{id: string, name: string}>` | List of selectable options   |
+| `value`    | `string`                            | Currently selected option ID |
+| `onChange` | `(optionId: string) => void`        | Handler for option selection |
 
 ### Optional Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `placeholder` | `string` | `"-- Pilih --"` | Placeholder text when no option selected |
-| `searchList` | `boolean` | `true` | Enable search functionality |
-| `withRadio` | `boolean` | `false` | Show radio button indicators |
-| `required` | `boolean` | `false` | Mark field as required for validation |
-| `validate` | `boolean` | `false` | Enable form validation |
-| `showValidationOnBlur` | `boolean` | `true` | Show validation errors on blur |
-| `validationAutoHide` | `boolean` | `true` | Auto-hide validation messages |
-| `validationAutoHideDelay` | `number` | `undefined` | Delay before auto-hiding validation |
-| `hoverToOpen` | `boolean` | `false` | Open dropdown on hover |
-| `onAddNew` | `(searchTerm: string) => void` | `undefined` | Handler for adding new options |
-| `name` | `string` | `undefined` | Form field name for validation |
-| `tabIndex` | `number` | `undefined` | Tab order for accessibility |
+| Prop                      | Type                           | Default         | Description                              |
+| ------------------------- | ------------------------------ | --------------- | ---------------------------------------- |
+| `placeholder`             | `string`                       | `"-- Pilih --"` | Placeholder text when no option selected |
+| `searchList`              | `boolean`                      | `true`          | Enable search functionality              |
+| `withRadio`               | `boolean`                      | `false`         | Show radio button indicators             |
+| `required`                | `boolean`                      | `false`         | Mark field as required for validation    |
+| `validate`                | `boolean`                      | `false`         | Enable form validation                   |
+| `showValidationOnBlur`    | `boolean`                      | `true`          | Show validation errors on blur           |
+| `validationAutoHide`      | `boolean`                      | `true`          | Auto-hide validation messages            |
+| `validationAutoHideDelay` | `number`                       | `undefined`     | Delay before auto-hiding validation      |
+| `hoverToOpen`             | `boolean`                      | `false`         | Open dropdown on hover                   |
+| `onAddNew`                | `(searchTerm: string) => void` | `undefined`     | Handler for adding new options           |
+| `name`                    | `string`                       | `undefined`     | Form field name for validation           |
+| `tabIndex`                | `number`                       | `undefined`     | Tab order for accessibility              |
 
 ## Advanced Examples
 
@@ -76,7 +76,7 @@ const MyComponent = () => {
   value={selectedValue}
   onChange={setSelectedValue}
   searchList={true}
-  onAddNew={(searchTerm) => {
+  onAddNew={searchTerm => {
     const newOption = { id: Date.now().toString(), name: searchTerm };
     setOptions(prev => [...prev, newOption]);
     setSelectedValue(newOption.id);
@@ -128,13 +128,13 @@ const MyComponent = () => {
 
 ## Keyboard Navigation
 
-| Key | Action |
-|-----|--------|
-| `ArrowDown` | Navigate to next option |
-| `ArrowUp` | Navigate to previous option |
-| `Enter` | Select highlighted option |
-| `Escape` | Close dropdown |
-| `Tab` | Move focus and close dropdown |
+| Key                 | Action                           |
+| ------------------- | -------------------------------- |
+| `ArrowDown`         | Navigate to next option          |
+| `ArrowUp`           | Navigate to previous option      |
+| `Enter`             | Select highlighted option        |
+| `Escape`            | Close dropdown                   |
+| `Tab`               | Move focus and close dropdown    |
 | `PageDown`/`PageUp` | Navigate quickly through options |
 
 ## Architecture
@@ -217,7 +217,7 @@ The dropdown integrates with form validation systems:
 const validationStates = {
   idle: 'No validation performed',
   valid: 'Field passes validation',
-  invalid: 'Field has validation errors'
+  invalid: 'Field has validation errors',
 };
 
 // Custom validation logic can be added

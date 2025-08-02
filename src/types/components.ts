@@ -1,6 +1,6 @@
-import React from "react";
-import { z } from "zod";
-import { Category, Item } from "./database";
+import React from 'react';
+import { z } from 'zod';
+import { Category, Item } from './database';
 
 // Component props and UI-related types
 export interface DropdownOption {
@@ -27,26 +27,26 @@ export interface DropdownProps {
 }
 
 export type BadgeVariant =
-  | "primary"
-  | "secondary"
-  | "success"
-  | "warning"
-  | "danger"
-  | "info"
-  | "default";
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info'
+  | 'default';
 
 export interface BadgeProps {
   children: React.ReactNode;
   variant?: BadgeVariant;
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
   icon?: React.ReactNode;
   animate?: boolean;
 }
 
-export type ButtonVariant = "primary" | "secondary" | "text" | "danger";
+export type ButtonVariant = 'primary' | 'secondary' | 'text' | 'danger';
 
-export type ButtonSize = "sm" | "md" | "lg";
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -73,7 +73,7 @@ export interface InputProps
   validationAutoHide?: boolean;
   validationAutoHideDelay?: number;
   onValidationChange?: (isValid: boolean, error: string | null) => void;
-  type?: "text" | "currency" | "number" | "email" | "password" | "tel" | "url";
+  type?: 'text' | 'currency' | 'number' | 'email' | 'password' | 'tel' | 'url';
 }
 
 export interface LoadingProps {
@@ -102,7 +102,7 @@ export interface TableSearchProps {
   placeholder?: string;
   className?: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
-  searchState?: "idle" | "typing" | "found" | "not-found";
+  searchState?: 'idle' | 'typing' | 'found' | 'not-found';
   resultsCount?: number;
 }
 
@@ -118,7 +118,7 @@ export interface TableCellProps
   extends React.TdHTMLAttributes<HTMLTableCellElement> {
   colSpan?: number;
   rowSpan?: number;
-  align?: "left" | "center" | "right";
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface TableRowProps
@@ -138,7 +138,7 @@ export interface ImageUploaderProps {
   disabled?: boolean;
   loadingIcon?: React.ReactNode;
   defaultIcon?: React.ReactNode;
-  shape?: "rounded" | "rounded-sm" | "square" | "full";
+  shape?: 'rounded' | 'rounded-sm' | 'square' | 'full';
 }
 
 export interface DescriptiveTextareaProps
@@ -229,7 +229,7 @@ export interface AddEditModalProps {
 export interface FieldConfig {
   key: string;
   label: string;
-  type?: "text" | "email" | "tel" | "textarea" | "date";
+  type?: 'text' | 'email' | 'tel' | 'textarea' | 'date';
   options?: { id: string; name: string }[];
   isRadioDropdown?: boolean;
   editable?: boolean;
@@ -242,7 +242,7 @@ export interface GenericIdentityModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave?: (
-    data: Record<string, string | number | boolean | null>,
+    data: Record<string, string | number | boolean | null>
   ) => Promise<void>;
   onFieldSave?: (key: string, value: unknown) => Promise<void>;
   onImageSave?: (data: { entityId?: string; file: File }) => Promise<void>;
@@ -254,12 +254,12 @@ export interface GenericIdentityModalProps {
   imageNotAvailableText?: string;
   imageFormatHint?: string;
   onDeleteRequest?: (
-    data: Record<string, string | number | boolean | null>,
+    data: Record<string, string | number | boolean | null>
   ) => void;
   deleteButtonLabel?: string;
-  mode?: "edit" | "add";
+  mode?: 'edit' | 'add';
   initialNameFromSearch?: string;
-  imageAspectRatio?: "default" | "square";
+  imageAspectRatio?: 'default' | 'square';
 }
 
 // CardName component types

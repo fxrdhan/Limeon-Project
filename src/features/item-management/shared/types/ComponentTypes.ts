@@ -1,4 +1,3 @@
-
 // Modal Component Props
 export interface ItemManagementModalProps {
   isOpen: boolean;
@@ -10,16 +9,6 @@ export interface ItemManagementModalProps {
   refetchItems?: () => void;
 }
 
-
-
-
-
-
 // Form Component Props
 
-
-
-
 // UI Component Props
-
-

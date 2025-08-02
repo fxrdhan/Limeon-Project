@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
-import { HISTORY_DEBUG } from "../../../config/debug";
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { HISTORY_DEBUG } from '../../../config/debug';
 
 interface EntityHistoryItem {
   id: string;
@@ -22,27 +22,33 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
 
   const fetchHistory = useCallback(async () => {
     if (!entityTable || !entityId) {
-      if (HISTORY_DEBUG) console.log('Missing params:', { entityTable, entityId });
+      if (HISTORY_DEBUG)
+        console.log('Missing params:', { entityTable, entityId });
       return;
     }
-    
-    if (HISTORY_DEBUG) console.log('🔍 Fetching history for:', { entityTable, entityId });
-    
+
+    if (HISTORY_DEBUG)
+      console.log('🔍 Fetching history for:', { entityTable, entityId });
+
     // Check auth status
-    const { data: { user } } = await supabase.auth.getUser();
-    if (HISTORY_DEBUG) console.log('🔑 Current user:', user?.id || 'Not authenticated');
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (HISTORY_DEBUG)
+      console.log('🔑 Current user:', user?.id || 'Not authenticated');
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Test basic connectivity first
       const { data: testData, error: testError } = await supabase
         .from('entity_history')
         .select('count')
         .limit(1);
-      if (HISTORY_DEBUG) console.log('🔗 Connection test:', { testData, testError });
-      
+      if (HISTORY_DEBUG)
+        console.log('🔗 Connection test:', { testData, testError });
+
       // Now try the actual query
       const { data, error: fetchError } = await supabase
         .from('entity_history')
@@ -51,12 +57,13 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         .eq('entity_id', entityId)
         .order('version_number', { ascending: false });
 
-      if (HISTORY_DEBUG) console.log('📊 History query result:', { 
-        data, 
-        error: fetchError,
-        queryParams: { entityTable, entityId },
-        resultCount: data?.length || 0
-      });
+      if (HISTORY_DEBUG)
+        console.log('📊 History query result:', {
+          data,
+          error: fetchError,
+          queryParams: { entityTable, entityId },
+          resultCount: data?.length || 0,
+        });
 
       if (fetchError) {
         if (HISTORY_DEBUG) console.error('❌ Query error:', fetchError);
@@ -68,7 +75,8 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
-      if (HISTORY_DEBUG) console.error('💥 Error fetching entity history:', err);
+      if (HISTORY_DEBUG)
+        console.error('💥 Error fetching entity history:', err);
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +91,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     try {
       // Get the entity data from the target version
       const restoreData = { ...targetVersion.entity_data };
-      
+
       // Remove metadata fields that shouldn't be restored
       delete restoreData.id;
       delete restoreData.created_at;
@@ -94,7 +102,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         .from(entityTable)
         .update({
           ...restoreData,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', entityId);
 
@@ -105,7 +113,8 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
       // Refresh history after restore
       await fetchHistory();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to restore version';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to restore version';
       throw new Error(errorMessage);
     }
   };
@@ -113,21 +122,21 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
   const getVersionDiff = (fromVersion: number, toVersion: number) => {
     const from = history.find(h => h.version_number === fromVersion);
     const to = history.find(h => h.version_number === toVersion);
-    
+
     if (!from || !to) return null;
 
     const changes: Record<string, { from: unknown; to: unknown }> = {};
-    
+
     // Compare all fields
     const allFields = new Set([
       ...Object.keys(from.entity_data),
-      ...Object.keys(to.entity_data)
+      ...Object.keys(to.entity_data),
     ]);
 
     allFields.forEach(field => {
       const fromVal = from.entity_data[field];
       const toVal = to.entity_data[field];
-      
+
       if (JSON.stringify(fromVal) !== JSON.stringify(toVal)) {
         changes[field] = { from: fromVal, to: toVal };
       }
@@ -136,7 +145,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     return {
       fromVersion: from,
       toVersion: to,
-      changes
+      changes,
     };
   };
 
@@ -168,7 +177,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
           action_type: actionType,
           entity_data: entityData,
           changed_fields: changedFields,
-          change_description: changeDescription
+          change_description: changeDescription,
         });
 
       if (insertError) {
@@ -193,6 +202,6 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     fetchHistory,
     restoreVersion,
     getVersionDiff,
-    addHistoryEntry
+    addHistoryEntry,
   };
 };

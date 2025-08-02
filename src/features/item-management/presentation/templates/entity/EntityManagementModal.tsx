@@ -1,12 +1,12 @@
-import React from "react";
-import { useConfirmDialog } from "@/components/dialog-box";
-import { EntityModalProvider } from "../../../shared/contexts/EntityModalContext";
-import { useEntityModalLogic } from "../../../application/hooks/entity/useEntityModalLogic";
-import { useEntityHistory } from "../../../application/hooks/entity/useEntityHistory";
-import EntityModalTemplate from "../EntityModalTemplate";
-import EntityModalContent from "./EntityModalContent";
-import { ComparisonModal } from "../comparison";
-import type { AddEditModalProps } from "@/types";
+import React from 'react';
+import { useConfirmDialog } from '@/components/dialog-box';
+import { EntityModalProvider } from '../../../shared/contexts/EntityModalContext';
+import { useEntityModalLogic } from '../../../application/hooks/entity/useEntityModalLogic';
+import { useEntityHistory } from '../../../application/hooks/entity/useEntityHistory';
+import EntityModalTemplate from '../EntityModalTemplate';
+import EntityModalContent from './EntityModalContent';
+import { ComparisonModal } from '../comparison';
+import type { AddEditModalProps } from '@/types';
 
 type EntityManagementModalProps = AddEditModalProps;
 
@@ -22,7 +22,7 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
   initialNameFromSearch,
 }) => {
   useConfirmDialog();
-  
+
   // Determine table name based on entity name
   const getTableName = (entity: string) => {
     switch (entity.toLowerCase()) {
@@ -43,10 +43,10 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
 
   const entityTable = getTableName(entityName);
   const entityId = initialData?.id || '';
-  
+
   // Get restore function from useEntityHistory hook
   const { restoreVersion } = useEntityHistory(entityTable, entityId);
-  
+
   const { contextValue, nameInputRef } = useEntityModalLogic({
     isOpen,
     onClose,
@@ -69,9 +69,12 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
   return (
     <EntityModalProvider value={contextValue}>
       <EntityModalTemplate>
-        <EntityModalContent nameInputRef={nameInputRef} initialData={initialData} />
+        <EntityModalContent
+          nameInputRef={nameInputRef}
+          initialData={initialData}
+        />
       </EntityModalTemplate>
-      
+
       <ComparisonModal
         isOpen={contextValue.comparison.isOpen}
         onClose={contextValue.uiActions.closeComparison}
@@ -80,7 +83,7 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
         currentData={{
           ...(initialData?.kode && { kode: initialData.kode }),
           name: initialData?.name || '',
-          description: initialData?.description || ''
+          description: initialData?.description || '',
         }}
         isDualMode={contextValue.comparison.isDualMode}
         versionA={contextValue.comparison.versionA}

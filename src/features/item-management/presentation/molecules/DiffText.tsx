@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
-import { DiffSegment, diffCache } from "@/utils/diff";
-import { analyzeDiff } from "@/services/api/diff.service";
-import { ComparisonSkeleton } from "../atoms";
+import React, { useState, useEffect, useRef } from 'react';
+import { DiffSegment, diffCache } from '@/utils/diff';
+import { analyzeDiff } from '@/services/api/diff.service';
+import { ComparisonSkeleton } from '../atoms';
 
 interface LocalDiffTextProps {
   oldText: string;
   newText: string;
-  mode?: "character" | "word" | "smart";
+  mode?: 'character' | 'word' | 'smart';
   className?: string;
   isFlipped?: boolean;
 }
@@ -14,7 +14,7 @@ interface LocalDiffTextProps {
 const DiffText: React.FC<LocalDiffTextProps> = ({
   oldText,
   newText,
-  className = "",
+  className = '',
   isFlipped = false,
 }) => {
   const [segments, setSegments] = useState<DiffSegment[]>([]);
@@ -56,7 +56,9 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
           async () => {
             console.log('📡 Making server request...');
             const result = await analyzeDiff(oldText, newText);
-            console.log(`✅ Server response: ${result.meta.processingTime}ms ${result.meta.fromCache ? '(cached)' : '(computed)'}`);
+            console.log(
+              `✅ Server response: ${result.meta.processingTime}ms ${result.meta.fromCache ? '(cached)' : '(computed)'}`
+            );
             return result.segments;
           }
         );
@@ -73,7 +75,6 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
           // Still cache the result for future use
           diffCache.set(oldText, newText, segments || []);
         }
-
       } catch (serverError) {
         console.error('❌ Server request failed:', serverError);
         if (mountedRef.current) {
@@ -100,9 +101,7 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
   if (error) {
     return (
       <div className={`text-red-600 text-sm ${className}`}>
-        <span className="inline-flex items-center gap-1">
-          ⚠️ {error}
-        </span>
+        <span className="inline-flex items-center gap-1">⚠️ {error}</span>
       </div>
     );
   }
@@ -120,26 +119,26 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
   const getSegmentStyle = (type: 'added' | 'removed' | 'unchanged') => {
     if (type === 'unchanged') {
       return {
-        className: "text-gray-800",
+        className: 'text-gray-800',
         style: {},
-        title: ""
+        title: '',
       };
     }
-    
+
     const isAddedType = type === 'added';
     const shouldShowGreen = isFlipped ? !isAddedType : isAddedType;
-    
+
     if (shouldShowGreen) {
       return {
-        className: "bg-green-400 text-gray-900 py-0.5 font-medium",
-        style: { backgroundColor: "#4ade80" },
-        title: isFlipped ? "Dihapus" : "Ditambahkan"
+        className: 'bg-green-400 text-gray-900 py-0.5 font-medium',
+        style: { backgroundColor: '#4ade80' },
+        title: isFlipped ? 'Dihapus' : 'Ditambahkan',
       };
     } else {
       return {
-        className: "bg-red-400 text-gray-900 py-0.5 font-medium",
-        style: { backgroundColor: "#f87171" },
-        title: isFlipped ? "Ditambahkan" : "Dihapus"
+        className: 'bg-red-400 text-gray-900 py-0.5 font-medium',
+        style: { backgroundColor: '#f87171' },
+        title: isFlipped ? 'Ditambahkan' : 'Dihapus',
       };
     }
   };
@@ -148,8 +147,10 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
   return (
     <span className={`font-mono text-sm ${className}`}>
       {segments.map((segment, index) => {
-        const segmentStyle = getSegmentStyle(segment.type as 'added' | 'removed' | 'unchanged');
-        
+        const segmentStyle = getSegmentStyle(
+          segment.type as 'added' | 'removed' | 'unchanged'
+        );
+
         return (
           <span
             key={index}

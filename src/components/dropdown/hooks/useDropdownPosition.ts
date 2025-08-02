@@ -5,10 +5,11 @@ import { getContextualBoxShadow } from '../utils/dropdownUtils';
 export const useDropdownPosition = (
   isOpen: boolean,
   buttonRef: RefObject<HTMLButtonElement | null>,
-  dropdownMenuRef: RefObject<HTMLDivElement | null>,
+  dropdownMenuRef: RefObject<HTMLDivElement | null>
 ) => {
   const [dropDirection, setDropDirection] = useState<DropDirection>('down');
-  const [initialDropDirection, setInitialDropDirection] = useState<DropDirection | null>(null);
+  const [initialDropDirection, setInitialDropDirection] =
+    useState<DropDirection | null>(null);
   const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
 
   const calculateDropdownPosition = useCallback(() => {
@@ -29,7 +30,8 @@ export const useDropdownPosition = (
     const spaceAbove = buttonRect.top - margin;
 
     const shouldDropUp =
-      (spaceBelow < dropdownActualHeight && spaceAbove > dropdownActualHeight) ||
+      (spaceBelow < dropdownActualHeight &&
+        spaceAbove > dropdownActualHeight) ||
       (spaceBelow < dropdownActualHeight && spaceAbove > spaceBelow);
 
     // Set initial direction only once when dropdown first opens
@@ -42,21 +44,33 @@ export const useDropdownPosition = (
     }
 
     let leftPosition = buttonRect.left;
-    if (leftPosition + buttonRect.width > viewportWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN) {
-      leftPosition = viewportWidth - buttonRect.width - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
+    if (
+      leftPosition + buttonRect.width >
+      viewportWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN
+    ) {
+      leftPosition =
+        viewportWidth - buttonRect.width - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
     }
     if (leftPosition < DROPDOWN_CONSTANTS.VIEWPORT_MARGIN) {
       leftPosition = DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
     }
 
-    const finalDirection = initialDropDirection || (shouldDropUp ? 'up' : 'down');
+    const finalDirection =
+      initialDropDirection || (shouldDropUp ? 'up' : 'down');
     const isDropUp = finalDirection === 'up';
 
     let topPosition: number;
     if (isDropUp) {
-      topPosition = buttonRect.top + window.scrollY - dropdownActualHeight - DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
+      topPosition =
+        buttonRect.top +
+        window.scrollY -
+        dropdownActualHeight -
+        DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
     } else {
-      topPosition = buttonRect.bottom + window.scrollY + DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
+      topPosition =
+        buttonRect.bottom +
+        window.scrollY +
+        DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
     }
 
     setPortalStyle({

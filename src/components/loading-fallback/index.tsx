@@ -1,6 +1,6 @@
-import { Card } from "@/components/card";
-import PageTitle from "@/components/page-title";
-import { Skeleton, SkeletonText } from "@/components/skeleton";
+import { Card } from '@/components/card';
+import PageTitle from '@/components/page-title';
+import { Skeleton, SkeletonText } from '@/components/skeleton';
 
 interface LoadingFallbackProps {
   title?: string;
@@ -12,7 +12,7 @@ interface LoadingFallbackProps {
 }
 
 export const TableLoadingFallback = ({
-  title = "Loading...",
+  title = 'Loading...',
   showSearchBar = true,
   showButton = true,
   tableColumns = 5,

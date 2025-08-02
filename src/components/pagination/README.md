@@ -27,7 +27,9 @@ const MyComponent = () => {
     setCurrentPage(page);
   };
 
-  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     setItemsPerPage(parseInt(e.target.value));
     setCurrentPage(1); // Reset to first page
   };
@@ -50,23 +52,23 @@ const MyComponent = () => {
 
 ### Required Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `currentPage` | `number` | Current active page number (1-based) |
-| `totalPages` | `number` | Total number of pages available |
-| `totalItems` | `number` | Total number of items across all pages |
-| `itemsPerPage` | `number` | Number of items displayed per page |
-| `itemsCount` | `number` | Number of items in current page |
-| `onPageChange` | `(page: number) => void` | Handler for page navigation |
-| `onItemsPerPageChange` | `(e: React.ChangeEvent<HTMLSelectElement>) => void` | Handler for page size changes |
+| Prop                   | Type                                                | Description                            |
+| ---------------------- | --------------------------------------------------- | -------------------------------------- |
+| `currentPage`          | `number`                                            | Current active page number (1-based)   |
+| `totalPages`           | `number`                                            | Total number of pages available        |
+| `totalItems`           | `number`                                            | Total number of items across all pages |
+| `itemsPerPage`         | `number`                                            | Number of items displayed per page     |
+| `itemsCount`           | `number`                                            | Number of items in current page        |
+| `onPageChange`         | `(page: number) => void`                            | Handler for page navigation            |
+| `onItemsPerPageChange` | `(e: React.ChangeEvent<HTMLSelectElement>) => void` | Handler for page size changes          |
 
 ### Optional Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `className` | `string` | `undefined` | CSS classes for the main container |
-| `enableFloating` | `boolean` | `true` | Enable floating pagination behavior |
-| `hideFloatingWhenModalOpen` | `boolean` | `false` | Hide floating pagination when modals are open |
+| Prop                        | Type      | Default     | Description                                   |
+| --------------------------- | --------- | ----------- | --------------------------------------------- |
+| `className`                 | `string`  | `undefined` | CSS classes for the main container            |
+| `enableFloating`            | `boolean` | `true`      | Enable floating pagination behavior           |
+| `hideFloatingWhenModalOpen` | `boolean` | `false`     | Hide floating pagination when modals are open |
 
 ## Advanced Examples
 
@@ -84,7 +86,7 @@ const [isModalOpen, setIsModalOpen] = useState(false);
   onPageChange={handlePageChange}
   onItemsPerPageChange={handleItemsPerPageChange}
   hideFloatingWhenModalOpen={isModalOpen}
-/>
+/>;
 ```
 
 ### Disabled Floating Behavior
@@ -124,7 +126,8 @@ const MyServerPaginatedTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
 
-  const { data, totalItems } = useQuery(['items', currentPage, itemsPerPage],
+  const { data, totalItems } = useQuery(
+    ['items', currentPage, itemsPerPage],
     () => fetchItems({ page: currentPage, limit: itemsPerPage })
   );
 
@@ -138,7 +141,7 @@ const MyServerPaginatedTable = () => {
         itemsPerPage={itemsPerPage}
         itemsCount={data?.length || 0}
         onPageChange={setCurrentPage}
-        onItemsPerPageChange={(e) => {
+        onItemsPerPageChange={e => {
           setItemsPerPage(parseInt(e.target.value));
           setCurrentPage(1);
         }}
@@ -152,12 +155,12 @@ const MyServerPaginatedTable = () => {
 
 When floating pagination is active, these keyboard shortcuts are available:
 
-| Key | Action |
-|-----|--------|
-| `ArrowLeft` | Navigate to previous page |
-| `ArrowRight` | Navigate to next page |
-| `ArrowUp` | Increase page size (cycles through options) |
-| `ArrowDown` | Decrease page size (cycles through options) |
+| Key          | Action                                      |
+| ------------ | ------------------------------------------- |
+| `ArrowLeft`  | Navigate to previous page                   |
+| `ArrowRight` | Navigate to next page                       |
+| `ArrowUp`    | Increase page size (cycles through options) |
+| `ArrowDown`  | Decrease page size (cycles through options) |
 
 ## Architecture
 
@@ -240,6 +243,7 @@ const observer = new IntersectionObserver(([entry]) => {
 ## Page Size Options
 
 The component supports these page size options by default:
+
 - 10 items per page
 - 20 items per page
 - 50 items per page
@@ -250,16 +254,19 @@ These can be customized by modifying the `PAGE_SIZES` constant in `constants.ts`
 ## Animations
 
 ### Page Number Transitions
+
 - **Direction-aware**: Page numbers slide left/right based on navigation direction
 - **Spring Physics**: Smooth, natural feeling transitions using Framer Motion
 - **Optimized**: Uses `AnimatePresence` with `popLayout` mode for better performance
 
 ### Floating Pagination
+
 - **Scale & Translate**: Appears from bottom with scale and Y-axis animation
 - **Backdrop Blur**: Glass-morphism effect with backdrop filter
 - **Portal Rendering**: Rendered outside normal DOM flow for proper z-indexing
 
 ### Page Size Selector
+
 - **Layout Animations**: Smooth background transition using `layoutId`
 - **Hover States**: Subtle hover effects with emerald color scheme
 - **Active Indication**: Clear visual feedback for selected page size
@@ -290,10 +297,16 @@ The component includes utility functions for common pagination calculations:
 import { paginationUtils } from '@/components/pagination/utils';
 
 // Calculate total pages
-const totalPages = paginationUtils.calculateTotalPages(totalItems, itemsPerPage);
+const totalPages = paginationUtils.calculateTotalPages(
+  totalItems,
+  itemsPerPage
+);
 
 // Calculate item range for current page
-const { start, end } = paginationUtils.calculateItemRange(currentPage, itemsPerPage);
+const { start, end } = paginationUtils.calculateItemRange(
+  currentPage,
+  itemsPerPage
+);
 
 // Validate page number
 const isValid = paginationUtils.isValidPage(page, totalPages);

@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from 'classnames';
 
 interface SkeletonProps {
   className?: string;
@@ -9,7 +9,7 @@ interface SkeletonProps {
 export const Skeleton = ({ className, width, height }: SkeletonProps) => {
   return (
     <div
-      className={classNames("animate-pulse bg-gray-200 rounded", className)}
+      className={classNames('animate-pulse bg-gray-200 rounded', className)}
       style={{ width, height }}
     />
   );
@@ -22,13 +22,13 @@ interface SkeletonTextProps {
 
 export const SkeletonText = ({ lines = 1, className }: SkeletonTextProps) => {
   return (
-    <div className={classNames("space-y-2", className)}>
+    <div className={classNames('space-y-2', className)}>
       {Array.from({ length: lines }).map((_, index) => (
         <div
           key={index}
           className={classNames(
-            "animate-pulse bg-gray-200 rounded h-4",
-            index === lines - 1 && lines > 1 ? "w-3/4" : "w-full",
+            'animate-pulse bg-gray-200 rounded h-4',
+            index === lines - 1 && lines > 1 ? 'w-3/4' : 'w-full'
           )}
         />
       ))}
@@ -46,7 +46,7 @@ export const SkeletonTableRow = ({
   className,
 }: SkeletonTableRowProps) => {
   return (
-    <tr className={classNames("animate-pulse", className)}>
+    <tr className={classNames('animate-pulse', className)}>
       {Array.from({ length: columns }).map((_, index) => (
         <td key={index} className="py-3 px-3">
           <div className="bg-gray-200 rounded h-4 w-full" />
@@ -92,8 +92,8 @@ export const CardSkeleton = ({
   return (
     <div
       className={classNames(
-        "bg-white rounded-lg shadow-sm border p-6",
-        className,
+        'bg-white rounded-lg shadow-sm border p-6',
+        className
       )}
     >
       {showHeader && (
@@ -108,8 +108,8 @@ export const CardSkeleton = ({
             <Skeleton
               key={index}
               className={classNames(
-                "h-4",
-                index === contentLines - 1 ? "w-3/4" : "w-full",
+                'h-4',
+                index === contentLines - 1 ? 'w-3/4' : 'w-full'
               )}
             />
           ))}
@@ -127,8 +127,8 @@ export const StatCardSkeleton = ({ className }: StatCardSkeletonProps) => {
   return (
     <div
       className={classNames(
-        "bg-white rounded-lg shadow-sm border p-6",
-        className,
+        'bg-white rounded-lg shadow-sm border p-6',
+        className
       )}
     >
       <div className="flex items-center justify-between">
@@ -145,22 +145,22 @@ export const StatCardSkeleton = ({ className }: StatCardSkeletonProps) => {
 
 interface ButtonSkeletonProps {
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export const ButtonSkeleton = ({
   className,
-  size = "md",
+  size = 'md',
 }: ButtonSkeletonProps) => {
   const sizeClasses = {
-    sm: "h-8 w-20",
-    md: "h-10 w-24",
-    lg: "h-12 w-32",
+    sm: 'h-8 w-20',
+    md: 'h-10 w-24',
+    lg: 'h-12 w-32',
   };
 
   return (
     <Skeleton
-      className={classNames("rounded-lg", sizeClasses[size], className)}
+      className={classNames('rounded-lg', sizeClasses[size], className)}
     />
   );
 };
@@ -177,7 +177,7 @@ export const FormSkeleton = ({
   showButtons = true,
 }: FormSkeletonProps) => {
   return (
-    <div className={classNames("space-y-6", className)}>
+    <div className={classNames('space-y-6', className)}>
       {Array.from({ length: fields }).map((_, index) => (
         <div key={index} className="space-y-2">
           <Skeleton className="h-4 w-24" />

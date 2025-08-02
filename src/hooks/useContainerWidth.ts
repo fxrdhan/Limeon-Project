@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from 'react';
 
 export const useContainerWidth = () => {
   const [width, setWidth] = useState(1200);
@@ -18,7 +18,7 @@ export const useContainerWidth = () => {
     updateWidth();
 
     // Update width on resize
-    window.addEventListener("resize", updateWidth);
+    window.addEventListener('resize', updateWidth);
 
     // Observer untuk memantau perubahan ukuran container
     const resizeObserver = new ResizeObserver(updateWidth);
@@ -27,7 +27,7 @@ export const useContainerWidth = () => {
     }
 
     return () => {
-      window.removeEventListener("resize", updateWidth);
+      window.removeEventListener('resize', updateWidth);
       resizeObserver.disconnect();
     };
   }, []);

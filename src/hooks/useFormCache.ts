@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import type { FormData, UnitConversion } from "@/types";
+import { useEffect, useRef } from 'react';
+import type { FormData, UnitConversion } from '@/types';
 
 interface CacheData {
   formData: FormData;
@@ -45,7 +45,7 @@ export const useFormCache = ({
       };
       sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
     } catch (error) {
-      console.warn("Failed to save form data to cache:", error);
+      console.warn('Failed to save form data to cache:', error);
     }
   };
 
@@ -59,7 +59,7 @@ export const useFormCache = ({
         return JSON.parse(cachedData) as CacheData;
       }
     } catch (error) {
-      console.warn("Failed to load form data from cache:", error);
+      console.warn('Failed to load form data from cache:', error);
     }
     return null;
   };
@@ -71,7 +71,7 @@ export const useFormCache = ({
     try {
       sessionStorage.removeItem(cacheKey);
     } catch (error) {
-      console.warn("Failed to clear form cache:", error);
+      console.warn('Failed to clear form cache:', error);
     }
   };
 
@@ -80,7 +80,7 @@ export const useFormCache = ({
    */
   const updateCacheWithSearchQuery = (
     cachedData: CacheData,
-    initialSearchQuery?: string,
+    initialSearchQuery?: string
   ): CacheData => {
     if (initialSearchQuery) {
       return {

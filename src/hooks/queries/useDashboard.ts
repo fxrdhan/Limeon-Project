@@ -18,7 +18,10 @@ export const useDashboardStats = (options?: { enabled?: boolean }) => {
 };
 
 // Sales Analytics Hook
-export const useSalesAnalytics = (days: number = 7, options?: { enabled?: boolean }) => {
+export const useSalesAnalytics = (
+  days: number = 7,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: QueryKeys.dashboard.salesAnalytics(days.toString()),
     queryFn: async () => {
@@ -33,7 +36,10 @@ export const useSalesAnalytics = (days: number = 7, options?: { enabled?: boolea
 };
 
 // Top Selling Medicines Hook
-export const useTopSellingMedicines = (limit: number = 5, options?: { enabled?: boolean }) => {
+export const useTopSellingMedicines = (
+  limit: number = 5,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: QueryKeys.dashboard.topSellingMedicines,
     queryFn: async () => {
@@ -48,7 +54,10 @@ export const useTopSellingMedicines = (limit: number = 5, options?: { enabled?: 
 };
 
 // Low Stock Items Hook
-export const useLowStockItems = (threshold: number = 10, options?: { enabled?: boolean }) => {
+export const useLowStockItems = (
+  threshold: number = 10,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: QueryKeys.dashboard.stockAlerts,
     queryFn: async () => {
@@ -63,7 +72,10 @@ export const useLowStockItems = (threshold: number = 10, options?: { enabled?: b
 };
 
 // Recent Transactions Hook
-export const useRecentTransactions = (limit: number = 10, options?: { enabled?: boolean }) => {
+export const useRecentTransactions = (
+  limit: number = 10,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: ['dashboard', 'recentTransactions', limit],
     queryFn: async () => {
@@ -78,7 +90,9 @@ export const useRecentTransactions = (limit: number = 10, options?: { enabled?: 
 };
 
 // Monthly Revenue Comparison Hook
-export const useMonthlyRevenueComparison = (options?: { enabled?: boolean }) => {
+export const useMonthlyRevenueComparison = (options?: {
+  enabled?: boolean;
+}) => {
   return useQuery({
     queryKey: ['dashboard', 'monthlyRevenue'],
     queryFn: async () => {
@@ -108,7 +122,7 @@ export const useDashboardData = (options?: { enabled?: boolean }) => {
     lowStockItems: lowStockQuery.data,
     recentTransactions: recentTransactionsQuery.data,
     monthlyRevenue: monthlyRevenueQuery.data,
-    isLoading: 
+    isLoading:
       statsQuery.isLoading ||
       salesQuery.isLoading ||
       topMedicinesQuery.isLoading ||
@@ -139,6 +153,6 @@ export const useDashboardData = (options?: { enabled?: boolean }) => {
         recentTransactionsQuery.refetch(),
         monthlyRevenueQuery.refetch(),
       ]);
-    }
+    },
   };
 };

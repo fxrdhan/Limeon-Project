@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from "react";
-import { FaPen } from "react-icons/fa";
-import Input from "@/components/input";
-import FormField from "@/components/form-field";
+import React, { useRef, useEffect } from 'react';
+import { FaPen } from 'react-icons/fa';
+import Input from '@/components/input';
+import FormField from '@/components/form-field';
 
 interface LocalMinStockEditorProps {
   isEditing: boolean;
@@ -52,8 +52,8 @@ export default function MinStockEditor({
             tabIndex={tabIndex}
             className="group w-full pb-1 cursor-pointer flex items-center focus:outline-hidden"
             onClick={onStartEdit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 onStartEdit();
               }
@@ -64,7 +64,7 @@ export default function MinStockEditor({
             <FaPen
               className="ml-2 text-gray-400 hover:text-primary group-focus:text-primary cursor-pointer transition-colors"
               size={14}
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onStartEdit();
               }}

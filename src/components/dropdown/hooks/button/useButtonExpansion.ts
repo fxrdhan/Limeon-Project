@@ -17,20 +17,23 @@ export const useButtonExpansion = ({
 
   const canExpand = useCallback((): boolean => {
     if (!selectedOption || !buttonRef.current) return false;
-    
+
     const buttonWidth = buttonRef.current.getBoundingClientRect().width;
     const maxTextWidth = buttonWidth - DROPDOWN_CONSTANTS.BUTTON_PADDING;
-    
+
     return shouldTruncateText(selectedOption.name, maxTextWidth);
   }, [selectedOption, buttonRef]);
 
-  const handleExpansionChange = useCallback((shouldExpand: boolean) => {
-    if (canExpand()) {
-      setIsExpanded(shouldExpand);
-    } else {
-      setIsExpanded(false);
-    }
-  }, [canExpand]);
+  const handleExpansionChange = useCallback(
+    (shouldExpand: boolean) => {
+      if (canExpand()) {
+        setIsExpanded(shouldExpand);
+      } else {
+        setIsExpanded(false);
+      }
+    },
+    [canExpand]
+  );
 
   // Reset expansion when selectedOption changes or when it can't expand
   useEffect(() => {

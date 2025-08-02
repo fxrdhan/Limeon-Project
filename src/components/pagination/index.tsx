@@ -1,14 +1,14 @@
-import React, { useRef, useState } from "react";
-import classNames from "classnames";
+import React, { useRef, useState } from 'react';
+import classNames from 'classnames';
 import {
   usePaginationState,
   useFloatingPagination,
   useKeyboardNavigation,
   useAnimationDirection,
-} from "./hooks";
-import { PaginationProvider } from "./providers";
-import { PaginationContent, FloatingWrapper } from "./components";
-import type { FloatingPaginationProps, PaginationContextValue } from "./types";
+} from './hooks';
+import { PaginationProvider } from './providers';
+import { PaginationContent, FloatingWrapper } from './components';
+import type { FloatingPaginationProps, PaginationContextValue } from './types';
 
 const Pagination: React.FC<FloatingPaginationProps> = ({
   currentPage,
@@ -74,10 +74,10 @@ const Pagination: React.FC<FloatingPaginationProps> = ({
       <div
         ref={containerRef}
         className={classNames(
-          "transition-opacity duration-200",
+          'transition-opacity duration-200',
           showFloating && !hideFloatingWhenModalOpen
-            ? "opacity-0 pointer-events-none"
-            : "opacity-100",
+            ? 'opacity-0 pointer-events-none'
+            : 'opacity-100'
         )}
       >
         <PaginationContent />

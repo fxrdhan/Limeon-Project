@@ -1,4 +1,4 @@
-import type { ColumnConfig, SortDirection } from "@/types/table";
+import type { ColumnConfig, SortDirection } from '@/types/table';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TableData = any;
@@ -6,7 +6,7 @@ type TableData = any;
 export const calculateColumnWidths = (
   columns: ColumnConfig[],
   data: TableData[],
-  containerWidth: number,
+  containerWidth: number
 ) => {
   const widths: Record<string, number> = {};
   const ratios: Record<string, number> = {};
@@ -14,33 +14,33 @@ export const calculateColumnWidths = (
   let totalRatio = 0;
 
   // Hitung rasio ideal untuk setiap kolom berdasarkan rata-rata + percentile
-  columns.forEach((column) => {
+  columns.forEach(column => {
     const headerLength = column.header.length;
 
     // Kumpulkan semua panjang konten dalam kolom ini
     const contentLengths: number[] = [];
 
-    data.forEach((row) => {
+    data.forEach(row => {
       const cellContent = row[column.key];
       let contentLength = 0;
 
       if (cellContent !== null && cellContent !== undefined) {
-        if (typeof cellContent === "number") {
-          contentLength = cellContent.toLocaleString("id-ID").length;
+        if (typeof cellContent === 'number') {
+          contentLength = cellContent.toLocaleString('id-ID').length;
         } else if (
-          typeof cellContent === "object" &&
+          typeof cellContent === 'object' &&
           cellContent !== null &&
-          "name" in cellContent
+          'name' in cellContent
         ) {
           contentLength = String((cellContent as { name: string }).name).length;
         } else if (Array.isArray(cellContent)) {
           contentLength = cellContent
-            .map((item) =>
-              typeof item === "object" && item !== null && "name" in item
+            .map(item =>
+              typeof item === 'object' && item !== null && 'name' in item
                 ? (item as { name: string }).name
-                : String(item),
+                : String(item)
             )
-            .join(", ").length;
+            .join(', ').length;
         } else {
           contentLength = String(cellContent).length;
         }
@@ -61,7 +61,7 @@ export const calculateColumnWidths = (
     // Gunakan yang lebih kecil antara rata-rata*1.2 atau p75, tapi min 6 karakter
     const smartContentLength = Math.max(
       Math.min(avgLength * 1.2, p75Length),
-      6,
+      6
     );
 
     // Bandingkan dengan header length
@@ -79,7 +79,7 @@ export const calculateColumnWidths = (
   let totalCalculatedWidth = 0;
   const tempWidths: Record<string, number> = {};
 
-  columns.forEach((column) => {
+  columns.forEach(column => {
     const proportionalWidth =
       (ratios[column.key] / totalRatio) * availableWidth;
 
@@ -96,7 +96,7 @@ export const calculateColumnWidths = (
   // Jika total width melebihi available width, scale down secara proporsional
   if (totalCalculatedWidth > availableWidth) {
     const scaleFactor = availableWidth / totalCalculatedWidth;
-    columns.forEach((column) => {
+    columns.forEach(column => {
       let scaledWidth = tempWidths[column.key] * scaleFactor;
 
       // Pastikan tidak kurang dari minimum absolut (40px)
@@ -121,7 +121,7 @@ export const calculateColumnWidths = (
     const remainingSpace = availableWidth - totalCalculatedWidth;
     const spacePerColumn = remainingSpace / columns.length;
 
-    columns.forEach((column) => {
+    columns.forEach(column => {
       widths[column.key] = Math.floor(tempWidths[column.key] + spacePerColumn);
     });
   }
@@ -132,34 +132,39 @@ export const calculateColumnWidths = (
 export const filterData = (
   data: TableData[],
   columnSearches: Record<string, string>,
-  columns: ColumnConfig[],
+  columns: ColumnConfig[]
 ): TableData[] => {
-  if (!columnSearches || !columns || Object.keys(columnSearches).length === 0) return data;
+  if (!columnSearches || !columns || Object.keys(columnSearches).length === 0)
+    return data;
 
-  return data.filter((row) => {
+  return data.filter(row => {
     return Object.entries(columnSearches).every(([columnKey, searchTerm]) => {
       if (!searchTerm.trim()) return true;
-      
+
       const value = row[columnKey];
       if (value == null) return false;
-      
-      let searchableValue = "";
-      if (typeof value === "number") {
-        searchableValue = value.toLocaleString("id-ID");
-      } else if (typeof value === "object" && value !== null && "name" in value) {
+
+      let searchableValue = '';
+      if (typeof value === 'number') {
+        searchableValue = value.toLocaleString('id-ID');
+      } else if (
+        typeof value === 'object' &&
+        value !== null &&
+        'name' in value
+      ) {
         searchableValue = String((value as { name: string }).name);
       } else if (Array.isArray(value)) {
         searchableValue = value
-          .map((item) =>
-            typeof item === "object" && item !== null && "name" in item
+          .map(item =>
+            typeof item === 'object' && item !== null && 'name' in item
               ? (item as { name: string }).name
-              : String(item),
+              : String(item)
           )
-          .join(", ");
+          .join(', ');
       } else {
         searchableValue = String(value);
       }
-      
+
       return searchableValue.toLowerCase().includes(searchTerm.toLowerCase());
     });
   });
@@ -169,9 +174,9 @@ export const sortData = (
   data: TableData[],
   column: string,
   direction: SortDirection,
-  originalData: TableData[],
+  originalData: TableData[]
 ): TableData[] => {
-  if (direction === "original") {
+  if (direction === 'original') {
     return [...originalData];
   }
 
@@ -179,24 +184,24 @@ export const sortData = (
     let aVal = a[column];
     let bVal = b[column];
 
-    if (aVal === null || aVal === undefined) aVal = "";
-    if (bVal === null || bVal === undefined) bVal = "";
+    if (aVal === null || aVal === undefined) aVal = '';
+    if (bVal === null || bVal === undefined) bVal = '';
 
-    if (typeof aVal === "object" && aVal !== null && "name" in aVal) {
+    if (typeof aVal === 'object' && aVal !== null && 'name' in aVal) {
       aVal = (aVal as { name: string }).name;
     }
-    if (typeof bVal === "object" && bVal !== null && "name" in bVal) {
+    if (typeof bVal === 'object' && bVal !== null && 'name' in bVal) {
       bVal = (bVal as { name: string }).name;
     }
 
-    if (typeof aVal === "number" && typeof bVal === "number") {
-      return direction === "asc" ? aVal - bVal : bVal - aVal;
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      return direction === 'asc' ? aVal - bVal : bVal - aVal;
     }
 
     const aStr = String(aVal).toLowerCase();
     const bStr = String(bVal).toLowerCase();
 
-    if (direction === "asc") {
+    if (direction === 'asc') {
       return aStr.localeCompare(bStr);
     } else {
       return bStr.localeCompare(aStr);

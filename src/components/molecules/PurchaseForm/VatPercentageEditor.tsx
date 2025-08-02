@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from 'react';
 
 interface VatPercentageEditorProps {
   vatPercentage: number;
@@ -27,7 +27,7 @@ const VatPercentageEditor: React.FC<VatPercentageEditorProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === "Escape") {
+    if (e.key === 'Enter' || e.key === 'Escape') {
       stopEditing();
     }
   };
@@ -49,7 +49,7 @@ const VatPercentageEditor: React.FC<VatPercentageEditorProps> = ({
               ref={inputRef}
               type="number"
               value={tempValue}
-              onChange={(e) => setTempValue(e.target.value)}
+              onChange={e => setTempValue(e.target.value)}
               onBlur={stopEditing}
               onKeyDown={handleKeyDown}
               className="w-16 p-1 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-primary focus:border-transparent"

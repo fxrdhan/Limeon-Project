@@ -4,16 +4,16 @@ import React, {
   useState,
   useCallback,
   useMemo,
-} from "react";
-import { LuSearch, LuHash, LuX } from "react-icons/lu";
-import { PiKeyReturnBold } from "react-icons/pi";
-import fuzzysort from "fuzzysort";
+} from 'react';
+import { LuSearch, LuHash, LuX } from 'react-icons/lu';
+import { PiKeyReturnBold } from 'react-icons/pi';
+import fuzzysort from 'fuzzysort';
 import {
   EnhancedSearchBarProps,
   SearchColumn,
   EnhancedSearchState,
-} from "@/types/search";
-import ColumnSelector from "./ColumnSelector";
+} from '@/types/search';
+import ColumnSelector from './ColumnSelector';
 
 const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   value,
@@ -21,10 +21,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   onKeyDown,
   onFocus,
   onBlur,
-  placeholder = "Cari...",
-  className = "",
+  placeholder = 'Cari...',
+  className = '',
   inputRef,
-  searchState = "idle",
+  searchState = 'idle',
   resultsCount,
   columns,
   onTargetedSearch,
@@ -49,7 +49,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const parseSearchValue = useCallback(
     (searchValue: string) => {
       // Handle special case for hashtag-only input
-      if (searchValue === "#") {
+      if (searchValue === '#') {
         return {
           isTargeted: false,
           globalSearch: undefined,
@@ -57,20 +57,20 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         };
       }
 
-      if (searchValue.startsWith("#")) {
+      if (searchValue.startsWith('#')) {
         const match = searchValue.match(/^#([^:]*):?(.*)$/);
         if (match) {
           const [, columnInput, searchTerm] = match;
 
           // Check if we have a colon, which indicates column is selected
-          const hasColon = searchValue.includes(":");
+          const hasColon = searchValue.includes(':');
 
           if (hasColon) {
             // Try to find the column
             const column = columns.find(
-              (col) =>
+              col =>
                 col.field.toLowerCase() === columnInput.toLowerCase() ||
-                col.headerName.toLowerCase() === columnInput.toLowerCase(),
+                col.headerName.toLowerCase() === columnInput.toLowerCase()
             );
 
             if (column) {
@@ -102,11 +102,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         showColumnSelector: false,
       };
     },
-    [columns],
+    [columns]
   );
 
   // Track previous value for comparison
-  const prevValueRef = useRef<string>("");
+  const prevValueRef = useRef<string>('');
 
   // Update search mode when value changes
   useEffect(() => {
@@ -117,28 +117,28 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // Helper function to check if value is hashtag mode
     const isHashtagMode = (searchValue: string) => {
       return (
-        searchValue === "#" ||
-        (searchValue.startsWith("#") && !searchValue.includes(":"))
+        searchValue === '#' ||
+        (searchValue.startsWith('#') && !searchValue.includes(':'))
       );
     };
 
     // Layer: Empty State Cleanup - When searchbar is completely empty
-    if (value === "" || value.trim() === "") {
+    if (value === '' || value.trim() === '') {
       // Clear all search states when searchbar is empty
       onTargetedSearch?.(null);
-      onGlobalSearch?.("");
+      onGlobalSearch?.('');
       return; // Early return to prevent other callbacks
     }
 
     // Trigger callbacks
     if (newMode.isTargeted && newMode.targetedSearch) {
       onTargetedSearch?.(newMode.targetedSearch);
-      onGlobalSearch?.("");
+      onGlobalSearch?.('');
     } else if (
       !newMode.isTargeted &&
       !newMode.showColumnSelector &&
       newMode.globalSearch !== undefined &&
-      newMode.globalSearch.trim() !== "" &&
+      newMode.globalSearch.trim() !== '' &&
       !isHashtagMode(newMode.globalSearch) // Explicit hashtag mode check
     ) {
       onTargetedSearch?.(null);
@@ -146,7 +146,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     } else if (newMode.showColumnSelector) {
       // When in column selector mode, clear any existing search
       onTargetedSearch?.(null);
-      onGlobalSearch?.("");
+      onGlobalSearch?.('');
     }
 
     // Force immediate refresh when targeted search value changes
@@ -187,22 +187,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const handleResize = () => updatePosition();
       const handleScroll = () => updatePosition();
 
-      window.addEventListener("resize", handleResize);
-      window.addEventListener("scroll", handleScroll, true); // Use capture to catch all scroll events
-      document.addEventListener("scroll", handleScroll, true);
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('scroll', handleScroll, true); // Use capture to catch all scroll events
+      document.addEventListener('scroll', handleScroll, true);
 
       // Use ResizeObserver for container size changes
       let resizeObserver: ResizeObserver | null = null;
-      if (containerRef.current && "ResizeObserver" in window) {
+      if (containerRef.current && 'ResizeObserver' in window) {
         resizeObserver = new ResizeObserver(updatePosition);
         resizeObserver.observe(containerRef.current);
       }
 
       // Cleanup function
       return () => {
-        window.removeEventListener("resize", handleResize);
-        window.removeEventListener("scroll", handleScroll, true);
-        document.removeEventListener("scroll", handleScroll, true);
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('scroll', handleScroll, true);
+        document.removeEventListener('scroll', handleScroll, true);
         if (resizeObserver) {
           resizeObserver.disconnect();
         }
@@ -216,19 +216,19 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       onChange({
         target: { value: newValue },
       } as React.ChangeEvent<HTMLInputElement>);
-      setSearchMode((prev) => ({ ...prev, showColumnSelector: false }));
+      setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
 
       // Focus back to input
       setTimeout(() => {
         inputRef?.current?.focus();
       }, 0);
     },
-    [onChange, inputRef],
+    [onChange, inputRef]
   );
 
   const handleCloseColumnSelector = useCallback(() => {
     // Just close the column selector without clearing the input
-    setSearchMode((prev) => ({ ...prev, showColumnSelector: false }));
+    setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
   }, []);
 
   const handleClearTargeted = useCallback(() => {
@@ -238,7 +238,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     } else {
       // Fall back to the original behavior
       onChange({
-        target: { value: "" },
+        target: { value: '' },
       } as React.ChangeEvent<HTMLInputElement>);
     }
   }, [onClearSearch, onChange]);
@@ -255,11 +255,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         } as React.ChangeEvent<HTMLInputElement>);
 
         // Force refresh when value becomes empty to immediately show all data
-        if (inputValue === "" && searchMode.targetedSearch.value !== "") {
+        if (inputValue === '' && searchMode.targetedSearch.value !== '') {
           setTimeout(() => {
             const emptyTargetedSearch = {
               field: searchMode.targetedSearch!.field,
-              value: "",
+              value: '',
               column: searchMode.targetedSearch!.column,
             };
             onTargetedSearch?.(emptyTargetedSearch);
@@ -270,22 +270,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onChange(e);
 
         // If user clears the # character, also close the column selector
-        if (searchMode.showColumnSelector && !inputValue.startsWith("#")) {
-          setSearchMode((prev) => ({ ...prev, showColumnSelector: false }));
+        if (searchMode.showColumnSelector && !inputValue.startsWith('#')) {
+          setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
         }
       }
     },
-    [searchMode, onChange, onTargetedSearch],
+    [searchMode, onChange, onTargetedSearch]
   );
 
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       try {
         // Handle escape to close column selector or clear search
-        if (e.key === "Escape") {
+        if (e.key === 'Escape') {
           if (searchMode.showColumnSelector) {
             // Just close the column selector without clearing input
-            setSearchMode((prev) => ({ ...prev, showColumnSelector: false }));
+            setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
             return;
           } else if (value && onClearSearch) {
             // Clear search when Escape is pressed and there's a search value
@@ -296,9 +296,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         // Handle backspace to clear targeted search
         if (
-          e.key === "Backspace" &&
+          e.key === 'Backspace' &&
           searchMode.isTargeted &&
-          searchMode.targetedSearch?.value === ""
+          searchMode.targetedSearch?.value === ''
         ) {
           if (onClearSearch) {
             // Use the comprehensive clear function if provided
@@ -306,7 +306,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           } else {
             // Fall back to the original behavior
             onChange({
-              target: { value: "" },
+              target: { value: '' },
             } as React.ChangeEvent<HTMLInputElement>);
           }
           return;
@@ -315,10 +315,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Handle Tab key to navigate through column selector
         if (
           searchMode.showColumnSelector &&
-          (e.key === "Tab" ||
-            e.key === "ArrowDown" ||
-            e.key === "ArrowUp" ||
-            e.key === "Enter")
+          (e.key === 'Tab' ||
+            e.key === 'ArrowDown' ||
+            e.key === 'ArrowUp' ||
+            e.key === 'Enter')
         ) {
           // Let the column selector handle these keys
           return;
@@ -326,28 +326,28 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         onKeyDown?.(e);
       } catch (error) {
-        console.error("Error in handleInputKeyDown:", error);
+        console.error('Error in handleInputKeyDown:', error);
         // Fallback: still call the original onKeyDown if it exists
         onKeyDown?.(e);
       }
     },
-    [searchMode, onChange, onKeyDown, onClearSearch, value],
+    [searchMode, onChange, onKeyDown, onClearSearch, value]
   );
 
   const getSearchIconColor = () => {
-    if (searchMode.isTargeted) return "text-purple-500";
+    if (searchMode.isTargeted) return 'text-purple-500';
 
     switch (searchState) {
-      case "idle":
-        return "text-gray-400";
-      case "typing":
-        return "text-gray-800";
-      case "found":
-        return "text-primary";
-      case "not-found":
-        return "text-red-500";
+      case 'idle':
+        return 'text-gray-400';
+      case 'typing':
+        return 'text-gray-800';
+      case 'found':
+        return 'text-primary';
+      case 'not-found':
+        return 'text-red-500';
       default:
-        return "text-gray-400";
+        return 'text-gray-400';
     }
   };
 
@@ -375,7 +375,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     if (searchMode.isTargeted && searchMode.targetedSearch) {
       return searchMode.targetedSearch.value;
     }
-    if (value.startsWith("#") && !searchMode.isTargeted) {
+    if (value.startsWith('#') && !searchMode.isTargeted) {
       // Keep the full hashtag input visible for better UX
       return value;
     }
@@ -400,16 +400,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Get column selector search term - compute directly for immediate update
   const searchTerm = useMemo(() => {
-    if (value.startsWith("#")) {
+    if (value.startsWith('#')) {
       const match = value.match(/^#([^:]*)/);
-      return match ? match[1] : "";
+      return match ? match[1] : '';
     }
-    return "";
+    return '';
   }, [value]);
 
   // Pre-prepare searchable columns for better performance
   const searchableColumns = useMemo(() => {
-    return columns.filter((col) => col.searchable);
+    return columns.filter(col => col.searchable);
   }, [columns]);
 
   // Sort columns using fuzzysort library
@@ -417,42 +417,42 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     if (!searchTerm) return searchableColumns;
 
     // Prepare search targets for fuzzysort
-    const searchTargets = searchableColumns.map((col) => ({
+    const searchTargets = searchableColumns.map(col => ({
       column: col,
       headerName: col.headerName,
       field: col.field,
-      description: col.description || "",
+      description: col.description || '',
     }));
 
     // Search header names (highest priority)
     const headerResults = fuzzysort.go(searchTerm, searchTargets, {
-      key: "headerName",
+      key: 'headerName',
       threshold: -1000,
     });
 
     // Search field names (medium priority)
     const fieldResults = fuzzysort.go(searchTerm, searchTargets, {
-      key: "field",
+      key: 'field',
       threshold: -1000,
     });
 
     // Search descriptions (lowest priority)
     const descResults = fuzzysort.go(searchTerm, searchTargets, {
-      key: "description",
+      key: 'description',
       threshold: -1000,
     });
 
     // Combine results with priority scoring
     const combinedResults = new Map();
 
-    headerResults.forEach((result) => {
+    headerResults.forEach(result => {
       combinedResults.set(result.obj.column.field, {
         column: result.obj.column,
         score: result.score + 1000, // Boost header matches
       });
     });
 
-    fieldResults.forEach((result) => {
+    fieldResults.forEach(result => {
       if (!combinedResults.has(result.obj.column.field)) {
         combinedResults.set(result.obj.column.field, {
           column: result.obj.column,
@@ -461,7 +461,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
     });
 
-    descResults.forEach((result) => {
+    descResults.forEach(result => {
       if (!combinedResults.has(result.obj.column.field)) {
         combinedResults.set(result.obj.column.field, {
           column: result.obj.column,
@@ -473,13 +473,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // Sort by score and return columns
     return Array.from(combinedResults.values())
       .sort((a, b) => b.score - a.score)
-      .map((item) => item.column);
+      .map(item => item.column);
   }, [searchableColumns, searchTerm]);
 
   // Get dynamic placeholder based on search mode
   const getPlaceholder = () => {
     if (showTargetedIndicator) {
-      return "Cari...";
+      return 'Cari...';
     }
     return placeholder;
   };
@@ -492,13 +492,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           <div
             className={`transition-all duration-300 ease-in-out ${
               displayValue
-                ? "opacity-100 transform translate-x-0 scale-150 pl-2"
-                : "opacity-0 transform -translate-x-2 scale-100"
+                ? 'opacity-100 transform translate-x-0 scale-150 pl-2'
+                : 'opacity-0 transform -translate-x-2 scale-100'
             }`}
             style={{
-              visibility: displayValue ? "visible" : "hidden",
-              width: displayValue ? "auto" : "0",
-              minWidth: displayValue ? "40px" : "0",
+              visibility: displayValue ? 'visible' : 'hidden',
+              width: displayValue ? 'auto' : '0',
+              minWidth: displayValue ? '40px' : '0',
             }}
           >
             {getSearchIcon()}
@@ -510,20 +510,20 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               type="text"
               placeholder={getPlaceholder()}
               className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-300 ease-in-out ${
-                searchState === "not-found"
-                  ? "border-danger focus:border-danger focus:ring-3 focus:ring-red-100"
+                searchState === 'not-found'
+                  ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
                   : searchMode.showColumnSelector
-                    ? "border-purple-300 focus:border-purple-500 focus:ring-3 focus:ring-purple-100"
+                    ? 'border-purple-300 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
                     : searchMode.isTargeted
-                      ? "border-purple-300 focus:border-purple-500 focus:ring-3 focus:ring-purple-100"
-                      : "border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200"
+                      ? 'border-purple-300 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
+                      : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
               } focus:outline-none rounded-lg`}
               style={{
                 paddingLeft: showTargetedIndicator
                   ? `${badgeWidth + 24}px` // Dynamic padding based on badge width + 24px margin
                   : displayValue
-                    ? "12px"
-                    : "40px",
+                    ? '12px'
+                    : '40px',
               }}
               value={displayValue}
               onChange={handleInputChange}
@@ -556,11 +556,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               <div
                 className={`absolute top-3.5 transition-all duration-300 ease-in-out ${
                   displayValue
-                    ? "opacity-0 transform translate-x-2 left-3"
-                    : "opacity-100 transform translate-x-0 left-3"
+                    ? 'opacity-0 transform translate-x-2 left-3'
+                    : 'opacity-100 transform translate-x-0 left-3'
                 }`}
                 style={{
-                  visibility: displayValue ? "hidden" : "visible",
+                  visibility: displayValue ? 'hidden' : 'visible',
                 }}
               >
                 {getSearchIcon()}
@@ -575,9 +575,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 left: showTargetedIndicator
                   ? `${badgeWidth + 24}px` // Dynamic position based on badge width + margin
                   : hasValue
-                    ? "18px"
-                    : "10px",
-                padding: "10px",
+                    ? '18px'
+                    : '10px',
+                padding: '10px',
               }}
             >
               {displayValue}
@@ -586,9 +586,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             {/* Return key icon */}
             <PiKeyReturnBold
               className={`absolute top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none ml-1 transition-all duration-300 ease-in-out ${
-                searchState === "not-found" && displayValue
-                  ? "opacity-100 scale-150 translate-x-0"
-                  : "opacity-0 scale-95 translate-x-2"
+                searchState === 'not-found' && displayValue
+                  ? 'opacity-100 scale-150 translate-x-0'
+                  : 'opacity-0 scale-95 translate-x-2'
               }`}
               style={{
                 left: `${textWidth + (showTargetedIndicator ? badgeWidth + 24 : displayValue ? 0 : 10)}px`,
@@ -598,7 +598,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         </div>
 
         {/* Results count */}
-        {resultsCount !== undefined && searchState === "found" && (
+        {resultsCount !== undefined && searchState === 'found' && (
           <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
             <LuSearch className="w-3 h-3" />
             <span>{resultsCount} hasil ditemukan</span>

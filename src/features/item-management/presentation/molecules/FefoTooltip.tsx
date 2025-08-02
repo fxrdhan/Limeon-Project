@@ -1,13 +1,13 @@
-import { useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { FaQuestionCircle } from "react-icons/fa";
+import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { FaQuestionCircle } from 'react-icons/fa';
 
 interface FefoTooltipProps {
   tooltipText?: string;
 }
 
 export default function FefoTooltip({
-  tooltipText = "First Expired First Out: Barang dengan tanggal kadaluarsa terdekat akan dikeluarkan lebih dulu saat penjualan.",
+  tooltipText = 'First Expired First Out: Barang dengan tanggal kadaluarsa terdekat akan dikeluarkan lebih dulu saat penjualan.',
 }: FefoTooltipProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<{
@@ -40,20 +40,17 @@ export default function FefoTooltip({
         onMouseLeave={handleMouseLeave}
         ref={iconRef}
       >
-        <FaQuestionCircle
-          className="text-gray-400 cursor-help"
-          size={14}
-        />
+        <FaQuestionCircle className="text-gray-400 cursor-help" size={14} />
       </div>
       {showTooltip &&
         tooltipPosition &&
         createPortal(
           <div
             style={{
-              position: "fixed",
+              position: 'fixed',
               top: `${tooltipPosition.top}px`,
               left: `${tooltipPosition.left}px`,
-              transform: "translate(-50%, -100%)",
+              transform: 'translate(-50%, -100%)',
               zIndex: 1000,
             }}
             className="w-max max-w-xs p-2 bg-zinc-500 text-white text-xs rounded-md shadow-lg"

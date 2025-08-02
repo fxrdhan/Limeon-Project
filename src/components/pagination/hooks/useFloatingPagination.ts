@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { PAGINATION_CONSTANTS } from '../constants';
-import type { UseFloatingPaginationProps, UseFloatingPaginationReturn } from '../types';
+import type {
+  UseFloatingPaginationProps,
+  UseFloatingPaginationReturn,
+} from '../types';
 
 export const useFloatingPagination = ({
   enableFloating,
@@ -18,7 +21,7 @@ export const useFloatingPagination = ({
       {
         threshold: PAGINATION_CONSTANTS.FLOATING.THRESHOLD,
         rootMargin: PAGINATION_CONSTANTS.FLOATING.ROOT_MARGIN,
-      },
+      }
     );
 
     observer.observe(containerRef.current);

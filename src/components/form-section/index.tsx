@@ -1,5 +1,5 @@
-import classNames from "classnames";
-import type { FormSectionProps } from "@/types";
+import classNames from 'classnames';
+import type { FormSectionProps } from '@/types';
 
 const FormSection: React.FC<FormSectionProps> = ({
   title,
@@ -9,8 +9,8 @@ const FormSection: React.FC<FormSectionProps> = ({
   return (
     <div
       className={classNames(
-        "border-2 border-gray-200 rounded-lg mb-6 overflow-hidden",
-        className,
+        'border-2 border-gray-200 rounded-lg mb-6 overflow-hidden',
+        className
       )}
     >
       <h2 className="text-lg font-semibold bg-gray-100 p-3 border-b-2 border-gray-200">

@@ -13,7 +13,9 @@ export interface PriceCalculationResult {
   warnings: string[];
 }
 
-export const calculateItemPrice = (input: PriceCalculationInput): PriceCalculationResult => {
+export const calculateItemPrice = (
+  input: PriceCalculationInput
+): PriceCalculationResult => {
   const { basePrice, marginPercentage, sellPrice } = input;
   const warnings: string[] = [];
 
@@ -27,7 +29,8 @@ export const calculateItemPrice = (input: PriceCalculationInput): PriceCalculati
   } else if (sellPrice !== undefined) {
     // Calculate margin from sell price
     calculatedSellPrice = sellPrice;
-    calculatedMargin = basePrice > 0 ? ((sellPrice - basePrice) / basePrice) * 100 : 0;
+    calculatedMargin =
+      basePrice > 0 ? ((sellPrice - basePrice) / basePrice) * 100 : 0;
   } else {
     // No calculation input provided
     calculatedSellPrice = basePrice;
@@ -52,6 +55,6 @@ export const calculateItemPrice = (input: PriceCalculationInput): PriceCalculati
     calculatedMargin: Math.round(calculatedMargin * 100) / 100,
     profitAmount: Math.round(profitAmount),
     isValidMargin,
-    warnings
+    warnings,
   };
 };

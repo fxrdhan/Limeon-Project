@@ -17,7 +17,7 @@ export const useKeyboardNavigation = ({
       if (!showFloating || hideFloatingWhenModalOpen) return;
 
       switch (event.key) {
-        case "ArrowUp": {
+        case 'ArrowUp': {
           event.preventDefault();
           const nextIndex =
             selectedPageSizeIndex < pageSizes.length - 1
@@ -29,7 +29,7 @@ export const useKeyboardNavigation = ({
           } as React.ChangeEvent<HTMLSelectElement>);
           break;
         }
-        case "ArrowDown": {
+        case 'ArrowDown': {
           event.preventDefault();
           const prevIndex =
             selectedPageSizeIndex > 0
@@ -41,13 +41,13 @@ export const useKeyboardNavigation = ({
           } as React.ChangeEvent<HTMLSelectElement>);
           break;
         }
-        case "ArrowLeft":
+        case 'ArrowLeft':
           event.preventDefault();
           if (currentPage > 1) {
             onPageChange(currentPage - 1);
           }
           break;
-        case "ArrowRight":
+        case 'ArrowRight':
           event.preventDefault();
           if (currentPage < totalPages && totalPages !== 0) {
             onPageChange(currentPage + 1);
@@ -65,14 +65,14 @@ export const useKeyboardNavigation = ({
       onItemsPerPageChange,
       onPageChange,
       setSelectedPageSizeIndex,
-    ],
+    ]
   );
 
   useEffect(() => {
     if (showFloating && !hideFloatingWhenModalOpen) {
-      document.addEventListener("keydown", handleKeyDown);
+      document.addEventListener('keydown', handleKeyDown);
       return () => {
-        document.removeEventListener("keydown", handleKeyDown);
+        document.removeEventListener('keydown', handleKeyDown);
       };
     }
   }, [showFloating, hideFloatingWhenModalOpen, handleKeyDown]);

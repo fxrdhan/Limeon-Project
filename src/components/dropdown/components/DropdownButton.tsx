@@ -30,10 +30,10 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
       onKeyDown,
       onBlur,
     },
-    ref,
+    ref
   ) => {
     const buttonRef = ref as React.RefObject<HTMLButtonElement>;
-    
+
     const { isExpanded, handleExpansionChange } = useButtonExpansion({
       selectedOption,
       buttonRef,
@@ -70,7 +70,7 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
         }}
       />
     );
-  },
+  }
 );
 
 DropdownButton.displayName = 'DropdownButton';

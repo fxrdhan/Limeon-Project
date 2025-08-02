@@ -1,4 +1,6 @@
-import { createContext } from "react";
-import type { DatepickerContextState } from "../types";
+import { createContext } from 'react';
+import type { DatepickerContextState } from '../types';
 
-export const DatepickerContext = createContext<DatepickerContextState | null>(null);
+export const DatepickerContext = createContext<DatepickerContextState | null>(
+  null
+);

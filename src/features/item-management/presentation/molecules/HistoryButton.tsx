@@ -1,7 +1,7 @@
-import React from "react";
-import Button from "@/components/button";
-import { FaHistory } from "react-icons/fa";
-import { useEntityModal } from "../../shared/contexts/EntityModalContext";
+import React from 'react';
+import Button from '@/components/button';
+import { FaHistory } from 'react-icons/fa';
+import { useEntityModal } from '../../shared/contexts/EntityModalContext';
 
 interface HistoryButtonProps {
   entityTable: string;
@@ -14,7 +14,7 @@ const HistoryButton: React.FC<HistoryButtonProps> = ({
   entityTable,
   entityId,
   entityName,
-  className = "",
+  className = '',
 }) => {
   const { uiActions } = useEntityModal();
 

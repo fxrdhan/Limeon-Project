@@ -37,7 +37,7 @@ export interface EnhancedSearchBarProps {
   placeholder?: string;
   className?: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
-  searchState?: "idle" | "typing" | "found" | "not-found";
+  searchState?: 'idle' | 'typing' | 'found' | 'not-found';
   resultsCount?: number;
   columns: SearchColumn[];
   onTargetedSearch?: (targetedSearch: TargetedSearch | null) => void;

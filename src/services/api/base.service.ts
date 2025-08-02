@@ -30,7 +30,9 @@ export class BaseService<T extends BaseEntity> {
 
   async getAll(options: QueryOptions = {}): Promise<ServiceResponse<T[]>> {
     try {
-      let query = supabase.from(this.tableName).select(options.select || '*', { count: 'exact' });
+      let query = supabase
+        .from(this.tableName)
+        .select(options.select || '*', { count: 'exact' });
 
       // Apply filters
       if (options.filters) {
@@ -43,7 +45,9 @@ export class BaseService<T extends BaseEntity> {
 
       // Apply ordering
       if (options.orderBy) {
-        query = query.order(options.orderBy.column, { ascending: options.orderBy.ascending ?? true });
+        query = query.order(options.orderBy.column, {
+          ascending: options.orderBy.ascending ?? true,
+        });
       }
 
       // Apply pagination
@@ -51,21 +55,24 @@ export class BaseService<T extends BaseEntity> {
         query = query.limit(options.limit);
       }
       if (options.offset) {
-        query = query.range(options.offset, (options.offset + (options.limit || 10)) - 1);
+        query = query.range(
+          options.offset,
+          options.offset + (options.limit || 10) - 1
+        );
       }
 
       const result = await query;
-      
+
       return {
         data: result.data ? (result.data as unknown as T[]) : [],
         error: result.error,
-        count: result.count
+        count: result.count,
       };
     } catch (error) {
       return {
         data: null,
         error: error as PostgrestError,
-        count: null
+        count: null,
       };
     }
   }
@@ -80,17 +87,19 @@ export class BaseService<T extends BaseEntity> {
 
       return {
         data: result.data ? (result.data as unknown as T) : null,
-        error: result.error
+        error: result.error,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError
+        error: error as PostgrestError,
       };
     }
   }
 
-  async create(data: Omit<T, 'id' | 'created_at' | 'updated_at'>): Promise<ServiceResponse<T>> {
+  async create(
+    data: Omit<T, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<ServiceResponse<T>> {
     try {
       const result = await supabase
         .from(this.tableName)
@@ -100,17 +109,20 @@ export class BaseService<T extends BaseEntity> {
 
       return {
         data: result.data ? (result.data as unknown as T) : null,
-        error: result.error
+        error: result.error,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError
+        error: error as PostgrestError,
       };
     }
   }
 
-  async update(id: string, data: Partial<Omit<T, 'id' | 'created_at'>>): Promise<ServiceResponse<T>> {
+  async update(
+    id: string,
+    data: Partial<Omit<T, 'id' | 'created_at'>>
+  ): Promise<ServiceResponse<T>> {
     try {
       const result = await supabase
         .from(this.tableName)
@@ -121,38 +133,41 @@ export class BaseService<T extends BaseEntity> {
 
       return {
         data: result.data ? (result.data as unknown as T) : null,
-        error: result.error
+        error: result.error,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError
+        error: error as PostgrestError,
       };
     }
   }
 
   async delete(id: string): Promise<ServiceResponse<null>> {
     try {
-      const result = await supabase
-        .from(this.tableName)
-        .delete()
-        .eq('id', id);
+      const result = await supabase.from(this.tableName).delete().eq('id', id);
 
       return {
         data: null,
-        error: result.error
+        error: result.error,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError
+        error: error as PostgrestError,
       };
     }
   }
 
-  async search(query: string, columns: string[], options: QueryOptions = {}): Promise<ServiceResponse<T[]>> {
+  async search(
+    query: string,
+    columns: string[],
+    options: QueryOptions = {}
+  ): Promise<ServiceResponse<T[]>> {
     try {
-      let searchQuery = supabase.from(this.tableName).select(options.select || '*', { count: 'exact' });
+      let searchQuery = supabase
+        .from(this.tableName)
+        .select(options.select || '*', { count: 'exact' });
 
       // Build search filter
       if (query && columns.length > 0) {
@@ -173,7 +188,9 @@ export class BaseService<T extends BaseEntity> {
 
       // Apply ordering
       if (options.orderBy) {
-        searchQuery = searchQuery.order(options.orderBy.column, { ascending: options.orderBy.ascending ?? true });
+        searchQuery = searchQuery.order(options.orderBy.column, {
+          ascending: options.orderBy.ascending ?? true,
+        });
       }
 
       // Apply pagination
@@ -182,41 +199,42 @@ export class BaseService<T extends BaseEntity> {
       }
 
       const result = await searchQuery;
-      
+
       return {
         data: result.data ? (result.data as unknown as T[]) : [],
         error: result.error,
-        count: result.count
+        count: result.count,
       };
     } catch (error) {
       return {
         data: null,
         error: error as PostgrestError,
-        count: null
+        count: null,
       };
     }
   }
 
-  async bulkCreate(data: Omit<T, 'id' | 'created_at' | 'updated_at'>[]): Promise<ServiceResponse<T[]>> {
+  async bulkCreate(
+    data: Omit<T, 'id' | 'created_at' | 'updated_at'>[]
+  ): Promise<ServiceResponse<T[]>> {
     try {
-      const result = await supabase
-        .from(this.tableName)
-        .insert(data)
-        .select();
+      const result = await supabase.from(this.tableName).insert(data).select();
 
       return {
         data: result.data ? (result.data as unknown as T[]) : [],
-        error: result.error
+        error: result.error,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError
+        error: error as PostgrestError,
       };
     }
   }
 
-  async bulkUpdate(updates: { id: string; data: Partial<Omit<T, 'id' | 'created_at'>> }[]): Promise<ServiceResponse<T[]>> {
+  async bulkUpdate(
+    updates: { id: string; data: Partial<Omit<T, 'id' | 'created_at'>> }[]
+  ): Promise<ServiceResponse<T[]>> {
     try {
       const updatePromises = updates.map(({ id, data }) =>
         this.update(id, data)
@@ -224,22 +242,22 @@ export class BaseService<T extends BaseEntity> {
 
       const results = await Promise.all(updatePromises);
       const errors = results.filter(result => result.error);
-      
+
       if (errors.length > 0) {
         return {
           data: null,
-          error: errors[0].error
+          error: errors[0].error,
         };
       }
 
       return {
         data: results.map(result => result.data).filter(Boolean) as T[],
-        error: null
+        error: null,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError
+        error: error as PostgrestError,
       };
     }
   }

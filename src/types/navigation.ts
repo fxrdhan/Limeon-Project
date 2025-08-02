@@ -1,4 +1,4 @@
-import { JSX } from "react";
+import { JSX } from 'react';
 
 // Navigation and layout types
 export interface NavbarProps {

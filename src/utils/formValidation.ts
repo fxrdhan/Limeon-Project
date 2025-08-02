@@ -1,4 +1,4 @@
-import type { FormData } from "@/types";
+import type { FormData } from '@/types';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -9,25 +9,27 @@ export interface ValidationResult {
 /**
  * Validates required fields for item form
  */
-export const validateRequiredFields = (formData: FormData): ValidationResult => {
+export const validateRequiredFields = (
+  formData: FormData
+): ValidationResult => {
   const errors: Record<string, string> = {};
   const warnings: Record<string, string> = {};
 
   // Required field validations
   if (!formData.name?.trim()) {
-    errors.name = "Nama item wajib diisi";
+    errors.name = 'Nama item wajib diisi';
   }
 
   if (!formData.category_id) {
-    errors.category_id = "Kategori wajib dipilih";
+    errors.category_id = 'Kategori wajib dipilih';
   }
 
   if (!formData.type_id) {
-    errors.type_id = "Jenis item wajib dipilih";
+    errors.type_id = 'Jenis item wajib dipilih';
   }
 
   if (!formData.unit_id) {
-    errors.unit_id = "Satuan wajib dipilih";
+    errors.unit_id = 'Satuan wajib dipilih';
   }
 
   return {
@@ -46,25 +48,28 @@ export const validatePriceFields = (formData: FormData): ValidationResult => {
 
   // Price validations
   if (formData.base_price <= 0) {
-    errors.base_price = "Harga beli harus lebih dari 0";
+    errors.base_price = 'Harga beli harus lebih dari 0';
   }
 
   if (formData.sell_price < 0) {
-    errors.sell_price = "Harga jual tidak boleh negatif";
+    errors.sell_price = 'Harga jual tidak boleh negatif';
   }
 
   if (formData.sell_price < formData.base_price) {
-    warnings.sell_price = "Harga jual lebih rendah dari harga beli";
+    warnings.sell_price = 'Harga jual lebih rendah dari harga beli';
   }
 
   // Extreme margin warnings
   if (formData.base_price > 0 && formData.sell_price > 0) {
-    const margin = ((formData.sell_price - formData.base_price) / formData.base_price) * 100;
-    
+    const margin =
+      ((formData.sell_price - formData.base_price) / formData.base_price) * 100;
+
     if (margin > 200) {
-      warnings.sell_price = "Margin sangat tinggi (>200%), periksa kompetitivitas harga";
+      warnings.sell_price =
+        'Margin sangat tinggi (>200%), periksa kompetitivitas harga';
     } else if (margin < 5) {
-      warnings.sell_price = "Margin sangat rendah (<5%), periksa profitabilitas";
+      warnings.sell_price =
+        'Margin sangat rendah (<5%), periksa profitabilitas';
     }
   }
 
@@ -83,11 +88,11 @@ export const validateStockFields = (formData: FormData): ValidationResult => {
   const warnings: Record<string, string> = {};
 
   if (formData.min_stock < 0) {
-    errors.min_stock = "Stok minimum tidak boleh negatif";
+    errors.min_stock = 'Stok minimum tidak boleh negatif';
   }
 
   if (formData.min_stock === 0) {
-    warnings.min_stock = "Stok minimum 0 dapat menyebabkan kehabisan stok";
+    warnings.min_stock = 'Stok minimum 0 dapat menyebabkan kehabisan stok';
   }
 
   return {
@@ -106,31 +111,32 @@ export const validateTextFields = (formData: FormData): ValidationResult => {
 
   // Name validation
   if (formData.name && formData.name.length > 255) {
-    errors.name = "Nama item tidak boleh lebih dari 255 karakter";
+    errors.name = 'Nama item tidak boleh lebih dari 255 karakter';
   }
 
   if (formData.name && formData.name.length < 3) {
-    warnings.name = "Nama item sangat pendek, pertimbangkan nama yang lebih deskriptif";
+    warnings.name =
+      'Nama item sangat pendek, pertimbangkan nama yang lebih deskriptif';
   }
 
   // Manufacturer validation
   if (formData.manufacturer && formData.manufacturer.length > 100) {
-    errors.manufacturer = "Nama produsen tidak boleh lebih dari 100 karakter";
+    errors.manufacturer = 'Nama produsen tidak boleh lebih dari 100 karakter';
   }
 
   // Description validation
   if (formData.description && formData.description.length > 500) {
-    errors.description = "Deskripsi tidak boleh lebih dari 500 karakter";
+    errors.description = 'Deskripsi tidak boleh lebih dari 500 karakter';
   }
 
   // Dosage validation
   if (!formData.dosage_id) {
-    errors.dosage_id = "Sediaan harus diisi";
+    errors.dosage_id = 'Sediaan harus diisi';
   }
 
   // Code validation
   if (formData.code && formData.code.length > 20) {
-    errors.code = "Kode item tidak boleh lebih dari 20 karakter";
+    errors.code = 'Kode item tidak boleh lebih dari 20 karakter';
   }
 
   return {
@@ -154,15 +160,16 @@ export const validateBarcode = (barcode: string): ValidationResult => {
   // Basic barcode format validation
   const barcodeRegex = /^[0-9A-Za-z\-_.]+$/;
   if (!barcodeRegex.test(barcode)) {
-    errors.barcode = "Barcode hanya boleh mengandung huruf, angka, tanda hubung, titik, dan underscore";
+    errors.barcode =
+      'Barcode hanya boleh mengandung huruf, angka, tanda hubung, titik, dan underscore';
   }
 
   if (barcode.length < 6) {
-    warnings.barcode = "Barcode sangat pendek, pastikan formatnya benar";
+    warnings.barcode = 'Barcode sangat pendek, pastikan formatnya benar';
   }
 
   if (barcode.length > 30) {
-    errors.barcode = "Barcode tidak boleh lebih dari 30 karakter";
+    errors.barcode = 'Barcode tidak boleh lebih dari 30 karakter';
   }
 
   return {
@@ -175,7 +182,9 @@ export const validateBarcode = (barcode: string): ValidationResult => {
 /**
  * Validates medicine-specific fields
  */
-export const validateMedicineFields = (formData: FormData): ValidationResult => {
+export const validateMedicineFields = (
+  formData: FormData
+): ValidationResult => {
   const errors: Record<string, string> = {};
   const warnings: Record<string, string> = {};
 
@@ -187,7 +196,7 @@ export const validateMedicineFields = (formData: FormData): ValidationResult => 
   // For example: expiry date requirements, batch tracking, etc.
 
   if (formData.is_medicine && !formData.has_expiry_date) {
-    warnings.has_expiry_date = "Obat biasanya memiliki tanggal kadaluarsa";
+    warnings.has_expiry_date = 'Obat biasanya memiliki tanggal kadaluarsa';
   }
 
   return {
@@ -206,7 +215,7 @@ export const validateFormData = (formData: FormData): ValidationResult => {
     validatePriceFields(formData),
     validateStockFields(formData),
     validateTextFields(formData),
-    validateBarcode(formData.barcode || ""),
+    validateBarcode(formData.barcode || ''),
     validateMedicineFields(formData),
   ];
 
@@ -228,12 +237,14 @@ export const validateFormData = (formData: FormData): ValidationResult => {
 /**
  * Validates form submission readiness
  */
-export const validateFormSubmission = (formData: FormData): ValidationResult => {
+export const validateFormSubmission = (
+  formData: FormData
+): ValidationResult => {
   const validation = validateFormData(formData);
 
   // Additional submission-specific validations
   if (!formData.code) {
-    validation.errors.code = "Kode item belum digenerate";
+    validation.errors.code = 'Kode item belum digenerate';
   }
 
   return validation;

@@ -1,31 +1,26 @@
 // Re-export all query hooks for easy import
 export * from './useMasterData';
-export { 
-  useItems, 
-  useItem, 
+export {
+  useItems,
+  useItem,
   useSearchItems,
   useItemsByCategory,
   useItemsByType,
   useLowStockItems as useItemsLowStock,
   useItemMutations,
   useCheckCodeUniqueness,
-  useCheckBarcodeUniqueness
+  useCheckBarcodeUniqueness,
 } from './useItems';
-export { 
+export {
   useCategoriesRealtime,
-  useMedicineTypesRealtime, 
+  useMedicineTypesRealtime,
   useUnitsRealtime,
   useItemsRealtime,
   useDosagesRealtime,
-  useManufacturersRealtime
+  useManufacturersRealtime,
 } from './useMasterDataRealtime';
-export { 
-  useDosageMutations
-} from './useDosages';
-export {
-  useManufacturerMutations,
-  useManufacturers
-} from './useManufacturers';
+export { useDosageMutations } from './useDosages';
+export { useManufacturerMutations, useManufacturers } from './useManufacturers';
 export * from './usePurchases';
 export {
   useDashboardStats,
@@ -34,6 +29,6 @@ export {
   useLowStockItems as useDashboardLowStock,
   useRecentTransactions,
   useMonthlyRevenueComparison,
-  useDashboardData
+  useDashboardData,
 } from './useDashboard';
 export * from './usePatientsDoctors';

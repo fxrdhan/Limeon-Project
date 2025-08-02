@@ -505,9 +505,9 @@ function createSmartDiff(oldText: string, newText: string): DiffSegment[] {
   
   // Only use character diff for single words if:
   // 1. Small length difference (≤2 chars)
-  // 2. High character similarity (≥0.8) - indicates minor edit, not word replacement
+  // 2. High character similarity (≥0.65) - indicates minor edit, not word replacement
   // 3. Not detected as number/unit change or word replacement
-  if (isSingleWord && lengthDiff <= 2 && analysis.characterSimilarity >= 0.8 && 
+  if (isSingleWord && lengthDiff <= 2 && analysis.characterSimilarity >= 0.65 && 
       !analysis.hasNumberUnitChanges && !analysis.hasWordReplacements) {
     return createCharacterDiff(oldText, newText);
   }

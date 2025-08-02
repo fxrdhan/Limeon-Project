@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { useEntityModal } from "../../shared/contexts/EntityModalContext";
-import { useEntityHistory } from "../../application/hooks/entity/useEntityHistory";
-import HistoryTimelineList, { HistoryItem } from "./HistoryTimelineList";
+import React, { useState, useEffect } from 'react';
+import { useEntityModal } from '../../shared/contexts/EntityModalContext';
+import { useEntityHistory } from '../../application/hooks/entity/useEntityHistory';
+import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
 
 interface HistoryListContentProps {
   compareMode?: boolean;
@@ -12,7 +12,10 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
 }) => {
   const { history: historyState, uiActions, comparison } = useEntityModal();
   const { entityTable, entityId } = historyState;
-  const { history, isLoading, restoreVersion } = useEntityHistory(entityTable, entityId);
+  const { history, isLoading, restoreVersion } = useEntityHistory(
+    entityTable,
+    entityId
+  );
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
 
   // Sync selection state with comparison modal state
@@ -36,10 +39,10 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
       uiActions.closeComparison();
       return;
     }
-    
+
     // Update local selection state first
     setSelectedVersion(item.version_number);
-    
+
     // Find the full VersionData from history using the item
     const versionData = history?.find(h => h.id === item.id);
     if (versionData) {
@@ -55,7 +58,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
         uiActions.closeHistory();
         window.location.reload(); // Refresh to show restored data
       } catch (error) {
-        alert("Gagal mengembalikan versi: " + error);
+        alert('Gagal mengembalikan versi: ' + error);
       }
     }
   };
@@ -65,7 +68,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
       // Find the full VersionData objects
       const versionA = history?.find(h => h.id === selectedVersions[0].id);
       const versionB = history?.find(h => h.id === selectedVersions[1].id);
-      
+
       if (versionA && versionB) {
         // Open dual comparison modal
         uiActions.openDualComparison(versionA, versionB);

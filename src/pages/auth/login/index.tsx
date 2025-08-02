@@ -1,13 +1,13 @@
 // src/pages/auth/Login.tsx
-import { useState } from "react";
-import Button from "@/components/button";
-import Input from "@/components/input";
-import { useAuthStore } from "@/store/authStore";
+import { useState } from 'react';
+import Button from '@/components/button';
+import Input from '@/components/input';
+import { useAuthStore } from '@/store/authStore';
 
 const Login = () => {
   const { login, error, loading } = useAuthStore();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +33,7 @@ const Login = () => {
               label="Email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               required
             />
           </div>
@@ -43,7 +43,7 @@ const Login = () => {
             type="password"
             className="mb-6"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={e => setPassword(e.target.value)}
             required
           />
 

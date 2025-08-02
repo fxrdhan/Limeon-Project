@@ -4,16 +4,21 @@ import { filterAndSortOptions } from '../utils/dropdownUtils';
 
 export const useDropdownSearch = (
   options: Array<{ id: string; name: string }>,
-  searchList: boolean,
+  searchList: boolean
 ) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentFilteredOptions, setCurrentFilteredOptions] = useState(options);
-  const [searchState, setSearchState] = useState<SearchState>(SEARCH_STATES.IDLE);
+  const [searchState, setSearchState] = useState<SearchState>(
+    SEARCH_STATES.IDLE
+  );
 
   // Debounce search term
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), DROPDOWN_CONSTANTS.DEBOUNCE_DELAY);
+    const timer = setTimeout(
+      () => setDebouncedSearchTerm(searchTerm),
+      DROPDOWN_CONSTANTS.DEBOUNCE_DELAY
+    );
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
@@ -25,7 +30,9 @@ export const useDropdownSearch = (
     } else if (debouncedSearchTerm.trim() !== '') {
       const filtered = filterAndSortOptions(options, debouncedSearchTerm);
       setCurrentFilteredOptions(filtered);
-      setSearchState(filtered.length > 0 ? SEARCH_STATES.FOUND : SEARCH_STATES.NOT_FOUND);
+      setSearchState(
+        filtered.length > 0 ? SEARCH_STATES.FOUND : SEARCH_STATES.NOT_FOUND
+      );
     } else {
       setCurrentFilteredOptions(options);
       setSearchState(SEARCH_STATES.IDLE);
@@ -41,10 +48,10 @@ export const useDropdownSearch = (
           ? SEARCH_STATES.IDLE
           : searchState === SEARCH_STATES.IDLE
             ? SEARCH_STATES.TYPING
-            : searchState,
+            : searchState
       );
     },
-    [searchState],
+    [searchState]
   );
 
   const resetSearch = useCallback(() => {

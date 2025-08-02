@@ -1,17 +1,22 @@
-import { useState, useCallback, useEffect } from "react";
-import { DATEPICKER_CONSTANTS } from "../constants";
-import type { UseDatepickerPositionParams, UseDatepickerPositionReturn } from "../types";
+import { useState, useCallback, useEffect } from 'react';
+import { DATEPICKER_CONSTANTS } from '../constants';
+import type {
+  UseDatepickerPositionParams,
+  UseDatepickerPositionReturn,
+} from '../types';
 
-export const useDatepickerPosition = (params: UseDatepickerPositionParams): UseDatepickerPositionReturn => {
+export const useDatepickerPosition = (
+  params: UseDatepickerPositionParams
+): UseDatepickerPositionReturn => {
   const { triggerRef, isOpen, portalWidth } = params;
-  
+
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
   const [isPositionReady, setIsPositionReady] = useState(false);
-  const [dropDirection, setDropDirection] = useState<"down" | "up">("down");
+  const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
 
   const calculatePosition = useCallback(() => {
     if (!triggerRef.current) return;
-    
+
     const buttonRect = triggerRef.current.getBoundingClientRect();
     const calendarHeight = DATEPICKER_CONSTANTS.CALENDAR_HEIGHT;
     const viewportHeight = window.innerHeight;
@@ -19,19 +24,19 @@ export const useDatepickerPosition = (params: UseDatepickerPositionParams): UseD
     const shouldDropUp =
       spaceBelow < calendarHeight + 10 && buttonRect.top > calendarHeight + 10;
 
-    setDropDirection(shouldDropUp ? "up" : "down");
+    setDropDirection(shouldDropUp ? 'up' : 'down');
 
     const newMenuStyle: React.CSSProperties = {
-      position: "fixed",
+      position: 'fixed',
       left: `${buttonRect.left + window.scrollX}px`,
       width: portalWidth
-        ? typeof portalWidth === "number"
+        ? typeof portalWidth === 'number'
           ? `${portalWidth}px`
           : portalWidth
         : `${buttonRect.width}px`,
       zIndex: DATEPICKER_CONSTANTS.PORTAL_Z_INDEX,
     };
-    
+
     const margin = DATEPICKER_CONSTANTS.POSITION_MARGIN;
     if (shouldDropUp) {
       newMenuStyle.top = `${
@@ -40,7 +45,7 @@ export const useDatepickerPosition = (params: UseDatepickerPositionParams): UseD
     } else {
       newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
     }
-    
+
     setPortalStyle(newMenuStyle);
     setIsPositionReady(true);
   }, [triggerRef, portalWidth]);
@@ -49,15 +54,15 @@ export const useDatepickerPosition = (params: UseDatepickerPositionParams): UseD
     if (isOpen) {
       setIsPositionReady(false);
       calculatePosition();
-      window.addEventListener("scroll", calculatePosition, true);
-      window.addEventListener("resize", calculatePosition);
+      window.addEventListener('scroll', calculatePosition, true);
+      window.addEventListener('resize', calculatePosition);
     } else {
       setIsPositionReady(false);
     }
-    
+
     return () => {
-      window.removeEventListener("scroll", calculatePosition, true);
-      window.removeEventListener("resize", calculatePosition);
+      window.removeEventListener('scroll', calculatePosition, true);
+      window.removeEventListener('resize', calculatePosition);
     };
   }, [isOpen, calculatePosition]);
 

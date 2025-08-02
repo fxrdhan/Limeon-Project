@@ -1,9 +1,9 @@
-import type { ReactNode } from "react";
-import type { Category, MedicineType, Unit } from "@/types/database";
-import type { ItemDosage } from "../../domain/entities/Item";
-import type { UseUnitConversionReturn } from "@/types/hooks";
-import type { ItemFormData } from "./FormTypes";
-import type { VersionData } from "./ItemTypes";
+import type { ReactNode } from 'react';
+import type { Category, MedicineType, Unit } from '@/types/database';
+import type { ItemDosage } from '../../domain/entities/Item';
+import type { UseUnitConversionReturn } from '@/types/hooks';
+import type { ItemFormData } from './FormTypes';
+import type { VersionData } from './ItemTypes';
 
 // Context State Interfaces (Updated to match actual implementation)
 export interface ItemFormState {
@@ -53,7 +53,7 @@ export interface ItemActionState {
 export interface ItemFormActions {
   updateFormData: (data: Partial<ItemFormData>) => void;
   handleChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
   handleSubmit: (e: React.FormEvent) => void;
   resetForm: () => void;
@@ -78,7 +78,7 @@ export interface ItemModalActions {
   closeModalAndClearSearch: (
     setter:
       | ((open: boolean) => void)
-      | React.Dispatch<React.SetStateAction<boolean>>,
+      | React.Dispatch<React.SetStateAction<boolean>>
   ) => void;
   handleAddNewCategory: () => void;
   handleAddNewType: () => void;
@@ -88,7 +88,9 @@ export interface ItemModalActions {
 
 export interface ItemBusinessActions {
   handleCancel: (
-    setter?: ((value: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>,
+    setter?:
+      | ((value: boolean) => void)
+      | React.Dispatch<React.SetStateAction<boolean>>
   ) => void;
   handleDeleteItem: () => void;
   handleSaveCategory: (data: {

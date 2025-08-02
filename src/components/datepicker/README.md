@@ -36,21 +36,21 @@ const MyComponent = () => {
 
 ### Required Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `value` | `Date \| null` | Currently selected date |
+| Prop       | Type                           | Description                |
+| ---------- | ------------------------------ | -------------------------- |
+| `value`    | `Date \| null`                 | Currently selected date    |
 | `onChange` | `(date: Date \| null) => void` | Handler for date selection |
 
 ### Optional Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `label` | `string` | `undefined` | Label text displayed above the input |
-| `placeholder` | `string` | `"Pilih tanggal"` | Placeholder text when no date selected |
-| `inputClassName` | `string` | `undefined` | Additional CSS classes for input element |
-| `minDate` | `Date` | `undefined` | Minimum selectable date |
-| `maxDate` | `Date` | `undefined` | Maximum selectable date |
-| `portalWidth` | `string \| number` | `undefined` | Custom width for calendar portal |
+| Prop             | Type               | Default           | Description                              |
+| ---------------- | ------------------ | ----------------- | ---------------------------------------- |
+| `label`          | `string`           | `undefined`       | Label text displayed above the input     |
+| `placeholder`    | `string`           | `"Pilih tanggal"` | Placeholder text when no date selected   |
+| `inputClassName` | `string`           | `undefined`       | Additional CSS classes for input element |
+| `minDate`        | `Date`             | `undefined`       | Minimum selectable date                  |
+| `maxDate`        | `Date`             | `undefined`       | Maximum selectable date                  |
+| `portalWidth`    | `string \| number` | `undefined`       | Custom width for calendar portal         |
 
 ## Advanced Examples
 
@@ -68,7 +68,7 @@ oneMonthFromNow.setMonth(today.getMonth() + 1);
   minDate={today}
   maxDate={oneMonthFromNow}
   placeholder="Pilih tanggal pengiriman"
-/>
+/>;
 ```
 
 ### With Custom Portal Width
@@ -94,57 +94,60 @@ const [formData, setFormData] = useState({
 <div className="grid grid-cols-2 gap-4">
   <Datepicker
     value={formData.startDate}
-    onChange={(date) => setFormData(prev => ({ ...prev, startDate: date }))}
+    onChange={date => setFormData(prev => ({ ...prev, startDate: date }))}
     label="Tanggal Mulai"
     maxDate={formData.endDate || undefined}
   />
 
   <Datepicker
     value={formData.endDate}
-    onChange={(date) => setFormData(prev => ({ ...prev, endDate: date }))}
+    onChange={date => setFormData(prev => ({ ...prev, endDate: date }))}
     label="Tanggal Selesai"
     minDate={formData.startDate || undefined}
   />
-</div>
+</div>;
 ```
 
 ## Keyboard Navigation
 
 ### Input Field Navigation
 
-| Key | Action |
-|-----|--------|
-| `Enter` | Open calendar or select highlighted date/month/year |
-| `Escape` | Close calendar |
-| `Tab` | Move focus (calendar stays open) |
+| Key      | Action                                              |
+| -------- | --------------------------------------------------- |
+| `Enter`  | Open calendar or select highlighted date/month/year |
+| `Escape` | Close calendar                                      |
+| `Tab`    | Move focus (calendar stays open)                    |
 
 ### Calendar Navigation
 
 #### Days View
-| Key Combination | Action |
-|----------------|--------|
-| `ArrowLeft/Right` | Navigate day by day |
-| `ArrowUp/Down` | Navigate week by week |
+
+| Key Combination          | Action                  |
+| ------------------------ | ----------------------- |
+| `ArrowLeft/Right`        | Navigate day by day     |
+| `ArrowUp/Down`           | Navigate week by week   |
 | `Ctrl + ArrowLeft/Right` | Navigate month by month |
-| `Ctrl + ArrowUp/Down` | Navigate year by year |
-| `Enter` | Select highlighted date |
-| `Escape` | Close calendar |
+| `Ctrl + ArrowUp/Down`    | Navigate year by year   |
+| `Enter`                  | Select highlighted date |
+| `Escape`                 | Close calendar          |
 
 #### Months View
-| Key | Action |
-|-----|--------|
-| `ArrowLeft/Right` | Navigate month by month |
-| `ArrowUp/Down` | Navigate by 3 months |
-| `Enter` | Select month and switch to days view |
-| `Escape` | Switch to days view |
+
+| Key               | Action                               |
+| ----------------- | ------------------------------------ |
+| `ArrowLeft/Right` | Navigate month by month              |
+| `ArrowUp/Down`    | Navigate by 3 months                 |
+| `Enter`           | Select month and switch to days view |
+| `Escape`          | Switch to days view                  |
 
 #### Years View
-| Key | Action |
-|-----|--------|
-| `ArrowLeft/Right` | Navigate year by year |
-| `ArrowUp/Down` | Navigate by 3 years |
-| `Enter` | Select year and switch to months view |
-| `Escape` | Switch to months view |
+
+| Key               | Action                                |
+| ----------------- | ------------------------------------- |
+| `ArrowLeft/Right` | Navigate year by year                 |
+| `ArrowUp/Down`    | Navigate by 3 years                   |
+| `Enter`           | Select year and switch to months view |
+| `Escape`          | Switch to months view                 |
 
 ## Architecture
 
@@ -243,19 +246,29 @@ Indonesian localization is built-in:
 ```tsx
 // Indonesian month names
 const MONTH_NAMES_ID = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
 ];
 
 // Indonesian day labels
-const DAY_LABELS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+const DAY_LABELS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
 // Indonesian date formatting
-const formatDisplayValue = (date) => {
-  return date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
+const formatDisplayValue = date => {
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   });
 };
 ```

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef } from 'react';
 
 interface UseVatPercentageEditorProps {
   initialValue: number;
@@ -37,7 +37,7 @@ export const useVatPercentageEditor = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === "Escape") {
+    if (e.key === 'Enter' || e.key === 'Escape') {
       stopEditing();
     }
   };

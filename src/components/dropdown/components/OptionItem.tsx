@@ -24,15 +24,18 @@ const OptionItem: FC<OptionItemProps> = ({
     onExpansion,
   } = useDropdownContext();
   const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
-  const maxTextWidth = buttonWidth - (withRadio 
-    ? DROPDOWN_CONSTANTS.BUTTON_PADDING + DROPDOWN_CONSTANTS.RADIO_EXTRA_PADDING 
-    : DROPDOWN_CONSTANTS.BUTTON_PADDING
-  );
+  const maxTextWidth =
+    buttonWidth -
+    (withRadio
+      ? DROPDOWN_CONSTANTS.BUTTON_PADDING +
+        DROPDOWN_CONSTANTS.RADIO_EXTRA_PADDING
+      : DROPDOWN_CONSTANTS.BUTTON_PADDING);
   const shouldTruncate = shouldTruncateText(option.name, maxTextWidth);
   const shouldExpand = isExpanded && shouldTruncate;
-  const displayText = shouldTruncate && !shouldExpand
-    ? truncateText(option.name, maxTextWidth)
-    : option.name;
+  const displayText =
+    shouldTruncate && !shouldExpand
+      ? truncateText(option.name, maxTextWidth)
+      : option.name;
 
   return (
     <OptionContainer
@@ -48,10 +51,7 @@ const OptionItem: FC<OptionItemProps> = ({
       optionName={option.name}
     >
       {withRadio && (
-        <RadioIndicator
-          isSelected={isSelected}
-          isExpanded={shouldExpand}
-        />
+        <RadioIndicator isSelected={isSelected} isExpanded={shouldExpand} />
       )}
       <OptionText
         text={shouldExpand ? option.name : displayText}

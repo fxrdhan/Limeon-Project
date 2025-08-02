@@ -14,7 +14,10 @@ export const paginationUtils = {
   /**
    * Calculate the start and end item indices for current page
    */
-  calculateItemRange: (currentPage: number, itemsPerPage: number): { start: number; end: number } => {
+  calculateItemRange: (
+    currentPage: number,
+    itemsPerPage: number
+  ): { start: number; end: number } => {
     const start = (currentPage - 1) * itemsPerPage + 1;
     const end = currentPage * itemsPerPage;
     return { start, end };

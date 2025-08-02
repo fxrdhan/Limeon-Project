@@ -18,10 +18,10 @@ export const useButtonText = ({
   const getDisplayText = (): string => {
     if (!selectedOption) return placeholder;
     if (isExpanded) return selectedOption.name;
-    
+
     const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
     const maxTextWidth = buttonWidth - DROPDOWN_CONSTANTS.BUTTON_PADDING;
-    
+
     return shouldTruncateText(selectedOption.name, maxTextWidth)
       ? truncateText(selectedOption.name, maxTextWidth)
       : selectedOption.name;
@@ -29,10 +29,10 @@ export const useButtonText = ({
 
   const getTitleText = (): string | undefined => {
     if (!selectedOption || isExpanded || !buttonRef.current) return undefined;
-    
+
     const buttonWidth = buttonRef.current.getBoundingClientRect().width;
     const maxTextWidth = buttonWidth - DROPDOWN_CONSTANTS.BUTTON_PADDING;
-    
+
     return shouldTruncateText(selectedOption.name, maxTextWidth)
       ? selectedOption.name
       : undefined;
@@ -40,10 +40,10 @@ export const useButtonText = ({
 
   const shouldTruncate = (): boolean => {
     if (!selectedOption || !buttonRef.current) return false;
-    
+
     const buttonWidth = buttonRef.current.getBoundingClientRect().width;
     const maxTextWidth = buttonWidth - DROPDOWN_CONSTANTS.BUTTON_PADDING;
-    
+
     return shouldTruncateText(selectedOption.name, maxTextWidth);
   };
 

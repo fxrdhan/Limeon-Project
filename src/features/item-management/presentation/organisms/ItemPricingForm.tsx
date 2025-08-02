@@ -1,9 +1,12 @@
-import React from "react";
-import Input from "@/components/input";
-import FormSection from "@/components/form-section";
-import FormField from "@/components/form-field";
-import { PriceInput, MarginEditor } from "../atoms";
-import { basePriceSchema, sellPriceComparisonSchema } from "@/schemas/itemValidation";
+import React from 'react';
+import Input from '@/components/input';
+import FormSection from '@/components/form-section';
+import FormField from '@/components/form-field';
+import { PriceInput, MarginEditor } from '../atoms';
+import {
+  basePriceSchema,
+  sellPriceComparisonSchema,
+} from '@/schemas/itemValidation';
 
 interface ItemPricingFormProps {
   formData: {

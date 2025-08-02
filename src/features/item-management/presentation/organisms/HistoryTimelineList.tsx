@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect } from "react";
-import { FaHistory } from "react-icons/fa";
-import Button from "@/components/button";
-import { formatDateTime } from "@/lib/formatters";
+import React, { useState, useRef, useEffect } from 'react';
+import { FaHistory } from 'react-icons/fa';
+import Button from '@/components/button';
+import { formatDateTime } from '@/lib/formatters';
 
 export interface HistoryItem {
   id: string;
   version_number: number;
-  action_type: "INSERT" | "UPDATE" | "DELETE";
+  action_type: 'INSERT' | 'UPDATE' | 'DELETE';
   changed_at: string;
   changed_fields?: Record<string, unknown>;
 }
@@ -37,8 +37,8 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   selectedVersion = null,
   showRestoreButton = false,
   onRestore,
-  emptyMessage = "Tidak ada riwayat perubahan",
-  loadingMessage = "Loading history...",
+  emptyMessage = 'Tidak ada riwayat perubahan',
+  loadingMessage = 'Loading history...',
   allowMultiSelect = false,
   onCompareSelected,
   maxSelections = 2,
@@ -51,13 +51,13 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     canScrollDown: false,
   });
   const [selectedForCompare, setSelectedForCompare] = useState<HistoryItem[]>(
-    [],
+    []
   );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Find the latest version number (current version should not have restore button)
   const latestVersion = history
-    ? Math.max(...history.map((h) => h.version_number))
+    ? Math.max(...history.map(h => h.version_number))
     : 0;
 
   const checkScrollPosition = () => {
@@ -79,14 +79,14 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     checkScrollPosition();
 
     // Add scroll listener
-    container.addEventListener("scroll", checkScrollPosition);
+    container.addEventListener('scroll', checkScrollPosition);
 
     // Check when content changes
     const resizeObserver = new ResizeObserver(checkScrollPosition);
     resizeObserver.observe(container);
 
     return () => {
-      container.removeEventListener("scroll", checkScrollPosition);
+      container.removeEventListener('scroll', checkScrollPosition);
       resizeObserver.disconnect();
     };
   }, [history]);
@@ -105,12 +105,12 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
 
   const handleItemClick = (item: HistoryItem) => {
     if (allowMultiSelect) {
-      const isSelected = selectedForCompare.find((s) => s.id === item.id);
+      const isSelected = selectedForCompare.find(s => s.id === item.id);
       if (isSelected) {
         // Remove from selection
-        const newSelection = selectedForCompare.filter((s) => s.id !== item.id);
+        const newSelection = selectedForCompare.filter(s => s.id !== item.id);
         setSelectedForCompare(newSelection);
-        
+
         // Auto-close comparison when no versions are selected
         if (newSelection.length === 0 && onSelectionEmpty) {
           onSelectionEmpty();
@@ -141,7 +141,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
 
   const isItemSelected = (item: HistoryItem): boolean => {
     if (allowMultiSelect) {
-      return selectedForCompare.some((s) => s.id === item.id);
+      return selectedForCompare.some(s => s.id === item.id);
     }
     return (
       selectedVersions.includes(item.version_number) ||
@@ -152,26 +152,26 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   const getItemBgColor = (item: HistoryItem): string => {
     if (allowMultiSelect) {
       const selectionIndex = selectedForCompare.findIndex(
-        (s) => s.id === item.id,
+        s => s.id === item.id
       );
       if (selectionIndex >= 0) {
         // Apply flip logic: if flipped, swap the colors
         if (isFlipped) {
-          return selectionIndex === 0 ? "bg-purple-50" : "bg-blue-50";
+          return selectionIndex === 0 ? 'bg-purple-50' : 'bg-blue-50';
         } else {
-          return selectionIndex === 0 ? "bg-blue-50" : "bg-purple-50";
+          return selectionIndex === 0 ? 'bg-blue-50' : 'bg-purple-50';
         }
       }
-      return "hover:bg-gray-50";
+      return 'hover:bg-gray-50';
     }
 
     if (selectedVersions.includes(item.version_number)) {
-      return "bg-blue-50";
+      return 'bg-blue-50';
     }
     if (selectedVersion === item.version_number) {
-      return "bg-green-50";
+      return 'bg-green-50';
     }
-    return "hover:bg-gray-50";
+    return 'hover:bg-gray-50';
   };
 
   if (isLoading) {
@@ -221,7 +221,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
             return (
               <div
                 key={item.id}
-                className={`relative ${isFirst ? "pt-2" : ""} ${isLast ? "pb-2" : ""}`}
+                className={`relative ${isFirst ? 'pt-2' : ''} ${isLast ? 'pb-2' : ''}`}
               >
                 {/* Simple bullet */}
                 <div
@@ -230,32 +230,32 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
                       ? allowMultiSelect
                         ? (() => {
                             const selectionIndex = selectedForCompare.findIndex(
-                              (s) => s.id === item.id,
+                              s => s.id === item.id
                             );
                             if (selectionIndex >= 0) {
                               // Apply flip logic for bullet colors too
                               if (isFlipped) {
-                                return selectionIndex === 0 
-                                  ? "border-2 border-purple-300 bg-purple-300"
-                                  : "border-2 border-blue-300 bg-blue-300";
+                                return selectionIndex === 0
+                                  ? 'border-2 border-purple-300 bg-purple-300'
+                                  : 'border-2 border-blue-300 bg-blue-300';
                               } else {
-                                return selectionIndex === 0 
-                                  ? "border-2 border-blue-300 bg-blue-300"
-                                  : "border-2 border-purple-300 bg-purple-300";
+                                return selectionIndex === 0
+                                  ? 'border-2 border-blue-300 bg-blue-300'
+                                  : 'border-2 border-purple-300 bg-purple-300';
                               }
                             }
-                            return "border-2 border-gray-300 bg-white";
+                            return 'border-2 border-gray-300 bg-white';
                           })()
-                        : "border-2 border-blue-300 bg-blue-300"
-                      : "border-2 border-gray-300 bg-white"
-                  } ${isExpanded ? "top-5" : "top-5"}`}
+                        : 'border-2 border-blue-300 bg-blue-300'
+                      : 'border-2 border-gray-300 bg-white'
+                  } ${isExpanded ? 'top-5' : 'top-5'}`}
                 />
 
                 <div
                   className={`ml-6 py-3 px-4 cursor-pointer transition-all duration-200 rounded-lg ${getItemBgColor(
-                    item,
+                    item
                   )} ${
-                    isExpanded ? "shadow-md" : ""
+                    isExpanded ? 'shadow-md' : ''
                   } border border-gray-200 hover:border-gray-300`}
                   onMouseEnter={() => setHoveredItem(item.id)}
                   onMouseLeave={() => setHoveredItem(null)}
@@ -265,11 +265,11 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
                     <div className="flex items-center gap-3">
                       <span
                         className={`text-xs px-2 py-1 rounded font-medium ${
-                          item.action_type === "INSERT"
-                            ? "bg-green-100 text-green-700"
-                            : item.action_type === "UPDATE"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-red-100 text-red-700"
+                          item.action_type === 'INSERT'
+                            ? 'bg-green-100 text-green-700'
+                            : item.action_type === 'UPDATE'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-red-100 text-red-700'
                         }`}
                       >
                         {item.action_type}
@@ -288,9 +288,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
                           <Button
                             variant="text"
                             size="sm"
-                            onClick={(e) =>
-                              handleRestore(e, item.version_number)
-                            }
+                            onClick={e => handleRestore(e, item.version_number)}
                             className="text-orange-600 hover:text-orange-700 p-1"
                             title="Restore ke versi ini"
                           >
@@ -311,14 +309,14 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${
                       isExpanded && item.changed_fields
-                        ? "max-h-24 opacity-100 mt-3"
-                        : "max-h-0 opacity-0 mt-0"
+                        ? 'max-h-24 opacity-100 mt-3'
+                        : 'max-h-0 opacity-0 mt-0'
                     }`}
                   >
                     {item.changed_fields && (
                       <div className="text-xs p-3 rounded-lg border transition-all duration-300 bg-gray-50 border-gray-200 text-gray-600">
-                        <span className="font-medium">Changed fields:</span>{" "}
-                        {Object.keys(item.changed_fields).join(", ")}
+                        <span className="font-medium">Changed fields:</span>{' '}
+                        {Object.keys(item.changed_fields).join(', ')}
                       </div>
                     )}
                   </div>

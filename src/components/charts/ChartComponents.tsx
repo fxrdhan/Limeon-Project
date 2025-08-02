@@ -9,7 +9,7 @@ import {
   Tooltip,
   Legend,
   ArcElement,
-} from "chart.js";
+} from 'chart.js';
 
 // Register Chart.js components only once
 ChartJS.register(
@@ -21,7 +21,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  ArcElement,
+  ArcElement
 );
 
 // This component just ensures Chart.js is registered

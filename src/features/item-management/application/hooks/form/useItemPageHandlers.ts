@@ -1,15 +1,15 @@
-import { useEffect } from "react";
-import { useAddItemForm } from "../core/useItemCrud";
-import type { MedicineType } from "@/types";
-import type { UseItemManagementProps } from "../../../shared/types";
+import { useEffect } from 'react';
+import { useAddItemForm } from '../core/useItemCrud';
+import type { MedicineType } from '@/types';
+import type { UseItemManagementProps } from '../../../shared/types';
 
 interface AddItemPageHandlersProps extends UseItemManagementProps {
   expiryCheckboxRef?: React.RefObject<HTMLLabelElement | null>;
 }
-import { useItemQueries } from "../core/useItemQueries";
-import { useAddItemEventHandlers } from "../ui/useEventHandlers";
-import { useAddItemUIState } from "../ui/useUIState";
-import { useAddItemRefs } from "../ui/useRefs";
+import { useItemQueries } from '../core/useItemQueries';
+import { useAddItemEventHandlers } from '../ui/useEventHandlers';
+import { useAddItemUIState } from '../ui/useUIState';
+import { useAddItemRefs } from '../ui/useRefs';
 
 export const useAddItemPageHandlers = ({
   itemId,
@@ -18,7 +18,12 @@ export const useAddItemPageHandlers = ({
   expiryCheckboxRef,
   refetchItems,
 }: AddItemPageHandlersProps) => {
-  const addItemForm = useAddItemForm({ itemId, initialSearchQuery, onClose, refetchItems });
+  const addItemForm = useAddItemForm({
+    itemId,
+    initialSearchQuery,
+    onClose,
+    refetchItems,
+  });
   const { descriptionRef, marginInputRef, minStockInputRef } = useAddItemRefs();
   const {
     isClosing,
@@ -30,8 +35,8 @@ export const useAddItemPageHandlers = ({
     showFefoTooltip,
     setShowFefoTooltip,
   } = useAddItemUIState();
-  const { categoriesData, typesData, unitsData, dosagesData } = useItemQueries();
-
+  const { categoriesData, typesData, unitsData, dosagesData } =
+    useItemQueries();
 
   const {
     handleSelectChange,
@@ -102,8 +107,11 @@ export const useAddItemPageHandlers = ({
     handleAddNewType: addItemForm.handleAddNewType,
     handleAddNewUnit: addItemForm.handleAddNewUnit,
     closeModalAndClearSearch: addItemForm.closeModalAndClearSearch,
-    handleCancel: (closingStateSetter?: ((value: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>) => 
-      handleActualCancel(closingStateSetter || setIsClosing),
+    handleCancel: (
+      closingStateSetter?:
+        | ((value: boolean) => void)
+        | React.Dispatch<React.SetStateAction<boolean>>
+    ) => handleActualCancel(closingStateSetter || setIsClosing),
     isClosing,
     setIsClosing,
     regenerateItemCode: addItemForm.regenerateItemCode,

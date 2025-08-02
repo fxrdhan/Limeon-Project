@@ -1,16 +1,16 @@
-import Button from "@/components/button";
-import Loading from "@/components/loading";
-import { Card } from "@/components/card";
-import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import type { PurchaseData, PurchaseItem } from "@/types";
+import Button from '@/components/button';
+import Loading from '@/components/loading';
+import { Card } from '@/components/card';
+import { useEffect, useState, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import type { PurchaseData, PurchaseItem } from '@/types';
 import {
   FaArrowLeft,
   FaSearchPlus,
   FaSearchMinus,
   FaPrint,
-} from "react-icons/fa";
+} from 'react-icons/fa';
 
 const ViewPurchase = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,7 +33,7 @@ const ViewPurchase = () => {
       setLoading(true);
 
       const { data: purchaseData, error: purchaseError } = await supabase
-        .from("purchases")
+        .from('purchases')
         .select(
           `
                     *,
@@ -42,15 +42,15 @@ const ViewPurchase = () => {
                     address,
                     contact_person
                     )
-        `,
+        `
         )
-        .eq("id", purchaseId)
+        .eq('id', purchaseId)
         .single();
 
       if (purchaseError) throw purchaseError;
 
       const { data: itemsData, error: itemsError } = await supabase
-        .from("purchase_items")
+        .from('purchase_items')
         .select(
           `
                     *,
@@ -58,17 +58,17 @@ const ViewPurchase = () => {
                         name,
                         code
                     )
-        `,
+        `
         )
-        .eq("purchase_id", purchaseId)
-        .order("id");
+        .eq('purchase_id', purchaseId)
+        .order('id');
 
       if (itemsError) throw itemsError;
 
       setPurchase(purchaseData);
       setItems(itemsData || []);
     } catch (error) {
-      console.error("Error fetching purchase data:", error);
+      console.error('Error fetching purchase data:', error);
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ const ViewPurchase = () => {
   const calculateSubtotals = () => {
     const baseTotal = items.reduce(
       (sum, item) => sum + item.price * item.quantity,
-      0,
+      0
     );
 
     const discountTotal = items.reduce((sum, item) => {
@@ -112,28 +112,28 @@ const ViewPurchase = () => {
 
   const openPrintableVersion = () => {
     sessionStorage.setItem(
-      "purchaseData",
+      'purchaseData',
       JSON.stringify({
         purchase: purchase,
         items: items,
         subtotals: calculateSubtotals(),
-      }),
+      })
     );
 
-    const printWindow = window.open("/purchases/print-view", "_blank");
+    const printWindow = window.open('/purchases/print-view', '_blank');
     if (printWindow) printWindow.focus();
   };
 
   const increaseScale = () => {
-    setScale((prev) => Math.min(prev + 0.1, 1.5));
+    setScale(prev => Math.min(prev + 0.1, 1.5));
   };
 
   const decreaseScale = () => {
-    setScale((prev) => Math.max(prev - 0.1, 0.5));
+    setScale(prev => Math.max(prev - 0.1, 0.5));
   };
 
-  const formatCurrency = (value: number | bigint, prefix = "") => {
-    const formatter = new Intl.NumberFormat("id-ID", {
+  const formatCurrency = (value: number | bigint, prefix = '') => {
+    const formatter = new Intl.NumberFormat('id-ID', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
@@ -148,7 +148,7 @@ const ViewPurchase = () => {
     return (
       <div className="text-center p-6">
         <p className="text-red-500 mb-4">Data pembelian tidak ditemukan</p>
-        <Button onClick={() => navigate("/purchases")}>
+        <Button onClick={() => navigate('/purchases')}>
           <FaArrowLeft className="mr-2" /> Kembali ke Daftar Pembelian
         </Button>
       </div>
@@ -164,7 +164,7 @@ const ViewPurchase = () => {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => navigate("/purchases")}
+          onClick={() => navigate('/purchases')}
         >
           <div className="flex items-center">
             <FaArrowLeft className="mr-2" /> <span>Kembali</span>
@@ -194,16 +194,16 @@ const ViewPurchase = () => {
         </div>
       </div>
 
-      <div className="overflow-auto" style={{ maxHeight: "85vh" }}>
+      <div className="overflow-auto" style={{ maxHeight: '85vh' }}>
         <div
           ref={printRef}
           className="bg-white p-6 shadow-xs print:shadow-none transition-transform duration-200"
           style={{
-            width: "215mm",
-            minHeight: "330mm",
-            margin: "0 auto",
+            width: '215mm',
+            minHeight: '330mm',
+            margin: '0 auto',
             transform: `scale(${scale})`,
-            transformOrigin: "top center",
+            transformOrigin: 'top center',
           }}
         >
           <div className="mb-8">
@@ -216,10 +216,10 @@ const ViewPurchase = () => {
               <div className="w-1/2">
                 <div className="text-left mb-4">
                   <h2 className="font-bold text-lg text-gray-800">
-                    {purchase.supplier?.name || "Supplier"}
+                    {purchase.supplier?.name || 'Supplier'}
                   </h2>
                   <div className="text-sm text-gray-600">
-                    <p>{purchase.supplier?.address || ""}</p>
+                    <p>{purchase.supplier?.address || ''}</p>
                   </div>
                 </div>
 
@@ -227,10 +227,10 @@ const ViewPurchase = () => {
                   <h2 className="text-sm text-gray-600">Customer:</h2>
                   <div className="text-sm ">
                     <p className="font-bold">
-                      {purchase.customer_name || "Data belum tersedia"}
+                      {purchase.customer_name || 'Data belum tersedia'}
                     </p>
                     <p className="text-gray-600">
-                      {purchase.customer_address || "Alamat belum tersedia"}
+                      {purchase.customer_address || 'Alamat belum tersedia'}
                     </p>
                   </div>
                 </div>
@@ -247,7 +247,7 @@ const ViewPurchase = () => {
                     <span className="text-left">Tanggal</span>
                     <span className="px-2">:</span>
                     <span>
-                      {new Date(purchase.date).toLocaleDateString("id-ID")}
+                      {new Date(purchase.date).toLocaleDateString('id-ID')}
                     </span>
                   </div>
                   <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
@@ -256,9 +256,9 @@ const ViewPurchase = () => {
                     <span>
                       {purchase.due_date
                         ? new Date(purchase.due_date).toLocaleDateString(
-                            "id-ID",
+                            'id-ID'
                           )
-                        : "-"}
+                        : '-'}
                     </span>
                   </div>
                 </div>
@@ -299,24 +299,24 @@ const ViewPurchase = () => {
                   items.map((item, index) => (
                     <tr key={item.id} className="hover:bg-gray-50 text-xs">
                       <td className="border p-1 text-center">{index + 1}</td>
-                      <td className="border p-1">{item.item?.code || "-"}</td>
+                      <td className="border p-1">{item.item?.code || '-'}</td>
                       <td className="border p-1">
-                        {item.item?.name || "Item tidak ditemukan"}
+                        {item.item?.name || 'Item tidak ditemukan'}
                       </td>
                       <td className="border p-1 text-center">
-                        {item.batch_no || "-"}
+                        {item.batch_no || '-'}
                       </td>
                       <td className="border p-1 text-center">
                         {item.expiry_date
                           ? new Date(item.expiry_date).toLocaleDateString(
-                              "id-ID",
+                              'id-ID',
                               {
-                                year: "numeric",
-                                month: "2-digit",
-                                day: "2-digit",
-                              },
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                              }
                             )
-                          : "-"}
+                          : '-'}
                       </td>
                       <td className="border p-1 text-center">
                         {item.quantity}
@@ -326,13 +326,13 @@ const ViewPurchase = () => {
                         {formatCurrency(item.price)}
                       </td>
                       <td className="border p-1 text-right">
-                        {item.discount > 0 ? `${item.discount}%` : "-"}
+                        {item.discount > 0 ? `${item.discount}%` : '-'}
                       </td>
                       {!purchase.is_vat_included && (
                         <td className="border p-1 text-right">
                           {item.vat_percentage > 0
                             ? `${item.vat_percentage}%`
-                            : "-"}
+                            : '-'}
                         </td>
                       )}
                       <td className="border p-1 text-right">
@@ -353,7 +353,7 @@ const ViewPurchase = () => {
                 <span>
                   {purchase.supplier?.contact_person ||
                     purchase.checked_by ||
-                    "-"}
+                    '-'}
                 </span>
               </div>
 
@@ -362,18 +362,18 @@ const ViewPurchase = () => {
                 <span className="px-2">:</span>
                 <span
                   className={`${
-                    purchase.payment_status === "paid"
-                      ? "text-green-600"
-                      : purchase.payment_status === "partial"
-                        ? "text-orange-600"
-                        : "text-red-600"
+                    purchase.payment_status === 'paid'
+                      ? 'text-green-600'
+                      : purchase.payment_status === 'partial'
+                        ? 'text-orange-600'
+                        : 'text-red-600'
                   }`}
                 >
-                  {purchase.payment_status === "paid"
-                    ? "Lunas"
-                    : purchase.payment_status === "partial"
-                      ? "Sebagian"
-                      : "Belum Dibayar"}
+                  {purchase.payment_status === 'paid'
+                    ? 'Lunas'
+                    : purchase.payment_status === 'partial'
+                      ? 'Sebagian'
+                      : 'Belum Dibayar'}
                 </span>
               </div>
 
@@ -381,12 +381,12 @@ const ViewPurchase = () => {
                 <span className="text-left">Metode Pembayaran</span>
                 <span className="px-2">:</span>
                 <span>
-                  {purchase.payment_method === "cash"
-                    ? "Tunai"
-                    : purchase.payment_method === "transfer"
-                      ? "Transfer"
-                      : purchase.payment_method === "credit"
-                        ? "Kredit"
+                  {purchase.payment_method === 'cash'
+                    ? 'Tunai'
+                    : purchase.payment_method === 'transfer'
+                      ? 'Transfer'
+                      : purchase.payment_method === 'credit'
+                        ? 'Kredit'
                         : purchase.payment_method}
                 </span>
               </div>
@@ -394,7 +394,7 @@ const ViewPurchase = () => {
               <div className="grid grid-cols-[1fr_auto_1fr] mb-1 text-sm">
                 <span className="text-left">Catatan</span>
                 <span className="px-2">:</span>
-                <span>{purchase.notes || "-"}</span>
+                <span>{purchase.notes || '-'}</span>
               </div>
               {purchase.is_vat_included && (
                 <div className="grid grid-cols-[1fr_auto_1fr] mt-2">
@@ -420,7 +420,7 @@ const ViewPurchase = () => {
                 <span className="text-left">Diskon</span>
                 <span className="px-2">:</span>
                 <span className="font-mono text-right">
-                  {formatCurrency(discountTotal, "-")}
+                  {formatCurrency(discountTotal, '-')}
                 </span>
               </div>
 
@@ -437,7 +437,7 @@ const ViewPurchase = () => {
                   <span className="text-left">PPN</span>
                   <span className="px-2">:</span>
                   <span className="font-mono text-right">
-                    {formatCurrency(vatTotal, "+")}
+                    {formatCurrency(vatTotal, '+')}
                   </span>
                 </div>
               )}

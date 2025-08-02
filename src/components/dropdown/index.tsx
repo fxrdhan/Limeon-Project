@@ -1,28 +1,28 @@
-import { useRef, useCallback, RefObject } from "react";
-import type { DropdownProps } from "@/types";
-import ValidationOverlay from "@/components/validation-overlay";
-import DropdownButton from "./components/DropdownButton";
-import DropdownMenu from "./components/DropdownMenu";
-import { DropdownProvider } from "./providers/DropdownContext";
-import { useDropdownState } from "./hooks/useDropdownState";
-import { useSearch } from "./hooks/search/useSearch";
-import { useOptionsFilter } from "./hooks/search/useOptionsFilter";
-import { useDropdownValidation } from "./hooks/useDropdownValidation";
-import { useDropdownPosition } from "./hooks/useDropdownPosition";
-import { useKeyboardEvents } from "./hooks/keyboard/useKeyboardEvents";
-import { useNavigationState } from "./hooks/keyboard/useNavigationState";
-import { useDropdownHover } from "./hooks/useDropdownHover";
-import { useScrollState } from "./hooks/useScrollState";
-import { useTextExpansion } from "./hooks/useTextExpansion";
-import { useFocusManagement } from "./hooks/useFocusManagement";
-import { useScrollManagement } from "./hooks/useScrollManagement";
-import { useDropdownEffects } from "./hooks/useDropdownEffects";
+import { useRef, useCallback, RefObject } from 'react';
+import type { DropdownProps } from '@/types';
+import ValidationOverlay from '@/components/validation-overlay';
+import DropdownButton from './components/DropdownButton';
+import DropdownMenu from './components/DropdownMenu';
+import { DropdownProvider } from './providers/DropdownContext';
+import { useDropdownState } from './hooks/useDropdownState';
+import { useSearch } from './hooks/search/useSearch';
+import { useOptionsFilter } from './hooks/search/useOptionsFilter';
+import { useDropdownValidation } from './hooks/useDropdownValidation';
+import { useDropdownPosition } from './hooks/useDropdownPosition';
+import { useKeyboardEvents } from './hooks/keyboard/useKeyboardEvents';
+import { useNavigationState } from './hooks/keyboard/useNavigationState';
+import { useDropdownHover } from './hooks/useDropdownHover';
+import { useScrollState } from './hooks/useScrollState';
+import { useTextExpansion } from './hooks/useTextExpansion';
+import { useFocusManagement } from './hooks/useFocusManagement';
+import { useScrollManagement } from './hooks/useScrollManagement';
+import { useDropdownEffects } from './hooks/useDropdownEffects';
 
 const Dropdown = ({
   options,
   value,
   onChange,
-  placeholder = "-- Pilih --",
+  placeholder = '-- Pilih --',
   withRadio = false,
   onAddNew,
   searchList = true,
@@ -35,7 +35,7 @@ const Dropdown = ({
   name, // Used for form field identification and validation
   hoverToOpen = false,
 }: DropdownProps) => {
-  const selectedOption = options.find((option) => option?.id === value);
+  const selectedOption = options.find(option => option?.id === value);
 
   // Refs
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -100,7 +100,7 @@ const Dropdown = ({
 
   const { expandedId, setExpandedId, handleExpansion } = useTextExpansion(
     buttonRef,
-    selectedOption,
+    selectedOption
   );
 
   const {
@@ -116,7 +116,7 @@ const Dropdown = ({
     isOpen,
     isClosing,
     openThisDropdown,
-    actualCloseDropdown,
+    actualCloseDropdown
   );
 
   const { scrollState, checkScroll } = useScrollState(optionsContainerRef);
@@ -152,14 +152,14 @@ const Dropdown = ({
   const handleSelect = useCallback(
     (optionId: string) => {
       onChange(optionId);
-      if (optionId && optionId.trim() !== "") {
+      if (optionId && optionId.trim() !== '') {
         handleCloseValidation();
       }
       actualCloseDropdown();
       resetSearch();
       setTimeout(() => buttonRef.current?.focus(), 150);
     },
-    [onChange, actualCloseDropdown, handleCloseValidation, resetSearch],
+    [onChange, actualCloseDropdown, handleCloseValidation, resetSearch]
   );
 
   const { handleKeyDown } = useKeyboardEvents({
@@ -241,19 +241,19 @@ const Dropdown = ({
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (
         [
-          "ArrowDown",
-          "ArrowUp",
-          "Tab",
-          "PageDown",
-          "PageUp",
-          "Enter",
-          "Escape",
+          'ArrowDown',
+          'ArrowUp',
+          'Tab',
+          'PageDown',
+          'PageUp',
+          'Enter',
+          'Escape',
         ].includes(e.key)
       ) {
         handleKeyDown(e as never);
       }
     },
-    [handleKeyDown],
+    [handleKeyDown]
   );
 
   const contextValue = {

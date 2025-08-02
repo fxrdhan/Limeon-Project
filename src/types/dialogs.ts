@@ -7,7 +7,7 @@ export interface ConfirmDialogContextType {
   cancelText: string;
   onConfirm: () => void;
   onCancel: () => void;
-  variant: "danger" | "primary";
+  variant: 'danger' | 'primary';
   openConfirmDialog: (options: ConfirmDialogOptions) => void;
   closeConfirmDialog: () => void;
 }
@@ -19,5 +19,5 @@ export interface ConfirmDialogOptions {
   cancelText?: string;
   onConfirm: () => void;
   onCancel?: () => void;
-  variant?: "danger" | "primary";
+  variant?: 'danger' | 'primary';
 }

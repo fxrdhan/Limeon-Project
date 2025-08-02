@@ -17,12 +17,15 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       onAddNew,
       onSearchChange,
     } = useDropdownContext();
-    
+
     const handleAddNewFromSearch = (term: string) => {
       onAddNew?.(term);
     };
-    const showAddNew = (searchState === SEARCH_STATES.NOT_FOUND ||
-      (searchState === SEARCH_STATES.TYPING && filteredOptions.length === 0)) && onAddNew;
+    const showAddNew =
+      (searchState === SEARCH_STATES.NOT_FOUND ||
+        (searchState === SEARCH_STATES.TYPING &&
+          filteredOptions.length === 0)) &&
+      onAddNew;
 
     return (
       <div className="p-2 border-b border-gray-200 sticky top-0 z-10">
@@ -66,7 +69,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
         </div>
       </div>
     );
-  },
+  }
 );
 
 SearchBar.displayName = 'SearchBar';

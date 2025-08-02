@@ -1,6 +1,6 @@
-import React from "react";
+import React from 'react';
 
-export type CalendarView = "days" | "months" | "years";
+export type CalendarView = 'days' | 'months' | 'years';
 
 export type CustomDateValueType = Date | null;
 

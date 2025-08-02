@@ -1,7 +1,7 @@
-import React from "react";
-import ImageUploader from "@/components/image-uploader";
-import { FaPencilAlt, FaSpinner } from "react-icons/fa";
-import { useIdentityModalContext } from "@/contexts/IdentityModalContext";
+import React from 'react';
+import ImageUploader from '@/components/image-uploader';
+import { FaPencilAlt, FaSpinner } from 'react-icons/fa';
+import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
 
 const IdentityImageUploader: React.FC = () => {
   const {
@@ -20,20 +20,20 @@ const IdentityImageUploader: React.FC = () => {
   } = useIdentityModalContext();
 
   const aspectRatioClass =
-    imageAspectRatio === "square" ? "aspect-square" : "aspect-video";
+    imageAspectRatio === 'square' ? 'aspect-square' : 'aspect-video';
 
   const renderImageContent = () => {
     if (currentImageUrl) {
       return (
         <img
           src={currentImageUrl}
-          alt={String(localData?.name ?? "Detail")}
+          alt={String(localData?.name ?? 'Detail')}
           className={`w-full h-auto ${aspectRatioClass} object-cover rounded-md border border-gray-200`}
         />
       );
     }
 
-    if (mode === "add") {
+    if (mode === 'add') {
       return (
         <div
           className={`w-full ${aspectRatioClass} flex items-center justify-center border border-dashed border-gray-300 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors`}
@@ -52,7 +52,7 @@ const IdentityImageUploader: React.FC = () => {
       return (
         <img
           src={defaultImageUrl}
-          alt={String(localData?.name ?? "Detail")}
+          alt={String(localData?.name ?? 'Detail')}
           className={`w-full h-auto ${aspectRatioClass} object-cover rounded-md border border-gray-200`}
         />
       );
@@ -62,7 +62,7 @@ const IdentityImageUploader: React.FC = () => {
       return (
         <img
           src={imagePlaceholder}
-          alt={String(localData?.name ?? "Detail")}
+          alt={String(localData?.name ?? 'Detail')}
           className={`w-full h-auto ${aspectRatioClass} object-cover rounded-md border border-gray-200`}
         />
       );
@@ -104,7 +104,7 @@ const IdentityImageUploader: React.FC = () => {
           shape="rounded"
           onImageUpload={handleImageUpload}
           onImageDelete={handleImageDeleteInternal}
-          disabled={isUploadingImage || mode !== "add"}
+          disabled={isUploadingImage || mode !== 'add'}
           loadingIcon={
             <FaSpinner className="text-white text-xl animate-spin" />
           }

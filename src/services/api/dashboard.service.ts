@@ -30,17 +30,16 @@ export class DashboardService {
   async getDashboardStats(): Promise<ServiceResponse<DashboardStats>> {
     try {
       // Fetch all data in parallel for better performance
-      const [
-        salesResult,
-        purchasesResult,
-        medicinesResult,
-        lowStockResult
-      ] = await Promise.all([
-        supabase.from('sales').select('total'),
-        supabase.from('purchases').select('total'),
-        supabase.from('items').select('*', { count: 'exact' }),
-        supabase.from('items').select('*', { count: 'exact' }).lt('stock', 10)
-      ]);
+      const [salesResult, purchasesResult, medicinesResult, lowStockResult] =
+        await Promise.all([
+          supabase.from('sales').select('total'),
+          supabase.from('purchases').select('total'),
+          supabase.from('items').select('*', { count: 'exact' }),
+          supabase
+            .from('items')
+            .select('*', { count: 'exact' })
+            .lt('stock', 10),
+        ]);
 
       // Check for errors
       if (salesResult.error) throw salesResult.error;
@@ -54,7 +53,10 @@ export class DashboardService {
         : 0;
 
       const totalPurchases = purchasesResult.data
-        ? purchasesResult.data.reduce((sum, purchase) => sum + Number(purchase.total), 0)
+        ? purchasesResult.data.reduce(
+            (sum, purchase) => sum + Number(purchase.total),
+            0
+          )
         : 0;
 
       const stats: DashboardStats = {
@@ -71,7 +73,9 @@ export class DashboardService {
   }
 
   // Get sales analytics for a date range
-  async getSalesAnalytics(days: number = 7): Promise<ServiceResponse<SalesAnalyticsData>> {
+  async getSalesAnalytics(
+    days: number = 7
+  ): Promise<ServiceResponse<SalesAnalyticsData>> {
     try {
       const now = new Date();
       const startDate = new Date(now);
@@ -127,7 +131,9 @@ export class DashboardService {
   }
 
   // Get top selling medicines
-  async getTopSellingMedicines(limit: number = 5): Promise<ServiceResponse<TopSellingMedicine[]>> {
+  async getTopSellingMedicines(
+    limit: number = 5
+  ): Promise<ServiceResponse<TopSellingMedicine[]>> {
     try {
       const { data, error } = await supabase.rpc('get_top_selling_medicines', {
         limit_count: limit,
@@ -146,14 +152,16 @@ export class DashboardService {
     try {
       const { data, error } = await supabase
         .from('items')
-        .select(`
+        .select(
+          `
           id,
           name,
           stock,
           item_categories (name),
           item_types (name),
           item_units (name)
-        `)
+        `
+        )
         .lte('stock', threshold)
         .order('stock', { ascending: true })
         .limit(10);
@@ -172,26 +180,30 @@ export class DashboardService {
       const [salesResult, purchasesResult] = await Promise.all([
         supabase
           .from('sales')
-          .select(`
+          .select(
+            `
             id,
             invoice_number,
             date,
             total,
             patients (name)
-          `)
+          `
+          )
           .order('date', { ascending: false })
           .limit(limit),
         supabase
           .from('purchases')
-          .select(`
+          .select(
+            `
             id,
             invoice_number,
             date,
             total,
             suppliers (name)
-          `)
+          `
+          )
           .order('date', { ascending: false })
-          .limit(limit)
+          .limit(limit),
       ]);
 
       if (salesResult.error) throw salesResult.error;
@@ -202,17 +214,23 @@ export class DashboardService {
         ...(salesResult.data || []).map(sale => ({
           ...sale,
           type: 'sale' as const,
-          counterparty: (sale as Record<string, { name?: string }>).patients?.name || 'Walk-in Customer'
+          counterparty:
+            (sale as Record<string, { name?: string }>).patients?.name ||
+            'Walk-in Customer',
         })),
         ...(purchasesResult.data || []).map(purchase => ({
           ...purchase,
           type: 'purchase' as const,
-          counterparty: (purchase as Record<string, { name?: string }>).suppliers?.name || 'Unknown Supplier'
-        }))
+          counterparty:
+            (purchase as Record<string, { name?: string }>).suppliers?.name ||
+            'Unknown Supplier',
+        })),
       ];
 
       // Sort by date descending
-      transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      transactions.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
 
       return { data: transactions.slice(0, limit), error: null };
     } catch (error) {
@@ -245,29 +263,34 @@ export class DashboardService {
           .from('sales')
           .select('total')
           .gte('date', prevMonthStart.toISOString())
-          .lte('date', prevMonthEnd.toISOString())
+          .lte('date', prevMonthEnd.toISOString()),
       ]);
 
       if (currentMonthResult.error) throw currentMonthResult.error;
       if (prevMonthResult.error) throw prevMonthResult.error;
 
-      const currentMonthTotal = (currentMonthResult.data || [])
-        .reduce((sum, sale) => sum + Number(sale.total), 0);
-      const prevMonthTotal = (prevMonthResult.data || [])
-        .reduce((sum, sale) => sum + Number(sale.total), 0);
+      const currentMonthTotal = (currentMonthResult.data || []).reduce(
+        (sum, sale) => sum + Number(sale.total),
+        0
+      );
+      const prevMonthTotal = (prevMonthResult.data || []).reduce(
+        (sum, sale) => sum + Number(sale.total),
+        0
+      );
 
-      const percentageChange = prevMonthTotal > 0 
-        ? ((currentMonthTotal - prevMonthTotal) / prevMonthTotal) * 100
-        : 0;
+      const percentageChange =
+        prevMonthTotal > 0
+          ? ((currentMonthTotal - prevMonthTotal) / prevMonthTotal) * 100
+          : 0;
 
       return {
         data: {
           currentMonth: currentMonthTotal,
           previousMonth: prevMonthTotal,
           percentageChange,
-          isIncrease: percentageChange > 0
+          isIncrease: percentageChange > 0,
         },
-        error: null
+        error: null,
       };
     } catch (error) {
       return { data: null, error: error as PostgrestError };

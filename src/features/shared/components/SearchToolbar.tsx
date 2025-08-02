@@ -1,7 +1,7 @@
-import Button from "@/components/button";
-import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
-import { FaPlus } from "react-icons/fa";
-import type { TargetedSearch, SearchColumn } from "@/types/search";
+import Button from '@/components/button';
+import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
+import { FaPlus } from 'react-icons/fa';
+import type { TargetedSearch, SearchColumn } from '@/types/search';
 
 interface SearchToolbarProps<T = unknown> {
   searchInputRef: React.RefObject<HTMLInputElement>;
@@ -11,7 +11,7 @@ interface SearchToolbarProps<T = unknown> {
     onTargetedSearch: (targetedSearch: TargetedSearch | null) => void;
     onGlobalSearch: (searchValue: string) => void;
     onClearSearch: () => void;
-    searchState: "idle" | "typing" | "found" | "not-found";
+    searchState: 'idle' | 'typing' | 'found' | 'not-found';
     columns: SearchColumn[];
     placeholder?: string;
   };
@@ -44,13 +44,13 @@ export default function SearchToolbar<T extends { id: string }>({
     }
 
     // Default behavior for items tab
-    if (e.key === "Enter" && items && onItemSelect) {
+    if (e.key === 'Enter' && items && onItemSelect) {
       e.preventDefault();
 
       if (items.length > 0) {
         const firstItem = items[0];
         onItemSelect(firstItem);
-      } else if (search && search.trim() !== "") {
+      } else if (search && search.trim() !== '') {
         onAdd();
       }
     }
@@ -62,7 +62,7 @@ export default function SearchToolbar<T extends { id: string }>({
         inputRef={searchInputRef}
         {...searchBarProps}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder || searchBarProps.placeholder || "Cari..."}
+        placeholder={placeholder || searchBarProps.placeholder || 'Cari...'}
         className="grow"
       />
       <Button

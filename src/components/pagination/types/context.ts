@@ -8,12 +8,12 @@ export interface PaginationContextValue {
   showFloating: boolean;
   selectedPageSizeIndex: number;
   direction: number;
-  
+
   // Actions
   onPageChange: (page: number) => void;
   onItemsPerPageChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   handleItemsPerPageClick: (value: number, event: React.MouseEvent) => void;
-  
+
   // Configuration
   enableFloating: boolean;
   hideFloatingWhenModalOpen: boolean;

@@ -1,7 +1,7 @@
-import React from "react";
-import FormSection from "@/components/form-section";
-import ItemSearchBar from "@/components/item-search";
-import Checkbox from "@/components/checkbox";
+import React from 'react';
+import FormSection from '@/components/form-section';
+import ItemSearchBar from '@/components/item-search';
+import Checkbox from '@/components/checkbox';
 import {
   Table,
   TableHead,
@@ -9,10 +9,10 @@ import {
   TableRow,
   TableCell,
   TableHeader,
-} from "@/components/table";
-import PurchaseItemRow from "@/components/molecules/PurchaseForm/PurchaseItemRow";
-import VatPercentageEditor from "@/components/molecules/PurchaseForm/VatPercentageEditor";
-import type { PurchaseItem, ItemSearchBarRef, Item } from "@/types";
+} from '@/components/table';
+import PurchaseItemRow from '@/components/molecules/PurchaseForm/PurchaseItemRow';
+import VatPercentageEditor from '@/components/molecules/PurchaseForm/VatPercentageEditor';
+import type { PurchaseItem, ItemSearchBarRef, Item } from '@/types';
 
 interface PurchaseItemsSectionProps {
   searchItem: string;
@@ -30,13 +30,21 @@ interface PurchaseItemsSectionProps {
   };
   total: number;
   getItemByID: (id: string) => Item | undefined;
-  updateItem: (id: string, field: "quantity" | "price" | "discount", value: number) => void;
+  updateItem: (
+    id: string,
+    field: 'quantity' | 'price' | 'discount',
+    value: number
+  ) => void;
   updateItemVat: (id: string, value: number) => void;
   onHandleUnitChange: (id: string, unitName: string) => void;
   updateItemBatchNo: (id: string, value: string) => void;
   updateItemExpiry: (id: string, value: string) => void;
   removeItem: (id: string) => void;
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+  handleChange: (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => void;
 }
 
 const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
@@ -65,8 +73,8 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
     if (!item) return [];
 
     const baseOption = {
-      id: item.base_unit || "Unit",
-      name: item.base_unit || "Unit",
+      id: item.base_unit || 'Unit',
+      name: item.base_unit || 'Unit',
     };
 
     const conversions = item.unit_conversions;
@@ -74,7 +82,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
 
     const uniqueUnits = Array.from(
       new Map(
-        conversions.map((uc) => [
+        conversions.map(uc => [
           uc.to_unit_id,
           {
             id: uc.to_unit_id,
@@ -90,8 +98,8 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
   const handleVatCheckboxChange = (isChecked: boolean) => {
     const event = {
       target: {
-        name: "is_vat_included",
-        type: "checkbox",
+        name: 'is_vat_included',
+        type: 'checkbox',
         checked: isChecked,
         value: String(isChecked),
       },
@@ -102,7 +110,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
   const handleVatPercentageChange = (value: number) => {
     const fakeEvent = {
       target: {
-        name: "vat_percentage",
+        name: 'vat_percentage',
         value: value.toString(),
       },
     } as React.ChangeEvent<HTMLInputElement>;
@@ -110,20 +118,30 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
   };
 
   const tableColumns = [
-    { key: "no", header: "No", minWidth: 40, align: "center" as const },
-    { key: "code", header: "Kode", minWidth: 80 },
-    { key: "name", header: "Nama", minWidth: 200 },
-    { key: "batch_no", header: "Batch No.", minWidth: 100 },
-    { key: "expiry_date", header: "EXP", minWidth: 100, align: "center" as const },
-    { key: "quantity", header: "Jml.", minWidth: 60, align: "center" as const },
-    { key: "unit", header: "Unit", minWidth: 70, align: "center" as const },
-    { key: "price", header: "Harga", minWidth: 100, align: "right" as const },
-    { key: "discount", header: "Disc", minWidth: 80, align: "right" as const },
+    { key: 'no', header: 'No', minWidth: 40, align: 'center' as const },
+    { key: 'code', header: 'Kode', minWidth: 80 },
+    { key: 'name', header: 'Nama', minWidth: 200 },
+    { key: 'batch_no', header: 'Batch No.', minWidth: 100 },
+    {
+      key: 'expiry_date',
+      header: 'EXP',
+      minWidth: 100,
+      align: 'center' as const,
+    },
+    { key: 'quantity', header: 'Jml.', minWidth: 60, align: 'center' as const },
+    { key: 'unit', header: 'Unit', minWidth: 70, align: 'center' as const },
+    { key: 'price', header: 'Harga', minWidth: 100, align: 'right' as const },
+    { key: 'discount', header: 'Disc', minWidth: 80, align: 'right' as const },
     ...(formData.is_vat_included
       ? []
-      : [{ key: "vat", header: "VAT", minWidth: 60, align: "right" as const }]),
-    { key: "subtotal", header: "Subtotal", minWidth: 120, align: "right" as const },
-    { key: "actions", header: "‎", minWidth: 60, align: "center" as const },
+      : [{ key: 'vat', header: 'VAT', minWidth: 60, align: 'right' as const }]),
+    {
+      key: 'subtotal',
+      header: 'Subtotal',
+      minWidth: 120,
+      align: 'right' as const,
+    },
+    { key: 'actions', header: '‎', minWidth: 60, align: 'center' as const },
   ];
 
   return (
@@ -138,7 +156,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
         isAddItemButtonDisabled={isAddNewItemDisabled}
         onOpenAddItemPortal={onOpenAddItemPortal}
       />
-      
+
       <Table autoSize={true} columns={tableColumns} data={purchaseItems}>
         <TableHead>
           <TableRow>
@@ -165,7 +183,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
                 colSpan={formData.is_vat_included ? 11 : 12}
                 className="text-center text-gray-500"
               >
-                {"Belum ada item ditambahkan"}
+                {'Belum ada item ditambahkan'}
               </TableCell>
             </TableRow>
           ) : (
@@ -174,12 +192,16 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
                 key={item.id}
                 item={item}
                 index={index}
-                itemCode={getItemByID(item.item_id)?.code || "-"}
+                itemCode={getItemByID(item.item_id)?.code || '-'}
                 unitOptions={getUnitOptions(item.item_id)}
                 isVatIncluded={formData.is_vat_included}
-                onQuantityChange={(id, value) => updateItem(id, "quantity", value)}
-                onPriceChange={(id, value) => updateItem(id, "price", value)}
-                onDiscountChange={(id, value) => updateItem(id, "discount", value)}
+                onQuantityChange={(id, value) =>
+                  updateItem(id, 'quantity', value)
+                }
+                onPriceChange={(id, value) => updateItem(id, 'price', value)}
+                onDiscountChange={(id, value) =>
+                  updateItem(id, 'discount', value)
+                }
                 onVatChange={updateItemVat}
                 onUnitChange={onHandleUnitChange}
                 onBatchNoChange={updateItemBatchNo}
@@ -208,9 +230,9 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
         <div className="flex items-center text-lg">
           <div className="mr-4">Total:</div>
           <div className="w-40 text-right">
-            {total.toLocaleString("id-ID", {
-              style: "currency",
-              currency: "IDR",
+            {total.toLocaleString('id-ID', {
+              style: 'currency',
+              currency: 'IDR',
             })}
           </div>
         </div>

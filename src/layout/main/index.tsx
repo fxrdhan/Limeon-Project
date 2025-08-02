@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Outlet } from "react-router-dom";
-import Navbar from "@/layout/navbar";
-import Sidebar from "@/layout/sidebar";
-import { usePresence } from "@/hooks/usePresence";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Outlet } from 'react-router-dom';
+import Navbar from '@/layout/navbar';
+import Sidebar from '@/layout/sidebar';
+import { usePresence } from '@/hooks/usePresence';
 
 const MainLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -28,7 +28,7 @@ const MainLayout = () => {
   }, [isLocked]);
 
   const toggleLock = useCallback(() => {
-    setIsLocked((prevIsLocked) => {
+    setIsLocked(prevIsLocked => {
       const newLockState = !prevIsLocked;
       if (newLockState && sidebarCollapsed) {
         setSidebarCollapsed(false);
@@ -70,17 +70,17 @@ const MainLayout = () => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && (event.key === "s" || event.key === "S")) {
+      if (event.ctrlKey && (event.key === 's' || event.key === 'S')) {
         event.preventDefault();
         // Toggle sidebar state and lock it
-        setSidebarCollapsed((prevCollapsed) => !prevCollapsed);
+        setSidebarCollapsed(prevCollapsed => !prevCollapsed);
         setIsLocked(true);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [setIsLocked, setSidebarCollapsed]);
 

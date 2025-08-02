@@ -1,58 +1,58 @@
-import { SearchColumn } from "@/types/search";
+import { SearchColumn } from '@/types/search';
 
 /**
  * Doctor search columns configuration
  */
 export const doctorSearchColumns: SearchColumn[] = [
   {
-    field: "name",
-    headerName: "Nama Dokter",
+    field: 'name',
+    headerName: 'Nama Dokter',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nama lengkap dokter"
+    type: 'text',
+    description: 'Cari berdasarkan nama lengkap dokter',
   },
   {
-    field: "gender",
-    headerName: "Jenis Kelamin",
+    field: 'gender',
+    headerName: 'Jenis Kelamin',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan jenis kelamin (L/P)"
+    type: 'text',
+    description: 'Cari berdasarkan jenis kelamin (L/P)',
   },
   {
-    field: "specialization",
-    headerName: "Spesialisasi",
+    field: 'specialization',
+    headerName: 'Spesialisasi',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan bidang spesialisasi dokter"
+    type: 'text',
+    description: 'Cari berdasarkan bidang spesialisasi dokter',
   },
   {
-    field: "license_number",
-    headerName: "Nomor Lisensi",
+    field: 'license_number',
+    headerName: 'Nomor Lisensi',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nomor lisensi praktik"
+    type: 'text',
+    description: 'Cari berdasarkan nomor lisensi praktik',
   },
   {
-    field: "experience_years",
-    headerName: "Pengalaman",
+    field: 'experience_years',
+    headerName: 'Pengalaman',
     searchable: true,
-    type: "number",
-    description: "Cari berdasarkan tahun pengalaman"
+    type: 'number',
+    description: 'Cari berdasarkan tahun pengalaman',
   },
   {
-    field: "phone",
-    headerName: "Telepon",
+    field: 'phone',
+    headerName: 'Telepon',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nomor telepon"
+    type: 'text',
+    description: 'Cari berdasarkan nomor telepon',
   },
   {
-    field: "email",
-    headerName: "Email",
+    field: 'email',
+    headerName: 'Email',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan alamat email"
-  }
+    type: 'text',
+    description: 'Cari berdasarkan alamat email',
+  },
 ];
 
 /**
@@ -60,75 +60,75 @@ export const doctorSearchColumns: SearchColumn[] = [
  */
 export const itemSearchColumns: SearchColumn[] = [
   {
-    field: "name",
-    headerName: "Nama Item",
+    field: 'name',
+    headerName: 'Nama Item',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nama item"
+    type: 'text',
+    description: 'Cari berdasarkan nama item',
   },
   {
-    field: "manufacturer",
-    headerName: "Produsen",
+    field: 'manufacturer',
+    headerName: 'Produsen',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nama produsen"
+    type: 'text',
+    description: 'Cari berdasarkan nama produsen',
   },
   {
-    field: "code",
-    headerName: "Kode",
+    field: 'code',
+    headerName: 'Kode',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan kode unik item"
+    type: 'text',
+    description: 'Cari berdasarkan kode unik item',
   },
   {
-    field: "barcode",
-    headerName: "Barcode",
+    field: 'barcode',
+    headerName: 'Barcode',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nomor barcode"
+    type: 'text',
+    description: 'Cari berdasarkan nomor barcode',
   },
   {
-    field: "category.name",
-    headerName: "Kategori",
+    field: 'category.name',
+    headerName: 'Kategori',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan kategori item"
+    type: 'text',
+    description: 'Cari berdasarkan kategori item',
   },
   {
-    field: "type.name",
-    headerName: "Jenis",
+    field: 'type.name',
+    headerName: 'Jenis',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan jenis item"
+    type: 'text',
+    description: 'Cari berdasarkan jenis item',
   },
   {
-    field: "unit.name",
-    headerName: "Satuan",
+    field: 'unit.name',
+    headerName: 'Satuan',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan satuan utama"
+    type: 'text',
+    description: 'Cari berdasarkan satuan utama',
   },
   {
-    field: "base_price",
-    headerName: "Harga Pokok",
+    field: 'base_price',
+    headerName: 'Harga Pokok',
     searchable: true,
-    type: "currency",
-    description: "Cari berdasarkan harga pokok"
+    type: 'currency',
+    description: 'Cari berdasarkan harga pokok',
   },
   {
-    field: "sell_price",
-    headerName: "Harga Jual",
+    field: 'sell_price',
+    headerName: 'Harga Jual',
     searchable: true,
-    type: "currency",
-    description: "Cari berdasarkan harga jual"
+    type: 'currency',
+    description: 'Cari berdasarkan harga jual',
   },
   {
-    field: "stock",
-    headerName: "Stok",
+    field: 'stock',
+    headerName: 'Stok',
     searchable: true,
-    type: "number",
-    description: "Cari berdasarkan jumlah stok"
-  }
+    type: 'number',
+    description: 'Cari berdasarkan jumlah stok',
+  },
 ];
 
 /**
@@ -136,47 +136,47 @@ export const itemSearchColumns: SearchColumn[] = [
  */
 export const patientSearchColumns: SearchColumn[] = [
   {
-    field: "name",
-    headerName: "Nama Pasien",
+    field: 'name',
+    headerName: 'Nama Pasien',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nama lengkap pasien"
+    type: 'text',
+    description: 'Cari berdasarkan nama lengkap pasien',
   },
   {
-    field: "gender",
-    headerName: "Jenis Kelamin",
+    field: 'gender',
+    headerName: 'Jenis Kelamin',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan jenis kelamin (L/P)"
+    type: 'text',
+    description: 'Cari berdasarkan jenis kelamin (L/P)',
   },
   {
-    field: "birth_date",
-    headerName: "Tanggal Lahir",
+    field: 'birth_date',
+    headerName: 'Tanggal Lahir',
     searchable: true,
-    type: "date",
-    description: "Cari berdasarkan tanggal lahir"
+    type: 'date',
+    description: 'Cari berdasarkan tanggal lahir',
   },
   {
-    field: "address",
-    headerName: "Alamat",
+    field: 'address',
+    headerName: 'Alamat',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan alamat tempat tinggal"
+    type: 'text',
+    description: 'Cari berdasarkan alamat tempat tinggal',
   },
   {
-    field: "phone",
-    headerName: "Telepon",
+    field: 'phone',
+    headerName: 'Telepon',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nomor telepon"
+    type: 'text',
+    description: 'Cari berdasarkan nomor telepon',
   },
   {
-    field: "email",
-    headerName: "Email",
+    field: 'email',
+    headerName: 'Email',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan alamat email"
-  }
+    type: 'text',
+    description: 'Cari berdasarkan alamat email',
+  },
 ];
 
 /**
@@ -184,40 +184,40 @@ export const patientSearchColumns: SearchColumn[] = [
  */
 export const supplierSearchColumns: SearchColumn[] = [
   {
-    field: "name",
-    headerName: "Nama Supplier",
+    field: 'name',
+    headerName: 'Nama Supplier',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nama perusahaan supplier"
+    type: 'text',
+    description: 'Cari berdasarkan nama perusahaan supplier',
   },
   {
-    field: "address",
-    headerName: "Alamat",
+    field: 'address',
+    headerName: 'Alamat',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan alamat supplier"
+    type: 'text',
+    description: 'Cari berdasarkan alamat supplier',
   },
   {
-    field: "phone",
-    headerName: "Telepon",
+    field: 'phone',
+    headerName: 'Telepon',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nomor telepon"
+    type: 'text',
+    description: 'Cari berdasarkan nomor telepon',
   },
   {
-    field: "email",
-    headerName: "Email",
+    field: 'email',
+    headerName: 'Email',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan alamat email"
+    type: 'text',
+    description: 'Cari berdasarkan alamat email',
   },
   {
-    field: "contact_person",
-    headerName: "Kontak Person",
+    field: 'contact_person',
+    headerName: 'Kontak Person',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nama kontak person"
-  }
+    type: 'text',
+    description: 'Cari berdasarkan nama kontak person',
+  },
 ];
 
 /**
@@ -225,44 +225,46 @@ export const supplierSearchColumns: SearchColumn[] = [
  */
 export const itemMasterSearchColumns: SearchColumn[] = [
   {
-    field: "kode",
-    headerName: "Kode",
+    field: 'kode',
+    headerName: 'Kode',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan kode"
+    type: 'text',
+    description: 'Cari berdasarkan kode',
   },
   {
-    field: "name",
-    headerName: "Nama",
+    field: 'name',
+    headerName: 'Nama',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan nama"
+    type: 'text',
+    description: 'Cari berdasarkan nama',
   },
   {
-    field: "description",
-    headerName: "Deskripsi",
+    field: 'description',
+    headerName: 'Deskripsi',
     searchable: true,
-    type: "text",
-    description: "Cari berdasarkan deskripsi"
-  }
+    type: 'text',
+    description: 'Cari berdasarkan deskripsi',
+  },
 ];
 
 /**
  * Get search columns by entity type
  */
-export const getSearchColumnsByEntity = (entityType: string): SearchColumn[] => {
+export const getSearchColumnsByEntity = (
+  entityType: string
+): SearchColumn[] => {
   switch (entityType) {
-    case "doctors":
+    case 'doctors':
       return doctorSearchColumns;
-    case "items":
+    case 'items':
       return itemSearchColumns;
-    case "patients":
+    case 'patients':
       return patientSearchColumns;
-    case "suppliers":
+    case 'suppliers':
       return supplierSearchColumns;
-    case "item_categories":
-    case "item_types":
-    case "item_units":
+    case 'item_categories':
+    case 'item_types':
+    case 'item_units':
       return itemMasterSearchColumns;
     default:
       return [];

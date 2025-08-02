@@ -7,7 +7,7 @@ import {
   ValueGetterParams,
   GridReadyEvent,
   ColDef,
-} from "ag-grid-community";
+} from 'ag-grid-community';
 
 export interface ColumnConfig {
   field: string;
@@ -29,7 +29,7 @@ export interface DataGridProps {
   onRowClicked?: (event: RowClickedEvent) => void;
   onGridReady?: (event: GridReadyEvent) => void;
   onFirstDataRendered?: () => void;
-  domLayout?: "normal" | "autoHeight" | "print";
+  domLayout?: 'normal' | 'autoHeight' | 'print';
   overlayNoRowsTemplate?: string;
   className?: string;
   style?: React.CSSProperties;
@@ -44,8 +44,8 @@ export interface DataGridProps {
   suppressAnimationFrame?: boolean;
   animateRows?: boolean;
   loadThemeGoogleFonts?: boolean;
-  rowSelection?: "single" | "multiple" | { mode: 'singleRow' | 'multiRow' };
-  colResizeDefault?: "shift" | undefined;
+  rowSelection?: 'single' | 'multiple' | { mode: 'singleRow' | 'multiRow' };
+  colResizeDefault?: 'shift' | undefined;
   isExternalFilterPresent?: () => boolean;
   doesExternalFilterPass?: (node: IRowNode) => boolean;
   disableFiltering?: boolean;

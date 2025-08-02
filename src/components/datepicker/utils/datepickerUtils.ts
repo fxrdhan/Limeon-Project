@@ -1,4 +1,4 @@
-import type { CustomDateValueType } from "../types";
+import type { CustomDateValueType } from '../types';
 
 // Date calculation utilities
 export const daysInMonth = (year: number, month: number): number =>
@@ -18,13 +18,13 @@ export const isDateInRange = (
     min.setHours(0, 0, 0, 0);
     if (date < min) return false;
   }
-  
+
   if (maxDate) {
     const max = new Date(maxDate);
     max.setHours(0, 0, 0, 0);
     if (date > max) return false;
   }
-  
+
   return true;
 };
 
@@ -41,7 +41,7 @@ export const isMonthInRange = (
     const lastDayOfMonth = new Date(year, month + 1, 0);
     if (lastDayOfMonth < minD) return false;
   }
-  
+
   if (maxDate) {
     const maxD = new Date(maxDate);
     maxD.setDate(1);
@@ -49,7 +49,7 @@ export const isMonthInRange = (
     const firstDayOfMonth = new Date(year, month, 1);
     if (firstDayOfMonth > maxD) return false;
   }
-  
+
   return true;
 };
 
@@ -90,10 +90,13 @@ export const cloneDate = (date: Date): Date => {
 };
 
 // Calendar grid utilities
-export const generateCalendarDays = (year: number, month: number): (number | null)[] => {
+export const generateCalendarDays = (
+  year: number,
+  month: number
+): (number | null)[] => {
   const numDays = daysInMonth(year, month);
   let firstDay = firstDayOfMonth(year, month);
-  
+
   // Convert Sunday (0) to Saturday (6) for Monday-first week
   if (firstDay === 0) firstDay = 6;
   else firstDay -= 1;
@@ -102,65 +105,65 @@ export const generateCalendarDays = (year: number, month: number): (number | nul
   for (let i = 1; i <= numDays; i++) {
     calendarDays.push(i);
   }
-  
+
   return calendarDays;
 };
 
 // Navigation utilities
 export const navigateDate = (
   currentDate: Date,
-  direction: "prev" | "next",
-  unit: "day" | "week" | "month" | "year"
+  direction: 'prev' | 'next',
+  unit: 'day' | 'week' | 'month' | 'year'
 ): Date => {
   const newDate = cloneDate(currentDate);
-  const multiplier = direction === "prev" ? -1 : 1;
-  
+  const multiplier = direction === 'prev' ? -1 : 1;
+
   switch (unit) {
-    case "day":
+    case 'day':
       newDate.setDate(newDate.getDate() + multiplier);
       break;
-    case "week":
-      newDate.setDate(newDate.getDate() + (7 * multiplier));
+    case 'week':
+      newDate.setDate(newDate.getDate() + 7 * multiplier);
       break;
-    case "month":
+    case 'month':
       newDate.setMonth(newDate.getMonth() + multiplier);
       break;
-    case "year":
+    case 'year':
       newDate.setFullYear(newDate.getFullYear() + multiplier);
       break;
   }
-  
+
   return newDate;
 };
 
 // Format utilities
 export const formatDisplayValue = (
   value: CustomDateValueType,
-  locale: string = "id-ID"
+  locale: string = 'id-ID'
 ): string => {
-  if (!value) return "";
-  
+  if (!value) return '';
+
   return value.toLocaleDateString(locale, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   });
 };
 
 export const formatHeaderContent = (
   date: Date,
-  view: "days" | "months" | "years",
-  locale: string = "id-ID"
+  view: 'days' | 'months' | 'years',
+  locale: string = 'id-ID'
 ): string => {
-  if (view === "days") {
+  if (view === 'days') {
     return date.toLocaleDateString(locale, {
-      month: "long",
-      year: "numeric",
+      month: 'long',
+      year: 'numeric',
     });
-  } else if (view === "months") {
+  } else if (view === 'months') {
     return date.getFullYear().toString();
   }
-  
+
   // years view is handled differently due to decade range
-  return "";
+  return '';
 };

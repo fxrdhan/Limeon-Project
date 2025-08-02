@@ -23,7 +23,9 @@ export interface CreateItemOutput {
 }
 
 // Business validation rules
-export const validateCreateItemInput = (input: CreateItemInput): { isValid: boolean; errors: string[] } => {
+export const validateCreateItemInput = (
+  input: CreateItemInput
+): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
 
   if (!input.name?.trim()) {
@@ -60,6 +62,6 @@ export const validateCreateItemInput = (input: CreateItemInput): { isValid: bool
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 };

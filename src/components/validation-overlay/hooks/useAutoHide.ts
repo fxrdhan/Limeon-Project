@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { DEFAULT_AUTO_HIDE_DELAY } from "../constants";
+import { useEffect, useRef } from 'react';
+import { DEFAULT_AUTO_HIDE_DELAY } from '../constants';
 
 interface UseAutoHideProps {
   showOverlay: boolean;
@@ -23,7 +23,13 @@ export const useAutoHide = ({
   const autoHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (showOverlay && error && autoHide && autoHideDelay > 0 && !hasAutoHidden) {
+    if (
+      showOverlay &&
+      error &&
+      autoHide &&
+      autoHideDelay > 0 &&
+      !hasAutoHidden
+    ) {
       autoHideTimeoutRef.current = setTimeout(() => {
         setShowOverlay(false);
         onAutoHide?.();
@@ -36,7 +42,15 @@ export const useAutoHide = ({
         autoHideTimeoutRef.current = null;
       }
     };
-  }, [showOverlay, error, autoHide, autoHideDelay, hasAutoHidden, onAutoHide, setShowOverlay]);
+  }, [
+    showOverlay,
+    error,
+    autoHide,
+    autoHideDelay,
+    hasAutoHidden,
+    onAutoHide,
+    setShowOverlay,
+  ]);
 
   return autoHideTimeoutRef;
 };

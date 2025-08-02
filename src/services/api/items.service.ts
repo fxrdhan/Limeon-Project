@@ -1,6 +1,10 @@
 import { BaseService, ServiceResponse } from './base.service';
 import { supabase } from '@/lib/supabase';
-import type { DBItem, UnitConversion, DBUnitConversion } from '@/types/database';
+import type {
+  DBItem,
+  UnitConversion,
+  DBUnitConversion,
+} from '@/types/database';
 import type { Item } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
 
@@ -18,10 +22,10 @@ export class ItemsService extends BaseService<DBItem> {
         item_types!inner(id, name),
         item_units!inner(id, name)
       `;
-      
+
       const result = await super.getAll({
         ...options,
-        select: options.select || defaultSelect
+        select: options.select || defaultSelect,
       });
 
       if (result.error || !result.data) {
@@ -52,13 +56,13 @@ export class ItemsService extends BaseService<DBItem> {
           type: item.item_types || { name: '' },
           unit: item.item_units || { name: '' },
           unit_conversions: unitConversions,
-          base_unit: item.item_units?.name || ''
+          base_unit: item.item_units?.name || '',
         };
       });
 
       return {
         ...result,
-        data: transformedData
+        data: transformedData,
       };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
@@ -70,12 +74,14 @@ export class ItemsService extends BaseService<DBItem> {
     try {
       const { data: item, error } = await supabase
         .from('items')
-        .select(`
+        .select(
+          `
           *,
           item_categories!inner(id, name),
           item_types!inner(id, name),
           item_units!inner(id, name)
-        `)
+        `
+        )
         .eq('id', id)
         .single();
 
@@ -104,7 +110,7 @@ export class ItemsService extends BaseService<DBItem> {
         type: item.item_types || { name: '' },
         unit: item.item_units || { name: '' },
         unit_conversions: unitConversions,
-        base_unit: item.item_units?.name || ''
+        base_unit: item.item_units?.name || '',
       };
 
       return { data: transformedItem, error: null };
@@ -114,7 +120,10 @@ export class ItemsService extends BaseService<DBItem> {
   }
 
   // Search items with related data
-  async searchItems(query: string, options: Parameters<BaseService<DBItem>['getAll']>[0] = {}) {
+  async searchItems(
+    query: string,
+    options: Parameters<BaseService<DBItem>['getAll']>[0] = {}
+  ) {
     try {
       const defaultSelect = `
         *,
@@ -123,10 +132,14 @@ export class ItemsService extends BaseService<DBItem> {
         item_units!inner(id, name)
       `;
 
-      const result = await this.search(query, ['name', 'code', 'barcode', 'manufacturer'], {
-        ...options,
-        select: options.select || defaultSelect
-      });
+      const result = await this.search(
+        query,
+        ['name', 'code', 'barcode', 'manufacturer'],
+        {
+          ...options,
+          select: options.select || defaultSelect,
+        }
+      );
 
       if (result.error || !result.data) {
         return result;
@@ -156,13 +169,13 @@ export class ItemsService extends BaseService<DBItem> {
           type: item.item_types || { name: '' },
           unit: item.item_units || { name: '' },
           unit_conversions: unitConversions,
-          base_unit: item.item_units?.name || ''
+          base_unit: item.item_units?.name || '',
         };
       });
 
       return {
         ...result,
-        data: transformedData
+        data: transformedData,
       };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
@@ -173,7 +186,7 @@ export class ItemsService extends BaseService<DBItem> {
   async getItemsByCategory(categoryId: string) {
     return this.getAll({
       filters: { category_id: categoryId },
-      orderBy: { column: 'name', ascending: true }
+      orderBy: { column: 'name', ascending: true },
     });
   }
 
@@ -181,7 +194,7 @@ export class ItemsService extends BaseService<DBItem> {
   async getItemsByType(typeId: string) {
     return this.getAll({
       filters: { type_id: typeId },
-      orderBy: { column: 'name', ascending: true }
+      orderBy: { column: 'name', ascending: true },
     });
   }
 
@@ -190,12 +203,14 @@ export class ItemsService extends BaseService<DBItem> {
     try {
       const { data, error } = await supabase
         .from('items')
-        .select(`
+        .select(
+          `
           *,
           item_categories!inner(id, name),
           item_types!inner(id, name),
           item_units!inner(id, name)
-        `)
+        `
+        )
         .lte('stock', threshold)
         .order('stock', { ascending: true });
 
@@ -227,7 +242,7 @@ export class ItemsService extends BaseService<DBItem> {
           type: item.item_types || { name: '' },
           unit: item.item_units || { name: '' },
           unit_conversions: unitConversions,
-          base_unit: item.item_units?.name || ''
+          base_unit: item.item_units?.name || '',
         };
       });
 
@@ -246,7 +261,9 @@ export class ItemsService extends BaseService<DBItem> {
       // Prepare item data with unit conversions
       const dataToInsert = {
         ...itemData,
-        unit_conversions: unitConversions ? JSON.stringify(unitConversions) : '[]'
+        unit_conversions: unitConversions
+          ? JSON.stringify(unitConversions)
+          : '[]',
       };
 
       return this.create(dataToInsert);
@@ -263,7 +280,7 @@ export class ItemsService extends BaseService<DBItem> {
   ): Promise<ServiceResponse<DBItem>> {
     try {
       const updateData = { ...itemData };
-      
+
       if (unitConversions !== undefined) {
         updateData.unit_conversions = JSON.stringify(unitConversions);
       }
@@ -275,12 +292,17 @@ export class ItemsService extends BaseService<DBItem> {
   }
 
   // Update stock
-  async updateStock(id: string, newStock: number): Promise<ServiceResponse<DBItem>> {
+  async updateStock(
+    id: string,
+    newStock: number
+  ): Promise<ServiceResponse<DBItem>> {
     return this.update(id, { stock: newStock });
   }
 
   // Bulk update stock (for purchases/sales)
-  async bulkUpdateStock(updates: { id: string; stock: number }[]): Promise<ServiceResponse<DBItem[]>> {
+  async bulkUpdateStock(
+    updates: { id: string; stock: number }[]
+  ): Promise<ServiceResponse<DBItem[]>> {
     return this.bulkUpdate(
       updates.map(({ id, stock }) => ({ id, data: { stock } }))
     );
@@ -289,17 +311,14 @@ export class ItemsService extends BaseService<DBItem> {
   // Check if code exists
   async isCodeUnique(code: string, excludeId?: string): Promise<boolean> {
     try {
-      let query = supabase
-        .from('items')
-        .select('id')
-        .eq('code', code);
+      let query = supabase.from('items').select('id').eq('code', code);
 
       if (excludeId) {
         query = query.neq('id', excludeId);
       }
 
       const { data, error } = await query;
-      
+
       if (error) {
         console.error('Error checking code uniqueness:', error);
         return false;
@@ -314,17 +333,14 @@ export class ItemsService extends BaseService<DBItem> {
   // Check if barcode exists
   async isBarcodeUnique(barcode: string, excludeId?: string): Promise<boolean> {
     try {
-      let query = supabase
-        .from('items')
-        .select('id')
-        .eq('barcode', barcode);
+      let query = supabase.from('items').select('id').eq('barcode', barcode);
 
       if (excludeId) {
         query = query.neq('id', excludeId);
       }
 
       const { data, error } = await query;
-      
+
       if (error) {
         console.error('Error checking barcode uniqueness:', error);
         return false;

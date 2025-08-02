@@ -1,7 +1,7 @@
-import React from "react";
-import classNames from "classnames";
-import { DAY_LABELS } from "../constants";
-import type { DaysGridProps } from "../types";
+import React from 'react';
+import classNames from 'classnames';
+import { DAY_LABELS } from '../constants';
+import type { DaysGridProps } from '../types';
 
 const DaysGrid: React.FC<DaysGridProps> = ({
   displayDate,
@@ -31,7 +31,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
 
   return (
     <div className="grid grid-cols-7 gap-px text-center text-xs">
-      {DAY_LABELS.map((day) => (
+      {DAY_LABELS.map(day => (
         <div key={day} className="font-medium text-gray-500 py-1.5">
           {day}
         </div>
@@ -67,24 +67,22 @@ const DaysGrid: React.FC<DaysGridProps> = ({
           <button
             key={day}
             onClick={() => !isDisabled && onDateSelect(currentDate)}
-            onMouseEnter={() =>
-              !isDisabled && onDateHighlight(currentDate)
-            }
+            onMouseEnter={() => !isDisabled && onDateHighlight(currentDate)}
             onMouseLeave={() => onDateHighlight(null)}
             disabled={isDisabled}
             className={classNames(
-              "py-1.5 rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
+              'py-1.5 rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary/50',
               isDisabled
-                ? "text-gray-300 cursor-not-allowed"
-                : "hover:bg-emerald-100",
+                ? 'text-gray-300 cursor-not-allowed'
+                : 'hover:bg-emerald-100',
               !isDisabled &&
                 (isSelected
-                  ? "bg-primary text-white hover:text-primary hover:bg-primary"
+                  ? 'bg-primary text-white hover:text-primary hover:bg-primary'
                   : isHighlighted
-                    ? "bg-primary/30 text-primary-dark ring-2 ring-primary/50"
+                    ? 'bg-primary/30 text-primary-dark ring-2 ring-primary/50'
                     : isToday
-                      ? "border border-primary text-primary"
-                      : "text-gray-700")
+                      ? 'border border-primary text-primary'
+                      : 'text-gray-700')
             )}
           >
             {day}

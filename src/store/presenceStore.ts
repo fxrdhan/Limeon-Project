@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import type { RealtimeChannel } from "@supabase/supabase-js";
-import type { PresenceState } from "@/types";
+import { create } from 'zustand';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import type { PresenceState } from '@/types';
 
 export const usePresenceStore = create<PresenceState>((set, get) => ({
   channel: null,

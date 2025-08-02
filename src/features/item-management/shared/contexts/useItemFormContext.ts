@@ -1,10 +1,12 @@
-import { useContext } from "react";
-import { ItemManagementContext } from "./ItemFormContext";
+import { useContext } from 'react';
+import { ItemManagementContext } from './ItemFormContext';
 
 export const useItemManagement = () => {
   const context = useContext(ItemManagementContext);
   if (!context) {
-    throw new Error("useItemManagement must be used within ItemManagementProvider");
+    throw new Error(
+      'useItemManagement must be used within ItemManagementProvider'
+    );
   }
   return context;
 };

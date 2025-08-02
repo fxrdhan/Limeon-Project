@@ -2,15 +2,15 @@
 export type { DropdownContextType } from './context';
 
 // Hook types
-export type { 
+export type {
   UseDropdownEffectsProps,
   UseFocusManagementProps,
-  UseScrollManagementProps 
+  UseScrollManagementProps,
 } from './hooks';
 
 // Component types
-export type { 
+export type {
   DropdownMenuProps,
   OptionItemProps,
-  SearchBarProps 
+  SearchBarProps,
 } from './components';

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { PaginationProps } from "@/types";
+import type { PaginationProps } from '@/types';
 
 export interface FloatingPaginationProps extends PaginationProps {
   enableFloating?: boolean;

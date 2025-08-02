@@ -1,15 +1,15 @@
-import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FaCheck } from "react-icons/fa";
-import type { CheckboxProps } from "@/types";
-import classNames from "classnames";
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaCheck } from 'react-icons/fa';
+import type { CheckboxProps } from '@/types';
+import classNames from 'classnames';
 
 const CheckboxComponent: React.ForwardRefRenderFunction<
   HTMLLabelElement,
   CheckboxProps
 > = (
-  { id, label, checked, onChange, disabled = false, className = "", tabIndex },
-  ref,
+  { id, label, checked, onChange, disabled = false, className = '', tabIndex },
+  ref
 ) => {
   const handleChange = () => {
     if (!disabled) {
@@ -18,7 +18,7 @@ const CheckboxComponent: React.ForwardRefRenderFunction<
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLLabelElement>) => {
-    if (event.key === "Enter" && !disabled) {
+    if (event.key === 'Enter' && !disabled) {
       event.preventDefault();
       onChange(!checked);
     }
@@ -31,9 +31,9 @@ const CheckboxComponent: React.ForwardRefRenderFunction<
       tabIndex={tabIndex}
       onKeyDown={handleKeyDown}
       className={classNames(
-        "inline-flex items-center group focus:outline-hidden",
-        disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
-        className,
+        'inline-flex items-center group focus:outline-hidden',
+        disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
+        className
       )}
     >
       <input
@@ -46,9 +46,9 @@ const CheckboxComponent: React.ForwardRefRenderFunction<
       />
       <motion.div
         className={classNames(
-          "relative w-5 h-5 border-2 rounded-md flex items-center justify-center mr-2 shrink-0 transition-colors duration-200 group-focus:border-emerald-400",
-          checked ? "bg-primary border-primary" : "bg-white border-gray-300",
-          !disabled && !checked ? "group-hover:border-emerald-400" : "",
+          'relative w-5 h-5 border-2 rounded-md flex items-center justify-center mr-2 shrink-0 transition-colors duration-200 group-focus:border-emerald-400',
+          checked ? 'bg-primary border-primary' : 'bg-white border-gray-300',
+          !disabled && !checked ? 'group-hover:border-emerald-400' : ''
         )}
       >
         <AnimatePresence>
@@ -58,9 +58,9 @@ const CheckboxComponent: React.ForwardRefRenderFunction<
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.5, opacity: 0 }}
-              transition={{ duration: 0.1, ease: "circOut" }}
+              transition={{ duration: 0.1, ease: 'circOut' }}
             >
-              <FaCheck className="text-white" style={{ fontSize: "0.7rem" }} />
+              <FaCheck className="text-white" style={{ fontSize: '0.7rem' }} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -73,6 +73,6 @@ const CheckboxComponent: React.ForwardRefRenderFunction<
 };
 
 export const Checkbox = React.forwardRef(CheckboxComponent);
-Checkbox.displayName = "Checkbox";
+Checkbox.displayName = 'Checkbox';
 
 export default Checkbox;

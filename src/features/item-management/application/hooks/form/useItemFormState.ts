@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
-import { formatRupiah, extractNumericValue } from "@/lib/formatters";
-import { formatMarginPercentage } from "../../../shared/utils/PriceCalculator";
-import type { ItemFormData, UnitConversion } from "../../../shared/types";
-import type { Category, MedicineType, Unit } from "@/types";
-import type { ItemDosage } from "../../../domain/entities/Item";
+import { useState, useRef } from 'react';
+import { formatRupiah, extractNumericValue } from '@/lib/formatters';
+import { formatMarginPercentage } from '../../../shared/utils/PriceCalculator';
+import type { ItemFormData, UnitConversion } from '../../../shared/types';
+import type { Category, MedicineType, Unit } from '@/types';
+import type { ItemDosage } from '../../../domain/entities/Item';
 
 interface UseAddItemFormStateProps {
   initialSearchQuery?: string;
@@ -12,18 +12,20 @@ interface UseAddItemFormStateProps {
 /**
  * Hook for managing form state and display values
  */
-export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateProps) => {
+export const useAddItemFormState = ({
+  initialSearchQuery,
+}: UseAddItemFormStateProps) => {
   // Core form state
   const [formData, setFormData] = useState<ItemFormData>({
-    code: "",
-    name: initialSearchQuery || "",
-    manufacturer: "",
-    type_id: "",
-    category_id: "",
-    unit_id: "",
-    dosage_id: "",
-    barcode: "",
-    description: "",
+    code: '',
+    name: initialSearchQuery || '',
+    manufacturer: '',
+    type_id: '',
+    category_id: '',
+    unit_id: '',
+    dosage_id: '',
+    barcode: '',
+    description: '',
     base_price: 0,
     sell_price: 0,
     min_stock: 10,
@@ -34,25 +36,31 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
   });
 
   // Initial state tracking for dirty detection
-  const [initialFormData, setInitialFormData] = useState<ItemFormData | null>(null);
-  const [initialUnitConversions, setInitialUnitConversions] = useState<UnitConversion[] | null>(null);
+  const [initialFormData, setInitialFormData] = useState<ItemFormData | null>(
+    null
+  );
+  const [initialUnitConversions, setInitialUnitConversions] = useState<
+    UnitConversion[] | null
+  >(null);
 
   // Display states for formatted prices
-  const [displayBasePrice, setDisplayBasePrice] = useState("");
-  const [displaySellPrice, setDisplaySellPrice] = useState("");
+  const [displayBasePrice, setDisplayBasePrice] = useState('');
+  const [displaySellPrice, setDisplaySellPrice] = useState('');
 
   // Editing states
   const [editingMargin, setEditingMargin] = useState(false);
-  const [marginPercentage, setMarginPercentage] = useState<string>("0");
+  const [marginPercentage, setMarginPercentage] = useState<string>('0');
   const [editingMinStock, setEditingMinStock] = useState(false);
-  const [minStockValue, setMinStockValue] = useState<string>("10");
+  const [minStockValue, setMinStockValue] = useState<string>('10');
 
   // Modal states
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
   const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
   const [isAddDosageModalOpen, setIsAddDosageModalOpen] = useState(false);
-  const [currentSearchTermForModal, setCurrentSearchTermForModal] = useState<string | undefined>();
+  const [currentSearchTermForModal, setCurrentSearchTermForModal] = useState<
+    string | undefined
+  >();
 
   // Loading states
   const [loading, setLoading] = useState(false);
@@ -82,31 +90,33 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
       setDisplayBasePrice(formatRupiah(newData.base_price));
     }
 
-    setFormData((prev) => ({ ...prev, ...newData }));
+    setFormData(prev => ({ ...prev, ...newData }));
   };
 
   /**
    * Handles form input changes with type-specific processing
    */
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value, type } = e.target as HTMLInputElement;
 
-    if (name === "base_price" || name === "sell_price") {
+    if (name === 'base_price' || name === 'sell_price') {
       const numericInt = extractNumericValue(value);
       updateFormData({ [name]: numericInt });
       const formattedValue = formatRupiah(numericInt);
-      
-      if (name === "base_price") {
+
+      if (name === 'base_price') {
         setDisplayBasePrice(formattedValue);
-      } else if (name === "sell_price") {
+      } else if (name === 'sell_price') {
         setDisplaySellPrice(formattedValue);
       }
-    } else if (type === "checkbox") {
+    } else if (type === 'checkbox') {
       const { checked } = e.target as HTMLInputElement;
       updateFormData({ [name]: checked });
-    } else if (type === "number") {
+    } else if (type === 'number') {
       updateFormData({ [name]: parseFloat(value) || 0 });
     } else {
       updateFormData({ [name]: value });
@@ -127,7 +137,8 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
   const isDirty = (currentConversions: UnitConversion[] = []): boolean => {
     if (!initialFormData) return false;
 
-    const formDataChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+    const formDataChanged =
+      JSON.stringify(formData) !== JSON.stringify(initialFormData);
 
     // Compare unit conversions if provided
     type ConversionForCompare = {
@@ -137,7 +148,9 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
       sellPrice: number;
     };
 
-    const mapConversionForComparison = (conv: UnitConversion): ConversionForCompare | null => {
+    const mapConversionForComparison = (
+      conv: UnitConversion
+    ): ConversionForCompare | null => {
       if (!conv || !conv.unit || !conv.unit.id) return null;
       return {
         to_unit_id: conv.unit.id,
@@ -164,8 +177,9 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
     const sortedCurrent = safeSortByUnitId(currentConversionsForCompare);
     const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
 
-    const conversionsChanged = JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
-    
+    const conversionsChanged =
+      JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
+
     return formDataChanged || conversionsChanged;
   };
 
@@ -174,15 +188,15 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
    */
   const setInitialDataForForm = (data?: ItemFormData) => {
     const initialState = data || {
-      code: "",
-      name: initialSearchQuery || "",
-      manufacturer: "",
-      type_id: "",
-      category_id: "",
-      unit_id: "",
-      dosage_id: "",
-      barcode: "",
-      description: "",
+      code: '',
+      name: initialSearchQuery || '',
+      manufacturer: '',
+      type_id: '',
+      category_id: '',
+      unit_id: '',
+      dosage_id: '',
+      barcode: '',
+      description: '',
       base_price: 0,
       sell_price: 0,
       min_stock: 10,
@@ -197,8 +211,10 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
 
     setDisplayBasePrice(formatRupiah(initialState.base_price || 0));
     setDisplaySellPrice(formatRupiah(initialState.sell_price || 0));
-    
-    setMarginPercentage(formatMarginPercentage(initialState.base_price, initialState.sell_price));
+
+    setMarginPercentage(
+      formatMarginPercentage(initialState.base_price, initialState.sell_price)
+    );
     setMinStockValue(String(initialState.min_stock || 10));
   };
 
@@ -211,7 +227,12 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
       setDisplayBasePrice(formatRupiah(initialFormData.base_price || 0));
       setDisplaySellPrice(formatRupiah(initialFormData.sell_price || 0));
 
-      setMarginPercentage(formatMarginPercentage(initialFormData.base_price, initialFormData.sell_price));
+      setMarginPercentage(
+        formatMarginPercentage(
+          initialFormData.base_price,
+          initialFormData.sell_price
+        )
+      );
       setMinStockValue(String(initialFormData.min_stock || 10));
     } else {
       setInitialDataForForm();
@@ -223,19 +244,19 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
     formData,
     setFormData,
     updateFormData,
-    
+
     // Initial state tracking
     initialFormData,
     setInitialFormData,
     initialUnitConversions,
     setInitialUnitConversions,
-    
+
     // Display states
     displayBasePrice,
     setDisplayBasePrice,
     displaySellPrice,
     setDisplaySellPrice,
-    
+
     // Editing states
     editingMargin,
     setEditingMargin,
@@ -245,7 +266,7 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
     setEditingMinStock,
     minStockValue,
     setMinStockValue,
-    
+
     // Modal states
     isAddEditModalOpen,
     setIsAddEditModalOpen,
@@ -257,17 +278,17 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
     setIsAddDosageModalOpen,
     currentSearchTermForModal,
     setCurrentSearchTermForModal,
-    
+
     // Loading states
     loading,
     setLoading,
     saving,
     setSaving,
-    
+
     // Mode tracking
     isEditMode,
     setIsEditMode,
-    
+
     // Data collections
     categories,
     setCategories,
@@ -277,14 +298,14 @@ export const useAddItemFormState = ({ initialSearchQuery }: UseAddItemFormStateP
     setUnits,
     dosages,
     setDosages,
-    
+
     // Initialization tracking
     hasInitialized,
-    
+
     // Event handlers
     handleChange,
     handleSelectChange,
-    
+
     // Utility functions
     isDirty,
     setInitialDataForForm,

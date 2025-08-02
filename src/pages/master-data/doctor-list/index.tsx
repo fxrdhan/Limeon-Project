@@ -1,25 +1,25 @@
-import IdentityDataModal from "@/features/identity/IdentityDataModal";
-import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
-import Button from "@/components/button";
-import Pagination from "@/components/pagination";
-import PageTitle from "@/components/page-title";
+import IdentityDataModal from '@/features/identity/IdentityDataModal';
+import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
+import Button from '@/components/button';
+import Pagination from '@/components/pagination';
+import PageTitle from '@/components/page-title';
 
-import { FaPlus } from "react-icons/fa";
-import { Card } from "@/components/card";
-import { DataGrid, createTextColumn } from "@/components/ag-grid";
-import { ColDef, RowClickedEvent } from "ag-grid-community";
-import { useRef, useMemo, useCallback } from "react";
-import type { Doctor as DoctorType, FieldConfig } from "@/types";
+import { FaPlus } from 'react-icons/fa';
+import { Card } from '@/components/card';
+import { DataGrid, createTextColumn } from '@/components/ag-grid';
+import { ColDef, RowClickedEvent } from 'ag-grid-community';
+import { useRef, useMemo, useCallback } from 'react';
+import type { Doctor as DoctorType, FieldConfig } from '@/types';
 
 // Use the new modular architecture
-import { useMasterDataManagement } from "@/features/master-data/hooks/useMasterDataManagement";
+import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
 
-import { useUnifiedSearch } from "@/hooks/useUnifiedSearch";
-import { doctorSearchColumns } from "@/utils/searchColumns";
+import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
+import { doctorSearchColumns } from '@/utils/searchColumns';
 
 const DoctorListNew = () => {
   const searchInputRef = useRef<HTMLInputElement>(
-    null,
+    null
   ) as React.RefObject<HTMLInputElement>;
 
   // Data management hook for server-side operations
@@ -47,7 +47,7 @@ const DoctorListNew = () => {
     debouncedSearch,
     handleKeyDown,
     setSearch: setDataSearch,
-  } = useMasterDataManagement("doctors", "Dokter", {
+  } = useMasterDataManagement('doctors', 'Dokter', {
     searchInputRef,
   });
 
@@ -56,11 +56,11 @@ const DoctorListNew = () => {
     (searchValue: string) => {
       setDataSearch(searchValue);
     },
-    [setDataSearch],
+    [setDataSearch]
   );
 
   const handleClear = useCallback(() => {
-    setDataSearch("");
+    setDataSearch('');
   }, [setDataSearch]);
 
   // Unified search functionality with hybrid mode
@@ -72,7 +72,7 @@ const DoctorListNew = () => {
     searchBarProps,
   } = useUnifiedSearch({
     columns: doctorSearchColumns,
-    searchMode: "hybrid",
+    searchMode: 'hybrid',
     useFuzzySearch: true,
     data: doctorsData,
     onSearch: handleSearch,
@@ -83,106 +83,105 @@ const DoctorListNew = () => {
 
   const doctorFields: FieldConfig[] = [
     {
-      key: "name",
-      label: "Nama Dokter",
-      type: "text",
+      key: 'name',
+      label: 'Nama Dokter',
+      type: 'text',
     },
     {
-      key: "gender",
-      label: "Jenis Kelamin",
-      type: "text",
+      key: 'gender',
+      label: 'Jenis Kelamin',
+      type: 'text',
       options: [
-        { id: "L", name: "Laki-laki" },
-        { id: "P", name: "Perempuan" },
+        { id: 'L', name: 'Laki-laki' },
+        { id: 'P', name: 'Perempuan' },
       ],
       isRadioDropdown: true,
     },
     {
-      key: "specialization",
-      label: "Spesialisasi",
-      type: "text",
+      key: 'specialization',
+      label: 'Spesialisasi',
+      type: 'text',
     },
     {
-      key: "license_number",
-      label: "Nomor Lisensi",
-      type: "text",
+      key: 'license_number',
+      label: 'Nomor Lisensi',
+      type: 'text',
     },
     {
-      key: "experience_years",
-      label: "Tahun Pengalaman",
-      type: "text",
+      key: 'experience_years',
+      label: 'Tahun Pengalaman',
+      type: 'text',
     },
     {
-      key: "education",
-      label: "Pendidikan",
-      type: "textarea",
+      key: 'education',
+      label: 'Pendidikan',
+      type: 'textarea',
     },
     {
-      key: "phone",
-      label: "Telepon",
-      type: "tel",
+      key: 'phone',
+      label: 'Telepon',
+      type: 'tel',
     },
     {
-      key: "email",
-      label: "Email",
-      type: "email",
+      key: 'email',
+      label: 'Email',
+      type: 'email',
     },
   ];
-
 
   const columnDefs: ColDef[] = useMemo(() => {
     const columns: ColDef[] = [
       createTextColumn({
-        field: "name",
-        headerName: "Nama Dokter",
+        field: 'name',
+        headerName: 'Nama Dokter',
         minWidth: 200,
         flex: 1,
       }),
       createTextColumn({
-        field: "gender",
-        headerName: "Jenis Kelamin",
+        field: 'gender',
+        headerName: 'Jenis Kelamin',
         minWidth: 120,
-        valueGetter: (params) => {
+        valueGetter: params => {
           const value = params.data.gender;
-          return value === "L"
-            ? "Laki-laki"
-            : value === "P"
-              ? "Perempuan"
-              : value || "-";
+          return value === 'L'
+            ? 'Laki-laki'
+            : value === 'P'
+              ? 'Perempuan'
+              : value || '-';
         },
       }),
       createTextColumn({
-        field: "specialization",
-        headerName: "Spesialisasi",
+        field: 'specialization',
+        headerName: 'Spesialisasi',
         minWidth: 150,
-        valueGetter: (params) => params.data.specialization || "-",
+        valueGetter: params => params.data.specialization || '-',
       }),
       createTextColumn({
-        field: "license_number",
-        headerName: "Nomor Lisensi",
+        field: 'license_number',
+        headerName: 'Nomor Lisensi',
         minWidth: 120,
-        valueGetter: (params) => params.data.license_number || "-",
+        valueGetter: params => params.data.license_number || '-',
       }),
       createTextColumn({
-        field: "experience_years",
-        headerName: "Pengalaman",
+        field: 'experience_years',
+        headerName: 'Pengalaman',
         minWidth: 100,
-        valueGetter: (params) => {
+        valueGetter: params => {
           const years = params.data.experience_years;
-          return years ? `${years} tahun` : "-";
+          return years ? `${years} tahun` : '-';
         },
       }),
       createTextColumn({
-        field: "phone",
-        headerName: "Telepon",
+        field: 'phone',
+        headerName: 'Telepon',
         minWidth: 120,
-        valueGetter: (params) => params.data.phone || "-",
+        valueGetter: params => params.data.phone || '-',
       }),
       createTextColumn({
-        field: "email",
-        headerName: "Email",
+        field: 'email',
+        headerName: 'Email',
         minWidth: 150,
-        valueGetter: (params) => params.data.email || "-",
+        valueGetter: params => params.data.email || '-',
       }),
     ];
 
@@ -206,8 +205,8 @@ const DoctorListNew = () => {
       <Card
         className={
           isFetching
-            ? "opacity-75 transition-opacity duration-300 flex-1 flex flex-col"
-            : "flex-1 flex flex-col"
+            ? 'opacity-75 transition-opacity duration-300 flex-1 flex flex-col'
+            : 'flex-1 flex flex-col'
         }
       >
         <div className="mb-6">
@@ -233,10 +232,10 @@ const DoctorListNew = () => {
         </div>
         {isError && (
           <div className="text-center p-6 text-red-500">
-            Error:{" "}
+            Error:{' '}
             {queryError instanceof Error
               ? queryError.message
-              : "Gagal memuat data"}
+              : 'Gagal memuat data'}
           </div>
         )}
         {!isError && (
@@ -258,9 +257,9 @@ const DoctorListNew = () => {
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
               style={{
-                width: "100%",
-                marginTop: "1rem",
-                marginBottom: "1rem",
+                width: '100%',
+                marginTop: '1rem',
+                marginBottom: '1rem',
               }}
             />
             <Pagination
@@ -283,10 +282,10 @@ const DoctorListNew = () => {
         fields={doctorFields}
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
-        onSave={async (data) => {
+        onSave={async data => {
           await handleModalSubmit({
-            name: String(data.name || ""),
-            description: String(data.specialization || ""),
+            name: String(data.name || ''),
+            description: String(data.specialization || ''),
             id: undefined,
           });
         }}
@@ -305,10 +304,10 @@ const DoctorListNew = () => {
         fields={doctorFields}
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
-        onSave={async (data) => {
+        onSave={async data => {
           await handleModalSubmit({
-            name: String(data.name || ""),
-            description: String(data.specialization || ""),
+            name: String(data.name || ''),
+            description: String(data.specialization || ''),
             id: editingItem?.id,
           });
         }}
@@ -316,10 +315,10 @@ const DoctorListNew = () => {
           editingItem
             ? () => {
                 openConfirmDialog({
-                  title: "Konfirmasi Hapus",
+                  title: 'Konfirmasi Hapus',
                   message: `Apakah Anda yakin ingin menghapus dokter "${editingItem.name}"?`,
-                  variant: "danger",
-                  confirmText: "Ya, Hapus",
+                  variant: 'danger',
+                  confirmText: 'Ya, Hapus',
                   onConfirm: async () => {
                     await deleteMutation.mutateAsync(editingItem.id);
                   },

@@ -24,7 +24,9 @@ export const useOptionsFilter = ({
     } else if (debouncedSearchTerm.trim() !== '') {
       const filtered = filterAndSortOptions(options, debouncedSearchTerm);
       setFilteredOptions(filtered);
-      updateSearchState(filtered.length > 0 ? SEARCH_STATES.FOUND : SEARCH_STATES.NOT_FOUND);
+      updateSearchState(
+        filtered.length > 0 ? SEARCH_STATES.FOUND : SEARCH_STATES.NOT_FOUND
+      );
     } else {
       setFilteredOptions(options);
       updateSearchState(SEARCH_STATES.IDLE);

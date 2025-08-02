@@ -1,10 +1,10 @@
-import React from "react";
-import FormSection from "@/components/form-section";
-import Input from "@/components/input";
-import Dropdown from "@/components/dropdown";
-import Datepicker from "@/components/datepicker";
-import DescriptiveTextarea from "@/components/descriptive-textarea";
-import type { CustomDateValueType } from "@/types";
+import React from 'react';
+import FormSection from '@/components/form-section';
+import Input from '@/components/input';
+import Dropdown from '@/components/dropdown';
+import Datepicker from '@/components/datepicker';
+import DescriptiveTextarea from '@/components/descriptive-textarea';
+import type { CustomDateValueType } from '@/types';
 
 interface PurchaseInfoSectionProps {
   formData: {
@@ -19,7 +19,9 @@ interface PurchaseInfoSectionProps {
   suppliers: Array<{ id: string; name: string }>;
   invoiceNumberInputRef: React.RefObject<HTMLInputElement | null>;
   handleChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => void;
 }
 
@@ -29,11 +31,14 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
   invoiceNumberInputRef,
   handleChange,
 }) => {
-  const handleDateChange = (fieldName: string, newDate: CustomDateValueType) => {
+  const handleDateChange = (
+    fieldName: string,
+    newDate: CustomDateValueType
+  ) => {
     const fakeEvent = {
       target: {
         name: fieldName,
-        value: newDate ? newDate.toISOString().split("T")[0] : "",
+        value: newDate ? newDate.toISOString().split('T')[0] : '',
       },
     } as React.ChangeEvent<HTMLInputElement>;
     handleChange(fakeEvent);
@@ -68,8 +73,8 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <Dropdown
             name="supplier_id"
             value={formData.supplier_id}
-            onChange={(value) => handleDropdownChange("supplier_id", value)}
-            options={suppliers.map((supplier) => ({
+            onChange={value => handleDropdownChange('supplier_id', value)}
+            options={suppliers.map(supplier => ({
               id: supplier.id,
               name: supplier.name,
             }))}
@@ -83,7 +88,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           </label>
           <Datepicker
             value={formData.date ? new Date(formData.date) : null}
-            onChange={(newDate) => handleDateChange("date", newDate)}
+            onChange={newDate => handleDateChange('date', newDate)}
             inputClassName="w-full p-2.5 border rounded-lg text-sm"
             placeholder="Pilih tanggal pembelian"
             portalWidth="280px"
@@ -96,7 +101,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           </label>
           <Datepicker
             value={formData.due_date ? new Date(formData.due_date) : null}
-            onChange={(newDate) => handleDateChange("due_date", newDate)}
+            onChange={newDate => handleDateChange('due_date', newDate)}
             inputClassName="w-full p-2.5 border rounded-lg text-sm"
             minDate={formData.date ? new Date(formData.date) : undefined}
             placeholder="Pilih tanggal jatuh tempo"
@@ -111,11 +116,11 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <Dropdown
             name="payment_status"
             value={formData.payment_status}
-            onChange={(value) => handleDropdownChange("payment_status", value)}
+            onChange={value => handleDropdownChange('payment_status', value)}
             options={[
-              { id: "unpaid", name: "Belum Dibayar" },
-              { id: "partial", name: "Sebagian" },
-              { id: "paid", name: "Lunas" },
+              { id: 'unpaid', name: 'Belum Dibayar' },
+              { id: 'partial', name: 'Sebagian' },
+              { id: 'paid', name: 'Lunas' },
             ]}
             placeholder="-- Pilih Status --"
           />
@@ -128,11 +133,11 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <Dropdown
             name="payment_method"
             value={formData.payment_method}
-            onChange={(value) => handleDropdownChange("payment_method", value)}
+            onChange={value => handleDropdownChange('payment_method', value)}
             options={[
-              { id: "cash", name: "Tunai" },
-              { id: "transfer", name: "Transfer" },
-              { id: "credit", name: "Kredit" },
+              { id: 'cash', name: 'Tunai' },
+              { id: 'transfer', name: 'Transfer' },
+              { id: 'credit', name: 'Kredit' },
             ]}
             placeholder="-- Pilih Metode --"
           />

@@ -1,18 +1,18 @@
-import Button from "@/components/button";
-import { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/card";
+import Button from '@/components/button';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/card';
 import {
   FaUpload,
   FaTimes,
   FaImage,
   FaSearchPlus,
   FaSearchMinus,
-} from "react-icons/fa";
-import { uploadAndExtractInvoice } from "@/services/invoiceExtractor";
-import { useInvoiceUploadStore } from "@/store/invoiceUploadStore";
-import { motion, AnimatePresence } from "framer-motion";
+} from 'react-icons/fa';
+import { uploadAndExtractInvoice } from '@/services/invoiceExtractor';
+import { useInvoiceUploadStore } from '@/store/invoiceUploadStore';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface UploadInvoicePortalProps {
   isOpen: boolean;
@@ -107,10 +107,10 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
       }, 8);
     };
 
-    document.addEventListener("mousemove", handleMouseMove, { passive: true });
+    document.addEventListener('mousemove', handleMouseMove, { passive: true });
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener('mousemove', handleMouseMove);
       if (throttleTimeoutRef.current) {
         clearTimeout(throttleTimeoutRef.current);
       }
@@ -119,7 +119,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.pointerEvents = "auto";
+      document.body.style.pointerEvents = 'auto';
 
       if (cachedInvoiceFile) {
         setFile(cachedInvoiceFile);
@@ -169,17 +169,17 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
         checkInitialHover();
       };
 
-      document.addEventListener("mousemove", handlePortalMouseMove, {
+      document.addEventListener('mousemove', handlePortalMouseMove, {
         passive: true,
         once: true,
       });
 
       return () => {
         clearTimeout(timeoutId);
-        document.removeEventListener("mousemove", handlePortalMouseMove);
+        document.removeEventListener('mousemove', handlePortalMouseMove);
       };
     } else {
-      document.body.style.pointerEvents = "auto";
+      document.body.style.pointerEvents = 'auto';
 
       setError(null);
       setLoading(false);
@@ -206,7 +206,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
 
       requestAnimationFrame(() => {
         if (uploaderContainerRef.current) {
-          uploaderContainerRef.current.style.transform = "translateZ(0)";
+          uploaderContainerRef.current.style.transform = 'translateZ(0)';
         }
       });
     }
@@ -216,15 +216,15 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     const selectedFile = e.target.files?.[0];
     setError(null);
     if (!selectedFile) return;
-    const validTypes = ["image/png", "image/jpeg", "image/jpg"];
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
     if (!validTypes.includes(selectedFile.type)) {
-      setError("Tipe file tidak valid. Harap unggah file PNG atau JPG.");
+      setError('Tipe file tidak valid. Harap unggah file PNG atau JPG.');
       setFile(null);
       return;
     }
     const maxSize = 5 * 1024 * 1024;
     if (selectedFile.size > maxSize) {
-      setError("Ukuran file terlalu besar. Maksimum 5MB.");
+      setError('Ukuran file terlalu besar. Maksimum 5MB.');
       setFile(null);
       return;
     }
@@ -248,14 +248,14 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     setError(null);
     const droppedFile = e.dataTransfer.files[0];
     if (!droppedFile) return;
-    const validTypes = ["image/png", "image/jpeg", "image/jpg"];
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
     if (!validTypes.includes(droppedFile.type)) {
-      setError("Tipe file tidak valid. Harap unggah file PNG atau JPG.");
+      setError('Tipe file tidak valid. Harap unggah file PNG atau JPG.');
       return;
     }
     const maxSize = 5 * 1024 * 1024;
     if (droppedFile.size > maxSize) {
-      setError("Ukuran file terlalu besar. Maksimum 5MB.");
+      setError('Ukuran file terlalu besar. Maksimum 5MB.');
       return;
     }
     setFile(droppedFile);
@@ -264,7 +264,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
 
   const handleUpload = async () => {
     if (!file) {
-      setError("Silakan pilih file gambar faktur terlebih dahulu.");
+      setError('Silakan pilih file gambar faktur terlebih dahulu.');
       return;
     }
     try {
@@ -276,7 +276,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
       const processingTime = (Date.now() - startTime) / 1000;
       clearCachedInvoiceFile();
       onClose();
-      navigate("/purchases/confirm-invoice", {
+      navigate('/purchases/confirm-invoice', {
         state: {
           extractedData: data,
           filePreview: previewUrl,
@@ -287,8 +287,8 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     } catch (err: unknown) {
       setError(
         `Gagal mengunggah dan mengekstrak faktur: ${
-          err instanceof Error ? err.message : "Terjadi kesalahan tidak dikenal"
-        }`,
+          err instanceof Error ? err.message : 'Terjadi kesalahan tidak dikenal'
+        }`
       );
     } finally {
       setLoading(false);
@@ -303,7 +303,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
 
     setFile(null);
     setPreviewUrl(null);
-    setFileInputKey((prev) => prev + 1);
+    setFileInputKey(prev => prev + 1);
     setError(null);
     setShowFullPreview(false);
     setIsHovering(false);
@@ -356,7 +356,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
     e.preventDefault();
     const zoomIncrement = 0.1;
     const direction = e.deltaY > 0 ? 1 : -1;
-    setZoomLevel((currentZoom) => {
+    setZoomLevel(currentZoom => {
       const newZoom = currentZoom + direction * zoomIncrement;
       return Math.min(Math.max(newZoom, 1), 3);
     });
@@ -373,10 +373,10 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
         <AnimatePresence mode="wait">
           {isOpen && (
             <motion.div
-              initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-              animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
-              exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
+              initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+              animate={{ opacity: 1, backdropFilter: 'blur(4px)' }}
+              exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
               className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
               onClick={() => {
                 if (showFullPreview) {
@@ -401,7 +401,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                   throttleTimeoutRef.current = null;
                 }
 
-                document.body.style.pointerEvents = "auto";
+                document.body.style.pointerEvents = 'auto';
 
                 onClose();
               }}
@@ -412,18 +412,18 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                 exit={{ scale: 0.95, opacity: 0, y: 10, rotateX: -5 }}
                 transition={{
                   duration: 0.2,
-                  type: "spring",
+                  type: 'spring',
                   damping: 35,
                   stiffness: 400,
-                  ease: "easeOut",
+                  ease: 'easeOut',
                 }}
                 style={{
-                  perspective: "1000px",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden",
-                  willChange: "transform, opacity",
+                  perspective: '1000px',
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  willChange: 'transform, opacity',
                 }}
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   if (!file && uploaderContainerRef.current) {
                     const rect =
@@ -489,46 +489,46 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             y: 0,
                             boxShadow: shouldShowGlow
                               ? getGlowEffect(glowIntensity)
-                              : "none",
+                              : 'none',
                           }}
                           transition={{
                             delay: 0.1,
                             duration: 0.4,
-                            ease: "easeOut",
+                            ease: 'easeOut',
                             boxShadow: {
                               duration: 0.15,
-                              ease: "easeOut",
+                              ease: 'easeOut',
                             },
                           }}
                           className={`border-2 ${
                             isDragging
-                              ? "border-primary bg-emerald-50"
+                              ? 'border-primary bg-emerald-50'
                               : isHovering
-                                ? "border-dashed border-primary bg-emerald-25"
-                                : "border-dashed border-gray-300"
+                                ? 'border-dashed border-primary bg-emerald-25'
+                                : 'border-dashed border-gray-300'
                           }
                                                   rounded-xl p-10 text-center cursor-pointer w-full min-h-[160px] flex items-center justify-center`}
                           style={{
-                            backfaceVisibility: "hidden",
-                            WebkitBackfaceVisibility: "hidden",
-                            transform: "translateZ(0)",
-                            WebkitTransform: "translateZ(0)",
+                            backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden',
+                            transform: 'translateZ(0)',
+                            WebkitTransform: 'translateZ(0)',
                             willChange:
-                              "transform, opacity, border-color, background-color",
-                            WebkitFontSmoothing: "antialiased",
-                            MozOsxFontSmoothing: "grayscale",
-                            contain: "layout style paint",
-                            isolation: "isolate",
+                              'transform, opacity, border-color, background-color',
+                            WebkitFontSmoothing: 'antialiased',
+                            MozOsxFontSmoothing: 'grayscale',
+                            contain: 'layout style paint',
+                            isolation: 'isolate',
                             backgroundColor: isHovering
-                              ? "rgba(240, 253, 250, 0.5)"
-                              : "transparent",
+                              ? 'rgba(240, 253, 250, 0.5)'
+                              : 'transparent',
                             borderColor: isHovering
-                              ? "rgb(20, 184, 166)"
+                              ? 'rgb(20, 184, 166)'
                               : isDragging
-                                ? "rgb(20, 184, 166)"
-                                : "rgb(209, 213, 219)",
+                                ? 'rgb(20, 184, 166)'
+                                : 'rgb(209, 213, 219)',
                             transition:
-                              "border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), background-color 200ms cubic-bezier(0.4, 0, 0.2, 1)",
+                              'border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), background-color 200ms cubic-bezier(0.4, 0, 0.2, 1)',
                           }}
                           onDragOver={handleDragOver}
                           onDragLeave={handleDragLeave}
@@ -552,14 +552,14 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                   setGlowIntensity(currentIntensity);
                                   glowAnimationRef.current = setTimeout(
                                     animateGlow,
-                                    3,
+                                    3
                                   );
                                 }
                               };
                               requestAnimationFrame(animateGlow);
                             }
                           }}
-                          onMouseLeave={(e) => {
+                          onMouseLeave={e => {
                             const rect =
                               uploaderContainerRef.current?.getBoundingClientRect();
                             if (rect) {
@@ -585,7 +585,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                     setGlowIntensity(currentIntensity);
                                     glowAnimationRef.current = setTimeout(
                                       fadeGlow,
-                                      2,
+                                      2
                                     );
                                   } else {
                                     setGlowIntensity(0);
@@ -597,23 +597,23 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             }
                           }}
                           onClick={() =>
-                            document.getElementById("fileInput")?.click()
+                            document.getElementById('fileInput')?.click()
                           }
                         >
                           <div className="flex flex-col items-center">
                             <motion.div
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.95 }}
-                              className={`rounded-full ${isHovering ? "bg-emerald-100" : "bg-gray-200"} p-4 inline-flex mb-3 transition-all duration-300 ease-out outline-none focus:outline-none border-0 ring-0 focus:ring-0`}
+                              className={`rounded-full ${isHovering ? 'bg-emerald-100' : 'bg-gray-200'} p-4 inline-flex mb-3 transition-all duration-300 ease-out outline-none focus:outline-none border-0 ring-0 focus:ring-0`}
                               style={{
-                                backfaceVisibility: "hidden",
-                                WebkitBackfaceVisibility: "hidden",
-                                transform: "translateZ(0)",
-                                WebkitTransform: "translateZ(0)",
-                                willChange: "transform",
-                                isolation: "isolate",
-                                WebkitFontSmoothing: "antialiased",
-                                MozOsxFontSmoothing: "grayscale",
+                                backfaceVisibility: 'hidden',
+                                WebkitBackfaceVisibility: 'hidden',
+                                transform: 'translateZ(0)',
+                                WebkitTransform: 'translateZ(0)',
+                                willChange: 'transform',
+                                isolation: 'isolate',
+                                WebkitFontSmoothing: 'antialiased',
+                                MozOsxFontSmoothing: 'grayscale',
                               }}
                             >
                               <motion.div
@@ -623,23 +623,23 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                     ? {
                                         duration: 2.0,
                                         repeat: Infinity,
-                                        ease: "easeInOut",
+                                        ease: 'easeInOut',
                                       }
                                     : {}
                                 }
                               >
                                 <FaUpload
-                                  className={`mx-auto h-8 w-8 ${isHovering ? "text-primary" : "text-gray-600"} transition-all duration-300 ease-out`}
+                                  className={`mx-auto h-8 w-8 ${isHovering ? 'text-primary' : 'text-gray-600'} transition-all duration-300 ease-out`}
                                 />
                               </motion.div>
                             </motion.div>
                             <p
-                              className={`text-sm font-medium transition-colors duration-300 ease-out ${isHovering ? "text-emerald-700" : "text-gray-700"}`}
+                              className={`text-sm font-medium transition-colors duration-300 ease-out ${isHovering ? 'text-emerald-700' : 'text-gray-700'}`}
                             >
                               Klik atau seret untuk mengunggah gambar faktur
                             </p>
                             <p
-                              className={`text-xs mt-1 transition-colors duration-300 ease-out ${isHovering ? "text-emerald-500" : "text-gray-500"}`}
+                              className={`text-xs mt-1 transition-colors duration-300 ease-out ${isHovering ? 'text-emerald-500' : 'text-gray-500'}`}
                             >
                               PNG, JPG (Maks. 5MB)
                             </p>
@@ -660,7 +660,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                           exit={{ opacity: 0, scale: 0.95, y: -10 }}
                           transition={{
                             duration: 0.4,
-                            type: "spring",
+                            type: 'spring',
                             damping: 25,
                             stiffness: 400,
                           }}
@@ -670,20 +670,20 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             className="flex items-center p-3 pr-4 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
-                            onClick={(e) => {
+                            onClick={e => {
                               const target = e.target as HTMLElement;
                               const isRemoveButton = target.closest(
-                                '[aria-label="Hapus file"]',
+                                '[aria-label="Hapus file"]'
                               );
                               if (!isRemoveButton) {
                                 e.stopPropagation();
                                 toggleFullPreview();
                               }
                             }}
-                            onTouchEnd={(e) => {
+                            onTouchEnd={e => {
                               const target = e.target as HTMLElement;
                               const isRemoveButton = target.closest(
-                                '[aria-label="Hapus file"]',
+                                '[aria-label="Hapus file"]'
                               );
                               if (!isRemoveButton) {
                                 e.preventDefault();
@@ -717,20 +717,20 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 handleRemoveFile(e);
                               }}
-                              onMouseDown={(e) => {
+                              onMouseDown={e => {
                                 e.preventDefault();
                                 e.stopPropagation();
                               }}
-                              onTouchStart={(e) => {
+                              onTouchStart={e => {
                                 e.preventDefault();
                                 e.stopPropagation();
                               }}
-                              onTouchEnd={(e) => {
+                              onTouchEnd={e => {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 handleRemoveFile(e);
@@ -792,7 +792,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                                     ? {
                                         duration: 1,
                                         repeat: Infinity,
-                                        ease: "linear",
+                                        ease: 'linear',
                                       }
                                     : {}
                                 }
@@ -811,17 +811,17 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
             </motion.div>
           )}
         </AnimatePresence>,
-        document.body,
+        document.body
       )}
 
       {createPortal(
         <AnimatePresence mode="wait">
           {showFullPreview && previewUrl && (
             <motion.div
-              initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-              animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
-              exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-              transition={{ duration: 0.15, ease: "easeInOut" }}
+              initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+              animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
+              exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+              transition={{ duration: 0.15, ease: 'easeInOut' }}
               className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
               onClick={() => {
                 setShowFullPreview(false);
@@ -847,16 +847,16 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                 exit={{ scale: 0.9, opacity: 0, rotateY: -8 }}
                 transition={{
                   duration: 0.15,
-                  type: "spring",
+                  type: 'spring',
                   damping: 30,
                   stiffness: 450,
                 }}
                 className="p-4 relative overflow-hidden"
                 style={{
-                  maxHeight: "100vh",
-                  maxWidth: "100vw",
-                  width: "auto",
-                  perspective: "1000px",
+                  maxHeight: '100vh',
+                  maxWidth: '100vw',
+                  width: 'auto',
+                  perspective: '1000px',
                 }}
                 onWheel={handleZoom}
                 onMouseMove={handleMouseMove}
@@ -866,8 +866,8 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                   alt="Preview"
                   className="h-auto w-auto object-contain transition-transform duration-100"
                   style={{
-                    maxHeight: "90vh",
-                    maxWidth: "120%",
+                    maxHeight: '90vh',
+                    maxWidth: '120%',
                     transformOrigin: `${position.x}px ${position.y}px`,
                     transform: `scale(${zoomLevel})`,
                   }}
@@ -879,7 +879,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                   transition={{
                     delay: 0.1,
                     duration: 0.2,
-                    type: "spring",
+                    type: 'spring',
                     damping: 25,
                     stiffness: 400,
                   }}
@@ -895,7 +895,7 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
             </motion.div>
           )}
         </AnimatePresence>,
-        document.body,
+        document.body
       )}
     </>
   );

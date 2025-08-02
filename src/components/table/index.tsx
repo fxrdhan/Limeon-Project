@@ -6,7 +6,7 @@ export {
   TableRow,
   TableCell,
   TableHeader,
-} from "./table";
+} from './table';
 
 // Export skeleton components
 export {
@@ -20,7 +20,7 @@ export {
   SupplierListSkeleton,
   PatientListSkeleton,
   PurchaseListSkeleton,
-} from "./skeleton";
+} from './skeleton';
 
 // Export general skeleton components
 export {
@@ -30,4 +30,4 @@ export {
   StatCardSkeleton,
   ButtonSkeleton,
   FormSkeleton,
-} from "../skeleton";
+} from '../skeleton';

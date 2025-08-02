@@ -4,7 +4,7 @@ import { DROPDOWN_CONSTANTS } from '../constants';
 
 export const useTextExpansion = (
   buttonRef: RefObject<HTMLButtonElement | null>,
-  selectedOption?: { id: string; name: string },
+  selectedOption?: { id: string; name: string }
 ) => {
   const [isButtonTextExpanded, setIsButtonTextExpanded] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export const useTextExpansion = (
         setExpandedId(null);
       }
     },
-    [buttonRef],
+    [buttonRef]
   );
 
   const handleButtonExpansion = useCallback(
@@ -33,7 +33,7 @@ export const useTextExpansion = (
         }
       }
     },
-    [selectedOption, buttonRef],
+    [selectedOption, buttonRef]
   );
 
   return {

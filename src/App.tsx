@@ -1,30 +1,30 @@
-import Login from "@/pages/auth/login";
-import MainLayout from "@/layout/main";
-import { AlertProvider } from "@/components/alert";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { Suspense, lazy, useEffect } from "react";
-import { useAuthStore } from "@/store/authStore";
-import { ConfirmDialogProvider } from "@/components/dialog-box";
-import ComingSoon from "@/pages/blank-page";
-import ErrorBoundary from "@/components/error-boundary";
+import Login from '@/pages/auth/login';
+import MainLayout from '@/layout/main';
+import { AlertProvider } from '@/components/alert';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Suspense, lazy, useEffect } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import { ConfirmDialogProvider } from '@/components/dialog-box';
+import ComingSoon from '@/pages/blank-page';
+import ErrorBoundary from '@/components/error-boundary';
 import {
   TableLoadingFallback,
   DashboardLoadingFallback,
   FormLoadingFallback,
-} from "@/components/loading-fallback";
+} from '@/components/loading-fallback';
 
-const Dashboard = lazy(() => import("@/pages/dashboard"));
-const ItemMaster = lazy(() => import("@/pages/master-data/item-master"));
-const PatientList = lazy(() => import("@/pages/master-data/patient-list"));
-const DoctorList = lazy(() => import("@/pages/master-data/doctor-list"));
-const SupplierList = lazy(() => import("@/pages/master-data/supplier-list"));
+const Dashboard = lazy(() => import('@/pages/dashboard'));
+const ItemMaster = lazy(() => import('@/pages/master-data/item-master'));
+const PatientList = lazy(() => import('@/pages/master-data/patient-list'));
+const DoctorList = lazy(() => import('@/pages/master-data/doctor-list'));
+const SupplierList = lazy(() => import('@/pages/master-data/supplier-list'));
 const ConfirmInvoicePage = lazy(
-  () => import("@/pages/purchases/confirm-invoice"),
+  () => import('@/pages/purchases/confirm-invoice')
 );
-const PurchaseList = lazy(() => import("@/pages/purchases/purchase-list"));
-const Profile = lazy(() => import("@/pages/settings/profile"));
-const PrintPurchase = lazy(() => import("@/pages/purchases/print-purchase"));
-const ViewPurchase = lazy(() => import("@/pages/purchases/view-purchase"));
+const PurchaseList = lazy(() => import('@/pages/purchases/purchase-list'));
+const Profile = lazy(() => import('@/pages/settings/profile'));
+const PrintPurchase = lazy(() => import('@/pages/purchases/print-purchase'));
+const ViewPurchase = lazy(() => import('@/pages/purchases/view-purchase'));
 
 function App() {
   const { session, initialize } = useAuthStore();
@@ -63,7 +63,7 @@ function App() {
               index
               element={
                 <ErrorBoundary
-                  showDetails={process.env.NODE_ENV === "development"}
+                  showDetails={process.env.NODE_ENV === 'development'}
                 >
                   <Suspense fallback={<DashboardLoadingFallback />}>
                     <Dashboard />
@@ -81,7 +81,7 @@ function App() {
                 path="item-master"
                 element={
                   <ErrorBoundary
-                    showDetails={process.env.NODE_ENV === "development"}
+                    showDetails={process.env.NODE_ENV === 'development'}
                   >
                     <Suspense
                       fallback={
@@ -112,7 +112,7 @@ function App() {
                 path="suppliers"
                 element={
                   <ErrorBoundary
-                    showDetails={process.env.NODE_ENV === "development"}
+                    showDetails={process.env.NODE_ENV === 'development'}
                   >
                     <Suspense
                       fallback={
@@ -131,7 +131,7 @@ function App() {
                 path="patients"
                 element={
                   <ErrorBoundary
-                    showDetails={process.env.NODE_ENV === "development"}
+                    showDetails={process.env.NODE_ENV === 'development'}
                   >
                     <Suspense
                       fallback={
@@ -150,7 +150,7 @@ function App() {
                 path="doctors"
                 element={
                   <ErrorBoundary
-                    showDetails={process.env.NODE_ENV === "development"}
+                    showDetails={process.env.NODE_ENV === 'development'}
                   >
                     <Suspense
                       fallback={

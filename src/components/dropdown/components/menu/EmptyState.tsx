@@ -12,8 +12,9 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   searchTerm,
   hasAddNew,
 }) => {
-  const isSearchWithAddNew = (searchState === SEARCH_STATES.NOT_FOUND ||
-    (searchState === SEARCH_STATES.TYPING)) &&
+  const isSearchWithAddNew =
+    (searchState === SEARCH_STATES.NOT_FOUND ||
+      searchState === SEARCH_STATES.TYPING) &&
     hasAddNew &&
     searchTerm.trim() !== '';
 

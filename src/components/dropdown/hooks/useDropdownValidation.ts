@@ -55,7 +55,11 @@ export const useDropdownValidation = ({
     if (touched && (validate || required)) {
       const isValid = validateDropdown();
       if (!isValid && showValidationOnBlur) {
-        if (validationAutoHide && validationAutoHideDelay && validationAutoHideDelay > 0) {
+        if (
+          validationAutoHide &&
+          validationAutoHideDelay &&
+          validationAutoHideDelay > 0
+        ) {
           if (validationTimeoutRef.current) {
             clearTimeout(validationTimeoutRef.current);
           }

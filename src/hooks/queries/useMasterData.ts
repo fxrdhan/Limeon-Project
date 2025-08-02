@@ -47,21 +47,30 @@ export const useCategoryMutations = () => {
       console.log(`✅ CREATE CATEGORY API success, returning:`, result.data);
       return result.data;
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       console.log(`🎉 CREATE CATEGORY SUCCESS! Data:`, data);
-      
+
       // Local cache update
       console.log(`💾 Updating local cache for categories...`);
-      queryClient.invalidateQueries({ queryKey: QueryKeys.masterData.categories.all });
-      queryClient.refetchQueries({ queryKey: QueryKeys.masterData.categories.all });
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.masterData.categories.all,
+      });
+      queryClient.refetchQueries({
+        queryKey: QueryKeys.masterData.categories.all,
+      });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
       console.log(`✅ Local cache updated`);
-      
     },
   });
 
   const updateCategory = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Category> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Category>;
+    }) => {
       console.log(`🚀 UPDATE CATEGORY CALLED with id:`, id, `data:`, data);
       const result = await masterDataService.categories.update(id, data);
       console.log(`📝 UPDATE CATEGORY API result:`, result);
@@ -73,15 +82,23 @@ export const useCategoryMutations = () => {
       return result.data;
     },
     onSuccess: (data, variables) => {
-      console.log(`🎉 UPDATE CATEGORY SUCCESS! Data:`, data, `Variables:`, variables);
-      
+      console.log(
+        `🎉 UPDATE CATEGORY SUCCESS! Data:`,
+        data,
+        `Variables:`,
+        variables
+      );
+
       // Local cache update
       console.log(`💾 Updating local cache for categories...`);
-      queryClient.invalidateQueries({ queryKey: QueryKeys.masterData.categories.all });
-      queryClient.refetchQueries({ queryKey: QueryKeys.masterData.categories.all });
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.masterData.categories.all,
+      });
+      queryClient.refetchQueries({
+        queryKey: QueryKeys.masterData.categories.all,
+      });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
       console.log(`✅ Local cache updated`);
-      
     },
   });
 
@@ -93,10 +110,13 @@ export const useCategoryMutations = () => {
     },
     onSuccess: () => {
       // Local cache update
-      queryClient.invalidateQueries({ queryKey: QueryKeys.masterData.categories.all });
-      queryClient.refetchQueries({ queryKey: QueryKeys.masterData.categories.all });
+      queryClient.invalidateQueries({
+        queryKey: QueryKeys.masterData.categories.all,
+      });
+      queryClient.refetchQueries({
+        queryKey: QueryKeys.masterData.categories.all,
+      });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
-      
     },
   });
 
@@ -118,7 +138,10 @@ export const useMedicineTypes = (options?: { enabled?: boolean }) => {
   });
 };
 
-export const useMedicineType = (id: string, options?: { enabled?: boolean }) => {
+export const useMedicineType = (
+  id: string,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: QueryKeys.masterData.types.detail(id),
     queryFn: async () => {
@@ -142,18 +165,28 @@ export const useMedicineTypeMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.types() });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.types(),
+      });
     },
   });
 
   const updateMedicineType = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<MedicineType> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<MedicineType>;
+    }) => {
       const result = await masterDataService.types.update(id, data);
       if (result.error) throw result.error;
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.types() });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.types(),
+      });
     },
   });
 
@@ -164,7 +197,9 @@ export const useMedicineTypeMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.types() });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.types(),
+      });
     },
   });
 
@@ -210,7 +245,9 @@ export const useUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.units() });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.units(),
+      });
     },
   });
 
@@ -221,7 +258,9 @@ export const useUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.units() });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.units(),
+      });
     },
   });
 
@@ -232,7 +271,9 @@ export const useUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.units() });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.units(),
+      });
     },
   });
 
@@ -268,7 +309,10 @@ export const useSupplier = (id: string, options?: { enabled?: boolean }) => {
   });
 };
 
-export const useSearchSuppliers = (query: string, options?: { enabled?: boolean }) => {
+export const useSearchSuppliers = (
+  query: string,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: ['suppliers', 'search', query],
     queryFn: async () => {
@@ -290,18 +334,28 @@ export const useSupplierMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.suppliers() });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.suppliers(),
+      });
     },
   });
 
   const updateSupplier = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Supplier> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Supplier>;
+    }) => {
       const result = await masterDataService.suppliers.update(id, data);
       if (result.error) throw result.error;
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.suppliers() });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.suppliers(),
+      });
     },
   });
 
@@ -312,7 +366,9 @@ export const useSupplierMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getInvalidationKeys.masterData.suppliers() });
+      queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.suppliers(),
+      });
     },
   });
 
@@ -325,7 +381,12 @@ export const useAllMasterData = (options?: { enabled?: boolean }) => {
     queryKey: ['masterData', 'all'],
     queryFn: async () => {
       const result = await masterDataService.getAllMasterData();
-      if (result.errors.categories || result.errors.types || result.errors.units || result.errors.suppliers) {
+      if (
+        result.errors.categories ||
+        result.errors.types ||
+        result.errors.units ||
+        result.errors.suppliers
+      ) {
         throw new Error('Failed to fetch master data');
       }
       return result;

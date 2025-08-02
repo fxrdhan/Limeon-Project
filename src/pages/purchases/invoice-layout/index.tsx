@@ -1,12 +1,12 @@
-import React from "react";
-import type { InvoiceLayoutProps } from "@/types";
+import React from 'react';
+import type { InvoiceLayoutProps } from '@/types';
 
 const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
   purchase,
   items,
   subtotals,
   printRef,
-  title = "FAKTUR PEMBELIAN",
+  title = 'FAKTUR PEMBELIAN',
 }) => {
   return (
     <div
@@ -21,10 +21,10 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
           <div className="w-1/2">
             <div className="text-left mb-4">
               <h2 className="font-bold text-lg text-gray-800">
-                {purchase.supplier?.name || "Supplier"}
+                {purchase.supplier?.name || 'Supplier'}
               </h2>
               <div className="text-sm text-gray-600">
-                <p>{purchase.supplier?.address || ""}</p>
+                <p>{purchase.supplier?.address || ''}</p>
               </div>
             </div>
 
@@ -32,10 +32,10 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
               <h2 className="text-sm text-gray-600">Customer:</h2>
               <div className="text-sm ">
                 <p className="font-bold">
-                  {purchase.customer_name || "Data belum tersedia"}
+                  {purchase.customer_name || 'Data belum tersedia'}
                 </p>
                 <p className="text-gray-600">
-                  {purchase.customer_address || "Alamat belum tersedia"}
+                  {purchase.customer_address || 'Alamat belum tersedia'}
                 </p>
               </div>
             </div>
@@ -54,7 +54,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                 <span className="text-left w-[100px]">Tanggal</span>
                 <span className="px-2">:</span>
                 <span>
-                  {new Date(purchase.date).toLocaleDateString("id-ID")}
+                  {new Date(purchase.date).toLocaleDateString('id-ID')}
                 </span>
               </div>
               <div className="grid grid-cols-[auto_auto_1fr] mb-1">
@@ -62,8 +62,8 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                 <span className="px-2">:</span>
                 <span>
                   {purchase.due_date
-                    ? new Date(purchase.due_date).toLocaleDateString("id-ID")
-                    : "-"}
+                    ? new Date(purchase.due_date).toLocaleDateString('id-ID')
+                    : '-'}
                 </span>
               </div>
             </div>
@@ -113,22 +113,22 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                     {index + 1}
                   </td>
                   <td className="border p-1 pt-2 pb-2">
-                    {item.item?.code || "-"}
+                    {item.item?.code || '-'}
                   </td>
                   <td className="border p-1 pt-2 pb-2">
-                    {item.item?.name || "Item tidak ditemukan"}
+                    {item.item?.name || 'Item tidak ditemukan'}
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-center">
-                    {item.batch_no || "-"}
+                    {item.batch_no || '-'}
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-center">
                     {item.expiry_date
-                      ? new Date(item.expiry_date).toLocaleDateString("id-ID", {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
+                      ? new Date(item.expiry_date).toLocaleDateString('id-ID', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
                         })
-                      : "-"}
+                      : '-'}
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-center">
                     {item.quantity}
@@ -137,20 +137,20 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                     {item.unit}
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-right">
-                    {item.price.toLocaleString("id-ID")}
+                    {item.price.toLocaleString('id-ID')}
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-right">
-                    {item.discount > 0 ? `${item.discount}%` : "-"}
+                    {item.discount > 0 ? `${item.discount}%` : '-'}
                   </td>
                   {!purchase.is_vat_included && (
                     <td className="border p-1 pt-2 pb-2 text-right">
                       {item.vat_percentage > 0
                         ? `${item.vat_percentage}%`
-                        : "-"}
+                        : '-'}
                     </td>
                   )}
                   <td className="border p-1 pt-2 pb-2 text-right">
-                    {item.subtotal.toLocaleString("id-ID")}
+                    {item.subtotal.toLocaleString('id-ID')}
                   </td>
                 </tr>
               ))
@@ -165,7 +165,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             <span className="text-left w-[120px]">Diperiksa oleh</span>
             <span className="px-2">:</span>
             <span>
-              {purchase.supplier?.contact_person || purchase.checked_by || "-"}
+              {purchase.supplier?.contact_person || purchase.checked_by || '-'}
             </span>
           </div>
 
@@ -174,18 +174,18 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             <span className="px-2">:</span>
             <span
               className={`${
-                purchase.payment_status === "paid"
-                  ? "text-green-600"
-                  : purchase.payment_status === "partial"
-                    ? "text-orange-600"
-                    : "text-red-600"
+                purchase.payment_status === 'paid'
+                  ? 'text-green-600'
+                  : purchase.payment_status === 'partial'
+                    ? 'text-orange-600'
+                    : 'text-red-600'
               }`}
             >
-              {purchase.payment_status === "paid"
-                ? "Lunas"
-                : purchase.payment_status === "partial"
-                  ? "Sebagian"
-                  : "Belum Dibayar"}
+              {purchase.payment_status === 'paid'
+                ? 'Lunas'
+                : purchase.payment_status === 'partial'
+                  ? 'Sebagian'
+                  : 'Belum Dibayar'}
             </span>
           </div>
 
@@ -193,12 +193,12 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             <span className="text-left w-[120px]">Metode Pembayaran</span>
             <span className="px-2">:</span>
             <span>
-              {purchase.payment_method === "cash"
-                ? "Tunai"
-                : purchase.payment_method === "transfer"
-                  ? "Transfer"
-                  : purchase.payment_method === "credit"
-                    ? "Kredit"
+              {purchase.payment_method === 'cash'
+                ? 'Tunai'
+                : purchase.payment_method === 'transfer'
+                  ? 'Transfer'
+                  : purchase.payment_method === 'credit'
+                    ? 'Kredit'
                     : purchase.payment_method}
             </span>
           </div>
@@ -206,7 +206,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
           <div className="grid grid-cols-[auto_auto_1fr] mb-1 text-sm">
             <span className="text-left w-[120px]">Catatan</span>
             <span className="px-2">:</span>
-            <span>{purchase.notes || "-"}</span>
+            <span>{purchase.notes || '-'}</span>
           </div>
           {purchase.is_vat_included && (
             <div className="grid grid-cols-[auto_auto_1fr] mt-2">
@@ -224,7 +224,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             <span className="text-left">Subtotal</span>
             <span className="px-2">:</span>
             <span className="text-right">
-              {subtotals.baseTotal.toLocaleString("id-ID")}
+              {subtotals.baseTotal.toLocaleString('id-ID')}
             </span>
           </div>
 
@@ -232,7 +232,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             <span className="text-left">Diskon</span>
             <span className="px-2">:</span>
             <span className="text-right">
-              -{subtotals.discountTotal.toLocaleString("id-ID")}
+              -{subtotals.discountTotal.toLocaleString('id-ID')}
             </span>
           </div>
 
@@ -240,7 +240,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             <span className="text-left">Setelah Diskon</span>
             <span className="px-2">:</span>
             <span className="text-right">
-              {subtotals.afterDiscountTotal.toLocaleString("id-ID")}
+              {subtotals.afterDiscountTotal.toLocaleString('id-ID')}
             </span>
           </div>
 
@@ -249,7 +249,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
               <span className="text-left">PPN</span>
               <span className="px-2">:</span>
               <span className="text-right">
-                +{subtotals.vatTotal.toLocaleString("id-ID")}
+                +{subtotals.vatTotal.toLocaleString('id-ID')}
               </span>
             </div>
           )}
@@ -258,7 +258,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             <span className="text-left">TOTAL</span>
             <span className="px-2">:</span>
             <span className="text-right">
-              {subtotals.grandTotal.toLocaleString("id-ID")}
+              {subtotals.grandTotal.toLocaleString('id-ID')}
             </span>
           </div>
         </div>

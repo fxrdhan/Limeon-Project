@@ -1,7 +1,7 @@
-import React from "react";
-import { FaTimes } from "react-icons/fa";
-import Button from "@/components/button";
-import { CardHeader, CardTitle } from "@/components/card";
+import React from 'react';
+import { FaTimes } from 'react-icons/fa';
+import Button from '@/components/button';
+import { CardHeader, CardTitle } from '@/components/card';
 
 interface PurchaseModalHeaderProps {
   title: string;

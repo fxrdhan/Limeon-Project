@@ -9,15 +9,17 @@ Collection of utility scripts and testing tools for PharmaSys development.
 Comprehensive collection of test cases for evaluating the smart adaptive diff algorithm.
 
 **Features:**
+
 - 30+ test cases covering various scenarios
 - Categorized by type: abbreviation expansion, word replacement, punctuation, numbers, medical terms, etc.
 - Difficulty levels: easy, medium, hard, extreme
 - Helper functions for filtering and statistics
 
 **Categories:**
+
 - `abbreviation_expansion` - dgn→dengan, utk→untuk, etc.
 - `word_replacement` - putih→merah, tablet→sirup
-- `punctuation` - comma insertion, formatting changes  
+- `punctuation` - comma insertion, formatting changes
 - `number_unit` - dosage changes, unit conversions
 - `mixed_complex` - multiple change types combined
 - `edge_case` - short texts, identical texts, completely different
@@ -30,6 +32,7 @@ Comprehensive collection of test cases for evaluating the smart adaptive diff al
 Full test suite runner with detailed analysis and reporting.
 
 **Usage:**
+
 ```bash
 # Run all tests
 yarn tsx scripts/test-diff-analyzer.ts
@@ -37,7 +40,7 @@ yarn tsx scripts/test-diff-analyzer.ts
 # Filter by category
 yarn tsx scripts/test-diff-analyzer.ts --category abbreviation_expansion
 
-# Filter by difficulty  
+# Filter by difficulty
 yarn tsx scripts/test-diff-analyzer.ts --difficulty hard
 
 # Run specific test
@@ -45,6 +48,7 @@ yarn tsx scripts/test-diff-analyzer.ts --id abbrev_001
 ```
 
 **Features:**
+
 - Colored terminal output with ✓/✗ indicators
 - Performance timing for each test
 - Fragmentation and accuracy detection
@@ -52,8 +56,9 @@ yarn tsx scripts/test-diff-analyzer.ts --id abbrev_001
 - Detailed failure analysis with visual diff output
 
 **Test Evaluation:**
+
 - Mode detection (character vs word vs smart)
-- Over-fragmentation detection  
+- Over-fragmentation detection
 - Text reconstruction accuracy
 - Performance timing
 - Pattern analysis
@@ -63,6 +68,7 @@ yarn tsx scripts/test-diff-analyzer.ts --id abbrev_001
 Simple tool for testing specific text pairs during development.
 
 **Usage:**
+
 ```bash
 # Test specific pair
 yarn tsx scripts/quick-diff-test.ts "old text" "new text"
@@ -75,6 +81,7 @@ yarn tsx scripts/quick-diff-test.ts
 ```
 
 **Features:**
+
 - Side-by-side comparison of all three modes (smart, character, word)
 - Visual diff output with colors
 - Performance timing
@@ -85,10 +92,12 @@ yarn tsx scripts/quick-diff-test.ts
 ## Other Utility Scripts
 
 ### User Management
+
 - `add-admin-user.ts` - Create new admin users
 - `update-user-password.ts` - Update user passwords
 
-### Data Management  
+### Data Management
+
 - `export.ts` - Export database data
 
 All user management scripts support `--help` flag for detailed usage instructions.
@@ -112,7 +121,7 @@ When improving the diff algorithm:
 ✓ abbrev_001: Simple abbreviation expansion - dgn to dengan (0.12ms)
 ✗ word_002: Multiple word replacements (0.08ms)
   ⚠ Over-fragmentation: 4 segments with ≤2 characters
-  Old: "Sediaan cair yang terdiri dari dua cairan"  
+  Old: "Sediaan cair yang terdiri dari dua cairan"
   New: "Sediaan cair dari dua cairan"
   Diff: Sediaan cair [+dari] [-yang terdiri dari] dua cairan
 

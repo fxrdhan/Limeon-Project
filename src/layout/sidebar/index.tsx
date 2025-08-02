@@ -10,10 +10,10 @@ import {
   FaAngleDown,
   FaLock,
   FaUnlock,
-} from "react-icons/fa";
-import { Link, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo, useCallback, useEffect, useRef, JSX } from "react";
+} from 'react-icons/fa';
+import { Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo, useCallback, useEffect, useRef, JSX } from 'react';
 
 interface MenuItem {
   name: string;
@@ -76,7 +76,7 @@ const Sidebar = ({
   });
 
   const [manuallyClosedMenus, setManuallyClosedMenus] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const menuHoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -84,82 +84,82 @@ const Sidebar = ({
   const menuItems: MenuItem[] = useMemo(
     () => [
       {
-        name: "Dashboard",
-        path: "/",
+        name: 'Dashboard',
+        path: '/',
         icon: <FaHome className="text-lg" />,
       },
       {
-        name: "Master Data",
-        path: "/master-data",
+        name: 'Master Data',
+        path: '/master-data',
         icon: <FaDatabase className="text-lg" />,
         children: [
-          { name: "Item Master", path: "/master-data/item-master" },
-          { name: "Supplier", path: "/master-data/suppliers" },
-          { name: "Pasien", path: "/master-data/patients" },
-          { name: "Dokter", path: "/master-data/doctors" },
+          { name: 'Item Master', path: '/master-data/item-master' },
+          { name: 'Supplier', path: '/master-data/suppliers' },
+          { name: 'Pasien', path: '/master-data/patients' },
+          { name: 'Dokter', path: '/master-data/doctors' },
         ],
       },
       {
-        name: "Persediaan",
-        path: "/inventory",
+        name: 'Persediaan',
+        path: '/inventory',
         icon: <FaBoxes className="text-lg" />,
         children: [
-          { name: "Stok Obat", path: "/inventory/stock" },
-          { name: "Stok Opname", path: "/inventory/stock-opname" },
-          { name: "Obat Kadaluarsa", path: "/inventory/expired" },
+          { name: 'Stok Obat', path: '/inventory/stock' },
+          { name: 'Stok Opname', path: '/inventory/stock-opname' },
+          { name: 'Obat Kadaluarsa', path: '/inventory/expired' },
         ],
       },
       {
-        name: "Pembelian",
-        path: "/purchases",
+        name: 'Pembelian',
+        path: '/purchases',
         icon: <FaShoppingCart className="text-lg" />,
         children: [
-          { name: "Daftar Pesanan Beli", path: "/purchases/orders" },
-          { name: "Daftar Pembelian", path: "/purchases" },
-          { name: "Riwayat Harga Beli", path: "/purchases/price-history" },
+          { name: 'Daftar Pesanan Beli', path: '/purchases/orders' },
+          { name: 'Daftar Pembelian', path: '/purchases' },
+          { name: 'Riwayat Harga Beli', path: '/purchases/price-history' },
         ],
       },
       {
-        name: "Penjualan",
-        path: "/sales",
+        name: 'Penjualan',
+        path: '/sales',
         icon: <FaShoppingBag className="text-lg" />,
         children: [
-          { name: "Daftar Penjualan", path: "/sales" },
-          { name: "Tambah Penjualan", path: "/sales/create" },
+          { name: 'Daftar Penjualan', path: '/sales' },
+          { name: 'Tambah Penjualan', path: '/sales/create' },
         ],
       },
       {
-        name: "Klinik",
-        path: "/clinic",
+        name: 'Klinik',
+        path: '/clinic',
         icon: <FaHospital className="text-lg" />,
         children: [
-          { name: "Daftar Pasien", path: "/clinic/patients" },
-          { name: "Antrian", path: "/clinic/queue" },
-          { name: "Rekam Medis", path: "/clinic/medical-records" },
+          { name: 'Daftar Pasien', path: '/clinic/patients' },
+          { name: 'Antrian', path: '/clinic/queue' },
+          { name: 'Rekam Medis', path: '/clinic/medical-records' },
         ],
       },
       {
-        name: "Laporan",
-        path: "/reports",
+        name: 'Laporan',
+        path: '/reports',
         icon: <FaChartBar className="text-lg" />,
         children: [
-          { name: "Penjualan", path: "/reports/sales" },
-          { name: "Pembelian", path: "/reports/purchases" },
-          { name: "Stok", path: "/reports/stock" },
+          { name: 'Penjualan', path: '/reports/sales' },
+          { name: 'Pembelian', path: '/reports/purchases' },
+          { name: 'Stok', path: '/reports/stock' },
         ],
       },
       {
-        name: "Pengaturan",
-        path: "/settings",
+        name: 'Pengaturan',
+        path: '/settings',
         icon: <FaCog className="text-lg" />,
         children: [
-          { name: "Profil", path: "/settings/profile" },
-          { name: "Pengguna", path: "/settings/users" },
-          { name: "Aplikasi", path: "/settings/app" },
+          { name: 'Profil', path: '/settings/profile' },
+          { name: 'Pengguna', path: '/settings/users' },
+          { name: 'Aplikasi', path: '/settings/app' },
         ],
       },
     ],
-    [],
+    []
   );
 
   const submenuContainerVariants = {
@@ -190,36 +190,36 @@ const Sidebar = ({
 
   const isActive = useCallback(
     (path: string) => {
-      if (path === "/") {
-        return location.pathname === "/";
+      if (path === '/') {
+        return location.pathname === '/';
       }
       return (
-        location.pathname === path || location.pathname.startsWith(path + "/")
+        location.pathname === path || location.pathname.startsWith(path + '/')
       );
     },
-    [location],
+    [location]
   );
 
   const hasActiveChild = useCallback(
     (children?: { path: string }[]) => {
       if (!children) return false;
       const exactMatch = children.find(
-        (child) => location.pathname === child.path,
+        child => location.pathname === child.path
       );
       if (exactMatch) return true;
 
-      const matches = children.filter((child) => isActive(child.path));
+      const matches = children.filter(child => isActive(child.path));
       return matches.length === 1;
     },
-    [isActive, location.pathname],
+    [isActive, location.pathname]
   );
 
   const toggleMenu = useCallback(
     (menu: string) => {
       if (!collapsed) {
         const isCurrentlyOpen = openMenus[menu];
-        setOpenMenus((prev) => ({ ...prev, [menu]: !isCurrentlyOpen }));
-        setManuallyClosedMenus((prevSet) => {
+        setOpenMenus(prev => ({ ...prev, [menu]: !isCurrentlyOpen }));
+        setManuallyClosedMenus(prevSet => {
           const newSet = new Set(prevSet);
           if (isCurrentlyOpen) {
             newSet.add(menu);
@@ -230,7 +230,7 @@ const Sidebar = ({
         });
       }
     },
-    [collapsed, openMenus],
+    [collapsed, openMenus]
   );
 
   const handleMenuMouseEnter = useCallback(
@@ -245,11 +245,11 @@ const Sidebar = ({
         newManuallyClosed.delete(menuKey);
         setManuallyClosedMenus(newManuallyClosed);
 
-        setOpenMenus((prev) => {
+        setOpenMenus(prev => {
           const newState = { ...prev };
-          Object.keys(newState).forEach((key) => {
+          Object.keys(newState).forEach(key => {
             const menuItem = menuItems.find(
-              (item) => item.name.toLowerCase().replace(" ", "") === key,
+              item => item.name.toLowerCase().replace(' ', '') === key
             );
             const isMenuActive =
               menuItem &&
@@ -262,7 +262,7 @@ const Sidebar = ({
         });
       }
     },
-    [collapsed, menuItems, isActive, hasActiveChild, manuallyClosedMenus],
+    [collapsed, menuItems, isActive, hasActiveChild, manuallyClosedMenus]
   );
 
   const handleMenuMouseLeave = useCallback(() => {}, []);
@@ -298,11 +298,11 @@ const Sidebar = ({
     }
     if (!collapsed) {
       menuHoverTimeoutRef.current = setTimeout(() => {
-        setOpenMenus((prev) => {
+        setOpenMenus(prev => {
           const newState = { ...prev };
-          Object.keys(newState).forEach((key) => {
+          Object.keys(newState).forEach(key => {
             const menuItem = menuItems.find(
-              (item) => item.name.toLowerCase().replace(" ", "") === key,
+              item => item.name.toLowerCase().replace(' ', '') === key
             );
             const isMenuActive =
               menuItem &&
@@ -339,13 +339,13 @@ const Sidebar = ({
     setManuallyClosedMenus(new Set());
 
     if (!collapsed) {
-      setOpenMenus((prev) => {
+      setOpenMenus(prev => {
         const newOpenMenus = { ...prev };
         let hasChanges = false;
 
-        menuItems.forEach((item) => {
+        menuItems.forEach(item => {
           if (item.children) {
-            const menuKey = item.name.toLowerCase().replace(" ", "");
+            const menuKey = item.name.toLowerCase().replace(' ', '');
             const shouldBeOpen =
               isActive(item.path) || hasActiveChild(item.children);
             if (newOpenMenus[menuKey] !== shouldBeOpen) {
@@ -363,16 +363,16 @@ const Sidebar = ({
   // Get active submenu item for smooth indicator positioning
   const getActiveSubmenuItem = useCallback(
     (children: { name: string; path: string }[]) => {
-      return children.find((child) => location.pathname === child.path);
+      return children.find(child => location.pathname === child.path);
     },
-    [location.pathname],
+    [location.pathname]
   );
 
   const activeSubmenuIndex = useCallback(
     (children: { name: string; path: string }[]) => {
-      return children.findIndex((child) => location.pathname === child.path);
+      return children.findIndex(child => location.pathname === child.path);
     },
-    [location.pathname],
+    [location.pathname]
   );
 
   return (
@@ -381,7 +381,7 @@ const Sidebar = ({
       onMouseLeave={handleMouseLeaveSidebar}
       className={`sidebar bg-white text-gray-800 border-r border-gray-200
                         transition-all duration-500 ease-in-out h-screen
-                        ${collapsed ? "w-20" : "w-64"} relative group z-10`}
+                        ${collapsed ? 'w-20' : 'w-64'} relative group z-10`}
     >
       <div className="flex flex-col h-full">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
@@ -390,7 +390,7 @@ const Sidebar = ({
               <span className="text-white text-xl font-bold">P</span>
             </div>
             <h2
-              className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? "opacity-0 scale-0 w-0" : "opacity-100 scale-100 w-auto"} text-gray-800`}
+              className={`ml-2 text-lg font-bold transition-opacity duration-200 ${collapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'} text-gray-800`}
             >
               PharmaSys
             </h2>
@@ -399,8 +399,8 @@ const Sidebar = ({
             <motion.button
               onClick={toggleLock}
               className="p-2 rounded-full text-gray-400 hover:bg-gray-100 focus:outline-hidden transition-colors duration-150 relative overflow-hidden"
-              title={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
-              aria-label={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
+              title={isLocked ? 'Buka Kunci Sidebar' : 'Kunci Sidebar'}
+              aria-label={isLocked ? 'Buka Kunci Sidebar' : 'Kunci Sidebar'}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -412,17 +412,17 @@ const Sidebar = ({
         </div>
 
         <nav className="grow overflow-y-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {menuItems.map((item) => (
+          {menuItems.map(item => (
             <div key={item.name}>
               {item.children ? (
                 <>
                   <button
                     onClick={() =>
-                      toggleMenu(item.name.toLowerCase().replace(" ", ""))
+                      toggleMenu(item.name.toLowerCase().replace(' ', ''))
                     }
                     onMouseEnter={() =>
                       handleMenuMouseEnter(
-                        item.name.toLowerCase().replace(" ", ""),
+                        item.name.toLowerCase().replace(' ', '')
                       )
                     }
                     onMouseLeave={handleMenuMouseLeave}
@@ -432,15 +432,15 @@ const Sidebar = ({
                                                   isActive(item.path) ||
                                                   hasActiveChild(item.children)
                                                     ? collapsed
-                                                      ? "text-primary font-medium"
-                                                      : "bg-primary text-white font-medium"
-                                                    : "text-gray-600 hover:bg-gray-100"
+                                                      ? 'text-primary font-medium'
+                                                      : 'bg-primary text-white font-medium'
+                                                    : 'text-gray-600 hover:bg-gray-100'
                                                 }
                                                 transition-all duration-150 group relative`}
                     style={{
-                      outline: "none",
-                      border: "none",
-                      borderLeft: "4px solid transparent",
+                      outline: 'none',
+                      border: 'none',
+                      borderLeft: '4px solid transparent',
                     }}
                   >
                     <div className="flex items-center overflow-hidden">
@@ -450,7 +450,7 @@ const Sidebar = ({
                         {item.icon}
                       </div>
                       <span
-                        className={`ml-3 truncate transition-all duration-300 ease-in-out ${collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full"}`}
+                        className={`ml-3 truncate transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}
                       >
                         {item.name}
                       </span>
@@ -460,12 +460,12 @@ const Sidebar = ({
                         className="mr-4"
                         animate={{
                           rotate: openMenus[
-                            item.name.toLowerCase().replace(" ", "")
+                            item.name.toLowerCase().replace(' ', '')
                           ]
                             ? 180
                             : 0,
                         }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                       >
                         <FaAngleDown className="text-sm" />
                       </motion.div>
@@ -473,24 +473,24 @@ const Sidebar = ({
                   </button>
                   <AnimatePresence initial={false}>
                     {!collapsed &&
-                      openMenus[item.name.toLowerCase().replace(" ", "")] && (
+                      openMenus[item.name.toLowerCase().replace(' ', '')] && (
                         <motion.div
                           key="submenu-content"
                           initial="collapsed"
                           animate="open"
                           exit="collapsed"
                           variants={{
-                            open: { opacity: 1, height: "auto" },
+                            open: { opacity: 1, height: 'auto' },
                             collapsed: { opacity: 0, height: 0 },
                           }}
                           transition={{
                             duration: 0.4,
-                            ease: "easeInOut",
+                            ease: 'easeInOut',
                           }}
                           onMouseEnter={() => {
                             handleSubmenuMouseEnter();
                             handleMenuMouseEnter(
-                              item.name.toLowerCase().replace(" ", ""),
+                              item.name.toLowerCase().replace(' ', '')
                             );
                           }}
                           onMouseLeave={handleSubmenuMouseLeave}
@@ -528,7 +528,7 @@ const Sidebar = ({
                                       transition: { duration: 0.2 },
                                     }}
                                     transition={{
-                                      type: "spring",
+                                      type: 'spring',
                                       stiffness: 300,
                                       damping: 30,
                                       mass: 0.8,
@@ -538,14 +538,14 @@ const Sidebar = ({
                             </AnimatePresence>
 
                             {item.children &&
-                              item.children.map((child) => {
+                              item.children.map(child => {
                                 const isActiveChild =
                                   location.pathname === child.path;
                                 return (
                                   <div
                                     key={child.name}
                                     className="relative"
-                                    style={{ height: "48px" }}
+                                    style={{ height: '48px' }}
                                   >
                                     {/* Active dot indicator */}
                                     <AnimatePresence>
@@ -565,7 +565,7 @@ const Sidebar = ({
                                             opacity: 0,
                                           }}
                                           transition={{
-                                            type: "spring",
+                                            type: 'spring',
                                             stiffness: 400,
                                             damping: 25,
                                             delay: 0.1,
@@ -583,14 +583,14 @@ const Sidebar = ({
                                                                 transform hover:translate-x-1
                                                                 ${
                                                                   isActiveChild
-                                                                    ? "font-medium scale-[1.02] bg-emerald-50"
-                                                                    : "hover:bg-gray-100"
+                                                                    ? 'font-medium scale-[1.02] bg-emerald-50'
+                                                                    : 'hover:bg-gray-100'
                                                                 } whitespace-nowrap overflow-hidden text-ellipsis`}
                                         style={{
-                                          outline: "none",
+                                          outline: 'none',
                                           color: isActiveChild
-                                            ? "oklch(50.8% 0.118 165.612)"
-                                            : "oklch(55.1% 0.027 264.364)",
+                                            ? 'oklch(50.8% 0.118 165.612)'
+                                            : 'oklch(55.1% 0.027 264.364)',
                                         }}
                                       >
                                         {child.name}
@@ -608,8 +608,8 @@ const Sidebar = ({
                 <button
                   onClick={() => {
                     if (location.pathname !== item.path) {
-                      window.history.pushState({}, "", item.path);
-                      const navEvent = new PopStateEvent("popstate");
+                      window.history.pushState({}, '', item.path);
+                      const navEvent = new PopStateEvent('popstate');
                       window.dispatchEvent(navEvent);
                     }
                   }}
@@ -618,15 +618,15 @@ const Sidebar = ({
                                                 ${
                                                   isActive(item.path)
                                                     ? collapsed
-                                                      ? "text-primary font-medium"
-                                                      : "bg-primary text-white font-medium"
-                                                    : "text-gray-600 hover:bg-gray-100"
+                                                      ? 'text-primary font-medium'
+                                                      : 'bg-primary text-white font-medium'
+                                                    : 'text-gray-600 hover:bg-gray-100'
                                                 }
                                                 transition-all duration-150 group relative`}
                   style={{
-                    outline: "none",
-                    border: "none",
-                    borderLeft: "4px solid transparent",
+                    outline: 'none',
+                    border: 'none',
+                    borderLeft: '4px solid transparent',
                   }}
                 >
                   <div className="flex items-center overflow-hidden">
@@ -636,7 +636,7 @@ const Sidebar = ({
                       {item.icon}
                     </div>
                     <span
-                      className={`ml-3 truncate transition-all duration-300 ease-in-out ${collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-full"}`}
+                      className={`ml-3 truncate transition-all duration-300 ease-in-out ${collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'}`}
                     >
                       {item.name}
                     </span>
@@ -653,9 +653,9 @@ const Sidebar = ({
           <div className="h-4">
             <div
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: "100%",
+                display: 'inline-flex',
+                alignItems: 'center',
+                height: '100%',
               }}
             >
               <AnimatePresence initial={false}>
@@ -665,12 +665,12 @@ const Sidebar = ({
                     initial={{ opacity: 0, width: 0, marginRight: 0 }}
                     animate={{
                       opacity: 1,
-                      width: "auto",
-                      marginRight: "0.25em",
+                      width: 'auto',
+                      marginRight: '0.25em',
                     }}
                     exit={{ opacity: 0, width: 0, marginRight: 0 }}
                     transition={{ duration: 0.3 }}
-                    style={{ whiteSpace: "nowrap", overflow: "hidden" }}
+                    style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}
                   >
                     PharmaSys
                   </motion.div>

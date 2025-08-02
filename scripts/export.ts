@@ -1,10 +1,10 @@
-import { Client } from "pg";
-import * as fs from "fs";
-import * as path from "path";
-import * as dotenv from "dotenv";
+import { Client } from 'pg';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as dotenv from 'dotenv';
 
 // Load environment variables from the root .env file.
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 /**
  * Creates a logging function for a specific export type.
@@ -16,12 +16,12 @@ function createLogger(outputDir: string): (message: string) => void {
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
-  const logFilePath = path.join(outputDir, "export.log");
+  const logFilePath = path.join(outputDir, 'export.log');
 
   // Start with a fresh log file for each run
   fs.writeFileSync(
     logFilePath,
-    `-- Export log generated on ${new Date().toISOString()} --\n\n`,
+    `-- Export log generated on ${new Date().toISOString()} --\n\n`
   );
 
   return (message: string) => {
@@ -52,12 +52,12 @@ async function exportTriggers(client: Client) {
   const result = await client.query(query);
   const triggers = result.rows;
 
-  const outputDir = path.join(process.cwd(), "supabase", "triggers");
+  const outputDir = path.join(process.cwd(), 'supabase', 'triggers');
   const log = createLogger(outputDir);
-  log("Initialized trigger export.");
+  log('Initialized trigger export.');
 
   if (triggers.length === 0) {
-    const info = "ℹ️ No user-defined triggers found to export.";
+    const info = 'ℹ️ No user-defined triggers found to export.';
     console.log(info);
     log(info);
     return;
@@ -75,9 +75,9 @@ async function exportTriggers(client: Client) {
     log(`  -> Exported '${trigger_name}' to ${filePath}`);
   }
 
-  const successMessage = `✅ Exported ${triggers.length} triggers. See details in ${path.join(outputDir, "export.log")}`;
+  const successMessage = `✅ Exported ${triggers.length} triggers. See details in ${path.join(outputDir, 'export.log')}`;
   console.log(successMessage);
-  log("Successfully finished exporting triggers.");
+  log('Successfully finished exporting triggers.');
 }
 
 /**
@@ -102,12 +102,12 @@ async function exportFunctions(client: Client) {
   const result = await client.query(query);
   const functions = result.rows;
 
-  const outputDir = path.join(process.cwd(), "supabase", "functions");
+  const outputDir = path.join(process.cwd(), 'supabase', 'functions');
   const log = createLogger(outputDir);
-  log("Initialized function export.");
+  log('Initialized function export.');
 
   if (functions.length === 0) {
-    const info = "ℹ️ No user-defined SQL functions found to export.";
+    const info = 'ℹ️ No user-defined SQL functions found to export.';
     console.log(info);
     log(info);
     return;
@@ -125,9 +125,9 @@ async function exportFunctions(client: Client) {
     log(`  -> Exported '${function_name}' to ${filePath}`);
   }
 
-  const successMessage = `✅ Exported ${functions.length} functions. See details in ${path.join(outputDir, "export.log")}`;
+  const successMessage = `✅ Exported ${functions.length} functions. See details in ${path.join(outputDir, 'export.log')}`;
   console.log(successMessage);
-  log("Successfully finished exporting functions.");
+  log('Successfully finished exporting functions.');
 }
 
 /**
@@ -164,12 +164,12 @@ async function exportTables(client: Client) {
   const result = await client.query(query);
   const tables = result.rows;
 
-  const outputDir = path.join(process.cwd(), "supabase", "tables");
+  const outputDir = path.join(process.cwd(), 'supabase', 'tables');
   const log = createLogger(outputDir);
-  log("Initialized table export.");
+  log('Initialized table export.');
 
   if (tables.length === 0) {
-    const info = "ℹ️ No user-defined tables found to export.";
+    const info = 'ℹ️ No user-defined tables found to export.';
     console.log(info);
     log(info);
     return;
@@ -187,9 +187,9 @@ async function exportTables(client: Client) {
     log(`  -> Exported '${table_name}' to ${filePath}`);
   }
 
-  const successMessage = `✅ Exported ${tables.length} tables. See details in ${path.join(outputDir, "export.log")}`;
+  const successMessage = `✅ Exported ${tables.length} tables. See details in ${path.join(outputDir, 'export.log')}`;
   console.log(successMessage);
-  log("Successfully finished exporting tables.");
+  log('Successfully finished exporting tables.');
 }
 
 /**
@@ -210,12 +210,12 @@ async function exportTableDataAsJson(client: Client) {
   const tablesResult = await client.query(getTablesQuery);
   const tables = tablesResult.rows;
 
-  const outputDir = path.join(process.cwd(), "supabase", "data");
+  const outputDir = path.join(process.cwd(), 'supabase', 'data');
   const log = createLogger(outputDir);
-  log("Initialized table data export.");
+  log('Initialized table data export.');
 
   if (tables.length === 0) {
-    const info = "ℹ️ No user-defined tables found to export data from.";
+    const info = 'ℹ️ No user-defined tables found to export data from.';
     console.log(info);
     log(info);
     return;
@@ -235,7 +235,7 @@ async function exportTableDataAsJson(client: Client) {
 
       fs.writeFileSync(filePath, jsonData);
       log(
-        `  -> Exported data for table '${table_name}' to ${filePath} (${dataResult.rowCount} rows)`,
+        `  -> Exported data for table '${table_name}' to ${filePath} (${dataResult.rowCount} rows)`
       );
     } catch (error) {
       const errorMessage = `  -> Failed to export data for table '${table_name}'. Error: ${error instanceof Error ? error.message : String(error)}`;
@@ -244,9 +244,9 @@ async function exportTableDataAsJson(client: Client) {
     }
   }
 
-  const successMessage = `✅ Exported data for ${tables.length} tables. See details in ${path.join(outputDir, "export.log")}`;
+  const successMessage = `✅ Exported data for ${tables.length} tables. See details in ${path.join(outputDir, 'export.log')}`;
   console.log(successMessage);
-  log("Successfully finished exporting table data.");
+  log('Successfully finished exporting table data.');
 }
 
 /**
@@ -257,14 +257,14 @@ async function main() {
 
   if (!exportType) {
     console.error(
-      "🔴 Please specify what to export. Usage: yarn export [triggers|functions|tables|data|all]",
+      '🔴 Please specify what to export. Usage: yarn export [triggers|functions|tables|data|all]'
     );
     process.exit(1);
   }
 
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
-    console.error("🔴 DATABASE_URL environment variable is not set.");
+    console.error('🔴 DATABASE_URL environment variable is not set.');
     process.exit(1);
   }
 
@@ -272,53 +272,53 @@ async function main() {
 
   try {
     await client.connect();
-    console.log("✅ Successfully connected to the database.");
+    console.log('✅ Successfully connected to the database.');
 
-    if (exportType === "all") {
-      console.log("\n--- Exporting All Database Objects ---");
+    if (exportType === 'all') {
+      console.log('\n--- Exporting All Database Objects ---');
       await exportTriggers(client);
-      console.log("------------------------------------");
+      console.log('------------------------------------');
       await exportFunctions(client);
-      console.log("------------------------------------");
+      console.log('------------------------------------');
       await exportTables(client);
-      console.log("------------------------------------");
+      console.log('------------------------------------');
       await exportTableDataAsJson(client);
     } else {
       switch (exportType) {
-        case "triggers":
-          console.log("\n--- Exporting Triggers ---");
+        case 'triggers':
+          console.log('\n--- Exporting Triggers ---');
           await exportTriggers(client);
           break;
 
-        case "functions":
-          console.log("\n--- Exporting Functions ---");
+        case 'functions':
+          console.log('\n--- Exporting Functions ---');
           await exportFunctions(client);
           break;
 
-        case "tables":
-          console.log("\n--- Exporting Table Definitions ---");
+        case 'tables':
+          console.log('\n--- Exporting Table Definitions ---');
           await exportTables(client);
           break;
 
-        case "data":
-          console.log("\n--- Exporting Table Data as JSON ---");
+        case 'data':
+          console.log('\n--- Exporting Table Data as JSON ---');
           await exportTableDataAsJson(client);
           break;
 
         default:
           console.error(
-            `🔴 Unknown export type '${exportType}'. Please use 'triggers', 'functions', 'tables', 'data', or 'all'.`,
+            `🔴 Unknown export type '${exportType}'. Please use 'triggers', 'functions', 'tables', 'data', or 'all'.`
           );
           process.exit(1);
       }
     }
-    console.log("\nExport process completed successfully.");
+    console.log('\nExport process completed successfully.');
   } catch (error) {
-    console.error("🔴 An error occurred during the export process:", error);
+    console.error('🔴 An error occurred during the export process:', error);
     process.exit(1);
   } finally {
     await client.end();
-    console.log("🔗 Database connection closed.");
+    console.log('🔗 Database connection closed.');
   }
 }
 

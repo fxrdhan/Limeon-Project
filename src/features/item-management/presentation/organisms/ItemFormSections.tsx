@@ -1,20 +1,20 @@
-import React from "react";
+import React from 'react';
 import {
   useItemForm,
   useItemModal,
   useItemPrice,
   useItemUI,
-} from "../../shared/contexts/useItemFormContext";
-import { useItemPriceCalculations } from "../../application/hooks/utils/useItemPriceCalculator";
-import { useUnitConversionLogic } from "../../application/hooks/utils/useUnitConversionLogic";
-import { useInlineEditor } from "@/hooks/useInlineEditor";
+} from '../../shared/contexts/useItemFormContext';
+import { useItemPriceCalculations } from '../../application/hooks/utils/useItemPriceCalculator';
+import { useUnitConversionLogic } from '../../application/hooks/utils/useUnitConversionLogic';
+import { useInlineEditor } from '@/hooks/useInlineEditor';
 
 // Child components
-import { ItemFormHeader } from "./";
-import ItemBasicInfoForm from "./ItemBasicInfoForm";
-import ItemSettingsForm from "./ItemSettingsForm";
-import ItemPricingForm from "./ItemPricingForm";
-import ItemUnitConversionManager from "./ItemUnitConversionForm";
+import { ItemFormHeader } from './';
+import ItemBasicInfoForm from './ItemBasicInfoForm';
+import ItemSettingsForm from './ItemSettingsForm';
+import ItemPricingForm from './ItemPricingForm';
+import ItemUnitConversionManager from './ItemUnitConversionForm';
 
 // Header Section
 // eslint-disable-next-line react-refresh/only-export-components
@@ -22,7 +22,14 @@ const FormHeader: React.FC<{ onReset?: () => void; onClose: () => void }> = ({
   onReset,
   onClose,
 }) => {
-  const { isEditMode, formattedUpdateAt, isClosing, handleHistoryClick, mode, goBackToForm } = useItemUI();
+  const {
+    isEditMode,
+    formattedUpdateAt,
+    isClosing,
+    handleHistoryClick,
+    mode,
+    goBackToForm,
+  } = useItemUI();
   const { formData } = useItemForm();
 
   const isHistoryMode = mode === 'history';
@@ -60,43 +67,59 @@ const BasicInfoSection: React.FC = () => {
   const { resetKey } = useItemUI();
   const { unitConversionHook } = useItemPrice();
 
-  const { handleAddNewCategory, handleAddNewType, handleAddNewUnit, handleAddNewDosage } =
-    useItemModal();
+  const {
+    handleAddNewCategory,
+    handleAddNewType,
+    handleAddNewUnit,
+    handleAddNewDosage,
+  } = useItemModal();
 
   // Transform database types to DropdownOption format
-  const transformedCategories = categories.map(cat => ({ id: cat.id, name: cat.name }));
-  const transformedTypes = types.map(type => ({ id: type.id, name: type.name }));
-  const transformedUnits = units.map(unit => ({ id: unit.id, name: unit.name }));
-  const transformedDosages = dosages.map(dosage => ({ id: dosage.id, name: dosage.name }));
+  const transformedCategories = categories.map(cat => ({
+    id: cat.id,
+    name: cat.name,
+  }));
+  const transformedTypes = types.map(type => ({
+    id: type.id,
+    name: type.name,
+  }));
+  const transformedUnits = units.map(unit => ({
+    id: unit.id,
+    name: unit.name,
+  }));
+  const transformedDosages = dosages.map(dosage => ({
+    id: dosage.id,
+    name: dosage.name,
+  }));
 
   const handleFieldChange = (field: string, value: boolean | string) => {
-    if (field === "is_medicine" && value === false) {
+    if (field === 'is_medicine' && value === false) {
       updateFormData({
         is_medicine: value as boolean,
         has_expiry_date: false,
       });
-    } else if (field === "is_medicine") {
+    } else if (field === 'is_medicine') {
       updateFormData({ is_medicine: value as boolean });
-    } else if (field === "is_active") {
+    } else if (field === 'is_active') {
       updateFormData({ is_active: value as boolean });
-    } else if (field === "has_expiry_date") {
+    } else if (field === 'has_expiry_date') {
       updateFormData({ has_expiry_date: value as boolean });
     }
   };
 
   const handleDropdownChange = (field: string, value: string) => {
-    if (field === "category_id") {
+    if (field === 'category_id') {
       updateFormData({ category_id: value });
-    } else if (field === "type_id") {
+    } else if (field === 'type_id') {
       updateFormData({ type_id: value });
-    } else if (field === "unit_id") {
+    } else if (field === 'unit_id') {
       updateFormData({ unit_id: value });
       // Also update baseUnit for unit conversion synchronization
       const selectedUnit = units.find(unit => unit.id === value);
       if (selectedUnit) {
         unitConversionHook.setBaseUnit(selectedUnit.name);
       }
-    } else if (field === "dosage_id") {
+    } else if (field === 'dosage_id') {
       updateFormData({ dosage_id: value });
     }
   };
@@ -105,16 +128,16 @@ const BasicInfoSection: React.FC = () => {
     <ItemBasicInfoForm
       key={resetKey} // Force re-mount on reset to clear validation
       formData={{
-        code: formData.code || "",
-        name: formData.name || "",
-        manufacturer: formData.manufacturer || "",
-        barcode: formData.barcode || "",
+        code: formData.code || '',
+        name: formData.name || '',
+        manufacturer: formData.manufacturer || '',
+        barcode: formData.barcode || '',
         is_medicine: formData.is_medicine || false,
-        category_id: formData.category_id || "",
-        type_id: formData.type_id || "",
-        unit_id: formData.unit_id || "",
-        dosage_id: formData.dosage_id || "",
-        description: formData.description || "",
+        category_id: formData.category_id || '',
+        type_id: formData.type_id || '',
+        unit_id: formData.unit_id || '',
+        dosage_id: formData.dosage_id || '',
+        description: formData.description || '',
       }}
       categories={transformedCategories}
       types={transformedTypes}
@@ -140,24 +163,24 @@ const SettingsSection: React.FC = () => {
 
   const minStockEditor = useInlineEditor({
     initialValue: (formData.min_stock || 0).toString(),
-    onSave: (value) => {
+    onSave: value => {
       updateFormData({ min_stock: parseInt(value.toString()) || 0 });
     },
   });
 
   const handleFieldChange = (field: string, value: boolean | string) => {
-    if (field === "is_medicine" && value === false) {
+    if (field === 'is_medicine' && value === false) {
       updateFormData({
         is_medicine: value as boolean,
         has_expiry_date: false,
       });
-    } else if (field === "is_medicine") {
+    } else if (field === 'is_medicine') {
       updateFormData({ is_medicine: value as boolean });
-    } else if (field === "is_active") {
+    } else if (field === 'is_active') {
       updateFormData({ is_active: value as boolean });
-    } else if (field === "has_expiry_date") {
+    } else if (field === 'has_expiry_date') {
       updateFormData({ has_expiry_date: value as boolean });
-    } else if (field === "min_stock") {
+    } else if (field === 'min_stock') {
       updateFormData({ min_stock: parseInt(value as string) || 0 });
     }
   };
@@ -189,7 +212,7 @@ const PricingSection: React.FC = () => {
   const { formData, updateFormData, handleChange } = useItemForm();
   const { unitConversionHook, displayBasePrice, displaySellPrice } =
     useItemPrice();
-  
+
   const { resetKey } = useItemUI();
 
   const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
@@ -199,7 +222,7 @@ const PricingSection: React.FC = () => {
 
   const marginEditor = useInlineEditor({
     initialValue: (calcMargin || 0).toString(),
-    onSave: (value) => {
+    onSave: value => {
       const basePrice = formData.base_price || 0;
       const marginPercentage = parseFloat(value.toString()) || 0;
       const newSellPrice = basePrice + (basePrice * marginPercentage) / 100;
@@ -209,7 +232,9 @@ const PricingSection: React.FC = () => {
 
   const handleSellPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Extract numeric value from currency format (e.g., "Rp 123" -> "123")
-    const cleanValue = e.target.value.replace(/^Rp\s*/, "").replace(/[^0-9]/g, "");
+    const cleanValue = e.target.value
+      .replace(/^Rp\s*/, '')
+      .replace(/[^0-9]/g, '');
     const value = parseFloat(cleanValue) || 0;
     updateFormData({ sell_price: value });
     marginEditor.setValue((calcMargin || 0).toString());
@@ -260,7 +285,7 @@ const UnitConversionSection: React.FC = () => {
     const result = unitConversionLogic.validateAndAddConversion();
     if (!result.success && result.error) {
       // Show validation errors to user - unit selection is now handled by dropdown validation
-      if (result.error !== "Silakan pilih satuan!") {
+      if (result.error !== 'Silakan pilih satuan!') {
         alert(result.error);
       }
     }

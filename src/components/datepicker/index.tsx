@@ -1,6 +1,6 @@
-import React from "react";
-import { DatepickerProvider } from "./providers";
-import { useDatepickerContext } from "./hooks";
+import React from 'react';
+import { DatepickerProvider } from './providers';
+import { useDatepickerContext } from './hooks';
 import {
   CalendarButton,
   CalendarPortal,
@@ -8,8 +8,8 @@ import {
   DaysGrid,
   MonthsGrid,
   YearsGrid,
-} from "./components";
-import type { DatepickerProps } from "./types";
+} from './components';
+import type { DatepickerProps } from './types';
 
 const DatepickerContent: React.FC<{
   label?: string;
@@ -37,22 +37,24 @@ const DatepickerContent: React.FC<{
   } = useDatepickerContext();
 
   const handleHeaderClick = () => {
-    if (currentView === "days") {
-      setCurrentView("months");
+    if (currentView === 'days') {
+      setCurrentView('months');
       setHighlightedDate(null);
       setHighlightedMonth(value ? value.getMonth() : 0);
-    } else if (currentView === "months") {
-      setCurrentView("years");
+    } else if (currentView === 'months') {
+      setCurrentView('years');
       setHighlightedMonth(null);
       setHighlightedYear(
         value ? value.getFullYear() : displayDate.getFullYear()
       );
     }
     calculatePosition?.();
-    
+
     // Focus portal after state update
     setTimeout(() => {
-      const portalElement = document.querySelector('[tabindex="0"]') as HTMLElement;
+      const portalElement = document.querySelector(
+        '[tabindex="0"]'
+      ) as HTMLElement;
       if (portalElement) {
         portalElement.focus();
       }
@@ -61,7 +63,7 @@ const DatepickerContent: React.FC<{
 
   const renderCalendarContent = () => {
     switch (currentView) {
-      case "days":
+      case 'days':
         return (
           <DaysGrid
             displayDate={displayDate}
@@ -73,7 +75,7 @@ const DatepickerContent: React.FC<{
             onDateHighlight={setHighlightedDate}
           />
         );
-      case "months":
+      case 'months':
         return (
           <MonthsGrid
             displayDate={displayDate}
@@ -85,7 +87,7 @@ const DatepickerContent: React.FC<{
             onMonthHighlight={setHighlightedMonth}
           />
         );
-      case "years":
+      case 'years':
         return (
           <YearsGrid
             displayDate={displayDate}
@@ -110,13 +112,13 @@ const DatepickerContent: React.FC<{
         inputClassName={inputClassName}
         label={label}
       />
-      
+
       <CalendarPortal>
         <CalendarHeader
           currentView={currentView}
           displayDate={displayDate}
-          onNavigatePrev={() => navigateViewDate("prev")}
-          onNavigateNext={() => navigateViewDate("next")}
+          onNavigatePrev={() => navigateViewDate('prev')}
+          onNavigateNext={() => navigateViewDate('next')}
           onHeaderClick={handleHeaderClick}
         />
         {renderCalendarContent()}

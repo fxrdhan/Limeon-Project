@@ -1,5 +1,5 @@
-import { createContext, useContext } from "react";
-import type { ModalMode, VersionData, EntityModalContextValue } from "../types";
+import { createContext, useContext } from 'react';
+import type { ModalMode, VersionData, EntityModalContextValue } from '../types';
 
 // Re-export for backward compatibility
 export type { ModalMode, VersionData, EntityModalContextValue };
@@ -12,7 +12,7 @@ export const EntityModalProvider = EntityModalContext.Provider;
 export const useEntityModal = () => {
   const context = useContext(EntityModalContext);
   if (!context) {
-    throw new Error("useEntityModal must be used within EntityModalProvider");
+    throw new Error('useEntityModal must be used within EntityModalProvider');
   }
   return context;
 };
