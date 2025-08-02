@@ -6,7 +6,7 @@ import type { EntityData } from "../../../shared/types";
 interface UseEntityModalLogicProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { id?: string; kode?: string; name: string; description: string }) => Promise<void>;
+  onSubmit: (data: { id?: string; kode?: string; name: string; description?: string; address?: string }) => Promise<void>;
   onDelete?: (id: string) => void;
   initialData?: EntityData | null;
   initialNameFromSearch?: string;
@@ -29,6 +29,7 @@ export const useEntityModalLogic = ({
   const [kode, setKode] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [address, setAddress] = useState("");
   const [mode, setMode] = useState<ModalMode>('add');
   const [historyData, setHistoryData] = useState({
     entityTable: '',
@@ -55,9 +56,10 @@ export const useEntityModalLogic = ({
     return (
       kode !== (initialData?.kode || "") ||
       name !== (initialData?.name || "") ||
-      description !== (initialData?.description || "")
+      description !== (initialData?.description || "") ||
+      address !== (initialData?.address || "")
     );
-  }, [kode, name, description, isEditMode, initialData]);
+  }, [kode, name, description, address, isEditMode, initialData]);
 
   // Check if form is valid
   const isValid = useMemo(() => {
@@ -69,6 +71,7 @@ export const useEntityModalLogic = ({
     setKode("");
     setName("");
     setDescription("");
+    setAddress("");
   }, []);
 
   // Initialize mode and form data when modal opens
@@ -82,10 +85,12 @@ export const useEntityModalLogic = ({
         setKode(initialData.kode || "");
         setName(initialData.name);
         setDescription(initialData.description || "");
+        setAddress(initialData.address || "");
       } else if (initialNameFromSearch) {
         setKode("");
         setName(initialNameFromSearch);
         setDescription("");
+        setAddress("");
       } else {
         resetForm();
       }
@@ -116,14 +121,22 @@ export const useEntityModalLogic = ({
       alert(`Kode dan nama ${entityName.toLowerCase()} tidak boleh kosong.`);
       return;
     }
-    const submitData: { id?: string; kode?: string; name: string; description: string } = { 
+    const submitData: { id?: string; kode?: string; name: string; description?: string; address?: string } = { 
       id: initialData?.id, 
       kode: kode.trim(),
-      name: name.trim(), 
-      description: description.trim() 
+      name: name.trim()
     };
+    
+    if (description.trim()) {
+      submitData.description = description.trim();
+    }
+    
+    if (address.trim()) {
+      submitData.address = address.trim();
+    }
+    
     await onSubmit(submitData);
-  }, [kode, name, description, isValid, entityName, onSubmit, initialData]);
+  }, [kode, name, description, address, isValid, entityName, onSubmit, initialData]);
 
   const handleDelete = useCallback(() => {
     if (initialData?.id && onDelete) {
@@ -241,6 +254,7 @@ export const useEntityModalLogic = ({
       kode,
       name,
       description,
+      address,
       isDirty,
       isValid,
     },
@@ -272,6 +286,7 @@ export const useEntityModalLogic = ({
       setKode,
       setName,
       setDescription,
+      setAddress,
       handleSubmit,
       handleDelete,
       resetForm,

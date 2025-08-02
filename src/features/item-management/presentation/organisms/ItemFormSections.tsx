@@ -58,6 +58,7 @@ const BasicInfoSection: React.FC = () => {
   } = useItemForm();
 
   const { resetKey } = useItemUI();
+  const { unitConversionHook } = useItemPrice();
 
   const { handleAddNewCategory, handleAddNewType, handleAddNewUnit, handleAddNewDosage } =
     useItemModal();
@@ -90,6 +91,11 @@ const BasicInfoSection: React.FC = () => {
       updateFormData({ type_id: value });
     } else if (field === "unit_id") {
       updateFormData({ unit_id: value });
+      // Also update baseUnit for unit conversion synchronization
+      const selectedUnit = units.find(unit => unit.id === value);
+      if (selectedUnit) {
+        unitConversionHook.setBaseUnit(selectedUnit.name);
+      }
     } else if (field === "dosage_id") {
       updateFormData({ dosage_id: value });
     }
@@ -247,13 +253,16 @@ const UnitConversionSection: React.FC = () => {
     formData: unitConversionHook.unitConversionFormData,
     addUnitConversion: unitConversionHook.addUnitConversion,
     setFormData: unitConversionHook.setUnitConversionFormData,
+    baseUnit: unitConversionHook.baseUnit,
   });
 
   const handleAddConversion = () => {
     const result = unitConversionLogic.validateAndAddConversion();
     if (!result.success && result.error) {
-      // Skip error handling for now as requested
-      console.warn(result.error);
+      // Show validation errors to user - unit selection is now handled by dropdown validation
+      if (result.error !== "Silakan pilih satuan!") {
+        alert(result.error);
+      }
     }
   };
 

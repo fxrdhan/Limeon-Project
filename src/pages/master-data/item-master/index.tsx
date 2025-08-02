@@ -29,7 +29,7 @@ import SearchToolbar from "@/features/shared/components/SearchToolbar";
 import { ItemDataTable } from "@/features/item-management/presentation/organisms";
 import { useItemGridColumns } from "@/features/item-management/application/hooks/ui";
 
-type MasterDataType = "categories" | "types" | "units" | "dosages" | "items";
+type MasterDataType = "categories" | "types" | "units" | "dosages" | "manufacturers" | "items";
 type MasterDataEntity = Category | MedicineType | Unit | ItemDataType;
 
 interface TabConfig {
@@ -84,6 +84,16 @@ const tabConfigs: Record<MasterDataType, TabConfig> = {
     noDataMessage: "Tidak ada data sediaan yang ditemukan",
     searchNoDataMessage: "Tidak ada sediaan dengan kata kunci",
   },
+  manufacturers: {
+    key: "manufacturers",
+    label: "Produsen",
+    entityName: "Produsen",
+    addButtonText: "Tambah Produsen Baru",
+    searchPlaceholder: "Cari nama atau alamat produsen",
+    nameColumnHeader: "Nama Produsen",
+    noDataMessage: "Tidak ada data produsen yang ditemukan",
+    searchNoDataMessage: "Tidak ada produsen dengan kata kunci",
+  },
   items: {
     key: "items",
     label: "Item",
@@ -97,7 +107,7 @@ const tabConfigs: Record<MasterDataType, TabConfig> = {
 };
 
 // Define tab order with items first
-const tabOrder: MasterDataType[] = ["items", "categories", "types", "units", "dosages"];
+const tabOrder: MasterDataType[] = ["items", "categories", "types", "units", "dosages", "manufacturers"];
 
 const ItemMasterNew = () => {
   const [activeTab, setActiveTab] = useState<MasterDataType>("items");
@@ -134,6 +144,8 @@ const ItemMasterNew = () => {
         return "item_units";
       case "dosages":
         return "item_dosages";
+      case "manufacturers":
+        return "item_manufacturers";
       case "items":
         return "items";
     }
@@ -160,6 +172,10 @@ const ItemMasterNew = () => {
     searchInputRef,
     activeTableName: getTableNameFromTab(activeTab),
   });
+  const manufacturersManagement = useMasterDataManagement("item_manufacturers", "Produsen", {
+    searchInputRef,
+    activeTableName: getTableNameFromTab(activeTab),
+  });
   const itemsManagement = useMasterDataManagement("items", "Item", {
     searchInputRef,
     activeTableName: getTableNameFromTab(activeTab),
@@ -176,6 +192,8 @@ const ItemMasterNew = () => {
         return unitsManagement;
       case "dosages":
         return dosagesManagement;
+      case "manufacturers":
+        return manufacturersManagement;
       case "items":
         return itemsManagement;
     }
@@ -310,10 +328,13 @@ const ItemMasterNew = () => {
     }),
     createTextColumn({
       field: "description",
-      headerName: "Deskripsi",
+      headerName: activeTab === "manufacturers" ? "Alamat" : "Deskripsi",
       minWidth: 200,
       flex: 1,
       valueGetter: (params) => {
+        if (activeTab === "manufacturers") {
+          return params.data.address || "-";
+        }
         return params.data.description || "-";
       },
     }),
@@ -486,14 +507,28 @@ const ItemMasterNew = () => {
             onSubmit={async (formData: {
               kode?: string;
               name: string;
-              description: string;
+              description?: string;
+              address?: string;
             }) => {
-              await handleModalSubmit({
+              const submitData: {
+                kode: string;
+                name: string;
+                description?: string;
+                address?: string;
+                id?: string;
+              } = {
                 kode: String(formData.kode || ""),
                 name: String(formData.name || ""),
-                description: String(formData.description || ""),
                 id: undefined,
-              });
+              };
+              
+              if (activeTab === "manufacturers") {
+                submitData.address = String(formData.address || "");
+              } else {
+                submitData.description = String(formData.description || "");
+              }
+              
+              await handleModalSubmit(submitData);
             }}
             isLoading={false}
             entityName={currentConfig.entityName}
@@ -507,14 +542,28 @@ const ItemMasterNew = () => {
             onSubmit={async (formData: {
               kode?: string;
               name: string;
-              description: string;
+              description?: string;
+              address?: string;
             }) => {
-              await handleModalSubmit({
+              const submitData: {
+                kode: string;
+                name: string;
+                description?: string;
+                address?: string;
+                id?: string;
+              } = {
                 kode: String(formData.kode || ""),
                 name: String(formData.name || ""),
-                description: String(formData.description || ""),
                 id: editingItem?.id,
-              });
+              };
+              
+              if (activeTab === "manufacturers") {
+                submitData.address = String(formData.address || "");
+              } else {
+                submitData.description = String(formData.description || "");
+              }
+              
+              await handleModalSubmit(submitData);
             }}
             initialData={
               (editingItem as Category | MedicineType | Unit) || undefined

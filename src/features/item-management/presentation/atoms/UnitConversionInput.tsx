@@ -57,9 +57,9 @@ export default function UnitConversionInput({
         1 {baseUnit || "Satuan Dasar"} setara berapa satuan turunan?
       </p>
       <div className="flex flex-row gap-4 mb-3">
-        <FormField label="Satuan Turunan" className="flex-1">
+        <FormField label="Satuan Turunan" className="flex-1" required={true}>
           <Dropdown
-            name="unit"
+            name="unit_conversion"
             tabIndex={tabIndex}
             value={
               availableUnits.find((u) => u.name === formData.unit)?.id || ""
@@ -70,6 +70,11 @@ export default function UnitConversionInput({
               name: unit.name,
             }))}
             placeholder="-- Pilih Satuan --"
+            required
+            validate={true}
+            showValidationOnBlur={true}
+            validationAutoHide={true}
+            validationAutoHideDelay={3000}
           />
         </FormField>
         <FormField

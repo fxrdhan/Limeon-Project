@@ -53,3 +53,12 @@ export interface ItemDosage {
   created_at: string;
   updated_at: string;
 }
+
+export interface ItemManufacturer {
+  id: string;
+  kode?: string;
+  name: string;
+  address?: string;
+  created_at: string;
+  updated_at: string;
+}

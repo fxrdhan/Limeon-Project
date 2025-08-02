@@ -7,6 +7,7 @@ import type {
   ItemType,
   Unit,
   Item,
+  ItemManufacturer,
   Supplier,
   Patient,
   Doctor,
@@ -24,6 +25,8 @@ import {
   useUnitMutations,
   useDosagesRealtime,
   useDosageMutations,
+  useManufacturersRealtime,
+  useManufacturerMutations,
   useSuppliers,
   useSupplierMutations,
   useItemsRealtime,
@@ -34,7 +37,7 @@ import {
   useDoctorMutations,
 } from "@/hooks/queries";
 
-type MasterDataItem = Category | ItemType | Unit | ItemDosage | Item | Supplier | Patient | Doctor;
+type MasterDataItem = Category | ItemType | Unit | ItemDosage | ItemManufacturer | Item | Supplier | Patient | Doctor;
 
 // Hook selector factory to get the right hooks for each table
 // Always use the same hooks to avoid hooks order violations
@@ -66,6 +69,11 @@ const getHooksForTable = (tableName: string, isRealtimeEnabled: boolean) => {
       return {
         useData: (options: QueryOptions) => useDosagesRealtime({ ...options, enabled: isRealtimeEnabled }),
         useMutations: useDosageMutations,
+      };
+    case "item_manufacturers":
+      return {
+        useData: (options: QueryOptions) => useManufacturersRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useMutations: useManufacturerMutations,
       };
     case "suppliers":
       return {
@@ -268,6 +276,11 @@ export const useMasterDataManagement = (
               typeof item.description === "string" &&
               fuzzyMatch(item.description, searchTermLower)
             ) return true;
+            if (
+              "address" in item &&
+              typeof item.address === "string" &&
+              fuzzyMatch(item.address, searchTermLower)
+            ) return true;
             
             if (tableName === "suppliers") {
               const supplier = item as Supplier;
@@ -343,7 +356,7 @@ export const useMasterDataManagement = (
   }, []);
 
   const handleModalSubmit = useCallback(
-    async (itemData: { id?: string; kode?: string; name: string; description?: string }) => {
+    async (itemData: { id?: string; kode?: string; name: string; description?: string; address?: string }) => {
       try {
         if (itemData.id) {
           // Update existing item
@@ -357,7 +370,13 @@ export const useMasterDataManagement = (
                                ("updateMutation" in mutations && mutations.updateMutation);
           
           if (updateMutation && typeof updateMutation === 'object' && 'mutateAsync' in updateMutation) {
-            const updateData: Record<string, unknown> = { name: itemData.name, description: itemData.description };
+            const updateData: Record<string, unknown> = { name: itemData.name };
+            if (itemData.description !== undefined) {
+              updateData.description = itemData.description;
+            }
+            if (itemData.address !== undefined) {
+              updateData.address = itemData.address;
+            }
             if (itemData.kode !== undefined) {
               updateData.kode = itemData.kode;
             }
@@ -389,7 +408,13 @@ export const useMasterDataManagement = (
                                ("createMutation" in mutations && mutations.createMutation);
           
           if (createMutation && typeof createMutation === 'object' && 'mutateAsync' in createMutation) {
-            const createData: Record<string, unknown> = { name: itemData.name, description: itemData.description };
+            const createData: Record<string, unknown> = { name: itemData.name };
+            if (itemData.description !== undefined) {
+              createData.description = itemData.description;
+            }
+            if (itemData.address !== undefined) {
+              createData.address = itemData.address;
+            }
             if (itemData.kode !== undefined) {
               createData.kode = itemData.kode;
             }
@@ -465,9 +490,9 @@ export const useMasterDataManagement = (
 
   // Create mutation objects with consistent interface for backward compatibility
   const addMutation = {
-    mutate: (data: { kode?: string; name: string; description?: string }) => 
+    mutate: (data: { kode?: string; name: string; description?: string; address?: string }) => 
       handleModalSubmit(data),
-    mutateAsync: (data: { kode?: string; name: string; description?: string }) => 
+    mutateAsync: (data: { kode?: string; name: string; description?: string; address?: string }) => 
       handleModalSubmit(data),
     isLoading: Object.values(mutations).some((mutation: unknown) => {
       const m = mutation as { isLoading?: boolean; isPending?: boolean };
@@ -483,9 +508,9 @@ export const useMasterDataManagement = (
   };
 
   const updateMutation = {
-    mutate: (data: { id: string; kode?: string; name: string; description?: string }) => 
+    mutate: (data: { id: string; kode?: string; name: string; description?: string; address?: string }) => 
       handleModalSubmit(data),
-    mutateAsync: (data: { id: string; kode?: string; name: string; description?: string }) => 
+    mutateAsync: (data: { id: string; kode?: string; name: string; description?: string; address?: string }) => 
       handleModalSubmit(data),
     isLoading: Object.values(mutations).some((mutation: unknown) => {
       const m = mutation as { isLoading?: boolean; isPending?: boolean };

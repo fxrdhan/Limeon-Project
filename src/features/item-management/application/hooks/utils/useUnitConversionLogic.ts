@@ -9,13 +9,18 @@ interface UseUnitConversionLogicProps {
   setFormData: (data: UnitConversionLogicFormData) => void;
 }
 
+interface UseUnitConversionLogicPropsExtended extends UseUnitConversionLogicProps {
+  baseUnit?: string;
+}
+
 export const useUnitConversionLogic = ({
   conversions,
   availableUnits,
   formData,
   addUnitConversion,
   setFormData,
-}: UseUnitConversionLogicProps) => {
+  baseUnit,
+}: UseUnitConversionLogicPropsExtended) => {
   const validateAndAddConversion = useCallback(() => {
     // Validate unit selection
     if (!formData.unit) {
@@ -25,6 +30,11 @@ export const useUnitConversionLogic = ({
     // Validate conversion value
     if (formData.conversion <= 0) {
       return { success: false, error: "Nilai konversi harus lebih dari 0!" };
+    }
+
+    // Check if selected unit is the same as base unit
+    if (baseUnit && formData.unit === baseUnit) {
+      return { success: false, error: "Satuan turunan tidak boleh sama dengan satuan utama!" };
     }
 
     // Check for duplicate units
@@ -64,7 +74,7 @@ export const useUnitConversionLogic = ({
     });
 
     return { success: true };
-  }, [conversions, availableUnits, formData, addUnitConversion, setFormData]);
+  }, [conversions, availableUnits, formData, addUnitConversion, setFormData, baseUnit]);
 
   return {
     validateAndAddConversion,

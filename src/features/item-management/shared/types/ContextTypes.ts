@@ -94,22 +94,26 @@ export interface ItemBusinessActions {
   handleSaveCategory: (data: {
     kode?: string;
     name: string;
-    description: string;
+    description?: string;
+    address?: string;
   }) => Promise<void>;
   handleSaveType: (data: {
     kode?: string;
     name: string;
-    description: string;
+    description?: string;
+    address?: string;
   }) => Promise<void>;
   handleSaveUnit: (data: {
     kode?: string;
     name: string;
-    description: string;
+    description?: string;
+    address?: string;
   }) => Promise<void>;
   handleSaveDosage: (data: {
     kode?: string;
     name: string;
-    description: string;
+    description?: string;
+    address?: string;
   }) => Promise<void>;
 }
 
@@ -144,6 +148,7 @@ export interface EntityModalContextValue {
     kode?: string;
     name: string;
     description: string;
+    address?: string;
     isDirty: boolean;
     isValid: boolean;
   };
@@ -178,6 +183,7 @@ export interface EntityModalContextValue {
     setKode?: (kode: string) => void;
     setName: (name: string) => void;
     setDescription: (description: string) => void;
+    setAddress?: (address: string) => void;
     handleSubmit: () => Promise<void>;
     handleDelete: () => void;
     resetForm: () => void;

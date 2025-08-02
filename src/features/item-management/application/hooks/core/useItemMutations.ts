@@ -20,7 +20,7 @@ export const useAddItemMutations = ({
    * Mutation for adding new categories
    */
   const addCategoryMutation = useMutation({
-    mutationFn: async (newCategory: { name: string; description: string }) => {
+    mutationFn: async (newCategory: { kode?: string; name: string; description?: string; address?: string }) => {
       const { data, error } = await supabase
         .from("item_categories")
         .insert(newCategory)
@@ -41,7 +41,7 @@ export const useAddItemMutations = ({
    * Mutation for adding new item types
    */
   const addTypeMutation = useMutation({
-    mutationFn: async (newType: { name: string; description: string }) => {
+    mutationFn: async (newType: { kode?: string; name: string; description?: string; address?: string }) => {
       const { data, error } = await supabase
         .from("item_types")
         .insert(newType)
@@ -62,7 +62,7 @@ export const useAddItemMutations = ({
    * Mutation for adding new units
    */
   const addUnitMutation = useMutation({
-    mutationFn: async (newUnit: { name: string; description: string }) => {
+    mutationFn: async (newUnit: { kode?: string; name: string; description?: string; address?: string }) => {
       const { data, error } = await supabase
         .from("item_units")
         .insert(newUnit)
@@ -83,7 +83,7 @@ export const useAddItemMutations = ({
    * Mutation for adding new dosages (sediaan)
    */
   const addDosageMutation = useMutation({
-    mutationFn: async (newDosage: { kode?: string; name: string; description: string }) => {
+    mutationFn: async (newDosage: { kode?: string; name: string; description?: string; address?: string }) => {
       const { data, error } = await supabase
         .from("item_dosages")
         .insert(newDosage)
@@ -280,7 +280,7 @@ export const useAddItemMutations = ({
   /**
    * Helper functions for saving related entities
    */
-  const saveCategory = async (categoryData: { name: string; description: string }) => {
+  const saveCategory = async (categoryData: { kode?: string; name: string; description?: string; address?: string }) => {
     try {
       const newCategory = await addCategoryMutation.mutateAsync(categoryData);
       const { data: updatedCategories } = await supabase
@@ -295,7 +295,7 @@ export const useAddItemMutations = ({
     }
   };
 
-  const saveType = async (typeData: { name: string; description: string }) => {
+  const saveType = async (typeData: { kode?: string; name: string; description?: string; address?: string }) => {
     try {
       const newType = await addTypeMutation.mutateAsync(typeData);
       const { data: updatedTypes } = await supabase
@@ -310,7 +310,7 @@ export const useAddItemMutations = ({
     }
   };
 
-  const saveUnit = async (unitData: { name: string; description: string }) => {
+  const saveUnit = async (unitData: { kode?: string; name: string; description?: string; address?: string }) => {
     try {
       const newUnit = await addUnitMutation.mutateAsync(unitData);
       const { data: updatedUnits } = await supabase
@@ -325,7 +325,7 @@ export const useAddItemMutations = ({
     }
   };
 
-  const saveDosage = async (dosageData: { kode?: string; name: string; description: string }) => {
+  const saveDosage = async (dosageData: { kode?: string; name: string; description?: string; address?: string }) => {
     try {
       const newDosage = await addDosageMutation.mutateAsync(dosageData);
       const { data: updatedDosages } = await supabase

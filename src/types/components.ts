@@ -213,8 +213,10 @@ export interface AddEditModalProps {
   onClose: () => void;
   onSubmit: (category: {
     id?: string;
+    kode?: string;
     name: string;
-    description: string;
+    description?: string;
+    address?: string;
   }) => Promise<void>;
   initialData?: Category | null;
   onDelete?: (categoryId: string) => void;

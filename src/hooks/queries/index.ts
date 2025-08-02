@@ -16,11 +16,16 @@ export {
   useMedicineTypesRealtime, 
   useUnitsRealtime,
   useItemsRealtime,
-  useDosagesRealtime
+  useDosagesRealtime,
+  useManufacturersRealtime
 } from './useMasterDataRealtime';
 export { 
   useDosageMutations
 } from './useDosages';
+export {
+  useManufacturerMutations,
+  useManufacturers
+} from './useManufacturers';
 export * from './usePurchases';
 export {
   useDashboardStats,

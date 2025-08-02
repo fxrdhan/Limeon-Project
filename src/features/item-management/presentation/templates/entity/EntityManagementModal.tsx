@@ -8,7 +8,7 @@ import EntityModalContent from "./EntityModalContent";
 import { ComparisonModal } from "../comparison";
 import type { AddEditModalProps } from "@/types";
 
-interface EntityManagementModalProps extends AddEditModalProps {}
+type EntityManagementModalProps = AddEditModalProps;
 
 const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
   isOpen,
@@ -34,6 +34,8 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
         return 'item_units';
       case 'sediaan':
         return 'item_dosages';
+      case 'produsen':
+        return 'item_manufacturers';
       default:
         return '';
     }

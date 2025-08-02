@@ -9,10 +9,10 @@ interface EntityFormFieldsProps {
 
 const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef }) => {
   const { form, ui, action, formActions } = useEntityModal();
-  const { kode, name, description } = form;
+  const { kode, name, description, address } = form;
   const { entityName } = ui;
   const { isLoading, isDeleting } = action;
-  const { setKode, setName, setDescription } = formActions;
+  const { setKode, setName, setDescription, setAddress } = formActions;
 
   const isReadOnly = isLoading || isDeleting;
 
@@ -39,18 +39,33 @@ const EntityFormFields: React.FC<EntityFormFieldsProps> = ({ nameInputRef }) => 
         readOnly={isReadOnly}
       />
 
-      <DescriptiveTextarea
-        label="Deskripsi"
-        name="description"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Masukkan deskripsi singkat"
-        readOnly={isReadOnly}
-        textareaClassName="text-sm min-h-[80px] resize-none"
-        rows={3}
-        showInitially={!!description}
-        expandOnClick={true}
-      />
+      {entityName === "Produsen" ? (
+        <DescriptiveTextarea
+          label="Alamat"
+          name="address"
+          value={address || ''}
+          onChange={(e) => setAddress && setAddress(e.target.value)}
+          placeholder="Masukkan alamat produsen"
+          readOnly={isReadOnly}
+          textareaClassName="text-sm min-h-[80px] resize-none"
+          rows={3}
+          showInitially={!!address}
+          expandOnClick={true}
+        />
+      ) : (
+        <DescriptiveTextarea
+          label="Deskripsi"
+          name="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Masukkan deskripsi singkat"
+          readOnly={isReadOnly}
+          textareaClassName="text-sm min-h-[80px] resize-none"
+          rows={3}
+          showInitially={!!description}
+          expandOnClick={true}
+        />
+      )}
     </div>
   );
 };
