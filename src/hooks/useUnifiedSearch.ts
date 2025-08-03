@@ -1,7 +1,7 @@
 import { useCallback, useMemo, ChangeEvent } from 'react';
 import { GridReadyEvent, IRowNode } from 'ag-grid-community';
 import { useEnhancedAgGridSearch } from './useEnhancedAgGridSearch';
-import { SearchColumn, TargetedSearch } from '@/types/search';
+import { SearchColumn, TargetedSearch, FilterSearch } from '@/types/search';
 import { getSearchState } from '@/utils/search';
 
 export interface UseUnifiedSearchOptions {
@@ -12,6 +12,7 @@ export interface UseUnifiedSearchOptions {
   onSearch?: (searchValue: string) => void;
   onClear?: () => void;
   externalSearchHandler?: (e: ChangeEvent<HTMLInputElement>) => void;
+  onFilterSearch?: (filterSearch: FilterSearch | null) => void; // AG Grid filter callback
 }
 
 export interface UnifiedSearchReturn {
@@ -36,6 +37,7 @@ export interface UnifiedSearchReturn {
     onTargetedSearch: (targetedSearch: TargetedSearch | null) => void;
     onGlobalSearch: (searchValue: string) => void;
     onClearSearch: () => void;
+    onFilterSearch: (filterSearch: FilterSearch | null) => void;
     searchState: ReturnType<typeof getSearchState>;
     columns: SearchColumn[];
     placeholder?: string;
@@ -58,6 +60,7 @@ export function useUnifiedSearch({
   onSearch,
   onClear,
   externalSearchHandler,
+  onFilterSearch,
 }: UseUnifiedSearchOptions): UnifiedSearchReturn {
   const {
     search,
@@ -217,6 +220,7 @@ export function useUnifiedSearch({
       onTargetedSearch: handleTargetedSearch,
       onGlobalSearch: handleGlobalSearch,
       onClearSearch: handleClearSearch,
+      onFilterSearch: onFilterSearch || (() => {}),
       searchState,
       columns,
     }),
@@ -226,6 +230,7 @@ export function useUnifiedSearch({
       handleTargetedSearch,
       handleGlobalSearch,
       handleClearSearch,
+      onFilterSearch,
       searchState,
       columns,
     ]
