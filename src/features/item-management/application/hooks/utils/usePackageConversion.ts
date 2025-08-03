@@ -10,7 +10,9 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
   const [baseUnit, setBaseUnit] = useState<string>('');
   const [basePrice, setBasePrice] = useState<number>(0);
   const [sellPrice, setSellPrice] = useState<number>(0);
-  const [packageConversions, setPackageConversions] = useState<PackageConversion[]>([]);
+  const [packageConversions, setPackageConversions] = useState<
+    PackageConversion[]
+  >([]);
   const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
   const [skipRecalculation, setSkipRecalculation] = useState<boolean>(false);
 

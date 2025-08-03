@@ -1,10 +1,10 @@
 /**
  * Unified Diff Test Suite
- * 
+ *
  * Consolidated testing tool for diff analyzer functionality.
  * Replaces: debug-diff-test.ts, quick-diff-test.ts, simple-diff-test.ts, test-diff-analyzer.ts
  * Uses: diff-test-dictionary.ts (test cases library)
- * 
+ *
  * Usage:
  *   yarn tsx scripts/unified-diff-test.ts                           # Run comprehensive test suite
  *   yarn tsx scripts/unified-diff-test.ts --interactive             # Interactive mode
@@ -16,10 +16,10 @@
  *   yarn tsx scripts/unified-diff-test.ts --id abbrev_001           # Run specific test case
  */
 
-import { 
-  DIFF_TEST_DICTIONARY, 
-  DiffTestCase, 
-  getAllCategories 
+import {
+  DIFF_TEST_DICTIONARY,
+  DiffTestCase,
+  getAllCategories,
 } from './diff-test-dictionary';
 import * as readline from 'readline';
 
@@ -90,14 +90,18 @@ function formatSegments(segments: DiffSegment[]): string {
 /**
  * Call the diff analyzer edge function
  */
-async function callDiffAnalyzer(oldText: string, newText: string): Promise<ApiResult> {
+async function callDiffAnalyzer(
+  oldText: string,
+  newText: string
+): Promise<ApiResult> {
   const response = await fetch(
     'https://psqmckbtwqphcteymjil.supabase.co/functions/v1/diff-analyzer',
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzcW1ja2J0d3FwaGN0ZXltamlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxOTQ2MjAsImV4cCI6MjA1Nzc3MDYyMH0.wvxpldpaoanDk9Wd7wDUeeCuMSVw9e0pxE7_BMt823s',
+        Authorization:
+          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzcW1ja2J0d3FwaGN0ZXltamlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxOTQ2MjAsImV4cCI6MjA1Nzc3MDYyMH0.wvxpldpaoanDk9Wd7wDUeeCuMSVw9e0pxE7_BMt823s',
       },
       body: JSON.stringify({ oldText, newText }),
     }
@@ -113,9 +117,13 @@ async function callDiffAnalyzer(oldText: string, newText: string): Promise<ApiRe
 /**
  * Detect which diff mode was actually used (based on segment patterns)
  */
-function detectActualMode(oldText: string, newText: string, segments: DiffSegment[]): 'character' | 'word' | 'smart' {
+function detectActualMode(
+  oldText: string,
+  newText: string,
+  segments: DiffSegment[]
+): 'character' | 'word' | 'smart' {
   if (oldText === newText) return 'smart';
-  
+
   const changeSegments = segments.filter(s => s.type !== 'unchanged');
   if (changeSegments.length === 0) return 'smart';
 
@@ -123,7 +131,12 @@ function detectActualMode(oldText: string, newText: string, segments: DiffSegmen
   if (segments.length === 2 && changeSegments.length === 2) {
     const removed = segments.find(s => s.type === 'removed');
     const added = segments.find(s => s.type === 'added');
-    if (removed && added && !removed.text.includes(' ') && !added.text.includes(' ')) {
+    if (
+      removed &&
+      added &&
+      !removed.text.includes(' ') &&
+      !added.text.includes(' ')
+    ) {
       return 'word';
     }
   }
@@ -136,14 +149,18 @@ function detectActualMode(oldText: string, newText: string, segments: DiffSegmen
     }
   }
 
-  const hasOnlySmallChangeSegments = changeSegments.every(s => s.text.length <= 3);
+  const hasOnlySmallChangeSegments = changeSegments.every(
+    s => s.text.length <= 3
+  );
   if (alternatingCount > segments.length * 0.6 && hasOnlySmallChangeSegments) {
     return 'character';
   }
 
   // Default to word-level for multi-word segments or larger changes
   const hasMultiWordSegments = changeSegments.some(s => s.text.includes(' '));
-  const hasVerySmallSegments = changeSegments.some(s => s.text.length <= 2 && !s.text.includes(' '));
+  const hasVerySmallSegments = changeSegments.some(
+    s => s.text.length <= 2 && !s.text.includes(' ')
+  );
 
   return hasMultiWordSegments || !hasVerySmallSegments ? 'word' : 'character';
 }
@@ -151,7 +168,10 @@ function detectActualMode(oldText: string, newText: string, segments: DiffSegmen
 /**
  * Check for accuracy issues
  */
-function checkAccuracy(testCase: DiffTestCase, segments: DiffSegment[]): string | null {
+function checkAccuracy(
+  testCase: DiffTestCase,
+  segments: DiffSegment[]
+): string | null {
   const reconstructedOld = segments
     .filter(s => s.type !== 'added')
     .map(s => s.text)
@@ -179,7 +199,7 @@ function checkAccuracy(testCase: DiffTestCase, segments: DiffSegment[]): string 
 function checkFragmentation(segments: DiffSegment[]): string | null {
   const changeSegments = segments.filter(s => s.type !== 'unchanged');
   const smallSegments = changeSegments.filter(s => s.text.length <= 2);
-  
+
   if (smallSegments.length > 3) {
     return `Over-fragmentation: ${smallSegments.length} segments with ≤2 characters`;
   }
@@ -192,7 +212,7 @@ function checkFragmentation(segments: DiffSegment[]): string | null {
  */
 async function runSingleTest(testCase: DiffTestCase): Promise<TestResult> {
   const startTime = performance.now();
-  
+
   let segments: DiffSegment[];
   try {
     const result = await callDiffAnalyzer(testCase.oldText, testCase.newText);
@@ -211,13 +231,20 @@ async function runSingleTest(testCase: DiffTestCase): Promise<TestResult> {
 
   const endTime = performance.now();
   const executionTime = endTime - startTime;
-  const actualMode = detectActualMode(testCase.oldText, testCase.newText, segments);
+  const actualMode = detectActualMode(
+    testCase.oldText,
+    testCase.newText,
+    segments
+  );
 
   const issues: string[] = [];
   let passed = true;
 
   // Check mode selection
-  if (testCase.expectedMode !== 'smart' && actualMode !== testCase.expectedMode) {
+  if (
+    testCase.expectedMode !== 'smart' &&
+    actualMode !== testCase.expectedMode
+  ) {
     issues.push(`Expected ${testCase.expectedMode} mode, got ${actualMode}`);
     passed = false;
   }
@@ -250,7 +277,9 @@ async function runSingleTest(testCase: DiffTestCase): Promise<TestResult> {
  * Test specific pair via API
  */
 async function testApiPair(oldText: string, newText: string) {
-  console.log(`${colors.blue}🔍 API Testing: "${oldText}" → "${newText}"${colors.reset}\n`);
+  console.log(
+    `${colors.blue}🔍 API Testing: "${oldText}" → "${newText}"${colors.reset}\n`
+  );
 
   try {
     const startTime = Date.now();
@@ -258,92 +287,162 @@ async function testApiPair(oldText: string, newText: string) {
     const endTime = Date.now();
     const requestTime = endTime - startTime;
 
-    console.log(`${colors.green}✅ Success${colors.reset} (${requestTime}ms request, ${result.meta.processingTime}ms server, ${result.meta.fromCache ? 'cached' : 'computed'})`);
+    console.log(
+      `${colors.green}✅ Success${colors.reset} (${requestTime}ms request, ${result.meta.processingTime}ms server, ${result.meta.fromCache ? 'cached' : 'computed'})`
+    );
     console.log(`Diff: ${formatSegments(result.segments)}\n`);
 
     // Analysis details
     console.log(`${colors.bold}📊 Analysis:${colors.reset}`);
-    console.log(`  Word similarity: ${(result.analysis.wordSimilarity * 100).toFixed(1)}%`);
-    console.log(`  Char similarity: ${(result.analysis.characterSimilarity * 100).toFixed(1)}%`);
-    console.log(`  Change ratio: ${(result.analysis.changeRatio * 100).toFixed(1)}%`);
+    console.log(
+      `  Word similarity: ${(result.analysis.wordSimilarity * 100).toFixed(1)}%`
+    );
+    console.log(
+      `  Char similarity: ${(result.analysis.characterSimilarity * 100).toFixed(1)}%`
+    );
+    console.log(
+      `  Change ratio: ${(result.analysis.changeRatio * 100).toFixed(1)}%`
+    );
 
     const flags = [];
-    if (result.analysis.hasAbbreviationExpansion) flags.push('abbreviation expansion');
-    if (result.analysis.hasRepeatedCharCorrection) flags.push('repeated char correction');
+    if (result.analysis.hasAbbreviationExpansion)
+      flags.push('abbreviation expansion');
+    if (result.analysis.hasRepeatedCharCorrection)
+      flags.push('repeated char correction');
     if (result.analysis.hasCleanWordChanges) flags.push('clean word changes');
-    if (result.analysis.hasPunctuationOnlyChanges) flags.push('punctuation only');
+    if (result.analysis.hasPunctuationOnlyChanges)
+      flags.push('punctuation only');
     if (result.analysis.hasNumberUnitChanges) flags.push('number/unit changes');
     if (result.analysis.hasWordReplacements) flags.push('word replacements');
 
     if (flags.length > 0) {
       console.log(`  Detected: ${flags.join(', ')}`);
     }
-
   } catch (error) {
     console.log(`${colors.red}❌ Failed: ${error.message}${colors.reset}`);
   }
 }
 
-
 /**
  * Debug mode with detailed decision analysis
  */
 async function debugMode(oldText: string, newText: string) {
-  console.log(`${colors.blue}🔍 Debug Analysis: "${oldText}" → "${newText}"${colors.reset}\n`);
+  console.log(
+    `${colors.blue}🔍 Debug Analysis: "${oldText}" → "${newText}"${colors.reset}\n`
+  );
 
   try {
     const result = await callDiffAnalyzer(oldText, newText);
-    
+
     console.log(`${colors.green}✅ Result Received${colors.reset}`);
     console.log(`Diff: ${formatSegments(result.segments)}\n`);
 
     // Detailed analysis breakdown
     console.log(`${colors.bold}📊 Detailed Analysis:${colors.reset}`);
-    console.log(`  Word similarity: ${(result.analysis.wordSimilarity * 100).toFixed(1)}% (${result.analysis.wordSimilarity})`);
-    console.log(`  Char similarity: ${(result.analysis.characterSimilarity * 100).toFixed(1)}% (${result.analysis.characterSimilarity})`);
-    console.log(`  Change ratio: ${(result.analysis.changeRatio * 100).toFixed(1)}% (${result.analysis.changeRatio})\n`);
+    console.log(
+      `  Word similarity: ${(result.analysis.wordSimilarity * 100).toFixed(1)}% (${result.analysis.wordSimilarity})`
+    );
+    console.log(
+      `  Char similarity: ${(result.analysis.characterSimilarity * 100).toFixed(1)}% (${result.analysis.characterSimilarity})`
+    );
+    console.log(
+      `  Change ratio: ${(result.analysis.changeRatio * 100).toFixed(1)}% (${result.analysis.changeRatio})\n`
+    );
 
     console.log(`${colors.bold}🔍 Decision Flags:${colors.reset}`);
-    console.log(`  hasAbbreviationExpansion: ${result.analysis.hasAbbreviationExpansion ? colors.green + 'TRUE' + colors.reset : 'false'}`);
-    console.log(`  hasRepeatedCharCorrection: ${result.analysis.hasRepeatedCharCorrection ? colors.green + 'TRUE' + colors.reset : 'false'}`);
-    console.log(`  hasCleanWordChanges: ${result.analysis.hasCleanWordChanges ? colors.green + 'TRUE' + colors.reset : 'false'}`);
-    console.log(`  hasPunctuationOnlyChanges: ${result.analysis.hasPunctuationOnlyChanges ? colors.green + 'TRUE' + colors.reset : 'false'}`);
-    console.log(`  hasNumberUnitChanges: ${result.analysis.hasNumberUnitChanges ? colors.green + 'TRUE' + colors.reset : 'false'}`);
-    console.log(`  hasWordReplacements: ${result.analysis.hasWordReplacements ? colors.green + 'TRUE' + colors.reset : 'false'}\n`);
+    console.log(
+      `  hasAbbreviationExpansion: ${result.analysis.hasAbbreviationExpansion ? colors.green + 'TRUE' + colors.reset : 'false'}`
+    );
+    console.log(
+      `  hasRepeatedCharCorrection: ${result.analysis.hasRepeatedCharCorrection ? colors.green + 'TRUE' + colors.reset : 'false'}`
+    );
+    console.log(
+      `  hasCleanWordChanges: ${result.analysis.hasCleanWordChanges ? colors.green + 'TRUE' + colors.reset : 'false'}`
+    );
+    console.log(
+      `  hasPunctuationOnlyChanges: ${result.analysis.hasPunctuationOnlyChanges ? colors.green + 'TRUE' + colors.reset : 'false'}`
+    );
+    console.log(
+      `  hasNumberUnitChanges: ${result.analysis.hasNumberUnitChanges ? colors.green + 'TRUE' + colors.reset : 'false'}`
+    );
+    console.log(
+      `  hasWordReplacements: ${result.analysis.hasWordReplacements ? colors.green + 'TRUE' + colors.reset : 'false'}\n`
+    );
 
     // Decision logic flow
     console.log(`${colors.bold}🧠 Decision Logic Flow:${colors.reset}`);
     const isSingleWord = !oldText.includes(' ') && !newText.includes(' ');
     const lengthDiff = Math.abs(oldText.length - newText.length);
 
-    console.log(`  1. Abbreviation/Punctuation check: ${result.analysis.hasAbbreviationExpansion || result.analysis.hasPunctuationOnlyChanges ? colors.green + 'MATCHED → Character Diff' + colors.reset : 'not matched'}`);
-    console.log(`  2. Number/Word replacement check: ${result.analysis.hasNumberUnitChanges || result.analysis.hasWordReplacements ? colors.green + 'MATCHED → Word Diff' + colors.reset : 'not matched'}`);
-    console.log(`  3. Clean word changes check: ${result.analysis.hasCleanWordChanges && result.analysis.wordSimilarity > 0.6 ? colors.green + 'MATCHED → Word Diff' + colors.reset : 'not matched'}`);
-    console.log(`  4. Repeated char correction: ${result.analysis.hasRepeatedCharCorrection ? colors.green + 'MATCHED → Character Diff' + colors.reset : 'not matched'}`);
+    console.log(
+      `  1. Abbreviation/Punctuation check: ${result.analysis.hasAbbreviationExpansion || result.analysis.hasPunctuationOnlyChanges ? colors.green + 'MATCHED → Character Diff' + colors.reset : 'not matched'}`
+    );
+    console.log(
+      `  2. Number/Word replacement check: ${result.analysis.hasNumberUnitChanges || result.analysis.hasWordReplacements ? colors.green + 'MATCHED → Word Diff' + colors.reset : 'not matched'}`
+    );
+    console.log(
+      `  3. Clean word changes check: ${result.analysis.hasCleanWordChanges && result.analysis.wordSimilarity > 0.6 ? colors.green + 'MATCHED → Word Diff' + colors.reset : 'not matched'}`
+    );
+    console.log(
+      `  4. Repeated char correction: ${result.analysis.hasRepeatedCharCorrection ? colors.green + 'MATCHED → Character Diff' + colors.reset : 'not matched'}`
+    );
 
     // Single word condition
-    const singleWordConditionMet = isSingleWord && lengthDiff <= 2 && result.analysis.characterSimilarity >= 0.65 && !result.analysis.hasNumberUnitChanges && !result.analysis.hasWordReplacements;
+    const singleWordConditionMet =
+      isSingleWord &&
+      lengthDiff <= 2 &&
+      result.analysis.characterSimilarity >= 0.65 &&
+      !result.analysis.hasNumberUnitChanges &&
+      !result.analysis.hasWordReplacements;
     console.log(`  5. Single word condition:`);
-    console.log(`     - isSingleWord: ${isSingleWord ? colors.green + 'TRUE' + colors.reset : 'false'}`);
-    console.log(`     - lengthDiff <= 2: ${lengthDiff <= 2 ? colors.green + 'TRUE' + colors.reset : 'false'} (${lengthDiff})`);
-    console.log(`     - charSimilarity >= 0.65: ${result.analysis.characterSimilarity >= 0.65 ? colors.green + 'TRUE' + colors.reset : 'false'} (${result.analysis.characterSimilarity.toFixed(3)})`);
-    console.log(`     - !hasNumberUnitChanges: ${!result.analysis.hasNumberUnitChanges ? colors.green + 'TRUE' + colors.reset : 'false'}`);
-    console.log(`     - !hasWordReplacements: ${!result.analysis.hasWordReplacements ? colors.green + 'TRUE' + colors.reset : 'false'}`);
-    console.log(`     → Overall: ${singleWordConditionMet ? colors.green + 'MET → Character Diff' + colors.reset : colors.red + 'NOT MET' + colors.reset}`);
+    console.log(
+      `     - isSingleWord: ${isSingleWord ? colors.green + 'TRUE' + colors.reset : 'false'}`
+    );
+    console.log(
+      `     - lengthDiff <= 2: ${lengthDiff <= 2 ? colors.green + 'TRUE' + colors.reset : 'false'} (${lengthDiff})`
+    );
+    console.log(
+      `     - charSimilarity >= 0.65: ${result.analysis.characterSimilarity >= 0.65 ? colors.green + 'TRUE' + colors.reset : 'false'} (${result.analysis.characterSimilarity.toFixed(3)})`
+    );
+    console.log(
+      `     - !hasNumberUnitChanges: ${!result.analysis.hasNumberUnitChanges ? colors.green + 'TRUE' + colors.reset : 'false'}`
+    );
+    console.log(
+      `     - !hasWordReplacements: ${!result.analysis.hasWordReplacements ? colors.green + 'TRUE' + colors.reset : 'false'}`
+    );
+    console.log(
+      `     → Overall: ${singleWordConditionMet ? colors.green + 'MET → Character Diff' + colors.reset : colors.red + 'NOT MET' + colors.reset}`
+    );
 
     // Final fallback
     const highCharSimilarity = result.analysis.characterSimilarity > 0.8;
-    console.log(`  6. High char similarity fallback: ${highCharSimilarity ? colors.green + 'MATCHED → Character Diff' + colors.reset : colors.red + 'NOT MATCHED → Word Diff' + colors.reset} (> 0.8: ${result.analysis.characterSimilarity.toFixed(3)})\n`);
+    console.log(
+      `  6. High char similarity fallback: ${highCharSimilarity ? colors.green + 'MATCHED → Character Diff' + colors.reset : colors.red + 'NOT MATCHED → Word Diff' + colors.reset} (> 0.8: ${result.analysis.characterSimilarity.toFixed(3)})\n`
+    );
 
     // Expected vs actual
-    const expectedDiff = singleWordConditionMet ? 'Character Diff' : highCharSimilarity ? 'Character Diff' : 'Word Diff';
-    const actualDiff = result.segments.length === 2 && result.segments[0].type === 'removed' && result.segments[1].type === 'added' ? 'Word Diff' : 'Character Diff';
+    const expectedDiff = singleWordConditionMet
+      ? 'Character Diff'
+      : highCharSimilarity
+        ? 'Character Diff'
+        : 'Word Diff';
+    const actualDiff =
+      result.segments.length === 2 &&
+      result.segments[0].type === 'removed' &&
+      result.segments[1].type === 'added'
+        ? 'Word Diff'
+        : 'Character Diff';
 
     console.log(`${colors.bold}🎯 Decision Summary:${colors.reset}`);
-    console.log(`  Expected Algorithm: ${expectedDiff === 'Character Diff' ? colors.green + expectedDiff + colors.reset : colors.yellow + expectedDiff + colors.reset}`);
-    console.log(`  Actual Algorithm: ${actualDiff === 'Character Diff' ? colors.green + actualDiff + colors.reset : colors.yellow + actualDiff + colors.reset}`);
-    console.log(`  Match: ${expectedDiff === actualDiff ? colors.green + '✓ CONSISTENT' + colors.reset : colors.red + '✗ INCONSISTENT' + colors.reset}`);
-
+    console.log(
+      `  Expected Algorithm: ${expectedDiff === 'Character Diff' ? colors.green + expectedDiff + colors.reset : colors.yellow + expectedDiff + colors.reset}`
+    );
+    console.log(
+      `  Actual Algorithm: ${actualDiff === 'Character Diff' ? colors.green + actualDiff + colors.reset : colors.yellow + actualDiff + colors.reset}`
+    );
+    console.log(
+      `  Match: ${expectedDiff === actualDiff ? colors.green + '✓ CONSISTENT' + colors.reset : colors.red + '✗ INCONSISTENT' + colors.reset}`
+    );
   } catch (error) {
     console.log(`${colors.red}❌ Failed: ${error.message}${colors.reset}`);
   }
@@ -353,7 +452,9 @@ async function debugMode(oldText: string, newText: string) {
  * Interactive mode
  */
 function interactiveMode() {
-  console.log(`${colors.bold}${colors.cyan}🎮 Interactive Diff Testing Mode${colors.reset}`);
+  console.log(
+    `${colors.bold}${colors.cyan}🎮 Interactive Diff Testing Mode${colors.reset}`
+  );
   console.log(`Commands: 'api', 'debug', or just press Enter for api mode`);
   console.log(`Type 'quit' to exit.\n`);
 
@@ -384,7 +485,7 @@ function interactiveMode() {
           }
 
           console.log();
-          
+
           try {
             switch (testMode) {
               case 'debug':
@@ -397,7 +498,9 @@ function interactiveMode() {
             console.log(`${colors.red}Error: ${error.message}${colors.reset}`);
           }
 
-          console.log(`${colors.cyan}───────────────────────────────────────────${colors.reset}\n`);
+          console.log(
+            `${colors.cyan}───────────────────────────────────────────${colors.reset}\n`
+          );
           promptForTexts();
         });
       });
@@ -410,8 +513,14 @@ function interactiveMode() {
 /**
  * Run comprehensive test suite
  */
-async function runComprehensiveTests(filter?: { category?: string; difficulty?: string; id?: string }) {
-  console.log(`${colors.bold}${colors.blue}🧪 Comprehensive Diff Test Suite${colors.reset}\n`);
+async function runComprehensiveTests(filter?: {
+  category?: string;
+  difficulty?: string;
+  id?: string;
+}) {
+  console.log(
+    `${colors.bold}${colors.blue}🧪 Comprehensive Diff Test Suite${colors.reset}\n`
+  );
 
   let testCases = [...DIFF_TEST_DICTIONARY];
 
@@ -427,7 +536,9 @@ async function runComprehensiveTests(filter?: { category?: string; difficulty?: 
   }
 
   if (testCases.length === 0) {
-    console.log(`${colors.red}No test cases found matching the filter${colors.reset}`);
+    console.log(
+      `${colors.red}No test cases found matching the filter${colors.reset}`
+    );
     return;
   }
 
@@ -445,7 +556,9 @@ async function runComprehensiveTests(filter?: { category?: string; difficulty?: 
     const result = await runSingleTest(testCase);
     results.push(result);
 
-    const status = result.passed ? `${colors.green}✓${colors.reset}` : `${colors.red}✗${colors.reset}`;
+    const status = result.passed
+      ? `${colors.green}✓${colors.reset}`
+      : `${colors.red}✗${colors.reset}`;
     const time = `${result.executionTime.toFixed(2)}ms`;
     console.log(`${status} ${testCase.id}: ${testCase.description} (${time})`);
 
@@ -470,7 +583,8 @@ async function runComprehensiveTests(filter?: { category?: string; difficulty?: 
   // Summary
   const passed = results.filter(r => r.passed).length;
   const failed = results.length - passed;
-  const averageTime = results.reduce((sum, r) => sum + r.executionTime, 0) / results.length;
+  const averageTime =
+    results.reduce((sum, r) => sum + r.executionTime, 0) / results.length;
 
   console.log(`${colors.bold}📋 Test Summary${colors.reset}`);
   console.log(`─────────────────────────────────────────`);
@@ -492,17 +606,33 @@ async function runComprehensiveTests(filter?: { category?: string; difficulty?: 
 function showUsage() {
   console.log(`${colors.bold}Unified Diff Test Suite${colors.reset}\n`);
   console.log(`Usage:`);
-  console.log(`  yarn tsx scripts/unified-diff-test.ts                           # Run comprehensive test suite via API`);
-  console.log(`  yarn tsx scripts/unified-diff-test.ts --interactive             # Interactive testing mode`);
-  console.log(`  yarn tsx scripts/unified-diff-test.ts --api "old" "new"        # Test specific pair via API`);
-  console.log(`  yarn tsx scripts/unified-diff-test.ts --debug "old" "new"      # Debug mode with detailed analysis`);
-  console.log(`  yarn tsx scripts/unified-diff-test.ts --category medical_term   # Filter by category`);
-  console.log(`  yarn tsx scripts/unified-diff-test.ts --difficulty hard         # Filter by difficulty`);
-  console.log(`  yarn tsx scripts/unified-diff-test.ts --id abbrev_001           # Run specific test case\n`);
-  
+  console.log(
+    `  yarn tsx scripts/unified-diff-test.ts                           # Run comprehensive test suite via API`
+  );
+  console.log(
+    `  yarn tsx scripts/unified-diff-test.ts --interactive             # Interactive testing mode`
+  );
+  console.log(
+    `  yarn tsx scripts/unified-diff-test.ts --api "old" "new"        # Test specific pair via API`
+  );
+  console.log(
+    `  yarn tsx scripts/unified-diff-test.ts --debug "old" "new"      # Debug mode with detailed analysis`
+  );
+  console.log(
+    `  yarn tsx scripts/unified-diff-test.ts --category medical_term   # Filter by category`
+  );
+  console.log(
+    `  yarn tsx scripts/unified-diff-test.ts --difficulty hard         # Filter by difficulty`
+  );
+  console.log(
+    `  yarn tsx scripts/unified-diff-test.ts --id abbrev_001           # Run specific test case\n`
+  );
+
   console.log(`Available categories: ${getAllCategories().join(', ')}`);
   console.log(`Available difficulties: easy, medium, hard, extreme`);
-  console.log(`\nNote: All tests now use the edge function API. Local diff functions have been moved server-side.`);
+  console.log(
+    `\nNote: All tests now use the edge function API. Local diff functions have been moved server-side.`
+  );
 }
 
 // Command line interface
@@ -528,7 +658,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       } else if (args[0] === '--id' && args[1]) {
         await runComprehensiveTests({ id: args[1] });
       } else {
-        console.log(`${colors.red}Invalid arguments. Use --help for usage information.${colors.reset}`);
+        console.log(
+          `${colors.red}Invalid arguments. Use --help for usage information.${colors.reset}`
+        );
         process.exit(1);
       }
     } catch (error) {

@@ -440,13 +440,17 @@ export const useAddItemMutations = ({
     address?: string;
   }) => {
     try {
-      const newManufacturer = await addManufacturerMutation.mutateAsync(manufacturerData);
+      const newManufacturer =
+        await addManufacturerMutation.mutateAsync(manufacturerData);
       const { data: updatedManufacturers } = await supabase
         .from('item_manufacturers')
         .select('id, kode, name, address, created_at, updated_at')
         .order('name');
 
-      return { newManufacturer, updatedManufacturers: updatedManufacturers || [] };
+      return {
+        newManufacturer,
+        updatedManufacturers: updatedManufacturers || [],
+      };
     } catch (error) {
       console.error('Error saving manufacturer:', error);
       throw new Error('Gagal menyimpan produsen baru.');

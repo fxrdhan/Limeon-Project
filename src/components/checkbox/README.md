@@ -35,20 +35,20 @@ const MyComponent = () => {
 
 ### Required Props
 
-| Prop       | Type                          | Description                    |
-| ---------- | ----------------------------- | ------------------------------ |
-| `checked`  | `boolean`                     | Whether checkbox is checked    |
-| `onChange` | `(checked: boolean) => void`  | Handler for state changes      |
+| Prop       | Type                         | Description                 |
+| ---------- | ---------------------------- | --------------------------- |
+| `checked`  | `boolean`                    | Whether checkbox is checked |
+| `onChange` | `(checked: boolean) => void` | Handler for state changes   |
 
 ### Optional Props
 
-| Prop        | Type      | Default | Description                        |
-| ----------- | --------- | ------- | ---------------------------------- |
-| `id`        | `string`  | `undefined` | HTML id attribute for the input |
-| `label`     | `string`  | `undefined` | Label text displayed next to checkbox |
-| `disabled`  | `boolean` | `false` | Disable interaction and show disabled state |
-| `className` | `string`  | `''`    | Additional CSS classes for the container |
-| `tabIndex`  | `number`  | `undefined` | Tab order for keyboard navigation |
+| Prop        | Type      | Default     | Description                                 |
+| ----------- | --------- | ----------- | ------------------------------------------- |
+| `id`        | `string`  | `undefined` | HTML id attribute for the input             |
+| `label`     | `string`  | `undefined` | Label text displayed next to checkbox       |
+| `disabled`  | `boolean` | `false`     | Disable interaction and show disabled state |
+| `className` | `string`  | `''`        | Additional CSS classes for the container    |
+| `tabIndex`  | `number`  | `undefined` | Tab order for keyboard navigation           |
 
 ## Advanced Examples
 
@@ -79,11 +79,7 @@ const MyComponent = () => {
 ### Without Label
 
 ```tsx
-<Checkbox
-  id="no-label-checkbox"
-  checked={isChecked}
-  onChange={setIsChecked}
-/>
+<Checkbox id="no-label-checkbox" checked={isChecked} onChange={setIsChecked} />
 ```
 
 ### With Ref
@@ -97,14 +93,14 @@ const checkboxRef = useRef<HTMLLabelElement>(null);
   label="Checkbox with ref"
   checked={isChecked}
   onChange={setIsChecked}
-/>
+/>;
 ```
 
 ## Keyboard Navigation
 
-| Key     | Action                    |
-| ------- | ------------------------- |
-| `Enter` | Toggle checkbox state     |
+| Key     | Action                     |
+| ------- | -------------------------- |
+| `Enter` | Toggle checkbox state      |
 | `Tab`   | Move focus to next element |
 
 ## Architecture
@@ -202,13 +198,13 @@ The component uses Tailwind CSS classes that can be customized:
 
 ```tsx
 // Container styling
-className="inline-flex items-center group focus:outline-hidden"
+className = 'inline-flex items-center group focus:outline-hidden';
 
 // Icon styling
-className="relative w-5 h-5 border-2 rounded-md"
+className = 'relative w-5 h-5 border-2 rounded-md';
 
 // Label styling
-className="text-sm text-gray-700 select-none"
+className = 'text-sm text-gray-700 select-none';
 ```
 
 ### Icon Customization
@@ -219,7 +215,7 @@ Replace the check icon by modifying the `CheckboxIcon` component:
 // Use a different icon
 import { FiCheck } from 'react-icons/fi';
 
-<FiCheck className="text-white" />
+<FiCheck className="text-white" />;
 ```
 
 ### Animation Customization

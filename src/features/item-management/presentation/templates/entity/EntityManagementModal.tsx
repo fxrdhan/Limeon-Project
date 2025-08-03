@@ -83,9 +83,10 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
         currentData={{
           ...(initialData?.kode && { kode: initialData.kode }),
           name: initialData?.name || '',
-          description: entityName === 'Produsen' 
-            ? (initialData as { address?: string })?.address || ''
-            : initialData?.description || '',
+          description:
+            entityName === 'Produsen'
+              ? (initialData as { address?: string })?.address || ''
+              : initialData?.description || '',
         }}
         isDualMode={contextValue.comparison.isDualMode}
         versionA={contextValue.comparison.versionA}

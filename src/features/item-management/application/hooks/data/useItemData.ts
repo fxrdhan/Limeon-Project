@@ -127,7 +127,9 @@ export const useItemData = ({
 /**
  * Parse package conversions from database format
  */
-function parsePackageConversions(packageConversions: unknown): DBPackageConversion[] {
+function parsePackageConversions(
+  packageConversions: unknown
+): DBPackageConversion[] {
   if (!packageConversions) return [];
 
   try {

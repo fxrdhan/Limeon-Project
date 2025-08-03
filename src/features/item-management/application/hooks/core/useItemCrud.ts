@@ -65,7 +65,6 @@ export const useAddItemForm = ({
     isSaving: formState.saving,
   });
 
-
   // Initialize data management
   const itemData = useItemData({
     formState,
@@ -118,7 +117,9 @@ export const useAddItemForm = ({
             initialSearchQuery
           );
           setInitialDataForForm(updatedCacheData.formData);
-          packageConversionHook.setConversions(updatedCacheData.conversions || []);
+          packageConversionHook.setConversions(
+            updatedCacheData.conversions || []
+          );
           formState.setInitialPackageConversions(
             updatedCacheData.conversions || []
           );
@@ -141,7 +142,10 @@ export const useAddItemForm = ({
         formState.isDirty(packageConversionHook.conversions) &&
         !formState.saving
       ) {
-        cache.saveToCache(formState.formData, packageConversionHook.conversions);
+        cache.saveToCache(
+          formState.formData,
+          packageConversionHook.conversions
+        );
       }
     };
   }, [cache, formState, packageConversionHook.conversions]);
@@ -379,8 +383,10 @@ export const useAddItemForm = ({
       address?: string;
     }) => {
       try {
-        const { newManufacturer, updatedManufacturers } = await saveManufacturer(manufacturerData);
-        if (updatedManufacturers) formState.setManufacturers(updatedManufacturers);
+        const { newManufacturer, updatedManufacturers } =
+          await saveManufacturer(manufacturerData);
+        if (updatedManufacturers)
+          formState.setManufacturers(updatedManufacturers);
         if (newManufacturer?.id)
           formState.updateFormData({ manufacturer_id: newManufacturer.id });
         formState.setIsAddManufacturerModalOpen(false);
@@ -504,7 +510,6 @@ export const useAddItemForm = ({
     },
     [clearSearchTerm]
   );
-
 
   return {
     // Form data and state (from formState)
