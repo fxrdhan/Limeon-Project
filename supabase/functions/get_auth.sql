@@ -1,5 +1,5 @@
 -- Function: get_auth
--- Exported from Supabase on: 2025-08-02T13:07:13.883Z
+-- Exported from Supabase on: 2025-08-03T03:25:40.290Z
 
 CREATE OR REPLACE FUNCTION pgbouncer.get_auth(p_usename text)
  RETURNS TABLE(username text, password text)

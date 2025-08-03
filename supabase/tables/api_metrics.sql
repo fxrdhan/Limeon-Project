@@ -1,5 +1,5 @@
 -- Table Definition: api_metrics
--- Exported from Supabase on: 2025-08-02T13:07:13.932Z
+-- Exported from Supabase on: 2025-08-03T03:25:40.338Z
 
 CREATE TABLE public.api_metrics (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
