@@ -67,7 +67,8 @@ export const useAddItemFormState = ({
   const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
   const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
   const [isAddDosageModalOpen, setIsAddDosageModalOpen] = useState(false);
-  const [isAddManufacturerModalOpen, setIsAddManufacturerModalOpen] = useState(false);
+  const [isAddManufacturerModalOpen, setIsAddManufacturerModalOpen] =
+    useState(false);
   const [currentSearchTermForModal, setCurrentSearchTermForModal] = useState<
     string | undefined
   >();
@@ -175,7 +176,9 @@ export const useAddItemFormState = ({
       .map(mapConversionForComparison)
       .filter(Boolean) as ConversionForCompare[];
 
-    const initialConversionsForCompare = Array.isArray(initialPackageConversions)
+    const initialConversionsForCompare = Array.isArray(
+      initialPackageConversions
+    )
       ? (initialPackageConversions
           .map(mapConversionForComparison)
           .filter(Boolean) as ConversionForCompare[])

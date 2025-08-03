@@ -59,8 +59,8 @@ export class ItemsService extends BaseService<DBItem> {
         }
 
         // Get manufacturer name from map
-        const manufacturerName = item.manufacturer 
-          ? manufacturerMap.get(item.manufacturer) || '' 
+        const manufacturerName = item.manufacturer
+          ? manufacturerMap.get(item.manufacturer) || ''
           : '';
 
         // Transform to Item interface
@@ -199,8 +199,8 @@ export class ItemsService extends BaseService<DBItem> {
         }
 
         // Get manufacturer name from map
-        const manufacturerName = item.manufacturer 
-          ? manufacturerMap.get(item.manufacturer) || '' 
+        const manufacturerName = item.manufacturer
+          ? manufacturerMap.get(item.manufacturer) || ''
           : '';
 
         // Transform to Item interface
@@ -287,8 +287,8 @@ export class ItemsService extends BaseService<DBItem> {
         }
 
         // Get manufacturer name from map
-        const manufacturerName = item.manufacturer 
-          ? manufacturerMap.get(item.manufacturer) || '' 
+        const manufacturerName = item.manufacturer
+          ? manufacturerMap.get(item.manufacturer) || ''
           : '';
 
         // Transform to Item interface

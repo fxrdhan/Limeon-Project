@@ -37,7 +37,10 @@ export const useFormCache = ({
   /**
    * Saves form data to session storage
    */
-  const saveToCache = (formData: FormData, conversions: PackageConversion[]) => {
+  const saveToCache = (
+    formData: FormData,
+    conversions: PackageConversion[]
+  ) => {
     try {
       const cacheData: CacheData = {
         formData,

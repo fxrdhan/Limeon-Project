@@ -216,7 +216,9 @@ export const usePurchaseForm = ({
         let conversionRate = 1;
 
         if (unitName !== itemData.base_unit) {
-          const packageConversionsArray = Array.isArray(itemData.unit_conversions)
+          const packageConversionsArray = Array.isArray(
+            itemData.unit_conversions
+          )
             ? itemData.unit_conversions
             : [];
           const packageConversion = packageConversionsArray.find(

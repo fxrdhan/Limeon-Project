@@ -41,7 +41,6 @@ const EntityFormFields: React.FC<EntityFormFieldsProps> = ({
         readOnly={isReadOnly}
       />
 
-
       {entityName === 'Produsen' ? (
         <DescriptiveTextarea
           label="Alamat"

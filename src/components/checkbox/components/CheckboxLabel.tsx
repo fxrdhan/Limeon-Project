@@ -9,7 +9,9 @@ export const CheckboxLabel: React.FC<CheckboxLabelProps> = ({
   if (!label) return null;
 
   return (
-    <span className={classNames('text-sm text-gray-700 select-none', className)}>
+    <span
+      className={classNames('text-sm text-gray-700 select-none', className)}
+    >
       {label}
     </span>
   );

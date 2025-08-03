@@ -35,8 +35,13 @@ export const useAddItemPageHandlers = ({
     showFefoTooltip,
     setShowFefoTooltip,
   } = useAddItemUIState();
-  const { categoriesData, typesData, unitsData, dosagesData, manufacturersData } =
-    useItemQueries();
+  const {
+    categoriesData,
+    typesData,
+    unitsData,
+    dosagesData,
+    manufacturersData,
+  } = useItemQueries();
 
   const {
     handleSelectChange,
