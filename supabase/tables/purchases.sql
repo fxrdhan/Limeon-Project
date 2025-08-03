@@ -1,5 +1,5 @@
 -- Table Definition: purchases
--- Exported from Supabase on: 2025-08-02T13:07:13.934Z
+-- Exported from Supabase on: 2025-08-03T03:25:40.341Z
 
 CREATE TABLE public.purchases (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

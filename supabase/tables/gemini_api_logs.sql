@@ -1,5 +1,5 @@
 -- Table Definition: gemini_api_logs
--- Exported from Supabase on: 2025-08-02T13:07:13.933Z
+-- Exported from Supabase on: 2025-08-03T03:25:40.340Z
 
 CREATE TABLE public.gemini_api_logs (
   id bigint NOT NULL,
