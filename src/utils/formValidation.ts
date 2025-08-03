@@ -29,7 +29,7 @@ export const validateRequiredFields = (
   }
 
   if (!formData.unit_id) {
-    errors.unit_id = 'Satuan wajib dipilih';
+    errors.unit_id = 'Kemasan wajib dipilih';
   }
 
   return {

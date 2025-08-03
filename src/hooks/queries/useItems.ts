@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import { itemsService } from '@/services/api/items.service';
-import type { DBItem, DBUnitConversion } from '@/types/database';
+import type { DBItem, DBPackageConversion } from '@/types/database';
 
 // Item Query Hooks
 export const useItems = (options?: {
@@ -118,20 +118,20 @@ export const useItemMutations = () => {
   const createItem = useMutation({
     mutationFn: async ({
       itemData,
-      unitConversions,
+      packageConversions,
     }: {
       itemData: Omit<DBItem, 'id' | 'created_at' | 'updated_at'>;
-      unitConversions?: DBUnitConversion[];
+      packageConversions?: DBPackageConversion[];
     }) => {
       console.log(
         `🚀 CREATE ITEM CALLED with itemData:`,
         itemData,
-        `unitConversions:`,
-        unitConversions
+        `packageConversions:`,
+        packageConversions
       );
       const result = await itemsService.createItemWithConversions(
         itemData,
-        unitConversions
+        packageConversions
       );
       console.log(`📝 CREATE ITEM API result:`, result);
       if (result.error) {
@@ -159,16 +159,16 @@ export const useItemMutations = () => {
     mutationFn: async ({
       id,
       itemData,
-      unitConversions,
+      packageConversions,
     }: {
       id: string;
       itemData: Partial<Omit<DBItem, 'id' | 'created_at'>>;
-      unitConversions?: DBUnitConversion[];
+      packageConversions?: DBPackageConversion[];
     }) => {
       const result = await itemsService.updateItemWithConversions(
         id,
         itemData,
-        unitConversions
+        packageConversions
       );
       if (result.error) throw result.error;
       return result.data;

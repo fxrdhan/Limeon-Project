@@ -103,14 +103,14 @@ export interface Item {
   stock: number;
   unit_id?: string;
   base_unit?: string;
-  unit_conversions: UnitConversion[];
+  unit_conversions: PackageConversion[];
   customer_level_discounts?: CustomerLevelDiscount[];
   category: { name: string };
   type: { name: string };
   unit: { name: string };
 }
 
-export interface UnitConversion {
+export interface PackageConversion {
   conversion_rate: number;
   unit_name: string;
   to_unit_id: string;
@@ -125,7 +125,7 @@ export interface UnitConversion {
   sellPrice: number;
 }
 
-export interface DBUnitConversion {
+export interface DBPackageConversion {
   id?: string;
   unit_name: string;
   to_unit_id?: string;
@@ -143,16 +143,16 @@ export interface DBItem {
   base_price: number;
   sell_price: number;
   stock: number;
-  unit_conversions: string | UnitConversion[];
+  unit_conversions: string | PackageConversion[];
   category_id?: string;
   type_id?: string;
   unit_id?: string;
   item_categories?: { name: string }[] | null;
   item_types?: { name: string }[] | null;
-  item_units?: { name: string }[] | null;
+  item_packages?: { name: string }[] | null;
 }
 
-export interface RawUnitConversion {
+export interface RawPackageConversion {
   id?: string;
   unit_name?: string;
   conversion_rate?: number;

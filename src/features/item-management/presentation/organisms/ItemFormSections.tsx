@@ -6,7 +6,7 @@ import {
   useItemUI,
 } from '../../shared/contexts/useItemFormContext';
 import { useItemPriceCalculations } from '../../application/hooks/utils/useItemPriceCalculator';
-import { useUnitConversionLogic } from '../../application/hooks/utils/useUnitConversionLogic';
+import { usePackageConversionLogic } from '../../application/hooks/utils/usePackageConversionLogic';
 import { useInlineEditor } from '@/hooks/useInlineEditor';
 
 // Child components
@@ -14,7 +14,7 @@ import { ItemFormHeader } from './';
 import ItemBasicInfoForm from './ItemBasicInfoForm';
 import ItemSettingsForm from './ItemSettingsForm';
 import ItemPricingForm from './ItemPricingForm';
-import ItemUnitConversionManager from './ItemUnitConversionForm';
+import ItemPackageConversionManager from './ItemPackageConversionForm';
 
 // Header Section
 // eslint-disable-next-line react-refresh/only-export-components
@@ -65,7 +65,7 @@ const BasicInfoSection: React.FC = () => {
   } = useItemForm();
 
   const { resetKey } = useItemUI();
-  const { unitConversionHook } = useItemPrice();
+  const { packageConversionHook } = useItemPrice();
 
   const {
     handleAddNewCategory,
@@ -122,7 +122,7 @@ const BasicInfoSection: React.FC = () => {
       // Also update baseUnit for unit conversion synchronization
       const selectedUnit = units.find(unit => unit.id === value);
       if (selectedUnit) {
-        unitConversionHook.setBaseUnit(selectedUnit.name);
+        packageConversionHook.setBaseUnit(selectedUnit.name);
       }
     } else if (field === 'dosage_id') {
       updateFormData({ dosage_id: value });
@@ -218,7 +218,7 @@ const SettingsSection: React.FC = () => {
 // eslint-disable-next-line react-refresh/only-export-components
 const PricingSection: React.FC = () => {
   const { formData, updateFormData, handleChange } = useItemForm();
-  const { unitConversionHook, displayBasePrice, displaySellPrice } =
+  const { packageConversionHook, displayBasePrice, displaySellPrice } =
     useItemPrice();
 
   const { resetKey } = useItemUI();
@@ -257,7 +257,7 @@ const PricingSection: React.FC = () => {
       }}
       displayBasePrice={displayBasePrice}
       displaySellPrice={displaySellPrice}
-      baseUnit={unitConversionHook.baseUnit}
+      baseUnit={packageConversionHook.baseUnit}
       marginEditing={{
         isEditing: marginEditor.isEditing,
         percentage: marginEditor.value,
@@ -274,41 +274,41 @@ const PricingSection: React.FC = () => {
   );
 };
 
-// Unit Conversion Section
+// Package Conversion Section
 // eslint-disable-next-line react-refresh/only-export-components
-const UnitConversionSection: React.FC = () => {
-  const { unitConversionHook } = useItemPrice();
+const PackageConversionSection: React.FC = () => {
+  const { packageConversionHook } = useItemPrice();
   const { resetKey } = useItemUI();
 
-  const unitConversionLogic = useUnitConversionLogic({
-    conversions: unitConversionHook.conversions,
-    availableUnits: unitConversionHook.availableUnits,
-    formData: unitConversionHook.unitConversionFormData,
-    addUnitConversion: unitConversionHook.addUnitConversion,
-    setFormData: unitConversionHook.setUnitConversionFormData,
-    baseUnit: unitConversionHook.baseUnit,
+  const packageConversionLogic = usePackageConversionLogic({
+    conversions: packageConversionHook.conversions,
+    availableUnits: packageConversionHook.availableUnits,
+    formData: packageConversionHook.packageConversionFormData,
+    addPackageConversion: packageConversionHook.addPackageConversion,
+    setFormData: packageConversionHook.setPackageConversionFormData,
+    baseUnit: packageConversionHook.baseUnit,
   });
 
   const handleAddConversion = () => {
-    const result = unitConversionLogic.validateAndAddConversion();
+    const result = packageConversionLogic.validateAndAddConversion();
     if (!result.success && result.error) {
       // Show validation errors to user - unit selection is now handled by dropdown validation
-      if (result.error !== 'Silakan pilih satuan!') {
+      if (result.error !== 'Silakan pilih kemasan!') {
         alert(result.error);
       }
     }
   };
 
   return (
-    <ItemUnitConversionManager
+    <ItemPackageConversionManager
       key={resetKey} // Force re-mount on reset to clear validation and input states
-      baseUnit={unitConversionHook.baseUnit}
-      availableUnits={unitConversionHook.availableUnits}
-      conversions={unitConversionHook.conversions}
-      formData={unitConversionHook.unitConversionFormData}
-      onFormDataChange={unitConversionHook.setUnitConversionFormData}
+      baseUnit={packageConversionHook.baseUnit}
+      availableUnits={packageConversionHook.availableUnits}
+      conversions={packageConversionHook.conversions}
+      formData={packageConversionHook.packageConversionFormData}
+      onFormDataChange={packageConversionHook.setPackageConversionFormData}
       onAddConversion={handleAddConversion}
-      onRemoveConversion={unitConversionHook.removeUnitConversion}
+      onRemoveConversion={packageConversionHook.removePackageConversion}
     />
   );
 };
@@ -319,5 +319,5 @@ export const ItemFormSections = {
   BasicInfo: BasicInfoSection,
   Settings: SettingsSection,
   Pricing: PricingSection,
-  UnitConversion: UnitConversionSection,
+  PackageConversion: PackageConversionSection,
 };

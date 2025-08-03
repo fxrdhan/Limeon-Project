@@ -5,26 +5,26 @@ import FormField from '@/components/form-field';
 import Input from '@/components/input';
 import type {
   UnitOption,
-  UnitConversionLogicFormData,
+  PackageConversionLogicFormData,
 } from '../../shared/types';
 
-interface LocalUnitConversionInputProps {
+interface LocalPackageConversionInputProps {
   baseUnit: string;
   availableUnits: UnitOption[];
-  formData: UnitConversionLogicFormData;
-  onFormDataChange: (data: UnitConversionLogicFormData) => void;
+  formData: PackageConversionLogicFormData;
+  onFormDataChange: (data: PackageConversionLogicFormData) => void;
   onAddConversion: () => void;
   tabIndex?: number;
 }
 
-export default function UnitConversionInput({
+export default function PackageConversionInput({
   baseUnit,
   availableUnits,
   formData,
   onFormDataChange,
   onAddConversion,
   tabIndex = 16,
-}: LocalUnitConversionInputProps) {
+}: LocalPackageConversionInputProps) {
   const handleUnitChange = (unitId: string) => {
     const selectedUnit = availableUnits.find(u => u.id === unitId);
     if (selectedUnit) {
@@ -55,14 +55,14 @@ export default function UnitConversionInput({
 
   return (
     <div>
-      <h3 className="text-lg font-medium mb-3">Tambah Konversi Satuan</h3>
+      <h3 className="text-lg font-medium mb-3">Tambah Konversi Kemasan</h3>
       <p className="text-sm text-gray-600 mb-2">
-        1 {baseUnit || 'Satuan Dasar'} setara berapa satuan turunan?
+        1 {baseUnit || 'Kemasan Dasar'} setara berapa kemasan turunan?
       </p>
       <div className="flex flex-row gap-4 mb-3">
-        <FormField label="Satuan Turunan" className="flex-1" required={true}>
+        <FormField label="Kemasan Turunan" className="flex-1" required={true}>
           <Dropdown
-            name="unit_conversion"
+            name="package_conversion"
             tabIndex={tabIndex}
             value={availableUnits.find(u => u.name === formData.unit)?.id || ''}
             onChange={handleUnitChange}
@@ -70,7 +70,7 @@ export default function UnitConversionInput({
               id: unit.id,
               name: unit.name,
             }))}
-            placeholder="-- Pilih Satuan --"
+            placeholder="-- Pilih Kemasan --"
             required
             validate={true}
             showValidationOnBlur={true}
@@ -81,7 +81,7 @@ export default function UnitConversionInput({
         <FormField
           label={
             formData.unit
-              ? `1 ${baseUnit || 'Satuan Dasar'} = ? ${formData.unit}`
+              ? `1 ${baseUnit || 'Kemasan Dasar'} = ? ${formData.unit}`
               : 'Nilai Konversi'
           }
           className="flex-1"

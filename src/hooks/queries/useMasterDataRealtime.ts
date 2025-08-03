@@ -276,7 +276,7 @@ export const useUnitsRealtime = (options?: UseMasterDataRealtimeOptions) => {
         {
           event: '*',
           schema: 'public',
-          table: 'item_units',
+          table: 'item_packages',
         },
         (payload: { eventType: string; new?: unknown; old?: unknown }) => {
           console.log('🔔 Units realtime change detected:', payload);

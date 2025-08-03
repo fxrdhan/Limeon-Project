@@ -13,16 +13,22 @@ export const CheckboxIcon: React.FC<CheckboxIconProps> = ({
     <motion.div
       className={classNames(
         'relative w-5 h-5 border-2 rounded-md flex items-center justify-center mr-2 shrink-0 transition-colors duration-200',
-        !disabled ? 'group-hover:!border-primary group-focus:!border-primary' : '',
+        !disabled
+          ? 'group-hover:!border-primary group-focus:!border-primary'
+          : '',
         className
       )}
       animate={{
         backgroundColor: checked ? 'var(--color-primary)' : '#ffffff',
         borderColor: checked ? 'var(--color-primary)' : '#d1d5db',
       }}
-      whileHover={!disabled ? {
-        borderColor: 'var(--color-primary)'
-      } : {}}
+      whileHover={
+        !disabled
+          ? {
+              borderColor: 'var(--color-primary)',
+            }
+          : {}
+      }
       transition={{ duration: 0.4, ease: 'easeInOut' }}
     >
       <AnimatePresence>

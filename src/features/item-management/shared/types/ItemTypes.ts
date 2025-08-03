@@ -29,7 +29,7 @@ export interface VersionData {
   changed_fields?: Record<string, { from: unknown; to: unknown }>;
 }
 
-export interface UnitConversion {
+export interface PackageConversion {
   id: string;
   unit_name: string;
   to_unit_id: string;
@@ -40,7 +40,7 @@ export interface UnitConversion {
   conversion_rate: number;
 }
 
-export interface DBUnitConversion {
+export interface DBPackageConversion {
   id?: string;
   unit_name: string;
   to_unit_id?: string;

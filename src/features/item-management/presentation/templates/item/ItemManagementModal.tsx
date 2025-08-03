@@ -91,7 +91,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
     deleteItemMutation,
 
     // Price & conversion
-    unitConversionHook,
+    packageConversionHook,
     formattedUpdateAt,
   } = handlers;
 
@@ -188,7 +188,7 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
       currentSearchTermForModal: currentSearchTermForModal || '',
     },
     price: {
-      unitConversionHook,
+      packageConversionHook,
       displayBasePrice,
       displaySellPrice,
     },
@@ -294,7 +294,7 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
           ),
           settingsForm: null,
           pricingForm: null,
-          unitConversionManager: null,
+          packageConversionManager: null,
           modals: null,
         }}
         formAction={{
@@ -326,7 +326,7 @@ const ItemManagementContent: React.FC<{ itemId?: string }> = ({ itemId }) => {
         basicInfo: <ItemFormSections.BasicInfo />,
         settingsForm: <ItemFormSections.Settings />,
         pricingForm: <ItemFormSections.Pricing />,
-        unitConversionManager: <ItemFormSections.UnitConversion />,
+        packageConversionManager: <ItemFormSections.PackageConversion />,
         modals: <ItemModalContainer />,
       }}
       formAction={{

@@ -9,8 +9,8 @@ export const QueryKeys = {
     detail: (id: string) => [...QueryKeys.items.details(), id] as const,
     search: (query: string, filters?: Record<string, unknown>) =>
       [...QueryKeys.items.all, 'search', query, { filters }] as const,
-    unitConversions: (itemId: string) =>
-      [...QueryKeys.items.detail(itemId), 'unitConversions'] as const,
+    packageConversions: (itemId: string) =>
+      [...QueryKeys.items.detail(itemId), 'packageConversions'] as const,
   },
 
   // Purchases

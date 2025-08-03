@@ -1,20 +1,20 @@
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useCallback } from 'react';
 import type {
-  UnitConversion,
-  UseUnitConversionReturn,
+  PackageConversion,
+  UsePackageConversionReturn,
   UnitData,
 } from '@/types';
 
-export const useUnitConversion = (): UseUnitConversionReturn => {
+export const usePackageConversion = (): UsePackageConversionReturn => {
   const [baseUnit, setBaseUnit] = useState<string>('');
   const [basePrice, setBasePrice] = useState<number>(0);
   const [sellPrice, setSellPrice] = useState<number>(0);
-  const [unitConversions, setUnitConversions] = useState<UnitConversion[]>([]);
+  const [packageConversions, setPackageConversions] = useState<PackageConversion[]>([]);
   const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
   const [skipRecalculation, setSkipRecalculation] = useState<boolean>(false);
 
-  const [unitConversionFormData, setUnitConversionFormData] = useState({
+  const [packageConversionFormData, setPackageConversionFormData] = useState({
     unit: '',
     conversion: 0,
   });
@@ -22,7 +22,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
   useEffect(() => {
     const fetchUnits = async () => {
       const { data } = await supabase
-        .from('item_units')
+        .from('item_packages')
         .select('id, name, description, updated_at')
         .order('name');
 
@@ -34,43 +34,43 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
     fetchUnits();
   }, []);
 
-  const addUnitConversion = useCallback(
+  const addPackageConversion = useCallback(
     (
-      unitConversion: Omit<UnitConversion, 'id'> & {
+      packageConversion: Omit<PackageConversion, 'id'> & {
         basePrice?: number;
         sellPrice?: number;
       }
     ) => {
       const calculatedBasePrice =
-        unitConversion.basePrice !== undefined
-          ? unitConversion.basePrice
-          : basePrice / unitConversion.conversion;
+        packageConversion.basePrice !== undefined
+          ? packageConversion.basePrice
+          : basePrice / packageConversion.conversion;
 
       const calculatedSellPrice =
-        unitConversion.sellPrice !== undefined
-          ? unitConversion.sellPrice
-          : sellPrice / unitConversion.conversion;
+        packageConversion.sellPrice !== undefined
+          ? packageConversion.sellPrice
+          : sellPrice / packageConversion.conversion;
 
-      const newUnitConversion: UnitConversion = {
+      const newPackageConversion: PackageConversion = {
         id: `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
-        unit: unitConversion.unit,
-        unit_name: unitConversion.unit_name,
-        to_unit_id: unitConversion.to_unit_id,
-        conversion: unitConversion.conversion,
-        conversion_rate: unitConversion.conversion_rate,
+        unit: packageConversion.unit,
+        unit_name: packageConversion.unit_name,
+        to_unit_id: packageConversion.to_unit_id,
+        conversion: packageConversion.conversion,
+        conversion_rate: packageConversion.conversion_rate,
         basePrice: calculatedBasePrice,
         sellPrice: calculatedSellPrice,
       };
-      setUnitConversions(prevConversions => [
+      setPackageConversions(prevConversions => [
         ...prevConversions,
-        newUnitConversion,
+        newPackageConversion,
       ]);
     },
     [basePrice, sellPrice]
   );
 
-  const removeUnitConversion = useCallback((id: string) => {
-    setUnitConversions(prevConversions =>
+  const removePackageConversion = useCallback((id: string) => {
+    setPackageConversions(prevConversions =>
       prevConversions.filter(uc => uc.id !== id)
     );
   }, []);
@@ -81,10 +81,10 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
       return;
     }
 
-    if ((basePrice <= 0 && sellPrice <= 0) || unitConversions.length === 0)
+    if ((basePrice <= 0 && sellPrice <= 0) || packageConversions.length === 0)
       return;
 
-    const needsUpdate = unitConversions.some(uc => {
+    const needsUpdate = packageConversions.some(uc => {
       const newBasePrice = basePrice > 0 ? basePrice / uc.conversion : 0;
       const newSellPrice = sellPrice > 0 ? sellPrice / uc.conversion : 0;
       return (
@@ -94,7 +94,7 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
     });
 
     if (needsUpdate) {
-      setUnitConversions(prevConversions =>
+      setPackageConversions(prevConversions =>
         prevConversions.map(uc => ({
           ...uc,
           basePrice: basePrice > 0 ? basePrice / uc.conversion : 0,
@@ -102,16 +102,16 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
         }))
       );
     }
-  }, [basePrice, sellPrice, skipRecalculation, unitConversions]);
+  }, [basePrice, sellPrice, skipRecalculation, packageConversions]);
 
   const skipNextRecalculation = useCallback(() => {
     setSkipRecalculation(true);
   }, []);
 
   const resetConversions = useCallback(() => {
-    setUnitConversions([]);
+    setPackageConversions([]);
     // Also reset the form data to clear input fields
-    setUnitConversionFormData({
+    setPackageConversionFormData({
       unit: '',
       conversion: 0,
     });
@@ -124,15 +124,15 @@ export const useUnitConversion = (): UseUnitConversionReturn => {
     setBasePrice,
     sellPrice,
     setSellPrice,
-    conversions: unitConversions,
-    addUnitConversion,
-    removeUnitConversion,
-    unitConversionFormData,
-    setUnitConversionFormData,
+    conversions: packageConversions,
+    addPackageConversion,
+    removePackageConversion,
+    packageConversionFormData,
+    setPackageConversionFormData,
     recalculateBasePrices,
     skipNextRecalculation,
     availableUnits,
     resetConversions,
-    setConversions: setUnitConversions,
+    setConversions: setPackageConversions,
   };
 };

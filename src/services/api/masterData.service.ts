@@ -32,7 +32,7 @@ export class MedicineTypeService extends BaseService<MedicineType> {
 // Unit Service
 export class UnitService extends BaseService<Unit> {
   constructor() {
-    super('item_units');
+    super('item_packages');
   }
 
   async getActiveUnits() {

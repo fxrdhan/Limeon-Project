@@ -103,10 +103,10 @@ export const itemSearchColumns: SearchColumn[] = [
   },
   {
     field: 'unit.name',
-    headerName: 'Satuan',
+    headerName: 'Kemasan',
     searchable: true,
     type: 'text',
-    description: 'Cari berdasarkan satuan utama',
+    description: 'Cari berdasarkan kemasan utama',
   },
   {
     field: 'base_price',
@@ -264,7 +264,7 @@ export const getSearchColumnsByEntity = (
       return supplierSearchColumns;
     case 'item_categories':
     case 'item_types':
-    case 'item_units':
+    case 'item_packages':
       return itemMasterSearchColumns;
     default:
       return [];

@@ -41,7 +41,7 @@ export const useItemQueries = () => {
     queryKey: ['units'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('item_units')
+        .from('item_packages')
         .select('id, kode, name, description, updated_at')
         .order('kode');
       if (error) throw error;

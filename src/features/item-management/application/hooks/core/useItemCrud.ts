@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useUnitConversion } from '../utils/useUnitConversion';
+import { usePackageConversion } from '../utils/usePackageConversion';
 import { formatDateTime, extractNumericValue } from '@/lib/formatters';
 import { useConfirmDialog } from '@/components/dialog-box';
 import {
@@ -32,7 +32,7 @@ import { CACHE_KEY } from '../../../constants';
 export const getUnitById = async (unitName: string) => {
   try {
     const { data } = await supabase
-      .from('item_units')
+      .from('item_packages')
       .select('id, name')
       .eq('name', unitName)
       .single();
@@ -51,7 +51,7 @@ export const useAddItemForm = ({
 }: UseItemManagementProps) => {
   // Initialize modular hooks
   const formState = useAddItemFormState({ initialSearchQuery });
-  const unitConversionHook = useUnitConversion();
+  const packageConversionHook = usePackageConversion();
   const confirmDialog = useConfirmDialog();
 
   // Initialize mutations
@@ -61,7 +61,7 @@ export const useAddItemForm = ({
   const cache = useFormCache({
     cacheKey: CACHE_KEY,
     isEditMode: formState.isEditMode,
-    isDirty: () => formState.isDirty(unitConversionHook.conversions),
+    isDirty: () => formState.isDirty(packageConversionHook.conversions),
     isSaving: formState.saving,
   });
 
@@ -69,7 +69,7 @@ export const useAddItemForm = ({
   // Initialize data management
   const itemData = useItemData({
     formState,
-    unitConversionHook,
+    packageConversionHook,
   });
 
   // Memoized wrapper functions for performance
@@ -83,8 +83,8 @@ export const useAddItemForm = ({
   );
 
   const isDirtyWrapper = useCallback(() => {
-    return formState.isDirty(unitConversionHook.conversions);
-  }, [formState, unitConversionHook.conversions]);
+    return formState.isDirty(packageConversionHook.conversions);
+  }, [formState, packageConversionHook.conversions]);
 
   const setInitialDataForForm = (data?: ItemFormData) => {
     formState.setInitialDataForForm(data);
@@ -92,9 +92,9 @@ export const useAddItemForm = ({
     if (data) {
       const baseUnitName =
         formState.units.find(u => u.id === data.unit_id)?.name || '';
-      unitConversionHook.setBaseUnit(baseUnitName);
-      unitConversionHook.setBasePrice(data.base_price || 0);
-      unitConversionHook.setSellPrice(data.sell_price || 0);
+      packageConversionHook.setBaseUnit(baseUnitName);
+      packageConversionHook.setBasePrice(data.base_price || 0);
+      packageConversionHook.setSellPrice(data.sell_price || 0);
     }
   };
 
@@ -118,8 +118,8 @@ export const useAddItemForm = ({
             initialSearchQuery
           );
           setInitialDataForForm(updatedCacheData.formData);
-          unitConversionHook.setConversions(updatedCacheData.conversions || []);
-          formState.setInitialUnitConversions(
+          packageConversionHook.setConversions(updatedCacheData.conversions || []);
+          formState.setInitialPackageConversions(
             updatedCacheData.conversions || []
           );
         } catch (e) {
@@ -138,33 +138,33 @@ export const useAddItemForm = ({
     return () => {
       if (
         !formState.isEditMode &&
-        formState.isDirty(unitConversionHook.conversions) &&
+        formState.isDirty(packageConversionHook.conversions) &&
         !formState.saving
       ) {
-        cache.saveToCache(formState.formData, unitConversionHook.conversions);
+        cache.saveToCache(formState.formData, packageConversionHook.conversions);
       }
     };
-  }, [cache, formState, unitConversionHook.conversions]);
+  }, [cache, formState, packageConversionHook.conversions]);
 
   // Auto code generation is now handled by useItemCodeGeneration hook
 
   useEffect(() => {
     if (
-      unitConversionHook.basePrice > 0 &&
-      unitConversionHook.conversions.length > 0
+      packageConversionHook.basePrice > 0 &&
+      packageConversionHook.conversions.length > 0
     ) {
-      unitConversionHook.recalculateBasePrices();
+      packageConversionHook.recalculateBasePrices();
     }
   }, [
-    unitConversionHook.basePrice,
-    unitConversionHook.recalculateBasePrices,
-    unitConversionHook.conversions.length,
-    unitConversionHook,
+    packageConversionHook.basePrice,
+    packageConversionHook.recalculateBasePrices,
+    packageConversionHook.conversions.length,
+    packageConversionHook,
   ]);
 
   useEffect(() => {
-    unitConversionHook.setSellPrice(formState.formData.sell_price || 0);
-  }, [formState.formData.sell_price, unitConversionHook]);
+    packageConversionHook.setSellPrice(formState.formData.sell_price || 0);
+  }, [formState.formData.sell_price, packageConversionHook]);
 
   // Memoized event handlers for performance
   const handleChange = useCallback(
@@ -179,13 +179,13 @@ export const useAddItemForm = ({
       const { name, value } = e.target as HTMLInputElement;
       if (name === 'base_price') {
         const numericInt = extractNumericValue(value);
-        unitConversionHook.setBasePrice(numericInt);
+        packageConversionHook.setBasePrice(numericInt);
       } else if (name === 'sell_price') {
         const numericInt = extractNumericValue(value);
-        unitConversionHook.setSellPrice(numericInt);
+        packageConversionHook.setSellPrice(numericInt);
       }
     },
-    [formState, unitConversionHook]
+    [formState, packageConversionHook]
   );
 
   const handleSelectChange = useCallback(
@@ -260,8 +260,8 @@ export const useAddItemForm = ({
       try {
         await saveItemMutation.mutateAsync({
           formData: formState.formData,
-          conversions: unitConversionHook.conversions,
-          baseUnit: unitConversionHook.baseUnit,
+          conversions: packageConversionHook.conversions,
+          baseUnit: packageConversionHook.baseUnit,
           isEditMode: formState.isEditMode,
           itemId,
         });
@@ -276,8 +276,8 @@ export const useAddItemForm = ({
     },
     [
       formState,
-      unitConversionHook.conversions,
-      unitConversionHook.baseUnit,
+      packageConversionHook.conversions,
+      packageConversionHook.baseUnit,
       saveItemMutation,
       itemId,
       cache,
@@ -345,7 +345,7 @@ export const useAddItemForm = ({
         formState.setIsAddUnitModalOpen(false);
         clearSearchTerm();
       } catch {
-        alert('Gagal menyimpan satuan baru.');
+        alert('Gagal menyimpan kemasan baru.');
       }
     },
     [saveUnit, formState, clearSearchTerm]
@@ -446,28 +446,28 @@ export const useAddItemForm = ({
     if (
       formState.isEditMode &&
       formState.initialFormData &&
-      formState.initialUnitConversions
+      formState.initialPackageConversions
     ) {
       // Reset unit conversions
-      unitConversionHook.resetConversions();
+      packageConversionHook.resetConversions();
       const baseUnitName =
         formState.units.find(u => u.id === formState.initialFormData!.unit_id)
           ?.name || '';
-      unitConversionHook.setBaseUnit(baseUnitName);
-      unitConversionHook.setBasePrice(
+      packageConversionHook.setBaseUnit(baseUnitName);
+      packageConversionHook.setBasePrice(
         formState.initialFormData.base_price || 0
       );
-      unitConversionHook.setSellPrice(
+      packageConversionHook.setSellPrice(
         formState.initialFormData.sell_price || 0
       );
-      unitConversionHook.skipNextRecalculation();
+      packageConversionHook.skipNextRecalculation();
 
-      formState.initialUnitConversions.forEach(convDataFromDB => {
+      formState.initialPackageConversions.forEach(convDataFromDB => {
         const unitDetails = formState.units.find(
           u => u.name === convDataFromDB.unit_name
         );
         if (unitDetails && typeof convDataFromDB.conversion_rate === 'number') {
-          unitConversionHook.addUnitConversion({
+          packageConversionHook.addPackageConversion({
             to_unit_id: unitDetails.id,
             unit_name: unitDetails.name,
             unit: unitDetails,
@@ -480,10 +480,10 @@ export const useAddItemForm = ({
       });
     } else {
       // Reset unit conversions for add mode
-      unitConversionHook.resetConversions();
-      unitConversionHook.setBaseUnit('');
-      unitConversionHook.setBasePrice(0);
-      unitConversionHook.setSellPrice(0);
+      packageConversionHook.resetConversions();
+      packageConversionHook.setBaseUnit('');
+      packageConversionHook.setBasePrice(0);
+      packageConversionHook.setSellPrice(0);
       cache.clearCache();
     }
   };
@@ -584,7 +584,7 @@ export const useAddItemForm = ({
     setManufacturers: formState.setManufacturers,
 
     // Unit conversion hook
-    unitConversionHook,
+    packageConversionHook,
 
     // Other utilities
     confirmDialog,

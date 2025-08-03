@@ -8,7 +8,7 @@ import {
   formatCurrency,
   formatBaseCurrency,
 } from '@/components/ag-grid';
-import type { UnitConversion } from '@/types';
+import type { PackageConversion } from '@/types';
 
 export const useItemGridColumns = () => {
   const columnDefs: ColDef[] = useMemo(() => {
@@ -48,7 +48,7 @@ export const useItemGridColumns = () => {
       }),
       createTextColumn({
         field: 'unit.name',
-        headerName: 'Satuan',
+        headerName: 'Kemasan',
         minWidth: 80,
       }),
       createTextColumn({
@@ -59,13 +59,13 @@ export const useItemGridColumns = () => {
       }),
       createTextColumn({
         field: 'unit_conversions',
-        headerName: 'Satuan Turunan',
+        headerName: 'Kemasan Turunan',
         minWidth: 140,
         valueGetter: params => {
           const conversions = params.data.unit_conversions;
           if (conversions && conversions.length > 0) {
             return conversions
-              .map((uc: UnitConversion) => uc.unit_name || 'N/A')
+              .map((uc: PackageConversion) => uc.unit_name || 'N/A')
               .join(', ');
           }
           return '-';

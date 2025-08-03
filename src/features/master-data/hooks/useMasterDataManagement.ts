@@ -71,7 +71,7 @@ const getHooksForTable = (tableName: string, isRealtimeEnabled: boolean) => {
           useMedicineTypesRealtime({ ...options, enabled: isRealtimeEnabled }),
         useMutations: useMedicineTypeMutations,
       };
-    case 'item_units':
+    case 'item_packages':
       return {
         useData: (options: QueryOptions) =>
           useUnitsRealtime({ ...options, enabled: isRealtimeEnabled }),

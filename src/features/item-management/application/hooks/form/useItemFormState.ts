@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { formatRupiah, extractNumericValue } from '@/lib/formatters';
 import { formatMarginPercentage } from '../../../shared/utils/PriceCalculator';
-import type { ItemFormData, UnitConversion } from '../../../shared/types';
+import type { ItemFormData, PackageConversion } from '../../../shared/types';
 import type { Category, MedicineType, Unit } from '@/types';
 import type { ItemDosage } from '../../../domain/entities/Item';
 
@@ -48,8 +48,8 @@ export const useAddItemFormState = ({
   const [initialFormData, setInitialFormData] = useState<ItemFormData | null>(
     null
   );
-  const [initialUnitConversions, setInitialUnitConversions] = useState<
-    UnitConversion[] | null
+  const [initialPackageConversions, setInitialPackageConversions] = useState<
+    PackageConversion[] | null
   >(null);
 
   // Display states for formatted prices
@@ -145,7 +145,7 @@ export const useAddItemFormState = ({
   /**
    * Checks if form has unsaved changes
    */
-  const isDirty = (currentConversions: UnitConversion[] = []): boolean => {
+  const isDirty = (currentConversions: PackageConversion[] = []): boolean => {
     if (!initialFormData) return false;
 
     const formDataChanged =
@@ -160,7 +160,7 @@ export const useAddItemFormState = ({
     };
 
     const mapConversionForComparison = (
-      conv: UnitConversion
+      conv: PackageConversion
     ): ConversionForCompare | null => {
       if (!conv || !conv.unit || !conv.unit.id) return null;
       return {
@@ -175,8 +175,8 @@ export const useAddItemFormState = ({
       .map(mapConversionForComparison)
       .filter(Boolean) as ConversionForCompare[];
 
-    const initialConversionsForCompare = Array.isArray(initialUnitConversions)
-      ? (initialUnitConversions
+    const initialConversionsForCompare = Array.isArray(initialPackageConversions)
+      ? (initialPackageConversions
           .map(mapConversionForComparison)
           .filter(Boolean) as ConversionForCompare[])
       : [];
@@ -233,7 +233,7 @@ export const useAddItemFormState = ({
    * Resets form to initial state
    */
   const resetForm = () => {
-    if (isEditMode && initialFormData && initialUnitConversions) {
+    if (isEditMode && initialFormData && initialPackageConversions) {
       setFormData({ ...initialFormData });
       setDisplayBasePrice(formatRupiah(initialFormData.base_price || 0));
       setDisplaySellPrice(formatRupiah(initialFormData.sell_price || 0));
@@ -259,8 +259,8 @@ export const useAddItemFormState = ({
     // Initial state tracking
     initialFormData,
     setInitialFormData,
-    initialUnitConversions,
-    setInitialUnitConversions,
+    initialPackageConversions,
+    setInitialPackageConversions,
 
     // Display states
     displayBasePrice,

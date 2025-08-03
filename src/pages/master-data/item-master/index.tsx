@@ -72,13 +72,13 @@ const tabConfigs: Record<MasterDataType, TabConfig> = {
   },
   units: {
     key: 'units',
-    label: 'Satuan',
-    entityName: 'Satuan',
-    addButtonText: 'Tambah Satuan Baru',
-    searchPlaceholder: 'Cari nama atau deskripsi satuan',
-    nameColumnHeader: 'Nama Satuan',
-    noDataMessage: 'Tidak ada data satuan yang ditemukan',
-    searchNoDataMessage: 'Tidak ada satuan dengan kata kunci',
+    label: 'Kemasan',
+    entityName: 'Kemasan',
+    addButtonText: 'Tambah Kemasan Baru',
+    searchPlaceholder: 'Cari nama atau deskripsi kemasan',
+    nameColumnHeader: 'Nama Kemasan',
+    noDataMessage: 'Tidak ada data kemasan yang ditemukan',
+    searchNoDataMessage: 'Tidak ada kemasan dengan kata kunci',
   },
   dosages: {
     key: 'dosages',
@@ -154,7 +154,7 @@ const ItemMasterNew = () => {
       case 'types':
         return 'item_types';
       case 'units':
-        return 'item_units';
+        return 'item_packages';
       case 'dosages':
         return 'item_dosages';
       case 'manufacturers':
@@ -177,7 +177,7 @@ const ItemMasterNew = () => {
     searchInputRef,
     activeTableName: getTableNameFromTab(activeTab),
   });
-  const unitsManagement = useMasterDataManagement('item_units', 'Satuan', {
+  const unitsManagement = useMasterDataManagement('item_packages', 'Kemasan', {
     searchInputRef,
     activeTableName: getTableNameFromTab(activeTab),
   });

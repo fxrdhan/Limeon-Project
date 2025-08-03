@@ -30,8 +30,8 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
         return 'item_categories';
       case 'jenis item':
         return 'item_types';
-      case 'satuan':
-        return 'item_units';
+      case 'kemasan':
+        return 'item_packages';
       case 'sediaan':
         return 'item_dosages';
       case 'produsen':
@@ -83,7 +83,9 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
         currentData={{
           ...(initialData?.kode && { kode: initialData.kode }),
           name: initialData?.name || '',
-          description: initialData?.description || '',
+          description: entityName === 'Produsen' 
+            ? (initialData as { address?: string })?.address || ''
+            : initialData?.description || '',
         }}
         isDualMode={contextValue.comparison.isDualMode}
         versionA={contextValue.comparison.versionA}

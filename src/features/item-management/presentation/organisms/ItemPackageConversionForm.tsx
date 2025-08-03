@@ -2,7 +2,7 @@ import React from 'react';
 import { FaTrash } from 'react-icons/fa';
 import Button from '@/components/button';
 import FormSection from '@/components/form-section';
-import { UnitConversionInput } from '../atoms';
+import { PackageConversionInput } from '../atoms';
 import {
   DataGrid,
   createTextColumn,
@@ -10,8 +10,8 @@ import {
 } from '@/components/ag-grid';
 import type {
   UnitOption,
-  UnitConversion,
-  UnitConversionLogicFormData,
+  PackageConversion,
+  PackageConversionLogicFormData,
 } from '../../shared/types';
 
 const DeleteButton = React.memo(({ onClick }: { onClick: () => void }) => (
@@ -22,17 +22,17 @@ const DeleteButton = React.memo(({ onClick }: { onClick: () => void }) => (
 
 DeleteButton.displayName = 'DeleteButton';
 
-interface LocalItemUnitConversionManagerProps {
+interface LocalItemPackageConversionManagerProps {
   baseUnit: string;
   availableUnits: UnitOption[];
-  conversions: UnitConversion[];
-  formData: UnitConversionLogicFormData;
-  onFormDataChange: (data: UnitConversionLogicFormData) => void;
+  conversions: PackageConversion[];
+  formData: PackageConversionLogicFormData;
+  onFormDataChange: (data: PackageConversionLogicFormData) => void;
   onAddConversion: () => void;
   onRemoveConversion: (id: string) => void;
 }
 
-export default function ItemUnitConversionManager({
+export default function ItemPackageConversionManager({
   baseUnit,
   availableUnits,
   conversions,
@@ -40,7 +40,7 @@ export default function ItemUnitConversionManager({
   onFormDataChange,
   onAddConversion,
   onRemoveConversion,
-}: LocalItemUnitConversionManagerProps) {
+}: LocalItemPackageConversionManagerProps) {
   const filteredAvailableUnits = availableUnits
     .filter(unit => unit.name !== baseUnit)
     .filter(unit => !conversions.some(uc => uc.unit.name === unit.name));
@@ -51,10 +51,10 @@ export default function ItemUnitConversionManager({
   );
 
   return (
-    <FormSection title="Satuan dan Konversi">
+    <FormSection title="Kemasan dan Konversi">
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 md:w-1/3 lg:w-1/4">
-          <UnitConversionInput
+          <PackageConversionInput
             baseUnit={baseUnit}
             availableUnits={filteredAvailableUnits}
             formData={formData}

@@ -75,7 +75,7 @@ export const itemSchema = z.object({
     ),
   category_id: z.string().min(1, 'Kategori harus dipilih'),
   type_id: z.string().min(1, 'Jenis harus dipilih'),
-  unit_id: z.string().min(1, 'Satuan harus dipilih'),
+  unit_id: z.string().min(1, 'Kemasan harus dipilih'),
   base_price: z.number().min(0.01, 'Harga pokok harus lebih dari 0'),
   sell_price: z.number().min(0.01, 'Harga jual harus lebih dari 0'),
   // Field opsional
