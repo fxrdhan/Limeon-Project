@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Pagination from '@/components/pagination';
 import PageTitle from '@/components/page-title';
 import { EntityManagementModal } from '@/features/item-management/presentation/templates/entity';
@@ -32,7 +33,7 @@ import { useItemGridColumns } from '@/features/item-management/application/hooks
 type MasterDataType =
   | 'categories'
   | 'types'
-  | 'units'
+  | 'packages'
   | 'dosages'
   | 'manufacturers'
   | 'items';
@@ -70,8 +71,8 @@ const tabConfigs: Record<MasterDataType, TabConfig> = {
     noDataMessage: 'Tidak ada data jenis item yang ditemukan',
     searchNoDataMessage: 'Tidak ada jenis item dengan kata kunci',
   },
-  units: {
-    key: 'units',
+  packages: {
+    key: 'packages',
     label: 'Kemasan',
     entityName: 'Kemasan',
     addButtonText: 'Tambah Kemasan Baru',
@@ -117,17 +118,46 @@ const tabOrder: MasterDataType[] = [
   'items',
   'categories',
   'types',
-  'units',
+  'packages',
   'dosages',
   'manufacturers',
 ];
 
 const ItemMasterNew = () => {
-  const [activeTab, setActiveTab] = useState<MasterDataType>('items');
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Get active tab from URL path
+  const getTabFromPath = (pathname: string): MasterDataType => {
+    const pathSegments = pathname.split('/');
+    const lastSegment = pathSegments[pathSegments.length - 1];
+    
+    // Map URL segments to tab types
+    const urlToTabMap: Record<string, MasterDataType> = {
+      'items': 'items',
+      'categories': 'categories', 
+      'types': 'types',
+      'packages': 'packages',
+      'dosages': 'dosages',
+      'manufacturers': 'manufacturers'
+    };
+    
+    return urlToTabMap[lastSegment] || 'items';
+  };
+
+  const [activeTab, setActiveTab] = useState<MasterDataType>(getTabFromPath(location.pathname));
   const searchInputRef = useRef<HTMLInputElement>(
     null
   ) as React.RefObject<HTMLInputElement>;
   const dataGridRef = useRef<DataGridRef>(null);
+
+  // Update active tab when URL changes
+  useEffect(() => {
+    const newTab = getTabFromPath(location.pathname);
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [location.pathname, activeTab]);
 
   // State for Items tab modal management
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
@@ -153,7 +183,7 @@ const ItemMasterNew = () => {
         return 'item_categories';
       case 'types':
         return 'item_types';
-      case 'units':
+      case 'packages':
         return 'item_packages';
       case 'dosages':
         return 'item_dosages';
@@ -205,7 +235,7 @@ const ItemMasterNew = () => {
         return categoriesManagement;
       case 'types':
         return typesManagement;
-      case 'units':
+      case 'packages':
         return unitsManagement;
       case 'dosages':
         return dosagesManagement;
@@ -316,7 +346,9 @@ const ItemMasterNew = () => {
 
   const handleTabChange = (newTab: MasterDataType) => {
     if (newTab !== activeTab) {
-      setActiveTab(newTab);
+      // Navigate to the new tab URL
+      navigate(`/master-data/item-master/${newTab}`);
+      
       // Clear search when switching tabs
       if (searchInputRef.current) {
         searchInputRef.current.value = '';
@@ -343,8 +375,8 @@ const ItemMasterNew = () => {
       headerName: currentConfig.nameColumnHeader,
       minWidth: 120,
     }),
-    // Add NCI Code column for units and dosages tabs
-    ...(activeTab === 'units' || activeTab === 'dosages'
+    // Add NCI Code column for packages and dosages tabs
+    ...(activeTab === 'packages' || activeTab === 'dosages'
       ? [
           createTextColumn({
             field: 'nci_code',
@@ -506,7 +538,7 @@ const ItemMasterNew = () => {
                   : `<span style="padding: 10px; color: #888;">${currentConfig.noDataMessage}</span>`
               }
               autoSizeColumns={
-                activeTab === 'units' || activeTab === 'dosages'
+                activeTab === 'packages' || activeTab === 'dosages'
                   ? ['kode', 'name', 'nci_code']
                   : ['kode', 'name']
               }

@@ -27,11 +27,23 @@ const PrintPurchase = lazy(() => import('@/pages/purchases/print-purchase'));
 const ViewPurchase = lazy(() => import('@/pages/purchases/view-purchase'));
 
 function App() {
-  const { session, initialize } = useAuthStore();
+  const { session, loading, initialize } = useAuthStore();
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // Show loading while auth is initializing
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AlertProvider>
@@ -75,38 +87,141 @@ function App() {
             <Route path="master-data">
               <Route
                 path="items"
-                element={<Navigate to="/master-data/item-master" replace />}
+                element={<Navigate to="/master-data/item-master/items" replace />}
               />
               <Route
+                index
                 path="item-master"
-                element={
-                  <ErrorBoundary
-                    showDetails={process.env.NODE_ENV === 'development'}
-                  >
-                    <Suspense
-                      fallback={
-                        <TableLoadingFallback
-                          title="Item Master"
-                          tableColumns={2}
-                        />
-                      }
-                    >
-                      <ItemMaster />
-                    </Suspense>
-                  </ErrorBoundary>
-                }
+                element={<Navigate to="/master-data/item-master/items" replace />}
               />
+              {/* Item Master sub-routes */}
+              <Route path="item-master">
+                <Route
+                  path="items"
+                  element={
+                    <ErrorBoundary
+                      showDetails={process.env.NODE_ENV === 'development'}
+                    >
+                      <Suspense
+                        fallback={
+                          <TableLoadingFallback
+                            title="Item Master"
+                            tableColumns={2}
+                          />
+                        }
+                      >
+                        <ItemMaster />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="categories"
+                  element={
+                    <ErrorBoundary
+                      showDetails={process.env.NODE_ENV === 'development'}
+                    >
+                      <Suspense
+                        fallback={
+                          <TableLoadingFallback
+                            title="Item Master"
+                            tableColumns={2}
+                          />
+                        }
+                      >
+                        <ItemMaster />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="types"
+                  element={
+                    <ErrorBoundary
+                      showDetails={process.env.NODE_ENV === 'development'}
+                    >
+                      <Suspense
+                        fallback={
+                          <TableLoadingFallback
+                            title="Item Master"
+                            tableColumns={2}
+                          />
+                        }
+                      >
+                        <ItemMaster />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="packages"
+                  element={
+                    <ErrorBoundary
+                      showDetails={process.env.NODE_ENV === 'development'}
+                    >
+                      <Suspense
+                        fallback={
+                          <TableLoadingFallback
+                            title="Item Master"
+                            tableColumns={2}
+                          />
+                        }
+                      >
+                        <ItemMaster />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="dosages"
+                  element={
+                    <ErrorBoundary
+                      showDetails={process.env.NODE_ENV === 'development'}
+                    >
+                      <Suspense
+                        fallback={
+                          <TableLoadingFallback
+                            title="Item Master"
+                            tableColumns={2}
+                          />
+                        }
+                      >
+                        <ItemMaster />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="manufacturers"
+                  element={
+                    <ErrorBoundary
+                      showDetails={process.env.NODE_ENV === 'development'}
+                    >
+                      <Suspense
+                        fallback={
+                          <TableLoadingFallback
+                            title="Item Master"
+                            tableColumns={2}
+                          />
+                        }
+                      >
+                        <ItemMaster />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
+              </Route>
               <Route
                 path="categories"
-                element={<Navigate to="/master-data/item-master" replace />}
+                element={<Navigate to="/master-data/item-master/categories" replace />}
               />
               <Route
                 path="types"
-                element={<Navigate to="/master-data/item-master" replace />}
+                element={<Navigate to="/master-data/item-master/types" replace />}
               />
               <Route
                 path="units"
-                element={<Navigate to="/master-data/item-master" replace />}
+                element={<Navigate to="/master-data/item-master/packages" replace />}
               />
               <Route
                 path="suppliers"
