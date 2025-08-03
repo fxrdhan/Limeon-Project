@@ -203,15 +203,24 @@ const Sidebar = ({
   const hasActiveChild = useCallback(
     (children?: { path: string }[]) => {
       if (!children) return false;
+      
+      // Check for exact match first
       const exactMatch = children.find(
         child => location.pathname === child.path
       );
       if (exactMatch) return true;
 
-      const matches = children.filter(child => isActive(child.path));
-      return matches.length === 1;
+      // Check for sub-routes (especially for item-master)
+      const hasMatch = children.some(child => {
+        if (child.path === '/master-data/item-master') {
+          return location.pathname.startsWith('/master-data/item-master');
+        }
+        return location.pathname.startsWith(child.path + '/');
+      });
+      
+      return hasMatch;
     },
-    [isActive, location.pathname]
+    [location.pathname]
   );
 
   const toggleMenu = useCallback(
@@ -363,14 +372,24 @@ const Sidebar = ({
   // Get active submenu item for smooth indicator positioning
   const getActiveSubmenuItem = useCallback(
     (children: { name: string; path: string }[]) => {
-      return children.find(child => location.pathname === child.path);
+      return children.find(child => {
+        if (child.path === '/master-data/item-master') {
+          return location.pathname.startsWith('/master-data/item-master');
+        }
+        return location.pathname === child.path;
+      });
     },
     [location.pathname]
   );
 
   const activeSubmenuIndex = useCallback(
     (children: { name: string; path: string }[]) => {
-      return children.findIndex(child => location.pathname === child.path);
+      return children.findIndex(child => {
+        if (child.path === '/master-data/item-master') {
+          return location.pathname.startsWith('/master-data/item-master');
+        }
+        return location.pathname === child.path;
+      });
     },
     [location.pathname]
   );
@@ -539,8 +558,10 @@ const Sidebar = ({
 
                             {item.children &&
                               item.children.map(child => {
-                                const isActiveChild =
-                                  location.pathname === child.path;
+                                const isActiveChild = 
+                                  child.path === '/master-data/item-master' 
+                                    ? location.pathname.startsWith('/master-data/item-master')
+                                    : location.pathname === child.path;
                                 return (
                                   <div
                                     key={child.name}
