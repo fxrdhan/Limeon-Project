@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
-import type { FormData, UnitConversion } from '@/types';
+import type { FormData, PackageConversion } from '@/types';
 
 interface CacheData {
   formData: FormData;
-  conversions: UnitConversion[];
+  conversions: PackageConversion[];
 }
 
 interface UseFormCacheOptions {
@@ -37,7 +37,7 @@ export const useFormCache = ({
   /**
    * Saves form data to session storage
    */
-  const saveToCache = (formData: FormData, conversions: UnitConversion[]) => {
+  const saveToCache = (formData: FormData, conversions: PackageConversion[]) => {
     try {
       const cacheData: CacheData = {
         formData,

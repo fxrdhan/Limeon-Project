@@ -16,7 +16,7 @@ interface ItemModalTemplateProps {
     categoryForm?: ReactNode;
     settingsForm: ReactNode;
     pricingForm: ReactNode;
-    unitConversionManager: ReactNode;
+    packageConversionManager: ReactNode;
     modals: ReactNode;
   };
   formAction: {
@@ -99,7 +99,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                     {/* Detect if this is a full-width layout (only basicInfo, others are null) */}
                     {!children.settingsForm &&
                     !children.pricingForm &&
-                    !children.unitConversionManager ? (
+                    !children.packageConversionManager ? (
                       // Full-width layout for history mode
                       <div className="w-full">
                         {children.basicInfo}
@@ -125,7 +125,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                           </div>
 
                           <div className="w-full md:w-3/4">
-                            {children.unitConversionManager}
+                            {children.packageConversionManager}
                           </div>
                         </div>
                       </>

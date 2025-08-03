@@ -22,15 +22,15 @@ export interface ItemFormData {
 }
 
 // Form-specific data structures
-export interface UnitConversionFormData {
+export interface PackageConversionFormData {
   unit_id: string;
   conversion_rate: number;
   base_price: number;
   sell_price: number;
 }
 
-// Additional UnitConversionFormData variant for logic hook
-export interface UnitConversionLogicFormData {
+// Additional PackageConversionFormData variant for logic hook
+export interface PackageConversionLogicFormData {
   unit: string;
   conversion: number;
 }

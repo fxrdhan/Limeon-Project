@@ -1,27 +1,27 @@
 import React from 'react';
-import { UnitConversion, UnitData } from './database';
+import { PackageConversion, UnitData } from './database';
 
 // Hook-related types
-export interface UseUnitConversionReturn {
-  conversions: UnitConversion[];
+export interface UsePackageConversionReturn {
+  conversions: PackageConversion[];
   baseUnit: string;
   setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
   basePrice: number;
   setBasePrice: React.Dispatch<React.SetStateAction<number>>;
   sellPrice: number;
   setSellPrice: React.Dispatch<React.SetStateAction<number>>;
-  addUnitConversion: (
-    unitConversion: Omit<UnitConversion, 'id'> & {
+  addPackageConversion: (
+    packageConversion: Omit<PackageConversion, 'id'> & {
       basePrice?: number;
       sellPrice?: number;
     }
   ) => void;
-  removeUnitConversion: (id: string) => void;
-  unitConversionFormData: {
+  removePackageConversion: (id: string) => void;
+  packageConversionFormData: {
     unit: string;
     conversion: number;
   };
-  setUnitConversionFormData: React.Dispatch<
+  setPackageConversionFormData: React.Dispatch<
     React.SetStateAction<{
       unit: string;
       conversion: number;
@@ -31,7 +31,7 @@ export interface UseUnitConversionReturn {
   skipNextRecalculation: () => void;
   availableUnits: UnitData[];
   resetConversions: () => void;
-  setConversions: React.Dispatch<React.SetStateAction<UnitConversion[]>>;
+  setConversions: React.Dispatch<React.SetStateAction<PackageConversion[]>>;
 }
 
 export interface UseAddItemFormProps {

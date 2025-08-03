@@ -6,7 +6,7 @@ export { default as ItemDataTable } from './ItemDataTable';
 export { default as ItemBasicInfoForm } from './ItemBasicInfoForm';
 export { default as ItemPricingForm } from './ItemPricingForm';
 export { default as ItemSettingsForm } from './ItemSettingsForm';
-export { default as ItemUnitConversionForm } from './ItemUnitConversionForm';
+export { default as ItemPackageConversionForm } from './ItemPackageConversionForm';
 export { default as ItemFormHeader } from './ItemFormHeader';
 
 // History organisms

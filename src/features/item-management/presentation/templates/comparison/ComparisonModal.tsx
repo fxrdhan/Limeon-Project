@@ -55,13 +55,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     if (isDualMode && versionA && versionB) {
       const versionAData = versionA.entity_data;
       const versionBData = versionB.entity_data;
+      const isManufacturer = entityName === 'Produsen';
       return {
         originalLeftKode: String(versionAData?.kode || ''),
         originalLeftName: String(versionAData?.name || ''),
-        originalLeftDescription: String(versionAData?.description || ''),
+        originalLeftDescription: String(isManufacturer ? versionAData?.address || '' : versionAData?.description || ''),
         originalRightKode: String(versionBData?.kode || ''),
         originalRightName: String(versionBData?.name || ''),
-        originalRightDescription: String(versionBData?.description || ''),
+        originalRightDescription: String(isManufacturer ? versionBData?.address || '' : versionBData?.description || ''),
       };
     }
     return null;
@@ -69,6 +70,8 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
   // Get comparison data based on mode
   const getComparisonData = () => {
+    const isManufacturer = entityName === 'Produsen';
+    
     if (isDualMode && versionA && versionB) {
       const effectiveVersionA = getEffectiveVersionA();
       const effectiveVersionB = getEffectiveVersionB();
@@ -77,10 +80,10 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
       return {
         leftKode: String(versionAData?.kode || ''),
         leftName: String(versionAData?.name || ''),
-        leftDescription: String(versionAData?.description || ''),
+        leftDescription: String(isManufacturer ? versionAData?.address || '' : versionAData?.description || ''),
         rightKode: String(versionBData?.kode || ''),
         rightName: String(versionBData?.name || ''),
-        rightDescription: String(versionBData?.description || ''),
+        rightDescription: String(isManufacturer ? versionBData?.address || '' : versionBData?.description || ''),
         leftVersion: effectiveVersionA,
         rightVersion: effectiveVersionB,
         isKodeDifferent:
@@ -88,14 +91,15 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
         isNameDifferent:
           versionA.entity_data?.name !== versionB.entity_data?.name,
         isDescriptionDifferent:
-          versionA.entity_data?.description !==
-          versionB.entity_data?.description,
+          isManufacturer 
+            ? versionA.entity_data?.address !== versionB.entity_data?.address
+            : versionA.entity_data?.description !== versionB.entity_data?.description,
       };
     } else if (selectedVersion) {
       const versionData = selectedVersion.entity_data;
       const versionKode = String(versionData?.kode || '');
       const versionName = String(versionData?.name || '');
-      const versionDescription = String(versionData?.description || '');
+      const versionDescription = String(isManufacturer ? versionData?.address || '' : versionData?.description || '');
       return {
         leftKode: versionKode,
         leftName: versionName,
@@ -361,10 +365,10 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Description Comparison */}
+                  {/* Description/Address Comparison */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Deskripsi
+                      {entityName === 'Produsen' ? 'Alamat' : 'Deskripsi'}
                     </label>
                     <div className="grid grid-cols-2 gap-3">
                       <div
@@ -429,11 +433,11 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   />
 
                   <DescriptiveTextarea
-                    label="Deskripsi"
-                    name="description"
+                    label={entityName === 'Produsen' ? 'Alamat' : 'Deskripsi'}
+                    name={entityName === 'Produsen' ? 'address' : 'description'}
                     value={compData.leftDescription}
                     onChange={() => {}} // No-op since readOnly
-                    placeholder="Deskripsi"
+                    placeholder={entityName === 'Produsen' ? 'Alamat' : 'Deskripsi'}
                     readOnly
                     autoFocus={false}
                     tabIndex={-1}
@@ -541,7 +545,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               className="overflow-hidden"
                             >
                               <div className="text-xs font-medium text-yellow-700 mb-1">
-                                Deskripsi:
+                                {entityName === 'Produsen' ? 'Alamat:' : 'Deskripsi:'}
                               </div>
                               <div className="bg-gray-50 rounded p-2">
                                 <DiffText

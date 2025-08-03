@@ -188,9 +188,9 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             )}
           </FormField>
 
-          <FormField label="Satuan" required={true}>
+          <FormField label="Kemasan" required={true}>
             {loading && units.length === 0 ? (
-              <Input value="Memuat satuan..." readOnly disabled />
+              <Input value="Memuat kemasan..." readOnly disabled />
             ) : (
               <Dropdown
                 name="unit_id"
@@ -198,7 +198,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 value={formData.unit_id}
                 onChange={value => onDropdownChange('unit_id', value)}
                 options={units}
-                placeholder="Pilih Satuan"
+                placeholder="Pilih Kemasan"
                 required
                 validate={true}
                 showValidationOnBlur={true}

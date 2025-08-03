@@ -4,8 +4,8 @@ import { formatRupiah } from '@/lib/formatters';
 import type {
   ItemFormData,
   UnitData,
-  DBUnitConversion,
-  UnitConversion,
+  DBPackageConversion,
+  PackageConversion,
 } from '../../../shared/types';
 
 interface UseItemDataProps {
@@ -13,19 +13,19 @@ interface UseItemDataProps {
     setLoading: (loading: boolean) => void;
     setFormData: (data: ItemFormData) => void;
     setInitialFormData: (data: ItemFormData) => void;
-    setInitialUnitConversions: (conversions: UnitConversion[]) => void;
+    setInitialPackageConversions: (conversions: PackageConversion[]) => void;
     setDisplayBasePrice: (price: string) => void;
     setDisplaySellPrice: (price: string) => void;
     units: UnitData[];
   };
-  unitConversionHook: {
+  packageConversionHook: {
     setBaseUnit: (unit: string) => void;
     setBasePrice: (price: number) => void;
     setSellPrice: (price: number) => void;
     skipNextRecalculation: () => void;
-    conversions: UnitConversion[];
-    removeUnitConversion: (id: string) => void;
-    addUnitConversion: (conversion: UnitConversion) => void;
+    conversions: PackageConversion[];
+    removePackageConversion: (id: string) => void;
+    addPackageConversion: (conversion: PackageConversion) => void;
   };
 }
 
@@ -37,7 +37,7 @@ interface UseItemDataProps {
  */
 export const useItemData = ({
   formState,
-  unitConversionHook,
+  packageConversionHook,
 }: UseItemDataProps) => {
   const fetchItemData = useCallback(
     async (id: string) => {
@@ -89,25 +89,25 @@ export const useItemData = ({
         formState.setFormData(fetchedFormData);
         formState.setInitialFormData(fetchedFormData);
 
-        // Process unit conversions for initial state
-        const parsedConversionsFromDB = parseUnitConversions(
+        // Process package conversions for initial state
+        const parsedConversionsFromDB = parsePackageConversions(
           itemData.unit_conversions
         );
-        const mappedConversions = mapUnitConversions(
+        const mappedConversions = mapPackageConversions(
           parsedConversionsFromDB,
           formState.units
         );
-        formState.setInitialUnitConversions(mappedConversions);
+        formState.setInitialPackageConversions(mappedConversions);
 
         // Set display prices
         formState.setDisplayBasePrice(formatRupiah(itemData.base_price || 0));
         formState.setDisplaySellPrice(formatRupiah(itemData.sell_price || 0));
 
-        // Initialize unit conversion hook
-        initializeUnitConversions(
+        // Initialize package conversion hook
+        initializePackageConversions(
           itemData,
           formState.units,
-          unitConversionHook
+          packageConversionHook
         );
       } catch (error) {
         console.error('Error fetching item data:', error);
@@ -116,7 +116,7 @@ export const useItemData = ({
         formState.setLoading(false);
       }
     },
-    [formState, unitConversionHook]
+    [formState, packageConversionHook]
   );
 
   return {
@@ -125,16 +125,16 @@ export const useItemData = ({
 };
 
 /**
- * Parse unit conversions from database format
+ * Parse package conversions from database format
  */
-function parseUnitConversions(unitConversions: unknown): DBUnitConversion[] {
-  if (!unitConversions) return [];
+function parsePackageConversions(packageConversions: unknown): DBPackageConversion[] {
+  if (!packageConversions) return [];
 
   try {
     const parsed =
-      typeof unitConversions === 'string'
-        ? JSON.parse(unitConversions)
-        : unitConversions;
+      typeof packageConversions === 'string'
+        ? JSON.parse(packageConversions)
+        : packageConversions;
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     console.error('Error parsing unit_conversions from DB:', e);
@@ -143,15 +143,15 @@ function parseUnitConversions(unitConversions: unknown): DBUnitConversion[] {
 }
 
 /**
- * Map database unit conversions to UI format
+ * Map database package conversions to UI format
  */
-function mapUnitConversions(
-  conversions: DBUnitConversion[],
+function mapPackageConversions(
+  conversions: DBPackageConversion[],
   units: UnitData[]
-): UnitConversion[] {
+): PackageConversion[] {
   if (!Array.isArray(conversions)) return [];
 
-  return conversions.map((conv: DBUnitConversion) => {
+  return conversions.map((conv: DBPackageConversion) => {
     const unitDetail =
       units.find(u => u.id === conv.to_unit_id) ||
       units.find(u => u.name === conv.unit_name);
@@ -174,27 +174,27 @@ function mapUnitConversions(
 }
 
 /**
- * Initialize unit conversion hook with database data
+ * Initialize package conversion hook with database data
  */
-function initializeUnitConversions(
+function initializePackageConversions(
   itemData: Record<string, unknown>,
   units: UnitData[],
-  unitConversionHook: UseItemDataProps['unitConversionHook']
+  packageConversionHook: UseItemDataProps['packageConversionHook']
 ): void {
   // Set base unit and prices
-  unitConversionHook.setBaseUnit((itemData.base_unit as string) || '');
-  unitConversionHook.setBasePrice((itemData.base_price as number) || 0);
-  unitConversionHook.setSellPrice((itemData.sell_price as number) || 0);
-  unitConversionHook.skipNextRecalculation();
+  packageConversionHook.setBaseUnit((itemData.base_unit as string) || '');
+  packageConversionHook.setBasePrice((itemData.base_price as number) || 0);
+  packageConversionHook.setSellPrice((itemData.sell_price as number) || 0);
+  packageConversionHook.skipNextRecalculation();
 
   // Clear existing conversions
-  const currentConversions = [...unitConversionHook.conversions];
+  const currentConversions = [...packageConversionHook.conversions];
   for (const conv of currentConversions) {
-    unitConversionHook.removeUnitConversion(conv.id);
+    packageConversionHook.removePackageConversion(conv.id);
   }
 
   // Parse and add new conversions
-  const conversions = parseUnitConversions(itemData.unit_conversions);
+  const conversions = parsePackageConversions(itemData.unit_conversions);
   if (!Array.isArray(conversions)) return;
 
   for (const conv of conversions) {
@@ -202,7 +202,7 @@ function initializeUnitConversions(
 
     if (unitDetail && typeof conv.conversion_rate === 'number') {
       // Add conversion with valid unit
-      unitConversionHook.addUnitConversion({
+      packageConversionHook.addPackageConversion({
         id:
           conv.id ||
           `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -227,7 +227,7 @@ function initializeUnitConversions(
         name: conv.unit_name || 'Unknown Unit',
       };
 
-      unitConversionHook.addUnitConversion({
+      packageConversionHook.addPackageConversion({
         id:
           conv.id ||
           `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,

@@ -24,7 +24,7 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
       Item: 'items',
       Kategori: 'item_categories',
       'Jenis Item': 'item_types',
-      Satuan: 'item_units',
+      Kemasan: 'item_packages',
       Sediaan: 'item_dosages',
       Produsen: 'item_manufacturers',
     };

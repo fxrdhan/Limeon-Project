@@ -1,40 +1,40 @@
 import { useCallback } from 'react';
 import type {
-  UnitConversion,
+  PackageConversion,
   UnitData,
-  UnitConversionLogicFormData,
+  PackageConversionLogicFormData,
 } from '../../../shared/types';
 
-interface UseUnitConversionLogicProps {
-  conversions: UnitConversion[];
+interface UsePackageConversionLogicProps {
+  conversions: PackageConversion[];
   availableUnits: UnitData[];
-  formData: UnitConversionLogicFormData;
-  addUnitConversion: (
-    conversion: Omit<UnitConversion, 'id'> & {
+  formData: PackageConversionLogicFormData;
+  addPackageConversion: (
+    conversion: Omit<PackageConversion, 'id'> & {
       basePrice?: number;
       sellPrice?: number;
     }
   ) => void;
-  setFormData: (data: UnitConversionLogicFormData) => void;
+  setFormData: (data: PackageConversionLogicFormData) => void;
 }
 
-interface UseUnitConversionLogicPropsExtended
-  extends UseUnitConversionLogicProps {
+interface UsePackageConversionLogicPropsExtended
+  extends UsePackageConversionLogicProps {
   baseUnit?: string;
 }
 
-export const useUnitConversionLogic = ({
+export const usePackageConversionLogic = ({
   conversions,
   availableUnits,
   formData,
-  addUnitConversion,
+  addPackageConversion,
   setFormData,
   baseUnit,
-}: UseUnitConversionLogicPropsExtended) => {
+}: UsePackageConversionLogicPropsExtended) => {
   const validateAndAddConversion = useCallback(() => {
     // Validate unit selection
     if (!formData.unit) {
-      return { success: false, error: 'Silakan pilih satuan!' };
+      return { success: false, error: 'Silakan pilih kemasan!' };
     }
 
     // Validate conversion value
@@ -46,7 +46,7 @@ export const useUnitConversionLogic = ({
     if (baseUnit && formData.unit === baseUnit) {
       return {
         success: false,
-        error: 'Satuan turunan tidak boleh sama dengan satuan utama!',
+        error: 'Kemasan turunan tidak boleh sama dengan kemasan utama!',
       };
     }
 
@@ -55,18 +55,18 @@ export const useUnitConversionLogic = ({
     if (existingUnit) {
       return {
         success: false,
-        error: 'Satuan tersebut sudah ada dalam daftar!',
+        error: 'Kemasan tersebut sudah ada dalam daftar!',
       };
     }
 
     // Find selected unit details
     const selectedUnit = availableUnits.find(u => u.name === formData.unit);
     if (!selectedUnit) {
-      return { success: false, error: 'Satuan tidak valid!' };
+      return { success: false, error: 'Kemasan tidak valid!' };
     }
 
     // Add the conversion
-    addUnitConversion({
+    addPackageConversion({
       unit: {
         id: selectedUnit.id,
         name: selectedUnit.name,
@@ -90,7 +90,7 @@ export const useUnitConversionLogic = ({
     conversions,
     availableUnits,
     formData,
-    addUnitConversion,
+    addPackageConversion,
     setFormData,
     baseUnit,
   ]);

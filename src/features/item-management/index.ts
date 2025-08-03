@@ -31,7 +31,7 @@ export {
 // Core Hooks
 export { useAddItemForm } from './application/hooks/core/useItemCrud';
 export { useItemFormValidation } from './application/hooks/form/useItemValidation';
-export { useUnitConversion } from './application/hooks/utils/useUnitConversion';
+export { usePackageConversion } from './application/hooks/utils/usePackageConversion';
 export { useEntityModalLogic } from './application/hooks/entity/useEntityModalLogic';
 
 // Type Definitions
@@ -39,7 +39,7 @@ export type {
   ItemFormData,
   ItemManagementModalProps,
   ItemManagementContextValue,
-  UnitConversion,
+  PackageConversion,
 } from './shared/types';
 
 // Utility Functions

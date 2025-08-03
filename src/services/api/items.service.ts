@@ -2,8 +2,8 @@ import { BaseService, ServiceResponse } from './base.service';
 import { supabase } from '@/lib/supabase';
 import type {
   DBItem,
-  UnitConversion,
-  DBUnitConversion,
+  PackageConversion,
+  DBPackageConversion,
 } from '@/types/database';
 import type { Item } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
@@ -20,7 +20,7 @@ export class ItemsService extends BaseService<DBItem> {
         *,
         item_categories!inner(id, name),
         item_types!inner(id, name),
-        item_units!inner(id, name)
+        item_packages!inner(id, name)
       `;
 
       const result = await super.getAll({
@@ -45,16 +45,16 @@ export class ItemsService extends BaseService<DBItem> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformedData = (result.data as any[]).map((item: any) => {
         // Parse unit conversions
-        let unitConversions: UnitConversion[] = [];
+        let packageConversions: PackageConversion[] = [];
         if (item.unit_conversions) {
           if (typeof item.unit_conversions === 'string') {
             try {
-              unitConversions = JSON.parse(item.unit_conversions);
+              packageConversions = JSON.parse(item.unit_conversions);
             } catch {
-              unitConversions = [];
+              packageConversions = [];
             }
           } else if (Array.isArray(item.unit_conversions)) {
-            unitConversions = item.unit_conversions;
+            packageConversions = item.unit_conversions;
           }
         }
 
@@ -68,10 +68,10 @@ export class ItemsService extends BaseService<DBItem> {
           ...item,
           category: item.item_categories || { name: '' },
           type: item.item_types || { name: '' },
-          unit: item.item_units || { name: '' },
+          unit: item.item_packages || { name: '' },
           manufacturer: manufacturerName,
-          unit_conversions: unitConversions,
-          base_unit: item.item_units?.name || '',
+          unit_conversions: packageConversions,
+          base_unit: item.item_packages?.name || '',
         };
       });
 
@@ -94,7 +94,7 @@ export class ItemsService extends BaseService<DBItem> {
           *,
           item_categories!inner(id, name),
           item_types!inner(id, name),
-          item_units!inner(id, name)
+          item_packages!inner(id, name)
         `
         )
         .eq('id', id)
@@ -116,16 +116,16 @@ export class ItemsService extends BaseService<DBItem> {
       }
 
       // Parse unit conversions
-      let unitConversions: UnitConversion[] = [];
+      let packageConversions: PackageConversion[] = [];
       if (item.unit_conversions) {
         if (typeof item.unit_conversions === 'string') {
           try {
-            unitConversions = JSON.parse(item.unit_conversions);
+            packageConversions = JSON.parse(item.unit_conversions);
           } catch {
-            unitConversions = [];
+            packageConversions = [];
           }
         } else if (Array.isArray(item.unit_conversions)) {
-          unitConversions = item.unit_conversions;
+          packageConversions = item.unit_conversions;
         }
       }
 
@@ -134,10 +134,10 @@ export class ItemsService extends BaseService<DBItem> {
         ...item,
         category: item.item_categories || { name: '' },
         type: item.item_types || { name: '' },
-        unit: item.item_units || { name: '' },
+        unit: item.item_packages || { name: '' },
         manufacturer: manufacturerName,
-        unit_conversions: unitConversions,
-        base_unit: item.item_units?.name || '',
+        unit_conversions: packageConversions,
+        base_unit: item.item_packages?.name || '',
       };
 
       return { data: transformedItem, error: null };
@@ -156,7 +156,7 @@ export class ItemsService extends BaseService<DBItem> {
         *,
         item_categories!inner(id, name),
         item_types!inner(id, name),
-        item_units!inner(id, name)
+        item_packages!inner(id, name)
       `;
 
       const result = await this.search(
@@ -185,16 +185,16 @@ export class ItemsService extends BaseService<DBItem> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformedData = (result.data as any[]).map((item: any) => {
         // Parse unit conversions
-        let unitConversions: UnitConversion[] = [];
+        let packageConversions: PackageConversion[] = [];
         if (item.unit_conversions) {
           if (typeof item.unit_conversions === 'string') {
             try {
-              unitConversions = JSON.parse(item.unit_conversions);
+              packageConversions = JSON.parse(item.unit_conversions);
             } catch {
-              unitConversions = [];
+              packageConversions = [];
             }
           } else if (Array.isArray(item.unit_conversions)) {
-            unitConversions = item.unit_conversions;
+            packageConversions = item.unit_conversions;
           }
         }
 
@@ -208,10 +208,10 @@ export class ItemsService extends BaseService<DBItem> {
           ...item,
           category: item.item_categories || { name: '' },
           type: item.item_types || { name: '' },
-          unit: item.item_units || { name: '' },
+          unit: item.item_packages || { name: '' },
           manufacturer: manufacturerName,
-          unit_conversions: unitConversions,
-          base_unit: item.item_units?.name || '',
+          unit_conversions: packageConversions,
+          base_unit: item.item_packages?.name || '',
         };
       });
 
@@ -250,7 +250,7 @@ export class ItemsService extends BaseService<DBItem> {
           *,
           item_categories!inner(id, name),
           item_types!inner(id, name),
-          item_units!inner(id, name)
+          item_packages!inner(id, name)
         `
         )
         .lte('stock', threshold)
@@ -273,16 +273,16 @@ export class ItemsService extends BaseService<DBItem> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformedData = (data as any[]).map((item: any) => {
         // Parse unit conversions
-        let unitConversions: UnitConversion[] = [];
+        let packageConversions: PackageConversion[] = [];
         if (item.unit_conversions) {
           if (typeof item.unit_conversions === 'string') {
             try {
-              unitConversions = JSON.parse(item.unit_conversions);
+              packageConversions = JSON.parse(item.unit_conversions);
             } catch {
-              unitConversions = [];
+              packageConversions = [];
             }
           } else if (Array.isArray(item.unit_conversions)) {
-            unitConversions = item.unit_conversions;
+            packageConversions = item.unit_conversions;
           }
         }
 
@@ -296,10 +296,10 @@ export class ItemsService extends BaseService<DBItem> {
           ...item,
           category: item.item_categories || { name: '' },
           type: item.item_types || { name: '' },
-          unit: item.item_units || { name: '' },
+          unit: item.item_packages || { name: '' },
           manufacturer: manufacturerName,
-          unit_conversions: unitConversions,
-          base_unit: item.item_units?.name || '',
+          unit_conversions: packageConversions,
+          base_unit: item.item_packages?.name || '',
         };
       });
 
@@ -312,14 +312,14 @@ export class ItemsService extends BaseService<DBItem> {
   // Create item with unit conversions
   async createItemWithConversions(
     itemData: Omit<DBItem, 'id' | 'created_at' | 'updated_at'>,
-    unitConversions?: DBUnitConversion[]
+    packageConversions?: DBPackageConversion[]
   ): Promise<ServiceResponse<DBItem>> {
     try {
       // Prepare item data with unit conversions
       const dataToInsert = {
         ...itemData,
-        unit_conversions: unitConversions
-          ? JSON.stringify(unitConversions)
+        unit_conversions: packageConversions
+          ? JSON.stringify(packageConversions)
           : '[]',
       };
 
@@ -333,13 +333,13 @@ export class ItemsService extends BaseService<DBItem> {
   async updateItemWithConversions(
     id: string,
     itemData: Partial<Omit<DBItem, 'id' | 'created_at'>>,
-    unitConversions?: DBUnitConversion[]
+    packageConversions?: DBPackageConversion[]
   ): Promise<ServiceResponse<DBItem>> {
     try {
       const updateData = { ...itemData };
 
-      if (unitConversions !== undefined) {
-        updateData.unit_conversions = JSON.stringify(unitConversions);
+      if (packageConversions !== undefined) {
+        updateData.unit_conversions = JSON.stringify(packageConversions);
       }
 
       return this.update(id, updateData);

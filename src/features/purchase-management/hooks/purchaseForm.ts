@@ -7,7 +7,7 @@ import type {
   CompanyProfile,
   PurchaseFormData,
   PurchaseItem,
-  UnitConversion,
+  PackageConversion,
 } from '@/types';
 
 interface UsePurchaseFormProps {
@@ -216,17 +216,17 @@ export const usePurchaseForm = ({
         let conversionRate = 1;
 
         if (unitName !== itemData.base_unit) {
-          const unitConversionsArray = Array.isArray(itemData.unit_conversions)
+          const packageConversionsArray = Array.isArray(itemData.unit_conversions)
             ? itemData.unit_conversions
             : [];
-          const unitConversion = unitConversionsArray.find(
-            (uc: UnitConversion) => uc.unit.name === unitName
+          const packageConversion = packageConversionsArray.find(
+            (uc: PackageConversion) => uc.unit.name === unitName
           );
-          if (unitConversion) {
+          if (packageConversion) {
             price =
-              unitConversion.basePrice ||
-              itemData.base_price / unitConversion.conversion;
-            conversionRate = unitConversion.conversion;
+              packageConversion.basePrice ||
+              itemData.base_price / packageConversion.conversion;
+            conversionRate = packageConversion.conversion;
           }
         }
 
@@ -325,13 +325,13 @@ export const usePurchaseForm = ({
           let quantityInBaseUnit = item.quantity;
 
           if (item.unit !== itemData.base_unit) {
-            const unitConversion = itemData.unit_conversions.find(
+            const packageConversion = itemData.unit_conversions.find(
               (uc: { unit_name: string }) => uc.unit_name === item.unit
             );
 
-            if (unitConversion) {
+            if (packageConversion) {
               quantityInBaseUnit =
-                item.quantity / unitConversion.conversion_rate;
+                item.quantity / packageConversion.conversion_rate;
             }
           }
 

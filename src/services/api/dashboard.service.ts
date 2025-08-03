@@ -159,7 +159,7 @@ export class DashboardService {
           stock,
           item_categories (name),
           item_types (name),
-          item_units (name)
+          item_packages (name)
         `
         )
         .lte('stock', threshold)

@@ -354,7 +354,7 @@ const DashboardNew = () => {
                   name: string;
                   stock: number;
                   item_categories?: { name: string }[];
-                  item_units?: { name: string }[];
+                  item_packages?: { name: string }[];
                 }) => (
                   <div
                     key={item.id}
@@ -364,7 +364,7 @@ const DashboardNew = () => {
                       <p className="font-medium text-gray-900">{item.name}</p>
                       <p className="text-sm text-gray-600">
                         {item.item_categories?.[0]?.name} •{' '}
-                        {item.item_units?.[0]?.name}
+                        {item.item_packages?.[0]?.name}
                       </p>
                     </div>
                     <div className="text-right">

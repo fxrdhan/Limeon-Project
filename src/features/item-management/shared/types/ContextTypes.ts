@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Category, MedicineType, Unit } from '@/types/database';
 import type { ItemDosage } from '../../domain/entities/Item';
-import type { UseUnitConversionReturn } from '@/types/hooks';
+import type { UsePackageConversionReturn } from '@/types/hooks';
 import type { ItemFormData } from './FormTypes';
 import type { VersionData } from './ItemTypes';
 
@@ -45,7 +45,7 @@ export interface ItemModalState {
 }
 
 export interface ItemPriceState {
-  unitConversionHook: UseUnitConversionReturn;
+  packageConversionHook: UsePackageConversionReturn;
   displayBasePrice: string;
   displaySellPrice: string;
 }

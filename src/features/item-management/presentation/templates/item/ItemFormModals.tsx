@@ -95,7 +95,7 @@ export default function ItemFormModals({
         onClose={unitModal.onClose}
         onSubmit={unitModal.onSubmit}
         isLoading={unitModal.mutation.isPending}
-        entityName="Satuan"
+        entityName="Kemasan"
         initialNameFromSearch={currentSearchTerm}
       />
 

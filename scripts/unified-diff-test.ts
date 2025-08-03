@@ -16,11 +16,9 @@
  *   yarn tsx scripts/unified-diff-test.ts --id abbrev_001           # Run specific test case
  */
 
-import { DiffSegment } from '../src/utils/diff';
 import { 
   DIFF_TEST_DICTIONARY, 
   DiffTestCase, 
-  getTestStatistics,
   getAllCategories 
 } from './diff-test-dictionary';
 import * as readline from 'readline';
@@ -36,9 +34,14 @@ const colors = {
   bold: '\x1b[1m',
 };
 
+interface DiffSegment {
+  type: 'added' | 'removed' | 'unchanged';
+  text: string;
+}
+
 interface TestResult {
   testCase: DiffTestCase;
-  segments: any[];
+  segments: DiffSegment[];
   actualMode: 'character' | 'word' | 'smart';
   passed: boolean;
   executionTime: number;
@@ -46,7 +49,7 @@ interface TestResult {
 }
 
 interface ApiResult {
-  segments: any[];
+  segments: DiffSegment[];
   analysis: {
     wordSimilarity: number;
     characterSimilarity: number;
@@ -67,7 +70,7 @@ interface ApiResult {
 /**
  * Format segments for display with colors
  */
-function formatSegments(segments: any[]): string {
+function formatSegments(segments: DiffSegment[]): string {
   return segments
     .map(segment => {
       switch (segment.type) {
@@ -110,7 +113,7 @@ async function callDiffAnalyzer(oldText: string, newText: string): Promise<ApiRe
 /**
  * Detect which diff mode was actually used (based on segment patterns)
  */
-function detectActualMode(oldText: string, newText: string, segments: any[]): 'character' | 'word' | 'smart' {
+function detectActualMode(oldText: string, newText: string, segments: DiffSegment[]): 'character' | 'word' | 'smart' {
   if (oldText === newText) return 'smart';
   
   const changeSegments = segments.filter(s => s.type !== 'unchanged');
@@ -148,7 +151,7 @@ function detectActualMode(oldText: string, newText: string, segments: any[]): 'c
 /**
  * Check for accuracy issues
  */
-function checkAccuracy(testCase: DiffTestCase, segments: any[]): string | null {
+function checkAccuracy(testCase: DiffTestCase, segments: DiffSegment[]): string | null {
   const reconstructedOld = segments
     .filter(s => s.type !== 'added')
     .map(s => s.text)
@@ -173,7 +176,7 @@ function checkAccuracy(testCase: DiffTestCase, segments: any[]): string | null {
 /**
  * Check for over-fragmentation
  */
-function checkFragmentation(segments: any[]): string | null {
+function checkFragmentation(segments: DiffSegment[]): string | null {
   const changeSegments = segments.filter(s => s.type !== 'unchanged');
   const smallSegments = changeSegments.filter(s => s.text.length <= 2);
   
@@ -190,7 +193,7 @@ function checkFragmentation(segments: any[]): string | null {
 async function runSingleTest(testCase: DiffTestCase): Promise<TestResult> {
   const startTime = performance.now();
   
-  let segments: any[];
+  let segments: DiffSegment[];
   try {
     const result = await callDiffAnalyzer(testCase.oldText, testCase.newText);
     segments = result.segments;

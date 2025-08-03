@@ -173,14 +173,14 @@ const PurchaseList = () => {
           let quantityInBaseUnit = item.quantity;
 
           if (item.unit !== itemData.base_unit) {
-            const unitConversion = itemData.unit_conversions?.find(
+            const packageConversion = itemData.unit_conversions?.find(
               (uc: { unit_name: string; conversion_rate: number }) =>
                 uc.unit_name === item.unit
             );
 
-            if (unitConversion) {
+            if (packageConversion) {
               quantityInBaseUnit =
-                item.quantity / unitConversion.conversion_rate;
+                item.quantity / packageConversion.conversion_rate;
             }
           }
 

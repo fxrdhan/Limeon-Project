@@ -71,7 +71,7 @@ export const useItemCodeGeneration = ({
    */
   const regenerateItemCode = async (): Promise<void> => {
     if (!formData.type_id || !formData.category_id || !formData.unit_id) {
-      alert('Silakan pilih jenis, kategori, dan satuan terlebih dahulu');
+      alert('Silakan pilih jenis, kategori, dan kemasan terlebih dahulu');
       return;
     }
 

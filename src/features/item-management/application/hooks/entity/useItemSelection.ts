@@ -44,8 +44,8 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
           ...item,
           category: item.item_categories?.[0] || { name: '' },
           type: item.item_types?.[0] || { name: '' },
-          unit: item.item_units?.[0] || { name: '' },
-          base_unit: item.item_units?.[0]?.name || '',
+          unit: item.item_packages?.[0] || { name: '' },
+          base_unit: item.item_packages?.[0]?.name || '',
           unit_conversions:
             typeof item.unit_conversions === 'string'
               ? JSON.parse(item.unit_conversions || '[]')

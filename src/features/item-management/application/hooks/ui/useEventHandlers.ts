@@ -3,7 +3,7 @@ import type { ChangeEvent, RefObject } from 'react';
 interface AddItemFormType {
   handleSelectChange: (e: ChangeEvent<HTMLSelectElement>) => void;
   units: Array<{ id: string; name: string }>;
-  unitConversionHook: { setBaseUnit: (unit: string) => void };
+  packageConversionHook: { setBaseUnit: (unit: string) => void };
   setMarginPercentage: (value: string) => void;
   formData: { base_price: number; min_stock: number; is_medicine: boolean };
   updateFormData: (data: Record<string, unknown>) => void;
@@ -42,7 +42,7 @@ export const useAddItemEventHandlers = ({
     if (name === 'unit_id' && value) {
       const selectedUnit = addItemForm.units.find(unit => unit.id === value);
       if (selectedUnit)
-        addItemForm.unitConversionHook.setBaseUnit(selectedUnit.name);
+        addItemForm.packageConversionHook.setBaseUnit(selectedUnit.name);
     }
   };
 

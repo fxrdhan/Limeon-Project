@@ -102,8 +102,8 @@ export const ItemListSkeleton = ({ rows = 8 }: { rows?: number }) => {
     { title: 'Barcode', className: 'w-[8%]' },
     { title: 'Kategori', className: 'w-[8%]' },
     { title: 'Jenis', className: 'w-[14%]' },
-    { title: 'Satuan', className: 'w-[6%]' },
-    { title: 'Satuan Turunan', className: 'w-[10%]' },
+    { title: 'Kemasan', className: 'w-[6%]' },
+    { title: 'Kemasan Turunan', className: 'w-[10%]' },
     { title: 'Harga Pokok', className: 'w-[10%] text-right' },
     { title: 'Harga Jual', className: 'w-[10%] text-right' },
     { title: 'Stok', className: 'w-[5%] text-center' },
@@ -143,7 +143,7 @@ export const CategoryListSkeleton = ({ rows = 8 }: { rows?: number }) => {
 
 export const UnitListSkeleton = ({ rows = 8 }: { rows?: number }) => {
   const headers = [
-    { title: 'Nama Satuan', className: 'w-[50%]' },
+    { title: 'Nama Kemasan', className: 'w-[50%]' },
     { title: 'Singkatan', className: 'w-[25%]' },
     { title: 'Deskripsi', className: 'w-[25%]' },
   ];

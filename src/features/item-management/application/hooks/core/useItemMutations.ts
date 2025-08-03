@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import type { ItemFormData, UnitConversion } from '../../../shared/types';
+import type { ItemFormData, PackageConversion } from '../../../shared/types';
 
 interface UseAddItemMutationsProps {
   onClose: () => void;
@@ -79,7 +79,7 @@ export const useAddItemMutations = ({
       address?: string;
     }) => {
       const { data, error } = await supabase
-        .from('item_units')
+        .from('item_packages')
         .insert(newUnit)
         .select('id, name, description')
         .single();
@@ -171,7 +171,7 @@ export const useAddItemMutations = ({
    */
   const prepareItemData = (
     formData: ItemFormData,
-    conversions: UnitConversion[],
+    conversions: PackageConversion[],
     baseUnit: string,
     isUpdate: boolean = false
   ) => {
@@ -221,7 +221,7 @@ export const useAddItemMutations = ({
       itemId,
     }: {
       formData: ItemFormData;
-      conversions: UnitConversion[];
+      conversions: PackageConversion[];
       baseUnit: string;
       isEditMode: boolean;
       itemId?: string;
@@ -270,7 +270,7 @@ export const useAddItemMutations = ({
           }
         } else {
           throw new Error(
-            'Silakan lengkapi jenis, satuan, dan kategori item terlebih dahulu.'
+            'Silakan lengkapi jenis, kemasan, dan kategori item terlebih dahulu.'
           );
         }
       }
@@ -403,14 +403,14 @@ export const useAddItemMutations = ({
     try {
       const newUnit = await addUnitMutation.mutateAsync(unitData);
       const { data: updatedUnits } = await supabase
-        .from('item_units')
+        .from('item_packages')
         .select('id, name, description, updated_at')
         .order('name');
 
       return { newUnit, updatedUnits: updatedUnits || [] };
     } catch (error) {
       console.error('Error saving unit:', error);
-      throw new Error('Gagal menyimpan satuan baru.');
+      throw new Error('Gagal menyimpan kemasan baru.');
     }
   };
 
