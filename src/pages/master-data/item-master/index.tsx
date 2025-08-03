@@ -6,7 +6,7 @@ import { EntityManagementModal } from '@/features/item-management/presentation/t
 import ItemManagementModal from '@/features/item-management/presentation/templates/item/ItemManagementModal';
 import { Card } from '@/components/card';
 import { DataGrid, DataGridRef, createTextColumn } from '@/components/ag-grid';
-import { ColDef, RowClickedEvent } from 'ag-grid-community';
+import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from 'ag-grid-community';
 import { motion, LayoutGroup } from 'framer-motion';
 import classNames from 'classnames';
 
@@ -24,6 +24,7 @@ import {
   itemMasterSearchColumns,
   itemSearchColumns,
 } from '@/utils/searchColumns';
+import { FilterSearch } from '@/types/search';
 
 // Additional imports for Items tab
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
@@ -150,6 +151,7 @@ const ItemMasterNew = () => {
     null
   ) as React.RefObject<HTMLInputElement>;
   const dataGridRef = useRef<DataGridRef>(null);
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
 
   // Update active tab when URL changes
   useEffect(() => {
@@ -283,10 +285,52 @@ const ItemMasterNew = () => {
     setDataSearch('');
   }, [setDataSearch]);
 
+  // Function to apply filter programmatically  
+  const applyColumnFilter = useCallback(async (columnId: string, filterType: string, filterValue: string) => {
+    if (!gridApi) return;
+    
+    try {
+      await gridApi.setColumnFilterModel(columnId, {
+        filterType: 'text',
+        type: filterType,
+        filter: filterValue
+      });
+      gridApi.onFilterChanged();
+    } catch (error) {
+      console.error('Failed to apply filter:', error);
+    }
+  }, [gridApi]);
+
+  // Function to clear all filters
+  const clearAllFilters = useCallback(() => {
+    if (!gridApi) return;
+    gridApi.setFilterModel(null);
+    gridApi.onFilterChanged();
+  }, [gridApi]);
+
+  // Handle AG Grid filter from search bar
+  const handleFilterSearch = useCallback(async (filterSearch: FilterSearch | null) => {
+    if (!filterSearch) {
+      // Clear all AG Grid filters when filterSearch is null
+      clearAllFilters();
+      return;
+    }
+    
+    try {
+      await applyColumnFilter(
+        filterSearch.field,
+        filterSearch.operator,
+        filterSearch.value
+      );
+    } catch (error) {
+      console.error('Failed to apply search bar filter:', error);
+    }
+  }, [applyColumnFilter, clearAllFilters]);
+
   // Unified search functionality with hybrid mode
   const {
     search,
-    onGridReady,
+    onGridReady: originalOnGridReady,
     isExternalFilterPresent,
     doesExternalFilterPass,
     searchBarProps,
@@ -298,7 +342,19 @@ const ItemMasterNew = () => {
     data: data,
     onSearch: handleSearch,
     onClear: handleClear,
+    onFilterSearch: handleFilterSearch,
   });
+
+  // Enhanced onGridReady to capture grid API
+  const onGridReady = useCallback((params: GridReadyEvent) => {
+    setGridApi(params.api);
+    originalOnGridReady(params);
+  }, [originalOnGridReady]);
+
+  // Specific function for applying "contains depresi" filter to description column
+  const applyDepresiFilter = useCallback(async () => {
+    await applyColumnFilter('description', 'contains', 'depresi');
+  }, [applyColumnFilter]);
 
   // Event handlers for Items tab
   const openAddItemModal = (itemId?: string, searchQuery?: string) => {
@@ -370,11 +426,33 @@ const ItemMasterNew = () => {
         return params.data.kode || '-';
       },
     }),
-    createTextColumn({
+    {
       field: 'name',
       headerName: currentConfig.nameColumnHeader,
       minWidth: 120,
-    }),
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: [
+          'contains',
+          'notContains', 
+          'equals',
+          'notEqual',
+          'startsWith',
+          'endsWith'
+        ],
+        defaultOption: 'contains',
+        suppressAndOrCondition: false,
+        caseSensitive: false,
+      },
+      cellStyle: {
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      },
+      tooltipField: 'name',
+      sortable: true,
+      resizable: true,
+    },
     // Add NCI Code column for packages and dosages tabs
     ...(activeTab === 'packages' || activeTab === 'dosages'
       ? [
@@ -498,6 +576,26 @@ const ItemMasterNew = () => {
             />
           </div>
         </div>
+
+        {/* Filter buttons for categories tab */}
+        {activeTab === 'categories' && (
+          <div className="flex items-center gap-2 mt-4 mb-2">
+            <button
+              onClick={applyDepresiFilter}
+              className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              disabled={!gridApi}
+            >
+              Filter "depresi"
+            </button>
+            <button
+              onClick={clearAllFilters}
+              className="px-3 py-1.5 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+              disabled={!gridApi}
+            >
+              Clear Filters
+            </button>
+          </div>
+        )}
 
         {isError ? (
           <div className="text-center p-6 text-red-500">

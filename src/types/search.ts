@@ -10,6 +10,11 @@ export interface TargetedSearch {
   field: string;
   value: string;
   column: SearchColumn;
+  operator?: string;
+}
+
+export interface FilterSearch extends TargetedSearch {
+  operator: string;
 }
 
 export interface EnhancedSearchState {
@@ -17,6 +22,10 @@ export interface EnhancedSearchState {
   targetedSearch?: TargetedSearch;
   globalSearch?: string;
   showColumnSelector: boolean;
+  showOperatorSelector: boolean;
+  isFilterMode: boolean;
+  filterSearch?: FilterSearch;
+  selectedColumn?: SearchColumn;
 }
 
 export interface ColumnSelectorProps {
@@ -43,4 +52,5 @@ export interface EnhancedSearchBarProps {
   onTargetedSearch?: (targetedSearch: TargetedSearch | null) => void;
   onGlobalSearch?: (search: string) => void;
   onClearSearch?: () => void;
+  onFilterSearch?: (filterSearch: FilterSearch | null) => void;
 }
