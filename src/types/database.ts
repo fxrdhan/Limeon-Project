@@ -101,9 +101,9 @@ export interface Item {
   base_price: number;
   sell_price: number;
   stock: number;
-  unit_id?: string;
+  package_id?: string;
   base_unit?: string;
-  unit_conversions: PackageConversion[];
+  package_conversions: PackageConversion[];
   customer_level_discounts?: CustomerLevelDiscount[];
   category: { name: string };
   type: { name: string };
@@ -143,10 +143,10 @@ export interface DBItem {
   base_price: number;
   sell_price: number;
   stock: number;
-  unit_conversions: string | PackageConversion[];
+  package_conversions: string | PackageConversion[];
   category_id?: string;
   type_id?: string;
-  unit_id?: string;
+  package_id?: string;
   item_categories?: { name: string }[] | null;
   item_types?: { name: string }[] | null;
   item_packages?: { name: string }[] | null;

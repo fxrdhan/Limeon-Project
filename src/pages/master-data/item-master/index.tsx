@@ -1,128 +1,29 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Pagination from '@/components/pagination';
-import PageTitle from '@/components/page-title';
-import { EntityManagementModal } from '@/features/item-management/presentation/templates/entity';
-import ItemManagementModal from '@/features/item-management/presentation/templates/item/ItemManagementModal';
-import { Card } from '@/components/card';
-import { DataGrid, DataGridRef, createTextColumn } from '@/components/ag-grid';
-import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from 'ag-grid-community';
 import { motion, LayoutGroup } from 'framer-motion';
 import classNames from 'classnames';
 
-// Use the new modular architecture
-import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
-
-import type {
-  Category,
-  MedicineType,
-  Unit,
-  Item as ItemDataType,
-} from '@/types/database';
-import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
-import {
-  itemMasterSearchColumns,
-  itemSearchColumns,
-} from '@/utils/searchColumns';
-import { FilterSearch } from '@/types/search';
-
-// Additional imports for Items tab
+// Components
+import PageTitle from '@/components/page-title';
+import { Card } from '@/components/card';
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
 import { ItemDataTable } from '@/features/item-management/presentation/organisms';
+import ItemManagementModal from '@/features/item-management/presentation/templates/item/ItemManagementModal';
+
+// New unified entity management
+import { EntityMasterPage } from '@/features/item-management/presentation/pages';
+
+// Hooks and utilities
+import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
+import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
+import { itemSearchColumns } from '@/utils/searchColumns';
 
-type MasterDataType =
-  | 'categories'
-  | 'types'
-  | 'packages'
-  | 'dosages'
-  | 'manufacturers'
-  | 'items';
-type MasterDataEntity = Category | MedicineType | Unit | ItemDataType;
+// Types
+import type { Item as ItemDataType } from '@/types/database';
+import { FilterSearch } from '@/types/search';
 
-interface TabConfig {
-  key: MasterDataType;
-  label: string;
-  entityName: string;
-  addButtonText: string;
-  searchPlaceholder: string;
-  nameColumnHeader: string;
-  noDataMessage: string;
-  searchNoDataMessage: string;
-}
-
-const tabConfigs: Record<MasterDataType, TabConfig> = {
-  categories: {
-    key: 'categories',
-    label: 'Kategori',
-    entityName: 'Kategori',
-    addButtonText: 'Tambah Kategori Baru',
-    searchPlaceholder: 'Cari nama atau deskripsi kategori item',
-    nameColumnHeader: 'Nama Kategori',
-    noDataMessage: 'Tidak ada data kategori yang ditemukan',
-    searchNoDataMessage: 'Tidak ada kategori dengan kata kunci',
-  },
-  types: {
-    key: 'types',
-    label: 'Jenis',
-    entityName: 'Jenis Item',
-    addButtonText: 'Tambah Jenis Item Baru',
-    searchPlaceholder: 'Cari nama atau deskripsi jenis item',
-    nameColumnHeader: 'Nama Jenis',
-    noDataMessage: 'Tidak ada data jenis item yang ditemukan',
-    searchNoDataMessage: 'Tidak ada jenis item dengan kata kunci',
-  },
-  packages: {
-    key: 'packages',
-    label: 'Kemasan',
-    entityName: 'Kemasan',
-    addButtonText: 'Tambah Kemasan Baru',
-    searchPlaceholder: 'Cari nama atau deskripsi kemasan',
-    nameColumnHeader: 'Nama Kemasan',
-    noDataMessage: 'Tidak ada data kemasan yang ditemukan',
-    searchNoDataMessage: 'Tidak ada kemasan dengan kata kunci',
-  },
-  dosages: {
-    key: 'dosages',
-    label: 'Sediaan',
-    entityName: 'Sediaan',
-    addButtonText: 'Tambah Sediaan Baru',
-    searchPlaceholder: 'Cari nama atau deskripsi sediaan',
-    nameColumnHeader: 'Nama Sediaan',
-    noDataMessage: 'Tidak ada data sediaan yang ditemukan',
-    searchNoDataMessage: 'Tidak ada sediaan dengan kata kunci',
-  },
-  manufacturers: {
-    key: 'manufacturers',
-    label: 'Produsen',
-    entityName: 'Produsen',
-    addButtonText: 'Tambah Produsen Baru',
-    searchPlaceholder: 'Cari nama atau alamat produsen',
-    nameColumnHeader: 'Nama Produsen',
-    noDataMessage: 'Tidak ada data produsen yang ditemukan',
-    searchNoDataMessage: 'Tidak ada produsen dengan kata kunci',
-  },
-  items: {
-    key: 'items',
-    label: 'Item',
-    entityName: 'Item',
-    addButtonText: 'Tambah Item Baru',
-    searchPlaceholder: 'Cari nama, kode, atau deskripsi item',
-    nameColumnHeader: 'Nama Item',
-    noDataMessage: 'Tidak ada data item yang ditemukan',
-    searchNoDataMessage: 'Tidak ada item dengan kata kunci',
-  },
-};
-
-// Define tab order with items first
-const tabOrder: MasterDataType[] = [
-  'items',
-  'categories',
-  'types',
-  'packages',
-  'dosages',
-  'manufacturers',
-];
+type MasterDataType = 'items' | 'categories' | 'types' | 'packages' | 'dosages' | 'manufacturers' | 'units';
 
 const ItemMasterNew = () => {
   const location = useLocation();
@@ -133,25 +34,21 @@ const ItemMasterNew = () => {
     const pathSegments = pathname.split('/');
     const lastSegment = pathSegments[pathSegments.length - 1];
     
-    // Map URL segments to tab types
     const urlToTabMap: Record<string, MasterDataType> = {
       'items': 'items',
       'categories': 'categories', 
       'types': 'types',
       'packages': 'packages',
       'dosages': 'dosages',
-      'manufacturers': 'manufacturers'
+      'manufacturers': 'manufacturers',
+      'units': 'units'
     };
     
     return urlToTabMap[lastSegment] || 'items';
   };
 
   const [activeTab, setActiveTab] = useState<MasterDataType>(getTabFromPath(location.pathname));
-  const searchInputRef = useRef<HTMLInputElement>(
-    null
-  ) as React.RefObject<HTMLInputElement>;
-  const dataGridRef = useRef<DataGridRef>(null);
-  const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Update active tab when URL changes
   useEffect(() => {
@@ -161,202 +58,22 @@ const ItemMasterNew = () => {
     }
   }, [location.pathname, activeTab]);
 
-  // State for Items tab modal management
+  // Items tab states (only needed for items tab)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isItemModalClosing, setIsItemModalClosing] = useState(false);
-  const [editingItemId, setEditingItemId] = useState<string | undefined>(
-    undefined
-  );
-  const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<
-    string | undefined
-  >(undefined);
+  const [editingItemId, setEditingItemId] = useState<string | undefined>(undefined);
+  const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<string | undefined>(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
 
-  const currentConfig = tabConfigs[activeTab];
-
-  // Grid columns configuration for Items tab
-  const { columnDefs: itemColumnDefs, columnsToAutoSize } =
-    useItemGridColumns();
-
-  // Map activeTab to table names for realtime control
-  const getTableNameFromTab = (tab: MasterDataType) => {
-    switch (tab) {
-      case 'categories':
-        return 'item_categories';
-      case 'types':
-        return 'item_types';
-      case 'packages':
-        return 'item_packages';
-      case 'dosages':
-        return 'item_dosages';
-      case 'manufacturers':
-        return 'item_manufacturers';
-      case 'items':
-        return 'items';
-    }
-  };
-
-  // Data management hooks for each tab - only active tab subscribes to realtime
-  const categoriesManagement = useMasterDataManagement(
-    'item_categories',
-    'Kategori',
-    {
-      searchInputRef,
-      activeTableName: getTableNameFromTab(activeTab),
-    }
-  );
-  const typesManagement = useMasterDataManagement('item_types', 'Jenis Item', {
-    searchInputRef,
-    activeTableName: getTableNameFromTab(activeTab),
-  });
-  const unitsManagement = useMasterDataManagement('item_packages', 'Kemasan', {
-    searchInputRef,
-    activeTableName: getTableNameFromTab(activeTab),
-  });
-  const dosagesManagement = useMasterDataManagement('item_dosages', 'Sediaan', {
-    searchInputRef,
-    activeTableName: getTableNameFromTab(activeTab),
-  });
-  const manufacturersManagement = useMasterDataManagement(
-    'item_manufacturers',
-    'Produsen',
-    {
-      searchInputRef,
-      activeTableName: getTableNameFromTab(activeTab),
-    }
-  );
+  // Items tab management (only for items tab)
   const itemsManagement = useMasterDataManagement('items', 'Item', {
-    searchInputRef,
-    activeTableName: getTableNameFromTab(activeTab),
+    searchInputRef: searchInputRef as React.RefObject<HTMLInputElement>,
+    activeTableName: activeTab === 'items' ? 'items' : undefined,
   });
 
-  // Get current management based on active tab
-  const getCurrentManagement = () => {
-    switch (activeTab) {
-      case 'categories':
-        return categoriesManagement;
-      case 'types':
-        return typesManagement;
-      case 'packages':
-        return unitsManagement;
-      case 'dosages':
-        return dosagesManagement;
-      case 'manufacturers':
-        return manufacturersManagement;
-      case 'items':
-        return itemsManagement;
-    }
-  };
+  const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns();
 
-  const {
-    data,
-    isLoading,
-    isError,
-    queryError: error,
-    isFetching,
-    isAddModalOpen,
-    setIsAddModalOpen,
-    isEditModalOpen,
-    setIsEditModalOpen,
-    editingItem,
-    currentPage,
-    itemsPerPage,
-    totalPages,
-    totalItems,
-    handleEdit,
-    handleModalSubmit,
-    handlePageChange,
-    handleItemsPerPageChange,
-    deleteMutation,
-    openConfirmDialog,
-    handleKeyDown,
-    setSearch: setDataSearch,
-  } = getCurrentManagement();
-
-  // Stable callback functions to prevent infinite re-renders
-  const handleSearch = useCallback(
-    (searchValue: string) => {
-      setDataSearch(searchValue);
-    },
-    [setDataSearch]
-  );
-
-  const handleClear = useCallback(() => {
-    setDataSearch('');
-  }, [setDataSearch]);
-
-  // Function to apply filter programmatically  
-  const applyColumnFilter = useCallback(async (columnId: string, filterType: string, filterValue: string) => {
-    if (!gridApi) return;
-    
-    try {
-      await gridApi.setColumnFilterModel(columnId, {
-        filterType: 'text',
-        type: filterType,
-        filter: filterValue
-      });
-      gridApi.onFilterChanged();
-    } catch (error) {
-      console.error('Failed to apply filter:', error);
-    }
-  }, [gridApi]);
-
-  // Function to clear all filters
-  const clearAllFilters = useCallback(() => {
-    if (!gridApi) return;
-    gridApi.setFilterModel(null);
-    gridApi.onFilterChanged();
-  }, [gridApi]);
-
-  // Handle AG Grid filter from search bar
-  const handleFilterSearch = useCallback(async (filterSearch: FilterSearch | null) => {
-    if (!filterSearch) {
-      // Clear all AG Grid filters when filterSearch is null
-      clearAllFilters();
-      return;
-    }
-    
-    try {
-      await applyColumnFilter(
-        filterSearch.field,
-        filterSearch.operator,
-        filterSearch.value
-      );
-    } catch (error) {
-      console.error('Failed to apply search bar filter:', error);
-    }
-  }, [applyColumnFilter, clearAllFilters]);
-
-  // Unified search functionality with hybrid mode
-  const {
-    search,
-    onGridReady: originalOnGridReady,
-    isExternalFilterPresent,
-    doesExternalFilterPass,
-    searchBarProps,
-  } = useUnifiedSearch({
-    columns:
-      activeTab === 'items' ? itemSearchColumns : itemMasterSearchColumns,
-    searchMode: 'hybrid',
-    useFuzzySearch: true,
-    data: data,
-    onSearch: handleSearch,
-    onClear: handleClear,
-    onFilterSearch: handleFilterSearch,
-  });
-
-  // Enhanced onGridReady to capture grid API
-  const onGridReady = useCallback((params: GridReadyEvent) => {
-    setGridApi(params.api);
-    originalOnGridReady(params);
-  }, [originalOnGridReady]);
-
-  // Specific function for applying "contains depresi" filter to description column
-  const applyDepresiFilter = useCallback(async () => {
-    await applyColumnFilter('description', 'contains', 'depresi');
-  }, [applyColumnFilter]);
-
-  // Event handlers for Items tab
+  // Items tab handlers
   const openAddItemModal = (itemId?: string, searchQuery?: string) => {
     setEditingItemId(itemId);
     setCurrentSearchQueryForModal(searchQuery);
@@ -387,28 +104,45 @@ const ItemMasterNew = () => {
     openAddItemModal(itemId, searchQuery);
   };
 
-  // Event handlers for other tabs
-  const handleDelete = async (item: MasterDataEntity) => {
-    openConfirmDialog({
-      title: 'Konfirmasi Hapus',
-      message: `Apakah Anda yakin ingin menghapus ${currentConfig.entityName.toLowerCase()} "${item.name}"?`,
-      variant: 'danger',
-      confirmText: 'Ya, Hapus',
-      onConfirm: async () => {
-        await deleteMutation.mutateAsync(item.id);
-      },
-    });
-  };
+  // Items tab search functionality
+  const handleItemSearch = useCallback((searchValue: string) => {
+    itemsManagement.setSearch(searchValue);
+  }, [itemsManagement]);
+
+  const handleItemClear = useCallback(() => {
+    itemsManagement.setSearch('');
+  }, [itemsManagement]);
+
+  const handleItemFilterSearch = useCallback(async (filterSearch: FilterSearch | null) => {
+    // Handle AG Grid filter for items
+    console.log('Item filter search:', filterSearch);
+  }, []);
+
+  const {
+    search: itemSearch,
+    onGridReady: itemOnGridReady,
+    isExternalFilterPresent: itemIsExternalFilterPresent,
+    doesExternalFilterPass: itemDoesExternalFilterPass,
+    searchBarProps: itemSearchBarProps,
+  } = useUnifiedSearch({
+    columns: itemSearchColumns,
+    searchMode: 'hybrid',
+    useFuzzySearch: true,
+    data: itemsManagement.data as ItemDataType[],
+    onSearch: handleItemSearch,
+    onClear: handleItemClear,
+    onFilterSearch: handleItemFilterSearch,
+  });
 
   const handleTabChange = (newTab: MasterDataType) => {
     if (newTab !== activeTab) {
-      // Navigate to the new tab URL
       navigate(`/master-data/item-master/${newTab}`);
       
       // Clear search when switching tabs
       if (searchInputRef.current) {
         searchInputRef.current.value = '';
       }
+      
       // Reset item modal state when switching tabs
       if (isAddItemModalOpen) {
         closeAddItemModal();
@@ -416,81 +150,28 @@ const ItemMasterNew = () => {
     }
   };
 
-  // Column definitions
-  const columnDefs: ColDef[] = [
-    createTextColumn({
-      field: 'kode',
-      headerName: 'Kode',
-      minWidth: 80,
-      valueGetter: params => {
-        return params.data.kode || '-';
-      },
-    }),
-    {
-      field: 'name',
-      headerName: currentConfig.nameColumnHeader,
-      minWidth: 120,
-      filter: 'agTextColumnFilter',
-      filterParams: {
-        filterOptions: [
-          'contains',
-          'notContains', 
-          'equals',
-          'notEqual',
-          'startsWith',
-          'endsWith'
-        ],
-        defaultOption: 'contains',
-        suppressAndOrCondition: false,
-        caseSensitive: false,
-      },
-      cellStyle: {
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      },
-      tooltipField: 'name',
-      sortable: true,
-      resizable: true,
-    },
-    // Add NCI Code column for packages and dosages tabs
-    ...(activeTab === 'packages' || activeTab === 'dosages'
-      ? [
-          createTextColumn({
-            field: 'nci_code',
-            headerName: 'Kode NCI',
-            minWidth: 120,
-            valueGetter: params => {
-              return params.data.nci_code || '-';
-            },
-          }),
-        ]
-      : []),
-    createTextColumn({
-      field: 'description',
-      headerName: activeTab === 'manufacturers' ? 'Alamat' : 'Deskripsi',
-      minWidth: 200,
-      flex: 1,
-      valueGetter: params => {
-        if (activeTab === 'manufacturers') {
-          return params.data.address || '-';
-        }
-        return params.data.description || '-';
-      },
-    }),
-  ];
-
-  const onRowClicked = (event: RowClickedEvent) => {
-    handleEdit(event.data);
+  // Tab configurations
+  const tabConfigs = {
+    items: { key: 'items' as const, label: 'Daftar Item' },
+    categories: { key: 'categories' as const, label: 'Kategori' },
+    types: { key: 'types' as const, label: 'Jenis' },
+    packages: { key: 'packages' as const, label: 'Kemasan' },
+    dosages: { key: 'dosages' as const, label: 'Sediaan' },
+    manufacturers: { key: 'manufacturers' as const, label: 'Produsen' },
+    units: { key: 'units' as const, label: 'Satuan' },
   };
 
+  const tabOrder: MasterDataType[] = ['items', 'categories', 'types', 'packages', 'dosages', 'manufacturers', 'units'];
+
+  // If it's not items tab, use the new EntityMasterPage
+  if (activeTab !== 'items') {
+    return <EntityMasterPage />;
+  }
+
+  // Items tab rendering (legacy functionality preserved)
   return (
     <>
-      <Card
-        className={
-          isFetching ? 'opacity-75 transition-opacity duration-300' : ''
-        }
-      >
+      <Card className={itemsManagement.isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
         <div className="relative flex items-center justify-center mb-0 pt-0">
           <div className="absolute left-0 pb-4 pt-6">
             <LayoutGroup id="item-master-tabs">
@@ -531,11 +212,7 @@ const ItemMasterNew = () => {
                           }
                         )}
                       >
-                        {activeTab === config.key
-                          ? config.key === 'items'
-                            ? 'Daftar Item'
-                            : `${config.label} Item`
-                          : config.label}
+                        {config.label}
                       </span>
                     </button>
                   );
@@ -550,208 +227,55 @@ const ItemMasterNew = () => {
         <div className="flex items-center pt-8">
           <div className="grow">
             <SearchToolbar
-              searchInputRef={searchInputRef}
-              searchBarProps={searchBarProps}
-              search={search}
-              buttonText={currentConfig.addButtonText}
-              placeholder={`${currentConfig.searchPlaceholder} atau ketik # untuk pencarian kolom spesifik`}
-              onAdd={
-                activeTab === 'items'
-                  ? () => handleAddItem(undefined, search)
-                  : () => setIsAddModalOpen(true)
-              }
-              onKeyDown={
-                activeTab === 'items'
-                  ? undefined // Use default items behavior
-                  : handleKeyDown
-              }
-              items={
-                activeTab === 'items' ? (data as ItemDataType[]) : undefined
-              }
-              onItemSelect={
-                activeTab === 'items'
-                  ? (item: ItemDataType) => handleItemSelect(item.id)
-                  : undefined
-              }
+              searchInputRef={searchInputRef as React.RefObject<HTMLInputElement>}
+              searchBarProps={itemSearchBarProps}
+              search={itemSearch}
+              buttonText="Tambah Item Baru"
+              placeholder="Cari nama, kode, atau deskripsi item atau ketik # untuk pencarian kolom spesifik"
+              onAdd={() => handleAddItem(undefined, itemSearch)}
+              items={itemsManagement.data as ItemDataType[]}
+              onItemSelect={(item: ItemDataType) => handleItemSelect(item.id)}
             />
           </div>
         </div>
 
-        {/* Filter buttons for categories tab */}
-        {activeTab === 'categories' && (
-          <div className="flex items-center gap-2 mt-4 mb-2">
-            <button
-              onClick={applyDepresiFilter}
-              className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-              disabled={!gridApi}
-            >
-              Filter "depresi"
-            </button>
-            <button
-              onClick={clearAllFilters}
-              className="px-3 py-1.5 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-              disabled={!gridApi}
-            >
-              Clear Filters
-            </button>
-          </div>
-        )}
-
-        {isError ? (
+        {itemsManagement.isError ? (
           <div className="text-center p-6 text-red-500">
-            Error: {error?.message || 'Gagal memuat data'}
+            Error: {itemsManagement.queryError?.message || 'Gagal memuat data'}
           </div>
-        ) : activeTab === 'items' ? (
+        ) : (
           <ItemDataTable
-            items={data as ItemDataType[]}
+            items={itemsManagement.data as ItemDataType[]}
             columnDefs={itemColumnDefs}
             columnsToAutoSize={columnsToAutoSize}
-            isLoading={isLoading}
-            isError={isError}
-            error={error}
-            search={search}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
+            isLoading={itemsManagement.isLoading}
+            isError={itemsManagement.isError}
+            error={itemsManagement.queryError}
+            search={itemSearch}
+            currentPage={itemsManagement.currentPage}
+            totalPages={itemsManagement.totalPages}
+            totalItems={itemsManagement.totalItems}
+            itemsPerPage={itemsManagement.itemsPerPage}
             onRowClick={handleItemEdit}
-            onPageChange={handlePageChange}
-            onItemsPerPageChange={handleItemsPerPageChange}
-            onGridReady={onGridReady}
-            isExternalFilterPresent={isExternalFilterPresent}
-            doesExternalFilterPass={doesExternalFilterPass}
+            onPageChange={itemsManagement.handlePageChange}
+            onItemsPerPageChange={itemsManagement.handleItemsPerPageChange}
+            onGridReady={itemOnGridReady}
+            isExternalFilterPresent={itemIsExternalFilterPresent}
+            doesExternalFilterPass={itemDoesExternalFilterPass}
           />
-        ) : (
-          <>
-            <DataGrid
-              ref={dataGridRef}
-              rowData={data}
-              columnDefs={columnDefs}
-              onRowClicked={onRowClicked}
-              onGridReady={onGridReady}
-              loading={isLoading}
-              overlayNoRowsTemplate={
-                search
-                  ? `<span style="padding: 10px; color: #888;">${currentConfig.searchNoDataMessage} "${search}"</span>`
-                  : `<span style="padding: 10px; color: #888;">${currentConfig.noDataMessage}</span>`
-              }
-              autoSizeColumns={
-                activeTab === 'packages' || activeTab === 'dosages'
-                  ? ['kode', 'name', 'nci_code']
-                  : ['kode', 'name']
-              }
-              isExternalFilterPresent={isExternalFilterPresent}
-              doesExternalFilterPass={doesExternalFilterPass}
-              style={{
-                width: '100%',
-                marginTop: '1rem',
-                marginBottom: '1rem',
-              }}
-            />
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems || 0}
-              itemsPerPage={itemsPerPage || 10}
-              itemsCount={data?.length || 0}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
-              hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
-            />
-          </>
         )}
       </Card>
 
-      {/* Modals for non-items tabs */}
-      {activeTab !== 'items' && (
-        <>
-          <EntityManagementModal
-            isOpen={isAddModalOpen}
-            onClose={() => setIsAddModalOpen(false)}
-            onSubmit={async (formData: {
-              kode?: string;
-              name: string;
-              description?: string;
-              address?: string;
-            }) => {
-              const submitData: {
-                kode: string;
-                name: string;
-                description?: string;
-                address?: string;
-                id?: string;
-              } = {
-                kode: String(formData.kode || ''),
-                name: String(formData.name || ''),
-                id: undefined,
-              };
-
-              if (activeTab === 'manufacturers') {
-                submitData.address = String(formData.address || '');
-              } else {
-                submitData.description = String(formData.description || '');
-              }
-
-              await handleModalSubmit(submitData);
-            }}
-            isLoading={false}
-            entityName={currentConfig.entityName}
-          />
-
-          <EntityManagementModal
-            isOpen={isEditModalOpen}
-            onClose={() => {
-              setIsEditModalOpen(false);
-            }}
-            onSubmit={async (formData: {
-              kode?: string;
-              name: string;
-              description?: string;
-              address?: string;
-            }) => {
-              const submitData: {
-                kode: string;
-                name: string;
-                description?: string;
-                address?: string;
-                id?: string;
-              } = {
-                kode: String(formData.kode || ''),
-                name: String(formData.name || ''),
-                id: editingItem?.id,
-              };
-
-              if (activeTab === 'manufacturers') {
-                submitData.address = String(formData.address || '');
-              } else {
-                submitData.description = String(formData.description || '');
-              }
-
-              await handleModalSubmit(submitData);
-            }}
-            initialData={
-              (editingItem as Category | MedicineType | Unit) || undefined
-            }
-            onDelete={editingItem ? () => handleDelete(editingItem) : undefined}
-            isLoading={false}
-            isDeleting={deleteMutation.isLoading}
-            entityName={currentConfig.entityName}
-          />
-        </>
-      )}
-
-      {/* Modal for items tab */}
-      {activeTab === 'items' && (
-        <ItemManagementModal
-          key={`${editingItemId ?? 'new'}-${currentSearchQueryForModal ?? ''}-${modalRenderId}`}
-          isOpen={isAddItemModalOpen}
-          onClose={closeAddItemModal}
-          itemId={editingItemId}
-          initialSearchQuery={currentSearchQueryForModal}
-          isClosing={isItemModalClosing}
-          setIsClosing={setIsItemModalClosing}
-        />
-      )}
+      {/* Item Management Modal */}
+      <ItemManagementModal
+        key={`${editingItemId ?? 'new'}-${currentSearchQueryForModal ?? ''}-${modalRenderId}`}
+        isOpen={isAddItemModalOpen}
+        onClose={closeAddItemModal}
+        itemId={editingItemId}
+        initialSearchQuery={currentSearchQueryForModal}
+        isClosing={isItemModalClosing}
+        setIsClosing={setIsItemModalClosing}
+      />
     </>
   );
 };

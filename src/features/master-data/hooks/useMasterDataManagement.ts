@@ -14,6 +14,7 @@ import type {
   UseMasterDataManagementOptions,
 } from '@/types';
 import type { ItemDosage } from '@/features/item-management/domain/entities/Item';
+import type { ItemUnit } from '@/services/api/masterData.service';
 
 // Import our new modular services and hooks
 import {
@@ -23,6 +24,8 @@ import {
   useMedicineTypeMutations,
   useUnitsRealtime,
   useUnitMutations,
+  useItemUnitsRealtime,
+  useItemUnitMutations,
   useDosagesRealtime,
   useDosageMutations,
   useManufacturersRealtime,
@@ -41,6 +44,7 @@ type MasterDataItem =
   | Category
   | ItemType
   | Unit
+  | ItemUnit
   | ItemDosage
   | ItemManufacturer
   | Item
@@ -76,6 +80,12 @@ const getHooksForTable = (tableName: string, isRealtimeEnabled: boolean) => {
         useData: (options: QueryOptions) =>
           useUnitsRealtime({ ...options, enabled: isRealtimeEnabled }),
         useMutations: useUnitMutations,
+      };
+    case 'item_units':
+      return {
+        useData: (options: QueryOptions) =>
+          useItemUnitsRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useMutations: useItemUnitMutations,
       };
     case 'item_dosages':
       return {
@@ -274,8 +284,8 @@ export const useMasterDataManagement = (
                 fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
               (item.stock &&
                 fuzzyMatch(item.stock.toString(), searchTermLower)) ||
-              (item.unit_conversions &&
-                item.unit_conversions.some(
+              (item.package_conversions &&
+                item.package_conversions.some(
                   uc =>
                     uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower)
                 ))
@@ -291,11 +301,18 @@ export const useMasterDataManagement = (
         // Standard filtering for other master data
         filteredData = filteredData
           .filter(item => {
-            // Check for kode field if it exists (only for item master data)
+            // Check for kode field if it exists (most item master data)
             if (
               'kode' in item &&
               typeof item.kode === 'string' &&
               fuzzyMatch(item.kode.toLowerCase(), searchTermLower)
+            )
+              return true;
+            // Check for code field if it exists (for item_units table)
+            if (
+              'code' in item &&
+              typeof item.code === 'string' &&
+              fuzzyMatch(item.code.toLowerCase(), searchTermLower)
             )
               return true;
             if (item.name && fuzzyMatch(item.name, searchTermLower))
@@ -373,7 +390,7 @@ export const useMasterDataManagement = (
           })
           .sort((a, b) => {
             const getScore = (itemToSort: MasterDataItem) => {
-              // Check kode first (highest priority)
+              // Check kode first (highest priority for most tables)
               if (
                 'kode' in itemToSort &&
                 typeof itemToSort.kode === 'string' &&
@@ -384,6 +401,19 @@ export const useMasterDataManagement = (
                 'kode' in itemToSort &&
                 typeof itemToSort.kode === 'string' &&
                 itemToSort.kode.toLowerCase().includes(searchTermLower)
+              )
+                return 4;
+              // Check code field (for item_units table)
+              if (
+                'code' in itemToSort &&
+                typeof itemToSort.code === 'string' &&
+                itemToSort.code.toLowerCase().startsWith(searchTermLower)
+              )
+                return 5;
+              if (
+                'code' in itemToSort &&
+                typeof itemToSort.code === 'string' &&
+                itemToSort.code.toLowerCase().includes(searchTermLower)
               )
                 return 4;
               // Then check name
@@ -407,7 +437,7 @@ export const useMasterDataManagement = (
             const scoreA = getScore(a);
             const scoreB = getScore(b);
             if (scoreA !== scoreB) return scoreB - scoreA;
-            // Secondary sort by kode if available, then name
+            // Secondary sort by kode/code if available, then name
             if (
               'kode' in a &&
               'kode' in b &&
@@ -415,6 +445,14 @@ export const useMasterDataManagement = (
               typeof b.kode === 'string'
             ) {
               return a.kode.localeCompare(b.kode);
+            }
+            if (
+              'code' in a &&
+              'code' in b &&
+              typeof a.code === 'string' &&
+              typeof b.code === 'string'
+            ) {
+              return a.code.localeCompare(b.code);
             }
             return a.name.localeCompare(b.name);
           });
@@ -456,6 +494,7 @@ export const useMasterDataManagement = (
             ('updateMedicineType' in mutations &&
               mutations.updateMedicineType) ||
             ('updateUnit' in mutations && mutations.updateUnit) ||
+            ('updateItemUnit' in mutations && mutations.updateItemUnit) ||
             ('updateSupplier' in mutations && mutations.updateSupplier) ||
             ('updateItem' in mutations && mutations.updateItem) ||
             ('updatePatient' in mutations && mutations.updatePatient) ||
@@ -476,6 +515,11 @@ export const useMasterDataManagement = (
             }
             if (itemData.kode !== undefined) {
               updateData.kode = itemData.kode;
+              // For item_units table, use 'code' instead of 'kode'
+              if (tableName === 'item_units') {
+                updateData.code = itemData.kode;
+                delete updateData.kode;
+              }
             }
 
             // Handle different parameter structures for different mutation types
@@ -513,6 +557,7 @@ export const useMasterDataManagement = (
             ('createMedicineType' in mutations &&
               mutations.createMedicineType) ||
             ('createUnit' in mutations && mutations.createUnit) ||
+            ('createItemUnit' in mutations && mutations.createItemUnit) ||
             ('createSupplier' in mutations && mutations.createSupplier) ||
             ('createItem' in mutations && mutations.createItem) ||
             ('createPatient' in mutations && mutations.createPatient) ||
@@ -533,6 +578,11 @@ export const useMasterDataManagement = (
             }
             if (itemData.kode !== undefined) {
               createData.kode = itemData.kode;
+              // For item_units table, use 'code' instead of 'kode'
+              if (tableName === 'item_units') {
+                createData.code = itemData.kode;
+                delete createData.kode;
+              }
             }
             // Cast to unknown first to avoid type conflicts, then cast to mutation interface
             await (
@@ -555,7 +605,7 @@ export const useMasterDataManagement = (
         alert.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
       }
     },
-    [mutations, entityNameLabel, alert]
+    [mutations, entityNameLabel, alert, tableName]
   );
 
   const handleDelete = useCallback(
@@ -565,6 +615,7 @@ export const useMasterDataManagement = (
           ('deleteCategory' in mutations && mutations.deleteCategory) ||
           ('deleteMedicineType' in mutations && mutations.deleteMedicineType) ||
           ('deleteUnit' in mutations && mutations.deleteUnit) ||
+          ('deleteItemUnit' in mutations && mutations.deleteItemUnit) ||
           ('deleteSupplier' in mutations && mutations.deleteSupplier) ||
           ('deleteItem' in mutations && mutations.deleteItem) ||
           ('deletePatient' in mutations && mutations.deletePatient) ||

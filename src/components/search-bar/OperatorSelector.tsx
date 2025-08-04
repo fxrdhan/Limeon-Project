@@ -259,6 +259,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
 export default OperatorSelector;
 
 // Default operators
+// eslint-disable-next-line react-refresh/only-export-components
 export const DEFAULT_FILTER_OPERATORS: FilterOperator[] = [
   {
     value: 'contains',

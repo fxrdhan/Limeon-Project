@@ -29,7 +29,7 @@ export const useAddItemMutations = ({
       const { data, error } = await supabase
         .from('item_categories')
         .insert(newCategory)
-        .select('id, name, description')
+        .select('id, kode, name, description, created_at, updated_at')
         .single();
       if (error) throw error;
       return data;
@@ -55,7 +55,7 @@ export const useAddItemMutations = ({
       const { data, error } = await supabase
         .from('item_types')
         .insert(newType)
-        .select('id, name, description')
+        .select('id, kode, name, description, created_at, updated_at')
         .single();
       if (error) throw error;
       return data;
@@ -73,15 +73,14 @@ export const useAddItemMutations = ({
    */
   const addUnitMutation = useMutation({
     mutationFn: async (newUnit: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
-      address?: string;
     }) => {
       const { data, error } = await supabase
-        .from('item_packages')
+        .from('item_units')
         .insert(newUnit)
-        .select('id, name, description')
+        .select('id, code, name, description, created_at, updated_at')
         .single();
       if (error) throw error;
       return data;
@@ -364,7 +363,7 @@ export const useAddItemMutations = ({
       const newCategory = await addCategoryMutation.mutateAsync(categoryData);
       const { data: updatedCategories } = await supabase
         .from('item_categories')
-        .select('id, name, description, updated_at')
+        .select('id, kode, name, description, created_at, updated_at')
         .order('name');
 
       return { newCategory, updatedCategories: updatedCategories || [] };
@@ -384,7 +383,7 @@ export const useAddItemMutations = ({
       const newType = await addTypeMutation.mutateAsync(typeData);
       const { data: updatedTypes } = await supabase
         .from('item_types')
-        .select('id, name, description, updated_at')
+        .select('id, kode, name, description, created_at, updated_at')
         .order('name');
 
       return { newType, updatedTypes: updatedTypes || [] };
@@ -395,22 +394,21 @@ export const useAddItemMutations = ({
   };
 
   const saveUnit = async (unitData: {
-    kode?: string;
+    code?: string;
     name: string;
     description?: string;
-    address?: string;
   }) => {
     try {
       const newUnit = await addUnitMutation.mutateAsync(unitData);
       const { data: updatedUnits } = await supabase
-        .from('item_packages')
-        .select('id, name, description, updated_at')
+        .from('item_units')
+        .select('id, code, name, description, created_at, updated_at')
         .order('name');
 
       return { newUnit, updatedUnits: updatedUnits || [] };
     } catch (error) {
       console.error('Error saving unit:', error);
-      throw new Error('Gagal menyimpan kemasan baru.');
+      throw new Error('Gagal menyimpan satuan baru.');
     }
   };
 

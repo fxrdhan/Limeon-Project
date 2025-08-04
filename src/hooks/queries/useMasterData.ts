@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import { masterDataService } from '@/services/api/masterData.service';
 import type { Category, MedicineType, Unit, Supplier } from '@/types/database';
+import type { ItemUnit } from '@/services/api/masterData.service';
 
 // Category Hooks
 export const useCategories = (options?: { enabled?: boolean }) => {
@@ -278,6 +279,80 @@ export const useUnitMutations = () => {
   });
 
   return { createUnit, updateUnit, deleteUnit };
+};
+
+// Item Unit Hooks (for item_units table)
+export const useItemUnits = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: ['item_units', 'list'],
+    queryFn: async () => {
+      const result = await masterDataService.itemUnits.getActiveItemUnits();
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
+  });
+};
+
+export const useItemUnit = (id: string, options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: ['item_units', 'detail', id],
+    queryFn: async () => {
+      const result = await masterDataService.itemUnits.getById(id);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 0,
+    gcTime: 0,
+  });
+};
+
+export const useItemUnitMutations = () => {
+  const queryClient = useQueryClient();
+
+  const createItemUnit = useMutation({
+    mutationFn: async (data: Omit<ItemUnit, 'id' | 'updated_at'>) => {
+      const result = await masterDataService.itemUnits.create(data);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['item_units'],
+      });
+    },
+  });
+
+  const updateItemUnit = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<ItemUnit> }) => {
+      const result = await masterDataService.itemUnits.update(id, data);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['item_units'],
+      });
+    },
+  });
+
+  const deleteItemUnit = useMutation({
+    mutationFn: async (id: string) => {
+      const result = await masterDataService.itemUnits.delete(id);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['item_units'],
+      });
+    },
+  });
+
+  return { createItemUnit, updateItemUnit, deleteItemUnit };
 };
 
 // Supplier Hooks

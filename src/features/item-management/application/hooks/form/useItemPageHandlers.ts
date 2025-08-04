@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useAddItemForm } from '../core/useItemCrud';
-import type { MedicineType } from '@/types';
+import type { ItemTypeEntity, ItemUnitEntity } from '../../../domain/entities';
 import type { UseItemManagementProps } from '../../../shared/types';
 
 interface AddItemPageHandlersProps extends UseItemManagementProps {
@@ -68,12 +68,12 @@ export const useAddItemPageHandlers = ({
   }, [categoriesData, addItemForm.setCategories, addItemForm]);
 
   useEffect(() => {
-    if (typesData) addItemForm.setTypes(typesData as MedicineType[]);
+    if (typesData) addItemForm.setTypes(typesData as ItemTypeEntity[]);
   }, [typesData, addItemForm.setTypes, addItemForm]);
 
   useEffect(() => {
     if (unitsData) {
-      addItemForm.setUnits(unitsData);
+      addItemForm.setUnits(unitsData as ItemUnitEntity[]);
     }
   }, [unitsData, addItemForm.setUnits, addItemForm]);
 

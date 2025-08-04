@@ -46,10 +46,10 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
           type: item.item_types?.[0] || { name: '' },
           unit: item.item_packages?.[0] || { name: '' },
           base_unit: item.item_packages?.[0]?.name || '',
-          unit_conversions:
-            typeof item.unit_conversions === 'string'
-              ? JSON.parse(item.unit_conversions || '[]')
-              : item.unit_conversions || [],
+          package_conversions:
+            typeof item.package_conversions === 'string'
+              ? JSON.parse(item.package_conversions || '[]')
+              : item.package_conversions || [],
         };
 
         return transformedItem;
@@ -93,10 +93,10 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
 
   // Get available units for an item
   const getItemUnits = (item: Item) => {
-    const units = [{ id: item.unit_id, name: item.unit.name }];
+    const units = [{ id: item.package_id, name: item.unit.name }];
 
-    if (item.unit_conversions && item.unit_conversions.length > 0) {
-      item.unit_conversions.forEach(conversion => {
+    if (item.package_conversions && item.package_conversions.length > 0) {
+      item.package_conversions.forEach(conversion => {
         if (conversion.unit && !units.find(u => u.id === conversion.unit.id)) {
           units.push({
             id: conversion.unit.id,

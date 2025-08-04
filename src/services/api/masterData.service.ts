@@ -1,6 +1,16 @@
 import { BaseService } from './base.service';
 import type { Category, MedicineType, Unit, Supplier } from '@/types/database';
 
+// Define ItemUnit type (same structure as Unit but for item_units table)
+export interface ItemUnit {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Category Service
 export class CategoryService extends BaseService<Category> {
   constructor() {
@@ -39,6 +49,20 @@ export class UnitService extends BaseService<Unit> {
     return this.getAll({
       select: 'id, kode, name, nci_code, description, updated_at',
       orderBy: { column: 'kode', ascending: true },
+    });
+  }
+}
+
+// Item Unit Service (for item_units table)
+export class ItemUnitService extends BaseService<ItemUnit> {
+  constructor() {
+    super('item_units');
+  }
+
+  async getActiveItemUnits() {
+    return this.getAll({
+      select: 'id, code, name, description, created_at, updated_at',
+      orderBy: { column: 'code', ascending: true },
     });
   }
 }
@@ -87,6 +111,7 @@ export class SupplierService extends BaseService<Supplier> {
 export const categoryService = new CategoryService();
 export const medicineTypeService = new MedicineTypeService();
 export const unitService = new UnitService();
+export const itemUnitService = new ItemUnitService();
 export const supplierService = new SupplierService();
 
 // Master Data Service Facade
@@ -94,6 +119,7 @@ export class MasterDataService {
   categories = categoryService;
   types = medicineTypeService;
   units = unitService;
+  itemUnits = itemUnitService;
   suppliers = supplierService;
 
   // Bulk operations for master data

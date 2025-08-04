@@ -1,55 +1,45 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { Category, MedicineType, Unit } from '@/types';
-import { ItemDosage } from '../../../domain/entities/Item';
-
-interface ItemManufacturer {
-  id: string;
-  kode?: string;
-  name: string;
-  address?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import { ItemCategory, ItemTypeEntity, ItemPackage, ItemDosageEntity, ItemManufacturerEntity } from '../../../domain/entities';
 
 export const useItemQueries = () => {
-  const { data: categoriesData } = useQuery<Category[]>({
+  const { data: categoriesData } = useQuery<ItemCategory[]>({
     queryKey: ['categories'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_categories')
-        .select('id, kode, name, description, updated_at')
+        .select('id, kode, name, description, created_at, updated_at')
         .order('kode');
       if (error) throw error;
       return data || [];
     },
   });
 
-  const { data: typesData } = useQuery<MedicineType[]>({
+  const { data: typesData } = useQuery<ItemTypeEntity[]>({
     queryKey: ['types'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_types')
-        .select('id, kode, name, description, updated_at')
+        .select('id, kode, name, description, created_at, updated_at')
         .order('kode');
       if (error) throw error;
       return data || [];
     },
   });
 
-  const { data: unitsData } = useQuery<Unit[]>({
+  const { data: unitsData } = useQuery<ItemPackage[]>({
     queryKey: ['units'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_packages')
-        .select('id, kode, name, description, updated_at')
+        .select('id, kode, name, description, created_at, updated_at')
         .order('kode');
       if (error) throw error;
       return data || [];
     },
   });
 
-  const { data: dosagesData } = useQuery<ItemDosage[]>({
+  const { data: dosagesData } = useQuery<ItemDosageEntity[]>({
     queryKey: ['dosages'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -61,7 +51,7 @@ export const useItemQueries = () => {
     },
   });
 
-  const { data: manufacturersData } = useQuery<ItemManufacturer[]>({
+  const { data: manufacturersData } = useQuery<ItemManufacturerEntity[]>({
     queryKey: ['manufacturers'],
     queryFn: async () => {
       const { data, error } = await supabase

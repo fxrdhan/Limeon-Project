@@ -1,6 +1,11 @@
 // Re-export all query hooks for easy import
 export * from './useMasterData';
 export {
+  useItemUnits,
+  useItemUnit,
+  useItemUnitMutations,
+} from './useMasterData';
+export {
   useItems,
   useItem,
   useSearchItems,
@@ -15,6 +20,7 @@ export {
   useCategoriesRealtime,
   useMedicineTypesRealtime,
   useUnitsRealtime,
+  useItemUnitsRealtime,
   useItemsRealtime,
   useDosagesRealtime,
   useManufacturersRealtime,

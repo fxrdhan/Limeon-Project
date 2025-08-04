@@ -46,15 +46,15 @@ export class ItemsService extends BaseService<DBItem> {
       const transformedData = (result.data as any[]).map((item: any) => {
         // Parse unit conversions
         let packageConversions: PackageConversion[] = [];
-        if (item.unit_conversions) {
-          if (typeof item.unit_conversions === 'string') {
+        if (item.package_conversions) {
+          if (typeof item.package_conversions === 'string') {
             try {
-              packageConversions = JSON.parse(item.unit_conversions);
+              packageConversions = JSON.parse(item.package_conversions);
             } catch {
               packageConversions = [];
             }
-          } else if (Array.isArray(item.unit_conversions)) {
-            packageConversions = item.unit_conversions;
+          } else if (Array.isArray(item.package_conversions)) {
+            packageConversions = item.package_conversions;
           }
         }
 
@@ -70,7 +70,7 @@ export class ItemsService extends BaseService<DBItem> {
           type: item.item_types || { name: '' },
           unit: item.item_packages || { name: '' },
           manufacturer: manufacturerName,
-          unit_conversions: packageConversions,
+          package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
         };
       });
@@ -186,15 +186,15 @@ export class ItemsService extends BaseService<DBItem> {
       const transformedData = (result.data as any[]).map((item: any) => {
         // Parse unit conversions
         let packageConversions: PackageConversion[] = [];
-        if (item.unit_conversions) {
-          if (typeof item.unit_conversions === 'string') {
+        if (item.package_conversions) {
+          if (typeof item.package_conversions === 'string') {
             try {
-              packageConversions = JSON.parse(item.unit_conversions);
+              packageConversions = JSON.parse(item.package_conversions);
             } catch {
               packageConversions = [];
             }
-          } else if (Array.isArray(item.unit_conversions)) {
-            packageConversions = item.unit_conversions;
+          } else if (Array.isArray(item.package_conversions)) {
+            packageConversions = item.package_conversions;
           }
         }
 
@@ -210,7 +210,7 @@ export class ItemsService extends BaseService<DBItem> {
           type: item.item_types || { name: '' },
           unit: item.item_packages || { name: '' },
           manufacturer: manufacturerName,
-          unit_conversions: packageConversions,
+          package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
         };
       });
@@ -274,15 +274,15 @@ export class ItemsService extends BaseService<DBItem> {
       const transformedData = (data as any[]).map((item: any) => {
         // Parse unit conversions
         let packageConversions: PackageConversion[] = [];
-        if (item.unit_conversions) {
-          if (typeof item.unit_conversions === 'string') {
+        if (item.package_conversions) {
+          if (typeof item.package_conversions === 'string') {
             try {
-              packageConversions = JSON.parse(item.unit_conversions);
+              packageConversions = JSON.parse(item.package_conversions);
             } catch {
               packageConversions = [];
             }
-          } else if (Array.isArray(item.unit_conversions)) {
-            packageConversions = item.unit_conversions;
+          } else if (Array.isArray(item.package_conversions)) {
+            packageConversions = item.package_conversions;
           }
         }
 
@@ -298,7 +298,7 @@ export class ItemsService extends BaseService<DBItem> {
           type: item.item_types || { name: '' },
           unit: item.item_packages || { name: '' },
           manufacturer: manufacturerName,
-          unit_conversions: packageConversions,
+          package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
         };
       });
@@ -318,7 +318,7 @@ export class ItemsService extends BaseService<DBItem> {
       // Prepare item data with unit conversions
       const dataToInsert = {
         ...itemData,
-        unit_conversions: packageConversions
+        package_conversions: packageConversions
           ? JSON.stringify(packageConversions)
           : '[]',
       };
@@ -339,7 +339,7 @@ export class ItemsService extends BaseService<DBItem> {
       const updateData = { ...itemData };
 
       if (packageConversions !== undefined) {
-        updateData.unit_conversions = JSON.stringify(packageConversions);
+        updateData.package_conversions = JSON.stringify(packageConversions);
       }
 
       return this.update(id, updateData);

@@ -6,6 +6,7 @@ import {
   useCategories,
   useMedicineTypes,
   useUnits,
+  useItemUnits,
   useItems,
 } from '@/hooks/queries';
 import type {
@@ -16,6 +17,7 @@ import type {
   ItemManufacturer,
 } from '@/types/database';
 import type { ItemDosage } from '@/features/item-management/domain/entities/Item';
+import type { ItemUnit } from '@/services/api/masterData.service';
 import { useQuery } from '@tanstack/react-query';
 
 interface UseMasterDataRealtimeOptions {
@@ -358,6 +360,110 @@ export const useUnitsRealtime = (options?: UseMasterDataRealtimeOptions) => {
   }, []);
 
   return unitsQuery;
+};
+
+// Item Units Realtime Hook (for item_units table)
+export const useItemUnitsRealtime = (options?: UseMasterDataRealtimeOptions) => {
+  const queryClient = useQueryClient();
+  const subscriptionRef = useRef<ReturnType<typeof supabase.channel> | null>(
+    null
+  );
+
+  const itemUnitsQuery = useItemUnits(options);
+
+  useEffect(() => {
+    // Always clean up existing subscription first
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe();
+      subscriptionRef.current = null;
+    }
+
+    // Only set up new subscription if enabled
+    if (options?.enabled === false) return;
+
+    const channel = supabase
+      .channel('realtime-item-units')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'item_units',
+        },
+        (payload: { eventType: string; new?: unknown; old?: unknown }) => {
+          console.log('🔔 Item Units realtime change detected:', payload);
+
+          switch (payload.eventType) {
+            case 'INSERT': {
+              console.log('➕ New item unit inserted:', payload.new);
+              queryClient.invalidateQueries({
+                queryKey: ['item_units'],
+              });
+              break;
+            }
+
+            case 'UPDATE': {
+              console.log('✏️ Item unit updated:', payload.new);
+              const updatedItemUnit = payload.new as ItemUnit;
+
+              queryClient.setQueryData(
+                ['item_units', 'detail', updatedItemUnit.id],
+                updatedItemUnit
+              );
+
+              queryClient.invalidateQueries({
+                queryKey: ['item_units'],
+              });
+              break;
+            }
+
+            case 'DELETE': {
+              console.log('🗑️ Item unit deleted:', payload.old);
+              const deletedItemUnit = payload.old as ItemUnit;
+
+              queryClient.removeQueries({
+                queryKey: ['item_units', 'detail', deletedItemUnit.id],
+              });
+
+              queryClient.invalidateQueries({
+                queryKey: ['item_units'],
+              });
+              break;
+            }
+
+            default:
+              console.log('🔄 Unknown item unit event type:', payload.eventType);
+          }
+        }
+      )
+      .subscribe(status => {
+        console.log('📡 Item Units realtime subscription status:', status);
+      });
+
+    subscriptionRef.current = channel;
+
+    return () => {
+      if (subscriptionRef.current) {
+        console.log('🧹 Cleaning up item units realtime subscription');
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+    };
+  }, [options?.enabled, queryClient]);
+
+  useEffect(() => {
+    return () => {
+      if (subscriptionRef.current) {
+        console.log(
+          '🧹 Component unmounting - cleaning up item units realtime subscription'
+        );
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+    };
+  }, []);
+
+  return itemUnitsQuery;
 };
 
 // Enhanced Items Realtime Hook with conditional enabling

@@ -210,6 +210,25 @@ function App() {
                     </ErrorBoundary>
                   }
                 />
+                <Route
+                  path="units"
+                  element={
+                    <ErrorBoundary
+                      showDetails={process.env.NODE_ENV === 'development'}
+                    >
+                      <Suspense
+                        fallback={
+                          <TableLoadingFallback
+                            title="Item Master"
+                            tableColumns={2}
+                          />
+                        }
+                      >
+                        <ItemMaster />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
               </Route>
               <Route
                 path="categories"
@@ -221,7 +240,7 @@ function App() {
               />
               <Route
                 path="units"
-                element={<Navigate to="/master-data/item-master/packages" replace />}
+                element={<Navigate to="/master-data/item-master/units" replace />}
               />
               <Route
                 path="suppliers"

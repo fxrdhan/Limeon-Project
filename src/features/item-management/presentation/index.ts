@@ -3,3 +3,6 @@ export * from './atoms';
 export * from './molecules';
 export * from './organisms';
 export * from './templates';
+
+// Pages
+export * from './pages';
