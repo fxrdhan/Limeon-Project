@@ -1,4 +1,11 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  memo,
+} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, LayoutGroup } from 'framer-motion';
 import classNames from 'classnames';
@@ -8,23 +15,37 @@ import Pagination from '@/components/pagination';
 import PageTitle from '@/components/page-title';
 import { Card } from '@/components/card';
 import { DataGrid, DataGridRef, createTextColumn } from '@/components/ag-grid';
-import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from 'ag-grid-community';
+import { TableSkeleton } from '@/components/skeleton';
+import { useCacheFirstLoading } from '@/hooks/useCacheFirstLoading';
+import {
+  ColDef,
+  RowClickedEvent,
+  GridApi,
+  GridReadyEvent,
+} from 'ag-grid-community';
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
 
 // Hooks and contexts
-import { useEntityManager, useGenericEntityManagement } from '../../application/hooks/collections';
+import {
+  useEntityManager,
+  useGenericEntityManagement,
+} from '../../application/hooks/collections';
 import { EntityManagementModal } from '../templates/entity';
 
 // Types
-import { EntityType, EntityData, entityConfigs } from '../../application/hooks/collections/useEntityManager';
+import {
+  EntityType,
+  EntityData,
+  entityConfigs,
+} from '../../application/hooks/collections/useEntityManager';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import { itemMasterSearchColumns } from '@/utils/searchColumns';
 import { FilterSearch } from '@/types/search';
 
 // Use EntityType directly since it now includes 'items'
 
-// Tab order - add items first
-const tabOrder: EntityType[] = [
+// Memoize static configurations outside component
+const TAB_ORDER: EntityType[] = [
   'items',
   'categories',
   'types',
@@ -34,32 +55,52 @@ const tabOrder: EntityType[] = [
   'units',
 ];
 
-const EntityMasterPage: React.FC = () => {
+const URL_TO_TAB_MAP: Record<string, EntityType> = {
+  items: 'items',
+  categories: 'categories',
+  types: 'types',
+  packages: 'packages',
+  dosages: 'dosages',
+  manufacturers: 'manufacturers',
+  units: 'units',
+};
+
+// Static grid configuration
+const GRID_STYLE = {
+  width: '100%',
+  marginTop: '1rem',
+  marginBottom: '1rem',
+} as const;
+
+const getAutoSizeColumns = (hasNciCode?: boolean) =>
+  hasNciCode ? ['kode', 'name', 'nci_code'] : ['kode', 'name'];
+
+const getOverlayTemplate = (
+  search: string,
+  currentConfig: { searchNoDataMessage?: string; noDataMessage?: string } | null
+) => {
+  if (search) {
+    return `<span style="padding: 10px; color: #888;">${currentConfig?.searchNoDataMessage || 'Tidak ada data yang cocok dengan pencarian'} "${search}"</span>`;
+  }
+  return `<span style="padding: 10px; color: #888;">${currentConfig?.noDataMessage || 'Tidak ada data'}</span>`;
+};
+
+const EntityMasterPage: React.FC = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dataGridRef = useRef<DataGridRef>(null);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
-
-  // Get active tab from URL path
-  const getTabFromPath = (pathname: string): EntityType => {
+  // Memoize tab detection function
+  const getTabFromPath = useCallback((pathname: string): EntityType => {
     const pathSegments = pathname.split('/');
     const lastSegment = pathSegments[pathSegments.length - 1];
-    
-    const urlToTabMap: Record<string, EntityType> = {
-      'items': 'items',
-      'categories': 'categories', 
-      'types': 'types',
-      'packages': 'packages',
-      'dosages': 'dosages',
-      'manufacturers': 'manufacturers',
-      'units': 'units'
-    };
-    
-    return urlToTabMap[lastSegment] || 'items';
-  };
+    return URL_TO_TAB_MAP[lastSegment] || 'items';
+  }, []);
 
-  const [activeTab, setActiveTab] = useState<EntityType>(getTabFromPath(location.pathname));
+  const [activeTab, setActiveTab] = useState<EntityType>(() =>
+    getTabFromPath(location.pathname)
+  );
 
   // Update active tab when URL changes
   useEffect(() => {
@@ -67,15 +108,14 @@ const EntityMasterPage: React.FC = () => {
     if (newTab !== activeTab) {
       setActiveTab(newTab);
     }
-  }, [location.pathname, activeTab]);
+  }, [location.pathname, activeTab, getTabFromPath]);
 
   // Entity manager - only for entity types, not items
   const entityManager = useEntityManager({
     activeEntityType: activeTab !== 'items' ? activeTab : 'categories',
     searchInputRef: searchInputRef as React.RefObject<HTMLInputElement>,
-    onEntityChange: (entityType) => {
-      setActiveTab(entityType);
-    },
+    // Remove onEntityChange to prevent circular dependency
+    // activeTab is already managed by URL changes
   });
 
   // Generic entity data management - only for entity types, not items
@@ -87,57 +127,66 @@ const EntityMasterPage: React.FC = () => {
     enabled: activeTab !== 'items',
   });
 
-  const currentConfig = activeTab !== 'items' ? entityConfigs[activeTab] : null;
+  // Smart loading state with cache-first strategy
+  const { showSkeleton, showBackgroundLoading, shouldSuppressOverlay } = useCacheFirstLoading({
+    isLoading: entityData.isLoading,
+    hasData: entityData.data && entityData.data.length > 0,
+    isInitialLoad: !entityData.data || entityData.data.length === 0,
+    minSkeletonTime: 300,
+    gracePeriod: 150, // Prevent flash of empty content
+    tabKey: activeTab, // For detecting tab changes
+  });
 
-  // Handle tab change
-  const handleTabChange = (newTab: EntityType) => {
-    if (newTab !== activeTab) {
-      navigate(`/master-data/item-master/${newTab}`);
-      
-      // Only call entityManager for entity types, not items
-      if (newTab !== 'items') {
-        entityManager.handleEntityTypeChange(newTab as EntityType);
+  // Memoize current config to prevent unnecessary re-renders
+  const currentConfig = useMemo(() => 
+    activeTab !== 'items' ? entityConfigs[activeTab] : null,
+    [activeTab]
+  );
+
+  // Memoize tab change handler
+  const handleTabChange = useCallback(
+    (newTab: EntityType) => {
+      if (newTab !== activeTab) {
+        // Only navigate - URL change will trigger useEffect to handle the rest
+        navigate(`/master-data/item-master/${newTab}`);
+
+        // Clear search when switching tabs
+        if (searchInputRef.current) {
+          searchInputRef.current.value = '';
+        }
       }
-      
-      // Clear search when switching tabs
-      if (searchInputRef.current) {
-        searchInputRef.current.value = '';
-      }
-    }
-  };
+    },
+    [activeTab, navigate]
+  );
 
-  // Handle search
-  const handleSearch = useCallback((searchValue: string) => {
-    entityManager.handleSearch(searchValue);
-  }, [entityManager]);
-
-  const handleClear = useCallback(() => {
-    entityManager.handleSearch('');
-  }, [entityManager]);
+  // Simple wrappers - no memoization needed
 
   // Handle filter from search bar
-  const handleFilterSearch = useCallback(async (filterSearch: FilterSearch | null) => {
-    if (!filterSearch) {
-      if (gridApi) {
-        gridApi.setFilterModel(null);
-        gridApi.onFilterChanged();
+  const handleFilterSearch = useCallback(
+    async (filterSearch: FilterSearch | null) => {
+      if (!filterSearch) {
+        if (gridApi && !gridApi.isDestroyed()) {
+          gridApi.setFilterModel(null);
+          gridApi.onFilterChanged();
+        }
+        return;
       }
-      return;
-    }
-    
-    if (gridApi) {
-      try {
-        await gridApi.setColumnFilterModel(filterSearch.field, {
-          filterType: 'text',
-          type: filterSearch.operator,
-          filter: filterSearch.value
-        });
-        gridApi.onFilterChanged();
-      } catch (error) {
-        console.error('Failed to apply filter:', error);
+
+      if (gridApi && !gridApi.isDestroyed()) {
+        try {
+          await gridApi.setColumnFilterModel(filterSearch.field, {
+            filterType: 'text',
+            type: filterSearch.operator,
+            filter: filterSearch.value,
+          });
+          gridApi.onFilterChanged();
+        } catch (error) {
+          console.error('Failed to apply filter:', error);
+        }
       }
-    }
-  }, [gridApi]);
+    },
+    [gridApi]
+  );
 
   // Unified search functionality
   const {
@@ -151,94 +200,113 @@ const EntityMasterPage: React.FC = () => {
     searchMode: 'hybrid',
     useFuzzySearch: true,
     data: entityData.data,
-    onSearch: handleSearch,
-    onClear: handleClear,
+    onSearch: entityManager.handleSearch,
+    onClear: () => entityManager.handleSearch(''),
     onFilterSearch: handleFilterSearch,
   });
 
   // Enhanced onGridReady to capture grid API
-  const onGridReady = useCallback((params: GridReadyEvent) => {
-    setGridApi(params.api);
-    originalOnGridReady(params);
-  }, [originalOnGridReady]);
-
-  // Column definitions
-  const columnDefs: ColDef[] = [
-    createTextColumn({
-      field: 'kode',
-      headerName: 'Kode',
-      minWidth: 80,
-      valueGetter: params => {
-        // Handle different field names: 'kode' for most tables, 'code' for item_units
-        return params.data.kode || params.data.code || '-';
-      },
-    }),
-    {
-      field: 'name',
-      headerName: currentConfig?.nameColumnHeader || 'Nama',
-      minWidth: 120,
-      filter: 'agTextColumnFilter',
-      filterParams: {
-        filterOptions: [
-          'contains',
-          'notContains', 
-          'equals',
-          'notEqual',
-          'startsWith',
-          'endsWith'
-        ],
-        defaultOption: 'contains',
-        suppressAndOrCondition: false,
-        caseSensitive: false,
-      },
-      cellStyle: {
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      },
-      tooltipField: 'name',
-      sortable: true,
-      resizable: true,
+  const onGridReady = useCallback(
+    (params: GridReadyEvent) => {
+      setGridApi(params.api);
+      originalOnGridReady(params);
     },
-    // Add NCI Code column for packages and dosages
-    ...(currentConfig?.hasNciCode
-      ? [
-          createTextColumn({
-            field: 'nci_code',
-            headerName: 'Kode NCI',
-            minWidth: 120,
-            valueGetter: params => params.data.nci_code || '-',
-          }),
-        ]
-      : []),
-    // Add abbreviation column for units
-    ...(currentConfig?.hasAbbreviation
-      ? [
-          createTextColumn({
-            field: 'abbreviation',
-            headerName: 'Singkatan',
-            minWidth: 100,
-            valueGetter: params => params.data.abbreviation || '-',
-          }),
-        ]
-      : []),
-    createTextColumn({
-      field: currentConfig?.hasAddress ? 'address' : 'description',
-      headerName: currentConfig?.hasAddress ? 'Alamat' : 'Deskripsi',
-      minWidth: 200,
-      flex: 1,
-      valueGetter: params => {
-        if (currentConfig?.hasAddress) {
-          return params.data.address || '-';
-        }
-        return params.data.description || '-';
-      },
-    }),
-  ];
+    [originalOnGridReady]
+  );
 
-  const onRowClicked = (event: RowClickedEvent) => {
-    entityManager.openEditModal(event.data);
-  };
+  // Cleanup grid API reference when activeTab changes or component unmounts
+  useEffect(() => {
+    return () => {
+      // Clear grid API reference on cleanup
+      setGridApi(null);
+    };
+  }, [activeTab]);
+
+  // Memoize column definitions
+  const columnDefs: ColDef[] = useMemo(
+    () => [
+      createTextColumn({
+        field: 'kode',
+        headerName: 'Kode',
+        minWidth: 80,
+        valueGetter: params => {
+          // Handle different field names: 'kode' for most tables, 'code' for item_units
+          return params.data.kode || params.data.code || '-';
+        },
+      }),
+      {
+        field: 'name',
+        headerName: currentConfig?.nameColumnHeader || 'Nama',
+        minWidth: 120,
+        filter: 'agTextColumnFilter',
+        filterParams: {
+          filterOptions: [
+            'contains',
+            'notContains',
+            'equals',
+            'notEqual',
+            'startsWith',
+            'endsWith',
+          ],
+          defaultOption: 'contains',
+          suppressAndOrCondition: false,
+          caseSensitive: false,
+        },
+        cellStyle: {
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        },
+        tooltipField: 'name',
+        sortable: true,
+        resizable: true,
+      },
+      // Add NCI Code column for packages and dosages
+      ...(currentConfig?.hasNciCode
+        ? [
+            createTextColumn({
+              field: 'nci_code',
+              headerName: 'Kode NCI',
+              minWidth: 120,
+              valueGetter: params => params.data.nci_code || '-',
+            }),
+          ]
+        : []),
+      // Add abbreviation column for units
+      ...(currentConfig?.hasAbbreviation
+        ? [
+            createTextColumn({
+              field: 'abbreviation',
+              headerName: 'Singkatan',
+              minWidth: 100,
+              valueGetter: params => params.data.abbreviation || '-',
+            }),
+          ]
+        : []),
+      createTextColumn({
+        field: currentConfig?.hasAddress ? 'address' : 'description',
+        headerName: currentConfig?.hasAddress ? 'Alamat' : 'Deskripsi',
+        minWidth: 200,
+        flex: 1,
+        valueGetter: params => {
+          if (currentConfig?.hasAddress) {
+            return params.data.address || '-';
+          }
+          return params.data.description || '-';
+        },
+      }),
+    ],
+    [currentConfig]
+  );
+
+  const onRowClicked = useCallback(
+    (event: RowClickedEvent) => {
+      entityManager.openEditModal(event.data);
+    },
+    [entityManager]
+  );
+
+  // Use static functions - no memoization needed
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -255,6 +323,18 @@ const EntityMasterPage: React.FC = () => {
     [entityData.hasData, entityData.data, entityManager]
   );
 
+  // Memoize SearchToolbar props for stable references
+  const memoizedButtonText = useMemo(() => 
+    currentConfig?.addButtonText || 'Tambah',
+    [currentConfig?.addButtonText]
+  );
+
+  const memoizedPlaceholder = useMemo(() => 
+    `${currentConfig?.searchPlaceholder || 'Cari'} atau ketik # untuk pencarian kolom spesifik`,
+    [currentConfig?.searchPlaceholder]
+  );
+
+
   // If items tab is selected, show message to use main item view
   if (activeTab === 'items') {
     return (
@@ -264,7 +344,7 @@ const EntityMasterPage: React.FC = () => {
             <div className="absolute left-0 pb-4 pt-6">
               <LayoutGroup id="entity-master-tabs">
                 <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
-                  {tabOrder.map(tabKey => {
+                  {TAB_ORDER.map(tabKey => {
                     // Handle items tab separately
                     if (tabKey === 'items') {
                       return (
@@ -306,7 +386,7 @@ const EntityMasterPage: React.FC = () => {
                         </button>
                       );
                     }
-                    
+
                     // Handle entity tabs
                     const config = entityConfigs[tabKey as EntityType];
                     return (
@@ -337,7 +417,8 @@ const EntityMasterPage: React.FC = () => {
                           className={classNames(
                             'relative z-10 select-none font-medium',
                             {
-                              'text-white': (activeTab as EntityType) === config.key,
+                              'text-white':
+                                (activeTab as EntityType) === config.key,
                               'text-gray-700 group-hover:text-emerald-700':
                                 (activeTab as EntityType) !== config.key,
                             }
@@ -354,11 +435,15 @@ const EntityMasterPage: React.FC = () => {
 
             <PageTitle title="Master Data Entities" />
           </div>
-
           <div className="text-center p-8">
             <div className="text-gray-500 text-lg">
-              <p>Silakan gunakan halaman utama Item Master untuk mengelola daftar item.</p>
-              <p className="text-sm mt-2">Halaman ini khusus untuk manajemen entitas master data.</p>
+              <p>
+                Silakan gunakan halaman utama Item Master untuk mengelola daftar
+                item.
+              </p>
+              <p className="text-sm mt-2">
+                Halaman ini khusus untuk manajemen entitas master data.
+              </p>
             </div>
           </div>
         </Card>
@@ -368,12 +453,12 @@ const EntityMasterPage: React.FC = () => {
 
   return (
     <>
-      <Card className={entityData.isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+      <Card>
         <div className="relative flex items-center justify-center mb-0 pt-0">
           <div className="absolute left-0 pb-4 pt-6">
             <LayoutGroup id="entity-master-tabs">
               <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
-                {tabOrder.map(tabKey => {
+                {TAB_ORDER.map(tabKey => {
                   // Handle items tab separately
                   if (tabKey === 'items') {
                     return (
@@ -404,7 +489,8 @@ const EntityMasterPage: React.FC = () => {
                           className={classNames(
                             'relative z-10 select-none font-medium',
                             {
-                              'text-white': activeTab === ('items' as EntityType),
+                              'text-white':
+                                activeTab === ('items' as EntityType),
                               'text-gray-700 group-hover:text-emerald-700':
                                 activeTab !== ('items' as EntityType),
                             }
@@ -415,7 +501,7 @@ const EntityMasterPage: React.FC = () => {
                       </button>
                     );
                   }
-                  
+
                   // Handle entity tabs
                   const config = entityConfigs[tabKey as EntityType];
                   return (
@@ -446,7 +532,8 @@ const EntityMasterPage: React.FC = () => {
                         className={classNames(
                           'relative z-10 select-none font-medium',
                           {
-                            'text-white': (activeTab as EntityType) === config.key,
+                            'text-white':
+                              (activeTab as EntityType) === config.key,
                             'text-gray-700 group-hover:text-emerald-700':
                               (activeTab as EntityType) !== config.key,
                           }
@@ -467,75 +554,106 @@ const EntityMasterPage: React.FC = () => {
         <div className="flex items-center pt-8">
           <div className="grow">
             <SearchToolbar
-              searchInputRef={searchInputRef as React.RefObject<HTMLInputElement>}
+              searchInputRef={
+                searchInputRef as React.RefObject<HTMLInputElement>
+              }
               searchBarProps={searchBarProps}
               search={search}
-              buttonText={currentConfig?.addButtonText || 'Tambah'}
-              placeholder={`${currentConfig?.searchPlaceholder || 'Cari'} atau ketik # untuk pencarian kolom spesifik`}
+              buttonText={memoizedButtonText}
+              placeholder={memoizedPlaceholder}
               onAdd={entityManager.openAddModal}
               onKeyDown={handleKeyDown}
             />
           </div>
         </div>
 
-        {entityData.isError ? (
-          <div className="text-center p-6 text-red-500">
-            Error: {entityData.error?.message || 'Gagal memuat data'}
-          </div>
-        ) : (
-          <>
-            <DataGrid
-              ref={dataGridRef}
-              rowData={entityData.data}
-              columnDefs={columnDefs}
-              onRowClicked={onRowClicked}
-              onGridReady={onGridReady}
-              loading={entityData.isLoading}
-              overlayNoRowsTemplate={
-                search
-                  ? `<span style="padding: 10px; color: #888;">${currentConfig?.searchNoDataMessage || 'Tidak ada data yang cocok dengan pencarian'} "${search}"</span>`
-                  : `<span style="padding: 10px; color: #888;">${currentConfig?.noDataMessage || 'Tidak ada data'}</span>`
-              }
-              autoSizeColumns={
-                currentConfig?.hasNciCode
-                  ? ['kode', 'name', 'nci_code']
-                  : ['kode', 'name']
-              }
-              isExternalFilterPresent={isExternalFilterPresent}
-              doesExternalFilterPass={doesExternalFilterPass}
-              style={{
-                width: '100%',
-                marginTop: '1rem',
-                marginBottom: '1rem',
-              }}
+        <div className={entityData.isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+          {entityData.isError ? (
+            <div className="text-center p-6 text-red-500">
+              Error: {entityData.error?.message || 'Gagal memuat data'}
+            </div>
+          ) : showSkeleton ? (
+            <TableSkeleton 
+              rows={entityManager.itemsPerPage || 10} 
+              columns={currentConfig?.hasNciCode ? 4 : currentConfig?.hasAddress || currentConfig?.hasAbbreviation ? 4 : 3} 
+              showPagination={true}
+              className="mt-4"
             />
-            <Pagination
-              currentPage={entityManager.currentPage}
-              totalPages={entityData.totalPages}
-              totalItems={entityData.totalItems || 0}
-              itemsPerPage={entityManager.itemsPerPage || 10}
-              itemsCount={entityData.data?.length || 0}
-              onPageChange={entityManager.handlePageChange}
-              onItemsPerPageChange={(e) => entityManager.handleItemsPerPageChange(Number(e.target.value))}
-              hideFloatingWhenModalOpen={entityManager.isAddModalOpen || entityManager.isEditModalOpen}
-            />
-          </>
-        )}
+          ) : (
+            <>
+              {/* Background loading indicator */}
+              {showBackgroundLoading && (
+                <div className="absolute top-0 right-0 z-10 mt-2 mr-4">
+                  <div className="flex items-center space-x-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm shadow-sm">
+                    <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Memperbarui data...</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="relative">
+                <DataGrid
+                key={`entity-grid-${activeTab}`}
+                ref={dataGridRef}
+                rowData={entityData.data}
+                columnDefs={columnDefs}
+                onRowClicked={onRowClicked}
+                onGridReady={onGridReady}
+                loading={false}
+                overlayNoRowsTemplate={shouldSuppressOverlay ? '' : getOverlayTemplate(search, currentConfig)}
+                autoSizeColumns={getAutoSizeColumns(currentConfig?.hasNciCode)}
+                isExternalFilterPresent={isExternalFilterPresent}
+                doesExternalFilterPass={doesExternalFilterPass}
+                style={{
+                  ...GRID_STYLE,
+                  opacity: showBackgroundLoading ? 0.8 : 1,
+                  transition: 'opacity 0.2s ease-in-out',
+                }}
+              />
+              </div>
+              
+              <Pagination
+                currentPage={entityManager.currentPage}
+                totalPages={entityData.totalPages}
+                totalItems={entityData.totalItems || 0}
+                itemsPerPage={entityManager.itemsPerPage || 10}
+                itemsCount={entityData.data?.length || 0}
+                onPageChange={entityManager.handlePageChange}
+                onItemsPerPageChange={e =>
+                  entityManager.handleItemsPerPageChange(Number(e.target.value))
+                }
+                hideFloatingWhenModalOpen={
+                  entityManager.isAddModalOpen || entityManager.isEditModalOpen
+                }
+              />
+            </>
+          )}
+        </div>
       </Card>
 
       {/* Entity Management Modal */}
       <EntityManagementModal
         isOpen={entityManager.isAddModalOpen || entityManager.isEditModalOpen}
-        onClose={entityManager.isEditModalOpen ? entityManager.closeEditModal : entityManager.closeAddModal}
+        onClose={
+          entityManager.isEditModalOpen
+            ? entityManager.closeEditModal
+            : entityManager.closeAddModal
+        }
         onSubmit={entityManager.handleSubmit}
         initialData={entityManager.editingEntity}
-        onDelete={entityManager.editingEntity ? () => entityManager.handleDelete(entityManager.editingEntity!) : undefined}
+        onDelete={
+          entityManager.editingEntity
+            ? () => entityManager.handleDelete(entityManager.editingEntity!)
+            : undefined
+        }
         isLoading={false}
         isDeleting={false}
         entityName={currentConfig?.entityName || 'Entity'}
       />
     </>
   );
-};
+});
+
+EntityMasterPage.displayName = 'EntityMasterPage';
 
 export default EntityMasterPage;

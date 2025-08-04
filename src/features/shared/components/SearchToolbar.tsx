@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import Button from '@/components/button';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import { FaPlus } from 'react-icons/fa';
@@ -25,7 +26,7 @@ interface SearchToolbarProps<T = unknown> {
   onItemSelect?: (item: T) => void;
 }
 
-export default function SearchToolbar<T extends { id: string }>({
+const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   searchInputRef,
   searchBarProps,
   search,
@@ -76,4 +77,6 @@ export default function SearchToolbar<T extends { id: string }>({
       </Button>
     </div>
   );
-}
+});
+
+export default SearchToolbar;

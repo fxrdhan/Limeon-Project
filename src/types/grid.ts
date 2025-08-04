@@ -7,6 +7,7 @@ import {
   ValueGetterParams,
   GridReadyEvent,
   ColDef,
+  RowDataTransaction,
 } from 'ag-grid-community';
 
 export interface ColumnConfig {
@@ -57,4 +58,6 @@ export interface DataGridRef {
   sizeColumnsToFit: () => void;
   onFilterChanged: () => void;
   refreshCells: () => void;
+  applyTransaction: (transaction: RowDataTransaction) => unknown;
+  applyTransactionAsync: (transaction: RowDataTransaction) => unknown;
 }
