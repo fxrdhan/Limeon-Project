@@ -1,8 +1,8 @@
 import React from 'react';
 import { useConfirmDialog } from '@/components/dialog-box';
 import { EntityModalProvider } from '../../../shared/contexts/EntityModalContext';
-import { useEntityModalLogic } from '../../../application/hooks/entity/useEntityModalLogic';
-import { useEntityHistory } from '../../../application/hooks/entity/useEntityHistory';
+import { useEntityModalLogic } from '../../../application/hooks/instances/useEntityModalLogic';
+import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
 import EntityModalTemplate from '../EntityModalTemplate';
 import EntityModalContent from './EntityModalContent';
 import { ComparisonModal } from '../comparison';

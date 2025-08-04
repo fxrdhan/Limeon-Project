@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { ItemCategory, ItemTypeEntity, ItemPackage, ItemDosage, ItemManufacturer } from '../../domain/entities';
+import type { ItemCategory, ItemTypeEntity, ItemPackage, ItemDosageEntity, ItemManufacturerEntity } from '../../domain/entities';
 import type { UsePackageConversionReturn } from '@/types/hooks';
 import type { ItemFormData } from './FormTypes';
 import type { VersionData } from './ItemTypes';
@@ -10,8 +10,8 @@ export interface ItemFormState {
   categories: ItemCategory[];
   types: ItemTypeEntity[];
   units: ItemPackage[];
-  dosages: ItemDosage[];
-  manufacturers: ItemManufacturer[];
+  dosages: ItemDosageEntity[];
+  manufacturers: ItemManufacturerEntity[];
   loading: boolean;
   isDirty: () => boolean;
 }

@@ -1,5 +1,4 @@
 // Complex feature-complete components
-export * from './ItemDataGrid';
 export { default as ItemDataTable } from './ItemDataTable';
 
 // Form organisms

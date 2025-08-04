@@ -12,11 +12,11 @@ import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from 'ag-grid-commun
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
 
 // Hooks and contexts
-import { useEntityManager, useGenericEntityManagement } from '../../application/hooks/entities';
+import { useEntityManager, useGenericEntityManagement } from '../../application/hooks/collections';
 import { EntityManagementModal } from '../templates/entity';
 
 // Types
-import { EntityType, EntityData, entityConfigs } from '../../application/hooks/entities/useEntityManager';
+import { EntityType, EntityData, entityConfigs } from '../../application/hooks/collections/useEntityManager';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import { itemMasterSearchColumns } from '@/utils/searchColumns';
 import { FilterSearch } from '@/types/search';

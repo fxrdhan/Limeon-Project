@@ -4,4 +4,5 @@ export * from './data';
 export * from './form';
 export * from './ui';
 export * from './utils';
-export * from './entity';
+export * from './collections';
+export * from './instances';

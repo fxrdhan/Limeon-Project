@@ -52,11 +52,11 @@ export const useItemGridColumns = () => {
         minWidth: 80,
       }),
       createTextColumn({
-        field: 'unit_conversions',
+        field: 'package_conversions',
         headerName: 'Kemasan Turunan',
         minWidth: 140,
         valueGetter: params => {
-          const conversions = params.data.unit_conversions;
+          const conversions = params.data.package_conversions;
           if (conversions && conversions.length > 0) {
             return conversions
               .map((uc: PackageConversion) => uc.unit_name || 'N/A')
@@ -93,7 +93,7 @@ export const useItemGridColumns = () => {
     'category.name',
     'type.name',
     'unit.name',
-    'unit_conversions',
+    'package_conversions',
     'base_price',
     'sell_price',
     'stock',

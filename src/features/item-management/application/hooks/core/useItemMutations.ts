@@ -191,7 +191,7 @@ export const useAddItemMutations = ({
       is_medicine: formData.is_medicine,
       base_unit: baseUnit,
       has_expiry_date: formData.has_expiry_date,
-      unit_conversions: conversions.map(uc => ({
+      package_conversions: conversions.map(uc => ({
         unit_name: uc.unit.name,
         to_unit_id: uc.to_unit_id,
         conversion_rate: uc.conversion_rate,

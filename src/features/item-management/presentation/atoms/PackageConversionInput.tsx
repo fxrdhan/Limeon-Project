@@ -4,13 +4,13 @@ import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
 import Input from '@/components/input';
 import type {
-  UnitOption,
   PackageConversionLogicFormData,
 } from '../../shared/types';
+import type { UnitData } from '@/types/database';
 
 interface LocalPackageConversionInputProps {
   baseUnit: string;
-  availableUnits: UnitOption[];
+  availableUnits: UnitData[];
   formData: PackageConversionLogicFormData;
   onFormDataChange: (data: PackageConversionLogicFormData) => void;
   onAddConversion: () => void;

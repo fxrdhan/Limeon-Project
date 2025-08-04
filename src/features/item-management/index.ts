@@ -32,7 +32,7 @@ export {
 export { useAddItemForm } from './application/hooks/core/useItemCrud';
 export { useItemFormValidation } from './application/hooks/form/useItemValidation';
 export { usePackageConversion } from './application/hooks/utils/usePackageConversion';
-export { useEntityModalLogic } from './application/hooks/entity/useEntityModalLogic';
+export { useEntityModalLogic } from './application/hooks/instances/useEntityModalLogic';
 
 // Type Definitions
 export type {
