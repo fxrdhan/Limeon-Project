@@ -3,10 +3,10 @@ import { supabase } from '@/lib/supabase';
 import { formatRupiah } from '@/lib/formatters';
 import type {
   ItemFormData,
-  UnitData,
   DBPackageConversion,
   PackageConversion,
 } from '../../../shared/types';
+import type { UnitData } from '@/types/database';
 
 interface UseItemDataProps {
   formState: {
@@ -50,7 +50,7 @@ export const useItemData = ({
           .select(
             `
           *, updated_at,
-          unit_conversions,
+          package_conversions,
           manufacturer
         `
           )
@@ -91,7 +91,7 @@ export const useItemData = ({
 
         // Process package conversions for initial state
         const parsedConversionsFromDB = parsePackageConversions(
-          itemData.unit_conversions
+          itemData.package_conversions
         );
         const mappedConversions = mapPackageConversions(
           parsedConversionsFromDB,
@@ -139,7 +139,7 @@ function parsePackageConversions(
         : packageConversions;
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
-    console.error('Error parsing unit_conversions from DB:', e);
+    console.error('Error parsing package_conversions from DB:', e);
     return [];
   }
 }
@@ -196,7 +196,7 @@ function initializePackageConversions(
   }
 
   // Parse and add new conversions
-  const conversions = parsePackageConversions(itemData.unit_conversions);
+  const conversions = parsePackageConversions(itemData.package_conversions);
   if (!Array.isArray(conversions)) return;
 
   for (const conv of conversions) {

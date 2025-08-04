@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useEntityModal } from '../../shared/contexts/EntityModalContext';
-import { useEntityHistory } from '../../application/hooks/entity/useEntityHistory';
+import { useEntityHistory } from '../../application/hooks/instances/useEntityHistory';
 import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
 
 interface HistoryListContentProps {

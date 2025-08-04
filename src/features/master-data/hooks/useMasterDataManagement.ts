@@ -13,7 +13,7 @@ import type {
   Doctor,
   UseMasterDataManagementOptions,
 } from '@/types';
-import type { ItemDosage } from '@/features/item-management/domain/entities/Item';
+import type { ItemDosage } from '@/features/item-management/domain/entities/ItemDosage';
 import type { ItemUnit } from '@/services/api/masterData.service';
 
 // Import our new modular services and hooks

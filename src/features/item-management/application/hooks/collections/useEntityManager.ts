@@ -3,16 +3,16 @@ import { useConfirmDialog } from '@/components/dialog-box';
 import { useAlert } from '@/components/alert/hooks';
 import type {
   ItemCategory,
-  ItemType,
+  ItemTypeEntity,
   ItemPackage,
-  ItemDosage,
-  ItemManufacturer,
-  ItemUnit,
+  ItemDosageEntity,
+  ItemManufacturerEntity,
+  ItemUnitEntity,
 } from '../../../domain/entities';
 
 // Define entity types
 export type EntityType = 'categories' | 'types' | 'packages' | 'dosages' | 'manufacturers' | 'units' | 'items';
-export type EntityData = ItemCategory | ItemType | ItemPackage | ItemDosage | ItemManufacturer | ItemUnit;
+export type EntityData = ItemCategory | ItemTypeEntity | ItemPackage | ItemDosageEntity | ItemManufacturerEntity | ItemUnitEntity;
 
 // Entity configuration
 export interface EntityConfig {

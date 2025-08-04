@@ -9,7 +9,7 @@ import PurchaseInfoSection from '@/components/organisms/PurchaseForm/PurchaseInf
 import PurchaseItemsSection from '@/components/organisms/PurchaseForm/PurchaseItemsSection';
 import type { ItemSearchBarRef, AddPurchasePortalProps } from '@/types';
 import { usePurchaseForm } from '@/features/purchase-management/hooks/purchaseForm';
-import { useItemSelection } from '@/features/item-management/application/hooks/entity/useItemSelection';
+import { useItemSelection } from '@/features/item-management/application/hooks/instances/useItemSelection';
 import { useItemSelectionEffect } from '@/features/purchase-management/hooks/useItemSelectionEffect';
 import { usePurchaseModalAnimation } from '@/features/purchase-management/hooks/usePurchaseModalAnimation';
 

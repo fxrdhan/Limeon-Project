@@ -319,7 +319,7 @@ export const usePurchaseForm = ({
       for (const item of purchaseItems) {
         const { data: itemData } = await supabase
           .from('items')
-          .select('stock, base_unit, unit_conversions')
+          .select('stock, base_unit, package_conversions')
           .eq('id', item.item_id)
           .single();
 
@@ -327,7 +327,7 @@ export const usePurchaseForm = ({
           let quantityInBaseUnit = item.quantity;
 
           if (item.unit !== itemData.base_unit) {
-            const packageConversion = itemData.unit_conversions.find(
+            const packageConversion = itemData.package_conversions.find(
               (uc: { unit_name: string }) => uc.unit_name === item.unit
             );
 

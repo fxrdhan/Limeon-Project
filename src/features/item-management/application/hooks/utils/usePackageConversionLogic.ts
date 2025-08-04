@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import type {
   PackageConversion,
-  UnitData,
   PackageConversionLogicFormData,
 } from '../../../shared/types';
+import type { UnitData } from '@/types/database';
 
 interface UsePackageConversionLogicProps {
   conversions: PackageConversion[];

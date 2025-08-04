@@ -2,21 +2,19 @@ import { useMemo } from 'react';
 import { fuzzyMatch } from '@/utils/search';
 import type { EntityData, EntityType } from './useEntityManager';
 
-// Import all entity hooks
+// Import entity hooks directly to avoid circular dependency
 import {
   useCategoriesRealtime,
-  useCategoryMutations,
   useMedicineTypesRealtime,
-  useMedicineTypeMutations,
   useUnitsRealtime,
-  useUnitMutations,
   useItemUnitsRealtime,
-  useItemUnitMutations,
   useDosagesRealtime,
-  useDosageMutations,
   useManufacturersRealtime,
-  useManufacturerMutations,
-} from '@/hooks/queries';
+} from '@/hooks/queries/useMasterDataRealtime';
+import { useCategoryMutations, useMedicineTypeMutations, useUnitMutations } from '@/hooks/queries/useMasterData';
+import { useItemUnitMutations } from '@/hooks/queries/useMasterData';
+import { useDosageMutations } from '@/hooks/queries/useDosages';
+import { useManufacturerMutations } from '@/hooks/queries/useManufacturers';
 
 export interface UseGenericEntityManagementOptions {
   entityType: EntityType;

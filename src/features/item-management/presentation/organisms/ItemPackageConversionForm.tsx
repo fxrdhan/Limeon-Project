@@ -9,10 +9,10 @@ import {
   createCurrencyColumn,
 } from '@/components/ag-grid';
 import type {
-  UnitOption,
   PackageConversion,
   PackageConversionLogicFormData,
 } from '../../shared/types';
+import type { UnitData } from '@/types/database';
 
 const DeleteButton = React.memo(({ onClick }: { onClick: () => void }) => (
   <Button variant="danger" size="sm" tabIndex={19} onClick={onClick}>
@@ -24,7 +24,7 @@ DeleteButton.displayName = 'DeleteButton';
 
 interface LocalItemPackageConversionManagerProps {
   baseUnit: string;
-  availableUnits: UnitOption[];
+  availableUnits: UnitData[];
   conversions: PackageConversion[];
   formData: PackageConversionLogicFormData;
   onFormDataChange: (data: PackageConversionLogicFormData) => void;

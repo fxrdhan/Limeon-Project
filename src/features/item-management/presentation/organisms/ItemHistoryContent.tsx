@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Button from '@/components/button';
 import { FaEye } from 'react-icons/fa';
-import { useEntityHistory } from '../../application/hooks/entity/useEntityHistory';
+import { useEntityHistory } from '../../application/hooks/instances/useEntityHistory';
 import { formatDateTime } from '@/lib/formatters';
 import { HISTORY_DEBUG } from '../../config/debug';
 import { useItemManagement } from '../../shared/contexts/useItemFormContext';

@@ -1,16 +1,5 @@
 // Business Entity Types
-export interface UnitData {
-  id: string;
-  kode?: string;
-  name: string;
-}
-
-export interface UnitOption {
-  id: string;
-  kode?: string;
-  name: string;
-}
-
+import type { UnitData } from '@/types/database';
 export interface EntityData {
   id: string;
   kode?: string;

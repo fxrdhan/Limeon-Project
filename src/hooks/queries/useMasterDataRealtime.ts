@@ -2,13 +2,9 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
-import {
-  useCategories,
-  useMedicineTypes,
-  useUnits,
-  useItemUnits,
-  useItems,
-} from '@/hooks/queries';
+// Direct imports to avoid circular dependency
+import { useCategories, useMedicineTypes, useUnits, useItemUnits } from './useMasterData';
+import { useItems } from './useItems';
 import type {
   Category,
   MedicineType,
@@ -16,7 +12,7 @@ import type {
   Item,
   ItemManufacturer,
 } from '@/types/database';
-import type { ItemDosage } from '@/features/item-management/domain/entities/Item';
+import type { ItemDosage } from '@/features/item-management/domain/entities/ItemDosage';
 import type { ItemUnit } from '@/services/api/masterData.service';
 import { useQuery } from '@tanstack/react-query';
 
