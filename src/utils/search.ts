@@ -43,7 +43,7 @@ export const fuzzySearchMatch = (
     }
 
     if (Array.isArray(value)) {
-      // Search in arrays (like unit_conversions)
+      // Search in arrays (like package_conversions)
       return value.some(item => searchInValue(item));
     }
 
@@ -76,10 +76,10 @@ export const getScore = (item: Item, searchTermLower: string): number => {
   if (sellPriceLower.includes(searchTermLower)) return 3;
   if (stockLower.includes(searchTermLower)) return 2;
 
-  // Check unit conversions
+  // Check package conversions
   if (
-    item.unit_conversions &&
-    item.unit_conversions.some(uc =>
+    item.package_conversions &&
+    item.package_conversions.some(uc =>
       uc.unit?.name?.toLowerCase?.()?.includes(searchTermLower)
     )
   )

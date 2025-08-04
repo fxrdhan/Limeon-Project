@@ -231,10 +231,17 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     // Trigger callbacks based on mode
     if (newMode.isFilterMode && newMode.filterSearch) {
-      // Filter mode - use AG Grid filter API
-      onFilterSearch?.(newMode.filterSearch);
-      onTargetedSearch?.(null);
-      onGlobalSearch?.('');
+      // Filter mode - use AG Grid filter API, but only when there's a value to filter
+      if (newMode.filterSearch.value.trim() !== '') {
+        onFilterSearch?.(newMode.filterSearch);
+        onTargetedSearch?.(null);
+        onGlobalSearch?.('');
+      } else {
+        // Clear filters when value is empty (wait for user input)
+        onFilterSearch?.(null);
+        onTargetedSearch?.(null);
+        onGlobalSearch?.('');
+      }
     } else if (newMode.isTargeted && newMode.targetedSearch) {
       // Legacy targeted search mode
       onTargetedSearch?.(newMode.targetedSearch);
@@ -638,7 +645,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         setBadgeWidth(badgeRef.current.offsetWidth);
       }
     }
-  }, [showTargetedIndicator, searchMode.targetedSearch?.column.headerName, searchMode.isFilterMode, searchMode.filterSearch?.operator]);
+  }, [showTargetedIndicator, searchMode.targetedSearch?.column.headerName, searchMode.isFilterMode, searchMode.filterSearch, searchMode.filterSearch?.operator]);
 
   // Get column selector search term - compute directly for immediate update
   const searchTerm = useMemo(() => {
@@ -754,11 +761,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-300 ease-in-out ${
                 searchState === 'not-found'
                   ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
-                  : searchMode.showColumnSelector
-                    ? 'border-purple-300 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
-                    : searchMode.isTargeted
-                      ? 'border-purple-300 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
-                      : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
+                  : searchMode.isFilterMode && searchMode.filterSearch
+                    ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
+                    : searchMode.showColumnSelector
+                      ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
+                      : searchMode.isTargeted
+                        ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
+                        : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
               } focus:outline-none rounded-lg`}
               style={{
                 paddingLeft: showTargetedIndicator

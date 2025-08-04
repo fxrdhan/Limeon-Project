@@ -2,17 +2,7 @@ import { useState, useRef } from 'react';
 import { formatRupiah, extractNumericValue } from '@/lib/formatters';
 import { formatMarginPercentage } from '../../../shared/utils/PriceCalculator';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
-import type { Category, MedicineType, Unit } from '@/types';
-import type { ItemDosage } from '../../../domain/entities/Item';
-
-interface ItemManufacturer {
-  id: string;
-  kode?: string;
-  name: string;
-  address?: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import type { ItemCategory, ItemTypeEntity, ItemPackage, ItemDosage, ItemManufacturer } from '../../../domain/entities';
 
 interface UseAddItemFormStateProps {
   initialSearchQuery?: string;
@@ -81,9 +71,9 @@ export const useAddItemFormState = ({
   const [isEditMode, setIsEditMode] = useState(false);
 
   // Data collections
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [types, setTypes] = useState<MedicineType[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
+  const [categories, setCategories] = useState<ItemCategory[]>([]);
+  const [types, setTypes] = useState<ItemTypeEntity[]>([]);
+  const [units, setUnits] = useState<ItemPackage[]>([]);
   const [dosages, setDosages] = useState<ItemDosage[]>([]);
   const [manufacturers, setManufacturers] = useState<ItemManufacturer[]>([]);
 

@@ -1,25 +1,15 @@
 import type { ReactNode } from 'react';
-import type { Category, MedicineType, Unit } from '@/types/database';
-import type { ItemDosage } from '../../domain/entities/Item';
+import type { ItemCategory, ItemTypeEntity, ItemPackage, ItemDosage, ItemManufacturer } from '../../domain/entities';
 import type { UsePackageConversionReturn } from '@/types/hooks';
 import type { ItemFormData } from './FormTypes';
 import type { VersionData } from './ItemTypes';
 
-interface ItemManufacturer {
-  id: string;
-  kode?: string;
-  name: string;
-  address?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
 // Context State Interfaces (Updated to match actual implementation)
 export interface ItemFormState {
   formData: Partial<ItemFormData>;
-  categories: Category[];
-  types: MedicineType[];
-  units: Unit[];
+  categories: ItemCategory[];
+  types: ItemTypeEntity[];
+  units: ItemPackage[];
   dosages: ItemDosage[];
   manufacturers: ItemManufacturer[];
   loading: boolean;

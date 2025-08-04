@@ -337,10 +337,9 @@ export const useAddItemForm = ({
 
   const handleSaveUnit = useCallback(
     async (unitData: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
-      address?: string;
     }) => {
       try {
         const { newUnit, updatedUnits } = await saveUnit(unitData);
@@ -349,7 +348,7 @@ export const useAddItemForm = ({
         formState.setIsAddUnitModalOpen(false);
         clearSearchTerm();
       } catch {
-        alert('Gagal menyimpan kemasan baru.');
+        alert('Gagal menyimpan satuan baru.');
       }
     },
     [saveUnit, formState, clearSearchTerm]

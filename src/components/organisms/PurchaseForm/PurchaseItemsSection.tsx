@@ -77,7 +77,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
       name: item.base_unit || 'Unit',
     };
 
-    const conversions = item.unit_conversions;
+    const conversions = item.package_conversions;
     if (!conversions) return [baseOption];
 
     const uniqueUnits = Array.from(

@@ -8,7 +8,7 @@ export interface Item {
   is_medicine: boolean;
   category_id: string;
   type_id: string;
-  unit_id: string;
+  package_id: string;
   dosage_id: string;
   description: string;
   base_price: number;
