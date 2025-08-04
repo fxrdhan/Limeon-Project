@@ -3,6 +3,25 @@ import { supabase } from '@/lib/supabase';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import type { ItemDosage } from '@/features/item-management/domain/entities/ItemDosage';
 
+// Simple dosages hook without realtime
+export const useDosages = ({
+  enabled = true,
+}: { enabled?: boolean } = {}) => {
+  return useQuery<ItemDosage[]>({
+    queryKey: QueryKeys.masterData.dosages.list(),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('item_dosages')
+        .select('id, kode, name, nci_code, description, created_at, updated_at')
+        .order('kode');
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled,
+  });
+};
+
 // Query hook untuk dosages dengan realtime
 export const useDosagesRealtime = ({
   enabled = true,

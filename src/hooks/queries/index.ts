@@ -24,10 +24,11 @@ export {
   useItemsRealtime,
   useDosagesRealtime,
   useManufacturersRealtime,
-} from './useMasterDataRealtime';
+} from '../realtime/useMasterDataRealtime';
 export { useDosageMutations } from './useDosages';
 export { useManufacturerMutations, useManufacturers } from './useManufacturers';
 export * from './usePurchases';
+export { usePurchasesRealtime } from './usePurchasesRealtime';
 export {
   useDashboardStats,
   useSalesAnalytics,
@@ -38,3 +39,7 @@ export {
   useDashboardData,
 } from './useDashboard';
 export * from './usePatientsDoctors';
+export {
+  useDoctorsRealtime,
+  usePatientsRealtime,
+} from './usePatientsDoctorsRealtime';

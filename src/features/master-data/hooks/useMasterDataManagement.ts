@@ -16,29 +16,34 @@ import type {
 import type { ItemDosage } from '@/features/item-management/domain/entities/ItemDosage';
 import type { ItemUnit } from '@/services/api/masterData.service';
 
-// Import our new modular services and hooks
+// Import realtime hooks
 import {
   useCategoriesRealtime,
-  useCategoryMutations,
   useMedicineTypesRealtime,
-  useMedicineTypeMutations,
   useUnitsRealtime,
-  useUnitMutations,
   useItemUnitsRealtime,
-  useItemUnitMutations,
   useDosagesRealtime,
-  useDosageMutations,
   useManufacturersRealtime,
-  useManufacturerMutations,
+  useItemsRealtime,
+} from '@/hooks/realtime/useMasterDataRealtime';
+
+// Import other hooks
+import {
+  useCategoryMutations,
+  useMedicineTypeMutations,
+  useUnitMutations,
+  useItemUnitMutations,
   useSuppliers,
   useSupplierMutations,
-  useItemsRealtime,
   useItemMutations,
-  usePatients,
   usePatientMutations,
-  useDoctors,
   useDoctorMutations,
+  usePatientsRealtime,
+  useDoctorsRealtime,
 } from '@/hooks/queries';
+
+import { useDosageMutations } from '@/hooks/queries/useDosages';
+import { useManufacturerMutations } from '@/hooks/queries/useManufacturers';
 
 type MasterDataItem =
   | Category
@@ -52,10 +57,8 @@ type MasterDataItem =
   | Patient
   | Doctor;
 
-// Hook selector factory to get the right hooks for each table
-// Always use the same hooks to avoid hooks order violations
-// Control realtime behavior via enabled parameter
-const getHooksForTable = (tableName: string, isRealtimeEnabled: boolean) => {
+// Simplified hook selector - realtime always enabled for simplicity
+const getHooksForTable = (tableName: string) => {
   interface QueryOptions {
     enabled?: boolean;
     filters?: Record<string, unknown>;
@@ -65,38 +68,32 @@ const getHooksForTable = (tableName: string, isRealtimeEnabled: boolean) => {
   switch (tableName) {
     case 'item_categories':
       return {
-        useData: (options: QueryOptions) =>
-          useCategoriesRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) => useCategoriesRealtime(options),
         useMutations: useCategoryMutations,
       };
     case 'item_types':
       return {
-        useData: (options: QueryOptions) =>
-          useMedicineTypesRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) => useMedicineTypesRealtime(options),
         useMutations: useMedicineTypeMutations,
       };
     case 'item_packages':
       return {
-        useData: (options: QueryOptions) =>
-          useUnitsRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) => useUnitsRealtime(options),
         useMutations: useUnitMutations,
       };
     case 'item_units':
       return {
-        useData: (options: QueryOptions) =>
-          useItemUnitsRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) => useItemUnitsRealtime(options),
         useMutations: useItemUnitMutations,
       };
     case 'item_dosages':
       return {
-        useData: (options: QueryOptions) =>
-          useDosagesRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) => useDosagesRealtime(options),
         useMutations: useDosageMutations,
       };
     case 'item_manufacturers':
       return {
-        useData: (options: QueryOptions) =>
-          useManufacturersRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) => useManufacturersRealtime(options),
         useMutations: useManufacturerMutations,
       };
     case 'suppliers':
@@ -106,18 +103,17 @@ const getHooksForTable = (tableName: string, isRealtimeEnabled: boolean) => {
       };
     case 'items':
       return {
-        useData: (options: QueryOptions) =>
-          useItemsRealtime({ ...options, enabled: isRealtimeEnabled }),
+        useData: (options: QueryOptions) => useItemsRealtime(options),
         useMutations: useItemMutations,
       };
     case 'patients':
       return {
-        useData: usePatients, // No realtime for patients yet
+        useData: (options: QueryOptions) => usePatientsRealtime(options),
         useMutations: usePatientMutations,
       };
     case 'doctors':
       return {
-        useData: useDoctors, // No realtime for doctors yet
+        useData: (options: QueryOptions) => useDoctorsRealtime(options),
         useMutations: useDoctorMutations,
       };
     default:
@@ -128,7 +124,7 @@ const getHooksForTable = (tableName: string, isRealtimeEnabled: boolean) => {
 export const useMasterDataManagement = (
   tableName: string,
   entityNameLabel: string,
-  options?: UseMasterDataManagementOptions & { activeTableName?: string }
+  options?: UseMasterDataManagementOptions
 ) => {
   const { openConfirmDialog } = useConfirmDialog();
   const alert = useAlert();
@@ -137,7 +133,6 @@ export const useMasterDataManagement = (
     isCustomModalOpen,
     searchInputRef,
     handleSearchChange,
-    activeTableName,
   } = options || {};
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -238,10 +233,8 @@ export const useMasterDataManagement = (
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
   }, [searchInputRef, handleSearchChange, actualIsModalOpen]);
 
-  // Get the appropriate hooks for this table
-  // Only enable realtime for the currently active table
-  const isRealtimeEnabled = tableName === activeTableName;
-  const hooks = getHooksForTable(tableName, isRealtimeEnabled);
+  // Get the appropriate hooks for this table - realtime always enabled
+  const hooks = getHooksForTable(tableName);
 
   // Use the appropriate data hook
   const {

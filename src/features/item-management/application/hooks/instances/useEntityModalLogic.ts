@@ -65,7 +65,7 @@ export const useEntityModalLogic = ({
     if (!isEditMode) return true;
     
     // Handle field name mapping: database uses 'code' but form uses 'kode'
-    const initialKode = initialData?.kode || initialData?.code || '';
+    const initialKode = initialData?.kode || (initialData as any)?.code || '';
     
     return (
       kode !== initialKode ||
@@ -97,7 +97,7 @@ export const useEntityModalLogic = ({
 
       if (initialData) {
         // Handle field name mapping: database uses 'code' but form uses 'kode'
-        setKode(initialData.kode || initialData.code || '');
+        setKode(initialData.kode || (initialData as any).code || '');
         setName(initialData.name);
         setDescription(initialData.description || '');
         setAddress(initialData.address || '');
