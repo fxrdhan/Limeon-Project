@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box';
 import { useAlert } from '@/components/alert/hooks';
+import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
 import type {
   ItemCategory,
   ItemTypeEntity,
@@ -140,6 +141,19 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     return entityConfigs[currentEntityType];
   }, [currentEntityType]);
 
+  // Use the actual master data management hook for API operations
+  const masterDataHook = useMasterDataManagement(
+    currentConfig.tableName,
+    currentConfig.entityName,
+    {
+      activeTableName: currentConfig.tableName,
+      searchInputRef,
+      handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value);
+      },
+    }
+  );
+
   // Change active entity type
   const handleEntityTypeChange = useCallback((entityType: EntityType) => {
     if (entityType !== currentEntityType) {
@@ -192,8 +206,10 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     abbreviation?: string;
   }) => {
     try {
-      // TODO: Implement actual API calls for each entity type
-      console.log('Submitting form data:', formData, 'for entity:', currentEntityType);
+      console.log('🚀 Submitting form data:', formData, 'for entity:', currentEntityType);
+      
+      // Use the actual master data hook to handle the submission
+      await masterDataHook.handleModalSubmit(formData);
       
       // Close modals after successful submit
       setIsAddModalOpen(false);
@@ -206,7 +222,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
       const action = formData.id ? 'memperbarui' : 'menambahkan';
       alert.error(`Gagal ${action} ${currentConfig.entityName}: ${errorMessage}`);
     }
-  }, [currentEntityType, currentConfig.entityName, alert]);
+  }, [currentEntityType, currentConfig.entityName, alert, masterDataHook]);
 
   // Delete handler
   const handleDelete = useCallback(async (entity: EntityData) => {
@@ -217,8 +233,10 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
       confirmText: 'Ya, Hapus',
       onConfirm: async () => {
         try {
-          // TODO: Implement actual API delete call
-          console.log('Deleting entity:', entity.id, 'of type:', currentEntityType);
+          console.log('🗑️ Deleting entity:', entity.id, 'of type:', currentEntityType);
+          
+          // Use the actual master data hook to handle the deletion
+          await masterDataHook.deleteMutation.mutateAsync(entity.id);
           
           setIsEditModalOpen(false);
           setEditingEntity(null);
@@ -230,7 +248,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
         }
       },
     });
-  }, [currentConfig.entityName, openConfirmDialog, alert, currentEntityType]);
+  }, [currentConfig.entityName, openConfirmDialog, alert, currentEntityType, masterDataHook]);
 
   // Search handler
   const handleSearch = useCallback((searchValue: string) => {

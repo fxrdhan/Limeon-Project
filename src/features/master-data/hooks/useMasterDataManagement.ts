@@ -249,6 +249,7 @@ export const useMasterDataManagement = (
     isLoading,
     isError,
     error,
+    refetch,
   } = hooks.useData({
     enabled: true,
   });
@@ -598,6 +599,9 @@ export const useMasterDataManagement = (
         setIsAddModalOpen(false);
         setIsEditModalOpen(false);
         setEditingItem(null);
+        
+        // Manually refetch to ensure current tab updates immediately after mutation
+        refetch();
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
@@ -605,7 +609,7 @@ export const useMasterDataManagement = (
         alert.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
       }
     },
-    [mutations, entityNameLabel, alert, tableName]
+    [mutations, entityNameLabel, alert, tableName, refetch]
   );
 
   const handleDelete = useCallback(
@@ -637,13 +641,16 @@ export const useMasterDataManagement = (
 
         setIsEditModalOpen(false);
         setEditingItem(null);
+        
+        // Manually refetch to ensure current tab updates immediately after mutation
+        refetch();
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
         alert.error(`Gagal menghapus ${entityNameLabel}: ${errorMessage}`);
       }
     },
-    [mutations, entityNameLabel, alert]
+    [mutations, entityNameLabel, alert, refetch]
   );
 
   const handlePageChange = (newPage: number) => setCurrentPage(newPage);

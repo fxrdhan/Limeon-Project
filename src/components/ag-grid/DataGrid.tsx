@@ -4,6 +4,7 @@ import {
   useEffect,
   useImperativeHandle,
   useMemo,
+  useCallback,
 } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import {
@@ -12,6 +13,8 @@ import {
   AllCommunityModule,
   themeQuartz,
   GridReadyEvent,
+  GetRowIdParams,
+  RowDataTransaction,
 } from 'ag-grid-community';
 import { DataGridProps, DataGridRef } from '@/types';
 
@@ -41,15 +44,14 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       className,
       style,
       autoSizeColumns,
-      autoSizeDelay = 200,
       sizeColumnsToFit = false,
       getRowHeight,
       rowClass = 'cursor-pointer',
       suppressMovableColumns = true,
       cellSelection = false,
       suppressScrollOnNewData = true,
-      suppressAnimationFrame = true,
-      animateRows = true,
+      suppressAnimationFrame = false,
+      animateRows = false,
       loadThemeGoogleFonts = true,
       rowSelection,
       colResizeDefault = 'shift',
@@ -89,12 +91,26 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           gridRef.current.api.refreshCells();
         }
       },
+      // Transaction-based methods for efficient updates
+      applyTransaction: (transaction: RowDataTransaction) => {
+        if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
+          return gridRef.current.api.applyTransaction(transaction);
+        }
+        return null;
+      },
+      applyTransactionAsync: (transaction: RowDataTransaction) => {
+        if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
+          return gridRef.current.api.applyTransactionAsync(transaction);
+        }
+        return null;
+      },
     }));
 
     useEffect(() => {
-      if (rowData && rowData.length > 0 && gridRef.current) {
-        setTimeout(() => {
-          if (gridRef.current?.api) {
+      if (rowData && rowData.length > 0 && gridRef.current?.api) {
+        // Use requestAnimationFrame for smoother performance
+        requestAnimationFrame(() => {
+          if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
             if (autoSizeColumns && autoSizeColumns.length > 0) {
               gridRef.current.api.autoSizeColumns(autoSizeColumns);
             } else if (sizeColumnsToFit) {
@@ -104,13 +120,12 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           if (onFirstDataRendered) {
             onFirstDataRendered();
           }
-        }, autoSizeDelay);
+        });
       }
     }, [
-      rowData,
+      rowData, // Include full rowData to satisfy deps
       autoSizeColumns,
       sizeColumnsToFit,
-      autoSizeDelay,
       onFirstDataRendered,
     ]);
 
@@ -129,6 +144,11 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       }
     };
 
+    const handleGridPreDestroyed = useCallback(() => {
+      // Clean up any references or listeners here if needed
+      // This is called just before the grid is destroyed
+    }, []);
+
     // Convert deprecated string values to new object format
     const normalizedRowSelection = useMemo(() => {
       if (!rowSelection) return undefined;
@@ -143,6 +163,11 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       return rowSelection;
     }, [rowSelection]);
 
+    // Memoized getRowId function for better performance
+    const getRowId = useCallback((params: GetRowIdParams) => {
+      return params.data?.id || params.data?.kode || params.data?.code;
+    }, []);
+
     return (
       <div className={className} style={style}>
         <AgGridReact
@@ -152,10 +177,12 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           columnDefs={columnDefs}
           domLayout={domLayout}
           getRowHeight={getRowHeight}
+          getRowId={getRowId}
           defaultColDef={defaultColDef}
           colResizeDefault={colResizeDefault}
           onRowClicked={onRowClicked}
           onGridReady={handleGridReady}
+          onGridPreDestroyed={handleGridPreDestroyed}
           {...(normalizedRowSelection && {
             rowSelection: normalizedRowSelection,
           })}
@@ -163,7 +190,9 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           cellSelection={cellSelection}
           suppressScrollOnNewData={suppressScrollOnNewData}
           suppressAnimationFrame={suppressAnimationFrame}
+          suppressRowTransform={true}
           loading={loading}
+          suppressLoadingOverlay={true}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           rowClass={rowClass}
           animateRows={animateRows}

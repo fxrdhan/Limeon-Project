@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, LayoutGroup } from 'framer-motion';
 import classNames from 'classnames';
@@ -25,29 +25,41 @@ import { FilterSearch } from '@/types/search';
 
 type MasterDataType = 'items' | 'categories' | 'types' | 'packages' | 'dosages' | 'manufacturers' | 'units';
 
-const ItemMasterNew = () => {
+// Memoize static configurations outside component
+const TAB_CONFIGS = {
+  items: { key: 'items' as const, label: 'Daftar Item' },
+  categories: { key: 'categories' as const, label: 'Kategori' },
+  types: { key: 'types' as const, label: 'Jenis' },
+  packages: { key: 'packages' as const, label: 'Kemasan' },
+  dosages: { key: 'dosages' as const, label: 'Sediaan' },
+  manufacturers: { key: 'manufacturers' as const, label: 'Produsen' },
+  units: { key: 'units' as const, label: 'Satuan' },
+} as const;
+
+const TAB_ORDER: MasterDataType[] = ['items', 'categories', 'types', 'packages', 'dosages', 'manufacturers', 'units'];
+
+const URL_TO_TAB_MAP: Record<string, MasterDataType> = {
+  'items': 'items',
+  'categories': 'categories', 
+  'types': 'types',
+  'packages': 'packages',
+  'dosages': 'dosages',
+  'manufacturers': 'manufacturers',
+  'units': 'units'
+};
+
+const ItemMasterNew = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Get active tab from URL path
-  const getTabFromPath = (pathname: string): MasterDataType => {
+  // Memoize tab detection function
+  const getTabFromPath = useCallback((pathname: string): MasterDataType => {
     const pathSegments = pathname.split('/');
     const lastSegment = pathSegments[pathSegments.length - 1];
-    
-    const urlToTabMap: Record<string, MasterDataType> = {
-      'items': 'items',
-      'categories': 'categories', 
-      'types': 'types',
-      'packages': 'packages',
-      'dosages': 'dosages',
-      'manufacturers': 'manufacturers',
-      'units': 'units'
-    };
-    
-    return urlToTabMap[lastSegment] || 'items';
-  };
+    return URL_TO_TAB_MAP[lastSegment] || 'items';
+  }, []);
 
-  const [activeTab, setActiveTab] = useState<MasterDataType>(getTabFromPath(location.pathname));
+  const [activeTab, setActiveTab] = useState<MasterDataType>(() => getTabFromPath(location.pathname));
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Update active tab when URL changes
@@ -56,7 +68,7 @@ const ItemMasterNew = () => {
     if (newTab !== activeTab) {
       setActiveTab(newTab);
     }
-  }, [location.pathname, activeTab]);
+  }, [location.pathname, activeTab, getTabFromPath]);
 
   // Items tab states (only needed for items tab)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
@@ -73,16 +85,16 @@ const ItemMasterNew = () => {
 
   const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns();
 
-  // Items tab handlers
-  const openAddItemModal = (itemId?: string, searchQuery?: string) => {
+  // Memoize modal handlers
+  const openAddItemModal = useCallback((itemId?: string, searchQuery?: string) => {
     setEditingItemId(itemId);
     setCurrentSearchQueryForModal(searchQuery);
     setIsItemModalClosing(false);
     setIsAddItemModalOpen(true);
     setModalRenderId(prevId => prevId + 1);
-  };
+  }, []);
 
-  const closeAddItemModal = () => {
+  const closeAddItemModal = useCallback(() => {
     setIsItemModalClosing(true);
     setTimeout(() => {
       setIsAddItemModalOpen(false);
@@ -90,19 +102,20 @@ const ItemMasterNew = () => {
       setEditingItemId(undefined);
       setCurrentSearchQueryForModal(undefined);
     }, 100);
-  };
+  }, []);
 
-  const handleItemEdit = (item: ItemDataType) => {
+  // Memoize item handlers
+  const handleItemEdit = useCallback((item: ItemDataType) => {
     openAddItemModal(item.id);
-  };
+  }, [openAddItemModal]);
 
-  const handleItemSelect = (itemId: string) => {
+  const handleItemSelect = useCallback((itemId: string) => {
     openAddItemModal(itemId);
-  };
+  }, [openAddItemModal]);
 
-  const handleAddItem = (itemId?: string, searchQuery?: string) => {
+  const handleAddItem = useCallback((itemId?: string, searchQuery?: string) => {
     openAddItemModal(itemId, searchQuery);
-  };
+  }, [openAddItemModal]);
 
   // Items tab search functionality
   const handleItemSearch = useCallback((searchValue: string) => {
@@ -134,7 +147,16 @@ const ItemMasterNew = () => {
     onFilterSearch: handleItemFilterSearch,
   });
 
-  const handleTabChange = (newTab: MasterDataType) => {
+  // Memoize SearchToolbar callback props for stable references (after itemSearch is declared)
+  const memoizedOnAdd = useCallback(() => {
+    handleAddItem(undefined, itemSearch);
+  }, [handleAddItem, itemSearch]);
+
+  const memoizedOnItemSelect = useCallback((item: { id: string }) => {
+    handleItemSelect(item.id);
+  }, [handleItemSelect]);
+
+  const handleTabChange = useCallback((newTab: MasterDataType) => {
     if (newTab !== activeTab) {
       navigate(`/master-data/item-master/${newTab}`);
       
@@ -148,20 +170,11 @@ const ItemMasterNew = () => {
         closeAddItemModal();
       }
     }
-  };
+  }, [activeTab, navigate, isAddItemModalOpen, closeAddItemModal]);
 
-  // Tab configurations
-  const tabConfigs = {
-    items: { key: 'items' as const, label: 'Daftar Item' },
-    categories: { key: 'categories' as const, label: 'Kategori' },
-    types: { key: 'types' as const, label: 'Jenis' },
-    packages: { key: 'packages' as const, label: 'Kemasan' },
-    dosages: { key: 'dosages' as const, label: 'Sediaan' },
-    manufacturers: { key: 'manufacturers' as const, label: 'Produsen' },
-    units: { key: 'units' as const, label: 'Satuan' },
-  };
-
-  const tabOrder: MasterDataType[] = ['items', 'categories', 'types', 'packages', 'dosages', 'manufacturers', 'units'];
+  // Use memoized configurations
+  const tabConfigs = TAB_CONFIGS;
+  const tabOrder = TAB_ORDER;
 
   // If it's not items tab, use the new EntityMasterPage
   if (activeTab !== 'items') {
@@ -171,7 +184,7 @@ const ItemMasterNew = () => {
   // Items tab rendering (legacy functionality preserved)
   return (
     <>
-      <Card className={itemsManagement.isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+      <Card>
         <div className="relative flex items-center justify-center mb-0 pt-0">
           <div className="absolute left-0 pb-4 pt-6">
             <LayoutGroup id="item-master-tabs">
@@ -232,19 +245,20 @@ const ItemMasterNew = () => {
               search={itemSearch}
               buttonText="Tambah Item Baru"
               placeholder="Cari nama, kode, atau deskripsi item atau ketik # untuk pencarian kolom spesifik"
-              onAdd={() => handleAddItem(undefined, itemSearch)}
+              onAdd={memoizedOnAdd}
               items={itemsManagement.data as ItemDataType[]}
-              onItemSelect={(item: ItemDataType) => handleItemSelect(item.id)}
+              onItemSelect={memoizedOnItemSelect}
             />
           </div>
         </div>
 
-        {itemsManagement.isError ? (
-          <div className="text-center p-6 text-red-500">
-            Error: {itemsManagement.queryError?.message || 'Gagal memuat data'}
-          </div>
-        ) : (
-          <ItemDataTable
+        <div className={itemsManagement.isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+          {itemsManagement.isError ? (
+            <div className="text-center p-6 text-red-500">
+              Error: {itemsManagement.queryError?.message || 'Gagal memuat data'}
+            </div>
+          ) : (
+            <ItemDataTable
             items={itemsManagement.data as ItemDataType[]}
             columnDefs={itemColumnDefs}
             columnsToAutoSize={columnsToAutoSize}
@@ -263,7 +277,8 @@ const ItemMasterNew = () => {
             isExternalFilterPresent={itemIsExternalFilterPresent}
             doesExternalFilterPass={itemDoesExternalFilterPass}
           />
-        )}
+          )}
+        </div>
       </Card>
 
       {/* Item Management Modal */}
@@ -278,6 +293,8 @@ const ItemMasterNew = () => {
       />
     </>
   );
-};
+});
+
+ItemMasterNew.displayName = 'ItemMasterNew';
 
 export default ItemMasterNew;
