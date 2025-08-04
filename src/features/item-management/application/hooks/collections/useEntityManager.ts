@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box';
 import { useAlert } from '@/components/alert/hooks';
 import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
@@ -136,6 +136,28 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Sync internal state with prop changes
+  useEffect(() => {
+    if (activeEntityType !== currentEntityType) {
+      console.log('🔄 EntityManager: Syncing entity type:', { 
+        from: currentEntityType, 
+        to: activeEntityType,
+        config: entityConfigs[activeEntityType]
+      });
+      setCurrentEntityType(activeEntityType);
+      setCurrentPage(1);
+      setSearch('');
+      setIsAddModalOpen(false);
+      setIsEditModalOpen(false);
+      setEditingEntity(null);
+      
+      // Clear search input
+      if (searchInputRef?.current) {
+        searchInputRef.current.value = '';
+      }
+    }
+  }, [activeEntityType, currentEntityType, searchInputRef]);
+
   // Get current configuration
   const currentConfig = useMemo(() => {
     return entityConfigs[currentEntityType];
@@ -206,7 +228,12 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     abbreviation?: string;
   }) => {
     try {
-      console.log('🚀 Submitting form data:', formData, 'for entity:', currentEntityType);
+      console.log('🚀 EntityManager: Submitting form data:', {
+        formData,
+        currentEntityType,
+        tableName: currentConfig.tableName,
+        entityName: currentConfig.entityName
+      });
       
       // Use the actual master data hook to handle the submission
       await masterDataHook.handleModalSubmit(formData);
