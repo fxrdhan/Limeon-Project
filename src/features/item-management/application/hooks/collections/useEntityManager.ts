@@ -139,11 +139,6 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
   // Sync internal state with prop changes
   useEffect(() => {
     if (activeEntityType !== currentEntityType) {
-      console.log('🔄 EntityManager: Syncing entity type:', { 
-        from: currentEntityType, 
-        to: activeEntityType,
-        config: entityConfigs[activeEntityType]
-      });
       setCurrentEntityType(activeEntityType);
       setCurrentPage(1);
       setSearch('');
@@ -168,7 +163,6 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     currentConfig.tableName,
     currentConfig.entityName,
     {
-      activeTableName: currentConfig.tableName,
       searchInputRef,
       handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
@@ -228,13 +222,6 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     abbreviation?: string;
   }) => {
     try {
-      console.log('🚀 EntityManager: Submitting form data:', {
-        formData,
-        currentEntityType,
-        tableName: currentConfig.tableName,
-        entityName: currentConfig.entityName
-      });
-      
       // Use the actual master data hook to handle the submission
       await masterDataHook.handleModalSubmit(formData);
       
@@ -260,8 +247,6 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
       confirmText: 'Ya, Hapus',
       onConfirm: async () => {
         try {
-          console.log('🗑️ Deleting entity:', entity.id, 'of type:', currentEntityType);
-          
           // Use the actual master data hook to handle the deletion
           await masterDataHook.deleteMutation.mutateAsync(entity.id);
           

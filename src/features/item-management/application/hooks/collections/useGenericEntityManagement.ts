@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { fuzzyMatch } from '@/utils/search';
 import type { EntityData, EntityType } from './useEntityManager';
 
-// Import entity hooks directly to avoid circular dependency
+// Import simplified realtime hooks
 import {
   useCategoriesRealtime,
   useMedicineTypesRealtime,
@@ -10,7 +10,7 @@ import {
   useItemUnitsRealtime,
   useDosagesRealtime,
   useManufacturersRealtime,
-} from '@/hooks/queries/useMasterDataRealtime';
+} from '@/hooks/realtime/useMasterDataRealtime';
 import { useCategoryMutations, useMedicineTypeMutations, useUnitMutations } from '@/hooks/queries/useMasterData';
 import { useItemUnitMutations } from '@/hooks/queries/useMasterData';
 import { useDosageMutations } from '@/hooks/queries/useDosages';
@@ -24,19 +24,8 @@ export interface UseGenericEntityManagementOptions {
   enabled?: boolean;
 }
 
-// Hook selector to get the right hooks for each entity type
-// 
-// IMPORTANT: Legacy naming issue in existing hooks:
-// - useUnitsRealtime actually handles 'item_packages' table (confusing name!)
-// - useItemUnitsRealtime handles 'item_units' table (correct name)
-// - This is why 'packages' maps to useUnitsRealtime - it's correct but confusing
-//
-// TODO: When refactoring hooks, consider renaming:
-// - useUnitsRealtime -> useItemPackagesRealtime (clearer)
-// - useMedicineTypesRealtime -> useItemTypesRealtime (consistent)
-// - useDosagesRealtime -> useItemDosagesRealtime (consistent)
-// - useManufacturersRealtime -> useItemManufacturersRealtime (consistent)
-const getHooksForEntityType = (entityType: EntityType, enabled: boolean) => {
+// Simple hook selector - realtime is always enabled for simplicity
+const getHooksForEntityType = (entityType: EntityType) => {
   interface QueryOptions {
     enabled?: boolean;
     filters?: Record<string, unknown>;
@@ -46,37 +35,32 @@ const getHooksForEntityType = (entityType: EntityType, enabled: boolean) => {
   switch (entityType) {
     case 'categories':
       return {
-        useData: (options: QueryOptions) => useCategoriesRealtime({ ...options, enabled }),
+        useData: (options: QueryOptions) => useCategoriesRealtime(options),
         useMutations: useCategoryMutations,
       };
     case 'types':
       return {
-        // useMedicineTypesRealtime handles 'item_types' table
-        useData: (options: QueryOptions) => useMedicineTypesRealtime({ ...options, enabled }),
+        useData: (options: QueryOptions) => useMedicineTypesRealtime(options),
         useMutations: useMedicineTypeMutations,
       };
     case 'packages':
       return {
-        // useUnitsRealtime actually handles 'item_packages' table (legacy naming)
-        useData: (options: QueryOptions) => useUnitsRealtime({ ...options, enabled }),
+        useData: (options: QueryOptions) => useUnitsRealtime(options),
         useMutations: useUnitMutations,
       };
     case 'units':
       return {
-        // useItemUnitsRealtime handles 'item_units' table
-        useData: (options: QueryOptions) => useItemUnitsRealtime({ ...options, enabled }),
+        useData: (options: QueryOptions) => useItemUnitsRealtime(options),
         useMutations: useItemUnitMutations,
       };
     case 'dosages':
       return {
-        // useDosagesRealtime handles 'item_dosages' table
-        useData: (options: QueryOptions) => useDosagesRealtime({ ...options, enabled }),
+        useData: (options: QueryOptions) => useDosagesRealtime(options),
         useMutations: useDosageMutations,
       };
     case 'manufacturers':
       return {
-        // useManufacturersRealtime handles 'item_manufacturers' table
-        useData: (options: QueryOptions) => useManufacturersRealtime({ ...options, enabled }),
+        useData: (options: QueryOptions) => useManufacturersRealtime(options),
         useMutations: useManufacturerMutations,
       };
     default:
@@ -93,10 +77,12 @@ export const useGenericEntityManagement = (options: UseGenericEntityManagementOp
     enabled = true,
   } = options;
 
-  // Get the appropriate hooks for this entity type
-  const hooks = getHooksForEntityType(entityType, enabled);
+  console.log(`🔍 [${entityType}] Simple realtime enabled`);
 
-  // Fetch data
+  // Get the appropriate hooks for this entity type
+  const hooks = getHooksForEntityType(entityType);
+
+  // Fetch data with realtime
   const {
     data: allData = [],
     isLoading,

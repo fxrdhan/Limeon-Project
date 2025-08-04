@@ -38,21 +38,15 @@ export const useCategoryMutations = () => {
 
   const createCategory = useMutation({
     mutationFn: async (data: Omit<Category, 'id' | 'updated_at'>) => {
-      console.log(`🚀 CREATE CATEGORY CALLED with data:`, data);
       const result = await masterDataService.categories.create(data);
-      console.log(`📝 CREATE CATEGORY API result:`, result);
       if (result.error) {
-        console.error(`❌ CREATE CATEGORY failed:`, result.error);
+        console.error(`Failed to create category:`, result.error);
         throw result.error;
       }
-      console.log(`✅ CREATE CATEGORY API success, returning:`, result.data);
       return result.data;
     },
-    onSuccess: data => {
-      console.log(`🎉 CREATE CATEGORY SUCCESS! Data:`, data);
-
+    onSuccess: () => {
       // Local cache update
-      console.log(`💾 Updating local cache for categories...`);
       queryClient.invalidateQueries({
         queryKey: QueryKeys.masterData.categories.all,
       });
@@ -60,7 +54,6 @@ export const useCategoryMutations = () => {
         queryKey: QueryKeys.masterData.categories.all,
       });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
-      console.log(`✅ Local cache updated`);
     },
   });
 
@@ -72,26 +65,15 @@ export const useCategoryMutations = () => {
       id: string;
       data: Partial<Category>;
     }) => {
-      console.log(`🚀 UPDATE CATEGORY CALLED with id:`, id, `data:`, data);
       const result = await masterDataService.categories.update(id, data);
-      console.log(`📝 UPDATE CATEGORY API result:`, result);
       if (result.error) {
-        console.error(`❌ UPDATE CATEGORY failed:`, result.error);
+        console.error(`Failed to update category:`, result.error);
         throw result.error;
       }
-      console.log(`✅ UPDATE CATEGORY API success, returning:`, result.data);
       return result.data;
     },
-    onSuccess: (data, variables) => {
-      console.log(
-        `🎉 UPDATE CATEGORY SUCCESS! Data:`,
-        data,
-        `Variables:`,
-        variables
-      );
-
+    onSuccess: () => {
       // Local cache update
-      console.log(`💾 Updating local cache for categories...`);
       queryClient.invalidateQueries({
         queryKey: QueryKeys.masterData.categories.all,
       });
@@ -99,7 +81,6 @@ export const useCategoryMutations = () => {
         queryKey: QueryKeys.masterData.categories.all,
       });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
-      console.log(`✅ Local cache updated`);
     },
   });
 

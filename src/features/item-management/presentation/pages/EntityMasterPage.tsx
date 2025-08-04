@@ -118,7 +118,7 @@ const EntityMasterPage: React.FC = memo(() => {
     // activeTab is already managed by URL changes
   });
 
-  // Generic entity data management - only for entity types, not items
+  // Generic entity data management - simplified realtime
   const entityData = useGenericEntityManagement({
     entityType: activeTab !== 'items' ? activeTab : 'categories',
     search: entityManager.search,

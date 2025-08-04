@@ -80,7 +80,6 @@ const ItemMasterNew = memo(() => {
   // Items tab management (only for items tab)
   const itemsManagement = useMasterDataManagement('items', 'Item', {
     searchInputRef: searchInputRef as React.RefObject<HTMLInputElement>,
-    activeTableName: activeTab === 'items' ? 'items' : undefined,
   });
 
   const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns();

@@ -123,35 +123,23 @@ export const useItemMutations = () => {
       itemData: Omit<DBItem, 'id' | 'created_at' | 'updated_at'>;
       packageConversions?: DBPackageConversion[];
     }) => {
-      console.log(
-        `🚀 CREATE ITEM CALLED with itemData:`,
-        itemData,
-        `packageConversions:`,
-        packageConversions
-      );
       const result = await itemsService.createItemWithConversions(
         itemData,
         packageConversions
       );
-      console.log(`📝 CREATE ITEM API result:`, result);
       if (result.error) {
-        console.error(`❌ CREATE ITEM failed:`, result.error);
+        console.error(`Failed to create item:`, result.error);
         throw result.error;
       }
-      console.log(`✅ CREATE ITEM API success, returning:`, result.data);
       return result.data;
     },
-    onSuccess: data => {
-      console.log(`🎉 CREATE ITEM SUCCESS! Data:`, data);
-
+    onSuccess: () => {
       // Local cache update
-      console.log(`💾 Updating local cache...`);
       const keysToInvalidate = getInvalidationKeys.items.all();
       keysToInvalidate.forEach(keySet => {
         queryClient.invalidateQueries({ queryKey: keySet });
         queryClient.refetchQueries({ queryKey: keySet });
       });
-      console.log(`✅ Local cache updated`);
     },
   });
 
@@ -182,7 +170,6 @@ export const useItemMutations = () => {
       );
 
       // Local cache update
-      console.log(`💾 Updating local cache...`);
       const keysToInvalidate = getInvalidationKeys.items.all();
       keysToInvalidate.forEach(keySet => {
         queryClient.invalidateQueries({ queryKey: keySet });
@@ -191,7 +178,6 @@ export const useItemMutations = () => {
       queryClient.invalidateQueries({
         queryKey: QueryKeys.items.detail(variables.id),
       });
-      console.log(`✅ Local cache updated`);
     },
   });
 

@@ -40,7 +40,7 @@ PharmaSys is a modern web-based application designed to streamline pharmacy and 
 This project is built with:
 
 - **Language:** [TypeScript](https://www.typescriptlang.org/)
-- **Linter:** [ESLint](https://eslint.org/)
+- **Linter:** [TypeScript ESLint](https://typescript-eslint.io/)
 - **Code Formatter:** [Prettier](https://prettier.io/)
 - **Library:** [React](https://react.dev/)
 - **Package Manager:** [Yarn](https://www.yarnpkg.com/)
