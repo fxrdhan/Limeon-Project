@@ -272,17 +272,7 @@ const EntityMasterPage: React.FC = memo(() => {
             }),
           ]
         : []),
-      // Add abbreviation column for units
-      ...(currentConfig?.hasAbbreviation
-        ? [
-            createTextColumn({
-              field: 'abbreviation',
-              headerName: 'Singkatan',
-              minWidth: 100,
-              valueGetter: params => params.data.abbreviation || '-',
-            }),
-          ]
-        : []),
+      // Note: abbreviation field removed as it doesn't exist in item_units table
       createTextColumn({
         field: currentConfig?.hasAddress ? 'address' : 'description',
         headerName: currentConfig?.hasAddress ? 'Alamat' : 'Deskripsi',
@@ -575,7 +565,7 @@ const EntityMasterPage: React.FC = memo(() => {
           ) : showSkeleton ? (
             <TableSkeleton 
               rows={entityManager.itemsPerPage || 10} 
-              columns={currentConfig?.hasNciCode ? 4 : currentConfig?.hasAddress || currentConfig?.hasAbbreviation ? 4 : 3} 
+              columns={currentConfig?.hasNciCode ? 4 : currentConfig?.hasAddress ? 4 : 3} 
               showPagination={true}
               className="mt-4"
             />

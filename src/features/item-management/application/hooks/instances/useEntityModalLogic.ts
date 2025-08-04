@@ -63,8 +63,12 @@ export const useEntityModalLogic = ({
   // Check if form is dirty
   const isDirty = useMemo(() => {
     if (!isEditMode) return true;
+    
+    // Handle field name mapping: database uses 'code' but form uses 'kode'
+    const initialKode = initialData?.kode || initialData?.code || '';
+    
     return (
-      kode !== (initialData?.kode || '') ||
+      kode !== initialKode ||
       name !== (initialData?.name || '') ||
       description !== (initialData?.description || '') ||
       address !== (initialData?.address || '')
@@ -92,7 +96,8 @@ export const useEntityModalLogic = ({
       setPreviousMode(newMode);
 
       if (initialData) {
-        setKode(initialData.kode || '');
+        // Handle field name mapping: database uses 'code' but form uses 'kode'
+        setKode(initialData.kode || initialData.code || '');
         setName(initialData.name);
         setDescription(initialData.description || '');
         setAddress(initialData.address || '');
@@ -134,13 +139,16 @@ export const useEntityModalLogic = ({
     const submitData: {
       id?: string;
       kode?: string;
+      code?: string;
       name: string;
       fda_code?: string;
       description?: string;
       address?: string;
     } = {
       id: initialData?.id,
+      // Include both kode and code for backward compatibility
       kode: kode.trim(),
+      code: kode.trim(),
       name: name.trim(),
     };
 

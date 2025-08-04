@@ -106,6 +106,17 @@ export const QueryKeys = {
       detail: (id: string) =>
         [...QueryKeys.masterData.manufacturers.details(), id] as const,
     },
+
+    // Item Units (distinct from units which refers to packages)
+    itemUnits: {
+      all: ['item_units'] as const,
+      lists: () => [...QueryKeys.masterData.itemUnits.all, 'list'] as const,
+      list: (filters?: Record<string, unknown>) =>
+        [...QueryKeys.masterData.itemUnits.lists(), { filters }] as const,
+      details: () => [...QueryKeys.masterData.itemUnits.all, 'detail'] as const,
+      detail: (id: string) =>
+        [...QueryKeys.masterData.itemUnits.details(), id] as const,
+    },
   },
 
   // Patients
@@ -204,6 +215,10 @@ export const getInvalidationKeys = {
     dosages: () => [QueryKeys.masterData.dosages.all, QueryKeys.items.all],
     manufacturers: () => [
       QueryKeys.masterData.manufacturers.all,
+      QueryKeys.items.all,
+    ],
+    itemUnits: () => [
+      QueryKeys.masterData.itemUnits.all,
       QueryKeys.items.all,
     ],
   },

@@ -248,7 +248,7 @@ export const useMedicineTypesRealtime = (
   return typesQuery;
 };
 
-// Units Realtime Hook
+// Units Realtime Hook (for item_packages table - legacy naming)
 export const useUnitsRealtime = (options?: UseMasterDataRealtimeOptions) => {
   const queryClient = useQueryClient();
   const subscriptionRef = useRef<ReturnType<typeof supabase.channel> | null>(
@@ -358,7 +358,7 @@ export const useUnitsRealtime = (options?: UseMasterDataRealtimeOptions) => {
   return unitsQuery;
 };
 
-// Item Units Realtime Hook (for item_units table)
+// Item Units Realtime Hook (for item_units table - actual units like PCS, BOX, etc.)
 export const useItemUnitsRealtime = (options?: UseMasterDataRealtimeOptions) => {
   const queryClient = useQueryClient();
   const subscriptionRef = useRef<ReturnType<typeof supabase.channel> | null>(
@@ -392,8 +392,10 @@ export const useItemUnitsRealtime = (options?: UseMasterDataRealtimeOptions) => 
           switch (payload.eventType) {
             case 'INSERT': {
               console.log('➕ New item unit inserted:', payload.new);
-              queryClient.invalidateQueries({
-                queryKey: ['item_units'],
+              const insertKeysToInvalidate =
+                getInvalidationKeys.masterData.itemUnits();
+              insertKeysToInvalidate.forEach((keySet: readonly string[]) => {
+                queryClient.invalidateQueries({ queryKey: keySet });
               });
               break;
             }
@@ -403,12 +405,14 @@ export const useItemUnitsRealtime = (options?: UseMasterDataRealtimeOptions) => 
               const updatedItemUnit = payload.new as ItemUnit;
 
               queryClient.setQueryData(
-                ['item_units', 'detail', updatedItemUnit.id],
+                QueryKeys.masterData.itemUnits.detail(updatedItemUnit.id),
                 updatedItemUnit
               );
 
-              queryClient.invalidateQueries({
-                queryKey: ['item_units'],
+              const updateKeysToInvalidate =
+                getInvalidationKeys.masterData.itemUnits();
+              updateKeysToInvalidate.forEach((keySet: readonly string[]) => {
+                queryClient.invalidateQueries({ queryKey: keySet });
               });
               break;
             }
@@ -418,11 +422,13 @@ export const useItemUnitsRealtime = (options?: UseMasterDataRealtimeOptions) => 
               const deletedItemUnit = payload.old as ItemUnit;
 
               queryClient.removeQueries({
-                queryKey: ['item_units', 'detail', deletedItemUnit.id],
+                queryKey: QueryKeys.masterData.itemUnits.detail(deletedItemUnit.id),
               });
 
-              queryClient.invalidateQueries({
-                queryKey: ['item_units'],
+              const deleteKeysToInvalidate =
+                getInvalidationKeys.masterData.itemUnits();
+              deleteKeysToInvalidate.forEach((keySet: readonly string[]) => {
+                queryClient.invalidateQueries({ queryKey: keySet });
               });
               break;
             }
@@ -433,7 +439,7 @@ export const useItemUnitsRealtime = (options?: UseMasterDataRealtimeOptions) => 
         }
       )
       .subscribe(status => {
-        console.log('📡 Item Units realtime subscription status:', status);
+        console.log('📡 Item Units (item_units) realtime subscription status:', status);
       });
 
     subscriptionRef.current = channel;

@@ -284,7 +284,7 @@ export const useUnitMutations = () => {
 // Item Unit Hooks (for item_units table)
 export const useItemUnits = (options?: { enabled?: boolean }) => {
   return useQuery({
-    queryKey: ['item_units', 'list'],
+    queryKey: QueryKeys.masterData.itemUnits.list(),
     queryFn: async () => {
       const result = await masterDataService.itemUnits.getActiveItemUnits();
       if (result.error) throw result.error;
@@ -298,7 +298,7 @@ export const useItemUnits = (options?: { enabled?: boolean }) => {
 
 export const useItemUnit = (id: string, options?: { enabled?: boolean }) => {
   return useQuery({
-    queryKey: ['item_units', 'detail', id],
+    queryKey: QueryKeys.masterData.itemUnits.detail(id),
     queryFn: async () => {
       const result = await masterDataService.itemUnits.getById(id);
       if (result.error) throw result.error;
@@ -320,8 +320,9 @@ export const useItemUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['item_units'],
+      const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
+      keysToInvalidate.forEach((keySet: readonly string[]) => {
+        queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
   });
@@ -333,8 +334,9 @@ export const useItemUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['item_units'],
+      const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
+      keysToInvalidate.forEach((keySet: readonly string[]) => {
+        queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
   });
@@ -346,8 +348,9 @@ export const useItemUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['item_units'],
+      const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
+      keysToInvalidate.forEach((keySet: readonly string[]) => {
+        queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
   });
