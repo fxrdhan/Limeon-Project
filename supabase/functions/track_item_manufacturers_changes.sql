@@ -45,7 +45,7 @@ BEGIN
     ELSIF TG_OP = 'UPDATE' THEN
         -- Only track if there are actual changes (updated to use address instead of description)
         IF OLD.name != NEW.name OR 
-           COALESCE(OLD.kode, '') != COALESCE(NEW.kode, '') OR 
+           COALESCE(OLD.code, '') != COALESCE(NEW.code, '') OR 
            COALESCE(OLD.address, '') != COALESCE(NEW.address, '') THEN
             
             INSERT INTO public.entity_history (
@@ -68,7 +68,7 @@ BEGIN
                 to_jsonb(NEW),
                 jsonb_build_object(
                     'name', jsonb_build_object('old', OLD.name, 'new', NEW.name),
-                    'kode', jsonb_build_object('old', OLD.kode, 'new', NEW.kode),
+                    'code', jsonb_build_object('old', OLD.code, 'new', NEW.code),
                     'address', jsonb_build_object('old', OLD.address, 'new', NEW.address)
                 ),
                 'Updated manufacturer: ' || NEW.name

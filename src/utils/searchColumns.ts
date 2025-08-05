@@ -221,29 +221,178 @@ export const supplierSearchColumns: SearchColumn[] = [
 ];
 
 /**
- * Item Master search columns configuration (for categories, types, and units)
+ * Item Categories search columns configuration
  */
-export const itemMasterSearchColumns: SearchColumn[] = [
+export const itemCategoriesSearchColumns: SearchColumn[] = [
   {
-    field: 'kode',
+    field: 'code',
     headerName: 'Kode',
     searchable: true,
     type: 'text',
-    description: 'Cari berdasarkan kode',
+    description: 'Cari berdasarkan kode kategori',
   },
   {
     field: 'name',
     headerName: 'Nama',
     searchable: true,
     type: 'text',
-    description: 'Cari berdasarkan nama',
+    description: 'Cari berdasarkan nama kategori',
   },
   {
     field: 'description',
     headerName: 'Deskripsi',
     searchable: true,
     type: 'text',
-    description: 'Cari berdasarkan deskripsi',
+    description: 'Cari berdasarkan deskripsi kategori',
+  },
+];
+
+/**
+ * Item Types search columns configuration
+ */
+export const itemTypesSearchColumns: SearchColumn[] = [
+  {
+    field: 'code',
+    headerName: 'Kode',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan kode jenis',
+  },
+  {
+    field: 'name',
+    headerName: 'Nama',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan nama jenis',
+  },
+  {
+    field: 'description',
+    headerName: 'Deskripsi',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan deskripsi jenis',
+  },
+];
+
+/**
+ * Item Packages search columns configuration
+ */
+export const itemPackagesSearchColumns: SearchColumn[] = [
+  {
+    field: 'code',
+    headerName: 'Kode',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan kode kemasan',
+  },
+  {
+    field: 'name',
+    headerName: 'Nama',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan nama kemasan',
+  },
+  {
+    field: 'description',
+    headerName: 'Deskripsi',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan deskripsi kemasan',
+  },
+  {
+    field: 'nci_code',
+    headerName: 'Kode NCI',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan kode NCI',
+  },
+];
+
+/**
+ * Item Dosages search columns configuration
+ */
+export const itemDosagesSearchColumns: SearchColumn[] = [
+  {
+    field: 'code',
+    headerName: 'Kode',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan kode sediaan',
+  },
+  {
+    field: 'name',
+    headerName: 'Nama',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan nama sediaan',
+  },
+  {
+    field: 'description',
+    headerName: 'Deskripsi',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan deskripsi sediaan',
+  },
+  {
+    field: 'nci_code',
+    headerName: 'Kode NCI',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan kode NCI',
+  },
+];
+
+/**
+ * Item Manufacturers search columns configuration
+ */
+export const itemManufacturersSearchColumns: SearchColumn[] = [
+  {
+    field: 'code',
+    headerName: 'Kode',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan kode produsen',
+  },
+  {
+    field: 'name',
+    headerName: 'Nama',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan nama produsen',
+  },
+  {
+    field: 'address',
+    headerName: 'Alamat',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan alamat produsen',
+  },
+];
+
+/**
+ * Item Units search columns configuration
+ */
+export const itemUnitsSearchColumns: SearchColumn[] = [
+  {
+    field: 'code',
+    headerName: 'Kode',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan kode satuan',
+  },
+  {
+    field: 'name',
+    headerName: 'Nama',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan nama satuan',
+  },
+  {
+    field: 'description',
+    headerName: 'Deskripsi',
+    searchable: true,
+    type: 'text',
+    description: 'Cari berdasarkan deskripsi satuan',
   },
 ];
 
@@ -262,10 +411,25 @@ export const getSearchColumnsByEntity = (
       return patientSearchColumns;
     case 'suppliers':
       return supplierSearchColumns;
+    // Item master data - match activeTab values
+    case 'categories':
     case 'item_categories':
+      return itemCategoriesSearchColumns;
+    case 'types':
     case 'item_types':
+      return itemTypesSearchColumns;
+    case 'packages':
     case 'item_packages':
-      return itemMasterSearchColumns;
+      return itemPackagesSearchColumns;
+    case 'dosages':
+    case 'item_dosages':
+      return itemDosagesSearchColumns;
+    case 'manufacturers':
+    case 'item_manufacturers':
+      return itemManufacturersSearchColumns;
+    case 'units':
+    case 'item_units':
+      return itemUnitsSearchColumns;
     default:
       return [];
   }

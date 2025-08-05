@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { LuCheck, LuX, LuSearch, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 import { HiOutlineSparkles } from 'react-icons/hi2';
+import fuzzysort from 'fuzzysort';
 
 export interface FilterOperator {
   value: string;
@@ -67,11 +68,65 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
 
   useEffect(() => {
     if (searchTerm) {
-      const filtered = operators.filter(op => 
-        op.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        op.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        op.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      // Prepare search targets for fuzzysort
+      const searchTargets = operators.map(op => ({
+        operator: op,
+        label: op.label,
+        value: op.value,
+        description: op.description || '',
+      }));
+
+      // Search labels (highest priority)
+      const labelResults = fuzzysort.go(searchTerm, searchTargets, {
+        key: 'label',
+        threshold: -1000,
+      });
+
+      // Search values (medium priority)
+      const valueResults = fuzzysort.go(searchTerm, searchTargets, {
+        key: 'value',
+        threshold: -1000,
+      });
+
+      // Search descriptions (lowest priority)
+      const descResults = fuzzysort.go(searchTerm, searchTargets, {
+        key: 'description',
+        threshold: -1000,
+      });
+
+      // Combine results with priority scoring
+      const combinedResults = new Map();
+
+      labelResults.forEach(result => {
+        combinedResults.set(result.obj.operator.value, {
+          operator: result.obj.operator,
+          score: result.score + 1000, // Boost label matches
+        });
+      });
+
+      valueResults.forEach(result => {
+        if (!combinedResults.has(result.obj.operator.value)) {
+          combinedResults.set(result.obj.operator.value, {
+            operator: result.obj.operator,
+            score: result.score + 500, // Medium boost
+          });
+        }
+      });
+
+      descResults.forEach(result => {
+        if (!combinedResults.has(result.obj.operator.value)) {
+          combinedResults.set(result.obj.operator.value, {
+            operator: result.obj.operator,
+            score: result.score, // No boost
+          });
+        }
+      });
+
+      // Sort by score and extract operators
+      const filtered = Array.from(combinedResults.values())
+        .sort((a, b) => b.score - a.score)
+        .map(item => item.operator);
+
       setFilteredOperators(filtered);
       setSelectedIndex(0);
     } else {

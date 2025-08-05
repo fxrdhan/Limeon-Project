@@ -112,7 +112,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         }
 
         // Check for space pattern: #column #operator value
-        const filterMatch = searchValue.match(/^#([^\s:]+)(?:\s+#([^\s:]+)(?:\s+(.*))?)?$/);
+        const filterMatch = searchValue.match(/^#([^\s:]+)(?:\s+#([^\s:]*)(?:\s+(.*))?)?$/);
         
         if (filterMatch) {
           const [, columnInput, operatorInput, filterValue] = filterMatch;
@@ -126,8 +126,19 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
           if (column) {
             // Check for different patterns
-            if (operatorInput) {
-              // Pattern: #column #operator or #column #operator value
+            if (operatorInput !== undefined) {
+              // Pattern: #column #operator or #column #operator value or #column # (empty operator)
+              if (operatorInput === '') {
+                // Pattern: #column # (empty operator - show selector)
+                return {
+                  globalSearch: undefined,
+                  showColumnSelector: false,
+                  showOperatorSelector: true,
+                  isFilterMode: false,
+                  selectedColumn: column,
+                };
+              }
+
               const operator = DEFAULT_FILTER_OPERATORS.find(
                 op => op.value.toLowerCase() === operatorInput.toLowerCase()
               );
@@ -147,7 +158,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   },
                 };
               } else {
-                // Show operator selector: #column #unknown
+                // Show operator selector: #column #partial_operator (searching)
                 return {
                   globalSearch: undefined,
                   showColumnSelector: false,
@@ -497,8 +508,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
         }
+      } else if (searchMode.showOperatorSelector && searchMode.selectedColumn) {
+        // Operator selector mode: update the operator part after #column #
+        const columnName = searchMode.selectedColumn.field;
+        const newValue = `#${columnName} #${inputValue}`;
+        onChange({
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLInputElement>);
       } else {
-        // For normal search or selector modes
+        // For normal search or column selector modes
         onChange(e);
 
         // If user clears the # character, also close selectors
@@ -624,6 +642,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const hasValue = value && value.length > 0;
   
+  // Get operator selector search term - extract from #column #operator pattern
+  const operatorSearchTerm = useMemo(() => {
+    if (searchMode.showOperatorSelector && value.startsWith('#')) {
+      // Match pattern: #column #operator or #column # (partial operator)
+      const match = value.match(/^#[^\s:]+\s+#([^\s]*)/);
+      return match ? match[1] : '';
+    }
+    return '';
+  }, [value, searchMode.showOperatorSelector]);
+  
   // Memoize showTargetedIndicator to prevent unnecessary recalculations
   const showTargetedIndicator = useMemo(() => 
     (searchMode.isFilterMode && !!searchMode.filterSearch) ||
@@ -637,15 +665,15 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return searchMode.filterSearch.value;
     }
     if (searchMode.showOperatorSelector && searchMode.selectedColumn) {
-      // Hide input during operator selection since badge is showing
-      return '';
+      // Show the operator search term for typing search
+      return operatorSearchTerm;
     }
     if (value.startsWith('#') && !searchMode.isFilterMode) {
       // Keep the full hashtag input visible for better UX during selection
       return value;
     }
     return value;
-  }, [value, searchMode.isFilterMode, searchMode.filterSearch, searchMode.showOperatorSelector, searchMode.selectedColumn]);
+  }, [value, searchMode.isFilterMode, searchMode.filterSearch, searchMode.showOperatorSelector, searchMode.selectedColumn, operatorSearchTerm]);
 
   // Calculate text width for return icon positioning
   useEffect(() => {
@@ -937,6 +965,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onSelect={handleOperatorSelect}
         onClose={handleCloseOperatorSelector}
         position={operatorSelectorPosition}
+        searchTerm={operatorSearchTerm}
       />
     </>
   );
