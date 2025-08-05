@@ -16,7 +16,6 @@ import PageTitle from '@/components/page-title';
 import { Card } from '@/components/card';
 import { DataGrid, DataGridRef, createTextColumn } from '@/components/ag-grid';
 import { TableSkeleton } from '@/components/skeleton';
-import { useCacheFirstLoading } from '@/hooks/useCacheFirstLoading';
 import {
   ColDef,
   RowClickedEvent,
@@ -140,16 +139,7 @@ const EntityMasterPage: React.FC = memo(() => {
   // Generic entity data management - simplified realtime
   const entityData = useGenericEntityManagement(entityManagementOptions);
 
-  // Smart loading state with cache-first strategy
-  const { showSkeleton, showBackgroundLoading, shouldSuppressOverlay } =
-    useCacheFirstLoading({
-      isLoading: entityData.isLoading,
-      hasData: entityData.data && entityData.data.length > 0,
-      isInitialLoad: !entityData.data || entityData.data.length === 0,
-      minSkeletonTime: 300,
-      gracePeriod: 150, // Prevent flash of empty content
-      tabKey: activeTab, // For detecting tab changes
-    });
+  // Simple loading state for realtime data
 
   // Memoize current config to prevent unnecessary re-renders
   const currentConfig = useMemo(
@@ -582,7 +572,7 @@ const EntityMasterPage: React.FC = memo(() => {
             <div className="text-center p-6 text-red-500">
               Error: {entityData.error?.message || 'Gagal memuat data'}
             </div>
-          ) : showSkeleton ? (
+          ) : entityData.isLoading && (!entityData.data || entityData.data.length === 0) ? (
             <TableSkeleton
               rows={entityManager.itemsPerPage || 10}
               columns={
@@ -597,8 +587,8 @@ const EntityMasterPage: React.FC = memo(() => {
             />
           ) : (
             <>
-              {/* Background loading indicator */}
-              {showBackgroundLoading && (
+              {/* Background loading indicator for realtime updates */}
+              {entityData.isLoading && entityData.data && entityData.data.length > 0 && (
                 <div className="absolute top-0 right-0 z-10 mt-2 mr-4">
                   <div className="flex items-center space-x-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm shadow-sm">
                     <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -616,11 +606,7 @@ const EntityMasterPage: React.FC = memo(() => {
                   onRowClicked={onRowClicked}
                   onGridReady={onGridReady}
                   loading={false}
-                  overlayNoRowsTemplate={
-                    shouldSuppressOverlay
-                      ? ''
-                      : getOverlayTemplate(search, currentConfig)
-                  }
+                  overlayNoRowsTemplate={getOverlayTemplate(search, currentConfig)}
                   autoSizeColumns={getAutoSizeColumns(
                     currentConfig?.hasNciCode
                   )}
@@ -628,7 +614,7 @@ const EntityMasterPage: React.FC = memo(() => {
                   doesExternalFilterPass={doesExternalFilterPass}
                   style={{
                     ...GRID_STYLE,
-                    opacity: showBackgroundLoading ? 0.8 : 1,
+                    opacity: (entityData.isLoading && entityData.data && entityData.data.length > 0) ? 0.8 : 1,
                     transition: 'opacity 0.2s ease-in-out',
                   }}
                 />
