@@ -653,25 +653,27 @@ const EntityMasterPage: React.FC = memo(() => {
         </div>
       </Card>
 
-      {/* Entity Management Modal */}
-      <EntityManagementModal
-        isOpen={entityManager.isAddModalOpen || entityManager.isEditModalOpen}
-        onClose={
-          entityManager.isEditModalOpen
-            ? entityManager.closeEditModal
-            : entityManager.closeAddModal
-        }
-        onSubmit={entityManager.handleSubmit}
-        initialData={entityManager.editingEntity}
-        onDelete={
-          entityManager.editingEntity
-            ? () => entityManager.handleDelete(entityManager.editingEntity!)
-            : undefined
-        }
-        isLoading={false}
-        isDeleting={false}
-        entityName={currentConfig?.entityName || 'Entity'}
-      />
+      {/* Entity Management Modal - Only render when modal is open */}
+      {(entityManager.isAddModalOpen || entityManager.isEditModalOpen) && (
+        <EntityManagementModal
+          isOpen={true}
+          onClose={
+            entityManager.isEditModalOpen
+              ? entityManager.closeEditModal
+              : entityManager.closeAddModal
+          }
+          onSubmit={entityManager.handleSubmit}
+          initialData={entityManager.editingEntity}
+          onDelete={
+            entityManager.editingEntity
+              ? () => entityManager.handleDelete(entityManager.editingEntity!)
+              : undefined
+          }
+          isLoading={false}
+          isDeleting={false}
+          entityName={currentConfig?.entityName || 'Entity'}
+        />
+      )}
     </>
   );
 });
