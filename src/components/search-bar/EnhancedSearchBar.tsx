@@ -129,6 +129,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               col.headerName.toLowerCase() === columnInput.toLowerCase()
           );
 
+
           if (column) {
             // Check for different patterns
             if (operatorInput !== undefined) {
@@ -192,6 +193,24 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               };
             }
           }
+        }
+
+        // Check if this is an exact column match first before showing selector
+        const exactColumnMatch = memoizedColumns.find(
+          col =>
+            col.field.toLowerCase() === searchValue.substring(1).toLowerCase() ||
+            col.headerName.toLowerCase() === searchValue.substring(1).toLowerCase()
+        );
+
+        if (exactColumnMatch) {
+          // Exact match: show selected column with badge
+          return {
+            globalSearch: undefined,
+            showColumnSelector: false,
+            showOperatorSelector: false,
+            isFilterMode: false,
+            selectedColumn: exactColumnMatch,
+          };
         }
 
         // Show column selector while typing after #
@@ -519,10 +538,51 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       } else if (searchMode.showOperatorSelector && searchMode.selectedColumn) {
         // Operator selector mode: update the operator part after #column #
         const columnName = searchMode.selectedColumn.field;
-        const newValue = `#${columnName} #${inputValue}`;
-        onChange({
-          target: { value: newValue },
-        } as React.ChangeEvent<HTMLInputElement>);
+        // Remove '#' from inputValue if user typed it (since we show '#' in displayValue)
+        const cleanInputValue = inputValue.startsWith('#') ? inputValue.substring(1) : inputValue;
+        
+        if (cleanInputValue === '') {
+          // User backspaced to empty - return to column mode  
+          const newValue = `#${columnName}`;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        } else {
+          // Normal typing in operator search
+          const newValue = `#${columnName} #${cleanInputValue}`;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
+      } else if (searchMode.selectedColumn && !searchMode.showColumnSelector && !searchMode.showOperatorSelector) {
+        // Selected column mode: handle different input types
+        const columnName = searchMode.selectedColumn.field;
+        
+        if (inputValue === ' ') {
+          // Space: prepare for operator selector
+          const newValue = `#${columnName} `;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        } else if (inputValue === ':') {
+          // Colon: switch to colon pattern
+          const newValue = `#${columnName}:`;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        } else if (inputValue.trim() !== '') {
+          // Any other character: switch to colon pattern with value
+          const newValue = `#${columnName}:${inputValue}`;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        } else {
+          // Empty: stay in selected column mode (shouldn't happen with this logic)
+          const newValue = `#${columnName}`;
+          onChange({
+            target: { value: newValue },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
       } else {
         // For normal search or column selector modes
         onChange(e);
@@ -540,6 +600,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     },
     [searchMode, onChange]
   );
+
+  // Get operator selector search term - extract from #column #operator pattern
+  const operatorSearchTerm = useMemo(() => {
+    if (searchMode.showOperatorSelector && value.startsWith('#')) {
+      // Match pattern: #column #operator or #column # (partial operator)
+      const match = value.match(/^#[^\s:]+\s+#([^\s]*)/);
+      return match ? match[1] : '';
+    }
+    return '';
+  }, [value, searchMode.showOperatorSelector]);
 
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -586,6 +656,19 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               } as React.ChangeEvent<HTMLInputElement>);
               return;
             }
+          } else if (
+            searchMode.showOperatorSelector &&
+            searchMode.selectedColumn &&
+            operatorSearchTerm === ''
+          ) {
+            // Operator selector mode with empty search term: remove second # and return to column mode
+            e.preventDefault();
+            const columnName = searchMode.selectedColumn.field;
+            const newValue = `#${columnName}`;
+            onChange({
+              target: { value: newValue },
+            } as React.ChangeEvent<HTMLInputElement>);
+            return;
           }
         }
 
@@ -608,7 +691,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onKeyDown?.(e);
       }
     },
-    [searchMode, onChange, onKeyDown, onClearSearch, value]
+    [searchMode, onChange, onKeyDown, onClearSearch, value, operatorSearchTerm]
   );
 
   const getSearchIconColor = () => {
@@ -660,26 +743,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const hasValue = value && value.length > 0;
 
-  // Get operator selector search term - extract from #column #operator pattern
-  const operatorSearchTerm = useMemo(() => {
-    if (searchMode.showOperatorSelector && value.startsWith('#')) {
-      // Match pattern: #column #operator or #column # (partial operator)
-      const match = value.match(/^#[^\s:]+\s+#([^\s]*)/);
-      return match ? match[1] : '';
-    }
-    return '';
-  }, [value, searchMode.showOperatorSelector]);
-
   // Memoize showTargetedIndicator to prevent unnecessary recalculations
   const showTargetedIndicator = useMemo(
     () =>
       (searchMode.isFilterMode && !!searchMode.filterSearch) ||
-      (searchMode.showOperatorSelector && !!searchMode.selectedColumn),
+      (searchMode.showOperatorSelector && !!searchMode.selectedColumn) ||
+      (!!searchMode.selectedColumn && !searchMode.showColumnSelector),
     [
       searchMode.isFilterMode,
       searchMode.filterSearch,
       searchMode.showOperatorSelector,
       searchMode.selectedColumn,
+      searchMode.showColumnSelector,
     ]
   );
 
@@ -689,8 +764,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return searchMode.filterSearch.value;
     }
     if (searchMode.showOperatorSelector && searchMode.selectedColumn) {
-      // Show the operator search term for typing search
-      return operatorSearchTerm;
+      // Show '#' + operator search term for typing search (like column selector)
+      return `#${operatorSearchTerm}`;
+    }
+    if (searchMode.selectedColumn && !searchMode.showColumnSelector) {
+      // Column selected mode: hide the #column text since badge is showing
+      return '';
     }
     if (value.startsWith('#') && !searchMode.isFilterMode) {
       // Keep the full hashtag input visible for better UX during selection
@@ -703,6 +782,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode.filterSearch,
     searchMode.showOperatorSelector,
     searchMode.selectedColumn,
+    searchMode.showColumnSelector,
     operatorSearchTerm,
   ]);
 
@@ -716,21 +796,24 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Calculate badge width for dynamic padding - immediate calculation
   useEffect(() => {
     if (showTargetedIndicator) {
-      if (
-        searchMode.isFilterMode &&
-        searchMode.filterSearch &&
-        badgesContainerRef.current
-      ) {
-        // For filter mode: calculate total width of both badges + gap
-        setBadgeWidth(badgesContainerRef.current.offsetWidth);
-      } else if (badgeRef.current) {
-        // For single badge mode: single badge width
-        setBadgeWidth(badgeRef.current.offsetWidth);
-      }
+      // Use setTimeout to ensure DOM is updated before measuring
+      setTimeout(() => {
+        if (
+          searchMode.isFilterMode &&
+          searchMode.filterSearch &&
+          badgesContainerRef.current
+        ) {
+          // For filter mode: calculate total width of both badges + gap
+          setBadgeWidth(badgesContainerRef.current.offsetWidth);
+        } else if (badgeRef.current) {
+          // For single badge mode: single badge width
+          setBadgeWidth(badgeRef.current.offsetWidth);
+        }
+      }, 0);
     } else {
       setBadgeWidth(0);
     }
-  }, [showTargetedIndicator, searchMode.isFilterMode, searchMode.filterSearch]);
+  }, [showTargetedIndicator, searchMode.isFilterMode, searchMode.filterSearch, searchMode.selectedColumn, searchMode.showOperatorSelector]);
 
   // Get column selector search term - compute directly for immediate update
   const searchTerm = useMemo(() => {
@@ -858,7 +941,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               } focus:outline-none rounded-lg`}
               style={{
                 paddingLeft: showTargetedIndicator
-                  ? `${badgeWidth + 24}px` // Dynamic padding based on badge width + 24px margin
+                  ? `${Math.max(badgeWidth + 16, 60)}px` // Dynamic padding with smaller margin and fallback
                   : displayValue
                     ? '12px'
                     : '40px',
@@ -932,6 +1015,21 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   >
                     <span>{searchMode.selectedColumn.headerName}</span>
                   </div>
+                ) : searchMode.selectedColumn && !searchMode.showColumnSelector ? (
+                  // Column selected mode: Single purple badge with X button
+                  <div
+                    ref={badgeRef}
+                    className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-700"
+                  >
+                    <span>{searchMode.selectedColumn.headerName}</span>
+                    <button
+                      onClick={handleClearTargeted}
+                      className="rounded-sm p-0.5 transition-colors hover:bg-purple-200"
+                      type="button"
+                    >
+                      <LuX className="w-3 h-3" />
+                    </button>
+                  </div>
                 ) : null}
               </div>
             )}
@@ -958,7 +1056,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               className="absolute invisible whitespace-nowrap text-sm"
               style={{
                 left: showTargetedIndicator
-                  ? `${badgeWidth + 24}px` // Dynamic position based on badge width + margin
+                  ? `${Math.max(badgeWidth + 16, 60)}px` // Dynamic position with smaller margin and fallback
                   : hasValue
                     ? '18px'
                     : '10px',
@@ -976,7 +1074,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   : 'opacity-0 scale-95 translate-x-2'
               }`}
               style={{
-                left: `${textWidth + (showTargetedIndicator ? badgeWidth + 24 : displayValue ? 0 : 10)}px`,
+                left: `${textWidth + (showTargetedIndicator ? Math.max(badgeWidth + 16, 60) : displayValue ? 0 : 10)}px`,
               }}
             />
           </div>
