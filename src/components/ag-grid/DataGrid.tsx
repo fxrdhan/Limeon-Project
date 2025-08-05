@@ -192,7 +192,6 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           suppressAnimationFrame={suppressAnimationFrame}
           suppressRowTransform={true}
           loading={loading}
-          suppressLoadingOverlay={true}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           rowClass={rowClass}
           animateRows={animateRows}

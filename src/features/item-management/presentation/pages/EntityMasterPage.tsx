@@ -30,6 +30,7 @@ import {
   useEntityManager,
   useGenericEntityManagement,
 } from '../../application/hooks/collections';
+import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
 import { EntityManagementModal } from '../templates/entity';
 
 // Types
@@ -102,13 +103,14 @@ const EntityMasterPage: React.FC = memo(() => {
     getTabFromPath(location.pathname)
   );
 
+  // Simple realtime for all item master data
+  useItemMasterRealtime({ enabled: true });
+
   // Update active tab when URL changes
   useEffect(() => {
     const newTab = getTabFromPath(location.pathname);
-    if (newTab !== activeTab) {
-      setActiveTab(newTab);
-    }
-  }, [location.pathname, activeTab, getTabFromPath]);
+    setActiveTab(prev => (prev !== newTab ? newTab : prev));
+  }, [location.pathname, getTabFromPath]);
 
   // Entity manager - only for entity types, not items
   const entityManager = useEntityManager({
@@ -118,28 +120,40 @@ const EntityMasterPage: React.FC = memo(() => {
     // activeTab is already managed by URL changes
   });
 
+  // Memoize options to prevent unnecessary re-renders
+  const entityManagementOptions = useMemo(
+    () => ({
+      entityType: activeTab !== 'items' ? activeTab : 'categories',
+      search: entityManager.search,
+      currentPage: entityManager.currentPage,
+      itemsPerPage: entityManager.itemsPerPage,
+      enabled: activeTab !== 'items',
+    }),
+    [
+      activeTab,
+      entityManager.search,
+      entityManager.currentPage,
+      entityManager.itemsPerPage,
+    ]
+  );
+
   // Generic entity data management - simplified realtime
-  const entityData = useGenericEntityManagement({
-    entityType: activeTab !== 'items' ? activeTab : 'categories',
-    search: entityManager.search,
-    currentPage: entityManager.currentPage,
-    itemsPerPage: entityManager.itemsPerPage,
-    enabled: activeTab !== 'items',
-  });
+  const entityData = useGenericEntityManagement(entityManagementOptions);
 
   // Smart loading state with cache-first strategy
-  const { showSkeleton, showBackgroundLoading, shouldSuppressOverlay } = useCacheFirstLoading({
-    isLoading: entityData.isLoading,
-    hasData: entityData.data && entityData.data.length > 0,
-    isInitialLoad: !entityData.data || entityData.data.length === 0,
-    minSkeletonTime: 300,
-    gracePeriod: 150, // Prevent flash of empty content
-    tabKey: activeTab, // For detecting tab changes
-  });
+  const { showSkeleton, showBackgroundLoading, shouldSuppressOverlay } =
+    useCacheFirstLoading({
+      isLoading: entityData.isLoading,
+      hasData: entityData.data && entityData.data.length > 0,
+      isInitialLoad: !entityData.data || entityData.data.length === 0,
+      minSkeletonTime: 300,
+      gracePeriod: 150, // Prevent flash of empty content
+      tabKey: activeTab, // For detecting tab changes
+    });
 
   // Memoize current config to prevent unnecessary re-renders
-  const currentConfig = useMemo(() => 
-    activeTab !== 'items' ? entityConfigs[activeTab] : null,
+  const currentConfig = useMemo(
+    () => (activeTab !== 'items' ? entityConfigs[activeTab] : null),
     [activeTab]
   );
 
@@ -314,16 +328,16 @@ const EntityMasterPage: React.FC = memo(() => {
   );
 
   // Memoize SearchToolbar props for stable references
-  const memoizedButtonText = useMemo(() => 
-    currentConfig?.addButtonText || 'Tambah',
+  const memoizedButtonText = useMemo(
+    () => currentConfig?.addButtonText || 'Tambah',
     [currentConfig?.addButtonText]
   );
 
-  const memoizedPlaceholder = useMemo(() => 
-    `${currentConfig?.searchPlaceholder || 'Cari'} atau ketik # untuk pencarian kolom spesifik`,
+  const memoizedPlaceholder = useMemo(
+    () =>
+      `${currentConfig?.searchPlaceholder || 'Cari'} atau ketik # untuk pencarian kolom spesifik`,
     [currentConfig?.searchPlaceholder]
   );
-
 
   // If items tab is selected, show message to use main item view
   if (activeTab === 'items') {
@@ -557,15 +571,27 @@ const EntityMasterPage: React.FC = memo(() => {
           </div>
         </div>
 
-        <div className={entityData.isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+        <div
+          className={
+            entityData.isFetching
+              ? 'opacity-75 transition-opacity duration-300'
+              : ''
+          }
+        >
           {entityData.isError ? (
             <div className="text-center p-6 text-red-500">
               Error: {entityData.error?.message || 'Gagal memuat data'}
             </div>
           ) : showSkeleton ? (
-            <TableSkeleton 
-              rows={entityManager.itemsPerPage || 10} 
-              columns={currentConfig?.hasNciCode ? 4 : currentConfig?.hasAddress ? 4 : 3} 
+            <TableSkeleton
+              rows={entityManager.itemsPerPage || 10}
+              columns={
+                currentConfig?.hasNciCode
+                  ? 4
+                  : currentConfig?.hasAddress
+                    ? 4
+                    : 3
+              }
               showPagination={true}
               className="mt-4"
             />
@@ -580,28 +606,34 @@ const EntityMasterPage: React.FC = memo(() => {
                   </div>
                 </div>
               )}
-              
+
               <div className="relative">
                 <DataGrid
-                key={`entity-grid-${activeTab}`}
-                ref={dataGridRef}
-                rowData={entityData.data}
-                columnDefs={columnDefs}
-                onRowClicked={onRowClicked}
-                onGridReady={onGridReady}
-                loading={false}
-                overlayNoRowsTemplate={shouldSuppressOverlay ? '' : getOverlayTemplate(search, currentConfig)}
-                autoSizeColumns={getAutoSizeColumns(currentConfig?.hasNciCode)}
-                isExternalFilterPresent={isExternalFilterPresent}
-                doesExternalFilterPass={doesExternalFilterPass}
-                style={{
-                  ...GRID_STYLE,
-                  opacity: showBackgroundLoading ? 0.8 : 1,
-                  transition: 'opacity 0.2s ease-in-out',
-                }}
-              />
+                  key={`entity-grid-${activeTab}`}
+                  ref={dataGridRef}
+                  rowData={entityData.data}
+                  columnDefs={columnDefs}
+                  onRowClicked={onRowClicked}
+                  onGridReady={onGridReady}
+                  loading={false}
+                  overlayNoRowsTemplate={
+                    shouldSuppressOverlay
+                      ? ''
+                      : getOverlayTemplate(search, currentConfig)
+                  }
+                  autoSizeColumns={getAutoSizeColumns(
+                    currentConfig?.hasNciCode
+                  )}
+                  isExternalFilterPresent={isExternalFilterPresent}
+                  doesExternalFilterPass={doesExternalFilterPass}
+                  style={{
+                    ...GRID_STYLE,
+                    opacity: showBackgroundLoading ? 0.8 : 1,
+                    transition: 'opacity 0.2s ease-in-out',
+                  }}
+                />
               </div>
-              
+
               <Pagination
                 currentPage={entityManager.currentPage}
                 totalPages={entityData.totalPages}

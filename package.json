@@ -23,7 +23,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.7",
     "@heroicons/react": "^2.2.0",
-    "@supabase/supabase-js": "^2.53.0",
+    "@supabase/supabase-js": "latest",
     "@tailwindcss/cli": "^4.1.11",
     "@tanstack/react-query": "^5.84.1",
     "@tanstack/react-query-devtools": "^5.84.1",

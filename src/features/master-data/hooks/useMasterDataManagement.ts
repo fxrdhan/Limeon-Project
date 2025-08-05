@@ -16,16 +16,16 @@ import type {
 import type { ItemDosage } from '@/features/item-management/domain/entities/ItemDosage';
 import type { ItemUnit } from '@/services/api/masterData.service';
 
-// Import realtime hooks
+// Import regular query hooks (realtime handled at page level)
 import {
-  useCategoriesRealtime,
-  useMedicineTypesRealtime,
-  useUnitsRealtime,
-  useItemUnitsRealtime,
-  useDosagesRealtime,
-  useManufacturersRealtime,
-  useItemsRealtime,
-} from '@/hooks/realtime/useMasterDataRealtime';
+  useCategories,
+  useMedicineTypes,
+  useUnits,
+  useItemUnits,
+} from '@/hooks/queries/useMasterData';
+import { useDosages } from '@/hooks/queries/useDosages';
+import { useManufacturers } from '@/hooks/queries/useManufacturers';
+import { useItems } from '@/hooks/queries/useItems';
 
 // Import other hooks
 import {
@@ -38,8 +38,8 @@ import {
   useItemMutations,
   usePatientMutations,
   useDoctorMutations,
-  usePatientsRealtime,
-  useDoctorsRealtime,
+  usePatients,
+  useDoctors,
 } from '@/hooks/queries';
 
 import { useDosageMutations } from '@/hooks/queries/useDosages';
@@ -68,32 +68,32 @@ const getHooksForTable = (tableName: string) => {
   switch (tableName) {
     case 'item_categories':
       return {
-        useData: (options: QueryOptions) => useCategoriesRealtime(options),
+        useData: (options: QueryOptions) => useCategories(options),
         useMutations: useCategoryMutations,
       };
     case 'item_types':
       return {
-        useData: (options: QueryOptions) => useMedicineTypesRealtime(options),
+        useData: (options: QueryOptions) => useMedicineTypes(options),
         useMutations: useMedicineTypeMutations,
       };
     case 'item_packages':
       return {
-        useData: (options: QueryOptions) => useUnitsRealtime(options),
+        useData: (options: QueryOptions) => useUnits(options),
         useMutations: useUnitMutations,
       };
     case 'item_units':
       return {
-        useData: (options: QueryOptions) => useItemUnitsRealtime(options),
+        useData: (options: QueryOptions) => useItemUnits(options),
         useMutations: useItemUnitMutations,
       };
     case 'item_dosages':
       return {
-        useData: (options: QueryOptions) => useDosagesRealtime(options),
+        useData: (options: QueryOptions) => useDosages(options),
         useMutations: useDosageMutations,
       };
     case 'item_manufacturers':
       return {
-        useData: (options: QueryOptions) => useManufacturersRealtime(options),
+        useData: (options: QueryOptions) => useManufacturers(options),
         useMutations: useManufacturerMutations,
       };
     case 'suppliers':
@@ -103,17 +103,17 @@ const getHooksForTable = (tableName: string) => {
       };
     case 'items':
       return {
-        useData: (options: QueryOptions) => useItemsRealtime(options),
+        useData: (options: QueryOptions) => useItems(options),
         useMutations: useItemMutations,
       };
     case 'patients':
       return {
-        useData: (options: QueryOptions) => usePatientsRealtime(options),
+        useData: (options: QueryOptions) => usePatients(options),
         useMutations: usePatientMutations,
       };
     case 'doctors':
       return {
-        useData: (options: QueryOptions) => useDoctorsRealtime(options),
+        useData: (options: QueryOptions) => useDoctors(options),
         useMutations: useDoctorMutations,
       };
     default:
