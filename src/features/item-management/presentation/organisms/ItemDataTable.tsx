@@ -51,18 +51,22 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   doesExternalFilterPass,
 }: ItemDataTableProps) {
   // Smart loading state with cache-first strategy
-  const { showSkeleton, showBackgroundLoading, shouldSuppressOverlay } = useCacheFirstLoading({
-    isLoading,
-    hasData: items.length > 0,
-    isInitialLoad: items.length === 0,
-    minSkeletonTime: 300,
-    gracePeriod: 150, // Prevent flash of empty content
-    tabKey: 'items', // Static key for items tab
-  });
+  const { showSkeleton, showBackgroundLoading, shouldSuppressOverlay } =
+    useCacheFirstLoading({
+      isLoading,
+      hasData: items.length > 0,
+      isInitialLoad: items.length === 0,
+      minSkeletonTime: 300,
+      gracePeriod: 150, // Prevent flash of empty content
+      tabKey: 'items', // Static key for items tab
+    });
 
-  const handleRowClicked = useCallback((event: RowClickedEvent) => {
-    onRowClick(event.data);
-  }, [onRowClick]);
+  const handleRowClicked = useCallback(
+    (event: RowClickedEvent) => {
+      onRowClick(event.data);
+    },
+    [onRowClick]
+  );
 
   const overlayTemplate = useMemo(() => {
     if (search) {
@@ -81,9 +85,9 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
 
   if (showSkeleton) {
     return (
-      <TableSkeleton 
-        rows={itemsPerPage || 10} 
-        columns={5} 
+      <TableSkeleton
+        rows={itemsPerPage || 10}
+        columns={5}
         showPagination={true}
         className="mt-4"
       />
@@ -101,7 +105,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           </div>
         </div>
       )}
-      
+
       <div className="relative">
         <DataGrid
           key="items-data-grid"
@@ -125,7 +129,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           }}
         />
       </div>
-      
+
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}

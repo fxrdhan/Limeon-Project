@@ -26,7 +26,14 @@ import { itemSearchColumns } from '@/utils/searchColumns';
 import type { Item as ItemDataType } from '@/types/database';
 import { FilterSearch } from '@/types/search';
 
-type MasterDataType = 'items' | 'categories' | 'types' | 'packages' | 'dosages' | 'manufacturers' | 'units';
+type MasterDataType =
+  | 'items'
+  | 'categories'
+  | 'types'
+  | 'packages'
+  | 'dosages'
+  | 'manufacturers'
+  | 'units';
 
 // Memoize static configurations outside component
 const TAB_CONFIGS = {
@@ -39,22 +46,30 @@ const TAB_CONFIGS = {
   units: { key: 'units' as const, label: 'Satuan' },
 } as const;
 
-const TAB_ORDER: MasterDataType[] = ['items', 'categories', 'types', 'packages', 'dosages', 'manufacturers', 'units'];
+const TAB_ORDER: MasterDataType[] = [
+  'items',
+  'categories',
+  'types',
+  'packages',
+  'dosages',
+  'manufacturers',
+  'units',
+];
 
 const URL_TO_TAB_MAP: Record<string, MasterDataType> = {
-  'items': 'items',
-  'categories': 'categories', 
-  'types': 'types',
-  'packages': 'packages',
-  'dosages': 'dosages',
-  'manufacturers': 'manufacturers',
-  'units': 'units'
+  items: 'items',
+  categories: 'categories',
+  types: 'types',
+  packages: 'packages',
+  dosages: 'dosages',
+  manufacturers: 'manufacturers',
+  units: 'units',
 };
 
 const ItemMasterNew = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // Memoize tab detection function
   const getTabFromPath = useCallback((pathname: string): MasterDataType => {
     const pathSegments = pathname.split('/');
@@ -62,7 +77,9 @@ const ItemMasterNew = memo(() => {
     return URL_TO_TAB_MAP[lastSegment] || 'items';
   }, []);
 
-  const [activeTab, setActiveTab] = useState<MasterDataType>(() => getTabFromPath(location.pathname));
+  const [activeTab, setActiveTab] = useState<MasterDataType>(() =>
+    getTabFromPath(location.pathname)
+  );
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // ✅ REALTIME WORKING! Use postgres_changes approach
@@ -79,8 +96,12 @@ const ItemMasterNew = memo(() => {
   // Items tab states (only needed for items tab)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isItemModalClosing, setIsItemModalClosing] = useState(false);
-  const [editingItemId, setEditingItemId] = useState<string | undefined>(undefined);
-  const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<string | undefined>(undefined);
+  const [editingItemId, setEditingItemId] = useState<string | undefined>(
+    undefined
+  );
+  const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<
+    string | undefined
+  >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
 
   // Items tab management (only for items tab)
@@ -88,16 +109,20 @@ const ItemMasterNew = memo(() => {
     searchInputRef: searchInputRef as React.RefObject<HTMLInputElement>,
   });
 
-  const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns();
+  const { columnDefs: itemColumnDefs, columnsToAutoSize } =
+    useItemGridColumns();
 
   // Memoize modal handlers
-  const openAddItemModal = useCallback((itemId?: string, searchQuery?: string) => {
-    setEditingItemId(itemId);
-    setCurrentSearchQueryForModal(searchQuery);
-    setIsItemModalClosing(false);
-    setIsAddItemModalOpen(true);
-    setModalRenderId(prevId => prevId + 1);
-  }, []);
+  const openAddItemModal = useCallback(
+    (itemId?: string, searchQuery?: string) => {
+      setEditingItemId(itemId);
+      setCurrentSearchQueryForModal(searchQuery);
+      setIsItemModalClosing(false);
+      setIsAddItemModalOpen(true);
+      setModalRenderId(prevId => prevId + 1);
+    },
+    []
+  );
 
   const closeAddItemModal = useCallback(() => {
     setIsItemModalClosing(true);
@@ -110,31 +135,46 @@ const ItemMasterNew = memo(() => {
   }, []);
 
   // Memoize item handlers
-  const handleItemEdit = useCallback((item: ItemDataType) => {
-    openAddItemModal(item.id);
-  }, [openAddItemModal]);
+  const handleItemEdit = useCallback(
+    (item: ItemDataType) => {
+      openAddItemModal(item.id);
+    },
+    [openAddItemModal]
+  );
 
-  const handleItemSelect = useCallback((itemId: string) => {
-    openAddItemModal(itemId);
-  }, [openAddItemModal]);
+  const handleItemSelect = useCallback(
+    (itemId: string) => {
+      openAddItemModal(itemId);
+    },
+    [openAddItemModal]
+  );
 
-  const handleAddItem = useCallback((itemId?: string, searchQuery?: string) => {
-    openAddItemModal(itemId, searchQuery);
-  }, [openAddItemModal]);
+  const handleAddItem = useCallback(
+    (itemId?: string, searchQuery?: string) => {
+      openAddItemModal(itemId, searchQuery);
+    },
+    [openAddItemModal]
+  );
 
   // Items tab search functionality
-  const handleItemSearch = useCallback((searchValue: string) => {
-    itemsManagement.setSearch(searchValue);
-  }, [itemsManagement]);
+  const handleItemSearch = useCallback(
+    (searchValue: string) => {
+      itemsManagement.setSearch(searchValue);
+    },
+    [itemsManagement]
+  );
 
   const handleItemClear = useCallback(() => {
     itemsManagement.setSearch('');
   }, [itemsManagement]);
 
-  const handleItemFilterSearch = useCallback(async (filterSearch: FilterSearch | null) => {
-    // Handle AG Grid filter for items
-    console.log('Item filter search:', filterSearch);
-  }, []);
+  const handleItemFilterSearch = useCallback(
+    async (filterSearch: FilterSearch | null) => {
+      // Handle AG Grid filter for items
+      console.log('Item filter search:', filterSearch);
+    },
+    []
+  );
 
   const {
     search: itemSearch,
@@ -157,25 +197,31 @@ const ItemMasterNew = memo(() => {
     handleAddItem(undefined, itemSearch);
   }, [handleAddItem, itemSearch]);
 
-  const memoizedOnItemSelect = useCallback((item: { id: string }) => {
-    handleItemSelect(item.id);
-  }, [handleItemSelect]);
+  const memoizedOnItemSelect = useCallback(
+    (item: { id: string }) => {
+      handleItemSelect(item.id);
+    },
+    [handleItemSelect]
+  );
 
-  const handleTabChange = useCallback((newTab: MasterDataType) => {
-    if (newTab !== activeTab) {
-      navigate(`/master-data/item-master/${newTab}`);
-      
-      // Clear search when switching tabs
-      if (searchInputRef.current) {
-        searchInputRef.current.value = '';
+  const handleTabChange = useCallback(
+    (newTab: MasterDataType) => {
+      if (newTab !== activeTab) {
+        navigate(`/master-data/item-master/${newTab}`);
+
+        // Clear search when switching tabs
+        if (searchInputRef.current) {
+          searchInputRef.current.value = '';
+        }
+
+        // Reset item modal state when switching tabs
+        if (isAddItemModalOpen) {
+          closeAddItemModal();
+        }
       }
-      
-      // Reset item modal state when switching tabs
-      if (isAddItemModalOpen) {
-        closeAddItemModal();
-      }
-    }
-  }, [activeTab, navigate, isAddItemModalOpen, closeAddItemModal]);
+    },
+    [activeTab, navigate, isAddItemModalOpen, closeAddItemModal]
+  );
 
   // Use memoized configurations
   const tabConfigs = TAB_CONFIGS;
@@ -243,7 +289,9 @@ const ItemMasterNew = memo(() => {
             <div className="flex items-center pt-8">
               <div className="grow">
                 <SearchToolbar
-                  searchInputRef={searchInputRef as React.RefObject<HTMLInputElement>}
+                  searchInputRef={
+                    searchInputRef as React.RefObject<HTMLInputElement>
+                  }
                   searchBarProps={itemSearchBarProps}
                   search={itemSearch}
                   buttonText="Tambah Item Baru"
@@ -255,10 +303,17 @@ const ItemMasterNew = memo(() => {
               </div>
             </div>
 
-            <div className={itemsManagement.isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+            <div
+              className={
+                itemsManagement.isFetching
+                  ? 'opacity-75 transition-opacity duration-300'
+                  : ''
+              }
+            >
               {itemsManagement.isError ? (
                 <div className="text-center p-6 text-red-500">
-                  Error: {itemsManagement.queryError?.message || 'Gagal memuat data'}
+                  Error:{' '}
+                  {itemsManagement.queryError?.message || 'Gagal memuat data'}
                 </div>
               ) : (
                 <ItemDataTable
@@ -275,7 +330,9 @@ const ItemMasterNew = memo(() => {
                   itemsPerPage={itemsManagement.itemsPerPage}
                   onRowClick={handleItemEdit}
                   onPageChange={itemsManagement.handlePageChange}
-                  onItemsPerPageChange={itemsManagement.handleItemsPerPageChange}
+                  onItemsPerPageChange={
+                    itemsManagement.handleItemsPerPageChange
+                  }
                   onGridReady={itemOnGridReady}
                   isExternalFilterPresent={itemIsExternalFilterPresent}
                   doesExternalFilterPass={itemDoesExternalFilterPass}

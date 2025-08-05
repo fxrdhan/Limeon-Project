@@ -129,11 +129,8 @@ export const useMasterDataManagement = (
   const { openConfirmDialog } = useConfirmDialog();
   const alert = useAlert();
 
-  const {
-    isCustomModalOpen,
-    searchInputRef,
-    handleSearchChange,
-  } = options || {};
+  const { isCustomModalOpen, searchInputRef, handleSearchChange } =
+    options || {};
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -554,7 +551,7 @@ export const useMasterDataManagement = (
         setIsAddModalOpen(false);
         setIsEditModalOpen(false);
         setEditingItem(null);
-        
+
         // Manually refetch to ensure current tab updates immediately after mutation
         refetch();
       } catch (error) {
@@ -596,7 +593,7 @@ export const useMasterDataManagement = (
 
         setIsEditModalOpen(false);
         setEditingItem(null);
-        
+
         // Manually refetch to ensure current tab updates immediately after mutation
         refetch();
       } catch (error) {

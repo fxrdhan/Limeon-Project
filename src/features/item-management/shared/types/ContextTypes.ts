@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
-import type { ItemCategory, ItemTypeEntity, ItemPackage, ItemDosageEntity, ItemManufacturerEntity } from '../../domain/entities';
+import type {
+  ItemCategory,
+  ItemTypeEntity,
+  ItemPackage,
+  ItemDosageEntity,
+  ItemManufacturerEntity,
+} from '../../domain/entities';
 import type { UsePackageConversionReturn } from '@/types/hooks';
 import type { ItemFormData } from './FormTypes';
 import type { VersionData } from './ItemTypes';

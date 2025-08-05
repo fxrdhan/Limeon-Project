@@ -63,10 +63,10 @@ export const useEntityModalLogic = ({
   // Check if form is dirty
   const isDirty = useMemo(() => {
     if (!isEditMode) return true;
-    
+
     // All tables now use 'code' field consistently
     const initialCode = initialData?.code || '';
-    
+
     return (
       code !== initialCode ||
       name !== (initialData?.name || '') ||

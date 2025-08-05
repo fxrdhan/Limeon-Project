@@ -38,7 +38,11 @@ const TableSkeleton: React.FC<TableSkeletonProps> = ({
                 <div key={colIndex} className="flex-1">
                   <div
                     className={`h-4 bg-gray-200 rounded ${
-                      colIndex === 0 ? 'w-1/2' : colIndex === columns - 1 ? 'w-full' : 'w-3/4'
+                      colIndex === 0
+                        ? 'w-1/2'
+                        : colIndex === columns - 1
+                          ? 'w-full'
+                          : 'w-3/4'
                     }`}
                   ></div>
                 </div>

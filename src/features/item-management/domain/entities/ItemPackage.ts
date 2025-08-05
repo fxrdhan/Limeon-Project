@@ -30,24 +30,36 @@ export const ItemPackageRules = {
   maxDescriptionLength: 500,
   maxNciCodeLength: 20,
   requiredFields: ['name'] as const,
-  
+
   validate: (data: Partial<ItemPackage>): string[] => {
     const errors: string[] = [];
-    
+
     if (!data.name?.trim()) {
       errors.push('Nama kemasan wajib diisi');
     } else if (data.name.length > ItemPackageRules.maxNameLength) {
-      errors.push(`Nama kemasan maksimal ${ItemPackageRules.maxNameLength} karakter`);
+      errors.push(
+        `Nama kemasan maksimal ${ItemPackageRules.maxNameLength} karakter`
+      );
     }
-    
-    if (data.description && data.description.length > ItemPackageRules.maxDescriptionLength) {
-      errors.push(`Deskripsi maksimal ${ItemPackageRules.maxDescriptionLength} karakter`);
+
+    if (
+      data.description &&
+      data.description.length > ItemPackageRules.maxDescriptionLength
+    ) {
+      errors.push(
+        `Deskripsi maksimal ${ItemPackageRules.maxDescriptionLength} karakter`
+      );
     }
-    
-    if (data.nci_code && data.nci_code.length > ItemPackageRules.maxNciCodeLength) {
-      errors.push(`Kode NCI maksimal ${ItemPackageRules.maxNciCodeLength} karakter`);
+
+    if (
+      data.nci_code &&
+      data.nci_code.length > ItemPackageRules.maxNciCodeLength
+    ) {
+      errors.push(
+        `Kode NCI maksimal ${ItemPackageRules.maxNciCodeLength} karakter`
+      );
     }
-    
+
     return errors;
-  }
+  },
 };

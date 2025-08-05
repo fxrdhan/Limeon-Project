@@ -14,7 +14,10 @@ import {
   EnhancedSearchState,
 } from '@/types/search';
 import ColumnSelector from './ColumnSelector';
-import OperatorSelector, { DEFAULT_FILTER_OPERATORS, FilterOperator } from './OperatorSelector';
+import OperatorSelector, {
+  DEFAULT_FILTER_OPERATORS,
+  FilterOperator,
+} from './OperatorSelector';
 
 const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   value,
@@ -54,7 +57,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Memoize columns to prevent parseSearchValue recreation
   const memoizedColumns = useMemo(() => columns, [columns]);
-  
+
   // Parse search value to detect targeted search and filter mode
   const parseSearchValue = useCallback(
     (searchValue: string) => {
@@ -74,7 +77,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           const colonMatch = searchValue.match(/^#([^:]+):(.*)$/);
           if (colonMatch) {
             const [, columnInput, searchTerm] = colonMatch;
-            
+
             // Find the column
             const column = memoizedColumns.find(
               col =>
@@ -93,7 +96,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   selectedColumn: column,
                 };
               }
-              
+
               // Convert #column:value directly to filter mode with 'contains' operator
               return {
                 globalSearch: undefined,
@@ -112,8 +115,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         }
 
         // Check for space pattern: #column #operator value
-        const filterMatch = searchValue.match(/^#([^\s:]+)(?:\s+#([^\s:]*)(?:\s+(.*))?)?$/);
-        
+        const filterMatch = searchValue.match(
+          /^#([^\s:]+)(?:\s+#([^\s:]*)(?:\s+(.*))?)?$/
+        );
+
         if (filterMatch) {
           const [, columnInput, operatorInput, filterValue] = filterMatch;
 
@@ -210,7 +215,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   // Track previous value for comparison
   const prevValueRef = useRef<string>('');
-  
+
   // Debounce timer for purple badge AG Grid updates
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -225,23 +230,26 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   });
 
   // Debounced AG Grid update function for purple badge smoothness
-  const debouncedFilterUpdate = useCallback((filterSearch: {
-    field: string;
-    value: string;
-    column: SearchColumn;
-    operator: string;
-  }) => {
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    
-    // Set new timer - only update AG Grid after user stops typing
-    debounceTimerRef.current = setTimeout(() => {
-      onFilterSearchRef.current?.(filterSearch);
-      onGlobalSearchRef.current?.('');
-    }, 150); // 150ms delay for smooth UX
-  }, []);
+  const debouncedFilterUpdate = useCallback(
+    (filterSearch: {
+      field: string;
+      value: string;
+      column: SearchColumn;
+      operator: string;
+    }) => {
+      // Clear existing timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      // Set new timer - only update AG Grid after user stops typing
+      debounceTimerRef.current = setTimeout(() => {
+        onFilterSearchRef.current?.(filterSearch);
+        onGlobalSearchRef.current?.('');
+      }, 150); // 150ms delay for smooth UX
+    },
+    []
+  );
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
@@ -276,13 +284,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // OPTIMIZED: Only trigger callbacks for meaningful state changes, not every character
     const previousValue = prevValueRef.current;
     const hasStateChanged = value !== previousValue;
-    
+
     if (!hasStateChanged) return;
 
     // Purple badge DEBOUNCED updates - ZERO flickering like unified mode
     if (newMode.isFilterMode && newMode.filterSearch) {
       const filterValue = newMode.filterSearch.value.trim();
-      
+
       if (filterValue === '') {
         // Immediate clear when empty - cancel any pending debounced updates
         if (debounceTimerRef.current) {
@@ -425,7 +433,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const columnMatch = value.match(/^#([^:\s]+)/);
       if (columnMatch) {
         const columnName = columnMatch[1];
-        // Pattern: #column #operator 
+        // Pattern: #column #operator
         const newValue = `#${columnName} #${operator.value} `;
         onChange({
           target: { value: newValue },
@@ -469,7 +477,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
-        
+
         // Focus back to input for continuing with value input
         setTimeout(() => {
           inputRef?.current?.focus();
@@ -555,7 +563,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         // Handle backspace to clear searches
         if (e.key === 'Backspace') {
-          if (searchMode.isFilterMode && searchMode.filterSearch?.value === '') {
+          if (
+            searchMode.isFilterMode &&
+            searchMode.filterSearch?.value === ''
+          ) {
             if (searchMode.filterSearch.operator === 'contains') {
               // Colon pattern with empty value: clear completely
               if (onClearSearch) {
@@ -601,7 +612,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   );
 
   const getSearchIconColor = () => {
-    if (searchMode.isFilterMode && searchMode.filterSearch?.operator === 'contains') return 'text-purple-500';
+    if (
+      searchMode.isFilterMode &&
+      searchMode.filterSearch?.operator === 'contains'
+    )
+      return 'text-purple-500';
     if (searchMode.isFilterMode) return 'text-blue-500';
 
     switch (searchState) {
@@ -619,7 +634,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   };
 
   const getSearchIcon = () => {
-    if (searchMode.isFilterMode && searchMode.filterSearch?.operator === 'contains') {
+    if (
+      searchMode.isFilterMode &&
+      searchMode.filterSearch?.operator === 'contains'
+    ) {
       return (
         <LuHash
           className={`${getSearchIconColor()} transition-all duration-300`}
@@ -641,7 +659,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   };
 
   const hasValue = value && value.length > 0;
-  
+
   // Get operator selector search term - extract from #column #operator pattern
   const operatorSearchTerm = useMemo(() => {
     if (searchMode.showOperatorSelector && value.startsWith('#')) {
@@ -651,12 +669,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
     return '';
   }, [value, searchMode.showOperatorSelector]);
-  
+
   // Memoize showTargetedIndicator to prevent unnecessary recalculations
-  const showTargetedIndicator = useMemo(() => 
-    (searchMode.isFilterMode && !!searchMode.filterSearch) ||
-    (searchMode.showOperatorSelector && !!searchMode.selectedColumn),
-    [searchMode.isFilterMode, searchMode.filterSearch, searchMode.showOperatorSelector, searchMode.selectedColumn]
+  const showTargetedIndicator = useMemo(
+    () =>
+      (searchMode.isFilterMode && !!searchMode.filterSearch) ||
+      (searchMode.showOperatorSelector && !!searchMode.selectedColumn),
+    [
+      searchMode.isFilterMode,
+      searchMode.filterSearch,
+      searchMode.showOperatorSelector,
+      searchMode.selectedColumn,
+    ]
   );
 
   // Get display value (hide #column: and #column #operator syntax from user) - memoized to prevent flickering
@@ -673,7 +697,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return value;
     }
     return value;
-  }, [value, searchMode.isFilterMode, searchMode.filterSearch, searchMode.showOperatorSelector, searchMode.selectedColumn, operatorSearchTerm]);
+  }, [
+    value,
+    searchMode.isFilterMode,
+    searchMode.filterSearch,
+    searchMode.showOperatorSelector,
+    searchMode.selectedColumn,
+    operatorSearchTerm,
+  ]);
 
   // Calculate text width for return icon positioning
   useEffect(() => {
@@ -685,7 +716,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // Calculate badge width for dynamic padding - immediate calculation
   useEffect(() => {
     if (showTargetedIndicator) {
-      if (searchMode.isFilterMode && searchMode.filterSearch && badgesContainerRef.current) {
+      if (
+        searchMode.isFilterMode &&
+        searchMode.filterSearch &&
+        badgesContainerRef.current
+      ) {
         // For filter mode: calculate total width of both badges + gap
         setBadgeWidth(badgesContainerRef.current.offsetWidth);
       } else if (badgeRef.current) {
@@ -811,7 +846,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-300 ease-in-out ${
                 searchState === 'not-found'
                   ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
-                  : searchMode.isFilterMode && searchMode.filterSearch && searchMode.filterSearch.operator === 'contains'
+                  : searchMode.isFilterMode &&
+                      searchMode.filterSearch &&
+                      searchMode.filterSearch.operator === 'contains'
                     ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
                     : searchMode.isFilterMode && searchMode.filterSearch
                       ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
@@ -835,7 +872,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
             {/* Search indicator - inline badge */}
             {showTargetedIndicator && (
-              <div 
+              <div
                 ref={badgesContainerRef}
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10 flex items-center gap-2"
               >
@@ -862,14 +899,19 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                       <div className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-700">
                         <span>{searchMode.filterSearch.column.headerName}</span>
                       </div>
-                      
+
                       {/* Operator badge (blue, with X button) */}
                       <div
                         ref={badgeRef}
                         className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700"
                       >
                         <span>
-                          {DEFAULT_FILTER_OPERATORS.find(op => op.value === searchMode.filterSearch!.operator)?.label}
+                          {
+                            DEFAULT_FILTER_OPERATORS.find(
+                              op =>
+                                op.value === searchMode.filterSearch!.operator
+                            )?.label
+                          }
                         </span>
                         <button
                           onClick={handleClearTargeted}
@@ -881,7 +923,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                       </div>
                     </>
                   )
-                ) : searchMode.showOperatorSelector && searchMode.selectedColumn ? (
+                ) : searchMode.showOperatorSelector &&
+                  searchMode.selectedColumn ? (
                   // Operator selection mode: Single purple badge (no X button during selection)
                   <div
                     ref={badgeRef}

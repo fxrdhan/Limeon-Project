@@ -1,4 +1,4 @@
-// ItemCategory entity definition  
+// ItemCategory entity definition
 export interface ItemCategory {
   id: string;
   code?: string;
@@ -26,20 +26,27 @@ export const ItemCategoryRules = {
   maxNameLength: 100,
   maxDescriptionLength: 500,
   requiredFields: ['name'] as const,
-  
+
   validate: (data: Partial<ItemCategory>): string[] => {
     const errors: string[] = [];
-    
+
     if (!data.name?.trim()) {
       errors.push('Nama kategori wajib diisi');
     } else if (data.name.length > ItemCategoryRules.maxNameLength) {
-      errors.push(`Nama kategori maksimal ${ItemCategoryRules.maxNameLength} karakter`);
+      errors.push(
+        `Nama kategori maksimal ${ItemCategoryRules.maxNameLength} karakter`
+      );
     }
-    
-    if (data.description && data.description.length > ItemCategoryRules.maxDescriptionLength) {
-      errors.push(`Deskripsi maksimal ${ItemCategoryRules.maxDescriptionLength} karakter`);
+
+    if (
+      data.description &&
+      data.description.length > ItemCategoryRules.maxDescriptionLength
+    ) {
+      errors.push(
+        `Deskripsi maksimal ${ItemCategoryRules.maxDescriptionLength} karakter`
+      );
     }
-    
+
     return errors;
-  }
+  },
 };

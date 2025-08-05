@@ -7,6 +7,7 @@ Real-time synchronization hook for Item Master data using Supabase realtime.
 `useItemMasterRealtime` provides **automatic UI updates** when database changes occur on all Item Master tables. Users see changes from other sessions instantly without manual refresh.
 
 ### Monitored Tables
+
 - ✅ `items` - Main item data
 - ✅ `item_categories` - Item categories
 - ✅ `item_types` - Item types
@@ -31,23 +32,37 @@ function ItemMasterPage() {
 ## 🔧 Key Features
 
 ### Single Channel Architecture
+
 Uses one channel with multiple listeners for efficiency:
+
 ```typescript
 const channel = supabase
   .channel('item-master-realtime')
-  .on('postgres_changes', { schema: 'public', table: 'items', event: '*' }, handler)
-  .on('postgres_changes', { schema: 'public', table: 'item_categories', event: '*' }, handler)
+  .on(
+    'postgres_changes',
+    { schema: 'public', table: 'items', event: '*' },
+    handler
+  )
+  .on(
+    'postgres_changes',
+    { schema: 'public', table: 'item_categories', event: '*' },
+    handler
+  )
   // ... other listeners
   .subscribe();
 ```
 
 ### Auto Cache Invalidation
+
 When database changes are detected, all related React Query caches are invalidated:
+
 - `['items']`, `['categories']`, `['types']`, `['units']`
 - `['packages']`, `['dosages']`, `['manufacturers']`
 
 ### Detailed Logging
+
 Records detailed database changes for debugging:
+
 ```
 🔄 item_categories UPDATE:
 📦 Raw payload: { schema: "public", table: "item_categories", ... }
@@ -58,7 +73,9 @@ Records detailed database changes for debugging:
 ```
 
 ### React Strict Mode Safe
+
 Uses global refs to prevent multiple subscriptions:
+
 ```typescript
 let globalSetupRef = false;
 let globalChannelRef: ReturnType<typeof supabase.channel> | null = null;

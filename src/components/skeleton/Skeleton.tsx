@@ -17,11 +17,11 @@ const Skeleton: React.FC<SkeletonProps> = ({
   animate = true,
 }) => {
   const style: React.CSSProperties = {};
-  
+
   if (width) {
     style.width = typeof width === 'number' ? `${width}px` : width;
   }
-  
+
   if (height) {
     style.height = typeof height === 'number' ? `${height}px` : height;
   }
@@ -31,7 +31,7 @@ const Skeleton: React.FC<SkeletonProps> = ({
       className={classNames(
         'bg-gray-200',
         {
-          'rounded': rounded,
+          rounded: rounded,
           'animate-pulse': animate,
         },
         className

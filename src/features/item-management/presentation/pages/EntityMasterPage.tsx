@@ -67,8 +67,9 @@ const getOverlayTemplate = (
 ) => {
   // Skip overlay error message for badge mode (filter search)
   // Badge mode uses AG Grid native filtering, so no need for custom overlay
-  const isBadgeMode = search.startsWith('#') && (search.includes(':') || search.includes(' #'));
-  
+  const isBadgeMode =
+    search.startsWith('#') && (search.includes(':') || search.includes(' #'));
+
   if (search && !isBadgeMode) {
     return `<span style="padding: 10px; color: #888;">${currentConfig?.searchNoDataMessage || 'Tidak ada data yang cocok dengan pencarian'} "${search}"</span>`;
   }
@@ -186,7 +187,6 @@ const EntityMasterPage: React.FC = memo(() => {
     onClear: () => entityManager.handleSearch(''),
     onFilterSearch: handleFilterSearch,
   });
-
 
   // Enhanced onGridReady to capture grid API
   const onGridReady = useCallback(
@@ -331,9 +331,7 @@ const EntityMasterPage: React.FC = memo(() => {
       <div className="flex items-center pt-0">
         <div className="grow">
           <SearchToolbar
-            searchInputRef={
-              searchInputRef as React.RefObject<HTMLInputElement>
-            }
+            searchInputRef={searchInputRef as React.RefObject<HTMLInputElement>}
             searchBarProps={searchBarProps}
             search={search}
             buttonText={memoizedButtonText}
@@ -355,15 +353,12 @@ const EntityMasterPage: React.FC = memo(() => {
           <div className="text-center p-6 text-red-500">
             Error: {entityData.error?.message || 'Gagal memuat data'}
           </div>
-        ) : entityData.isLoading && (!entityData.data || entityData.data.length === 0) ? (
+        ) : entityData.isLoading &&
+          (!entityData.data || entityData.data.length === 0) ? (
           <TableSkeleton
             rows={entityManager.itemsPerPage || 10}
             columns={
-              currentConfig?.hasNciCode
-                ? 4
-                : currentConfig?.hasAddress
-                  ? 4
-                  : 3
+              currentConfig?.hasNciCode ? 4 : currentConfig?.hasAddress ? 4 : 3
             }
             showPagination={true}
             className="mt-4"
@@ -371,14 +366,16 @@ const EntityMasterPage: React.FC = memo(() => {
         ) : (
           <>
             {/* Background loading indicator for realtime updates */}
-            {entityData.isLoading && entityData.data && entityData.data.length > 0 && (
-              <div className="absolute top-0 right-0 z-10 mt-2 mr-4">
-                <div className="flex items-center space-x-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm shadow-sm">
-                  <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Memperbarui data...</span>
+            {entityData.isLoading &&
+              entityData.data &&
+              entityData.data.length > 0 && (
+                <div className="absolute top-0 right-0 z-10 mt-2 mr-4">
+                  <div className="flex items-center space-x-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm shadow-sm">
+                    <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Memperbarui data...</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <div className="relative">
               <DataGrid
@@ -389,15 +386,21 @@ const EntityMasterPage: React.FC = memo(() => {
                 onRowClicked={onRowClicked}
                 onGridReady={onGridReady}
                 loading={false}
-                overlayNoRowsTemplate={getOverlayTemplate(search, currentConfig)}
-                autoSizeColumns={getAutoSizeColumns(
-                  currentConfig?.hasNciCode
+                overlayNoRowsTemplate={getOverlayTemplate(
+                  search,
+                  currentConfig
                 )}
+                autoSizeColumns={getAutoSizeColumns(currentConfig?.hasNciCode)}
                 isExternalFilterPresent={isExternalFilterPresent}
                 doesExternalFilterPass={doesExternalFilterPass}
                 style={{
                   ...GRID_STYLE,
-                  opacity: (entityData.isLoading && entityData.data && entityData.data.length > 0) ? 0.8 : 1,
+                  opacity:
+                    entityData.isLoading &&
+                    entityData.data &&
+                    entityData.data.length > 0
+                      ? 0.8
+                      : 1,
                   transition: 'opacity 0.2s ease-in-out',
                 }}
               />

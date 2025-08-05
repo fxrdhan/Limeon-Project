@@ -336,11 +336,7 @@ export const useAddItemForm = ({
   );
 
   const handleSaveUnit = useCallback(
-    async (unitData: {
-      code?: string;
-      name: string;
-      description?: string;
-    }) => {
+    async (unitData: { code?: string; name: string; description?: string }) => {
       try {
         const { newUnit, updatedUnits } = await saveUnit(unitData);
         if (updatedUnits) formState.setUnits(updatedUnits);

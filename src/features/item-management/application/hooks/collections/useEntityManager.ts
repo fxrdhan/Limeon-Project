@@ -12,8 +12,21 @@ import type {
 } from '../../../domain/entities';
 
 // Define entity types
-export type EntityType = 'categories' | 'types' | 'packages' | 'dosages' | 'manufacturers' | 'units' | 'items';
-export type EntityData = ItemCategory | ItemTypeEntity | ItemPackage | ItemDosageEntity | ItemManufacturerEntity | ItemUnitEntity;
+export type EntityType =
+  | 'categories'
+  | 'types'
+  | 'packages'
+  | 'dosages'
+  | 'manufacturers'
+  | 'units'
+  | 'items';
+export type EntityData =
+  | ItemCategory
+  | ItemTypeEntity
+  | ItemPackage
+  | ItemDosageEntity
+  | ItemManufacturerEntity
+  | ItemUnitEntity;
 
 // Entity configuration
 export interface EntityConfig {
@@ -105,7 +118,7 @@ export const entityConfigs: Record<EntityType, EntityConfig> = {
     key: 'items',
     label: 'Item',
     entityName: 'Item',
-    tableName: 'items', 
+    tableName: 'items',
     addButtonText: 'Tambah Item Baru',
     searchPlaceholder: 'Cari nama, kode, atau barcode item',
     nameColumnHeader: 'Nama Item',
@@ -125,10 +138,15 @@ export interface UseEntityManagerOptions {
 export const useEntityManager = (options?: UseEntityManagerOptions) => {
   const { openConfirmDialog } = useConfirmDialog();
   const alert = useAlert();
-  const { activeEntityType = 'categories', searchInputRef, onEntityChange } = options || {};
+  const {
+    activeEntityType = 'categories',
+    searchInputRef,
+    onEntityChange,
+  } = options || {};
 
   // State management
-  const [currentEntityType, setCurrentEntityType] = useState<EntityType>(activeEntityType);
+  const [currentEntityType, setCurrentEntityType] =
+    useState<EntityType>(activeEntityType);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingEntity, setEditingEntity] = useState<EntityData | null>(null);
@@ -145,7 +163,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
       setIsAddModalOpen(false);
       setIsEditModalOpen(false);
       setEditingEntity(null);
-      
+
       // Clear search input
       if (searchInputRef?.current) {
         searchInputRef.current.value = '';
@@ -165,23 +183,26 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
   );
 
   // Change active entity type
-  const handleEntityTypeChange = useCallback((entityType: EntityType) => {
-    if (entityType !== currentEntityType) {
-      setCurrentEntityType(entityType);
-      setCurrentPage(1);
-      setSearch('');
-      setIsAddModalOpen(false);
-      setIsEditModalOpen(false);
-      setEditingEntity(null);
-      
-      // Clear search input
-      if (searchInputRef?.current) {
-        searchInputRef.current.value = '';
+  const handleEntityTypeChange = useCallback(
+    (entityType: EntityType) => {
+      if (entityType !== currentEntityType) {
+        setCurrentEntityType(entityType);
+        setCurrentPage(1);
+        setSearch('');
+        setIsAddModalOpen(false);
+        setIsEditModalOpen(false);
+        setEditingEntity(null);
+
+        // Clear search input
+        if (searchInputRef?.current) {
+          searchInputRef.current.value = '';
+        }
+
+        onEntityChange?.(entityType);
       }
-      
-      onEntityChange?.(entityType);
-    }
-  }, [currentEntityType, searchInputRef, onEntityChange]);
+    },
+    [currentEntityType, searchInputRef, onEntityChange]
+  );
 
   // Modal management
   const openAddModal = useCallback(() => {
@@ -205,54 +226,62 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
   }, []);
 
   // Form submit handler
-  const handleSubmit = useCallback(async (formData: {
-    id?: string;
-    kode?: string;
-    code?: string;
-    name: string;
-    description?: string;
-    address?: string;
-    nci_code?: string;
-    abbreviation?: string;
-  }) => {
-    try {
-      // Use simplified CRUD operations to handle the submission
-      await crudOperations.handleModalSubmit(formData);
-      
-      // Close modals after successful submit
-      setIsAddModalOpen(false);
-      setIsEditModalOpen(false);
-      setEditingEntity(null);
-      
-      alert.success(`${currentConfig.entityName} berhasil ${formData.id ? 'diperbarui' : 'ditambahkan'}`);
-    } catch {
-      // Error is already handled and displayed by the CRUD operations hook
-      // Just ensure modals stay open for user to retry or cancel
-    }
-  }, [currentConfig.entityName, alert, crudOperations]);
+  const handleSubmit = useCallback(
+    async (formData: {
+      id?: string;
+      kode?: string;
+      code?: string;
+      name: string;
+      description?: string;
+      address?: string;
+      nci_code?: string;
+      abbreviation?: string;
+    }) => {
+      try {
+        // Use simplified CRUD operations to handle the submission
+        await crudOperations.handleModalSubmit(formData);
+
+        // Close modals after successful submit
+        setIsAddModalOpen(false);
+        setIsEditModalOpen(false);
+        setEditingEntity(null);
+
+        alert.success(
+          `${currentConfig.entityName} berhasil ${formData.id ? 'diperbarui' : 'ditambahkan'}`
+        );
+      } catch {
+        // Error is already handled and displayed by the CRUD operations hook
+        // Just ensure modals stay open for user to retry or cancel
+      }
+    },
+    [currentConfig.entityName, alert, crudOperations]
+  );
 
   // Delete handler
-  const handleDelete = useCallback(async (entity: EntityData) => {
-    openConfirmDialog({
-      title: 'Konfirmasi Hapus',
-      message: `Apakah Anda yakin ingin menghapus ${currentConfig.entityName.toLowerCase()} "${entity.name}"?`,
-      variant: 'danger',
-      confirmText: 'Ya, Hapus',
-      onConfirm: async () => {
-        try {
-          // Use simplified CRUD operations to handle the deletion
-          await crudOperations.deleteMutation.mutateAsync(entity.id);
-          
-          setIsEditModalOpen(false);
-          setEditingEntity(null);
-          
-          alert.success(`${currentConfig.entityName} berhasil dihapus`);
-        } catch {
-          // Error is already handled and displayed by the CRUD operations hook
-        }
-      },
-    });
-  }, [currentConfig.entityName, openConfirmDialog, alert, crudOperations]);
+  const handleDelete = useCallback(
+    async (entity: EntityData) => {
+      openConfirmDialog({
+        title: 'Konfirmasi Hapus',
+        message: `Apakah Anda yakin ingin menghapus ${currentConfig.entityName.toLowerCase()} "${entity.name}"?`,
+        variant: 'danger',
+        confirmText: 'Ya, Hapus',
+        onConfirm: async () => {
+          try {
+            // Use simplified CRUD operations to handle the deletion
+            await crudOperations.deleteMutation.mutateAsync(entity.id);
+
+            setIsEditModalOpen(false);
+            setEditingEntity(null);
+
+            alert.success(`${currentConfig.entityName} berhasil dihapus`);
+          } catch {
+            // Error is already handled and displayed by the CRUD operations hook
+          }
+        },
+      });
+    },
+    [currentConfig.entityName, openConfirmDialog, alert, crudOperations]
+  );
 
   // Search handler
   const handleSearch = useCallback((searchValue: string) => {

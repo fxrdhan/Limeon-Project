@@ -33,12 +33,13 @@ export const useCacheFirstLoading = ({
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [showBackgroundLoading, setShowBackgroundLoading] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(isInitialLoad);
-  const [shouldSuppressOverlay, setShouldSuppressOverlay] = useState(isInitialLoad);
+  const [shouldSuppressOverlay, setShouldSuppressOverlay] =
+    useState(isInitialLoad);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const hasDataRef = useRef(hasData);
   const prevTabKeyRef = useRef(tabKey);
   const isTabChangingRef = useRef(false);
-  
+
   // Track tab changes - optimized for realtime
   useEffect(() => {
     if (tabKey && prevTabKeyRef.current && tabKey !== prevTabKeyRef.current) {
@@ -46,7 +47,7 @@ export const useCacheFirstLoading = ({
       isTabChangingRef.current = true;
       setShowSkeleton(false); // Never show skeleton on tab change for realtime
       setShouldSuppressOverlay(true);
-      
+
       // Reset tab changing flag after brief delay
       const tabChangeTimer = setTimeout(() => {
         isTabChangingRef.current = false;
@@ -55,9 +56,9 @@ export const useCacheFirstLoading = ({
           setShouldSuppressOverlay(false);
         }
       }, gracePeriod * 3); // Longer suppression for realtime data to settle
-      
+
       prevTabKeyRef.current = tabKey;
-      
+
       return () => clearTimeout(tabChangeTimer);
     } else if (tabKey) {
       prevTabKeyRef.current = tabKey;
@@ -82,7 +83,7 @@ export const useCacheFirstLoading = ({
     if (isLoading) {
       // Always suppress overlay during loading
       setShouldSuppressOverlay(true);
-      
+
       // Don't show skeleton if tab is changing (realtime scenario)
       if (isTabChangingRef.current) {
         setShowSkeleton(false);
@@ -152,7 +153,14 @@ export const useCacheFirstLoading = ({
         timerRef.current = null;
       }
     };
-  }, [isLoading, isFirstLoad, showSkeleton, hasData, minSkeletonTime, gracePeriod]);
+  }, [
+    isLoading,
+    isFirstLoad,
+    showSkeleton,
+    hasData,
+    minSkeletonTime,
+    gracePeriod,
+  ]);
 
   return {
     showSkeleton,

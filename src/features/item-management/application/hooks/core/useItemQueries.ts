@@ -1,6 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { ItemCategory, ItemTypeEntity, ItemPackage, ItemDosageEntity, ItemManufacturerEntity } from '../../../domain/entities';
+import {
+  ItemCategory,
+  ItemTypeEntity,
+  ItemPackage,
+  ItemDosageEntity,
+  ItemManufacturerEntity,
+} from '../../../domain/entities';
 
 export const useItemQueries = () => {
   const { data: categoriesData } = useQuery<ItemCategory[]>({

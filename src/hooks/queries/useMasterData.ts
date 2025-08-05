@@ -15,7 +15,7 @@ export const useCategories = (options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };
 
@@ -29,7 +29,7 @@ export const useCategory = (id: string, options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };
 
@@ -116,7 +116,7 @@ export const useMedicineTypes = (options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };
 
@@ -133,7 +133,7 @@ export const useMedicineType = (
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };
 
@@ -199,7 +199,7 @@ export const useUnits = (options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };
 
@@ -213,7 +213,7 @@ export const useUnit = (id: string, options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };
 
@@ -273,7 +273,7 @@ export const useItemUnits = (options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };
 
@@ -287,7 +287,7 @@ export const useItemUnit = (id: string, options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };
 
@@ -309,7 +309,13 @@ export const useItemUnitMutations = () => {
   });
 
   const updateItemUnit = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<ItemUnit> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<ItemUnit>;
+    }) => {
       const result = await masterDataService.itemUnits.update(id, data);
       if (result.error) throw result.error;
       return result.data;
@@ -350,7 +356,7 @@ export const useSuppliers = (options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };
 
@@ -364,7 +370,7 @@ export const useSupplier = (id: string, options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };
 
@@ -452,6 +458,6 @@ export const useAllMasterData = (options?: { enabled?: boolean }) => {
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
-    gcTime: 0
+    gcTime: 0,
   });
 };

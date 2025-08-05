@@ -4,7 +4,13 @@ import { SearchColumn, ColumnSelectorProps } from '@/types/search';
 import { LuHash, LuSearch, LuFilter } from 'react-icons/lu';
 import { HiOutlineSparkles } from 'react-icons/hi2';
 
-type AnimationPhase = 'hidden' | 'header' | 'footer' | 'content' | 'complete' | 'closing';
+type AnimationPhase =
+  | 'hidden'
+  | 'header'
+  | 'footer'
+  | 'content'
+  | 'complete'
+  | 'closing';
 
 const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   columns,
@@ -42,10 +48,16 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       setTimeout(() => {
         setAnimationPhase('complete');
       }, 650);
-    } else if (!isOpen && (animationPhase === 'complete' || animationPhase === 'content' || animationPhase === 'footer' || animationPhase === 'header')) {
+    } else if (
+      !isOpen &&
+      (animationPhase === 'complete' ||
+        animationPhase === 'content' ||
+        animationPhase === 'footer' ||
+        animationPhase === 'header')
+    ) {
       // Start closing animation sequence
       setAnimationPhase('closing');
-      
+
       // Complete closing after animation duration
       setTimeout(() => {
         setAnimationPhase('hidden');

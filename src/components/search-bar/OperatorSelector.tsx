@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { LuCheck, LuX, LuSearch, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
+import {
+  LuCheck,
+  LuX,
+  LuSearch,
+  LuChevronLeft,
+  LuChevronRight,
+} from 'react-icons/lu';
 import { HiOutlineSparkles } from 'react-icons/hi2';
 import fuzzysort from 'fuzzysort';
 
@@ -19,7 +25,13 @@ interface OperatorSelectorProps {
   searchTerm?: string;
 }
 
-type AnimationPhase = 'hidden' | 'header' | 'footer' | 'content' | 'complete' | 'closing';
+type AnimationPhase =
+  | 'hidden'
+  | 'header'
+  | 'footer'
+  | 'content'
+  | 'complete'
+  | 'closing';
 
 const OperatorSelector: React.FC<OperatorSelectorProps> = ({
   operators,
@@ -29,9 +41,11 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
   position,
   searchTerm = '',
 }) => {
-  const [filteredOperators, setFilteredOperators] = useState<FilterOperator[]>(operators);
+  const [filteredOperators, setFilteredOperators] =
+    useState<FilterOperator[]>(operators);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [animationPhase, setAnimationPhase] = useState<AnimationPhase>('hidden');
+  const [animationPhase, setAnimationPhase] =
+    useState<AnimationPhase>('hidden');
   const modalRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -55,10 +69,16 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
       setTimeout(() => {
         setAnimationPhase('complete');
       }, 650);
-    } else if (!isOpen && (animationPhase === 'complete' || animationPhase === 'content' || animationPhase === 'footer' || animationPhase === 'header')) {
+    } else if (
+      !isOpen &&
+      (animationPhase === 'complete' ||
+        animationPhase === 'content' ||
+        animationPhase === 'footer' ||
+        animationPhase === 'header')
+    ) {
       // Start closing animation sequence
       setAnimationPhase('closing');
-      
+
       // Complete closing after animation duration
       setTimeout(() => {
         setAnimationPhase('hidden');
@@ -271,9 +291,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
                   animationPhase === 'complete' && onSelect(operator)
                 }
               >
-                <div className="flex-shrink-0 mt-0.5">
-                  {operator.icon}
-                </div>
+                <div className="flex-shrink-0 mt-0.5">{operator.icon}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span
