@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box';
 import { useAlert } from '@/components/alert/hooks';
-import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
+import { useEntityCrudOperations } from './useEntityCrudOperations';
 import type {
   ItemCategory,
   ItemTypeEntity,
@@ -158,16 +158,10 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     return entityConfigs[currentEntityType];
   }, [currentEntityType]);
 
-  // Use the actual master data management hook for API operations
-  const masterDataHook = useMasterDataManagement(
+  // Use simplified CRUD operations hook for API operations
+  const crudOperations = useEntityCrudOperations(
     currentConfig.tableName,
-    currentConfig.entityName,
-    {
-      searchInputRef,
-      handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearch(e.target.value);
-      },
-    }
+    currentConfig.entityName
   );
 
   // Change active entity type
@@ -222,8 +216,8 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     abbreviation?: string;
   }) => {
     try {
-      // Use the actual master data hook to handle the submission
-      await masterDataHook.handleModalSubmit(formData);
+      // Use simplified CRUD operations to handle the submission
+      await crudOperations.handleModalSubmit(formData);
       
       // Close modals after successful submit
       setIsAddModalOpen(false);
@@ -231,12 +225,11 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
       setEditingEntity(null);
       
       alert.success(`${currentConfig.entityName} berhasil ${formData.id ? 'diperbarui' : 'ditambahkan'}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const action = formData.id ? 'memperbarui' : 'menambahkan';
-      alert.error(`Gagal ${action} ${currentConfig.entityName}: ${errorMessage}`);
+    } catch {
+      // Error is already handled and displayed by the CRUD operations hook
+      // Just ensure modals stay open for user to retry or cancel
     }
-  }, [currentConfig.entityName, alert, masterDataHook]);
+  }, [currentConfig.entityName, alert, crudOperations]);
 
   // Delete handler
   const handleDelete = useCallback(async (entity: EntityData) => {
@@ -247,20 +240,19 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
       confirmText: 'Ya, Hapus',
       onConfirm: async () => {
         try {
-          // Use the actual master data hook to handle the deletion
-          await masterDataHook.deleteMutation.mutateAsync(entity.id);
+          // Use simplified CRUD operations to handle the deletion
+          await crudOperations.deleteMutation.mutateAsync(entity.id);
           
           setIsEditModalOpen(false);
           setEditingEntity(null);
           
           alert.success(`${currentConfig.entityName} berhasil dihapus`);
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          alert.error(`Gagal menghapus ${currentConfig.entityName}: ${errorMessage}`);
+        } catch {
+          // Error is already handled and displayed by the CRUD operations hook
         }
       },
     });
-  }, [currentConfig.entityName, openConfirmDialog, alert, masterDataHook]);
+  }, [currentConfig.entityName, openConfirmDialog, alert, crudOperations]);
 
   // Search handler
   const handleSearch = useCallback((searchValue: string) => {

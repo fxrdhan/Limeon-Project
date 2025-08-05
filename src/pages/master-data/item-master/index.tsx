@@ -17,7 +17,7 @@ import { EntityMasterPage } from '@/features/item-management/presentation/pages'
 import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
 
 // Hooks and utilities
-import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
+import { useMasterDataManagement } from '@/hooks/useMasterDataManagement';
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import { itemSearchColumns } from '@/utils/searchColumns';

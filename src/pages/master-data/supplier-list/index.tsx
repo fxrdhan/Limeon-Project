@@ -13,7 +13,7 @@ import { useRef, useMemo, useCallback } from 'react';
 import type { Supplier as SupplierType, FieldConfig } from '@/types';
 
 // Use the new modular architecture
-import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
+import { useMasterDataManagement } from '@/hooks/useMasterDataManagement';
 
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import { supplierSearchColumns } from '@/utils/searchColumns';

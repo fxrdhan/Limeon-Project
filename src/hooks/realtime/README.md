@@ -9,7 +9,7 @@ Real-time synchronization hook for Item Master data using Supabase realtime.
 ### Monitored Tables
 - ✅ `items` - Main item data
 - ✅ `item_categories` - Item categories
-- ✅ `item_types` - Item types  
+- ✅ `item_types` - Item types
 - ✅ `item_units` - Measurement units
 - ✅ `item_packages` - Package types
 - ✅ `item_dosages` - Medicine dosages
@@ -23,7 +23,7 @@ import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
 function ItemMasterPage() {
   // Enable realtime for all item master tables
   useItemMasterRealtime({ enabled: true });
-  
+
   return <div>Your component</div>;
 }
 ```
@@ -86,7 +86,3 @@ interface UseItemMasterRealtimeOptions {
 - **Supabase Client**: For WebSocket connection
 - **React Query**: For cache invalidation
 - **React**: useEffect for lifecycle management
-
----
-
-**Built with ❤️ for real-time collaboration in PharmaSys**
