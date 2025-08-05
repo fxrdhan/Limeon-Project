@@ -1,4 +1,4 @@
-import { useCallback, useMemo, ChangeEvent } from 'react';
+import { useCallback, useMemo, ChangeEvent, useRef, useEffect } from 'react';
 import { GridReadyEvent, IRowNode } from 'ag-grid-community';
 import { useEnhancedAgGridSearch } from './useEnhancedAgGridSearch';
 import { SearchColumn, TargetedSearch, FilterSearch } from '@/types/search';
@@ -34,7 +34,6 @@ export interface UnifiedSearchReturn {
   searchBarProps: {
     value: string;
     onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-    onTargetedSearch: (targetedSearch: TargetedSearch | null) => void;
     onGlobalSearch: (searchValue: string) => void;
     onClearSearch: () => void;
     onFilterSearch: (filterSearch: FilterSearch | null) => void;
@@ -105,6 +104,33 @@ export function useUnifiedSearch({
     onClear?.();
   }, [onClear]);
 
+  // Debounce timer for external search handlers to prevent per-character processing
+  const searchDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced external search handler - prevents server calls on every character
+  const debouncedExternalSearch = useCallback((searchValue: string) => {
+    // Clear existing timer
+    if (searchDebounceTimerRef.current) {
+      clearTimeout(searchDebounceTimerRef.current);
+    }
+    
+    // Set new timer - only call external handler after user stops typing
+    searchDebounceTimerRef.current = setTimeout(() => {
+      if (searchMode === 'server' || searchMode === 'hybrid') {
+        stableOnSearch(searchValue);
+      }
+    }, 200); // 200ms delay for server calls
+  }, [searchMode, stableOnSearch]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchDebounceTimerRef.current) {
+        clearTimeout(searchDebounceTimerRef.current);
+      }
+    };
+  }, []);
+
   // Check if value is in hashtag mode (incomplete hashtag search)
   const isHashtagMode = useCallback((value: string) => {
     if (value === '#') return true;
@@ -120,6 +146,12 @@ export function useUnifiedSearch({
 
       // Layer: Empty State Cleanup - When input is completely empty
       if (value === '' || value.trim() === '') {
+        // Cancel any pending debounced search
+        if (searchDebounceTimerRef.current) {
+          clearTimeout(searchDebounceTimerRef.current);
+          searchDebounceTimerRef.current = null;
+        }
+        
         // Clear all search states immediately
         if (searchMode === 'server' || searchMode === 'hybrid') {
           stableOnSearch('');
@@ -131,12 +163,10 @@ export function useUnifiedSearch({
       // Call external search handler if provided (for integration with existing hooks)
       externalSearchHandler?.(e);
 
-      // For server-side search, call the external handler
+      // For server-side search, use DEBOUNCED handler to prevent per-character calls
       // But skip if we're in hashtag mode (incomplete hashtag search)
-      if (searchMode === 'server' || searchMode === 'hybrid') {
-        if (!isHashtagMode(value)) {
-          stableOnSearch(value);
-        }
+      if (!isHashtagMode(value)) {
+        debouncedExternalSearch(value);
       }
     },
     [
@@ -146,6 +176,7 @@ export function useUnifiedSearch({
       stableOnClear,
       searchMode,
       isHashtagMode,
+      debouncedExternalSearch,
     ]
   );
 
@@ -156,6 +187,12 @@ export function useUnifiedSearch({
 
       // Layer: Empty State Cleanup - When global search is empty
       if (searchValue === '' || searchValue.trim() === '') {
+        // Cancel any pending debounced search
+        if (searchDebounceTimerRef.current) {
+          clearTimeout(searchDebounceTimerRef.current);
+          searchDebounceTimerRef.current = null;
+        }
+        
         // Clear all search states immediately
         if (searchMode === 'server' || searchMode === 'hybrid') {
           stableOnSearch('');
@@ -164,12 +201,10 @@ export function useUnifiedSearch({
         return; // Early return
       }
 
-      // For server-side search, call the external handler
+      // For server-side search, use DEBOUNCED handler to prevent per-character calls
       // But skip if we're in hashtag mode (incomplete hashtag search)
-      if (searchMode === 'server' || searchMode === 'hybrid') {
-        if (!isHashtagMode(searchValue)) {
-          stableOnSearch(searchValue);
-        }
+      if (!isHashtagMode(searchValue)) {
+        debouncedExternalSearch(searchValue);
       }
     },
     [
@@ -178,13 +213,27 @@ export function useUnifiedSearch({
       stableOnClear,
       searchMode,
       isHashtagMode,
+      debouncedExternalSearch,
     ]
   );
 
-  // Unified targeted search handler
+  // Unified targeted search handler (deprecated - redirects to filter search)
   const handleTargetedSearch = useCallback(
     (targetedSearch: TargetedSearch | null) => {
-      originalHandleTargetedSearch(targetedSearch);
+      // Convert targeted search to filter search to use AG Grid native filtering
+      if (targetedSearch && onFilterSearch) {
+        const filterSearch: FilterSearch = {
+          ...targetedSearch,
+          operator: 'contains', // Use contains operator for targeted search
+        };
+        onFilterSearch(filterSearch);
+      } else if (!targetedSearch) {
+        // Clear filter search when targeted search is null
+        onFilterSearch?.(null);
+      } else {
+        // Fallback to original handler if no onFilterSearch callback
+        originalHandleTargetedSearch(targetedSearch);
+      }
 
       // For targeted search, we typically want to clear server-side search
       // since AG Grid will handle the filtering
@@ -192,11 +241,17 @@ export function useUnifiedSearch({
         stableOnSearch('');
       }
     },
-    [originalHandleTargetedSearch, stableOnSearch, searchMode]
+    [originalHandleTargetedSearch, onFilterSearch, stableOnSearch, searchMode]
   );
 
   // Unified clear search handler
   const handleClearSearch = useCallback(() => {
+    // Cancel any pending debounced search
+    if (searchDebounceTimerRef.current) {
+      clearTimeout(searchDebounceTimerRef.current);
+      searchDebounceTimerRef.current = null;
+    }
+    
     originalClearSearch();
 
     // Call external clear handler if provided
@@ -217,7 +272,6 @@ export function useUnifiedSearch({
     () => ({
       value: search,
       onChange: handleSearchChange,
-      onTargetedSearch: handleTargetedSearch,
       onGlobalSearch: handleGlobalSearch,
       onClearSearch: handleClearSearch,
       onFilterSearch: onFilterSearch || (() => {}),
@@ -227,7 +281,6 @@ export function useUnifiedSearch({
     [
       search,
       handleSearchChange,
-      handleTargetedSearch,
       handleGlobalSearch,
       handleClearSearch,
       onFilterSearch,

@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { GridApi, GridReadyEvent } from 'ag-grid-community';
-import { fuzzySearchMatch } from '@/utils/search';
 import { SearchColumn, TargetedSearch } from '@/types/search';
 
 interface UseEnhancedAgGridSearchOptions {
@@ -53,82 +52,6 @@ interface UseEnhancedAgGridSearchReturn {
   searchColumns: SearchColumn[];
 }
 
-/**
- * Enhanced fuzzy search that supports targeted column search
- */
-const enhancedFuzzySearchMatch = (
-  data: Record<string, unknown>,
-  searchTerm: string,
-  targetedSearch?: TargetedSearch | null
-): boolean => {
-  // If no search term and no targeted search, show all data
-  if (!searchTerm && !targetedSearch) return true;
-
-  // If targeted search exists but has no value, show all data
-  if (targetedSearch && !targetedSearch.value.trim()) return true;
-
-  // Handle targeted search with value
-  if (targetedSearch && targetedSearch.value.trim()) {
-    const fieldValue = getNestedValue(data, targetedSearch.field);
-    if (fieldValue === null || fieldValue === undefined) return false;
-
-    const stringValue = String(fieldValue).toLowerCase();
-    const searchValue = targetedSearch.value.toLowerCase();
-
-    // Different search strategies based on column type
-    switch (targetedSearch.column.type) {
-      case 'number':
-      case 'currency':
-        // Exact match for numbers
-        return stringValue.includes(searchValue);
-      case 'date':
-        // Date matching (could be enhanced with date parsing)
-        return stringValue.includes(searchValue);
-      default:
-        // Fuzzy match for text
-        return fuzzyMatch(stringValue, searchValue);
-    }
-  }
-
-  // Handle global search
-  if (searchTerm && searchTerm.trim()) {
-    return fuzzySearchMatch(data, searchTerm);
-  }
-
-  return true;
-};
-
-/**
- * Get nested value from object using dot notation (e.g., "category.name")
- */
-const getNestedValue = (
-  obj: Record<string, unknown>,
-  path: string
-): unknown => {
-  return path.split('.').reduce((current: unknown, key: string) => {
-    if (current && typeof current === 'object' && key in current) {
-      return (current as Record<string, unknown>)[key];
-    }
-    return undefined;
-  }, obj as unknown);
-};
-
-/**
- * Simple fuzzy match function for targeted search
- */
-const fuzzyMatch = (text: string, pattern: string): boolean => {
-  const lowerText = text.toLowerCase();
-  const lowerPattern = pattern.toLowerCase();
-  let tIdx = 0;
-  let pIdx = 0;
-  while (tIdx < lowerText.length && pIdx < lowerPattern.length) {
-    if (lowerText[tIdx] === lowerPattern[pIdx]) {
-      pIdx++;
-    }
-    tIdx++;
-  }
-  return pIdx === lowerPattern.length;
-};
 
 /**
  * Custom hook for managing enhanced AG-Grid search functionality
@@ -154,7 +77,6 @@ export const useEnhancedAgGridSearch = (
   const searchRef = useRef(search);
   const globalSearchRef = useRef(globalSearch);
   const targetedSearchRef = useRef(targetedSearch);
-  const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
 
   // Wrapper for setSearch that also updates searchRef immediately
   const setSearch = useCallback((value: string) => {
@@ -175,14 +97,6 @@ export const useEnhancedAgGridSearch = (
     targetedSearchRef.current = targetedSearch;
   }, [targetedSearch]);
 
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      // Clear all pending timeouts
-      timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
-      timeoutRefs.current = [];
-    };
-  }, []);
 
   const isExternalFilterPresent = useFuzzySearch
     ? () => {
@@ -197,15 +111,13 @@ export const useEnhancedAgGridSearch = (
     : undefined;
 
   const doesExternalFilterPass = useFuzzySearch
-    ? (node: { data: Record<string, unknown> }) => {
+    ? (/* node: { data: Record<string, unknown> } */) => {
         const currentGlobalSearch = globalSearchRef.current;
         const currentTargetedSearch = targetedSearchRef.current;
 
-        return enhancedFuzzySearchMatch(
-          node.data,
-          currentGlobalSearch,
-          currentTargetedSearch
-        );
+        // Simple fallback - if using fuzzy search, let AG Grid handle it
+        // This is now deprecated since we use AG Grid native filtering
+        return Boolean(currentGlobalSearch || currentTargetedSearch);
       }
     : undefined;
 
@@ -226,7 +138,6 @@ export const useEnhancedAgGridSearch = (
 
   const handleTargetedSearch = useCallback(
     (newTargetedSearch: TargetedSearch | null) => {
-      const prevTargetedSearch = targetedSearchRef.current;
       setTargetedSearch(newTargetedSearch);
 
       // Clear global search when targeted search is active
@@ -234,49 +145,9 @@ export const useEnhancedAgGridSearch = (
         setGlobalSearch('');
       }
 
-      // Clear existing timeouts
-      timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
-      timeoutRefs.current = [];
-
-      // Use setTimeout to ensure state updates are processed before refreshing
-      const timeout1 = setTimeout(() => {
-        if (
-          gridRef.current &&
-          useFuzzySearch &&
-          !gridRef.current.isDestroyed?.()
-        ) {
-          gridRef.current.onFilterChanged();
-        }
-      }, 0);
-      timeoutRefs.current.push(timeout1);
-
-      // Special handling: when targeted search value changes from non-empty to empty
-      if (
-        prevTargetedSearch &&
-        newTargetedSearch &&
-        prevTargetedSearch.value.trim() &&
-        !newTargetedSearch.value.trim()
-      ) {
-        // Force refresh multiple times to ensure AG Grid shows all data
-        const timeout2 = setTimeout(() => {
-          if (
-            gridRef.current &&
-            useFuzzySearch &&
-            !gridRef.current.isDestroyed?.()
-          ) {
-            gridRef.current.onFilterChanged();
-          }
-        }, 10);
-        const timeout3 = setTimeout(() => {
-          if (
-            gridRef.current &&
-            useFuzzySearch &&
-            !gridRef.current.isDestroyed?.()
-          ) {
-            gridRef.current.onFilterChanged();
-          }
-        }, 50);
-        timeoutRefs.current.push(timeout2, timeout3);
+      // Simple refresh for AG Grid - no complex timeout logic needed
+      if (gridRef.current && useFuzzySearch && !gridRef.current.isDestroyed?.()) {
+        gridRef.current.onFilterChanged();
       }
     },
     [useFuzzySearch]
