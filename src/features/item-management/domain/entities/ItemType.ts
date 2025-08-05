@@ -1,7 +1,7 @@
 // ItemType entity definition
 export interface ItemType {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   description?: string;
   created_at: string;
@@ -9,14 +9,14 @@ export interface ItemType {
 }
 
 export interface ItemTypeCreateInput {
-  kode?: string;
+  code?: string;
   name: string;
   description?: string;
 }
 
 export interface ItemTypeUpdateInput {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   description?: string;
 }

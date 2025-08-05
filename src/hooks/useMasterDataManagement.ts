@@ -295,14 +295,7 @@ export const useMasterDataManagement = (
         // Standard filtering for other master data
         filteredData = filteredData
           .filter(item => {
-            // Check for kode field if it exists (most item master data)
-            if (
-              'kode' in item &&
-              typeof item.kode === 'string' &&
-              fuzzyMatch(item.kode.toLowerCase(), searchTermLower)
-            )
-              return true;
-            // Check for code field if it exists (for item_units table)
+            // Check for code field if it exists (all master data now uses 'code')
             if (
               'code' in item &&
               typeof item.code === 'string' &&
@@ -384,20 +377,7 @@ export const useMasterDataManagement = (
           })
           .sort((a, b) => {
             const getScore = (itemToSort: MasterDataItem) => {
-              // Check kode first (highest priority for most tables)
-              if (
-                'kode' in itemToSort &&
-                typeof itemToSort.kode === 'string' &&
-                itemToSort.kode.toLowerCase().startsWith(searchTermLower)
-              )
-                return 5;
-              if (
-                'kode' in itemToSort &&
-                typeof itemToSort.kode === 'string' &&
-                itemToSort.kode.toLowerCase().includes(searchTermLower)
-              )
-                return 4;
-              // Check code field (for item_units table)
+              // Check code field (all master data tables now use 'code')
               if (
                 'code' in itemToSort &&
                 typeof itemToSort.code === 'string' &&
@@ -431,15 +411,7 @@ export const useMasterDataManagement = (
             const scoreA = getScore(a);
             const scoreB = getScore(b);
             if (scoreA !== scoreB) return scoreB - scoreA;
-            // Secondary sort by kode/code if available, then name
-            if (
-              'kode' in a &&
-              'kode' in b &&
-              typeof a.kode === 'string' &&
-              typeof b.kode === 'string'
-            ) {
-              return a.kode.localeCompare(b.kode);
-            }
+            // Secondary sort by code if available, then name
             if (
               'code' in a &&
               'code' in b &&
@@ -475,7 +447,7 @@ export const useMasterDataManagement = (
   const handleModalSubmit = useCallback(
     async (itemData: {
       id?: string;
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -507,13 +479,8 @@ export const useMasterDataManagement = (
             if (itemData.address !== undefined) {
               updateData.address = itemData.address;
             }
-            if (itemData.kode !== undefined) {
-              updateData.kode = itemData.kode;
-              // For item_units table, use 'code' instead of 'kode'
-              if (tableName === 'item_units') {
-                updateData.code = itemData.kode;
-                delete updateData.kode;
-              }
+            if (itemData.code !== undefined) {
+              updateData.code = itemData.code;
             }
 
             // Handle different parameter structures for different mutation types
@@ -570,13 +537,8 @@ export const useMasterDataManagement = (
             if (itemData.address !== undefined) {
               createData.address = itemData.address;
             }
-            if (itemData.kode !== undefined) {
-              createData.kode = itemData.kode;
-              // For item_units table, use 'code' instead of 'kode'
-              if (tableName === 'item_units') {
-                createData.code = itemData.kode;
-                delete createData.kode;
-              }
+            if (itemData.code !== undefined) {
+              createData.code = itemData.code;
             }
             // Cast to unknown first to avoid type conflicts, then cast to mutation interface
             await (
@@ -676,13 +638,13 @@ export const useMasterDataManagement = (
   // Create mutation objects with consistent interface for backward compatibility
   const addMutation = {
     mutate: (data: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
     }) => handleModalSubmit(data),
     mutateAsync: (data: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -705,14 +667,14 @@ export const useMasterDataManagement = (
   const updateMutation = {
     mutate: (data: {
       id: string;
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
     }) => handleModalSubmit(data),
     mutateAsync: (data: {
       id: string;
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;

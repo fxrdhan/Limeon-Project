@@ -1,560 +1,66 @@
 [
   {
-    "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-    "name": "AMPULE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Sealed glass capsule containing sterile liquid for injection",
-    "kode": "AMP",
-    "nci_code": "C43165"
+    "id": "352ec663-d621-4c11-b810-4d00b52d07c9",
+    "code": "PCS",
+    "name": "Pieces",
+    "description": "Individual pieces or units",
+    "created_at": "2025-08-04T05:44:15.128Z",
+    "updated_at": "2025-08-04T05:44:15.128Z"
   },
   {
-    "id": "6d03a502-f7c0-408e-b1c2-2cda4095157c",
-    "name": "APPLICATOR",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Device used to apply medication to specific body areas",
-    "kode": "APP",
-    "nci_code": "C43166"
+    "id": "8017cb6f-0c02-4370-bfb5-c14ce9f71f92",
+    "code": "BOX",
+    "name": "Box",
+    "description": "Boxed items",
+    "created_at": "2025-08-04T05:44:15.128Z",
+    "updated_at": "2025-08-04T05:44:15.128Z"
   },
   {
-    "id": "312a23d1-f2c1-4f75-afb6-d490bc4189bf",
-    "name": "BAG",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Flexible container for storing or dispensing medications",
-    "kode": "BAG",
-    "nci_code": "C43167"
+    "id": "913dd996-b0a9-4de8-b01f-ba56d9181c7d",
+    "code": "BTL",
+    "name": "Bottle",
+    "description": "Bottled items",
+    "created_at": "2025-08-04T05:44:15.128Z",
+    "updated_at": "2025-08-04T05:44:15.128Z"
   },
   {
-    "id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
-    "name": "BLISTER PACK",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Pre-formed plastic packaging with individual compartments for each dose",
-    "kode": "BLP",
-    "nci_code": "C43168"
+    "id": "e320f0f6-4a29-4c98-80fb-b8e66dbcf5e2",
+    "code": "PKT",
+    "name": "Packet",
+    "description": "Packaged items",
+    "created_at": "2025-08-04T05:44:15.128Z",
+    "updated_at": "2025-08-04T05:44:15.128Z"
   },
   {
-    "id": "70d3c6aa-e191-4b05-aa08-2d629867a10e",
-    "name": "BOTTLE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Rigid container with narrow neck for storing liquids or solids",
-    "kode": "BTL",
-    "nci_code": "C43169"
+    "id": "890b3440-2ba0-4863-9e88-ea890f06340a",
+    "code": "TAB",
+    "name": "Tablet",
+    "description": "Tablet form medication",
+    "created_at": "2025-08-04T05:44:15.128Z",
+    "updated_at": "2025-08-04T05:44:15.128Z"
   },
   {
-    "id": "38e48a63-ad65-4582-9339-ecff39f6da7e",
-    "name": "BOTTLE, DISPENSING",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Bottle designed for controlled dispensing of medication",
-    "kode": "BTL-D",
-    "nci_code": "C43170"
+    "id": "7bc4fdb3-1b31-4b0d-9603-6aa8fa66d94d",
+    "code": "CAP",
+    "name": "Capsule",
+    "description": "Capsule form medication",
+    "created_at": "2025-08-04T05:44:15.128Z",
+    "updated_at": "2025-08-04T05:44:15.128Z"
   },
   {
-    "id": "deca6a96-8fbc-4431-a2f2-e67a8abb1247",
-    "name": "BOTTLE, DROPPER",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Bottle with integrated dropper for precise liquid dosing",
-    "kode": "BTL-DR",
-    "nci_code": "C43171"
+    "id": "76f9f113-84ab-4aed-92af-a4211407d53f",
+    "code": "VIA",
+    "name": "Vial",
+    "description": "Vial container",
+    "created_at": "2025-08-04T05:44:15.128Z",
+    "updated_at": "2025-08-04T05:44:15.128Z"
   },
   {
-    "id": "64b3a065-d0da-435f-9ecd-509b5bba3e85",
-    "name": "BOTTLE, GLASS",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Glass bottle for storing medications requiring protection from light",
-    "kode": "BTL-G",
-    "nci_code": "C43172"
-  },
-  {
-    "id": "b252da8f-228b-4fe8-83f8-a0cf0335a35c",
-    "name": "BOTTLE, PLASTIC",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Plastic bottle for general medication storage",
-    "kode": "BTL-P",
-    "nci_code": "C43173"
-  },
-  {
-    "id": "68eacb7f-bf31-4bb5-95d7-f6144119828c",
-    "name": "BOTTLE, PUMP",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Bottle with pump mechanism for spray or lotion dispensing",
-    "kode": "BTL-PU",
-    "nci_code": "C43174"
-  },
-  {
-    "id": "adc1f693-3171-47a6-9bd9-376360332e90",
-    "name": "BOTTLE, SPRAY",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Bottle with spray nozzle for topical applications",
-    "kode": "BTL-S",
-    "nci_code": "C43175"
-  },
-  {
-    "id": "eefbea92-06ee-4cb7-98ce-c349f491f491",
-    "name": "BOTTLE, UNIT-DOSE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Single-dose bottle for individual patient use",
-    "kode": "BTL-UD",
-    "nci_code": "C43176"
-  },
-  {
-    "id": "acc1050b-3471-4d6e-8b3b-6cf02d598df1",
-    "name": "BOTTLE, WITH APPLICATOR",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Bottle equipped with applicator for precise medication placement",
-    "kode": "BTL-A",
-    "nci_code": "C43177"
-  },
-  {
-    "id": "cec54e52-c48d-491c-88c3-f0b63031ce12",
-    "name": "BOX",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Rigid rectangular container for packaging medications",
-    "kode": "BOX",
-    "nci_code": "C43178"
-  },
-  {
-    "id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
-    "name": "BOX, UNIT-DOSE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Box containing single-dose medication packages",
-    "kode": "BOX-UD",
-    "nci_code": "C43179"
-  },
-  {
-    "id": "1fc871d5-443f-4145-aaa3-4d540377f156",
-    "name": "CAN",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Metal container for pressurized or powder medications",
-    "kode": "CAN",
-    "nci_code": "C43180"
-  },
-  {
-    "id": "0f7552b8-3e25-4e9a-96e4-b539641c59d3",
-    "name": "CANISTER",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Cylindrical container for storing dry or pressurized medications",
-    "kode": "CNS",
-    "nci_code": "C43181"
-  },
-  {
-    "id": "ec96854d-630d-492b-ad3c-e3ad935b0263",
-    "name": "CAPSULE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Encapsulated dosage form container",
-    "kode": "CAP",
-    "nci_code": "C92708"
-  },
-  {
-    "id": "4abfbb0e-d2e2-4726-bc15-f97016a568d8",
-    "name": "CARTON",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Paperboard container for secondary packaging",
-    "kode": "CTN",
-    "nci_code": "C43182"
-  },
-  {
-    "id": "f42425e2-a171-490f-8077-417cf5a6fa38",
-    "name": "CARTRIDGE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Replaceable container for injection devices",
-    "kode": "CRT",
-    "nci_code": "C43183"
-  },
-  {
-    "id": "b3f7d798-687a-4465-a223-93460bad790e",
-    "name": "CASE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Protective container for transporting medications",
-    "kode": "CSE",
-    "nci_code": "C43184"
-  },
-  {
-    "id": "f05a40ff-f019-4077-a693-89283b29ab7a",
-    "name": "CELLO PACK",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Transparent plastic wrapping for individual items",
-    "kode": "CEL",
-    "nci_code": "C43185"
-  },
-  {
-    "id": "d51b98c4-49a0-4a47-89ac-8469be1d878b",
-    "name": "CONTAINER",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "General purpose container for medication storage",
-    "kode": "CON",
-    "nci_code": "C43186"
-  },
-  {
-    "id": "1612f08e-f6b6-4c77-a3de-29a5904d91c0",
-    "name": "CONTAINER, FLEXIBLE INTERMEDIATE BULK",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Large flexible container for bulk pharmaceutical materials",
-    "kode": "FIBC",
-    "nci_code": "C79135"
-  },
-  {
-    "id": "50284657-9253-41f0-a952-9e2d1b6ab67e",
-    "name": "CUP",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Small container for liquid medication dispensing",
-    "kode": "CUP",
-    "nci_code": "C43187"
-  },
-  {
-    "id": "7b7760f8-c79b-4189-9a4e-b2ff9ba8f738",
-    "name": "CUP, UNIT-DOSE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Single-dose cup for individual patient use",
-    "kode": "CUP-UD",
-    "nci_code": "C43188"
-  },
-  {
-    "id": "f2988235-c24a-4263-a1eb-ac9c9f7a328e",
-    "name": "CYLINDER",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Cylindrical container for gas or liquid medications",
-    "kode": "CYL",
-    "nci_code": "C43189"
-  },
-  {
-    "id": "46ef9bd3-af1b-4012-91c0-21d5284aab9e",
-    "name": "DEWAR",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Cryogenic storage container for temperature-sensitive medications",
-    "kode": "DEW",
-    "nci_code": "C43190"
-  },
-  {
-    "id": "672851ef-c43e-4513-a408-0e5f52be42f6",
-    "name": "DIALPACK",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Specialized dispensing system for controlled medication release",
-    "kode": "DIA",
-    "nci_code": "C43191"
-  },
-  {
-    "id": "6366e295-0400-4019-a682-ba7c5526c0d4",
-    "name": "DOSE PACK",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Pre-packaged medication in individual dose containers",
-    "kode": "DOS",
-    "nci_code": "C43192"
-  },
-  {
-    "id": "01064a78-5366-431c-be2f-282d9c20a08f",
-    "name": "DRUM",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Large cylindrical container for bulk pharmaceutical storage",
-    "kode": "DRM",
-    "nci_code": "C43193"
-  },
-  {
-    "id": "dfaa6581-23f9-423e-8bd0-ab279428acdf",
-    "name": "INHALER",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Device for delivering medication to respiratory system",
-    "kode": "INH",
-    "nci_code": "C16738"
-  },
-  {
-    "id": "8205bab2-953d-4f8f-b4cd-aff397827c05",
-    "name": "INHALER, REFILL",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Refillable cartridge for inhaler devices",
-    "kode": "INH-R",
-    "nci_code": "C43194"
-  },
-  {
-    "id": "ba2a2454-df90-4633-80a7-cb008bba5b95",
-    "name": "JAR",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Wide-mouth container for creams, ointments, or solids",
-    "kode": "JAR",
-    "nci_code": "C43195"
-  },
-  {
-    "id": "ed3c9c10-231a-4828-974f-1b1133f98a50",
-    "name": "JUG",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Large container with handle for liquid medications",
-    "kode": "JUG",
-    "nci_code": "C43196"
-  },
-  {
-    "id": "dc89a401-7946-455c-8a37-2482f5b5c8a5",
-    "name": "KIT",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Complete set of components for medication preparation or administration",
-    "kode": "KIT",
-    "nci_code": "C43197"
-  },
-  {
-    "id": "54eefba8-7521-4054-932a-68de189cef05",
-    "name": "NOT APPLICABLE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Package type not applicable or not specified",
-    "kode": "N/A",
-    "nci_code": "C123723"
-  },
-  {
-    "id": "90d9c9ed-6c6e-4d20-b52a-20866d6deb80",
-    "name": "PACKAGE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "General medication packaging container",
-    "kode": "PKG",
-    "nci_code": "C43233"
-  },
-  {
-    "id": "ade74c62-7f5a-4f2c-8b7e-82cc137dcf1a",
-    "name": "PACKAGE, COMBINATION",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Package containing multiple different medications",
-    "kode": "PKG-C",
-    "nci_code": "C43198"
-  },
-  {
-    "id": "a1cd33de-8b70-49e3-93df-544ea3ee4be3",
-    "name": "PACKET",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Small sealed package for single or multiple doses",
-    "kode": "PCK",
-    "nci_code": "C43199"
-  },
-  {
-    "id": "1d78c072-dc94-4afd-b163-f3ac4e85baf6",
-    "name": "PAIL",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Bucket-like container for bulk pharmaceutical materials",
-    "kode": "PAL",
-    "nci_code": "C79136"
-  },
-  {
-    "id": "aca23959-4110-4a60-a2ea-f9fcecdbde22",
-    "name": "PATCH",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Transdermal delivery system for medication absorption through skin",
-    "kode": "PAT",
-    "nci_code": "C82332"
-  },
-  {
-    "id": "ab796a3d-7c52-46a8-8c0d-ec5f734e7fa2",
-    "name": "POUCH",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Flexible sealed container for sterile or non-sterile medications",
-    "kode": "POU",
-    "nci_code": "C43200"
-  },
-  {
-    "id": "24081b72-75f5-4ef1-be26-f7efa3bae3f8",
-    "name": "SUPERSACK",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Extra-large bulk container for pharmaceutical raw materials",
-    "kode": "SUP",
-    "nci_code": "C43201"
-  },
-  {
-    "id": "4c442721-ab9f-4fcc-84cf-0cb99e0ecd1a",
-    "name": "SYRINGE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Injection device with plunger for precise medication delivery",
-    "kode": "SYR",
-    "nci_code": "C43202"
-  },
-  {
-    "id": "c29a7843-f6b1-496d-9a8e-459c13df5198",
-    "name": "SYRINGE, GLASS",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Glass syringe for chemical-sensitive medications",
-    "kode": "SYR-G",
-    "nci_code": "C43203"
-  },
-  {
-    "id": "6e38592a-1802-48f7-aeb4-35022287b679",
-    "name": "SYRINGE, PLASTIC",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Plastic syringe for general injection use",
-    "kode": "SYR-P",
-    "nci_code": "C43204"
-  },
-  {
-    "id": "166e45c7-eb2d-42ae-aef8-dc5389890481",
-    "name": "TABMINDER",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Compliance packaging system for medication adherence",
-    "kode": "TAB",
-    "nci_code": "C43205"
-  },
-  {
-    "id": "c28b166f-89a1-4b5e-af81-63748ef6ccb3",
-    "name": "TANK",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Large container for bulk liquid pharmaceutical storage",
-    "kode": "TNK",
-    "nci_code": "C43206"
-  },
-  {
-    "id": "2a8f145b-655d-4f44-b830-f5362bac0fe7",
-    "name": "TRAY",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Flat container for organizing and dispensing medications",
-    "kode": "TRY",
-    "nci_code": "C53438"
-  },
-  {
-    "id": "5ec5ff3d-28b8-49b3-b7c2-dca41571e724",
-    "name": "TUBE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Flexible container for creams, gels, or paste medications",
-    "kode": "TUB",
-    "nci_code": "C42794"
-  },
-  {
-    "id": "2f027441-6f37-4178-aa58-15f91bfaa34c",
-    "name": "TUBE, WITH APPLICATOR",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Tube with integrated applicator for precise topical application",
-    "kode": "TUB-A",
-    "nci_code": "C43207"
-  },
-  {
-    "id": "a9d88fd7-b631-4919-a8e9-0e2bb05e041a",
-    "name": "VIAL",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Small container for liquid medications, typically injectable",
-    "kode": "VIA",
-    "nci_code": "C43226"
-  },
-  {
-    "id": "a8e85736-2154-49db-b0bd-798bea7fba80",
-    "name": "VIAL, DISPENSING",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Vial designed for controlled medication dispensing",
-    "kode": "VIA-D",
-    "nci_code": "C43208"
-  },
-  {
-    "id": "27455a2c-bfe4-4475-832a-ee40de7a0653",
-    "name": "VIAL, GLASS",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Glass vial for light-sensitive or reactive medications",
-    "kode": "VIA-G",
-    "nci_code": "C43209"
-  },
-  {
-    "id": "5f1b4ff9-b760-429f-a0f3-7795351403ca",
-    "name": "VIAL, MULTI-DOSE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Vial containing multiple doses for repeated use",
-    "kode": "VIA-M",
-    "nci_code": "C43210"
-  },
-  {
-    "id": "d81237fd-5c34-48d8-bd14-13a3369dee76",
-    "name": "VIAL, PATENT DELIVERY SYSTEM",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Vial with proprietary delivery mechanism",
-    "kode": "VIA-PDS",
-    "nci_code": "C43211"
-  },
-  {
-    "id": "d70bf32f-6701-45a2-a855-9a2518d4c4cd",
-    "name": "VIAL, PHARMACY BULK PACKAGE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Large vial for pharmacy compounding and dispensing",
-    "kode": "VIA-PBP",
-    "nci_code": "C43212"
-  },
-  {
-    "id": "bae2f030-b37c-474c-8055-1870efe4ac80",
-    "name": "VIAL, PIGGYBACK",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Vial designed for IV piggyback administration",
-    "kode": "VIA-PB",
-    "nci_code": "C43213"
-  },
-  {
-    "id": "c22a2a2e-78aa-45b3-b00e-f2390a92d9bd",
-    "name": "VIAL, PLASTIC",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Plastic vial for general medication storage",
-    "kode": "VIA-P",
-    "nci_code": "C43214"
-  },
-  {
-    "id": "bdd64d83-d04c-4bb5-b0dc-cd9e598a1b0a",
-    "name": "VIAL, SINGLE-DOSE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Vial containing exactly one dose of medication",
-    "kode": "VIA-SD",
-    "nci_code": "C43215"
-  },
-  {
-    "id": "9373fd3b-18e1-4052-b898-921aaa28ffcc",
-    "name": "VIAL, SINGLE-USE",
-    "created_at": "2025-08-02T12:20:34.674Z",
-    "updated_at": "2025-08-02T12:20:34.674Z",
-    "description": "Vial intended for one-time use only",
-    "kode": "VIA-SU",
-    "nci_code": "C43216"
+    "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
+    "code": "AMP",
+    "name": "Ampoule,",
+    "description": "Ampoule container",
+    "created_at": "2025-08-04T05:44:15.128Z",
+    "updated_at": "2025-08-05T05:10:34.267Z"
   }
 ]

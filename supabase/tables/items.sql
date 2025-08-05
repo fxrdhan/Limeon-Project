@@ -1,5 +1,5 @@
 -- Table Definition: items
--- Exported from Supabase on: 2025-08-03T03:25:40.340Z
+-- Exported from Supabase on: 2025-08-05T13:14:25.977Z
 
 CREATE TABLE public.items (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -17,11 +17,11 @@ CREATE TABLE public.items (
   is_medicine boolean DEFAULT true,
   category_id uuid,
   type_id uuid,
-  unit_id uuid,
   base_unit text,
   base_price numeric DEFAULT 0,
-  unit_conversions jsonb DEFAULT '[]'::jsonb,
+  package_conversions jsonb DEFAULT '[]'::jsonb,
   barcode text,
   manufacturer character varying(100),
-  dosage_id uuid
+  dosage_id uuid,
+  package_id uuid NOT NULL
 );

@@ -21,7 +21,7 @@ export const useAddItemMutations = ({
    */
   const addCategoryMutation = useMutation({
     mutationFn: async (newCategory: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -29,7 +29,7 @@ export const useAddItemMutations = ({
       const { data, error } = await supabase
         .from('item_categories')
         .insert(newCategory)
-        .select('id, kode, name, description, created_at, updated_at')
+        .select('id, code, name, description, created_at, updated_at')
         .single();
       if (error) throw error;
       return data;
@@ -47,7 +47,7 @@ export const useAddItemMutations = ({
    */
   const addTypeMutation = useMutation({
     mutationFn: async (newType: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -55,7 +55,7 @@ export const useAddItemMutations = ({
       const { data, error } = await supabase
         .from('item_types')
         .insert(newType)
-        .select('id, kode, name, description, created_at, updated_at')
+        .select('id, code, name, description, created_at, updated_at')
         .single();
       if (error) throw error;
       return data;
@@ -98,7 +98,7 @@ export const useAddItemMutations = ({
    */
   const addDosageMutation = useMutation({
     mutationFn: async (newDosage: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -106,7 +106,7 @@ export const useAddItemMutations = ({
       const { data, error } = await supabase
         .from('item_dosages')
         .insert(newDosage)
-        .select('id, kode, name, description')
+        .select('id, code, name, description')
         .single();
       if (error) throw error;
       return data;
@@ -124,14 +124,14 @@ export const useAddItemMutations = ({
    */
   const addManufacturerMutation = useMutation({
     mutationFn: async (newManufacturer: {
-      kode?: string;
+      code?: string;
       name: string;
       address?: string;
     }) => {
       const { data, error } = await supabase
         .from('item_manufacturers')
         .insert(newManufacturer)
-        .select('id, kode, name, address')
+        .select('id, code, name, address')
         .single();
       if (error) throw error;
       return data;
@@ -354,7 +354,7 @@ export const useAddItemMutations = ({
    * Helper functions for saving related entities
    */
   const saveCategory = async (categoryData: {
-    kode?: string;
+    code?: string;
     name: string;
     description?: string;
     address?: string;
@@ -363,7 +363,7 @@ export const useAddItemMutations = ({
       const newCategory = await addCategoryMutation.mutateAsync(categoryData);
       const { data: updatedCategories } = await supabase
         .from('item_categories')
-        .select('id, kode, name, description, created_at, updated_at')
+        .select('id, code, name, description, created_at, updated_at')
         .order('name');
 
       return { newCategory, updatedCategories: updatedCategories || [] };
@@ -374,7 +374,7 @@ export const useAddItemMutations = ({
   };
 
   const saveType = async (typeData: {
-    kode?: string;
+    code?: string;
     name: string;
     description?: string;
     address?: string;
@@ -383,7 +383,7 @@ export const useAddItemMutations = ({
       const newType = await addTypeMutation.mutateAsync(typeData);
       const { data: updatedTypes } = await supabase
         .from('item_types')
-        .select('id, kode, name, description, created_at, updated_at')
+        .select('id, code, name, description, created_at, updated_at')
         .order('name');
 
       return { newType, updatedTypes: updatedTypes || [] };
@@ -413,7 +413,7 @@ export const useAddItemMutations = ({
   };
 
   const saveDosage = async (dosageData: {
-    kode?: string;
+    code?: string;
     name: string;
     description?: string;
     address?: string;
@@ -422,7 +422,7 @@ export const useAddItemMutations = ({
       const newDosage = await addDosageMutation.mutateAsync(dosageData);
       const { data: updatedDosages } = await supabase
         .from('item_dosages')
-        .select('id, kode, name, description, created_at, updated_at')
+        .select('id, code, name, description, created_at, updated_at')
         .order('name');
 
       return { newDosage, updatedDosages: updatedDosages || [] };
@@ -433,7 +433,7 @@ export const useAddItemMutations = ({
   };
 
   const saveManufacturer = async (manufacturerData: {
-    kode?: string;
+    code?: string;
     name: string;
     address?: string;
   }) => {
@@ -442,7 +442,7 @@ export const useAddItemMutations = ({
         await addManufacturerMutation.mutateAsync(manufacturerData);
       const { data: updatedManufacturers } = await supabase
         .from('item_manufacturers')
-        .select('id, kode, name, address, created_at, updated_at')
+        .select('id, code, name, address, created_at, updated_at')
         .order('name');
 
       return {

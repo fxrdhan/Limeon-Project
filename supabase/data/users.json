@@ -13,9 +13,9 @@
     "id": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
     "name": "tester",
     "email": "tester@email.com",
-    "role": "staff",
+    "role": "Admin",
     "created_at": "2025-06-20T19:13:12.823Z",
-    "updated_at": "2025-06-20T19:13:12.823Z",
+    "updated_at": "2025-08-04T21:05:09.767Z",
     "profilephoto": null,
     "profilephoto_path": null
   }

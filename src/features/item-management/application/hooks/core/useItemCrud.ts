@@ -295,7 +295,7 @@ export const useAddItemForm = ({
 
   const handleSaveCategory = useCallback(
     async (categoryData: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -317,7 +317,7 @@ export const useAddItemForm = ({
 
   const handleSaveType = useCallback(
     async (typeData: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -356,7 +356,7 @@ export const useAddItemForm = ({
 
   const handleSaveDosage = useCallback(
     async (dosageData: {
-      kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -377,7 +377,7 @@ export const useAddItemForm = ({
 
   const handleSaveManufacturer = useCallback(
     async (manufacturerData: {
-      kode?: string;
+      code?: string;
       name: string;
       address?: string;
     }) => {

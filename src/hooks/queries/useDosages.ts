@@ -12,8 +12,8 @@ export const useDosages = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_dosages')
-        .select('id, kode, name, nci_code, description, created_at, updated_at')
-        .order('kode');
+        .select('id, code, name, nci_code, description, created_at, updated_at')
+        .order('code');
 
       if (error) throw error;
       return data || [];
@@ -31,8 +31,8 @@ export const useDosagesRealtime = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_dosages')
-        .select('id, kode, name, nci_code, description, created_at, updated_at')
-        .order('kode');
+        .select('id, code, name, nci_code, description, created_at, updated_at')
+        .order('code');
 
       if (error) throw error;
       return data || [];
@@ -47,7 +47,7 @@ export const useDosageMutations = () => {
 
   const createMutation = useMutation({
     mutationFn: async (dosageData: {
-      kode?: string;
+      code?: string;
       name: string;
       description: string;
     }) => {

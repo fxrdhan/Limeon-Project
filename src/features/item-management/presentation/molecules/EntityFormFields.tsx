@@ -11,20 +11,20 @@ const EntityFormFields: React.FC<EntityFormFieldsProps> = ({
   nameInputRef,
 }) => {
   const { form, ui, action, formActions } = useEntityModal();
-  const { kode, name, description, address } = form;
+  const { code, name, description, address } = form;
   const { entityName } = ui;
   const { isLoading, isDeleting } = action;
-  const { setKode, setName, setDescription, setAddress } = formActions;
+  const { setCode, setName, setDescription, setAddress } = formActions;
 
   const isReadOnly = isLoading || isDeleting;
 
   return (
     <div className="p-6 space-y-4">
-      {setKode && (
+      {setCode && (
         <Input
           label={`Kode ${entityName}`}
-          value={kode || ''}
-          onChange={e => setKode(e.target.value)}
+          value={code || ''}
+          onChange={e => setCode(e.target.value)}
           placeholder={`Masukkan kode ${entityName.toLowerCase()}`}
           required
           readOnly={isReadOnly}

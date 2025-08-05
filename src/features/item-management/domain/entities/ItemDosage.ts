@@ -1,7 +1,7 @@
 // ItemDosage entity definition
 export interface ItemDosage {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   nci_code?: string;
   description?: string;
@@ -10,7 +10,7 @@ export interface ItemDosage {
 }
 
 export interface ItemDosageCreateInput {
-  kode?: string;
+  code?: string;
   name: string;
   nci_code?: string;
   description?: string;
@@ -18,7 +18,7 @@ export interface ItemDosageCreateInput {
 
 export interface ItemDosageUpdateInput {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   nci_code?: string;
   description?: string;

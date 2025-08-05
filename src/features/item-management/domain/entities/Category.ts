@@ -1,7 +1,7 @@
 // ItemCategory entity definition  
 export interface ItemCategory {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   description?: string;
   created_at: string;
@@ -9,14 +9,14 @@ export interface ItemCategory {
 }
 
 export interface ItemCategoryCreateInput {
-  kode?: string;
+  code?: string;
   name: string;
   description?: string;
 }
 
 export interface ItemCategoryUpdateInput {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   description?: string;
 }

@@ -1,4 +1,4 @@
 -- Trigger: set_updated_at on table patients
--- Exported from Supabase on: 2025-08-03T03:25:40.238Z
+-- Exported from Supabase on: 2025-08-05T13:14:25.871Z
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.patients FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

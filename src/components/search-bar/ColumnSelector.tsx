@@ -4,7 +4,7 @@ import { SearchColumn, ColumnSelectorProps } from '@/types/search';
 import { LuHash, LuSearch, LuFilter } from 'react-icons/lu';
 import { HiOutlineSparkles } from 'react-icons/hi2';
 
-type AnimationPhase = 'hidden' | 'header' | 'footer' | 'content' | 'complete';
+type AnimationPhase = 'hidden' | 'header' | 'footer' | 'content' | 'complete' | 'closing';
 
 const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   columns,
@@ -25,7 +25,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   // Animation sequence effect
   useEffect(() => {
     if (isOpen && animationPhase === 'hidden') {
-      // Start animation sequence
+      // Start opening animation sequence
       setAnimationPhase('header');
 
       // Show footer after header
@@ -42,9 +42,14 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       setTimeout(() => {
         setAnimationPhase('complete');
       }, 650);
-    } else if (!isOpen && animationPhase !== 'hidden') {
-      // Reset animation when closing
-      setAnimationPhase('hidden');
+    } else if (!isOpen && (animationPhase === 'complete' || animationPhase === 'content' || animationPhase === 'footer' || animationPhase === 'header')) {
+      // Start closing animation sequence
+      setAnimationPhase('closing');
+      
+      // Complete closing after animation duration
+      setTimeout(() => {
+        setAnimationPhase('hidden');
+      }, 200); // 200ms for faster closing animation
     }
   }, [isOpen, animationPhase]);
 
@@ -190,8 +195,8 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
     };
   }, [isOpen, animationPhase, onClose]);
 
-  // Don't render if not open
-  if (!isOpen && animationPhase === 'hidden') return null;
+  // Don't render if completely hidden
+  if (animationPhase === 'hidden') return null;
 
   const getColumnIcon = (column: SearchColumn) => {
     switch (column.type) {
@@ -216,8 +221,8 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
     >
       {/* Header - fades in first */}
       <div
-        className={`flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg transition-opacity duration-300 ${
-          animationPhase === 'hidden' ? 'opacity-0' : 'opacity-100'
+        className={`flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg transition-opacity duration-200 ${
+          animationPhase === 'closing' ? 'opacity-0' : 'opacity-100'
         }`}
       >
         <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -228,18 +233,18 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
 
       {/* Content - appears last with smooth slide and fade */}
       <div
-        className={`flex-1 overflow-y-auto min-h-0 transition-all duration-500 ease-out ${
-          animationPhase === 'hidden' ||
+        className={`flex-1 overflow-y-auto min-h-0 transition-all duration-300 ease-out ${
           animationPhase === 'header' ||
-          animationPhase === 'footer'
+          animationPhase === 'footer' ||
+          animationPhase === 'closing'
             ? 'opacity-0 max-h-0'
             : 'opacity-100 max-h-64'
         }`}
         style={{
           transform:
-            animationPhase === 'hidden' ||
             animationPhase === 'header' ||
-            animationPhase === 'footer'
+            animationPhase === 'footer' ||
+            animationPhase === 'closing'
               ? 'translateY(-10px)'
               : 'translateY(0px)',
         }}
@@ -297,8 +302,8 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
 
       {/* Footer - fades in second */}
       <div
-        className={`flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg transition-opacity duration-300 ${
-          animationPhase === 'hidden' || animationPhase === 'header'
+        className={`flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg transition-opacity duration-200 ${
+          animationPhase === 'header' || animationPhase === 'closing'
             ? 'opacity-0'
             : 'opacity-100'
         }`}

@@ -1,7 +1,7 @@
 // ItemManufacturer entity definition
 export interface ItemManufacturer {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   address?: string;
   created_at: string;
@@ -9,14 +9,14 @@ export interface ItemManufacturer {
 }
 
 export interface ItemManufacturerCreateInput {
-  kode?: string;
+  code?: string;
   name: string;
   address?: string;
 }
 
 export interface ItemManufacturerUpdateInput {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   address?: string;
 }

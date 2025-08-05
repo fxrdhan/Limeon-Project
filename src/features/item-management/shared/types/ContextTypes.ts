@@ -97,31 +97,31 @@ export interface ItemBusinessActions {
   ) => void;
   handleDeleteItem: () => void;
   handleSaveCategory: (data: {
-    kode?: string;
+    code?: string;
     name: string;
     description?: string;
     address?: string;
   }) => Promise<void>;
   handleSaveType: (data: {
-    kode?: string;
+    code?: string;
     name: string;
     description?: string;
     address?: string;
   }) => Promise<void>;
   handleSaveUnit: (data: {
-    kode?: string;
+    code?: string;
     name: string;
     description?: string;
     address?: string;
   }) => Promise<void>;
   handleSaveDosage: (data: {
-    kode?: string;
+    code?: string;
     name: string;
     description?: string;
     address?: string;
   }) => Promise<void>;
   handleSaveManufacturer: (data: {
-    kode?: string;
+    code?: string;
     name: string;
     address?: string;
   }) => Promise<void>;
@@ -155,7 +155,7 @@ export type ModalMode = 'add' | 'edit' | 'history';
 export interface EntityModalContextValue {
   // State
   form: {
-    kode?: string;
+    code?: string;
     name: string;
     description: string;
     address?: string;
@@ -190,7 +190,7 @@ export interface EntityModalContextValue {
 
   // Actions
   formActions: {
-    setKode?: (kode: string) => void;
+    setCode?: (code: string) => void;
     setName: (name: string) => void;
     setDescription: (description: string) => void;
     setAddress?: (address: string) => void;
