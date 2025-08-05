@@ -22,8 +22,10 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
 
   const fetchHistory = useCallback(async () => {
     if (!entityTable || !entityId) {
-      if (HISTORY_DEBUG)
-        console.log('Missing params:', { entityTable, entityId });
+      // Only log if entityTable exists but entityId is missing (unexpected case)
+      // Don't log when both are missing (expected for ADD mode)
+      if (HISTORY_DEBUG && entityTable && !entityId)
+        console.log('Missing entityId for history:', { entityTable, entityId });
       return;
     }
 
