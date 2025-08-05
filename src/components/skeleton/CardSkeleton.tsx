@@ -25,7 +25,7 @@ const CardSkeleton: React.FC<CardSkeletonProps> = ({
           <Skeleton className="h-6 w-48" animate={animate} />
         </div>
       )}
-      
+
       {showBody && (
         <div className="space-y-3">
           <SkeletonText lines={bodyLines} animate={animate} />

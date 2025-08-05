@@ -27,20 +27,27 @@ export const ItemUnitRules = {
   maxNameLength: 100,
   maxDescriptionLength: 500,
   requiredFields: ['name'] as const,
-  
+
   validate: (data: Partial<ItemUnit>): string[] => {
     const errors: string[] = [];
-    
+
     if (!data.name?.trim()) {
       errors.push('Nama satuan wajib diisi');
     } else if (data.name.length > ItemUnitRules.maxNameLength) {
-      errors.push(`Nama satuan maksimal ${ItemUnitRules.maxNameLength} karakter`);
+      errors.push(
+        `Nama satuan maksimal ${ItemUnitRules.maxNameLength} karakter`
+      );
     }
-    
-    if (data.description && data.description.length > ItemUnitRules.maxDescriptionLength) {
-      errors.push(`Deskripsi maksimal ${ItemUnitRules.maxDescriptionLength} karakter`);
+
+    if (
+      data.description &&
+      data.description.length > ItemUnitRules.maxDescriptionLength
+    ) {
+      errors.push(
+        `Deskripsi maksimal ${ItemUnitRules.maxDescriptionLength} karakter`
+      );
     }
-    
+
     return errors;
-  }
+  },
 };

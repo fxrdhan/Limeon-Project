@@ -11,10 +11,13 @@ import {
   useCategoryMutations,
   useMedicineTypeMutations,
   useUnitMutations,
-  useItemUnitMutations
+  useItemUnitMutations,
 } from '@/hooks/queries/useMasterData';
 import { useDosages, useDosageMutations } from '@/hooks/queries/useDosages';
-import { useManufacturers, useManufacturerMutations } from '@/hooks/queries/useManufacturers';
+import {
+  useManufacturers,
+  useManufacturerMutations,
+} from '@/hooks/queries/useManufacturers';
 
 export interface UseGenericEntityManagementOptions {
   entityType: EntityType;
@@ -68,7 +71,9 @@ const getHooksForEntityType = (entityType: EntityType) => {
   }
 };
 
-export const useGenericEntityManagement = (options: UseGenericEntityManagementOptions) => {
+export const useGenericEntityManagement = (
+  options: UseGenericEntityManagementOptions
+) => {
   const {
     entityType,
     search = '',
@@ -102,63 +107,123 @@ export const useGenericEntityManagement = (options: UseGenericEntityManagementOp
       filteredData = filteredData
         .filter(entity => {
           // Check for kode field (most entities)
-          if ('kode' in entity && typeof entity.kode === 'string' && 
-              fuzzyMatch(entity.kode.toLowerCase(), searchTermLower)) return true;
-          
+          if (
+            'kode' in entity &&
+            typeof entity.kode === 'string' &&
+            fuzzyMatch(entity.kode.toLowerCase(), searchTermLower)
+          )
+            return true;
+
           // Check for code field (units entity)
-          if ('code' in entity && typeof entity.code === 'string' && 
-              fuzzyMatch(entity.code.toLowerCase(), searchTermLower)) return true;
-          
+          if (
+            'code' in entity &&
+            typeof entity.code === 'string' &&
+            fuzzyMatch(entity.code.toLowerCase(), searchTermLower)
+          )
+            return true;
+
           // Check name
-          if (entity.name && fuzzyMatch(entity.name, searchTermLower)) return true;
-          
+          if (entity.name && fuzzyMatch(entity.name, searchTermLower))
+            return true;
+
           // Check description
-          if ('description' in entity && typeof entity.description === 'string' && 
-              fuzzyMatch(entity.description, searchTermLower)) return true;
-          
+          if (
+            'description' in entity &&
+            typeof entity.description === 'string' &&
+            fuzzyMatch(entity.description, searchTermLower)
+          )
+            return true;
+
           // Check address (for manufacturers)
-          if ('address' in entity && typeof entity.address === 'string' && 
-              fuzzyMatch(entity.address, searchTermLower)) return true;
-          
+          if (
+            'address' in entity &&
+            typeof entity.address === 'string' &&
+            fuzzyMatch(entity.address, searchTermLower)
+          )
+            return true;
+
           // Check nci_code (for packages and dosages)
-          if ('nci_code' in entity && typeof entity.nci_code === 'string' && 
-              fuzzyMatch(entity.nci_code, searchTermLower)) return true;
-          
+          if (
+            'nci_code' in entity &&
+            typeof entity.nci_code === 'string' &&
+            fuzzyMatch(entity.nci_code, searchTermLower)
+          )
+            return true;
+
           // Check abbreviation (for units)
-          if ('abbreviation' in entity && typeof entity.abbreviation === 'string' && 
-              fuzzyMatch(entity.abbreviation, searchTermLower)) return true;
+          if (
+            'abbreviation' in entity &&
+            typeof entity.abbreviation === 'string' &&
+            fuzzyMatch(entity.abbreviation, searchTermLower)
+          )
+            return true;
 
           return false;
         })
         .sort((a, b) => {
           const getScore = (entity: EntityData) => {
             // Check kode/code first (highest priority)
-            if ('kode' in entity && typeof entity.kode === 'string' && 
-                entity.kode.toLowerCase().startsWith(searchTermLower)) return 5;
-            if ('kode' in entity && typeof entity.kode === 'string' && 
-                entity.kode.toLowerCase().includes(searchTermLower)) return 4;
-            if ('code' in entity && typeof entity.code === 'string' && 
-                entity.code.toLowerCase().startsWith(searchTermLower)) return 5;
-            if ('code' in entity && typeof entity.code === 'string' && 
-                entity.code.toLowerCase().includes(searchTermLower)) return 4;
-            
+            if (
+              'kode' in entity &&
+              typeof entity.kode === 'string' &&
+              entity.kode.toLowerCase().startsWith(searchTermLower)
+            )
+              return 5;
+            if (
+              'kode' in entity &&
+              typeof entity.kode === 'string' &&
+              entity.kode.toLowerCase().includes(searchTermLower)
+            )
+              return 4;
+            if (
+              'code' in entity &&
+              typeof entity.code === 'string' &&
+              entity.code.toLowerCase().startsWith(searchTermLower)
+            )
+              return 5;
+            if (
+              'code' in entity &&
+              typeof entity.code === 'string' &&
+              entity.code.toLowerCase().includes(searchTermLower)
+            )
+              return 4;
+
             // Then check name
-            if (entity.name && entity.name.toLowerCase().startsWith(searchTermLower)) return 3;
-            if (entity.name && entity.name.toLowerCase().includes(searchTermLower)) return 2;
-            if (entity.name && fuzzyMatch(entity.name, searchTermLower)) return 1;
-            
+            if (
+              entity.name &&
+              entity.name.toLowerCase().startsWith(searchTermLower)
+            )
+              return 3;
+            if (
+              entity.name &&
+              entity.name.toLowerCase().includes(searchTermLower)
+            )
+              return 2;
+            if (entity.name && fuzzyMatch(entity.name, searchTermLower))
+              return 1;
+
             return 0;
           };
-          
+
           const scoreA = getScore(a);
           const scoreB = getScore(b);
           if (scoreA !== scoreB) return scoreB - scoreA;
-          
+
           // Secondary sort by kode/code if available, then name
-          if ('kode' in a && 'kode' in b && typeof a.kode === 'string' && typeof b.kode === 'string') {
+          if (
+            'kode' in a &&
+            'kode' in b &&
+            typeof a.kode === 'string' &&
+            typeof b.kode === 'string'
+          ) {
             return a.kode.localeCompare(b.kode);
           }
-          if ('code' in a && 'code' in b && typeof a.code === 'string' && typeof b.code === 'string') {
+          if (
+            'code' in a &&
+            'code' in b &&
+            typeof a.code === 'string' &&
+            typeof b.code === 'string'
+          ) {
             return a.code.localeCompare(b.code);
           }
           return a.name.localeCompare(b.name);
@@ -185,16 +250,16 @@ export const useGenericEntityManagement = (options: UseGenericEntityManagementOp
     allData,
     totalItems,
     totalPages,
-    
+
     // Loading states
     isLoading,
     isError,
     error,
     isFetching,
-    
+
     // Mutations
     mutations,
-    
+
     // Computed
     isEmpty: currentData.length === 0,
     hasData: currentData.length > 0,

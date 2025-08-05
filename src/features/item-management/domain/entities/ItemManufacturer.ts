@@ -26,20 +26,27 @@ export const ItemManufacturerRules = {
   maxNameLength: 100,
   maxAddressLength: 500,
   requiredFields: ['name'] as const,
-  
+
   validate: (data: Partial<ItemManufacturer>): string[] => {
     const errors: string[] = [];
-    
+
     if (!data.name?.trim()) {
       errors.push('Nama produsen wajib diisi');
     } else if (data.name.length > ItemManufacturerRules.maxNameLength) {
-      errors.push(`Nama produsen maksimal ${ItemManufacturerRules.maxNameLength} karakter`);
+      errors.push(
+        `Nama produsen maksimal ${ItemManufacturerRules.maxNameLength} karakter`
+      );
     }
-    
-    if (data.address && data.address.length > ItemManufacturerRules.maxAddressLength) {
-      errors.push(`Alamat maksimal ${ItemManufacturerRules.maxAddressLength} karakter`);
+
+    if (
+      data.address &&
+      data.address.length > ItemManufacturerRules.maxAddressLength
+    ) {
+      errors.push(
+        `Alamat maksimal ${ItemManufacturerRules.maxAddressLength} karakter`
+      );
     }
-    
+
     return errors;
-  }
+  },
 };

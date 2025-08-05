@@ -3,9 +3,7 @@ import { PiKeyReturnBold } from 'react-icons/pi';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
 import Input from '@/components/input';
-import type {
-  PackageConversionLogicFormData,
-} from '../../shared/types';
+import type { PackageConversionLogicFormData } from '../../shared/types';
 import type { UnitData } from '@/types/database';
 
 interface LocalPackageConversionInputProps {

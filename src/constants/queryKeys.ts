@@ -217,10 +217,7 @@ export const getInvalidationKeys = {
       QueryKeys.masterData.manufacturers.all,
       QueryKeys.items.all,
     ],
-    itemUnits: () => [
-      QueryKeys.masterData.itemUnits.all,
-      QueryKeys.items.all,
-    ],
+    itemUnits: () => [QueryKeys.masterData.itemUnits.all, QueryKeys.items.all],
   },
   patients: {
     all: () => [QueryKeys.patients.all],

@@ -4,9 +4,7 @@ import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import type { ItemDosage } from '@/features/item-management/domain/entities/ItemDosage';
 
 // Simple dosages hook without realtime
-export const useDosages = ({
-  enabled = true,
-}: { enabled?: boolean } = {}) => {
+export const useDosages = ({ enabled = true }: { enabled?: boolean } = {}) => {
   return useQuery<ItemDosage[]>({
     queryKey: QueryKeys.masterData.dosages.list(),
     queryFn: async () => {

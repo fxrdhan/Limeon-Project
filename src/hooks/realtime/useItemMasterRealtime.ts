@@ -29,14 +29,22 @@ export const useItemMasterRealtime = ({
 
     console.log('🔗 Setting up Item Master realtime (production)');
 
-    const handleTableChange = (tableName: string, payload: { eventType: string; new?: Record<string, unknown>; old?: Record<string, unknown>; commit_timestamp?: string }) => {
+    const handleTableChange = (
+      tableName: string,
+      payload: {
+        eventType: string;
+        new?: Record<string, unknown>;
+        old?: Record<string, unknown>;
+        commit_timestamp?: string;
+      }
+    ) => {
       console.log(`🔄 ${tableName} ${payload.eventType}:`);
       console.log('📦 Raw payload:', payload);
       console.log('🔵 New data:', payload.new);
       console.log('🔴 Old data:', payload.old);
       console.log('⏰ Timestamp:', payload.commit_timestamp);
       console.log('---');
-      
+
       // Invalidate all item master queries
       queryClient.invalidateQueries({ queryKey: ['items'] });
       queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -50,47 +58,83 @@ export const useItemMasterRealtime = ({
     };
 
     // All item master tables
-    const tables = ['items', 'item_categories', 'item_types', 'item_units', 'item_packages', 'item_dosages', 'item_manufacturers'];
+    const tables = [
+      'items',
+      'item_categories',
+      'item_types',
+      'item_units',
+      'item_packages',
+      'item_dosages',
+      'item_manufacturers',
+    ];
     const channelName = 'item-master-realtime';
-    
+
     const channel = supabase
       .channel(channelName)
-      .on('postgres_changes', {
-        schema: 'public',
-        table: 'items',
-        event: '*',
-      }, (payload) => handleTableChange('items', payload))
-      .on('postgres_changes', {
-        schema: 'public', 
-        table: 'item_categories',
-        event: '*',
-      }, (payload) => handleTableChange('item_categories', payload))
-      .on('postgres_changes', {
-        schema: 'public',
-        table: 'item_types', 
-        event: '*',
-      }, (payload) => handleTableChange('item_types', payload))
-      .on('postgres_changes', {
-        schema: 'public',
-        table: 'item_units',
-        event: '*',
-      }, (payload) => handleTableChange('item_units', payload))
-      .on('postgres_changes', {
-        schema: 'public',
-        table: 'item_packages',
-        event: '*',
-      }, (payload) => handleTableChange('item_packages', payload))
-      .on('postgres_changes', {
-        schema: 'public',
-        table: 'item_dosages',
-        event: '*',
-      }, (payload) => handleTableChange('item_dosages', payload))
-      .on('postgres_changes', {
-        schema: 'public',
-        table: 'item_manufacturers',
-        event: '*',
-      }, (payload) => handleTableChange('item_manufacturers', payload))
-      .subscribe((status) => {        
+      .on(
+        'postgres_changes',
+        {
+          schema: 'public',
+          table: 'items',
+          event: '*',
+        },
+        payload => handleTableChange('items', payload)
+      )
+      .on(
+        'postgres_changes',
+        {
+          schema: 'public',
+          table: 'item_categories',
+          event: '*',
+        },
+        payload => handleTableChange('item_categories', payload)
+      )
+      .on(
+        'postgres_changes',
+        {
+          schema: 'public',
+          table: 'item_types',
+          event: '*',
+        },
+        payload => handleTableChange('item_types', payload)
+      )
+      .on(
+        'postgres_changes',
+        {
+          schema: 'public',
+          table: 'item_units',
+          event: '*',
+        },
+        payload => handleTableChange('item_units', payload)
+      )
+      .on(
+        'postgres_changes',
+        {
+          schema: 'public',
+          table: 'item_packages',
+          event: '*',
+        },
+        payload => handleTableChange('item_packages', payload)
+      )
+      .on(
+        'postgres_changes',
+        {
+          schema: 'public',
+          table: 'item_dosages',
+          event: '*',
+        },
+        payload => handleTableChange('item_dosages', payload)
+      )
+      .on(
+        'postgres_changes',
+        {
+          schema: 'public',
+          table: 'item_manufacturers',
+          event: '*',
+        },
+        payload => handleTableChange('item_manufacturers', payload)
+      )
+      .subscribe(status => {
         if (status === 'SUBSCRIBED') {
           console.log('✅ Item Master realtime connected');
           console.log('🔍 Monitoring:', tables.join(', '));
@@ -103,7 +147,7 @@ export const useItemMasterRealtime = ({
 
     return () => {
       globalSetupRef = false;
-      
+
       // Proper cleanup
       if (globalChannelRef) {
         try {

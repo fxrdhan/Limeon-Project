@@ -108,19 +108,22 @@ export function useUnifiedSearch({
   const searchDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debounced external search handler - prevents server calls on every character
-  const debouncedExternalSearch = useCallback((searchValue: string) => {
-    // Clear existing timer
-    if (searchDebounceTimerRef.current) {
-      clearTimeout(searchDebounceTimerRef.current);
-    }
-    
-    // Set new timer - only call external handler after user stops typing
-    searchDebounceTimerRef.current = setTimeout(() => {
-      if (searchMode === 'server' || searchMode === 'hybrid') {
-        stableOnSearch(searchValue);
+  const debouncedExternalSearch = useCallback(
+    (searchValue: string) => {
+      // Clear existing timer
+      if (searchDebounceTimerRef.current) {
+        clearTimeout(searchDebounceTimerRef.current);
       }
-    }, 200); // 200ms delay for server calls
-  }, [searchMode, stableOnSearch]);
+
+      // Set new timer - only call external handler after user stops typing
+      searchDebounceTimerRef.current = setTimeout(() => {
+        if (searchMode === 'server' || searchMode === 'hybrid') {
+          stableOnSearch(searchValue);
+        }
+      }, 200); // 200ms delay for server calls
+    },
+    [searchMode, stableOnSearch]
+  );
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
@@ -151,7 +154,7 @@ export function useUnifiedSearch({
           clearTimeout(searchDebounceTimerRef.current);
           searchDebounceTimerRef.current = null;
         }
-        
+
         // Clear all search states immediately
         if (searchMode === 'server' || searchMode === 'hybrid') {
           stableOnSearch('');
@@ -192,7 +195,7 @@ export function useUnifiedSearch({
           clearTimeout(searchDebounceTimerRef.current);
           searchDebounceTimerRef.current = null;
         }
-        
+
         // Clear all search states immediately
         if (searchMode === 'server' || searchMode === 'hybrid') {
           stableOnSearch('');
@@ -251,7 +254,7 @@ export function useUnifiedSearch({
       clearTimeout(searchDebounceTimerRef.current);
       searchDebounceTimerRef.current = null;
     }
-    
+
     originalClearSearch();
 
     // Call external clear handler if provided

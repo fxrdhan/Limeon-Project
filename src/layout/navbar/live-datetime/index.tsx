@@ -39,7 +39,10 @@ const DateTimeDisplay = () => {
   }, []);
 
   return (
-    <div className="text-md text-emerald-700 tracking-tight flex items-baseline tabular-nums" style={{ fontFamily: '"Google Sans Code", monospace' }}>
+    <div
+      className="text-md text-emerald-700 tracking-tight flex items-baseline tabular-nums"
+      style={{ fontFamily: '"Google Sans Code", monospace' }}
+    >
       {datePart && <span className="mr-1">{datePart} -</span>}
       <span>{hours || '--'}</span>
       <span className="mx-1">:</span>

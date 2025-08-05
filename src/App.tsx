@@ -87,12 +87,16 @@ function App() {
             <Route path="master-data">
               <Route
                 path="items"
-                element={<Navigate to="/master-data/item-master/items" replace />}
+                element={
+                  <Navigate to="/master-data/item-master/items" replace />
+                }
               />
               <Route
                 index
                 path="item-master"
-                element={<Navigate to="/master-data/item-master/items" replace />}
+                element={
+                  <Navigate to="/master-data/item-master/items" replace />
+                }
               />
               {/* Item Master sub-routes */}
               <Route path="item-master">
@@ -232,15 +236,21 @@ function App() {
               </Route>
               <Route
                 path="categories"
-                element={<Navigate to="/master-data/item-master/categories" replace />}
+                element={
+                  <Navigate to="/master-data/item-master/categories" replace />
+                }
               />
               <Route
                 path="types"
-                element={<Navigate to="/master-data/item-master/types" replace />}
+                element={
+                  <Navigate to="/master-data/item-master/types" replace />
+                }
               />
               <Route
                 path="units"
-                element={<Navigate to="/master-data/item-master/units" replace />}
+                element={
+                  <Navigate to="/master-data/item-master/units" replace />
+                }
               />
               <Route
                 path="suppliers"

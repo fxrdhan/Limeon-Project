@@ -203,7 +203,7 @@ const Sidebar = ({
   const hasActiveChild = useCallback(
     (children?: { path: string }[]) => {
       if (!children) return false;
-      
+
       // Check for exact match first
       const exactMatch = children.find(
         child => location.pathname === child.path
@@ -217,7 +217,7 @@ const Sidebar = ({
         }
         return location.pathname.startsWith(child.path + '/');
       });
-      
+
       return hasMatch;
     },
     [location.pathname]
@@ -558,9 +558,11 @@ const Sidebar = ({
 
                             {item.children &&
                               item.children.map(child => {
-                                const isActiveChild = 
-                                  child.path === '/master-data/item-master' 
-                                    ? location.pathname.startsWith('/master-data/item-master')
+                                const isActiveChild =
+                                  child.path === '/master-data/item-master'
+                                    ? location.pathname.startsWith(
+                                        '/master-data/item-master'
+                                      )
                                     : location.pathname === child.path;
                                 return (
                                   <div

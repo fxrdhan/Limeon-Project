@@ -19,7 +19,7 @@ const SkeletonText: React.FC<SkeletonTextProps> = ({
   return (
     <div className={`space-y-2 ${className}`}>
       {Array.from({ length: lines }, (_, index) => (
-        <Skeleton 
+        <Skeleton
           key={index}
           className={`h-4 ${index === lines - 1 ? 'w-3/4' : 'w-full'}`}
           animate={animate}

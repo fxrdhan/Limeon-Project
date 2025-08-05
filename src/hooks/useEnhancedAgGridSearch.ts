@@ -52,7 +52,6 @@ interface UseEnhancedAgGridSearchReturn {
   searchColumns: SearchColumn[];
 }
 
-
 /**
  * Custom hook for managing enhanced AG-Grid search functionality
  * Handles both client-side fuzzy search and targeted column search
@@ -96,7 +95,6 @@ export const useEnhancedAgGridSearch = (
   useEffect(() => {
     targetedSearchRef.current = targetedSearch;
   }, [targetedSearch]);
-
 
   const isExternalFilterPresent = useFuzzySearch
     ? () => {
@@ -146,7 +144,11 @@ export const useEnhancedAgGridSearch = (
       }
 
       // Simple refresh for AG Grid - no complex timeout logic needed
-      if (gridRef.current && useFuzzySearch && !gridRef.current.isDestroyed?.()) {
+      if (
+        gridRef.current &&
+        useFuzzySearch &&
+        !gridRef.current.isDestroyed?.()
+      ) {
         gridRef.current.onFilterChanged();
       }
     },
