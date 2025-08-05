@@ -8,8 +8,8 @@ export const useItemQueries = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_categories')
-        .select('id, kode, name, description, created_at, updated_at')
-        .order('kode');
+        .select('id, code, name, description, created_at, updated_at')
+        .order('code');
       if (error) throw error;
       return data || [];
     },
@@ -20,8 +20,8 @@ export const useItemQueries = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_types')
-        .select('id, kode, name, description, created_at, updated_at')
-        .order('kode');
+        .select('id, code, name, description, created_at, updated_at')
+        .order('code');
       if (error) throw error;
       return data || [];
     },
@@ -32,8 +32,8 @@ export const useItemQueries = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_packages')
-        .select('id, kode, name, description, created_at, updated_at')
-        .order('kode');
+        .select('id, code, name, description, created_at, updated_at')
+        .order('code');
       if (error) throw error;
       return data || [];
     },
@@ -44,8 +44,8 @@ export const useItemQueries = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_dosages')
-        .select('id, kode, name, description, created_at, updated_at')
-        .order('kode');
+        .select('id, code, name, description, created_at, updated_at')
+        .order('code');
       if (error) throw error;
       return data || [];
     },
@@ -56,7 +56,7 @@ export const useItemQueries = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_manufacturers')
-        .select('id, kode, name, address, created_at, updated_at')
+        .select('id, code, name, address, created_at, updated_at')
         .order('name');
       if (error) throw error;
       return data || [];

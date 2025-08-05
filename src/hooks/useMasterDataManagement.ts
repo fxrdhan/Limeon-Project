@@ -564,7 +564,7 @@ export const useMasterDataManagement = (
         alert.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
       }
     },
-    [mutations, entityNameLabel, alert, tableName, refetch]
+    [mutations, entityNameLabel, alert, refetch]
   );
 
   const handleDelete = useCallback(

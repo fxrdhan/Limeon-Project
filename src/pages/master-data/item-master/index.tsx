@@ -181,12 +181,7 @@ const ItemMasterNew = memo(() => {
   const tabConfigs = TAB_CONFIGS;
   const tabOrder = TAB_ORDER;
 
-  // If it's not items tab, use the new EntityMasterPage
-  if (activeTab !== 'items') {
-    return <EntityMasterPage />;
-  }
-
-  // Items tab rendering (legacy functionality preserved)
+  // Unified rendering - keep tabs always mounted for smooth animation
   return (
     <>
       <Card>
@@ -242,60 +237,71 @@ const ItemMasterNew = memo(() => {
           <PageTitle title="Item Master" />
         </div>
 
-        <div className="flex items-center pt-8">
-          <div className="grow">
-            <SearchToolbar
-              searchInputRef={searchInputRef as React.RefObject<HTMLInputElement>}
-              searchBarProps={itemSearchBarProps}
-              search={itemSearch}
-              buttonText="Tambah Item Baru"
-              placeholder="Cari nama, kode, atau deskripsi item atau ketik # untuk pencarian kolom spesifik"
-              onAdd={memoizedOnAdd}
-              items={itemsManagement.data as ItemDataType[]}
-              onItemSelect={memoizedOnItemSelect}
-            />
-          </div>
-        </div>
-
-        <div className={itemsManagement.isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
-          {itemsManagement.isError ? (
-            <div className="text-center p-6 text-red-500">
-              Error: {itemsManagement.queryError?.message || 'Gagal memuat data'}
+        {/* Conditional content rendering */}
+        {activeTab === 'items' ? (
+          <>
+            <div className="flex items-center pt-8">
+              <div className="grow">
+                <SearchToolbar
+                  searchInputRef={searchInputRef as React.RefObject<HTMLInputElement>}
+                  searchBarProps={itemSearchBarProps}
+                  search={itemSearch}
+                  buttonText="Tambah Item Baru"
+                  placeholder="Cari nama, kode, atau deskripsi item atau ketik # untuk pencarian kolom spesifik"
+                  onAdd={memoizedOnAdd}
+                  items={itemsManagement.data as ItemDataType[]}
+                  onItemSelect={memoizedOnItemSelect}
+                />
+              </div>
             </div>
-          ) : (
-            <ItemDataTable
-            items={itemsManagement.data as ItemDataType[]}
-            columnDefs={itemColumnDefs}
-            columnsToAutoSize={columnsToAutoSize}
-            isLoading={itemsManagement.isLoading}
-            isError={itemsManagement.isError}
-            error={itemsManagement.queryError}
-            search={itemSearch}
-            currentPage={itemsManagement.currentPage}
-            totalPages={itemsManagement.totalPages}
-            totalItems={itemsManagement.totalItems}
-            itemsPerPage={itemsManagement.itemsPerPage}
-            onRowClick={handleItemEdit}
-            onPageChange={itemsManagement.handlePageChange}
-            onItemsPerPageChange={itemsManagement.handleItemsPerPageChange}
-            onGridReady={itemOnGridReady}
-            isExternalFilterPresent={itemIsExternalFilterPresent}
-            doesExternalFilterPass={itemDoesExternalFilterPass}
-          />
-          )}
-        </div>
+
+            <div className={itemsManagement.isFetching ? 'opacity-75 transition-opacity duration-300' : ''}>
+              {itemsManagement.isError ? (
+                <div className="text-center p-6 text-red-500">
+                  Error: {itemsManagement.queryError?.message || 'Gagal memuat data'}
+                </div>
+              ) : (
+                <ItemDataTable
+                  items={itemsManagement.data as ItemDataType[]}
+                  columnDefs={itemColumnDefs}
+                  columnsToAutoSize={columnsToAutoSize}
+                  isLoading={itemsManagement.isLoading}
+                  isError={itemsManagement.isError}
+                  error={itemsManagement.queryError}
+                  search={itemSearch}
+                  currentPage={itemsManagement.currentPage}
+                  totalPages={itemsManagement.totalPages}
+                  totalItems={itemsManagement.totalItems}
+                  itemsPerPage={itemsManagement.itemsPerPage}
+                  onRowClick={handleItemEdit}
+                  onPageChange={itemsManagement.handlePageChange}
+                  onItemsPerPageChange={itemsManagement.handleItemsPerPageChange}
+                  onGridReady={itemOnGridReady}
+                  isExternalFilterPresent={itemIsExternalFilterPresent}
+                  doesExternalFilterPass={itemDoesExternalFilterPass}
+                />
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="pt-8">
+            <EntityMasterPage />
+          </div>
+        )}
       </Card>
 
-      {/* Item Management Modal */}
-      <ItemManagementModal
-        key={`${editingItemId ?? 'new'}-${currentSearchQueryForModal ?? ''}-${modalRenderId}`}
-        isOpen={isAddItemModalOpen}
-        onClose={closeAddItemModal}
-        itemId={editingItemId}
-        initialSearchQuery={currentSearchQueryForModal}
-        isClosing={isItemModalClosing}
-        setIsClosing={setIsItemModalClosing}
-      />
+      {/* Item Management Modal - only render for items tab */}
+      {activeTab === 'items' && (
+        <ItemManagementModal
+          key={`${editingItemId ?? 'new'}-${currentSearchQueryForModal ?? ''}-${modalRenderId}`}
+          isOpen={isAddItemModalOpen}
+          onClose={closeAddItemModal}
+          itemId={editingItemId}
+          initialSearchQuery={currentSearchQueryForModal}
+          isClosing={isItemModalClosing}
+          setIsClosing={setIsItemModalClosing}
+        />
+      )}
     </>
   );
 });

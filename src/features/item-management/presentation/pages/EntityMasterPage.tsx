@@ -6,14 +6,9 @@ import React, {
   useMemo,
   memo,
 } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { motion, LayoutGroup } from 'framer-motion';
-import classNames from 'classnames';
-
+import { useLocation } from 'react-router-dom';
 // Components
 import Pagination from '@/components/pagination';
-import PageTitle from '@/components/page-title';
-import { Card } from '@/components/card';
 import { DataGrid, DataGridRef, createTextColumn } from '@/components/ag-grid';
 import { TableSkeleton } from '@/components/skeleton';
 import {
@@ -39,21 +34,12 @@ import {
   entityConfigs,
 } from '../../application/hooks/collections/useEntityManager';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
-import { itemMasterSearchColumns } from '@/utils/searchColumns';
+import { getSearchColumnsByEntity } from '@/utils/searchColumns';
 import { FilterSearch } from '@/types/search';
 
 // Use EntityType directly since it now includes 'items'
 
 // Memoize static configurations outside component
-const TAB_ORDER: EntityType[] = [
-  'items',
-  'categories',
-  'types',
-  'packages',
-  'dosages',
-  'manufacturers',
-  'units',
-];
 
 const URL_TO_TAB_MAP: Record<string, EntityType> = {
   items: 'items',
@@ -91,7 +77,6 @@ const getOverlayTemplate = (
 
 const EntityMasterPage: React.FC = memo(() => {
   const location = useLocation();
-  const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dataGridRef = useRef<DataGridRef>(null);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
@@ -151,22 +136,6 @@ const EntityMasterPage: React.FC = memo(() => {
     [activeTab]
   );
 
-  // Memoize tab change handler
-  const handleTabChange = useCallback(
-    (newTab: EntityType) => {
-      if (newTab !== activeTab) {
-        // Only navigate - URL change will trigger useEffect to handle the rest
-        navigate(`/master-data/item-master/${newTab}`);
-
-        // Clear search when switching tabs
-        if (searchInputRef.current) {
-          searchInputRef.current.value = '';
-        }
-      }
-    },
-    [activeTab, navigate]
-  );
-
   // Simple wrappers - no memoization needed
 
   // Handle filter from search bar
@@ -196,6 +165,11 @@ const EntityMasterPage: React.FC = memo(() => {
     [gridApi]
   );
 
+  // Get search columns for current tab
+  const searchColumns = useMemo(() => {
+    return getSearchColumnsByEntity(activeTab);
+  }, [activeTab]);
+
   // Unified search functionality
   const {
     search,
@@ -204,7 +178,7 @@ const EntityMasterPage: React.FC = memo(() => {
     doesExternalFilterPass,
     searchBarProps,
   } = useUnifiedSearch({
-    columns: itemMasterSearchColumns,
+    columns: searchColumns,
     searchMode: 'hybrid',
     useFuzzySearch: true,
     data: entityData.data,
@@ -212,6 +186,7 @@ const EntityMasterPage: React.FC = memo(() => {
     onClear: () => entityManager.handleSearch(''),
     onFilterSearch: handleFilterSearch,
   });
+
 
   // Enhanced onGridReady to capture grid API
   const onGridReady = useCallback(
@@ -333,315 +308,118 @@ const EntityMasterPage: React.FC = memo(() => {
     [currentConfig?.searchPlaceholder]
   );
 
-  // If items tab is selected, show message to use main item view
+  // If items tab is selected, redirect to parent (handled by ItemMasterNew)
   if (activeTab === 'items') {
     return (
-      <>
-        <Card>
-          <div className="relative flex items-center justify-center mb-0 pt-0">
-            <div className="absolute left-0 pb-4 pt-6">
-              <LayoutGroup id="entity-master-tabs">
-                <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
-                  {TAB_ORDER.map(tabKey => {
-                    // Handle items tab separately
-                    if (tabKey === 'items') {
-                      return (
-                        <button
-                          key="items"
-                          className={classNames(
-                            'group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150',
-                            {
-                              'hover:bg-emerald-100 hover:text-emerald-700':
-                                activeTab !== 'items',
-                            }
-                          )}
-                          onClick={() => handleTabChange('items' as EntityType)}
-                        >
-                          {activeTab === ('items' as EntityType) && (
-                            <motion.div
-                              layoutId="tab-selector-bg"
-                              className="absolute inset-0 bg-primary rounded-lg shadow-xs"
-                              transition={{
-                                type: 'spring',
-                                stiffness: 500,
-                                damping: 30,
-                                duration: 0.3,
-                              }}
-                            />
-                          )}
-                          <span
-                            className={classNames(
-                              'relative z-10 select-none font-medium',
-                              {
-                                'text-white': activeTab === 'items',
-                                'text-gray-700 group-hover:text-emerald-700':
-                                  activeTab !== 'items',
-                              }
-                            )}
-                          >
-                            Daftar Item
-                          </span>
-                        </button>
-                      );
-                    }
-
-                    // Handle entity tabs
-                    const config = entityConfigs[tabKey as EntityType];
-                    return (
-                      <button
-                        key={config.key}
-                        className={classNames(
-                          'group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150',
-                          {
-                            'hover:bg-emerald-100 hover:text-emerald-700':
-                              (activeTab as EntityType) !== config.key,
-                          }
-                        )}
-                        onClick={() => handleTabChange(config.key)}
-                      >
-                        {(activeTab as EntityType) === config.key && (
-                          <motion.div
-                            layoutId="tab-selector-bg"
-                            className="absolute inset-0 bg-primary rounded-lg shadow-xs"
-                            transition={{
-                              type: 'spring',
-                              stiffness: 500,
-                              damping: 30,
-                              duration: 0.3,
-                            }}
-                          />
-                        )}
-                        <span
-                          className={classNames(
-                            'relative z-10 select-none font-medium',
-                            {
-                              'text-white':
-                                (activeTab as EntityType) === config.key,
-                              'text-gray-700 group-hover:text-emerald-700':
-                                (activeTab as EntityType) !== config.key,
-                            }
-                          )}
-                        >
-                          {config.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </LayoutGroup>
-            </div>
-
-            <PageTitle title="Master Data Entities" />
-          </div>
-          <div className="text-center p-8">
-            <div className="text-gray-500 text-lg">
-              <p>
-                Silakan gunakan halaman utama Item Master untuk mengelola daftar
-                item.
-              </p>
-              <p className="text-sm mt-2">
-                Halaman ini khusus untuk manajemen entitas master data.
-              </p>
-            </div>
-          </div>
-        </Card>
-      </>
+      <div className="text-center p-8">
+        <div className="text-gray-500 text-lg">
+          <p>
+            Silakan gunakan halaman utama Item Master untuk mengelola daftar
+            item.
+          </p>
+          <p className="text-sm mt-2">
+            Halaman ini khusus untuk manajemen entitas master data.
+          </p>
+        </div>
+      </div>
     );
   }
 
+  // Entity content only - navigation handled by parent
   return (
     <>
-      <Card>
-        <div className="relative flex items-center justify-center mb-0 pt-0">
-          <div className="absolute left-0 pb-4 pt-6">
-            <LayoutGroup id="entity-master-tabs">
-              <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
-                {TAB_ORDER.map(tabKey => {
-                  // Handle items tab separately
-                  if (tabKey === 'items') {
-                    return (
-                      <button
-                        key="items"
-                        className={classNames(
-                          'group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150',
-                          {
-                            'hover:bg-emerald-100 hover:text-emerald-700':
-                              activeTab !== ('items' as EntityType),
-                          }
-                        )}
-                        onClick={() => handleTabChange('items' as EntityType)}
-                      >
-                        {activeTab === ('items' as EntityType) && (
-                          <motion.div
-                            layoutId="tab-selector-bg"
-                            className="absolute inset-0 bg-primary rounded-lg shadow-xs"
-                            transition={{
-                              type: 'spring',
-                              stiffness: 500,
-                              damping: 30,
-                              duration: 0.3,
-                            }}
-                          />
-                        )}
-                        <span
-                          className={classNames(
-                            'relative z-10 select-none font-medium',
-                            {
-                              'text-white':
-                                activeTab === ('items' as EntityType),
-                              'text-gray-700 group-hover:text-emerald-700':
-                                activeTab !== ('items' as EntityType),
-                            }
-                          )}
-                        >
-                          Daftar Item
-                        </span>
-                      </button>
-                    );
-                  }
-
-                  // Handle entity tabs
-                  const config = entityConfigs[tabKey as EntityType];
-                  return (
-                    <button
-                      key={config.key}
-                      className={classNames(
-                        'group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150',
-                        {
-                          'hover:bg-emerald-100 hover:text-emerald-700':
-                            activeTab !== config.key,
-                        }
-                      )}
-                      onClick={() => handleTabChange(config.key)}
-                    >
-                      {activeTab === config.key && (
-                        <motion.div
-                          layoutId="tab-selector-bg"
-                          className="absolute inset-0 bg-primary rounded-lg shadow-xs"
-                          transition={{
-                            type: 'spring',
-                            stiffness: 500,
-                            damping: 30,
-                            duration: 0.3,
-                          }}
-                        />
-                      )}
-                      <span
-                        className={classNames(
-                          'relative z-10 select-none font-medium',
-                          {
-                            'text-white':
-                              (activeTab as EntityType) === config.key,
-                            'text-gray-700 group-hover:text-emerald-700':
-                              (activeTab as EntityType) !== config.key,
-                          }
-                        )}
-                      >
-                        {config.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </LayoutGroup>
-          </div>
-
-          <PageTitle title="Master Data Entities" />
+      <div className="flex items-center pt-0">
+        <div className="grow">
+          <SearchToolbar
+            searchInputRef={
+              searchInputRef as React.RefObject<HTMLInputElement>
+            }
+            searchBarProps={searchBarProps}
+            search={search}
+            buttonText={memoizedButtonText}
+            placeholder={memoizedPlaceholder}
+            onAdd={entityManager.openAddModal}
+            onKeyDown={handleKeyDown}
+          />
         </div>
+      </div>
 
-        <div className="flex items-center pt-8">
-          <div className="grow">
-            <SearchToolbar
-              searchInputRef={
-                searchInputRef as React.RefObject<HTMLInputElement>
-              }
-              searchBarProps={searchBarProps}
-              search={search}
-              buttonText={memoizedButtonText}
-              placeholder={memoizedPlaceholder}
-              onAdd={entityManager.openAddModal}
-              onKeyDown={handleKeyDown}
-            />
+      <div
+        className={
+          entityData.isFetching
+            ? 'opacity-75 transition-opacity duration-300'
+            : ''
+        }
+      >
+        {entityData.isError ? (
+          <div className="text-center p-6 text-red-500">
+            Error: {entityData.error?.message || 'Gagal memuat data'}
           </div>
-        </div>
-
-        <div
-          className={
-            entityData.isFetching
-              ? 'opacity-75 transition-opacity duration-300'
-              : ''
-          }
-        >
-          {entityData.isError ? (
-            <div className="text-center p-6 text-red-500">
-              Error: {entityData.error?.message || 'Gagal memuat data'}
-            </div>
-          ) : entityData.isLoading && (!entityData.data || entityData.data.length === 0) ? (
-            <TableSkeleton
-              rows={entityManager.itemsPerPage || 10}
-              columns={
-                currentConfig?.hasNciCode
+        ) : entityData.isLoading && (!entityData.data || entityData.data.length === 0) ? (
+          <TableSkeleton
+            rows={entityManager.itemsPerPage || 10}
+            columns={
+              currentConfig?.hasNciCode
+                ? 4
+                : currentConfig?.hasAddress
                   ? 4
-                  : currentConfig?.hasAddress
-                    ? 4
-                    : 3
-              }
-              showPagination={true}
-              className="mt-4"
-            />
-          ) : (
-            <>
-              {/* Background loading indicator for realtime updates */}
-              {entityData.isLoading && entityData.data && entityData.data.length > 0 && (
-                <div className="absolute top-0 right-0 z-10 mt-2 mr-4">
-                  <div className="flex items-center space-x-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm shadow-sm">
-                    <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Memperbarui data...</span>
-                  </div>
+                  : 3
+            }
+            showPagination={true}
+            className="mt-4"
+          />
+        ) : (
+          <>
+            {/* Background loading indicator for realtime updates */}
+            {entityData.isLoading && entityData.data && entityData.data.length > 0 && (
+              <div className="absolute top-0 right-0 z-10 mt-2 mr-4">
+                <div className="flex items-center space-x-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm shadow-sm">
+                  <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Memperbarui data...</span>
                 </div>
-              )}
-
-              <div className="relative">
-                <DataGrid
-                  key={`entity-grid-${activeTab}`}
-                  ref={dataGridRef}
-                  rowData={entityData.data}
-                  columnDefs={columnDefs}
-                  onRowClicked={onRowClicked}
-                  onGridReady={onGridReady}
-                  loading={false}
-                  overlayNoRowsTemplate={getOverlayTemplate(search, currentConfig)}
-                  autoSizeColumns={getAutoSizeColumns(
-                    currentConfig?.hasNciCode
-                  )}
-                  isExternalFilterPresent={isExternalFilterPresent}
-                  doesExternalFilterPass={doesExternalFilterPass}
-                  style={{
-                    ...GRID_STYLE,
-                    opacity: (entityData.isLoading && entityData.data && entityData.data.length > 0) ? 0.8 : 1,
-                    transition: 'opacity 0.2s ease-in-out',
-                  }}
-                />
               </div>
+            )}
 
-              <Pagination
-                currentPage={entityManager.currentPage}
-                totalPages={entityData.totalPages}
-                totalItems={entityData.totalItems || 0}
-                itemsPerPage={entityManager.itemsPerPage || 10}
-                itemsCount={entityData.data?.length || 0}
-                onPageChange={entityManager.handlePageChange}
-                onItemsPerPageChange={e =>
-                  entityManager.handleItemsPerPageChange(Number(e.target.value))
-                }
-                hideFloatingWhenModalOpen={
-                  entityManager.isAddModalOpen || entityManager.isEditModalOpen
-                }
+            <div className="relative">
+              <DataGrid
+                key={`entity-grid-${activeTab}`}
+                ref={dataGridRef}
+                rowData={entityData.data}
+                columnDefs={columnDefs}
+                onRowClicked={onRowClicked}
+                onGridReady={onGridReady}
+                loading={false}
+                overlayNoRowsTemplate={getOverlayTemplate(search, currentConfig)}
+                autoSizeColumns={getAutoSizeColumns(
+                  currentConfig?.hasNciCode
+                )}
+                isExternalFilterPresent={isExternalFilterPresent}
+                doesExternalFilterPass={doesExternalFilterPass}
+                style={{
+                  ...GRID_STYLE,
+                  opacity: (entityData.isLoading && entityData.data && entityData.data.length > 0) ? 0.8 : 1,
+                  transition: 'opacity 0.2s ease-in-out',
+                }}
               />
-            </>
-          )}
-        </div>
-      </Card>
+            </div>
+
+            <Pagination
+              currentPage={entityManager.currentPage}
+              totalPages={entityData.totalPages}
+              totalItems={entityData.totalItems || 0}
+              itemsPerPage={entityManager.itemsPerPage || 10}
+              itemsCount={entityData.data?.length || 0}
+              onPageChange={entityManager.handlePageChange}
+              onItemsPerPageChange={e =>
+                entityManager.handleItemsPerPageChange(Number(e.target.value))
+              }
+              hideFloatingWhenModalOpen={
+                entityManager.isAddModalOpen || entityManager.isEditModalOpen
+              }
+            />
+          </>
+        )}
+      </div>
 
       {/* Entity Management Modal - Only render when modal is open */}
       {(entityManager.isAddModalOpen || entityManager.isEditModalOpen) && (
