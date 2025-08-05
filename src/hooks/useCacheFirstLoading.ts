@@ -39,21 +39,22 @@ export const useCacheFirstLoading = ({
   const prevTabKeyRef = useRef(tabKey);
   const isTabChangingRef = useRef(false);
   
-  // Track tab changes
+  // Track tab changes - optimized for realtime
   useEffect(() => {
     if (tabKey && prevTabKeyRef.current && tabKey !== prevTabKeyRef.current) {
-      // Tab is changing - just suppress overlay briefly to prevent flash
+      // Tab is changing - suppress skeleton and overlay for realtime data
       isTabChangingRef.current = true;
+      setShowSkeleton(false); // Never show skeleton on tab change for realtime
       setShouldSuppressOverlay(true);
       
       // Reset tab changing flag after brief delay
       const tabChangeTimer = setTimeout(() => {
         isTabChangingRef.current = false;
-        // Only allow overlay to show if still no data after tab change stabilizes
+        // For realtime, allow overlay only if no data after reasonable wait
         if (!hasData) {
           setShouldSuppressOverlay(false);
         }
-      }, gracePeriod * 2); // Brief suppression for tab changes
+      }, gracePeriod * 3); // Longer suppression for realtime data to settle
       
       prevTabKeyRef.current = tabKey;
       
@@ -82,7 +83,11 @@ export const useCacheFirstLoading = ({
       // Always suppress overlay during loading
       setShouldSuppressOverlay(true);
       
-      if (isFirstLoad || !hasDataRef.current) {
+      // Don't show skeleton if tab is changing (realtime scenario)
+      if (isTabChangingRef.current) {
+        setShowSkeleton(false);
+        setShowBackgroundLoading(true);
+      } else if (isFirstLoad || !hasDataRef.current) {
         // First load or no cached data - show skeleton
         setShowSkeleton(true);
         setShowBackgroundLoading(false);

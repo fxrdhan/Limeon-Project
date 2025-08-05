@@ -25,7 +25,7 @@ interface ComparisonModalProps {
   versionB?: VersionData;
   onFlipVersions?: () => void;
   // Restore functionality
-  onRestore?: (version: number) => void;
+  onRestore?: (version: number) => Promise<void>;
 }
 
 const ComparisonModal: React.FC<ComparisonModalProps> = ({
@@ -403,7 +403,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                         >
                           v{compData.leftVersion?.version_number}
                         </div>
-                        <div className="text-sm whitespace-pre-wrap min-h-[60px]">
+                        <div className="text-sm whitespace-pre-wrap min-h-[60px] max-h-[120px] overflow-y-auto">
                           {compData.leftDescription || (
                             <span className="text-gray-400 italic">Empty</span>
                           )}
@@ -421,7 +421,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                         >
                           v{compData.rightVersion?.version_number}
                         </div>
-                        <div className="text-sm whitespace-pre-wrap min-h-[60px]">
+                        <div className="text-sm whitespace-pre-wrap min-h-[60px] max-h-[120px] overflow-y-auto">
                           {compData.rightDescription || (
                             <span className="text-gray-400 italic">Empty</span>
                           )}
@@ -463,7 +463,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                     readOnly
                     autoFocus={false}
                     tabIndex={-1}
-                    textareaClassName="text-sm min-h-[80px] resize-none pointer-events-none select-none"
+                    textareaClassName="text-sm min-h-[80px] max-h-[120px] resize-none cursor-default"
                     rows={3}
                     showInitially={!!compData.leftDescription}
                     expandOnClick={true}
@@ -509,19 +509,25 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               <div className="text-xs font-medium text-yellow-700 mb-1">
                                 Kode:
                               </div>
-                              <div className="bg-gray-50 rounded p-2">
-                                <DiffText
-                                  oldText={
-                                    originalData?.originalLeftKode ||
-                                    compData.leftKode
-                                  }
-                                  newText={
-                                    originalData?.originalRightKode ||
-                                    compData.rightKode
-                                  }
-                                  className="text-sm font-mono"
-                                  isFlipped={isFlipped}
-                                />
+                              <div className="relative bg-gray-50 rounded overflow-hidden">
+                                <div className="p-2 max-h-[80px] overflow-y-auto scrollbar-thin">
+                                  <DiffText
+                                    oldText={
+                                      originalData?.originalLeftKode ||
+                                      compData.leftKode
+                                    }
+                                    newText={
+                                      originalData?.originalRightKode ||
+                                      compData.rightKode
+                                    }
+                                    className="text-sm font-mono"
+                                    isFlipped={isFlipped}
+                                  />
+                                </div>
+                                {/* Top fade gradient */}
+                                <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
+                                {/* Bottom fade gradient */}
+                                <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
                               </div>
                             </motion.div>
                           )}
@@ -539,19 +545,25 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               <div className="text-xs font-medium text-yellow-700 mb-1">
                                 Nama:
                               </div>
-                              <div className="bg-gray-50 rounded p-2">
-                                <DiffText
-                                  oldText={
-                                    originalData?.originalLeftName ||
-                                    compData.leftName
-                                  }
-                                  newText={
-                                    originalData?.originalRightName ||
-                                    compData.rightName
-                                  }
-                                  className="text-sm"
-                                  isFlipped={isFlipped}
-                                />
+                              <div className="relative bg-gray-50 rounded overflow-hidden">
+                                <div className="p-2 max-h-[100px] overflow-y-auto scrollbar-thin">
+                                  <DiffText
+                                    oldText={
+                                      originalData?.originalLeftName ||
+                                      compData.leftName
+                                    }
+                                    newText={
+                                      originalData?.originalRightName ||
+                                      compData.rightName
+                                    }
+                                    className="text-sm"
+                                    isFlipped={isFlipped}
+                                  />
+                                </div>
+                                {/* Top fade gradient */}
+                                <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
+                                {/* Bottom fade gradient */}
+                                <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
                               </div>
                             </motion.div>
                           )}
@@ -571,19 +583,25 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                   ? 'Alamat:'
                                   : 'Deskripsi:'}
                               </div>
-                              <div className="bg-gray-50 rounded p-2">
-                                <DiffText
-                                  oldText={
-                                    originalData?.originalLeftDescription ||
-                                    compData.leftDescription
-                                  }
-                                  newText={
-                                    originalData?.originalRightDescription ||
-                                    compData.rightDescription
-                                  }
-                                  className="text-sm leading-relaxed"
-                                  isFlipped={isFlipped}
-                                />
+                              <div className="relative bg-gray-50 rounded overflow-hidden">
+                                <div className="p-2 max-h-[150px] overflow-y-auto scrollbar-thin">
+                                  <DiffText
+                                    oldText={
+                                      originalData?.originalLeftDescription ||
+                                      compData.leftDescription
+                                    }
+                                    newText={
+                                      originalData?.originalRightDescription ||
+                                      compData.rightDescription
+                                    }
+                                    className="text-sm leading-relaxed"
+                                    isFlipped={isFlipped}
+                                  />
+                                </div>
+                                {/* Top fade gradient */}
+                                <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
+                                {/* Bottom fade gradient */}
+                                <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
                               </div>
                             </motion.div>
                           )}
