@@ -31,7 +31,6 @@ import { EntityManagementModal } from '../templates/entity';
 import {
   EntityType,
   EntityData,
-  entityConfigs,
 } from '../../application/hooks/collections/useEntityManager';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import { getSearchColumnsByEntity } from '@/utils/searchColumns';
@@ -133,8 +132,8 @@ const EntityMasterPage: React.FC = memo(() => {
 
   // Memoize current config to prevent unnecessary re-renders
   const currentConfig = useMemo(
-    () => (activeTab !== 'items' ? entityConfigs[activeTab] : null),
-    [activeTab]
+    () => (activeTab !== 'items' ? entityManager.entityConfigs[activeTab] : null),
+    [activeTab, entityManager.entityConfigs]
   );
 
   // Simple wrappers - no memoization needed
