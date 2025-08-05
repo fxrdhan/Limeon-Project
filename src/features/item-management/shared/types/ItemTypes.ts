@@ -2,7 +2,7 @@
 import type { UnitData } from '@/types/database';
 export interface EntityData {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   description?: string | null;
   address?: string | null;

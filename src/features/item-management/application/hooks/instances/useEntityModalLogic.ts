@@ -12,7 +12,7 @@ interface UseEntityModalLogicProps {
   onClose: () => void;
   onSubmit: (data: {
     id?: string;
-    kode?: string;
+    code?: string;
     name: string;
     description?: string;
     address?: string;
@@ -36,7 +36,7 @@ export const useEntityModalLogic = ({
   isLoading = false,
   isDeleting = false,
 }: UseEntityModalLogicProps) => {
-  const [kode, setKode] = useState('');
+  const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
@@ -64,25 +64,25 @@ export const useEntityModalLogic = ({
   const isDirty = useMemo(() => {
     if (!isEditMode) return true;
     
-    // Handle field name mapping: database uses 'code' but form uses 'kode'
-    const initialKode = initialData?.kode || (initialData as EntityData & { code?: string })?.code || '';
+    // All tables now use 'code' field consistently
+    const initialCode = initialData?.code || '';
     
     return (
-      kode !== initialKode ||
+      code !== initialCode ||
       name !== (initialData?.name || '') ||
       description !== (initialData?.description || '') ||
       address !== (initialData?.address || '')
     );
-  }, [kode, name, description, address, isEditMode, initialData]);
+  }, [code, name, description, address, isEditMode, initialData]);
 
   // Check if form is valid
   const isValid = useMemo(() => {
-    return kode.trim().length > 0 && name.trim().length > 0;
-  }, [kode, name]);
+    return code.trim().length > 0 && name.trim().length > 0;
+  }, [code, name]);
 
   // Form actions
   const resetForm = useCallback(() => {
-    setKode('');
+    setCode('');
     setName('');
     setDescription('');
     setAddress('');
@@ -96,13 +96,13 @@ export const useEntityModalLogic = ({
       setPreviousMode(newMode);
 
       if (initialData) {
-        // Handle field name mapping: database uses 'code' but form uses 'kode'
-        setKode(initialData.kode || (initialData as EntityData & { code?: string }).code || '');
+        // All tables now use 'code' field consistently
+        setCode(initialData.code || '');
         setName(initialData.name);
         setDescription(initialData.description || '');
         setAddress(initialData.address || '');
       } else if (initialNameFromSearch) {
-        setKode('');
+        setCode('');
         setName(initialNameFromSearch);
         setDescription('');
         setAddress('');
@@ -138,7 +138,6 @@ export const useEntityModalLogic = ({
     }
     const submitData: {
       id?: string;
-      kode?: string;
       code?: string;
       name: string;
       fda_code?: string;
@@ -146,9 +145,8 @@ export const useEntityModalLogic = ({
       address?: string;
     } = {
       id: initialData?.id,
-      // Include both kode and code for backward compatibility
-      kode: kode.trim(),
-      code: kode.trim(),
+      // All tables now use 'code' field consistently
+      code: code.trim(),
       name: name.trim(),
     };
 
@@ -162,7 +160,7 @@ export const useEntityModalLogic = ({
 
     await onSubmit(submitData);
   }, [
-    kode,
+    code,
     name,
     description,
     address,
@@ -293,7 +291,7 @@ export const useEntityModalLogic = ({
   // Create context value
   const contextValue: EntityModalContextValue = {
     form: {
-      kode,
+      code,
       name,
       description,
       address,
@@ -325,7 +323,7 @@ export const useEntityModalLogic = ({
       isFlipped: comparisonData.isFlipped,
     },
     formActions: {
-      setKode,
+      setCode,
       setName,
       setDescription,
       setAddress,

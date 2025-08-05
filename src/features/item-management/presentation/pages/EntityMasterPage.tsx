@@ -73,7 +73,7 @@ const GRID_STYLE = {
 } as const;
 
 const getAutoSizeColumns = (hasNciCode?: boolean) =>
-  hasNciCode ? ['kode', 'name', 'nci_code'] : ['kode', 'name'];
+  hasNciCode ? ['code', 'name', 'nci_code'] : ['code', 'name'];
 
 const getOverlayTemplate = (
   search: string,
@@ -234,12 +234,12 @@ const EntityMasterPage: React.FC = memo(() => {
   const columnDefs: ColDef[] = useMemo(
     () => [
       createTextColumn({
-        field: 'kode',
+        field: 'code',
         headerName: 'Kode',
         minWidth: 80,
         valueGetter: params => {
-          // Handle different field names: 'kode' for most tables, 'code' for item_units
-          return params.data.kode || params.data.code || '-';
+          // All master data tables now use 'code'
+          return params.data.code || '-';
         },
       }),
       {

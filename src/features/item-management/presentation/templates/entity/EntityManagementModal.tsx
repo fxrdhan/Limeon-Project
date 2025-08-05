@@ -81,7 +81,7 @@ const EntityManagementModal: React.FC<EntityManagementModalProps> = ({
         entityName={entityName}
         selectedVersion={contextValue.comparison.selectedVersion}
         currentData={{
-          ...(initialData?.kode && { kode: initialData.kode }),
+          ...(initialData?.code && { code: initialData.code }),
           name: initialData?.name || '',
           description:
             entityName === 'Produsen'

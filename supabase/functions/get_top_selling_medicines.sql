@@ -1,5 +1,5 @@
 -- Function: get_top_selling_medicines
--- Exported from Supabase on: 2025-08-03T03:25:40.290Z
+-- Exported from Supabase on: 2025-08-05T13:14:25.920Z
 
 CREATE OR REPLACE FUNCTION public.get_top_selling_medicines(limit_count integer)
  RETURNS TABLE(name character varying, total_quantity bigint)

@@ -1,7 +1,7 @@
 // ItemPackage entity definition
 export interface ItemPackage {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   nci_code?: string;
   description?: string;
@@ -10,7 +10,7 @@ export interface ItemPackage {
 }
 
 export interface ItemPackageCreateInput {
-  kode?: string;
+  code?: string;
   name: string;
   nci_code?: string;
   description?: string;
@@ -18,7 +18,7 @@ export interface ItemPackageCreateInput {
 
 export interface ItemPackageUpdateInput {
   id: string;
-  kode?: string;
+  code?: string;
   name: string;
   nci_code?: string;
   description?: string;

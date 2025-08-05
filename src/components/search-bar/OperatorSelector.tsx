@@ -18,7 +18,7 @@ interface OperatorSelectorProps {
   searchTerm?: string;
 }
 
-type AnimationPhase = 'hidden' | 'header' | 'footer' | 'content' | 'complete';
+type AnimationPhase = 'hidden' | 'header' | 'footer' | 'content' | 'complete' | 'closing';
 
 const OperatorSelector: React.FC<OperatorSelectorProps> = ({
   operators,
@@ -37,7 +37,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
   // Animation sequence effect
   useEffect(() => {
     if (isOpen && animationPhase === 'hidden') {
-      // Start animation sequence
+      // Start opening animation sequence
       setAnimationPhase('header');
 
       // Show footer after header
@@ -54,9 +54,14 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
       setTimeout(() => {
         setAnimationPhase('complete');
       }, 650);
-    } else if (!isOpen && animationPhase !== 'hidden') {
-      // Reset animation when closing
-      setAnimationPhase('hidden');
+    } else if (!isOpen && (animationPhase === 'complete' || animationPhase === 'content' || animationPhase === 'footer' || animationPhase === 'header')) {
+      // Start closing animation sequence
+      setAnimationPhase('closing');
+      
+      // Complete closing after animation duration
+      setTimeout(() => {
+        setAnimationPhase('hidden');
+      }, 200); // 200ms for faster closing animation
     }
   }, [isOpen, animationPhase]);
 
@@ -148,8 +153,8 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
     };
   }, [isOpen, animationPhase, onClose]);
 
-  // Don't render if not open
-  if (!isOpen && animationPhase === 'hidden') return null;
+  // Don't render if completely hidden
+  if (animationPhase === 'hidden') return null;
 
   return (
     <div
@@ -162,8 +167,8 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
     >
       {/* Header - fades in first */}
       <div
-        className={`flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg transition-opacity duration-300 ${
-          animationPhase === 'hidden' ? 'opacity-0' : 'opacity-100'
+        className={`flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg transition-opacity duration-200 ${
+          animationPhase === 'closing' ? 'opacity-0' : 'opacity-100'
         }`}
       >
         <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -174,18 +179,18 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
 
       {/* Content - appears last with smooth slide and fade */}
       <div
-        className={`flex-1 overflow-y-auto min-h-0 transition-all duration-500 ease-out ${
-          animationPhase === 'hidden' ||
+        className={`flex-1 overflow-y-auto min-h-0 transition-all duration-300 ease-out ${
           animationPhase === 'header' ||
-          animationPhase === 'footer'
+          animationPhase === 'footer' ||
+          animationPhase === 'closing'
             ? 'opacity-0 max-h-0'
             : 'opacity-100 max-h-64'
         }`}
         style={{
           transform:
-            animationPhase === 'hidden' ||
             animationPhase === 'header' ||
-            animationPhase === 'footer'
+            animationPhase === 'footer' ||
+            animationPhase === 'closing'
               ? 'translateY(-10px)'
               : 'translateY(0px)',
         }}
@@ -241,8 +246,8 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
 
       {/* Footer - fades in second */}
       <div
-        className={`flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg transition-opacity duration-300 ${
-          animationPhase === 'hidden' || animationPhase === 'header'
+        className={`flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg transition-opacity duration-200 ${
+          animationPhase === 'header' || animationPhase === 'closing'
             ? 'opacity-0'
             : 'opacity-100'
         }`}

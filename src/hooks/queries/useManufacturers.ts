@@ -15,8 +15,8 @@ export const useManufacturersRealtime = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_manufacturers')
-        .select('id, kode, name, address, created_at, updated_at')
-        .order('kode');
+        .select('id, code, name, address, created_at, updated_at')
+        .order('code');
 
       if (error) throw error;
       return data || [];
@@ -37,8 +37,8 @@ export const useManufacturers = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_manufacturers')
-        .select('id, kode, name, address, created_at, updated_at')
-        .order('kode');
+        .select('id, code, name, address, created_at, updated_at')
+        .order('code');
 
       if (error) throw error;
       return data || [];
@@ -53,7 +53,7 @@ export const useManufacturerMutations = () => {
 
   const createMutation = useMutation({
     mutationFn: async (manufacturerData: {
-      kode?: string;
+      code?: string;
       name: string;
       address: string;
     }) => {

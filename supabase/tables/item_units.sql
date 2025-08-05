@@ -1,12 +1,11 @@
 -- Table Definition: item_units
--- Exported from Supabase on: 2025-08-02T13:07:13.934Z
+-- Exported from Supabase on: 2025-08-05T13:14:25.976Z
 
 CREATE TABLE public.item_units (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
-  name character varying(50) NOT NULL,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  code character varying NOT NULL,
+  name character varying NOT NULL,
   description text,
-  kode character varying(50),
-  nci_code character varying(50)
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now()
 );
