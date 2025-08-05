@@ -2,16 +2,16 @@ import { memo } from 'react';
 import Button from '@/components/button';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import { FaPlus } from 'react-icons/fa';
-import type { TargetedSearch, SearchColumn } from '@/types/search';
+import type { SearchColumn, FilterSearch } from '@/types/search';
 
 interface SearchToolbarProps<T = unknown> {
   searchInputRef: React.RefObject<HTMLInputElement>;
   searchBarProps: {
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onTargetedSearch: (targetedSearch: TargetedSearch | null) => void;
     onGlobalSearch: (searchValue: string) => void;
     onClearSearch: () => void;
+    onFilterSearch: (filterSearch: FilterSearch | null) => void;
     searchState: 'idle' | 'typing' | 'found' | 'not-found';
     columns: SearchColumn[];
     placeholder?: string;

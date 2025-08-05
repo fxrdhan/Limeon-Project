@@ -79,7 +79,11 @@ const getOverlayTemplate = (
   search: string,
   currentConfig: { searchNoDataMessage?: string; noDataMessage?: string } | null
 ) => {
-  if (search) {
+  // Skip overlay error message for badge mode (filter search)
+  // Badge mode uses AG Grid native filtering, so no need for custom overlay
+  const isBadgeMode = search.startsWith('#') && (search.includes(':') || search.includes(' #'));
+  
+  if (search && !isBadgeMode) {
     return `<span style="padding: 10px; color: #888;">${currentConfig?.searchNoDataMessage || 'Tidak ada data yang cocok dengan pencarian'} "${search}"</span>`;
   }
   return `<span style="padding: 10px; color: #888;">${currentConfig?.noDataMessage || 'Tidak ada data'}</span>`;

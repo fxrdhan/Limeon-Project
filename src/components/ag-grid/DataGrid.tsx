@@ -51,7 +51,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       cellSelection = false,
       suppressScrollOnNewData = true,
       suppressAnimationFrame = false,
-      animateRows = false,
+      animateRows = true,
       loadThemeGoogleFonts = true,
       rowSelection,
       colResizeDefault = 'shift',

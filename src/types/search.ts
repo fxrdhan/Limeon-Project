@@ -18,8 +18,6 @@ export interface FilterSearch extends TargetedSearch {
 }
 
 export interface EnhancedSearchState {
-  isTargeted: boolean;
-  targetedSearch?: TargetedSearch;
   globalSearch?: string;
   showColumnSelector: boolean;
   showOperatorSelector: boolean;
@@ -49,7 +47,6 @@ export interface EnhancedSearchBarProps {
   searchState?: 'idle' | 'typing' | 'found' | 'not-found';
   resultsCount?: number;
   columns: SearchColumn[];
-  onTargetedSearch?: (targetedSearch: TargetedSearch | null) => void;
   onGlobalSearch?: (search: string) => void;
   onClearSearch?: () => void;
   onFilterSearch?: (filterSearch: FilterSearch | null) => void;
