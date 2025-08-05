@@ -236,7 +236,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
       const action = formData.id ? 'memperbarui' : 'menambahkan';
       alert.error(`Gagal ${action} ${currentConfig.entityName}: ${errorMessage}`);
     }
-  }, [currentEntityType, currentConfig.entityName, alert, masterDataHook]);
+  }, [currentConfig.entityName, alert, masterDataHook]);
 
   // Delete handler
   const handleDelete = useCallback(async (entity: EntityData) => {
@@ -260,7 +260,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
         }
       },
     });
-  }, [currentConfig.entityName, openConfirmDialog, alert, currentEntityType, masterDataHook]);
+  }, [currentConfig.entityName, openConfirmDialog, alert, masterDataHook]);
 
   // Search handler
   const handleSearch = useCallback((searchValue: string) => {

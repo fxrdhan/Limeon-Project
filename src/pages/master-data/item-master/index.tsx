@@ -13,6 +13,9 @@ import ItemManagementModal from '@/features/item-management/presentation/templat
 // New unified entity management
 import { EntityMasterPage } from '@/features/item-management/presentation/pages';
 
+// Simple realtime for all item master data
+import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
+
 // Hooks and utilities
 import { useMasterDataManagement } from '@/features/master-data/hooks/useMasterDataManagement';
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
@@ -61,6 +64,9 @@ const ItemMasterNew = memo(() => {
 
   const [activeTab, setActiveTab] = useState<MasterDataType>(() => getTabFromPath(location.pathname));
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // ✅ REALTIME WORKING! Use postgres_changes approach
+  useItemMasterRealtime({ enabled: true });
 
   // Update active tab when URL changes
   useEffect(() => {

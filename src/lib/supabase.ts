@@ -4,25 +4,9 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
-    heartbeatIntervalMs: 30000,
-    reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 10000),
-    timeout: 20000,
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'apotek-klinik-app',
-    },
-  },
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-  },
-  db: {
-    schema: 'public',
   },
 });
 
@@ -54,7 +38,7 @@ if (typeof window !== 'undefined') {
     if (!document.hidden) {
       // Page became visible - good time to check connections
       setTimeout(() => {
-        console.log('📱 Page visible - checking realtime connections...');
+        // console.log('📱 Page visible - checking realtime connections...');
         startConnectionHealthCheck();
       }, 1000);
     } else {
