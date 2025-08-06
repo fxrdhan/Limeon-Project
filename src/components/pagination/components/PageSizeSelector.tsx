@@ -1,5 +1,8 @@
 import React from 'react';
-import { SlidingSelector, SlidingSelectorOption } from '@/components/shared/SlidingSelector';
+import {
+  SlidingSelector,
+  SlidingSelectorOption,
+} from '@/components/shared/sliding-selector';
 import type { PageSizeSelectorProps } from '../types';
 
 export const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
@@ -16,7 +19,11 @@ export const PageSizeSelector: React.FC<PageSizeSelectorProps> = ({
     activeLabel: `${size} items`,
   }));
 
-  const handleSelectionChange = (_key: string, value: number, event?: React.MouseEvent) => {
+  const handleSelectionChange = (
+    _key: string,
+    value: number,
+    event?: React.MouseEvent
+  ) => {
     // onSizeChange expects both parameters, provide event or create a synthetic one
     const mouseEvent = event || ({} as React.MouseEvent);
     onSizeChange(value, mouseEvent);
