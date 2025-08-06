@@ -15,6 +15,7 @@ export interface TargetedSearch {
 
 export interface FilterSearch extends TargetedSearch {
   operator: string;
+  isExplicitOperator?: boolean; // True if operator was explicitly selected via space pattern
 }
 
 export interface EnhancedSearchState {

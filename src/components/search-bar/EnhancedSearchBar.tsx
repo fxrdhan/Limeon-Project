@@ -108,6 +108,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   value: searchTerm,
                   column,
                   operator: 'contains',
+                  isExplicitOperator: false, // Default contains via colon pattern
                 },
               };
             }
@@ -161,6 +162,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                     value: filterValue || '',
                     column,
                     operator: operator.value,
+                    isExplicitOperator: true, // Explicit operator via space pattern
                   },
                 };
               } else {
@@ -518,7 +520,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleClearTargeted = useCallback(() => {
     if (searchMode.isFilterMode && searchMode.filterSearch) {
-      if (searchMode.filterSearch.operator === 'contains') {
+      if (searchMode.filterSearch.operator === 'contains' && !searchMode.filterSearch.isExplicitOperator) {
         // Colon pattern: clear completely
         if (onClearSearch) {
           onClearSearch();
@@ -557,7 +559,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       const inputValue = e.target.value;
 
       if (searchMode.isFilterMode && searchMode.filterSearch) {
-        if (searchMode.filterSearch.operator === 'contains') {
+        if (searchMode.filterSearch.operator === 'contains' && !searchMode.filterSearch.isExplicitOperator) {
           // Colon pattern: update the value part after #column:
           const columnName = searchMode.filterSearch.field;
           const newValue = `#${columnName}:${inputValue}`;
@@ -675,7 +677,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             searchMode.isFilterMode &&
             searchMode.filterSearch?.value === ''
           ) {
-            if (searchMode.filterSearch.operator === 'contains') {
+            if (searchMode.filterSearch.operator === 'contains' && !searchMode.filterSearch.isExplicitOperator) {
               // Colon pattern with empty value: clear completely
               if (onClearSearch) {
                 onClearSearch();
@@ -735,7 +737,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const getSearchIconColor = () => {
     if (
       searchMode.isFilterMode &&
-      searchMode.filterSearch?.operator === 'contains'
+      searchMode.filterSearch?.operator === 'contains' &&
+      !searchMode.filterSearch?.isExplicitOperator
     )
       return 'text-purple-500';
     if (searchMode.isFilterMode) return 'text-blue-500';
@@ -757,7 +760,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const getSearchIcon = () => {
     if (
       searchMode.isFilterMode &&
-      searchMode.filterSearch?.operator === 'contains'
+      searchMode.filterSearch?.operator === 'contains' &&
+      !searchMode.filterSearch?.isExplicitOperator
     ) {
       return (
         <LuHash
@@ -969,10 +973,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                   ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-100'
                   : searchMode.isFilterMode &&
                       searchMode.filterSearch &&
-                      searchMode.filterSearch.operator === 'contains'
+                      searchMode.filterSearch.operator === 'contains' &&
+                      !searchMode.filterSearch.isExplicitOperator
                     ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
                     : searchMode.isFilterMode && searchMode.filterSearch
-                      ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
+                      ? 'border-blue-300 ring-3 ring-blue-100 focus:border-blue-500 focus:ring-3 focus:ring-blue-100'
                       : searchMode.showColumnSelector
                         ? 'border-purple-300 ring-3 ring-purple-100 focus:border-purple-500 focus:ring-3 focus:ring-purple-100'
                         : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
@@ -998,7 +1003,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10 flex items-center gap-2"
               >
                 {searchMode.isFilterMode && searchMode.filterSearch ? (
-                  searchMode.filterSearch.operator === 'contains' ? (
+                  searchMode.filterSearch.operator === 'contains' && !searchMode.filterSearch.isExplicitOperator ? (
                     // Colon pattern: Single purple badge with X button (maintains targeted search UX)
                     <div
                       ref={badgeRef}
