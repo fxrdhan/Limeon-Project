@@ -57,6 +57,16 @@ This project is built with:
 - **Storage:** [Supabase Storage](https://supabase.com/storage)
 - **Server Side Caching:** [Upstash Redis](https://upstash.com/)
 
+### Special Thanks
+
+This project incorporates and builds upon several outstanding open-source libraries:
+
+- **[AG Grid](https://ag-grid.com/)** - High-performance data grid for displaying and managing large datasets with a lot of advanced features.
+- **[classnames](https://github.com/JedWatson/classnames)** by Jed Watson - A utility for conditionally joining CSS class names, making dynamic styling more elegant and maintainable.
+- **[jsdiff](https://github.com/kpdecker/jsdiff)** by Kevin Decker - Text diff implementation using Myers O(ND) algorithm.
+
+We are grateful to all maintainers and contributors of these projects for their excellent work that makes this PharmaSys possible.
+
 ---
 
 ## Supabase Integration
@@ -197,17 +207,3 @@ src/
 - Atomic design component hierarchy
 - Testable business logic
 - Scalable feature organization
-
----
-
-## Acknowledgments
-
-This project incorporates and builds upon several outstanding open-source libraries:
-
-- **[AG Grid](https://ag-grid.com/)** - High-performance data grid for displaying and managing large datasets with advanced features like filtering, sorting, and pagination.
-
-- **[classnames](https://github.com/JedWatson/classnames)** by Jed Watson - A utility for conditionally joining CSS class names, making dynamic styling more elegant and maintainable.
-
-- **[jsdiff](https://github.com/kpdecker/jsdiff)** by Kevin Decker - Text diff implementation using Myers O(ND) algorithm.
-
-We are grateful to all maintainers and contributors of these projects for their excellent work that makes this project possible.
