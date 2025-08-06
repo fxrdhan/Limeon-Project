@@ -52,43 +52,18 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
   // Animation sequence effect
   useEffect(() => {
     if (isOpen && animationPhase === 'hidden') {
-      // Start opening animation sequence
       setAnimationPhase('header');
-
-      // Show footer after header
-      setTimeout(() => {
-        setAnimationPhase('footer');
-      }, 150);
-
-      // Show content after footer
-      setTimeout(() => {
-        setAnimationPhase('content');
-      }, 300);
-
-      // Mark as complete
-      setTimeout(() => {
-        setAnimationPhase('complete');
-      }, 650);
-    } else if (
-      !isOpen &&
-      (animationPhase === 'complete' ||
-        animationPhase === 'content' ||
-        animationPhase === 'footer' ||
-        animationPhase === 'header')
-    ) {
-      // Start closing animation sequence
+      setTimeout(() => setAnimationPhase('footer'), 150);
+      setTimeout(() => setAnimationPhase('content'), 300);
+      setTimeout(() => setAnimationPhase('complete'), 650);
+    } else if (!isOpen && animationPhase !== 'hidden') {
       setAnimationPhase('closing');
-
-      // Complete closing after animation duration
-      setTimeout(() => {
-        setAnimationPhase('hidden');
-      }, 200); // 200ms for faster closing animation
+      setTimeout(() => setAnimationPhase('hidden'), 200);
     }
   }, [isOpen, animationPhase]);
 
   useEffect(() => {
     if (searchTerm) {
-      // Prepare search targets for fuzzysort
       const searchTargets = operators.map(op => ({
         operator: op,
         label: op.label,
@@ -96,31 +71,27 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
         description: op.description || '',
       }));
 
-      // Search labels (highest priority)
       const labelResults = fuzzysort.go(searchTerm, searchTargets, {
         key: 'label',
         threshold: -1000,
       });
 
-      // Search values (medium priority)
       const valueResults = fuzzysort.go(searchTerm, searchTargets, {
         key: 'value',
         threshold: -1000,
       });
 
-      // Search descriptions (lowest priority)
       const descResults = fuzzysort.go(searchTerm, searchTargets, {
         key: 'description',
         threshold: -1000,
       });
 
-      // Combine results with priority scoring
       const combinedResults = new Map();
 
       labelResults.forEach(result => {
         combinedResults.set(result.obj.operator.value, {
           operator: result.obj.operator,
-          score: result.score + 1000, // Boost label matches
+          score: result.score + 1000,
         });
       });
 
@@ -128,7 +99,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
         if (!combinedResults.has(result.obj.operator.value)) {
           combinedResults.set(result.obj.operator.value, {
             operator: result.obj.operator,
-            score: result.score + 500, // Medium boost
+            score: result.score + 500,
           });
         }
       });
@@ -137,12 +108,11 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
         if (!combinedResults.has(result.obj.operator.value)) {
           combinedResults.set(result.obj.operator.value, {
             operator: result.obj.operator,
-            score: result.score, // No boost
+            score: result.score,
           });
         }
       });
 
-      // Sort by score and extract operators
       const filtered = Array.from(combinedResults.values())
         .sort((a, b) => b.score - a.score)
         .map(item => item.operator);
@@ -155,21 +125,20 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
     }
   }, [searchTerm, operators]);
 
+  // Simple keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen || animationPhase !== 'complete') return;
+      if (!isOpen) return;
 
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex(prev =>
-            prev < filteredOperators.length - 1 ? prev + 1 : 0
-          );
+          setSelectedIndex(prev => (prev + 1) % filteredOperators.length);
           break;
         case 'ArrowUp':
           e.preventDefault();
           setSelectedIndex(prev =>
-            prev > 0 ? prev - 1 : filteredOperators.length - 1
+            prev === 0 ? filteredOperators.length - 1 : prev - 1
           );
           break;
         case 'Enter':
@@ -187,27 +156,17 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [
-    isOpen,
-    animationPhase,
-    filteredOperators,
-    selectedIndex,
-    onSelect,
-    onClose,
-  ]);
+  }, [isOpen, filteredOperators, selectedIndex, onSelect, onClose]);
 
+  // Simple scroll to selected item
   useEffect(() => {
-    if (
-      isOpen &&
-      animationPhase === 'complete' &&
-      itemRefs.current[selectedIndex]
-    ) {
+    if (isOpen && itemRefs.current[selectedIndex]) {
       itemRefs.current[selectedIndex]?.scrollIntoView({
-        block: 'center',
+        block: 'nearest',
         behavior: 'smooth',
       });
     }
-  }, [selectedIndex, isOpen, animationPhase]);
+  }, [selectedIndex, isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -219,28 +178,28 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
       }
     };
 
-    if (isOpen && animationPhase === 'complete') {
+    if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, animationPhase, onClose]);
+  }, [isOpen, onClose]);
 
-  // Don't render if completely hidden
   if (animationPhase === 'hidden') return null;
 
   return (
     <div
       ref={modalRef}
-      className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 min-w-80 flex flex-col"
+      className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-80 flex flex-col"
       style={{
         top: position.top + 5,
         left: position.left,
+        maxHeight: '320px',
       }}
     >
-      {/* Header - fades in first */}
+      {/* Header */}
       <div
         className={`flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg transition-opacity duration-200 ${
           animationPhase === 'closing' ? 'opacity-0' : 'opacity-100'
@@ -252,14 +211,14 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
         </div>
       </div>
 
-      {/* Content - appears last with smooth slide and fade */}
+      {/* Content */}
       <div
         className={`flex-1 overflow-y-auto min-h-0 transition-all duration-300 ease-out ${
           animationPhase === 'header' ||
           animationPhase === 'footer' ||
           animationPhase === 'closing'
             ? 'opacity-0 max-h-0'
-            : 'opacity-100 max-h-64'
+            : 'opacity-100'
         }`}
         style={{
           transform:
@@ -275,21 +234,19 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
             Tidak ada operator yang ditemukan untuk "{searchTerm}"
           </div>
         ) : (
-          <div className="py-2">
+          <div className="py-1">
             {filteredOperators.map((operator, index) => (
               <div
                 key={operator.value}
                 ref={el => {
                   itemRefs.current[index] = el;
                 }}
-                className={`px-3 py-2 cursor-pointer flex items-start gap-3 hover:bg-gray-50 transition-colors ${
+                className={`px-3 py-2 cursor-pointer flex items-start gap-3 mx-1 rounded-md transition-all duration-200 ease-out ${
                   index === selectedIndex
-                    ? 'bg-blue-100 border-r-2 border-blue-500 hover:bg-blue-50'
-                    : ''
+                    ? 'bg-purple-100'
+                    : 'bg-transparent hover:bg-gray-50'
                 }`}
-                onClick={() =>
-                  animationPhase === 'complete' && onSelect(operator)
-                }
+                onClick={() => onSelect(operator)}
               >
                 <div className="flex-shrink-0 mt-0.5">{operator.icon}</div>
                 <div className="flex-1 min-w-0">
@@ -297,7 +254,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
                     <span
                       className={`text-sm font-medium ${
                         index === selectedIndex
-                          ? 'text-blue-700'
+                          ? 'text-purple-700'
                           : 'text-gray-900'
                       }`}
                     >
@@ -317,7 +274,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
         )}
       </div>
 
-      {/* Footer - fades in second */}
+      {/* Footer */}
       <div
         className={`flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg transition-opacity duration-200 ${
           animationPhase === 'header' || animationPhase === 'closing'

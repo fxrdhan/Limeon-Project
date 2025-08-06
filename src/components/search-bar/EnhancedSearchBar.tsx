@@ -469,14 +469,52 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   );
 
   const handleCloseColumnSelector = useCallback(() => {
-    // Just close the column selector without clearing the input
+    // Close the column selector and clear invalid hashtag input
     setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
-  }, []);
+    
+    // If input starts with # but no valid column is selected, clear it
+    if (value.startsWith('#') && !searchMode.selectedColumn) {
+      const searchTerm = value.substring(1);
+      const exactMatch = memoizedColumns.find(
+        col =>
+          col.field.toLowerCase() === searchTerm.toLowerCase() ||
+          col.headerName.toLowerCase() === searchTerm.toLowerCase()
+      );
+      
+      // If no exact match found, clear the input
+      if (!exactMatch) {
+        if (onClearSearch) {
+          onClearSearch();
+        } else {
+          onChange({
+            target: { value: '' },
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
+      }
+    }
+  }, [value, searchMode.selectedColumn, memoizedColumns, onClearSearch, onChange]);
 
   const handleCloseOperatorSelector = useCallback(() => {
-    // Just close the operator selector without clearing the input
+    // Close the operator selector and return to valid state
     setSearchMode(prev => ({ ...prev, showOperatorSelector: false }));
-  }, []);
+    
+    // If we have a selected column, return to column selected mode
+    if (searchMode.selectedColumn) {
+      const newValue = `#${searchMode.selectedColumn.field}`;
+      onChange({
+        target: { value: newValue },
+      } as React.ChangeEvent<HTMLInputElement>);
+    } else {
+      // If no valid column, clear the input
+      if (onClearSearch) {
+        onClearSearch();
+      } else {
+        onChange({
+          target: { value: '' },
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
+    }
+  }, [searchMode.selectedColumn, onChange, onClearSearch]);
 
   const handleClearTargeted = useCallback(() => {
     if (searchMode.isFilterMode && searchMode.filterSearch) {
@@ -617,12 +655,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         // Handle escape to close selectors or clear search
         if (e.key === 'Escape') {
           if (searchMode.showColumnSelector) {
-            // Just close the column selector without clearing input
-            setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
+            // Use the same logic as handleCloseColumnSelector
+            handleCloseColumnSelector();
             return;
           } else if (searchMode.showOperatorSelector) {
-            // Just close the operator selector without clearing input
-            setSearchMode(prev => ({ ...prev, showOperatorSelector: false }));
+            // Use the same logic as handleCloseOperatorSelector
+            handleCloseOperatorSelector();
             return;
           } else if (value && onClearSearch) {
             // Clear search when Escape is pressed and there's a search value
@@ -691,7 +729,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         onKeyDown?.(e);
       }
     },
-    [searchMode, onChange, onKeyDown, onClearSearch, value, operatorSearchTerm]
+    [searchMode, onChange, onKeyDown, onClearSearch, value, operatorSearchTerm, handleCloseColumnSelector, handleCloseOperatorSelector]
   );
 
   const getSearchIconColor = () => {
