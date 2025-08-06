@@ -7,7 +7,10 @@ import { Card } from '@/components/card';
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
 import { ItemDataTable } from '@/features/item-management/presentation/organisms';
 import ItemManagementModal from '@/features/item-management/presentation/templates/item/ItemManagementModal';
-import { SlidingSelector, SlidingSelectorOption } from '@/components/shared/SlidingSelector';
+import {
+  SlidingSelector,
+  SlidingSelectorOption,
+} from '@/components/shared/sliding-selector';
 
 // New unified entity management
 import { EntityMasterPage } from '@/features/item-management/presentation/pages';
@@ -36,13 +39,48 @@ type MasterDataType =
 
 // Transform to SlidingSelector format
 const TAB_OPTIONS: SlidingSelectorOption<MasterDataType>[] = [
-  { key: 'items', value: 'items', defaultLabel: 'Item', activeLabel: 'Daftar Item' },
-  { key: 'categories', value: 'categories', defaultLabel: 'Kategori', activeLabel: 'Kategori Item' },
-  { key: 'types', value: 'types', defaultLabel: 'Jenis', activeLabel: 'Jenis Item' },
-  { key: 'packages', value: 'packages', defaultLabel: 'Kemasan', activeLabel: 'Kemasan Item' },
-  { key: 'dosages', value: 'dosages', defaultLabel: 'Sediaan', activeLabel: 'Sediaan Item' },
-  { key: 'manufacturers', value: 'manufacturers', defaultLabel: 'Produsen', activeLabel: 'Produsen Item' },
-  { key: 'units', value: 'units', defaultLabel: 'Satuan', activeLabel: 'Satuan Item' },
+  {
+    key: 'items',
+    value: 'items',
+    defaultLabel: 'Item',
+    activeLabel: 'Daftar Item',
+  },
+  {
+    key: 'categories',
+    value: 'categories',
+    defaultLabel: 'Kategori',
+    activeLabel: 'Kategori Item',
+  },
+  {
+    key: 'types',
+    value: 'types',
+    defaultLabel: 'Jenis',
+    activeLabel: 'Jenis Item',
+  },
+  {
+    key: 'packages',
+    value: 'packages',
+    defaultLabel: 'Kemasan',
+    activeLabel: 'Kemasan Item',
+  },
+  {
+    key: 'dosages',
+    value: 'dosages',
+    defaultLabel: 'Sediaan',
+    activeLabel: 'Sediaan Item',
+  },
+  {
+    key: 'manufacturers',
+    value: 'manufacturers',
+    defaultLabel: 'Produsen',
+    activeLabel: 'Produsen Item',
+  },
+  {
+    key: 'units',
+    value: 'units',
+    defaultLabel: 'Satuan',
+    activeLabel: 'Satuan Item',
+  },
 ];
 
 const URL_TO_TAB_MAP: Record<string, MasterDataType> = {
@@ -81,7 +119,6 @@ const ItemMasterNew = memo(() => {
       setActiveTab(newTab);
     }
   }, [location.pathname, activeTab, getTabFromPath]);
-
 
   // Items tab states (only needed for items tab)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
