@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 import { PiKeyReturnBold } from 'react-icons/pi';
-import type { TableSearchProps } from '@/types';
+import { TableSearchProps } from './types';
+import { SEARCH_CONSTANTS } from './constants';
 
 const SearchBar: React.FC<TableSearchProps> = ({
   value,
@@ -43,7 +44,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
     <div className={`mb-4 relative ${className}`}>
       <div className="flex items-center">
         <LuSearch
-          className={`${getSearchIconColor()} transition-all duration-300 ease-in-out ${
+          className={`${getSearchIconColor()} transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
             hasValue
               ? 'opacity-100 transform translate-x-0 scale-150'
               : 'opacity-0 transform -translate-x-2 scale-100'
@@ -59,7 +60,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
             ref={inputRef}
             type="text"
             placeholder={placeholder}
-            className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-300 ease-in-out ${
+            className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
               hasValue ? 'pl-3' : 'pl-10'
             } ${
               searchState === 'not-found'
@@ -73,7 +74,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
             onBlur={onBlur}
           />
           <LuSearch
-            className={`absolute top-3.5 ${getSearchIconColor()} transition-all duration-300 ease-in-out ${
+            className={`absolute top-3.5 ${getSearchIconColor()} transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
               hasValue
                 ? 'opacity-0 transform translate-x-2 left-3'
                 : 'opacity-100 transform translate-x-0 left-3'
@@ -90,7 +91,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
             {value}
           </span>
           <PiKeyReturnBold
-            className={`absolute top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none ml-1 transition-all duration-300 ease-in-out ${
+            className={`absolute top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none ml-1 transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
               searchState === 'not-found' && value
                 ? 'opacity-100 scale-150 translate-x-0'
                 : 'opacity-0 scale-95 translate-x-2'

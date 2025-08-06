@@ -1,36 +1,8 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { HiOutlineSparkles } from 'react-icons/hi2';
 import fuzzysort from 'fuzzysort';
-
-export interface BaseSelectorConfig<T> {
-  headerText: string;
-  footerSingular: string;
-  maxHeight: string;
-  noResultsText: string;
-  getItemKey: (item: T) => string;
-  getItemLabel: (item: T) => string;
-  getItemIcon: (item: T) => React.ReactNode;
-  getItemSecondaryText?: (item: T) => string;
-  getItemDescription?: (item: T) => string;
-  getSearchFields: (item: T) => Array<{ key: string; value: string; boost?: number }>;
-  theme?: 'purple' | 'blue';
-}
-
-interface BaseSelectorProps<T> {
-  items: T[];
-  isOpen: boolean;
-  onSelect: (item: T) => void;
-  onClose: () => void;
-  position: { top: number; left: number };
-  searchTerm?: string;
-  config: BaseSelectorConfig<T>;
-}
-
-type AnimationPhase =
-  | 'hidden'
-  | 'opening'
-  | 'open'
-  | 'closing';
+import { BaseSelectorProps } from '../../types';
+import { AnimationPhase, SEARCH_CONSTANTS } from '../../constants';
 
 function BaseSelector<T>({
   items,
@@ -54,24 +26,30 @@ function BaseSelector<T>({
     }
   }, [isOpen]);
 
-  // Smooth animation sequence
+  // Ensure selectedIndex stays within bounds when filteredItems change
+  useEffect(() => {
+    if (filteredItems.length > 0 && selectedIndex >= filteredItems.length) {
+      setSelectedIndex(Math.max(0, filteredItems.length - 1));
+    } else if (filteredItems.length === 0) {
+      setSelectedIndex(0);
+    }
+  }, [filteredItems.length, selectedIndex]);
+
   useEffect(() => {
     if (isOpen && animationPhase === 'hidden') {
       setAnimationPhase('opening');
-      setTimeout(() => setAnimationPhase('open'), 200);
+      setTimeout(() => setAnimationPhase('open'), SEARCH_CONSTANTS.ANIMATION_OPENING_DURATION);
     } else if (!isOpen && animationPhase !== 'hidden') {
       setAnimationPhase('closing');
-      setTimeout(() => setAnimationPhase('hidden'), 150);
+      setTimeout(() => setAnimationPhase('hidden'), SEARCH_CONSTANTS.ANIMATION_CLOSING_DURATION);
     }
   }, [isOpen, animationPhase]);
 
-  // Memoize search fields to avoid recreation
   const searchFieldsConfig = useMemo(() => {
     if (items.length === 0) return [];
     return config.getSearchFields(items[0]);
   }, [items, config]);
 
-  // Search filtering - simplified and stable
   useEffect(() => {
     if (searchTerm && items.length > 0) {
       const searchTargets = items.map(item => {
@@ -84,11 +62,10 @@ function BaseSelector<T>({
 
       const allResults = new Map<string, { item: T; score: number }>();
 
-      // Search each field with different boosts
       searchFieldsConfig.forEach(fieldConfig => {
         const results = fuzzysort.go(searchTerm, searchTargets, {
           key: fieldConfig.key,
-          threshold: -1000,
+          threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
         });
 
         results.forEach(result => {
@@ -110,32 +87,36 @@ function BaseSelector<T>({
         .map(item => item.item);
 
       setFilteredItems(filtered);
-      setSelectedIndex(0);
+      // Only reset selectedIndex if current selection would be out of bounds
+      setSelectedIndex(prev => prev >= filtered.length ? 0 : prev);
     } else {
       setFilteredItems(items);
-      setSelectedIndex(0);
+      // Only reset selectedIndex if current selection would be out of bounds
+      setSelectedIndex(prev => prev >= items.length ? 0 : prev);
     }
   }, [searchTerm, items, searchFieldsConfig, config]);
 
-  // Simple keyboard navigation - matching original working pattern
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
+      if (!isOpen || filteredItems.length === 0) return;
 
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex(prev => (prev + 1) % filteredItems.length);
+          setSelectedIndex(prev => {
+            const nextIndex = prev + 1;
+            return nextIndex >= filteredItems.length ? 0 : nextIndex;
+          });
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setSelectedIndex(prev => 
-            prev === 0 ? filteredItems.length - 1 : prev - 1
-          );
+          setSelectedIndex(prev => {
+            return prev === 0 ? filteredItems.length - 1 : prev - 1;
+          });
           break;
         case 'Enter':
           e.preventDefault();
-          if (filteredItems[selectedIndex]) {
+          if (selectedIndex >= 0 && selectedIndex < filteredItems.length && filteredItems[selectedIndex]) {
             onSelect(filteredItems[selectedIndex]);
           }
           break;
@@ -150,7 +131,6 @@ function BaseSelector<T>({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, filteredItems, selectedIndex, onSelect, onClose]);
 
-  // Scroll to selected item
   useEffect(() => {
     if (isOpen && itemRefs.current[selectedIndex]) {
       itemRefs.current[selectedIndex]?.scrollIntoView({
@@ -160,7 +140,6 @@ function BaseSelector<T>({
     }
   }, [selectedIndex, isOpen, filteredItems]);
 
-  // Click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
@@ -189,7 +168,6 @@ function BaseSelector<T>({
         maxHeight: config.maxHeight,
       }}
     >
-      {/* Header */}
       <div
         className={`flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg transition-all duration-300 ease-out ${
           animationPhase === 'open'
@@ -203,7 +181,6 @@ function BaseSelector<T>({
         </div>
       </div>
 
-      {/* Content */}
       <div
         className={`flex-1 overflow-y-auto min-h-0 transition-all duration-300 ease-out ${
           animationPhase === 'open'
@@ -264,7 +241,6 @@ function BaseSelector<T>({
         )}
       </div>
 
-      {/* Footer */}
       <div
         className={`flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg transition-all duration-300 ease-out ${
           animationPhase === 'open'

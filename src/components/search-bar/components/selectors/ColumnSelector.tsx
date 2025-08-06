@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { SearchColumn, ColumnSelectorProps } from '@/types/search';
 import { LuHash, LuSearch, LuFilter } from 'react-icons/lu';
-import BaseSelector, { BaseSelectorConfig } from './BaseSelector';
+import BaseSelector from './BaseSelector';
+import { SearchColumn, ColumnSelectorProps, BaseSelectorConfig } from '../../types';
 
 const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   columns,
