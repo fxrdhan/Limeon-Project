@@ -1,7 +1,5 @@
 import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { motion, LayoutGroup } from 'framer-motion';
-import classNames from 'classnames';
 
 // Components
 import PageTitle from '@/components/page-title';
@@ -9,6 +7,7 @@ import { Card } from '@/components/card';
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
 import { ItemDataTable } from '@/features/item-management/presentation/organisms';
 import ItemManagementModal from '@/features/item-management/presentation/templates/item/ItemManagementModal';
+import { SlidingSelector, SlidingSelectorOption } from '@/components/shared/SlidingSelector';
 
 // New unified entity management
 import { EntityMasterPage } from '@/features/item-management/presentation/pages';
@@ -35,25 +34,15 @@ type MasterDataType =
   | 'manufacturers'
   | 'units';
 
-// Memoize static configurations outside component
-const TAB_CONFIGS = {
-  items: { key: 'items' as const, label: 'Daftar Item' },
-  categories: { key: 'categories' as const, label: 'Kategori' },
-  types: { key: 'types' as const, label: 'Jenis' },
-  packages: { key: 'packages' as const, label: 'Kemasan' },
-  dosages: { key: 'dosages' as const, label: 'Sediaan' },
-  manufacturers: { key: 'manufacturers' as const, label: 'Produsen' },
-  units: { key: 'units' as const, label: 'Satuan' },
-} as const;
-
-const TAB_ORDER: MasterDataType[] = [
-  'items',
-  'categories',
-  'types',
-  'packages',
-  'dosages',
-  'manufacturers',
-  'units',
+// Transform to SlidingSelector format
+const TAB_OPTIONS: SlidingSelectorOption<MasterDataType>[] = [
+  { key: 'items', value: 'items', defaultLabel: 'Item', activeLabel: 'Daftar Item' },
+  { key: 'categories', value: 'categories', defaultLabel: 'Kategori', activeLabel: 'Kategori Item' },
+  { key: 'types', value: 'types', defaultLabel: 'Jenis', activeLabel: 'Jenis Item' },
+  { key: 'packages', value: 'packages', defaultLabel: 'Kemasan', activeLabel: 'Kemasan Item' },
+  { key: 'dosages', value: 'dosages', defaultLabel: 'Sediaan', activeLabel: 'Sediaan Item' },
+  { key: 'manufacturers', value: 'manufacturers', defaultLabel: 'Produsen', activeLabel: 'Produsen Item' },
+  { key: 'units', value: 'units', defaultLabel: 'Satuan', activeLabel: 'Satuan Item' },
 ];
 
 const URL_TO_TAB_MAP: Record<string, MasterDataType> = {
@@ -92,6 +81,7 @@ const ItemMasterNew = memo(() => {
       setActiveTab(newTab);
     }
   }, [location.pathname, activeTab, getTabFromPath]);
+
 
   // Items tab states (only needed for items tab)
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
@@ -205,9 +195,9 @@ const ItemMasterNew = memo(() => {
   );
 
   const handleTabChange = useCallback(
-    (newTab: MasterDataType) => {
-      if (newTab !== activeTab) {
-        navigate(`/master-data/item-master/${newTab}`);
+    (_key: string, value: MasterDataType) => {
+      if (value !== activeTab) {
+        navigate(`/master-data/item-master/${value}`);
 
         // Clear search when switching tabs
         if (searchInputRef.current) {
@@ -223,9 +213,7 @@ const ItemMasterNew = memo(() => {
     [activeTab, navigate, isAddItemModalOpen, closeAddItemModal]
   );
 
-  // Use memoized configurations
-  const tabConfigs = TAB_CONFIGS;
-  const tabOrder = TAB_ORDER;
+  // No need for mouse handlers - handled by SlidingSelector
 
   // Unified rendering - keep tabs always mounted for smooth animation
   return (
@@ -233,51 +221,20 @@ const ItemMasterNew = memo(() => {
       <Card>
         <div className="relative flex items-center justify-center mb-0 pt-0">
           <div className="absolute left-0 pb-4 pt-6">
-            <LayoutGroup id="item-master-tabs">
-              <div className="flex items-center rounded-lg bg-zinc-100 p-1 shadow-md text-gray-700 overflow-hidden select-none relative w-fit">
-                {tabOrder.map(tabKey => {
-                  const config = tabConfigs[tabKey];
-                  return (
-                    <button
-                      key={config.key}
-                      className={classNames(
-                        'group px-4 py-2 rounded-lg focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150',
-                        {
-                          'hover:bg-emerald-100 hover:text-emerald-700':
-                            activeTab !== config.key,
-                        }
-                      )}
-                      onClick={() => handleTabChange(config.key)}
-                    >
-                      {activeTab === config.key && (
-                        <motion.div
-                          layoutId="tab-selector-bg"
-                          className="absolute inset-0 bg-primary rounded-lg shadow-xs"
-                          transition={{
-                            type: 'spring',
-                            stiffness: 500,
-                            damping: 30,
-                            duration: 0.3,
-                          }}
-                        />
-                      )}
-                      <span
-                        className={classNames(
-                          'relative z-10 select-none font-medium',
-                          {
-                            'text-white': activeTab === config.key,
-                            'text-gray-700 group-hover:text-emerald-700':
-                              activeTab !== config.key,
-                          }
-                        )}
-                      >
-                        {config.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </LayoutGroup>
+            <SlidingSelector
+              options={TAB_OPTIONS}
+              activeKey={activeTab}
+              onSelectionChange={handleTabChange}
+              variant="tabs"
+              size="md"
+              shape="rounded"
+              collapsible={true}
+              defaultExpanded={true}
+              expandOnHover={true}
+              autoCollapseDelay={300}
+              layoutId="item-master-tabs"
+              animationPreset="smooth"
+            />
           </div>
 
           <PageTitle title="Item Master" />
