@@ -31,43 +31,18 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   // Animation sequence effect
   useEffect(() => {
     if (isOpen && animationPhase === 'hidden') {
-      // Start opening animation sequence
       setAnimationPhase('header');
-
-      // Show footer after header
-      setTimeout(() => {
-        setAnimationPhase('footer');
-      }, 150);
-
-      // Show content after footer
-      setTimeout(() => {
-        setAnimationPhase('content');
-      }, 300);
-
-      // Mark as complete
-      setTimeout(() => {
-        setAnimationPhase('complete');
-      }, 650);
-    } else if (
-      !isOpen &&
-      (animationPhase === 'complete' ||
-        animationPhase === 'content' ||
-        animationPhase === 'footer' ||
-        animationPhase === 'header')
-    ) {
-      // Start closing animation sequence
+      setTimeout(() => setAnimationPhase('footer'), 150);
+      setTimeout(() => setAnimationPhase('content'), 300);
+      setTimeout(() => setAnimationPhase('complete'), 650);
+    } else if (!isOpen && animationPhase !== 'hidden') {
       setAnimationPhase('closing');
-
-      // Complete closing after animation duration
-      setTimeout(() => {
-        setAnimationPhase('hidden');
-      }, 200); // 200ms for faster closing animation
+      setTimeout(() => setAnimationPhase('hidden'), 200);
     }
   }, [isOpen, animationPhase]);
 
   useEffect(() => {
     if (searchTerm) {
-      // Prepare search targets for fuzzysort
       const searchTargets = columns.map(col => ({
         column: col,
         headerName: col.headerName,
@@ -75,31 +50,27 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         description: col.description || '',
       }));
 
-      // Search header names (highest priority)
       const headerResults = fuzzysort.go(searchTerm, searchTargets, {
         key: 'headerName',
         threshold: -1000,
       });
 
-      // Search field names (medium priority)
       const fieldResults = fuzzysort.go(searchTerm, searchTargets, {
         key: 'field',
         threshold: -1000,
       });
 
-      // Search descriptions (lowest priority)
       const descResults = fuzzysort.go(searchTerm, searchTargets, {
         key: 'description',
         threshold: -1000,
       });
 
-      // Combine results with priority scoring
       const combinedResults = new Map();
 
       headerResults.forEach(result => {
         combinedResults.set(result.obj.column.field, {
           column: result.obj.column,
-          score: result.score + 1000, // Boost header matches
+          score: result.score + 1000,
         });
       });
 
@@ -107,7 +78,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         if (!combinedResults.has(result.obj.column.field)) {
           combinedResults.set(result.obj.column.field, {
             column: result.obj.column,
-            score: result.score + 500, // Medium boost
+            score: result.score + 500,
           });
         }
       });
@@ -116,12 +87,11 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         if (!combinedResults.has(result.obj.column.field)) {
           combinedResults.set(result.obj.column.field, {
             column: result.obj.column,
-            score: result.score, // No boost
+            score: result.score,
           });
         }
       });
 
-      // Sort by score and extract columns
       const filtered = Array.from(combinedResults.values())
         .sort((a, b) => b.score - a.score)
         .map(item => item.column);
@@ -134,21 +104,20 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
     }
   }, [searchTerm, columns]);
 
+  // Simple keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen || animationPhase !== 'complete') return;
+      if (!isOpen) return;
 
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex(prev =>
-            prev < filteredColumns.length - 1 ? prev + 1 : 0
-          );
+          setSelectedIndex(prev => (prev + 1) % filteredColumns.length);
           break;
         case 'ArrowUp':
           e.preventDefault();
           setSelectedIndex(prev =>
-            prev > 0 ? prev - 1 : filteredColumns.length - 1
+            prev === 0 ? filteredColumns.length - 1 : prev - 1
           );
           break;
         case 'Enter':
@@ -166,27 +135,17 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [
-    isOpen,
-    animationPhase,
-    filteredColumns,
-    selectedIndex,
-    onSelect,
-    onClose,
-  ]);
+  }, [isOpen, filteredColumns, selectedIndex, onSelect, onClose]);
 
+  // Simple scroll to selected item
   useEffect(() => {
-    if (
-      isOpen &&
-      animationPhase === 'complete' &&
-      itemRefs.current[selectedIndex]
-    ) {
+    if (isOpen && itemRefs.current[selectedIndex]) {
       itemRefs.current[selectedIndex]?.scrollIntoView({
-        block: 'center',
+        block: 'nearest',
         behavior: 'smooth',
       });
     }
-  }, [selectedIndex, isOpen, animationPhase]);
+  }, [selectedIndex, isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -198,16 +157,15 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       }
     };
 
-    if (isOpen && animationPhase === 'complete') {
+    if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, animationPhase, onClose]);
+  }, [isOpen, onClose]);
 
-  // Don't render if completely hidden
   if (animationPhase === 'hidden') return null;
 
   const getColumnIcon = (column: SearchColumn) => {
@@ -225,13 +183,14 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   return (
     <div
       ref={modalRef}
-      className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 min-w-80 flex flex-col"
+      className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-80 flex flex-col"
       style={{
         top: position.top + 5,
         left: position.left,
+        maxHeight: '320px',
       }}
     >
-      {/* Header - fades in first */}
+      {/* Header */}
       <div
         className={`flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg transition-opacity duration-200 ${
           animationPhase === 'closing' ? 'opacity-0' : 'opacity-100'
@@ -243,14 +202,14 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         </div>
       </div>
 
-      {/* Content - appears last with smooth slide and fade */}
+      {/* Content */}
       <div
         className={`flex-1 overflow-y-auto min-h-0 transition-all duration-300 ease-out ${
           animationPhase === 'header' ||
           animationPhase === 'footer' ||
           animationPhase === 'closing'
             ? 'opacity-0 max-h-0'
-            : 'opacity-100 max-h-64'
+            : 'opacity-100'
         }`}
         style={{
           transform:
@@ -266,21 +225,19 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
             Tidak ada kolom yang ditemukan untuk "{searchTerm}"
           </div>
         ) : (
-          <div className="py-2">
+          <div className="py-1">
             {filteredColumns.map((column, index) => (
               <div
                 key={column.field}
                 ref={el => {
                   itemRefs.current[index] = el;
                 }}
-                className={`px-3 py-2 cursor-pointer flex items-start gap-3 hover:bg-gray-50 transition-colors ${
+                className={`px-3 py-2 cursor-pointer flex items-start gap-3 mx-1 rounded-md transition-all duration-200 ease-out ${
                   index === selectedIndex
-                    ? 'bg-purple-100 border-r-2 border-purple-500 hover:bg-purple-50'
-                    : ''
+                    ? 'bg-purple-100'
+                    : 'bg-transparent hover:bg-gray-50'
                 }`}
-                onClick={() =>
-                  animationPhase === 'complete' && onSelect(column)
-                }
+                onClick={() => onSelect(column)}
               >
                 <div className="flex-shrink-0 mt-0.5">
                   {getColumnIcon(column)}
@@ -312,7 +269,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         )}
       </div>
 
-      {/* Footer - fades in second */}
+      {/* Footer */}
       <div
         className={`flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg transition-opacity duration-200 ${
           animationPhase === 'header' || animationPhase === 'closing'
