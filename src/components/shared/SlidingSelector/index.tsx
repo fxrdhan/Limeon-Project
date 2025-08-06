@@ -58,7 +58,7 @@ const SIZE_CLASSES = {
   },
   md: {
     container: 'p-1',
-    button: 'px-4 py-1.5',
+    button: 'px-3 py-1.5',
     text: 'text-base',
   },
   lg: {
