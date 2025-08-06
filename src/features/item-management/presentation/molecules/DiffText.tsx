@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { DiffSegment, diffCache } from '@/utils/diff';
-import { analyzeDiff } from '@/services/api/diff.service';
-import { ComparisonSkeleton } from '../atoms';
+import React, { useMemo } from 'react';
+import { diffChars, convertChangesToSegments } from '@/utils/jsdiff';
 
 interface LocalDiffTextProps {
   oldText: string;
   newText: string;
-  mode?: 'character' | 'word' | 'smart';
   className?: string;
   isFlipped?: boolean;
 }
@@ -17,102 +14,20 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
   className = '',
   isFlipped = false,
 }) => {
-  const [segments, setSegments] = useState<DiffSegment[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const mountedRef = useRef(true);
+  // Compute character-level diff directly
+  const segments = useMemo(() => {
+    try {
+      const changes = diffChars(oldText, newText);
+      return convertChangesToSegments(changes);
+    } catch (error) {
+      console.error('❌ Character diff computation failed:', error);
+      return [];
+    }
+  }, [oldText, newText]);
 
-  // Create unique key for current inputs
-  const inputKey = `${oldText}|||${newText}`;
-
-  useEffect(() => {
-    mountedRef.current = true; // Reset mounted status
-
-    const computeDiff = async () => {
-      console.log(`🔍 Computing diff for: ${inputKey.substring(0, 30)}...`);
-
-      // L1 Cache check first
-      const cachedResult = diffCache.get(oldText, newText);
-      if (cachedResult) {
-        console.log('🚀 L1 Cache HIT');
-        if (mountedRef.current) {
-          setSegments(cachedResult);
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      // Start loading
-      if (mountedRef.current) {
-        setError(null);
-        setIsLoading(true);
-      }
-
-      try {
-        // Server request dengan deduplication
-        const segments = await diffCache.getOrCreatePendingRequest(
-          oldText,
-          newText,
-          async () => {
-            console.log('📡 Making server request...');
-            const result = await analyzeDiff(oldText, newText);
-            console.log(
-              `✅ Server response: ${result.meta.processingTime}ms ${result.meta.fromCache ? '(cached)' : '(computed)'}`
-            );
-            return result.segments;
-          }
-        );
-
-        console.log(`📦 Received ${segments?.length || 0} segments`);
-
-        // Update state jika component masih mounted
-        if (mountedRef.current) {
-          console.log('✅ Updating UI state');
-          setSegments(segments || []);
-          diffCache.set(oldText, newText, segments || []);
-        } else {
-          console.log('⏭️ Component unmounted - skipping UI update');
-          // Still cache the result for future use
-          diffCache.set(oldText, newText, segments || []);
-        }
-      } catch (serverError) {
-        console.error('❌ Server request failed:', serverError);
-        if (mountedRef.current) {
-          setError('Tidak dapat menerima hasil komputasi. Coba lagi nanti.');
-          setSegments([]);
-        }
-      } finally {
-        if (mountedRef.current) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    computeDiff();
-
-    // Cleanup: mark as unmounted
-    return () => {
-      console.log(`🧹 Cleanup: unmounting for ${inputKey.substring(0, 30)}...`);
-      mountedRef.current = false;
-    };
-  }, [oldText, newText, inputKey]);
-
-  // Error state
-  if (error) {
-    return (
-      <div className={`text-red-600 text-sm ${className}`}>
-        <span className="inline-flex items-center gap-1">⚠️ {error}</span>
-      </div>
-    );
-  }
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className={`${className}`}>
-        <ComparisonSkeleton lines={1} />
-      </div>
-    );
+  // Return early if no segments
+  if (!segments.length) {
+    return <span className={`${className}`}>{newText}</span>;
   }
 
   // Helper function to get segment styling with flip support

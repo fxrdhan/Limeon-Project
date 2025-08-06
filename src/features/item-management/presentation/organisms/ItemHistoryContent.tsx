@@ -216,7 +216,6 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
                                 <DiffText
                                   oldText={String(changes.from || '')}
                                   newText={String(changes.to || '')}
-                                  mode="smart"
                                   className="w-full"
                                 />
                               </div>
