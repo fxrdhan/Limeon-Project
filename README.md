@@ -10,8 +10,8 @@ PharmaSys is a modern web-based application designed to streamline pharmacy and 
 - **Authentication & User Management:** Secure login and profile management
 - **Real-time Data Synchronization:** Live updates across user sessions with presence tracking
 - **Version Control System:** Complete entity history tracking with versioning and restoration capabilities
-- **Text Comparison Engine:** Advanced diff analysis with general pharmaceutical terminology support
-- **Performance Optimized:** Code-splitting, lazy loading, and multi-layer caching (client + Redis)
+- **Text Comparison Engine:** Client-side character diff using Myers O(ND) algorithm with instant processing
+- **Performance Optimized:** Code-splitting, lazy loading, and local processing without server dependencies
 
 ---
 
@@ -48,8 +48,6 @@ This project is built with:
 - **Compiler:** [SWC](https://swc.rs/) (via @vitejs/plugin-react-swc)
 - **Schema Validation:** [Zod](https://zod.dev/)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **CSS Utilities:** [classnames](https://github.com/JedWatson/classnames)
-- **Data Grid:** [AG Grid](https://ag-grid.com/)
 - **Routing:** [React Router DOM](https://reactrouter.com/)
 - **Data Fetching & Caching:** [TanStack Query](https://tanstack.com/query/latest)
 - **State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
@@ -73,7 +71,6 @@ PharmaSys leverages the full power of [Supabase](https://supabase.com/) as its b
   - `extract-invoice`: Process invoice images to extract data
   - `confirm-invoice`: Store extracted invoice data
   - `regenerate-invoice`: Reprocess existing invoices
-  - `diff-analyzer`: Text comparison with general pharmaceutical support and Redis caching
   - `metrics`: Function usage and performance tracking
 
 ### Database Migrations
@@ -93,11 +90,11 @@ All database schema changes (e.g., adding tables or columns) are managed through
 
 **Diff Analysis Engine:**
 
-- Heuristic algorithm for optimal diff strategy selection (character vs word level)
-- Pharmaceutical terminology support
-- Pattern detection for abbreviations, numbers, punctuation, and typo corrections
-- Server-side processing via `diff-analyzer` edge function
-- Multi-layer caching: client-side + Redis with request deduplication
+- Pure client-side character-level diffing using Myers O(ND) algorithm
+- 100% exact implementation from jsdiff library (https://github.com/kpdecker/jsdiff)
+- Real-time local processing with instant results
+- Complete support for ignoreCase, oneChangePerToken, timeout, and maxEditLength options
+- No server dependencies - fully offline capable
 
 **User Interface:**
 
@@ -200,3 +197,17 @@ src/
 - Atomic design component hierarchy
 - Testable business logic
 - Scalable feature organization
+
+---
+
+## Acknowledgments
+
+This project incorporates and builds upon several outstanding open-source libraries:
+
+- **[AG Grid](https://ag-grid.com/)** - High-performance data grid for displaying and managing large datasets with advanced features like filtering, sorting, and pagination.
+
+- **[classnames](https://github.com/JedWatson/classnames)** by Jed Watson - A utility for conditionally joining CSS class names, making dynamic styling more elegant and maintainable.
+
+- **[jsdiff](https://github.com/kpdecker/jsdiff)** by Kevin Decker - Text diff implementation using Myers O(ND) algorithm.
+
+We are grateful to all maintainers and contributors of these projects for their excellent work that makes this project possible.
