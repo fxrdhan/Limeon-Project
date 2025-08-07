@@ -76,7 +76,7 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
             onMouseEnter={() => !expandOnClick && setIsHovered(true)}
             onMouseLeave={() => !expandOnClick && setIsHovered(false)}
           >
-            <div className="mt-2 min-h-[100px] max-h-[200px] p-1">
+            <div className="mt-2 min-h-[100px] max-h-[200px] p-0">
               <textarea
                 ref={textareaRef}
                 name={name}
