@@ -77,6 +77,21 @@ export const useSearchKeyboard = ({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
             return;
+          } else if (
+            searchMode.selectedColumn &&
+            !searchMode.showColumnSelector &&
+            !searchMode.showOperatorSelector &&
+            !searchMode.isFilterMode &&
+            value === `#${searchMode.selectedColumn.field}`
+          ) {
+            if (onClearSearch) {
+              onClearSearch();
+            } else {
+              onChange({
+                target: { value: '' },
+              } as React.ChangeEvent<HTMLInputElement>);
+            }
+            return;
           }
         }
 
