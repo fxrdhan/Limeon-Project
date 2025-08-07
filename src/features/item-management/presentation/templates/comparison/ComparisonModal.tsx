@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FaExchangeAlt } from 'react-icons/fa';
@@ -41,6 +41,102 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
 }) => {
   const { comparison, uiActions } = useEntityModal();
   const { isFlipped } = comparison;
+
+  // Refs for checking overflow
+  const kodeRef = useRef<HTMLDivElement>(null);
+  const nameRef = useRef<HTMLDivElement>(null);
+  const descriptionRef = useRef<HTMLDivElement>(null);
+
+  // State to track overflow status
+  const [overflowStatus, setOverflowStatus] = useState({
+    kode: false,
+    name: false,
+    description: false,
+  });
+
+  // Function to check if element overflows
+  const checkOverflow = (element: HTMLElement | null) => {
+    if (!element) return false;
+    return element.scrollHeight > element.clientHeight;
+  };
+
+  // Effect to check overflow when content changes (must be before early returns)
+  useEffect(() => {
+    const checkAllOverflow = () => {
+      setOverflowStatus({
+        kode: checkOverflow(kodeRef.current),
+        name: checkOverflow(nameRef.current),
+        description: checkOverflow(descriptionRef.current),
+      });
+    };
+
+    if (isOpen) {
+      // Check immediately and after a small delay to ensure content is rendered
+      checkAllOverflow();
+      const timer = setTimeout(checkAllOverflow, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isFlipped]);
+
+  // Auto-scroll to first highlighted text EVERY TIME content changes (must be before early returns)
+  useEffect(() => {
+    // Only run when modal is actually opened
+    if (!isOpen) return;
+
+    const scrollToFirstHighlight = (
+      container: HTMLDivElement | null,
+      retryCount = 0
+    ) => {
+      if (!container) return;
+
+      // Use multiple requestAnimationFrame for better timing - especially for equal->diff transitions
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            // Find first highlighted element (either added or removed text)
+            const highlightedElement = container.querySelector(
+              '.bg-green-400, .bg-red-400'
+            );
+            if (highlightedElement) {
+              // Smooth scroll to first highlight - no jarring reset to top
+              highlightedElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest',
+              });
+            } else if (retryCount < 3) {
+              // Retry if highlighted elements not found yet (useful for equal->diff transitions)
+              setTimeout(
+                () => scrollToFirstHighlight(container, retryCount + 1),
+                100
+              );
+            }
+          });
+        });
+      });
+    };
+
+    // Longer delay to ensure DOM is fully updated with new content and highlights
+    const timer = setTimeout(() => {
+      // Priority order: description (usually longest), name, then kode
+      // Only scroll if container actually overflows (is scrollable)
+      if (descriptionRef.current && checkOverflow(descriptionRef.current)) {
+        scrollToFirstHighlight(descriptionRef.current);
+      } else if (nameRef.current && checkOverflow(nameRef.current)) {
+        scrollToFirstHighlight(nameRef.current);
+      } else if (kodeRef.current && checkOverflow(kodeRef.current)) {
+        scrollToFirstHighlight(kodeRef.current);
+      }
+    }, 400); // Longer delay to handle equal->diff transitions properly
+
+    return () => clearTimeout(timer);
+  }, [
+    isOpen,
+    isFlipped,
+    selectedVersion?.version_number,
+    versionA?.version_number,
+    versionB?.version_number,
+  ]); // Trigger on content changes - retry mechanism handles equal->diff transitions
 
   // Early return for invalid states
   if (!isDualMode && !selectedVersion) return null;
@@ -137,6 +233,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     return null;
   };
 
+  // Get comparison data
   const compData = getComparisonData();
   const originalData = getOriginalComparisonData();
   if (!compData) return null;
@@ -484,8 +581,8 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <h4 className="text-sm font-medium text-yellow-800 mb-3">
+                    <div className="bg-gray-200 border border-gray-200 rounded-lg p-3">
+                      <h4 className="text-sm font-medium text-slate-800 mb-3">
                         {isDualMode
                           ? 'Perbedaan antara kedua versi:'
                           : 'Berbeda dari saat ini:'}
@@ -506,11 +603,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
                             >
-                              <div className="text-xs font-medium text-yellow-700 mb-1">
+                              <div className="text-xs font-medium text-slate-700 mb-1">
                                 Kode:
                               </div>
                               <div className="relative bg-gray-50 rounded overflow-hidden">
-                                <div className="p-2 max-h-[80px] overflow-y-auto scrollbar-thin">
+                                <div
+                                  ref={kodeRef}
+                                  className="p-2 max-h-[80px] overflow-y-auto scrollbar-thin"
+                                >
                                   <DiffText
                                     oldText={
                                       originalData?.originalLeftKode ||
@@ -524,10 +624,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                     isFlipped={isFlipped}
                                   />
                                 </div>
-                                {/* Top fade gradient */}
-                                <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
-                                {/* Bottom fade gradient */}
-                                <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
+                                {/* Top fade gradient - only show when overflowing */}
+                                {overflowStatus.kode && (
+                                  <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
+                                )}
+                                {/* Bottom fade gradient - only show when overflowing */}
+                                {overflowStatus.kode && (
+                                  <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
+                                )}
                               </div>
                             </motion.div>
                           )}
@@ -542,11 +646,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
                             >
-                              <div className="text-xs font-medium text-yellow-700 mb-1">
+                              <div className="text-xs font-medium text-slate-700 mb-1">
                                 Nama:
                               </div>
                               <div className="relative bg-gray-50 rounded overflow-hidden">
-                                <div className="p-2 max-h-[100px] overflow-y-auto scrollbar-thin">
+                                <div
+                                  ref={nameRef}
+                                  className="p-2 max-h-[100px] overflow-y-auto scrollbar-thin"
+                                >
                                   <DiffText
                                     oldText={
                                       originalData?.originalLeftName ||
@@ -560,10 +667,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                     isFlipped={isFlipped}
                                   />
                                 </div>
-                                {/* Top fade gradient */}
-                                <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
-                                {/* Bottom fade gradient */}
-                                <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
+                                {/* Top fade gradient - only show when overflowing */}
+                                {overflowStatus.name && (
+                                  <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
+                                )}
+                                {/* Bottom fade gradient - only show when overflowing */}
+                                {overflowStatus.name && (
+                                  <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
+                                )}
                               </div>
                             </motion.div>
                           )}
@@ -578,13 +689,16 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
                             >
-                              <div className="text-xs font-medium text-yellow-700 mb-1">
+                              <div className="text-xs font-medium text-slate-700 mb-1">
                                 {entityName === 'Produsen'
                                   ? 'Alamat:'
                                   : 'Deskripsi:'}
                               </div>
                               <div className="relative bg-gray-50 rounded overflow-hidden">
-                                <div className="p-2 max-h-[150px] overflow-y-auto scrollbar-thin">
+                                <div
+                                  ref={descriptionRef}
+                                  className="p-2 max-h-[150px] overflow-y-auto scrollbar-thin"
+                                >
                                   <DiffText
                                     oldText={
                                       originalData?.originalLeftDescription ||
@@ -598,10 +712,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                     isFlipped={isFlipped}
                                   />
                                 </div>
-                                {/* Top fade gradient */}
-                                <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
-                                {/* Bottom fade gradient */}
-                                <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
+                                {/* Top fade gradient - only show when overflowing */}
+                                {overflowStatus.description && (
+                                  <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
+                                )}
+                                {/* Bottom fade gradient - only show when overflowing */}
+                                {overflowStatus.description && (
+                                  <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
+                                )}
                               </div>
                             </motion.div>
                           )}
