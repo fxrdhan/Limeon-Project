@@ -29,18 +29,9 @@ export class StorageService {
       data: { publicUrl },
     } = supabase.storage.from(bucket).getPublicUrl(data.path);
 
-    // In development, use proxy to avoid Cloudflare cookie issues
-    const finalPublicUrl =
-      import.meta.env.DEV && publicUrl.includes('.supabase.co')
-        ? publicUrl.replace(
-            /https:\/\/[^.]+\.supabase\.co/,
-            'http://localhost:5173'
-          )
-        : publicUrl;
-
     return {
       path: data.path,
-      publicUrl: finalPublicUrl,
+      publicUrl,
     };
   }
 
@@ -90,14 +81,6 @@ export class StorageService {
     const {
       data: { publicUrl },
     } = supabase.storage.from(bucket).getPublicUrl(path);
-
-    // In development, use proxy to avoid Cloudflare cookie issues
-    if (import.meta.env.DEV && publicUrl.includes('.supabase.co')) {
-      return publicUrl.replace(
-        /https:\/\/[^.]+\.supabase\.co/,
-        'http://localhost:5173'
-      );
-    }
 
     return publicUrl;
   }

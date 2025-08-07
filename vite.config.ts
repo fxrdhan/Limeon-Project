@@ -5,10 +5,6 @@ import path from 'path';
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  define: {
-    // Suppress React DevTools warning in development
-    __REACT_DEVTOOLS_GLOBAL_HOOK__: 'undefined',
-  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -18,35 +14,6 @@ export default defineConfig({
     fs: {
       // Allow serving files from one level up from the project root
       allow: ['..'],
-    },
-    // Proxy Supabase Storage requests to avoid cookie issues on images
-    proxy: {
-      '/storage': {
-        target:
-          process.env.VITE_SUPABASE_URL ||
-          'https://psqmckbtwqphcteymjil.supabase.co',
-        changeOrigin: true,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        configure: (proxy, _options) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          proxy.on('proxyRes', (proxyRes, _req, _res) => {
-            // Remove all set-cookie headers for storage assets
-            delete proxyRes.headers['set-cookie'];
-
-            // Set cache headers for images
-            const url = _req.url || '';
-            if (url.includes('/storage/v1/object/public/')) {
-              proxyRes.headers['cache-control'] = 'public, max-age=3600';
-            }
-          });
-
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          proxy.on('proxyReq', (proxyReq, _req, _res) => {
-            // Remove all cookies from storage requests
-            proxyReq.removeHeader('cookie');
-          });
-        },
-      },
     },
   },
   build: {
