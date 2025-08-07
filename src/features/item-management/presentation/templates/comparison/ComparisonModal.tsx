@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FaExchangeAlt } from 'react-icons/fa';
@@ -47,12 +47,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   const nameRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
 
-  // State to track overflow status
-  const [overflowStatus, setOverflowStatus] = useState({
-    kode: false,
-    name: false,
-    description: false,
-  });
 
   // Function to check if element overflows
   const checkOverflow = (element: HTMLElement | null) => {
@@ -60,23 +54,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     return element.scrollHeight > element.clientHeight;
   };
 
-  // Effect to check overflow when content changes (must be before early returns)
-  useEffect(() => {
-    const checkAllOverflow = () => {
-      setOverflowStatus({
-        kode: checkOverflow(kodeRef.current),
-        name: checkOverflow(nameRef.current),
-        description: checkOverflow(descriptionRef.current),
-      });
-    };
-
-    if (isOpen) {
-      // Check immediately and after a small delay to ensure content is rendered
-      checkAllOverflow();
-      const timer = setTimeout(checkAllOverflow, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, isFlipped]);
 
   // Auto-scroll to first highlighted text EVERY TIME content changes (must be before early returns)
   useEffect(() => {
@@ -581,7 +558,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
-                    <div className="bg-gray-200 border border-gray-200 rounded-lg p-3">
+                    <div className="bg-white p-0">
                       <h4 className="text-sm font-medium text-slate-800 mb-3">
                         {isDualMode
                           ? 'Perbedaan antara kedua versi:'
@@ -603,13 +580,13 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
                             >
-                              <div className="text-xs font-medium text-slate-700 mb-1">
+                              <div className="text-xs font-medium text-slate-700 mb-0">
                                 Kode:
                               </div>
-                              <div className="relative bg-gray-50 rounded overflow-hidden">
+                              <div className="relative overflow-hidden">
                                 <div
                                   ref={kodeRef}
-                                  className="p-2 max-h-[80px] overflow-y-auto scrollbar-thin"
+                                  className="px-4 py-4 max-h-[80px] overflow-y-auto scrollbar-thin"
                                 >
                                   <DiffText
                                     oldText={
@@ -624,14 +601,13 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                     isFlipped={isFlipped}
                                   />
                                 </div>
-                                {/* Top fade gradient - only show when overflowing */}
-                                {overflowStatus.kode && (
-                                  <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
-                                )}
-                                {/* Bottom fade gradient - only show when overflowing */}
-                                {overflowStatus.kode && (
-                                  <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
-                                )}
+                                {/* Enhanced gradient fade overlay on all sides */}
+                                <div className="absolute inset-0 pointer-events-none rounded">
+                                  <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white via-white/60 to-transparent"></div>
+                                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/60 to-transparent"></div>
+                                  <div className="absolute top-0 bottom-0 left-0 w-4 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
+                                  <div className="absolute top-0 bottom-0 right-0 w-4 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
+                                </div>
                               </div>
                             </motion.div>
                           )}
@@ -646,13 +622,13 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
                             >
-                              <div className="text-xs font-medium text-slate-700 mb-1">
+                              <div className="text-xs font-medium text-slate-700 mb-0">
                                 Nama:
                               </div>
-                              <div className="relative bg-gray-50 rounded overflow-hidden">
+                              <div className="relative overflow-hidden">
                                 <div
                                   ref={nameRef}
-                                  className="p-2 max-h-[100px] overflow-y-auto scrollbar-thin"
+                                  className="px-4 py-4 max-h-[100px] overflow-y-auto scrollbar-thin"
                                 >
                                   <DiffText
                                     oldText={
@@ -667,14 +643,13 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                     isFlipped={isFlipped}
                                   />
                                 </div>
-                                {/* Top fade gradient - only show when overflowing */}
-                                {overflowStatus.name && (
-                                  <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
-                                )}
-                                {/* Bottom fade gradient - only show when overflowing */}
-                                {overflowStatus.name && (
-                                  <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
-                                )}
+                                {/* Enhanced gradient fade overlay on all sides */}
+                                <div className="absolute inset-0 pointer-events-none rounded">
+                                  <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white via-white/60 to-transparent"></div>
+                                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/60 to-transparent"></div>
+                                  <div className="absolute top-0 bottom-0 left-0 w-4 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
+                                  <div className="absolute top-0 bottom-0 right-0 w-4 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
+                                </div>
                               </div>
                             </motion.div>
                           )}
@@ -689,15 +664,15 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                               transition={{ duration: 0.2 }}
                               className="overflow-hidden"
                             >
-                              <div className="text-xs font-medium text-slate-700 mb-1">
+                              <div className="text-xs font-medium text-slate-700 mb-0">
                                 {entityName === 'Produsen'
                                   ? 'Alamat:'
                                   : 'Deskripsi:'}
                               </div>
-                              <div className="relative bg-gray-50 rounded overflow-hidden">
+                              <div className="relative overflow-hidden">
                                 <div
                                   ref={descriptionRef}
-                                  className="p-2 max-h-[150px] overflow-y-auto scrollbar-thin"
+                                  className="px-4 py-4 max-h-[150px] overflow-y-auto scrollbar-thin"
                                 >
                                   <DiffText
                                     oldText={
@@ -712,14 +687,13 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                     isFlipped={isFlipped}
                                   />
                                 </div>
-                                {/* Top fade gradient - only show when overflowing */}
-                                {overflowStatus.description && (
-                                  <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-t"></div>
-                                )}
-                                {/* Bottom fade gradient - only show when overflowing */}
-                                {overflowStatus.description && (
-                                  <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent pointer-events-none rounded-b"></div>
-                                )}
+                                {/* Enhanced gradient fade overlay on all sides */}
+                                <div className="absolute inset-0 pointer-events-none rounded">
+                                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white via-white/65 to-transparent"></div>
+                                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/65 to-transparent"></div>
+                                  <div className="absolute top-0 bottom-0 left-0 w-5 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
+                                  <div className="absolute top-0 bottom-0 right-0 w-5 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
+                                </div>
                               </div>
                             </motion.div>
                           )}
