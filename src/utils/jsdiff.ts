@@ -116,19 +116,21 @@ export type AllDiffOptions = {
  * keep track of the state of the diffing algorithm, but gets converted to an array of
  * ChangeObjects before being returned to the caller.
  */
-interface DraftChangeObject {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface DraftChangeObject<ValueT = any> {
   added: boolean;
   removed: boolean;
   count: number;
-  previousComponent?: DraftChangeObject;
+  previousComponent?: DraftChangeObject<ValueT>;
 
   // Only added in buildValues:
-  value?: any;
+  value?: ValueT;
 }
 
-interface Path {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface Path<ValueT = any> {
   oldPos: number;
-  lastComponent: DraftChangeObject | undefined;
+  lastComponent: DraftChangeObject<ValueT> | undefined;
 }
 
 export default class Diff<
@@ -224,7 +226,7 @@ export default class Diff<
     const maxExecutionTime = options.timeout ?? Infinity;
     const abortAfterTimestamp = Date.now() + maxExecutionTime;
 
-    const bestPath: Path[] = [{ oldPos: -1, lastComponent: undefined }];
+    const bestPath: Path<ValueT>[] = [{ oldPos: -1, lastComponent: undefined }];
 
     // Seed editLength = 0, i.e. the content starts with the same values
     let newPos = this.extractCommon(
@@ -363,12 +365,12 @@ export default class Diff<
   }
 
   private addToPath(
-    path: Path,
+    path: Path<ValueT>,
     added: boolean,
     removed: boolean,
     oldPosInc: number,
     options: AllDiffOptions
-  ): Path {
+  ): Path<ValueT> {
     const last = path.lastComponent;
     if (
       last &&
@@ -399,7 +401,7 @@ export default class Diff<
   }
 
   private extractCommon(
-    basePath: Path,
+    basePath: Path<ValueT>,
     newTokens: TokenT[],
     oldTokens: TokenT[],
     diagonalPath: number,
@@ -495,13 +497,13 @@ export default class Diff<
   }
 
   private buildValues(
-    lastComponent: DraftChangeObject | undefined,
+    lastComponent: DraftChangeObject<ValueT> | undefined,
     newTokens: TokenT[],
     oldTokens: TokenT[]
   ): ChangeObject<ValueT>[] {
     // First we convert our linked list of components in reverse order to an
     // array in the right order:
-    const components: DraftChangeObject[] = [];
+    const components: DraftChangeObject<ValueT>[] = [];
     let nextComponent;
     while (lastComponent) {
       components.push(lastComponent);
@@ -592,6 +594,7 @@ export function diffChars(
 export function diffChars(
   oldStr: string,
   newStr: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options?: any
 ): undefined | ChangeObject<string>[] {
   return characterDiff.diff(oldStr, newStr, options);
