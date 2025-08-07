@@ -22,6 +22,16 @@ export interface Unit {
   updated_at?: string | null;
 }
 
+export interface ItemPackage {
+  id: string;
+  code?: string;
+  name: string;
+  nci_code?: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string | null;
+}
+
 export interface ItemManufacturer {
   id: string;
   code?: string;

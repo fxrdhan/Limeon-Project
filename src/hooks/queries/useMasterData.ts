@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import { masterDataService } from '@/services/api/masterData.service';
-import type { Category, MedicineType, Unit, Supplier } from '@/types/database';
+import type { Category, MedicineType, ItemPackage, Supplier } from '@/types/database';
 import type { ItemUnit } from '@/services/api/masterData.service';
 
 // Category Hooks
@@ -188,12 +188,12 @@ export const useMedicineTypeMutations = () => {
   return { createMedicineType, updateMedicineType, deleteMedicineType };
 };
 
-// Unit Hooks
-export const useUnits = (options?: { enabled?: boolean }) => {
+// Item Package Hooks
+export const usePackages = (options?: { enabled?: boolean }) => {
   return useQuery({
-    queryKey: QueryKeys.masterData.units.list(),
+    queryKey: QueryKeys.masterData.packages.list(),
     queryFn: async () => {
-      const result = await masterDataService.units.getActiveUnits();
+      const result = await masterDataService.packages.getActivePackages();
       if (result.error) throw result.error;
       return result.data;
     },
@@ -203,11 +203,11 @@ export const useUnits = (options?: { enabled?: boolean }) => {
   });
 };
 
-export const useUnit = (id: string, options?: { enabled?: boolean }) => {
+export const usePackage = (id: string, options?: { enabled?: boolean }) => {
   return useQuery({
-    queryKey: QueryKeys.masterData.units.detail(id),
+    queryKey: QueryKeys.masterData.packages.detail(id),
     queryFn: async () => {
-      const result = await masterDataService.units.getById(id);
+      const result = await masterDataService.packages.getById(id);
       if (result.error) throw result.error;
       return result.data;
     },
@@ -217,50 +217,57 @@ export const useUnit = (id: string, options?: { enabled?: boolean }) => {
   });
 };
 
-export const useUnitMutations = () => {
+export const usePackageMutations = () => {
   const queryClient = useQueryClient();
 
-  const createUnit = useMutation({
-    mutationFn: async (data: Omit<Unit, 'id' | 'updated_at'>) => {
-      const result = await masterDataService.units.create(data);
+  const createPackage = useMutation({
+    mutationFn: async (data: Omit<ItemPackage, 'id' | 'updated_at'>) => {
+      const result = await masterDataService.packages.create(data);
       if (result.error) throw result.error;
       return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.units(),
+        queryKey: getInvalidationKeys.masterData.packages(),
       });
     },
   });
 
-  const updateUnit = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Unit> }) => {
-      const result = await masterDataService.units.update(id, data);
+  const updatePackage = useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<ItemPackage>;
+    }) => {
+      const result = await masterDataService.packages.update(id, data);
       if (result.error) throw result.error;
       return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.units(),
+        queryKey: getInvalidationKeys.masterData.packages(),
       });
     },
   });
 
-  const deleteUnit = useMutation({
+  const deletePackage = useMutation({
     mutationFn: async (id: string) => {
-      const result = await masterDataService.units.delete(id);
+      const result = await masterDataService.packages.delete(id);
       if (result.error) throw result.error;
       return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.units(),
+        queryKey: getInvalidationKeys.masterData.packages(),
       });
     },
   });
 
-  return { createUnit, updateUnit, deleteUnit };
+  return { createPackage, updatePackage, deletePackage };
 };
+
 
 // Item Unit Hooks (for item_units table)
 export const useItemUnits = (options?: { enabled?: boolean }) => {
@@ -449,7 +456,7 @@ export const useAllMasterData = (options?: { enabled?: boolean }) => {
       if (
         result.errors.categories ||
         result.errors.types ||
-        result.errors.units ||
+        result.errors.packages ||
         result.errors.suppliers
       ) {
         throw new Error('Failed to fetch master data');

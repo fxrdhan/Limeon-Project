@@ -62,15 +62,15 @@ export const QueryKeys = {
         [...QueryKeys.masterData.types.details(), id] as const,
     },
 
-    // Units
-    units: {
-      all: ['masterData', 'units'] as const,
-      lists: () => [...QueryKeys.masterData.units.all, 'list'] as const,
+    // Packages
+    packages: {
+      all: ['masterData', 'packages'] as const,
+      lists: () => [...QueryKeys.masterData.packages.all, 'list'] as const,
       list: (filters?: Record<string, unknown>) =>
-        [...QueryKeys.masterData.units.lists(), { filters }] as const,
-      details: () => [...QueryKeys.masterData.units.all, 'detail'] as const,
+        [...QueryKeys.masterData.packages.lists(), { filters }] as const,
+      details: () => [...QueryKeys.masterData.packages.all, 'detail'] as const,
       detail: (id: string) =>
-        [...QueryKeys.masterData.units.details(), id] as const,
+        [...QueryKeys.masterData.packages.details(), id] as const,
     },
 
     // Suppliers
@@ -207,7 +207,7 @@ export const getInvalidationKeys = {
       QueryKeys.items.all,
     ],
     types: () => [QueryKeys.masterData.types.all, QueryKeys.items.all],
-    units: () => [QueryKeys.masterData.units.all, QueryKeys.items.all],
+    packages: () => [QueryKeys.masterData.packages.all, QueryKeys.items.all],
     suppliers: () => [
       QueryKeys.masterData.suppliers.all,
       QueryKeys.purchases.all,

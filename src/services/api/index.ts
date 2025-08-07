@@ -26,7 +26,7 @@ export {
   masterDataService,
   categoryService,
   medicineTypeService,
-  unitService,
+  itemPackageService,
   supplierService,
 } from './masterData.service';
 export {

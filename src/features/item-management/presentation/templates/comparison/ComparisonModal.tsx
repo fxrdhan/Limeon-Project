@@ -16,6 +16,7 @@ interface ComparisonModalProps {
   selectedVersion?: VersionData;
   currentData: {
     kode?: string;
+    code?: string;
     name: string;
     description: string;
   };
@@ -115,6 +116,11 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     versionB?.version_number,
   ]); // Trigger on content changes - retry mechanism handles equal->diff transitions
 
+  // Helper function to get code field from entity data (supports both 'code' and 'kode')
+  const getCodeField = (entityData: Record<string, unknown> | undefined | null) => {
+    return String(entityData?.code || entityData?.kode || '');
+  };
+
   // Early return for invalid states
   if (!isDualMode && !selectedVersion) return null;
   if (isDualMode && (!versionA || !versionB)) return null;
@@ -130,14 +136,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
       const versionBData = versionB.entity_data;
       const isManufacturer = entityName === 'Produsen';
       return {
-        originalLeftKode: String(versionAData?.kode || ''),
+        originalLeftKode: getCodeField(versionAData),
         originalLeftName: String(versionAData?.name || ''),
         originalLeftDescription: String(
           isManufacturer
             ? versionAData?.address || ''
             : versionAData?.description || ''
         ),
-        originalRightKode: String(versionBData?.kode || ''),
+        originalRightKode: getCodeField(versionBData),
         originalRightName: String(versionBData?.name || ''),
         originalRightDescription: String(
           isManufacturer
@@ -159,14 +165,14 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
       const versionAData = effectiveVersionA?.entity_data;
       const versionBData = effectiveVersionB?.entity_data;
       return {
-        leftKode: String(versionAData?.kode || ''),
+        leftKode: getCodeField(versionAData),
         leftName: String(versionAData?.name || ''),
         leftDescription: String(
           isManufacturer
             ? versionAData?.address || ''
             : versionAData?.description || ''
         ),
-        rightKode: String(versionBData?.kode || ''),
+        rightKode: getCodeField(versionBData),
         rightName: String(versionBData?.name || ''),
         rightDescription: String(
           isManufacturer
@@ -176,7 +182,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
         leftVersion: effectiveVersionA,
         rightVersion: effectiveVersionB,
         isKodeDifferent:
-          versionA.entity_data?.kode !== versionB.entity_data?.kode,
+          getCodeField(versionA.entity_data) !== getCodeField(versionB.entity_data),
         isNameDifferent:
           versionA.entity_data?.name !== versionB.entity_data?.name,
         isDescriptionDifferent: isManufacturer
@@ -186,7 +192,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
       };
     } else if (selectedVersion) {
       const versionData = selectedVersion.entity_data;
-      const versionKode = String(versionData?.kode || '');
+      const versionKode = getCodeField(versionData);
       const versionName = String(versionData?.name || '');
       const versionDescription = String(
         isManufacturer
@@ -197,12 +203,12 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
         leftKode: versionKode,
         leftName: versionName,
         leftDescription: versionDescription,
-        rightKode: currentData.kode || '',
+        rightKode: currentData.code || currentData.kode || '',
         rightName: currentData.name,
         rightDescription: currentData.description,
         leftVersion: selectedVersion,
         rightVersion: null,
-        isKodeDifferent: (currentData.kode || '') !== versionKode,
+        isKodeDifferent: (currentData.code || currentData.kode || '') !== versionKode,
         isNameDifferent: currentData.name !== versionName,
         isDescriptionDifferent: currentData.description !== versionDescription,
       };

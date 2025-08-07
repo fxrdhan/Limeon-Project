@@ -5,7 +5,7 @@ import { useAlert } from '@/components/alert/hooks';
 import {
   useCategories,
   useMedicineTypes,
-  useUnits,
+  usePackages,
   useItemUnits,
 } from '@/hooks/queries/useMasterData';
 import { useDosages } from '@/hooks/queries/useDosages';
@@ -16,7 +16,7 @@ import { useItems } from '@/hooks/queries/useItems';
 import {
   useCategoryMutations,
   useMedicineTypeMutations,
-  useUnitMutations,
+  usePackageMutations,
   useItemUnitMutations,
   useSuppliers,
   useSupplierMutations,
@@ -51,8 +51,8 @@ const getHooksForTable = (tableName: string) => {
       };
     case 'item_packages':
       return {
-        useData: (options: QueryOptions) => useUnits(options),
-        useMutations: useUnitMutations,
+        useData: (options: QueryOptions) => usePackages(options),
+        useMutations: usePackageMutations,
       };
     case 'item_units':
       return {
@@ -120,6 +120,7 @@ export const useEntityCrudOperations = (
     async (itemData: {
       id?: string;
       kode?: string;
+      code?: string;
       name: string;
       description?: string;
       address?: string;
@@ -132,7 +133,7 @@ export const useEntityCrudOperations = (
             ('updateCategory' in mutations && mutations.updateCategory) ||
             ('updateMedicineType' in mutations &&
               mutations.updateMedicineType) ||
-            ('updateUnit' in mutations && mutations.updateUnit) ||
+            ('updatePackage' in mutations && mutations.updatePackage) ||
             ('updateItemUnit' in mutations && mutations.updateItemUnit) ||
             ('updateSupplier' in mutations && mutations.updateSupplier) ||
             ('updateItem' in mutations && mutations.updateItem) ||
@@ -155,12 +156,15 @@ export const useEntityCrudOperations = (
             if (itemData.nci_code !== undefined) {
               updateData.nci_code = itemData.nci_code;
             }
-            if (itemData.kode !== undefined) {
-              updateData.kode = itemData.kode;
-              // For item_units table, use 'code' instead of 'kode'
-              if (tableName === 'item_units') {
-                updateData.code = itemData.kode;
-                delete updateData.kode;
+            // Handle code field properly for different tables
+            const codeValue = itemData.code || itemData.kode;
+            if (codeValue !== undefined) {
+              if (tableName.startsWith('item_')) {
+                // All item master tables use 'code' field
+                updateData.code = codeValue;
+              } else {
+                // Other tables (like suppliers, customers, etc.) might use 'kode'
+                updateData.kode = codeValue;
               }
             }
 
@@ -198,7 +202,7 @@ export const useEntityCrudOperations = (
             ('createCategory' in mutations && mutations.createCategory) ||
             ('createMedicineType' in mutations &&
               mutations.createMedicineType) ||
-            ('createUnit' in mutations && mutations.createUnit) ||
+            ('createPackage' in mutations && mutations.createPackage) ||
             ('createItemUnit' in mutations && mutations.createItemUnit) ||
             ('createSupplier' in mutations && mutations.createSupplier) ||
             ('createItem' in mutations && mutations.createItem) ||
@@ -221,12 +225,15 @@ export const useEntityCrudOperations = (
             if (itemData.nci_code !== undefined) {
               createData.nci_code = itemData.nci_code;
             }
-            if (itemData.kode !== undefined) {
-              createData.kode = itemData.kode;
-              // For item_units table, use 'code' instead of 'kode'
-              if (tableName === 'item_units') {
-                createData.code = itemData.kode;
-                delete createData.kode;
+            // Handle code field properly for different tables
+            const codeValue = itemData.code || itemData.kode;
+            if (codeValue !== undefined) {
+              if (tableName.startsWith('item_')) {
+                // All item master tables use 'code' field
+                createData.code = codeValue;
+              } else {
+                // Other tables (like suppliers, customers, etc.) might use 'kode'
+                createData.kode = codeValue;
               }
             }
 
@@ -243,10 +250,32 @@ export const useEntityCrudOperations = (
         // Manually refetch to ensure current tab updates immediately after mutation
         refetch();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error';
+        // Check for duplicate code constraint error (409 Conflict)
+        // PostgrestError structure: {message: string, details: string, hint: string, code: string}
+        const errorMessage = error?.message || error?.toString() || 'Unknown error';
+        const errorDetails = error?.details || '';
+        const errorCode = error?.code || '';
+        
+        const isDuplicateCodeError = 
+          errorCode === '23505' || // PostgreSQL unique violation code
+          errorMessage.includes('item_units_kode_key') || 
+          errorMessage.includes('duplicate key value') ||
+          errorMessage.includes('violates unique constraint') ||
+          errorDetails.includes('already exists') ||
+          errorMessage.includes('already exists') ||
+          (errorMessage.includes('409') && errorMessage.includes('conflict'));
+        
         const action = itemData.id ? 'memperbarui' : 'menambahkan';
-        alert.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
+        const codeValue = itemData.code || itemData.kode;
+        
+        if (isDuplicateCodeError && codeValue) {
+          alert.error(
+            `Kode "${codeValue}" sudah digunakan oleh ${entityNameLabel.toLowerCase()} lain. ` +
+            `Silakan gunakan kode yang berbeda.`
+          );
+        } else {
+          alert.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
+        }
         throw error; // Re-throw to allow caller to handle
       }
     },
@@ -260,7 +289,7 @@ export const useEntityCrudOperations = (
         const deleteMutation =
           ('deleteCategory' in mutations && mutations.deleteCategory) ||
           ('deleteMedicineType' in mutations && mutations.deleteMedicineType) ||
-          ('deleteUnit' in mutations && mutations.deleteUnit) ||
+          ('deletePackage' in mutations && mutations.deletePackage) ||
           ('deleteItemUnit' in mutations && mutations.deleteItemUnit) ||
           ('deleteSupplier' in mutations && mutations.deleteSupplier) ||
           ('deleteItem' in mutations && mutations.deleteItem) ||
@@ -283,9 +312,23 @@ export const useEntityCrudOperations = (
         // Manually refetch to ensure current tab updates immediately after mutation
         refetch();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error';
-        alert.error(`Gagal menghapus ${entityNameLabel}: ${errorMessage}`);
+        // Check for foreign key constraint error for delete operations
+        const isForeignKeyError = 
+          error instanceof Error && 
+          (error.message.includes('foreign key constraint') ||
+           error.message.includes('violates foreign key') ||
+           error.message.includes('still referenced'));
+        
+        if (isForeignKeyError) {
+          alert.error(
+            `Tidak dapat menghapus ${entityNameLabel.toLowerCase()} karena masih digunakan di data lain. ` +
+            `Hapus terlebih dahulu data yang menggunakannya.`
+          );
+        } else {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+          alert.error(`Gagal menghapus ${entityNameLabel}: ${errorMessage}`);
+        }
         throw error; // Re-throw to allow caller to handle
       }
     },
