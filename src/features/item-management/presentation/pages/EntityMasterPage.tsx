@@ -132,7 +132,8 @@ const EntityMasterPage: React.FC = memo(() => {
 
   // Memoize current config to prevent unnecessary re-renders
   const currentConfig = useMemo(
-    () => (activeTab !== 'items' ? entityManager.entityConfigs[activeTab] : null),
+    () =>
+      activeTab !== 'items' ? entityManager.entityConfigs[activeTab] : null,
     [activeTab, entityManager.entityConfigs]
   );
 

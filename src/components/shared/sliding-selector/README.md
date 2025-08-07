@@ -51,11 +51,11 @@ interface SlidingSelectorProps<T = unknown> {
 
 ```typescript
 interface SlidingSelectorOption<T = unknown> {
-  key: string;                    // Unique identifier
-  value: T;                       // Associated value of any type
-  defaultLabel: string;           // Label when not active
-  activeLabel?: string;           // Optional label when active
-  disabled?: boolean;             // Disable specific option
+  key: string; // Unique identifier
+  value: T; // Associated value of any type
+  defaultLabel: string; // Label when not active
+  activeLabel?: string; // Optional label when active
+  disabled?: boolean; // Disable specific option
 }
 ```
 
@@ -130,19 +130,19 @@ const roleOptions: SlidingSelectorOption<UserRole>[] = [
 
 ### Size Variants
 
-| Size | Container Padding | Button Padding | Text Size |
-|------|-------------------|----------------|-----------|
-| `sm` | `p-0.5`          | `px-2 py-1`    | `text-sm` |
-| `md` | `p-1`            | `px-3 py-1.5`  | `text-base` |
-| `lg` | `p-1.5`          | `px-6 py-3`    | `text-lg` |
+| Size | Container Padding | Button Padding | Text Size   |
+| ---- | ----------------- | -------------- | ----------- |
+| `sm` | `p-0.5`           | `px-2 py-1`    | `text-sm`   |
+| `md` | `p-1`             | `px-3 py-1.5`  | `text-base` |
+| `lg` | `p-1.5`           | `px-6 py-3`    | `text-lg`   |
 
 ### Animation Presets
 
-| Preset   | Container Spring | Background Spring | Use Case |
-|----------|------------------|-------------------|----------|
-| `smooth` | 400/30/0.6s      | 500/30/0.3s      | General purpose, polished feel |
-| `snappy` | 600/25/0.4s      | 700/25/0.2s      | Quick interactions, responsive feel |
-| `fluid`  | 300/35/0.8s      | 400/35/0.4s      | Gentle animations, relaxed UX |
+| Preset   | Container Spring | Background Spring | Use Case                            |
+| -------- | ---------------- | ----------------- | ----------------------------------- |
+| `smooth` | 400/30/0.6s      | 500/30/0.3s       | General purpose, polished feel      |
+| `snappy` | 600/25/0.4s      | 700/25/0.2s       | Quick interactions, responsive feel |
+| `fluid`  | 300/35/0.8s      | 400/35/0.4s       | Gentle animations, relaxed UX       |
 
 ### Shape Options
 
@@ -242,13 +242,13 @@ The component is used throughout the application:
 
 ```typescript
 // Container classes
-'flex items-center bg-zinc-100 shadow-md text-gray-700 overflow-hidden select-none relative w-fit'
+'flex items-center bg-zinc-100 shadow-md text-gray-700 overflow-hidden select-none relative w-fit';
 
 // Active state background
-'absolute inset-0 bg-primary shadow-xs'
+'absolute inset-0 bg-primary shadow-xs';
 
 // Button hover states
-'hover:bg-emerald-100 hover:text-emerald-700'
+'hover:bg-emerald-100 hover:text-emerald-700';
 ```
 
 ### Custom Styling

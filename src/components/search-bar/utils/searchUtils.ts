@@ -173,14 +173,20 @@ export const buildFilterValue = (
   filterSearch: FilterSearch,
   inputValue: string
 ): string => {
-  if (filterSearch.operator === 'contains' && !filterSearch.isExplicitOperator) {
+  if (
+    filterSearch.operator === 'contains' &&
+    !filterSearch.isExplicitOperator
+  ) {
     return `#${filterSearch.field}:${inputValue}`;
   } else {
     return `#${filterSearch.field} #${filterSearch.operator} ${inputValue}`;
   }
 };
 
-export const buildColumnValue = (columnName: string, mode: 'colon' | 'space' | 'plain'): string => {
+export const buildColumnValue = (
+  columnName: string,
+  mode: 'colon' | 'space' | 'plain'
+): string => {
   switch (mode) {
     case 'colon':
       return `#${columnName}:`;

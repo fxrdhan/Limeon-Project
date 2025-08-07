@@ -14,22 +14,22 @@ export interface SlidingSelectorProps<T = unknown> {
   options: SlidingSelectorOption<T>[];
   activeKey: string;
   onSelectionChange: (key: string, value: T, event?: React.MouseEvent) => void;
-  
+
   // Styling options
   variant?: 'tabs' | 'selector';
   size?: 'sm' | 'md' | 'lg';
   shape?: 'rounded' | 'pill';
-  
+
   // Expand/collapse functionality
   collapsible?: boolean;
   defaultExpanded?: boolean;
   autoCollapseDelay?: number;
   expandOnHover?: boolean;
-  
+
   // Animation options
   layoutId?: string;
   animationPreset?: 'smooth' | 'snappy' | 'fluid';
-  
+
   // Additional props
   className?: string;
   disabled?: boolean;
@@ -155,7 +155,10 @@ export const SlidingSelector = <T,>({
     [disabled, onSelectionChange]
   );
 
-  const getDisplayLabel = (option: SlidingSelectorOption<T>, isActive: boolean) => {
+  const getDisplayLabel = (
+    option: SlidingSelectorOption<T>,
+    isActive: boolean
+  ) => {
     if (isActive && option.activeLabel) {
       return option.activeLabel;
     }
@@ -176,12 +179,12 @@ export const SlidingSelector = <T,>({
           layout: {
             type: 'spring',
             ...animation.container,
-          }
+          },
         }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {(!collapsible || isExpanded) ? (
+        {!collapsible || isExpanded ? (
           // Expanded view - show all options
           options.map(option => {
             const isActive = option.key === activeKey;
@@ -193,11 +196,12 @@ export const SlidingSelector = <T,>({
                   sizeClasses.button,
                   shapeClasses.button,
                   {
-                    'hover:bg-emerald-100 hover:text-emerald-700': !isActive && !option.disabled,
+                    'hover:bg-emerald-100 hover:text-emerald-700':
+                      !isActive && !option.disabled,
                     'opacity-50 cursor-not-allowed': option.disabled,
                   }
                 )}
-                onClick={(event) => handleOptionClick(option, event)}
+                onClick={event => handleOptionClick(option, event)}
                 disabled={disabled || option.disabled}
               >
                 {isActive && (
@@ -220,7 +224,8 @@ export const SlidingSelector = <T,>({
                     sizeClasses.text,
                     {
                       'text-white': isActive,
-                      'text-gray-700 group-hover:text-emerald-700': !isActive && !option.disabled,
+                      'text-gray-700 group-hover:text-emerald-700':
+                        !isActive && !option.disabled,
                     }
                   )}
                 >
@@ -238,7 +243,9 @@ export const SlidingSelector = <T,>({
                 sizeClasses.button,
                 shapeClasses.button
               )}
-              onClick={(event) => activeOption && handleOptionClick(activeOption, event)}
+              onClick={event =>
+                activeOption && handleOptionClick(activeOption, event)
+              }
               disabled={disabled}
             >
               <motion.div

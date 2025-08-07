@@ -7,6 +7,7 @@ The Pagination component is a sophisticated, feature-rich React component that p
 ## Architecture Patterns
 
 ### 1. Context Provider Pattern
+
 The component uses React Context to share state and functionality across all child components, eliminating prop drilling and providing a centralized state management solution.
 
 ```typescript
@@ -14,7 +15,9 @@ PaginationProvider → PaginationContext → Child Components
 ```
 
 ### 2. Custom Hook Composition
+
 Multiple specialized hooks handle different aspects of pagination:
+
 - `usePaginationState`: Core pagination state management
 - `useFloatingPagination`: Floating pagination visibility logic
 - `useAnimationDirection`: Animation direction calculation
@@ -22,7 +25,9 @@ Multiple specialized hooks handle different aspects of pagination:
 - `usePaginationContext`: Context consumer hook
 
 ### 3. Component Composition
+
 Modular component design allows for flexible UI composition:
+
 - `PaginationContent`: Main content wrapper
 - `FloatingWrapper`: Floating pagination container
 - `PageSizeSelector`: Items per page selector
@@ -32,7 +37,9 @@ Modular component design allows for flexible UI composition:
 ## Core Components
 
 ### Main Component (`index.tsx`)
+
 The root component that orchestrates all functionality:
+
 ```typescript
 <PaginationProvider>
   <div> {/* Static pagination */}
@@ -45,20 +52,26 @@ The root component that orchestrates all functionality:
 ```
 
 ### State Management (`usePaginationState`)
+
 Manages core pagination state including:
+
 - Current page tracking
 - Page size management
 - Event handler creation
 - Page size index synchronization
 
 ### Floating Logic (`useFloatingPagination`)
+
 Implements Intersection Observer API to:
+
 - Detect when static pagination is out of view
 - Toggle floating pagination visibility
 - Handle scroll-based interactions
 
 ### Animation System (`useAnimationDirection`)
+
 Calculates animation direction based on page navigation:
+
 - Forward navigation: positive direction
 - Backward navigation: negative direction
 - Used for smooth page transitions
@@ -68,6 +81,7 @@ Calculates animation direction based on page navigation:
 ### Core Interfaces
 
 #### `PaginationContextValue`
+
 ```typescript
 interface PaginationContextValue {
   // State
@@ -92,12 +106,15 @@ interface PaginationContextValue {
 ```
 
 #### `FloatingPaginationProps`
+
 Main component props interface with configuration options for floating behavior, styling, and event handlers.
 
 ## Configuration System
 
 ### Constants (`constants.ts`)
+
 Centralized configuration for:
+
 - **Animation**: Spring physics, timing, and transition values
 - **Floating**: Intersection Observer settings, positioning
 - **Page Sizes**: Available items per page options `[10, 20, 50, 100]`
@@ -105,13 +122,15 @@ Centralized configuration for:
 - **Accessibility**: ARIA labels for screen readers
 
 ### Utility Functions (`paginationUtils.ts`)
+
 Mathematical helpers for pagination calculations:
+
 ```typescript
-- calculateTotalPages(totalItems, itemsPerPage)
-- calculateItemRange(currentPage, itemsPerPage)
-- isValidPage(page, totalPages)
-- clampPage(page, totalPages)
-- calculateOffset(currentPage, itemsPerPage)
+-calculateTotalPages(totalItems, itemsPerPage) -
+  calculateItemRange(currentPage, itemsPerPage) -
+  isValidPage(page, totalPages) -
+  clampPage(page, totalPages) -
+  calculateOffset(currentPage, itemsPerPage);
 ```
 
 ## Component Dependencies
@@ -121,14 +140,16 @@ Mathematical helpers for pagination calculations:
 The pagination component leverages the shared `SlidingSelector` component for its page size selection functionality:
 
 #### Architecture Relationship
+
 ```typescript
 PageSizeSelector → SlidingSelector (shared/SlidingSelector)
 ```
 
 #### Implementation Details
+
 - **Base Component**: `SlidingSelector` provides the animated UI foundation with Framer Motion
 - **Adapter Pattern**: `PageSizeSelector` acts as an adapter, converting pagination-specific data to `SlidingSelectorOption` format
-- **Configuration Mapping**: 
+- **Configuration Mapping**:
   ```typescript
   // Pagination pageSizes: [10, 20, 50, 100]
   // Transforms to SlidingSelector options:
@@ -141,12 +162,14 @@ PageSizeSelector → SlidingSelector (shared/SlidingSelector)
   ```
 
 #### Shared Features Utilized
+
 - **Smooth Animations**: Spring physics animations via Framer Motion's `layoutId`
 - **Layout Animations**: Seamless transitions between size options
 - **Visual Variants**: Uses `selector` variant with `pill` shape
 - **Dual Context Support**: Different `layoutId` for static vs floating mode
 
 #### Benefits of Integration
+
 - **Code Reusability**: Leverages battle-tested UI component across the application
 - **Consistent UX**: Maintains consistent interaction patterns across different UI contexts
 - **Performance**: Optimized animations and state management from shared component
@@ -155,19 +178,24 @@ PageSizeSelector → SlidingSelector (shared/SlidingSelector)
 ## Features
 
 ### Dual-Mode Operation
+
 - **Static Mode**: Traditional pagination at bottom of content
 - **Floating Mode**: Sticky pagination that appears when static version scrolls out of view
 
 ### Keyboard Navigation
+
 Full keyboard support with arrow keys, Enter, and Escape handling for accessibility compliance.
 
 ### Animation System
+
 Smooth page transitions using spring physics with configurable stiffness and damping values.
 
 ### Responsive Design
+
 Adapts to different screen sizes with optimized floating positioning and mobile-friendly interactions.
 
 ### Accessibility
+
 - ARIA labels for screen readers
 - Keyboard navigation support
 - Focus management

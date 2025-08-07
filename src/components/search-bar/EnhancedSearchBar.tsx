@@ -103,11 +103,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleCloseColumnSelector = useCallback(() => {
     setSearchMode(prev => ({ ...prev, showColumnSelector: false }));
-    
+
     if (value.startsWith('#') && !searchMode.selectedColumn) {
       const searchTerm = value.substring(1);
       const exactMatch = findColumn(memoizedColumns, searchTerm);
-      
+
       if (!exactMatch) {
         if (onClearSearch) {
           onClearSearch();
@@ -118,13 +118,23 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         }
       }
     }
-  }, [value, searchMode.selectedColumn, memoizedColumns, onClearSearch, onChange, setSearchMode]);
+  }, [
+    value,
+    searchMode.selectedColumn,
+    memoizedColumns,
+    onClearSearch,
+    onChange,
+    setSearchMode,
+  ]);
 
   const handleCloseOperatorSelector = useCallback(() => {
     setSearchMode(prev => ({ ...prev, showOperatorSelector: false }));
-    
+
     if (searchMode.selectedColumn) {
-      const newValue = buildColumnValue(searchMode.selectedColumn.field, 'plain');
+      const newValue = buildColumnValue(
+        searchMode.selectedColumn.field,
+        'plain'
+      );
       onChange({
         target: { value: newValue },
       } as React.ChangeEvent<HTMLInputElement>);
@@ -141,7 +151,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const handleClearTargeted = useCallback(() => {
     if (searchMode.isFilterMode && searchMode.filterSearch) {
-      if (searchMode.filterSearch.operator === 'contains' && !searchMode.filterSearch.isExplicitOperator) {
+      if (
+        searchMode.filterSearch.operator === 'contains' &&
+        !searchMode.filterSearch.isExplicitOperator
+      ) {
         if (onClearSearch) {
           onClearSearch();
         } else {

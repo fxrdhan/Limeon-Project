@@ -1,6 +1,10 @@
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { EnhancedSearchState } from '../types';
-import { buildFilterValue, buildColumnValue, getOperatorSearchTerm } from '../utils/searchUtils';
+import {
+  buildFilterValue,
+  buildColumnValue,
+  getOperatorSearchTerm,
+} from '../utils/searchUtils';
 
 interface UseSearchInputProps {
   value: string;
@@ -82,12 +86,19 @@ export const useSearchInput = ({
           setBadgeWidth(badgeRef.current.offsetWidth);
         }
       }, 10); // Slightly longer delay for DOM updates
-      
+
       return () => clearTimeout(timeoutId);
     } else {
       setBadgeWidth(0);
     }
-  }, [showTargetedIndicator, searchMode.isFilterMode, searchMode.filterSearch, searchMode.selectedColumn, searchMode.showColumnSelector, searchMode.showOperatorSelector]);
+  }, [
+    showTargetedIndicator,
+    searchMode.isFilterMode,
+    searchMode.filterSearch,
+    searchMode.selectedColumn,
+    searchMode.showColumnSelector,
+    searchMode.showOperatorSelector,
+  ]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,10 +111,10 @@ export const useSearchInput = ({
         } as React.ChangeEvent<HTMLInputElement>);
       } else if (searchMode.showOperatorSelector && searchMode.selectedColumn) {
         const columnName = searchMode.selectedColumn.field;
-        const cleanInputValue = inputValue.startsWith('#') 
-          ? inputValue.substring(1) 
+        const cleanInputValue = inputValue.startsWith('#')
+          ? inputValue.substring(1)
           : inputValue;
-        
+
         if (cleanInputValue === '') {
           const newValue = buildColumnValue(columnName, 'plain');
           onChange({
@@ -115,9 +126,13 @@ export const useSearchInput = ({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
         }
-      } else if (searchMode.selectedColumn && !searchMode.showColumnSelector && !searchMode.showOperatorSelector) {
+      } else if (
+        searchMode.selectedColumn &&
+        !searchMode.showColumnSelector &&
+        !searchMode.showOperatorSelector
+      ) {
         const columnName = searchMode.selectedColumn.field;
-        
+
         if (inputValue === ' ') {
           const newValue = buildColumnValue(columnName, 'space');
           onChange({

@@ -16,7 +16,11 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   badgesContainerRef,
   onClearTargeted,
 }) => {
-  if (!searchMode.isFilterMode && !searchMode.showOperatorSelector && !searchMode.selectedColumn) {
+  if (
+    !searchMode.isFilterMode &&
+    !searchMode.showOperatorSelector &&
+    !searchMode.selectedColumn
+  ) {
     return null;
   }
 
@@ -26,7 +30,8 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10 flex items-center gap-2"
     >
       {searchMode.isFilterMode && searchMode.filterSearch ? (
-        searchMode.filterSearch.operator === 'contains' && !searchMode.filterSearch.isExplicitOperator ? (
+        searchMode.filterSearch.operator === 'contains' &&
+        !searchMode.filterSearch.isExplicitOperator ? (
           <div
             ref={badgeRef}
             className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-700"
