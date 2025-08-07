@@ -6,11 +6,11 @@ import type { EntityData, EntityType } from './useEntityManager';
 import {
   useCategories,
   useMedicineTypes,
-  useUnits,
+  usePackages,
   useItemUnits,
   useCategoryMutations,
   useMedicineTypeMutations,
-  useUnitMutations,
+  usePackageMutations,
   useItemUnitMutations,
 } from '@/hooks/queries/useMasterData';
 import { useDosages, useDosageMutations } from '@/hooks/queries/useDosages';
@@ -48,8 +48,8 @@ const getHooksForEntityType = (entityType: EntityType) => {
       };
     case 'packages':
       return {
-        useData: (options: QueryOptions) => useUnits(options),
-        useMutations: useUnitMutations,
+        useData: (options: QueryOptions) => usePackages(options),
+        useMutations: usePackageMutations,
       };
     case 'units':
       return {

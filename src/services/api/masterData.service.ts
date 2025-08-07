@@ -1,5 +1,5 @@
 import { BaseService } from './base.service';
-import type { Category, MedicineType, Unit, Supplier } from '@/types/database';
+import type { Category, MedicineType, ItemPackage, Supplier } from '@/types/database';
 
 // Define ItemUnit type (same structure as Unit but for item_units table)
 export interface ItemUnit {
@@ -39,15 +39,15 @@ export class MedicineTypeService extends BaseService<MedicineType> {
   }
 }
 
-// Unit Service
-export class UnitService extends BaseService<Unit> {
+// Item Package Service
+export class ItemPackageService extends BaseService<ItemPackage> {
   constructor() {
     super('item_packages');
   }
 
-  async getActiveUnits() {
+  async getActivePackages() {
     return this.getAll({
-      select: 'id, code, name, nci_code, description, updated_at',
+      select: 'id, code, name, nci_code, description, created_at, updated_at',
       orderBy: { column: 'code', ascending: true },
     });
   }
@@ -110,7 +110,7 @@ export class SupplierService extends BaseService<Supplier> {
 // Export singleton instances
 export const categoryService = new CategoryService();
 export const medicineTypeService = new MedicineTypeService();
-export const unitService = new UnitService();
+export const itemPackageService = new ItemPackageService();
 export const itemUnitService = new ItemUnitService();
 export const supplierService = new SupplierService();
 
@@ -118,28 +118,28 @@ export const supplierService = new SupplierService();
 export class MasterDataService {
   categories = categoryService;
   types = medicineTypeService;
-  units = unitService;
+  packages = itemPackageService;
   itemUnits = itemUnitService;
   suppliers = supplierService;
 
   // Bulk operations for master data
   async getAllMasterData() {
-    const [categories, types, units, suppliers] = await Promise.all([
+    const [categories, types, packages, suppliers] = await Promise.all([
       this.categories.getActiveCategories(),
       this.types.getActiveTypes(),
-      this.units.getActiveUnits(),
+      this.packages.getActivePackages(),
       this.suppliers.getActiveSuppliers(),
     ]);
 
     return {
       categories: categories.data || [],
       types: types.data || [],
-      units: units.data || [],
+      packages: packages.data || [],
       suppliers: suppliers.data || [],
       errors: {
         categories: categories.error,
         types: types.error,
-        units: units.error,
+        packages: packages.error,
         suppliers: suppliers.error,
       },
     };
