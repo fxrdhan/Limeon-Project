@@ -21,7 +21,7 @@
     "export": "tsx scripts/export.ts"
   },
   "dependencies": {
-    "@headlessui/react": "^2.2.7",
+    "@headlessui/react": "latest",
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "latest",
     "@tailwindcss/cli": "^4.1.11",
