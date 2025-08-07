@@ -1,4 +1,10 @@
-import { LuSearch, LuCheck, LuX, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
+import {
+  LuSearch,
+  LuCheck,
+  LuX,
+  LuChevronLeft,
+  LuChevronRight,
+} from 'react-icons/lu';
 
 export const DEFAULT_FILTER_OPERATORS = [
   {

@@ -32,19 +32,16 @@ export const useSearchState = ({
     onFilterSearchRef.current = onFilterSearch;
   });
 
-  const debouncedFilterUpdate = useCallback(
-    (filterSearch: FilterSearch) => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
+  const debouncedFilterUpdate = useCallback((filterSearch: FilterSearch) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
 
-      debounceTimerRef.current = setTimeout(() => {
-        onFilterSearchRef.current?.(filterSearch);
-        onGlobalSearchRef.current?.('');
-      }, SEARCH_CONSTANTS.DEBOUNCE_DELAY);
-    },
-    []
-  );
+    debounceTimerRef.current = setTimeout(() => {
+      onFilterSearchRef.current?.(filterSearch);
+      onGlobalSearchRef.current?.('');
+    }, SEARCH_CONSTANTS.DEBOUNCE_DELAY);
+  }, []);
 
   useEffect(() => {
     const newMode = parseSearchValue(value, columns);

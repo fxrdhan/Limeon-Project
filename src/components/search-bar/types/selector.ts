@@ -18,7 +18,9 @@ export interface BaseSelectorConfig<T> {
   getItemIcon: (item: T) => React.ReactNode;
   getItemSecondaryText?: (item: T) => string;
   getItemDescription?: (item: T) => string;
-  getSearchFields: (item: T) => Array<{ key: string; value: string; boost?: number }>;
+  getSearchFields: (
+    item: T
+  ) => Array<{ key: string; value: string; boost?: number }>;
   theme?: 'purple' | 'blue';
 }
 

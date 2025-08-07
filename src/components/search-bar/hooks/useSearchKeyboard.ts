@@ -45,7 +45,10 @@ export const useSearchKeyboard = ({
             searchMode.isFilterMode &&
             searchMode.filterSearch?.value === ''
           ) {
-            if (searchMode.filterSearch.operator === 'contains' && !searchMode.filterSearch.isExplicitOperator) {
+            if (
+              searchMode.filterSearch.operator === 'contains' &&
+              !searchMode.filterSearch.isExplicitOperator
+            ) {
               if (onClearSearch) {
                 onClearSearch();
               } else {

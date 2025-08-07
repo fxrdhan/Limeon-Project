@@ -15,7 +15,8 @@ function BaseSelector<T>({
 }: BaseSelectorProps<T>) {
   const [filteredItems, setFilteredItems] = useState<T[]>(items);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [animationPhase, setAnimationPhase] = useState<AnimationPhase>('hidden');
+  const [animationPhase, setAnimationPhase] =
+    useState<AnimationPhase>('hidden');
   const modalRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -38,10 +39,16 @@ function BaseSelector<T>({
   useEffect(() => {
     if (isOpen && animationPhase === 'hidden') {
       setAnimationPhase('opening');
-      setTimeout(() => setAnimationPhase('open'), SEARCH_CONSTANTS.ANIMATION_OPENING_DURATION);
+      setTimeout(
+        () => setAnimationPhase('open'),
+        SEARCH_CONSTANTS.ANIMATION_OPENING_DURATION
+      );
     } else if (!isOpen && animationPhase !== 'hidden') {
       setAnimationPhase('closing');
-      setTimeout(() => setAnimationPhase('hidden'), SEARCH_CONSTANTS.ANIMATION_CLOSING_DURATION);
+      setTimeout(
+        () => setAnimationPhase('hidden'),
+        SEARCH_CONSTANTS.ANIMATION_CLOSING_DURATION
+      );
     }
   }, [isOpen, animationPhase]);
 
@@ -56,7 +63,10 @@ function BaseSelector<T>({
         const searchFields = config.getSearchFields(item);
         return {
           item,
-          ...searchFields.reduce((acc, field) => ({ ...acc, [field.key]: field.value }), {}),
+          ...searchFields.reduce(
+            (acc, field) => ({ ...acc, [field.key]: field.value }),
+            {}
+          ),
         };
       });
 
@@ -72,7 +82,7 @@ function BaseSelector<T>({
           const itemKey = config.getItemKey(result.obj.item);
           const boost = fieldConfig.boost || 0;
           const currentBest = allResults.get(itemKey);
-          
+
           if (!currentBest || result.score + boost > currentBest.score) {
             allResults.set(itemKey, {
               item: result.obj.item,
@@ -88,11 +98,11 @@ function BaseSelector<T>({
 
       setFilteredItems(filtered);
       // Only reset selectedIndex if current selection would be out of bounds
-      setSelectedIndex(prev => prev >= filtered.length ? 0 : prev);
+      setSelectedIndex(prev => (prev >= filtered.length ? 0 : prev));
     } else {
       setFilteredItems(items);
       // Only reset selectedIndex if current selection would be out of bounds
-      setSelectedIndex(prev => prev >= items.length ? 0 : prev);
+      setSelectedIndex(prev => (prev >= items.length ? 0 : prev));
     }
   }, [searchTerm, items, searchFieldsConfig, config]);
 
@@ -116,7 +126,11 @@ function BaseSelector<T>({
           break;
         case 'Enter':
           e.preventDefault();
-          if (selectedIndex >= 0 && selectedIndex < filteredItems.length && filteredItems[selectedIndex]) {
+          if (
+            selectedIndex >= 0 &&
+            selectedIndex < filteredItems.length &&
+            filteredItems[selectedIndex]
+          ) {
             onSelect(filteredItems[selectedIndex]);
           }
           break;
@@ -142,7 +156,10 @@ function BaseSelector<T>({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
         onClose();
       }
     };
@@ -172,7 +189,7 @@ function BaseSelector<T>({
         className={`flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg transition-all duration-300 ease-out ${
           animationPhase === 'open'
             ? 'opacity-100 transform translate-y-0'
-            : 'opacity-0 transform -translate-y-2' 
+            : 'opacity-0 transform -translate-y-2'
         }`}
       >
         <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -186,8 +203,8 @@ function BaseSelector<T>({
           animationPhase === 'open'
             ? 'opacity-100 transform translate-y-0 scale-100'
             : animationPhase === 'opening'
-            ? 'opacity-0 max-h-0 transform translate-y-4 scale-95'
-            : 'opacity-0 max-h-0 transform -translate-y-2 scale-98'
+              ? 'opacity-0 max-h-0 transform translate-y-4 scale-95'
+              : 'opacity-0 max-h-0 transform -translate-y-2 scale-98'
         }`}
       >
         {filteredItems.length === 0 ? (
@@ -204,7 +221,9 @@ function BaseSelector<T>({
                 }}
                 className={`px-3 py-2 cursor-pointer flex items-start gap-3 mx-1 rounded-md transition-all duration-200 ease-out ${
                   index === selectedIndex
-                    ? config.theme === 'blue' ? 'bg-blue-100' : 'bg-purple-100'
+                    ? config.theme === 'blue'
+                      ? 'bg-blue-100'
+                      : 'bg-purple-100'
                     : 'bg-transparent hover:bg-gray-50'
                 }`}
                 onClick={() => onSelect(item)}
@@ -217,7 +236,9 @@ function BaseSelector<T>({
                     <span
                       className={`text-sm font-medium ${
                         index === selectedIndex
-                          ? config.theme === 'blue' ? 'text-blue-700' : 'text-purple-700'
+                          ? config.theme === 'blue'
+                            ? 'text-blue-700'
+                            : 'text-purple-700'
                           : 'text-gray-900'
                       }`}
                     >
@@ -229,11 +250,12 @@ function BaseSelector<T>({
                       </span>
                     )}
                   </div>
-                  {config.getItemDescription && config.getItemDescription(item) && (
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                      {config.getItemDescription(item)}
-                    </p>
-                  )}
+                  {config.getItemDescription &&
+                    config.getItemDescription(item) && (
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                        {config.getItemDescription(item)}
+                      </p>
+                    )}
                 </div>
               </div>
             ))}
@@ -250,7 +272,9 @@ function BaseSelector<T>({
       >
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>↑↓ navigasi • Enter pilih • Esc tutup</span>
-          <span>{filteredItems.length} {config.footerSingular}</span>
+          <span>
+            {filteredItems.length} {config.footerSingular}
+          </span>
         </div>
       </div>
     </div>
