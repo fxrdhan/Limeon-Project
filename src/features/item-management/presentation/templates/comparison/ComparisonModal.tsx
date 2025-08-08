@@ -48,6 +48,9 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   const nameRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
 
+  // State for smooth closing animation
+  const [isClosing, setIsClosing] = React.useState(false);
+
   // State to track overflow status
   const [overflowStates, setOverflowStates] = React.useState({
     kode: false,
@@ -60,6 +63,31 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     if (!element) return false;
     return element.scrollHeight > element.clientHeight;
   };
+
+  // Handle smooth closing
+  const handleClose = () => {
+    if (!isClosing) {
+      setIsClosing(true);
+    }
+  };
+
+  // Effect to handle closing animation timing
+  useEffect(() => {
+    if (isClosing) {
+      const timer = setTimeout(() => {
+        onClose();
+        setIsClosing(false);
+      }, 250); // Match animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [isClosing, onClose]);
+
+  // Reset closing state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setIsClosing(false);
+    }
+  }, [isOpen]);
 
   // Auto-scroll to first highlighted text EVERY TIME content changes (must be before early returns)
   useEffect(() => {
@@ -325,7 +353,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     ) {
       try {
         await onRestore(selectedVersion.version_number);
-        onClose(); // Close modal after successful restore
+        handleClose(); // Close modal after successful restore
       } catch (error) {
         alert('Gagal mengembalikan versi: ' + error);
       }
@@ -343,20 +371,26 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     : false;
   const shouldShowRestore = canRestore && hasDifferences;
 
+  const modalVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.95 },
+  };
+
   return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
           key="comparison-modal"
-          className="fixed top-1/2 left-1/2 transform -translate-y-1/2 translate-x-2 z-[60]"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
+          variants={modalVariants}
+          initial="hidden"
+          animate={isClosing ? 'exit' : 'visible'}
+          exit="exit"
           transition={{
-            type: 'tween',
             duration: 0.25,
-            ease: [0.25, 0.46, 0.45, 0.94], // Custom easing for smooth enter/exit
+            ease: [0.25, 0.46, 0.45, 0.94],
           }}
+          className="fixed top-1/2 left-1/2 transform -translate-y-1/2 translate-x-2 z-[60]"
           onAnimationComplete={() => {
             // Prevent auto-focus on form elements
             if (document.activeElement) {
@@ -364,7 +398,9 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             }
           }}
         >
-          <div className="relative bg-white rounded-xl shadow-xl w-[500px] max-w-[90vw]">
+          <div
+            className={`relative bg-white rounded-xl shadow-xl max-w-[90vw] ${isDualMode ? 'w-[600px]' : 'w-[400px]'}`}
+          >
             {/* Hidden element to capture initial focus */}
             <div tabIndex={0} className="sr-only" aria-hidden="true"></div>
             {/* Header */}
@@ -848,7 +884,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
               ) : (
                 <div></div>
               )}
-              <Button type="button" variant="text" onClick={onClose}>
+              <Button type="button" variant="text" onClick={handleClose}>
                 Tutup
               </Button>
             </div>
