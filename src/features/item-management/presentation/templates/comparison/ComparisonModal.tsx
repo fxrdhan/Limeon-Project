@@ -135,10 +135,10 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
     // Check overflow after content is rendered
     const timer = setTimeout(updateOverflowStates, 100);
-    
+
     // Also check on resize
     window.addEventListener('resize', updateOverflowStates);
-    
+
     return () => {
       clearTimeout(timer);
       window.removeEventListener('resize', updateOverflowStates);
@@ -269,27 +269,34 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
       };
 
       // For equal->diff transitions, we need to wait for AnimatePresence to mount elements
-      const hasAnyDiff = compData?.isKodeDifferent || compData?.isNameDifferent || compData?.isDescriptionDifferent;
-      
+      const hasAnyDiff =
+        compData?.isKodeDifferent ||
+        compData?.isNameDifferent ||
+        compData?.isDescriptionDifferent;
+
       if (hasAnyDiff) {
         // Check if refs are available (elements are mounted)
-        const refsReady = (compData?.isKodeDifferent ? kodeRef.current : true) &&
-                         (compData?.isNameDifferent ? nameRef.current : true) &&
-                         (compData?.isDescriptionDifferent ? descriptionRef.current : true);
-        
+        const refsReady =
+          (compData?.isKodeDifferent ? kodeRef.current : true) &&
+          (compData?.isNameDifferent ? nameRef.current : true) &&
+          (compData?.isDescriptionDifferent ? descriptionRef.current : true);
+
         if (!refsReady && retryCount < 5) {
           // Retry with increasing delay for AnimatePresence mounting
-          setTimeout(() => updateOverflowStatesWithRetry(retryCount + 1), 100 + (retryCount * 50));
+          setTimeout(
+            () => updateOverflowStatesWithRetry(retryCount + 1),
+            100 + retryCount * 50
+          );
           return;
         }
       }
-      
+
       updateOverflowStates();
     };
 
     // Initial delay, then retry mechanism for equal->diff transitions
     const timer = setTimeout(() => updateOverflowStatesWithRetry(), 200);
-    
+
     return () => clearTimeout(timer);
   }, [
     isOpen,
@@ -357,7 +364,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             }
           }}
         >
-          <div className="relative bg-white rounded-xl shadow-xl w-96">
+          <div className="relative bg-white rounded-xl shadow-xl w-[500px] max-w-[90vw]">
             {/* Hidden element to capture initial focus */}
             <div tabIndex={0} className="sr-only" aria-hidden="true"></div>
             {/* Header */}

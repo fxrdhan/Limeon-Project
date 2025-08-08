@@ -170,6 +170,7 @@ export interface EntityModalContextValue {
   };
   ui: {
     isOpen: boolean;
+    isClosing: boolean;
     isEditMode: boolean;
     entityName: string;
     formattedUpdateAt: string;
@@ -207,6 +208,7 @@ export interface EntityModalContextValue {
   uiActions: {
     handleClose: () => void;
     handleBackdropClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+    setIsClosing: (isClosing: boolean) => void;
     setMode: (mode: ModalMode) => void;
     openHistory: (entityTable: string, entityId: string) => void;
     closeHistory: () => void;
