@@ -103,13 +103,7 @@ export const useDropdownEffects = ({
         }
       }
     }
-  }, [
-    filteredOptions,
-    isOpen,
-    value,
-    setExpandedId,
-    buttonRef,
-  ]);
+  }, [filteredOptions, isOpen, value, setExpandedId, buttonRef]);
 
   // Manage open/close states and event listeners
   useEffect(() => {

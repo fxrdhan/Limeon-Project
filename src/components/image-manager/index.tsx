@@ -60,7 +60,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     event.stopPropagation();
-    
+
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -241,9 +241,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       options.push({
         label: 'Hapus',
         icon: <FaTrash className="w-3 h-3" />,
-        action: onImageDelete ? handleDeleteImage : () => {
-          alert('Fitur hapus gambar belum tersedia untuk komponen ini');
-        },
+        action: onImageDelete
+          ? handleDeleteImage
+          : () => {
+              alert('Fitur hapus gambar belum tersedia untuk komponen ini');
+            },
         disabled: isUploading || isDeleting,
       });
     }
@@ -307,7 +309,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               {getPopupOptions().map(option => (
                 <button
                   key={option.label}
-                  onClick={(event) => {
+                  onClick={event => {
                     event.stopPropagation();
                     option.action();
                   }}

@@ -175,9 +175,12 @@ export const useKeyboardNavigation = ({
   }, [highlightedIndex, isOpen, currentFilteredOptions, optionsContainerRef]);
 
   // Simple wrapper for external components that just need basic key handling
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
-    handleDropdownKeyDown(e);
-  }, [handleDropdownKeyDown]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLElement>) => {
+      handleDropdownKeyDown(e);
+    },
+    [handleDropdownKeyDown]
+  );
 
   return {
     highlightedIndex,

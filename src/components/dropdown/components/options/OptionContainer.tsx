@@ -19,7 +19,11 @@ interface OptionContainerProps {
   children: ReactNode;
   // Hover detail props
   option?: DropdownOption;
-  onHoverDetailShow?: (optionId: string, element: HTMLElement, optionData?: Partial<DropdownOption>) => Promise<void>;
+  onHoverDetailShow?: (
+    optionId: string,
+    element: HTMLElement,
+    optionData?: Partial<DropdownOption>
+  ) => Promise<void>;
   onHoverDetailHide?: () => void;
 }
 
@@ -42,7 +46,7 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
   const handleMouseEnter = async (e: React.MouseEvent<HTMLButtonElement>) => {
     onHighlight(index);
     onExpansion(optionId, optionName, true);
-    
+
     // Trigger hover detail if enabled
     if (onHoverDetailShow && option) {
       await onHoverDetailShow(optionId, e.currentTarget, {
@@ -57,7 +61,7 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
 
   const handleMouseLeave = () => {
     onExpansion(optionId, optionName, false);
-    
+
     // Hide hover detail
     if (onHoverDetailHide) {
       onHoverDetailHide();

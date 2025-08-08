@@ -97,7 +97,7 @@ const Dropdown = ({
   const { expandedId, setExpandedId, handleExpansion } = useTextExpansion({
     buttonRef,
     selectedOption,
-    isOpen
+    isOpen,
   });
 
   // Hover functionality now handled by useDropdownEffects

@@ -14,7 +14,6 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
   const navigate = useNavigate();
 
-
   return (
     <nav className="bg-white px-6 py-3 sticky top-0 z-20">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center">

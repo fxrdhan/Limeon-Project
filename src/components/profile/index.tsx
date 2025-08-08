@@ -55,23 +55,23 @@ const Profile = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      
+
       // Check if click is inside the profile portal
       if (portalRef.current && portalRef.current.contains(target)) {
         return;
       }
-      
+
       // Check if click is on ImageUploader popup (rendered via portal)
       const imageUploaderPopup = target.closest('[class*="z-[9999]"]');
       if (imageUploaderPopup) {
         return;
       }
-      
+
       // Close the profile modal only if click is truly outside
       setAnimatingPortal(true);
       setPortalOpen(false);
     };
-    
+
     if (portalOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     } else {
@@ -132,9 +132,7 @@ const Profile = () => {
             {!portalOpen && (
               <motion.div
                 initial={
-                  animatingPortal
-                    ? { opacity: 0, scale: 1.5 }
-                    : { opacity: 1 }
+                  animatingPortal ? { opacity: 0, scale: 1.5 } : { opacity: 1 }
                 }
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 2.5, y: -20, x: 20 }}
@@ -301,9 +299,7 @@ const Profile = () => {
                         onImageDelete={async () => {
                           setIsUploading(true);
                           try {
-                            await useAuthStore
-                              .getState()
-                              .deleteProfilePhoto();
+                            await useAuthStore.getState().deleteProfilePhoto();
                           } finally {
                             setIsUploading(false);
                           }

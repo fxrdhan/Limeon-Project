@@ -57,6 +57,10 @@ export interface DropdownContextType {
   onMenuLeave: () => void;
   onScroll: () => void;
   // Hover detail handlers
-  onHoverDetailShow?: (optionId: string, element: HTMLElement, optionData?: Partial<DropdownOption>) => Promise<void>;
+  onHoverDetailShow?: (
+    optionId: string,
+    element: HTMLElement,
+    optionData?: Partial<DropdownOption>
+  ) => Promise<void>;
   onHoverDetailHide?: () => void;
 }
