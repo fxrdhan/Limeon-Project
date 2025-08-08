@@ -107,6 +107,9 @@ const BasicInfoSection: React.FC = () => {
   const transformedManufacturers = manufacturers.map(manufacturer => ({
     id: manufacturer.id,
     name: manufacturer.name,
+    code: manufacturer.code,
+    description: manufacturer.address, // Use address field as description for hover detail
+    updated_at: manufacturer.updated_at,
   }));
 
   const handleFieldChange = (field: string, value: boolean | string) => {

@@ -4,6 +4,7 @@ import type { HoverDetailData } from '@/types';
 interface HoverDetailPosition {
   top: number;
   left: number;
+  direction: 'right' | 'left';
 }
 
 interface UseHoverDetailProps {
@@ -20,7 +21,7 @@ export const useHoverDetail = ({
   onFetchData,
 }: UseHoverDetailProps = {}) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [position, setPosition] = useState<HoverDetailPosition>({ top: 0, left: 0 });
+  const [position, setPosition] = useState<HoverDetailPosition>({ top: 0, left: 0, direction: 'right' });
   const [data, setData] = useState<HoverDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -43,24 +44,49 @@ export const useHoverDetail = ({
     const rect = element.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-
-    // Position portal to the right of the option with some padding
-    const left = rect.right + scrollLeft + 10;
-    const top = rect.top + scrollTop;
-
-    // Adjust if portal would go off-screen (using max possible width)
     const viewportWidth = window.innerWidth;
-    const maxPortalWidth = 480; // max-width of portal
+
+    const top = rect.top + scrollTop;
+    const padding = 10;
+    const minPortalWidth = 280; // Minimum portal width
+    const maxPortalWidth = 580; // Maximum portal width
+
+    // Calculate available space on both sides
+    const spaceOnRight = viewportWidth - rect.right;
+    const spaceOnLeft = rect.left;
     
-    if (left + maxPortalWidth > viewportWidth) {
-      // Position to the left instead
+    // Check if we can fit on the right (preferred)
+    if (spaceOnRight >= minPortalWidth + padding) {
       return {
-        left: rect.left + scrollLeft - maxPortalWidth - 10,
+        left: rect.right + scrollLeft + padding,
         top,
+        direction: 'right'
       };
     }
-
-    return { left, top };
+    
+    // Check if we can fit on the left
+    if (spaceOnLeft >= minPortalWidth + padding) {
+      return {
+        left: rect.left + scrollLeft - minPortalWidth - padding,
+        top,
+        direction: 'left'
+      };
+    }
+    
+    // If neither side has enough space, choose the side with more space
+    if (spaceOnRight >= spaceOnLeft) {
+      return {
+        left: Math.max(padding, rect.right + scrollLeft + padding),
+        top,
+        direction: 'right'
+      };
+    } else {
+      return {
+        left: Math.max(padding, rect.left + scrollLeft - maxPortalWidth - padding),
+        top,
+        direction: 'left'
+      };
+    }
   }, []);
 
   const handleOptionHover = useCallback(async (

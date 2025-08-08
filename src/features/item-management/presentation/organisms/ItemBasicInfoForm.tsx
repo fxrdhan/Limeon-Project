@@ -10,7 +10,8 @@ import {
   createOptimizedCategoryDetailFetcher,
   createOptimizedTypeDetailFetcher,
   createOptimizedUnitDetailFetcher,
-  createOptimizedDosageDetailFetcher
+  createOptimizedDosageDetailFetcher,
+  createOptimizedManufacturerDetailFetcher
 } from '@/utils/optimizedCategoryDetailFetcher';
 
 interface ItemBasicInfoFormProps {
@@ -82,6 +83,10 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       return createOptimizedDosageDetailFetcher(dosages);
     }, [dosages]);
 
+    const optimizedManufacturerDetailFetcher = useMemo(() => {
+      return createOptimizedManufacturerDetailFetcher(manufacturers);
+    }, [manufacturers]);
+
     return (
       <div className="border-2 border-gray-200 rounded-lg mb-6 overflow-hidden">
         <div className="bg-gray-100 p-3 border-b-2 border-gray-200">
@@ -135,6 +140,9 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   options={manufacturers}
                   placeholder="Pilih Produsen"
                   onAddNew={onAddNewManufacturer}
+                  enableHoverDetail={true}
+                  hoverDetailDelay={400}
+                  onFetchHoverDetail={optimizedManufacturerDetailFetcher}
                 />
               )}
             </FormField>
