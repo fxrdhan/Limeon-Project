@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import Button from '@/components/button';
 import { FaEye } from 'react-icons/fa';
 import { useEntityHistory } from '../../application/hooks/instances/useEntityHistory';
@@ -17,11 +17,15 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
   itemId,
   itemName,
 }) => {
-  if (HISTORY_DEBUG)
-    console.log('🪟 ItemHistoryContent props:', { itemId, itemName });
-
-  const { uiActions } = useItemManagement();
-  const { form } = useItemManagement();
+  // Single context call to prevent double renders
+  const { uiActions, form } = useItemManagement();
+  
+  // Only log props on mount or when itemId changes
+  const prevItemId = useRef(itemId);
+  if (HISTORY_DEBUG && prevItemId.current !== itemId) {
+    console.log('🪟 ItemHistoryContent itemId changed:', { oldId: prevItemId.current, newId: itemId, itemName });
+    prevItemId.current = itemId;
+  }
   const { history, isLoading, restoreVersion } = useEntityHistory(
     'items',
     itemId
@@ -29,12 +33,19 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
   const [selectedVersions, setSelectedVersions] = useState<number[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
 
-  if (HISTORY_DEBUG)
-    console.log('📋 ItemHistoryContent state:', {
+  // Only log state changes, not every render
+  const prevHistoryLength = useRef(history?.length || 0);
+  const prevIsLoading = useRef(isLoading);
+  
+  if (HISTORY_DEBUG && (prevHistoryLength.current !== (history?.length || 0) || prevIsLoading.current !== isLoading)) {
+    console.log('📋 ItemHistoryContent state changed:', {
       historyCount: history?.length || 0,
       isLoading,
       hasHistory: !!history?.length,
     });
+    prevHistoryLength.current = history?.length || 0;
+    prevIsLoading.current = isLoading;
+  }
 
   const handleVersionClick = (item: HistoryItem) => {
     if (selectedVersions.includes(item.version_number)) {

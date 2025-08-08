@@ -22,10 +22,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
 
   const fetchHistory = useCallback(async () => {
     if (!entityTable || !entityId) {
-      // Only log if entityTable exists but entityId is missing (unexpected case)
-      // Don't log when both are missing (expected for ADD mode)
-      if (HISTORY_DEBUG && entityTable && !entityId)
-        console.log('Missing entityId for history:', { entityTable, entityId });
+      // Skip logging for initial renders where entityId is not yet available
       return;
     }
 
@@ -59,13 +56,14 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         .eq('entity_id', entityId)
         .order('version_number', { ascending: false });
 
-      if (HISTORY_DEBUG)
+      if (HISTORY_DEBUG) {
         console.log('📊 History query result:', {
           data,
           error: fetchError,
           queryParams: { entityTable, entityId },
           resultCount: data?.length || 0,
         });
+      }
 
       if (fetchError) {
         if (HISTORY_DEBUG) console.error('❌ Query error:', fetchError);
@@ -73,7 +71,9 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
       }
 
       setHistory(data || []);
-      if (HISTORY_DEBUG) console.log('✅ History set to:', data);
+      if (HISTORY_DEBUG) {
+        console.log('✅ History set to:', data);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
