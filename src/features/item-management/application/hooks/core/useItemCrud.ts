@@ -1,22 +1,22 @@
 import { useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { usePackageConversion } from '../utils/usePackageConversion';
-import { formatDateTime, extractNumericValue } from '@/lib/formatters';
-import { useConfirmDialog } from '@/components/dialog-box';
-import {
-  calculateProfitPercentage,
-  calculateSellPriceFromMargin,
-} from '../../../shared/utils/PriceCalculator';
+import { formatDateTime } from '@/lib/formatters';
 import { useAddItemFormState } from '../form/useItemFormState';
 import { useAddItemMutations } from './useItemMutations';
-import { useFormCache } from '@/hooks/useFormCache';
 import { useItemData } from '../data/useItemData';
+import { 
+  useItemModalOrchestrator,
+  useItemCacheManager,
+  useItemFormHandlers,
+  useItemUserInteractions,
+  useItemFormReset,
+} from '../form';
+import { useItemPricingLogic } from '../utils';
 import type {
   ItemFormData,
   UseItemManagementProps,
 } from '../../../shared/types';
-
-import { CACHE_KEY } from '../../../constants';
 
 /**
  * Core Item CRUD Hook
@@ -27,6 +27,8 @@ import { CACHE_KEY } from '../../../constants';
  * - CRUD operations
  * - Unit conversion handling
  * - Code generation via edge function
+ * 
+ * REFACTORED: Now orchestrates multiple specialized hooks while maintaining exact same API
  */
 
 export const getUnitById = async (unitName: string) => {
@@ -52,17 +54,19 @@ export const useAddItemForm = ({
   // Initialize modular hooks
   const formState = useAddItemFormState({ initialSearchQuery });
   const packageConversionHook = usePackageConversion();
-  const confirmDialog = useConfirmDialog();
 
   // Initialize mutations
   const mutations = useAddItemMutations({ onClose, refetchItems });
 
   // Initialize cache management
-  const cache = useFormCache({
-    cacheKey: CACHE_KEY,
-    isEditMode: formState.isEditMode,
-    isDirty: () => formState.isDirty(packageConversionHook.conversions),
-    isSaving: formState.saving,
+  const cache = useItemCacheManager({
+    formState: {
+      isEditMode: formState.isEditMode,
+      saving: formState.saving,
+      isDirty: (conversions) => formState.isDirty(conversions),
+      formData: formState.formData,
+    },
+    conversions: packageConversionHook.conversions,
   });
 
   // Initialize data management
@@ -71,19 +75,67 @@ export const useAddItemForm = ({
     packageConversionHook,
   });
 
-  // Memoized wrapper functions for performance
-  const calculateProfitPercentageWrapper = useCallback(
-    (base_price?: number, sell_price?: number) => {
-      const currentBasePrice = base_price ?? formState.formData.base_price;
-      const currentSellPrice = sell_price ?? formState.formData.sell_price;
-      return calculateProfitPercentage(currentBasePrice, currentSellPrice);
-    },
-    [formState.formData.base_price, formState.formData.sell_price]
-  );
+  // Initialize pricing logic
+  const pricingLogic = useItemPricingLogic({
+    formData: formState.formData,
+  });
 
-  const isDirtyWrapper = useCallback(() => {
-    return formState.isDirty(packageConversionHook.conversions);
-  }, [formState, packageConversionHook.conversions]);
+  // Initialize form handlers
+  const formHandlers = useItemFormHandlers({
+    formState,
+    packageConversionHook,
+  });
+
+  // Initialize user interactions
+  const userInteractions = useItemUserInteractions({
+    formState: {
+      formData: formState.formData,
+      isDirty: (conversions) => formState.isDirty(conversions),
+    },
+    packageConversionHook,
+    mutations,
+    cache,
+    onClose,
+    itemId,
+  });
+
+  // Initialize form reset logic
+  const formReset = useItemFormReset({
+    formState: {
+      resetForm: formState.resetForm,
+      isEditMode: formState.isEditMode,
+      initialFormData: formState.initialFormData,
+      initialPackageConversions: formState.initialPackageConversions,
+      units: formState.units,
+    },
+    packageConversionHook,
+    cache,
+  });
+
+  // Initialize modal orchestrator
+  const modalOrchestrator = useItemModalOrchestrator({
+    formState: {
+      setCurrentSearchTermForModal: formState.setCurrentSearchTermForModal,
+      setIsAddEditModalOpen: formState.setIsAddEditModalOpen,
+      setIsAddTypeModalOpen: formState.setIsAddTypeModalOpen,
+      setIsAddUnitModalOpen: formState.setIsAddUnitModalOpen,
+      setIsAddDosageModalOpen: formState.setIsAddDosageModalOpen,
+      setIsAddManufacturerModalOpen: formState.setIsAddManufacturerModalOpen,
+      setCategories: formState.setCategories,
+      setTypes: formState.setTypes,
+      setUnits: formState.setUnits,
+      setDosages: formState.setDosages,
+      setManufacturers: formState.setManufacturers,
+      updateFormData: formState.updateFormData,
+    },
+    mutations: {
+      saveCategory: mutations.saveCategory,
+      saveType: mutations.saveType,
+      saveUnit: mutations.saveUnit,
+      saveDosage: mutations.saveDosage,
+      saveManufacturer: mutations.saveManufacturer,
+    },
+  });
 
   const setInitialDataForForm = (data?: ItemFormData) => {
     formState.setInitialDataForForm(data);
@@ -150,8 +202,6 @@ export const useAddItemForm = ({
     };
   }, [cache, formState, packageConversionHook.conversions]);
 
-  // Auto code generation is now handled by useItemCodeGeneration hook
-
   useEffect(() => {
     if (
       packageConversionHook.basePrice > 0 &&
@@ -170,75 +220,6 @@ export const useAddItemForm = ({
     packageConversionHook.setSellPrice(formState.formData.sell_price || 0);
   }, [formState.formData.sell_price, packageConversionHook]);
 
-  // Memoized event handlers for performance
-  const handleChange = useCallback(
-    (
-      e: React.ChangeEvent<
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-      >
-    ) => {
-      formState.handleChange(e);
-
-      // Handle unit conversion sync for price changes
-      const { name, value } = e.target as HTMLInputElement;
-      if (name === 'base_price') {
-        const numericInt = extractNumericValue(value);
-        packageConversionHook.setBasePrice(numericInt);
-      } else if (name === 'sell_price') {
-        const numericInt = extractNumericValue(value);
-        packageConversionHook.setSellPrice(numericInt);
-      }
-    },
-    [formState, packageConversionHook]
-  );
-
-  const handleSelectChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      formState.handleSelectChange(e);
-    },
-    [formState]
-  );
-
-  const handleAddNewCategory = useCallback(
-    (searchTerm?: string) => {
-      formState.setCurrentSearchTermForModal(searchTerm);
-      formState.setIsAddEditModalOpen(true);
-    },
-    [formState]
-  );
-
-  const handleAddNewType = useCallback(
-    (searchTerm?: string) => {
-      formState.setCurrentSearchTermForModal(searchTerm);
-      formState.setIsAddTypeModalOpen(true);
-    },
-    [formState]
-  );
-
-  const handleAddNewUnit = useCallback(
-    (searchTerm?: string) => {
-      formState.setCurrentSearchTermForModal(searchTerm);
-      formState.setIsAddUnitModalOpen(true);
-    },
-    [formState]
-  );
-
-  const handleAddNewDosage = useCallback(
-    (searchTerm?: string) => {
-      formState.setCurrentSearchTermForModal(searchTerm);
-      formState.setIsAddDosageModalOpen(true);
-    },
-    [formState]
-  );
-
-  const handleAddNewManufacturer = useCallback(
-    (searchTerm?: string) => {
-      formState.setCurrentSearchTermForModal(searchTerm);
-      formState.setIsAddManufacturerModalOpen(true);
-    },
-    [formState]
-  );
-
   // Use mutations from the modular hook
   const {
     addCategoryMutation,
@@ -248,14 +229,9 @@ export const useAddItemForm = ({
     addManufacturerMutation,
     deleteItemMutation,
     saveItemMutation,
-    saveCategory,
-    saveType,
-    saveUnit,
-    saveDosage,
-    saveManufacturer,
   } = mutations;
 
-  // Memoized submit and save handlers
+  // Memoized submit handler
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -288,207 +264,6 @@ export const useAddItemForm = ({
     ]
   );
 
-  // Memoized utility functions
-  const clearSearchTerm = useCallback(() => {
-    formState.setCurrentSearchTermForModal(undefined);
-  }, [formState]);
-
-  const handleSaveCategory = useCallback(
-    async (categoryData: {
-      code?: string;
-      name: string;
-      description?: string;
-      address?: string;
-    }) => {
-      try {
-        const { newCategory, updatedCategories } =
-          await saveCategory(categoryData);
-        if (updatedCategories) formState.setCategories(updatedCategories);
-        if (newCategory?.id)
-          formState.updateFormData({ category_id: newCategory.id });
-        formState.setIsAddEditModalOpen(false);
-        clearSearchTerm();
-      } catch {
-        alert('Gagal menyimpan kategori baru.');
-      }
-    },
-    [saveCategory, formState, clearSearchTerm]
-  );
-
-  const handleSaveType = useCallback(
-    async (typeData: {
-      code?: string;
-      name: string;
-      description?: string;
-      address?: string;
-    }) => {
-      try {
-        const { newType, updatedTypes } = await saveType(typeData);
-        if (updatedTypes) formState.setTypes(updatedTypes);
-        if (newType?.id) formState.updateFormData({ type_id: newType.id });
-        formState.setIsAddTypeModalOpen(false);
-        clearSearchTerm();
-      } catch {
-        alert('Gagal menyimpan jenis item baru.');
-      }
-    },
-    [saveType, formState, clearSearchTerm]
-  );
-
-  const handleSaveUnit = useCallback(
-    async (unitData: { code?: string; name: string; description?: string }) => {
-      try {
-        const { newUnit, updatedUnits } = await saveUnit(unitData);
-        if (updatedUnits) formState.setUnits(updatedUnits);
-        if (newUnit?.id) formState.updateFormData({ unit_id: newUnit.id });
-        formState.setIsAddUnitModalOpen(false);
-        clearSearchTerm();
-      } catch {
-        alert('Gagal menyimpan satuan baru.');
-      }
-    },
-    [saveUnit, formState, clearSearchTerm]
-  );
-
-  const handleSaveDosage = useCallback(
-    async (dosageData: {
-      code?: string;
-      name: string;
-      description?: string;
-      address?: string;
-    }) => {
-      try {
-        const { newDosage, updatedDosages } = await saveDosage(dosageData);
-        if (updatedDosages) formState.setDosages(updatedDosages);
-        if (newDosage?.id)
-          formState.updateFormData({ dosage_id: newDosage.id });
-        formState.setIsAddDosageModalOpen(false);
-        clearSearchTerm();
-      } catch {
-        alert('Gagal menyimpan sediaan baru.');
-      }
-    },
-    [saveDosage, formState, clearSearchTerm]
-  );
-
-  const handleSaveManufacturer = useCallback(
-    async (manufacturerData: {
-      code?: string;
-      name: string;
-      address?: string;
-    }) => {
-      try {
-        const { newManufacturer, updatedManufacturers } =
-          await saveManufacturer(manufacturerData);
-        if (updatedManufacturers)
-          formState.setManufacturers(updatedManufacturers);
-        if (newManufacturer?.id)
-          formState.updateFormData({ manufacturer_id: newManufacturer.id });
-        formState.setIsAddManufacturerModalOpen(false);
-        clearSearchTerm();
-      } catch {
-        alert('Gagal menyimpan produsen baru.');
-      }
-    },
-    [saveManufacturer, formState, clearSearchTerm]
-  );
-
-  const handleDeleteItem = () => {
-    if (!itemId) return;
-    confirmDialog.openConfirmDialog({
-      title: 'Konfirmasi Hapus',
-      message: `Apakah Anda yakin ingin menghapus item "${formState.formData.name}"? Stok terkait akan terpengaruh.`,
-      variant: 'danger',
-      confirmText: 'Hapus',
-      onConfirm: () => {
-        deleteItemMutation.mutate(itemId);
-        cache.clearCache();
-      },
-    });
-  };
-
-  const calculateSellPriceFromMarginWrapper = (margin: number) => {
-    return calculateSellPriceFromMargin(formState.formData.base_price, margin);
-  };
-
-  const handleCancel = (
-    setIsClosing?:
-      | ((value: boolean) => void)
-      | React.Dispatch<React.SetStateAction<boolean>>
-  ) => {
-    if (isDirtyWrapper()) {
-      confirmDialog.openConfirmDialog({
-        title: 'Konfirmasi Keluar',
-        message:
-          'Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.',
-        confirmText: 'Tinggalkan',
-        cancelText: 'Batal',
-        onConfirm: () => {
-          if (setIsClosing) {
-            setIsClosing(true);
-          } else {
-            onClose();
-          }
-        },
-        variant: 'danger',
-      });
-    } else {
-      if (setIsClosing) {
-        setIsClosing(true);
-      } else {
-        onClose();
-      }
-    }
-  };
-
-  const resetFormWrapper = () => {
-    formState.resetForm();
-
-    if (
-      formState.isEditMode &&
-      formState.initialFormData &&
-      formState.initialPackageConversions
-    ) {
-      // Reset unit conversions
-      packageConversionHook.resetConversions();
-      const baseUnitName =
-        formState.units.find(u => u.id === formState.initialFormData!.unit_id)
-          ?.name || '';
-      packageConversionHook.setBaseUnit(baseUnitName);
-      packageConversionHook.setBasePrice(
-        formState.initialFormData.base_price || 0
-      );
-      packageConversionHook.setSellPrice(
-        formState.initialFormData.sell_price || 0
-      );
-      packageConversionHook.skipNextRecalculation();
-
-      formState.initialPackageConversions.forEach(convDataFromDB => {
-        const unitDetails = formState.units.find(
-          u => u.name === convDataFromDB.unit_name
-        );
-        if (unitDetails && typeof convDataFromDB.conversion_rate === 'number') {
-          packageConversionHook.addPackageConversion({
-            to_unit_id: unitDetails.id,
-            unit_name: unitDetails.name,
-            unit: unitDetails,
-            conversion: convDataFromDB.conversion,
-            basePrice: convDataFromDB.basePrice || 0,
-            sellPrice: convDataFromDB.sellPrice || 0,
-            conversion_rate: convDataFromDB.conversion_rate,
-          });
-        }
-      });
-    } else {
-      // Reset unit conversions for add mode
-      packageConversionHook.resetConversions();
-      packageConversionHook.setBaseUnit('');
-      packageConversionHook.setBasePrice(0);
-      packageConversionHook.setSellPrice(0);
-      cache.clearCache();
-    }
-  };
-
   // Memoized computed values
   const formattedUpdateAt = useMemo(
     () =>
@@ -496,14 +271,6 @@ export const useAddItemForm = ({
         ? formatDateTime(formState.formData.updated_at)
         : '-',
     [formState.formData.updated_at]
-  );
-
-  const closeModalAndClearSearch = useCallback(
-    (modalSetter: React.Dispatch<React.SetStateAction<boolean>>) => {
-      modalSetter(false);
-      clearSearchTerm();
-    },
-    [clearSearchTerm]
   );
 
   return {
@@ -543,30 +310,30 @@ export const useAddItemForm = ({
     setMinStockValue: formState.setMinStockValue,
     currentSearchTermForModal: formState.currentSearchTermForModal,
 
-    // Event handlers
-    handleChange,
-    handleSelectChange,
+    // Event handlers (from formHandlers and modalOrchestrator)
+    handleChange: formHandlers.handleChange,
+    handleSelectChange: formHandlers.handleSelectChange,
     handleSubmit,
-    handleSaveCategory,
-    handleSaveType,
-    handleSaveUnit,
-    handleSaveDosage,
-    handleSaveManufacturer,
-    handleDeleteItem,
-    handleAddNewCategory,
-    handleAddNewType,
-    handleAddNewUnit,
-    handleAddNewDosage,
-    handleAddNewManufacturer,
-    handleCancel,
+    handleSaveCategory: modalOrchestrator.handleSaveCategory,
+    handleSaveType: modalOrchestrator.handleSaveType,
+    handleSaveUnit: modalOrchestrator.handleSaveUnit,
+    handleSaveDosage: modalOrchestrator.handleSaveDosage,
+    handleSaveManufacturer: modalOrchestrator.handleSaveManufacturer,
+    handleDeleteItem: userInteractions.handleDeleteItem,
+    handleAddNewCategory: modalOrchestrator.handleAddNewCategory,
+    handleAddNewType: modalOrchestrator.handleAddNewType,
+    handleAddNewUnit: modalOrchestrator.handleAddNewUnit,
+    handleAddNewDosage: modalOrchestrator.handleAddNewDosage,
+    handleAddNewManufacturer: modalOrchestrator.handleAddNewManufacturer,
+    handleCancel: userInteractions.handleCancel,
 
     // Utility functions
     updateFormData: formState.updateFormData,
-    isDirty: isDirtyWrapper,
-    calculateProfitPercentage: calculateProfitPercentageWrapper,
-    calculateSellPriceFromMargin: calculateSellPriceFromMarginWrapper,
-    closeModalAndClearSearch,
-    resetForm: resetFormWrapper,
+    isDirty: userInteractions.isDirty,
+    calculateProfitPercentage: pricingLogic.calculateProfitPercentage,
+    calculateSellPriceFromMargin: pricingLogic.calculateSellPriceFromMargin,
+    closeModalAndClearSearch: modalOrchestrator.closeModalAndClearSearch,
+    resetForm: formReset.resetForm,
 
     // Mutations (from mutations)
     addCategoryMutation,
@@ -587,7 +354,7 @@ export const useAddItemForm = ({
     packageConversionHook,
 
     // Other utilities
-    confirmDialog,
+    confirmDialog: userInteractions.confirmDialog,
     formattedUpdateAt,
   };
 };
