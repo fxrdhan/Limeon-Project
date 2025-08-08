@@ -41,6 +41,7 @@ export const useEntityModalLogic = ({
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
   const [mode, setMode] = useState<ModalMode>('add');
+  const [isClosing, setIsClosing] = useState(false);
   const [historyData, setHistoryData] = useState({
     entityTable: '',
     entityId: '',
@@ -91,6 +92,7 @@ export const useEntityModalLogic = ({
   // Initialize mode and form data when modal opens
   useEffect(() => {
     if (isOpen) {
+      setIsClosing(false); // Reset closing state when opening
       const newMode = initialData ? 'edit' : 'add';
       setMode(newMode);
       setPreviousMode(newMode);
@@ -116,6 +118,17 @@ export const useEntityModalLogic = ({
       }, 100);
     }
   }, [isOpen, initialData, initialNameFromSearch, resetForm]);
+
+  // Handle closing animation
+  useEffect(() => {
+    if (isClosing) {
+      const timer = setTimeout(() => {
+        onClose();
+        setIsClosing(false);
+      }, 200); // Duration matches the animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [isClosing, onClose]);
 
   // Reset comparison data when modal closes
   useEffect(() => {
@@ -276,17 +289,14 @@ export const useEntityModalLogic = ({
     if (comparisonData.isOpen) {
       closeComparison();
     }
-    onClose();
-  }, [onClose, comparisonData.isOpen, closeComparison]);
+    setIsClosing(true);
+  }, [comparisonData.isOpen, closeComparison]);
 
-  const handleBackdropClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (e.target === e.currentTarget) {
-        handleClose();
-      }
-    },
-    [handleClose]
-  );
+  const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget && !isClosing) {
+      setIsClosing(true);
+    }
+  }, [isClosing]);
 
   // Create context value
   const contextValue: EntityModalContextValue = {
@@ -300,6 +310,7 @@ export const useEntityModalLogic = ({
     },
     ui: {
       isOpen,
+      isClosing,
       isEditMode,
       entityName,
       formattedUpdateAt,
@@ -334,6 +345,7 @@ export const useEntityModalLogic = ({
     uiActions: {
       handleClose,
       handleBackdropClick,
+      setIsClosing,
       setMode,
       openHistory,
       closeHistory,
