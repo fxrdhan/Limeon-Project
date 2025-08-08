@@ -45,9 +45,9 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
                 className={`text-xs ${isFlipped ? 'text-purple-600' : 'text-blue-600'}`}
               >
                 {compData.leftVersion &&
-                  new Date(
-                    compData.leftVersion.changed_at
-                  ).toLocaleString('id-ID')}
+                  new Date(compData.leftVersion.changed_at).toLocaleString(
+                    'id-ID'
+                  )}
               </div>
             </div>
 
@@ -81,9 +81,9 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
                 className={`text-xs ${isFlipped ? 'text-blue-600' : 'text-purple-600'}`}
               >
                 {compData.rightVersion &&
-                  new Date(
-                    compData.rightVersion.changed_at
-                  ).toLocaleString('id-ID')}
+                  new Date(compData.rightVersion.changed_at).toLocaleString(
+                    'id-ID'
+                  )}
               </div>
             </div>
           </div>
@@ -105,9 +105,9 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
             </span>
             <span className="text-xs text-gray-600">
               {compData.leftVersion &&
-                new Date(
-                  compData.leftVersion.changed_at
-                ).toLocaleString('id-ID')}
+                new Date(compData.leftVersion.changed_at).toLocaleString(
+                  'id-ID'
+                )}
             </span>
             <span className="font-mono bg-purple-100 text-purple-700 px-2 py-1 rounded ml-auto">
               v{compData.leftVersion?.version_number}

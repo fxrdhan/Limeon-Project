@@ -58,7 +58,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
   // Use custom hooks
   const { isClosing, handleClose } = useModalAnimation({ isOpen, onClose });
-  
+
   const { compData, originalData } = useComparisonData({
     isDualMode,
     selectedVersion,
@@ -142,7 +142,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
           >
             {/* Hidden element to capture initial focus */}
             <div tabIndex={0} className="sr-only" aria-hidden="true"></div>
-            
+
             {/* Header */}
             <ComparisonHeader
               isDualMode={isDualMode}

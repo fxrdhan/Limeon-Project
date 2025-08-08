@@ -93,8 +93,7 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                       >
                         <DiffText
                           oldText={
-                            originalData?.originalLeftKode ||
-                            compData.leftKode
+                            originalData?.originalLeftKode || compData.leftKode
                           }
                           newText={
                             originalData?.originalRightKode ||
@@ -137,8 +136,7 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                       >
                         <DiffText
                           oldText={
-                            originalData?.originalLeftName ||
-                            compData.leftName
+                            originalData?.originalLeftName || compData.leftName
                           }
                           newText={
                             originalData?.originalRightName ||
@@ -172,9 +170,7 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                     className="overflow-hidden"
                   >
                     <div className="text-xs font-medium text-slate-700 mb-0">
-                      {entityName === 'Produsen'
-                        ? 'Alamat:'
-                        : 'Deskripsi:'}
+                      {entityName === 'Produsen' ? 'Alamat:' : 'Deskripsi:'}
                     </div>
                     <div className="relative overflow-hidden">
                       <div

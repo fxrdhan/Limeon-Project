@@ -299,22 +299,25 @@ export const useEntityModalLogic = ({
     }
   }, [comparisonData.isOpen, closeComparison]);
 
-  const handleBackdropClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget && !isClosing) {
-      // Sequential closing for backdrop clicks:
-      // If comparison modal is open, close it first, then close history modal
-      if (comparisonData.isOpen) {
-        closeComparison();
-        // After comparison closes, schedule closing of history modal
-        setTimeout(() => {
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === e.currentTarget && !isClosing) {
+        // Sequential closing for backdrop clicks:
+        // If comparison modal is open, close it first, then close history modal
+        if (comparisonData.isOpen) {
+          closeComparison();
+          // After comparison closes, schedule closing of history modal
+          setTimeout(() => {
+            setIsClosing(true);
+          }, 300); // Slight delay after comparison modal closes
+        } else {
+          // No comparison modal open, close normally
           setIsClosing(true);
-        }, 300); // Slight delay after comparison modal closes
-      } else {
-        // No comparison modal open, close normally
-        setIsClosing(true);
+        }
       }
-    }
-  }, [isClosing, comparisonData.isOpen, closeComparison]);
+    },
+    [isClosing, comparisonData.isOpen, closeComparison]
+  );
 
   // Create context value
   const contextValue: EntityModalContextValue = {

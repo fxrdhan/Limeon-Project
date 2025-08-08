@@ -254,31 +254,39 @@ export const useEntityCrudOperations = (
         // Check for duplicate code constraint error (409 Conflict)
         // PostgrestError structure: {message: string, details: string, hint: string, code: string}
         const isPostgrestError = (err: unknown): err is PostgrestError => {
-          return typeof err === 'object' && err !== null && 'message' in err && 'code' in err;
+          return (
+            typeof err === 'object' &&
+            err !== null &&
+            'message' in err &&
+            'code' in err
+          );
         };
-        
-        const errorMessage = isPostgrestError(error) 
-          ? error.message 
-          : (typeof error === 'string' ? error : String(error)) || 'Unknown error';
-        const errorDetails = isPostgrestError(error) ? (error.details ?? '') : '';
+
+        const errorMessage = isPostgrestError(error)
+          ? error.message
+          : (typeof error === 'string' ? error : String(error)) ||
+            'Unknown error';
+        const errorDetails = isPostgrestError(error)
+          ? (error.details ?? '')
+          : '';
         const errorCode = isPostgrestError(error) ? (error.code ?? '') : '';
-        
-        const isDuplicateCodeError = 
+
+        const isDuplicateCodeError =
           errorCode === '23505' || // PostgreSQL unique violation code
-          errorMessage.includes('item_units_kode_key') || 
+          errorMessage.includes('item_units_kode_key') ||
           errorMessage.includes('duplicate key value') ||
           errorMessage.includes('violates unique constraint') ||
           errorDetails.includes('already exists') ||
           errorMessage.includes('already exists') ||
           (errorMessage.includes('409') && errorMessage.includes('conflict'));
-        
+
         const action = itemData.id ? 'memperbarui' : 'menambahkan';
         const codeValue = itemData.code || itemData.kode;
-        
+
         if (isDuplicateCodeError && codeValue) {
           alert.error(
             `Kode "${codeValue}" sudah digunakan oleh ${entityNameLabel.toLowerCase()} lain. ` +
-            `Silakan gunakan kode yang berbeda.`
+              `Silakan gunakan kode yang berbeda.`
           );
         } else {
           alert.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
@@ -320,16 +328,16 @@ export const useEntityCrudOperations = (
         refetch();
       } catch (error) {
         // Check for foreign key constraint error for delete operations
-        const isForeignKeyError = 
-          error instanceof Error && 
+        const isForeignKeyError =
+          error instanceof Error &&
           (error.message.includes('foreign key constraint') ||
-           error.message.includes('violates foreign key') ||
-           error.message.includes('still referenced'));
-        
+            error.message.includes('violates foreign key') ||
+            error.message.includes('still referenced'));
+
         if (isForeignKeyError) {
           alert.error(
             `Tidak dapat menghapus ${entityNameLabel.toLowerCase()} karena masih digunakan di data lain. ` +
-            `Hapus terlebih dahulu data yang menggunakannya.`
+              `Hapus terlebih dahulu data yang menggunakannya.`
           );
         } else {
           const errorMessage =

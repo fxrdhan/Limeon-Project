@@ -5,7 +5,10 @@ interface UseModalAnimationProps {
   onClose: () => void;
 }
 
-export const useModalAnimation = ({ isOpen, onClose }: UseModalAnimationProps) => {
+export const useModalAnimation = ({
+  isOpen,
+  onClose,
+}: UseModalAnimationProps) => {
   const [isClosing, setIsClosing] = React.useState(false);
 
   const handleClose = () => {
