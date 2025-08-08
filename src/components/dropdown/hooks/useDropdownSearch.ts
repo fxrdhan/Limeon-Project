@@ -8,7 +8,7 @@ export const useDropdownSearch = (
 ) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [currentFilteredOptions, setCurrentFilteredOptions] = useState(options);
+  const [filteredOptions, setFilteredOptions] = useState(options);
   const [searchState, setSearchState] = useState<SearchState>(
     SEARCH_STATES.IDLE
   );
@@ -25,16 +25,16 @@ export const useDropdownSearch = (
   // Filter options based on search
   useEffect(() => {
     if (!searchList && debouncedSearchTerm.trim() === '') {
-      setCurrentFilteredOptions(options);
+      setFilteredOptions(options);
       setSearchState(SEARCH_STATES.IDLE);
     } else if (debouncedSearchTerm.trim() !== '') {
       const filtered = filterAndSortOptions(options, debouncedSearchTerm);
-      setCurrentFilteredOptions(filtered);
+      setFilteredOptions(filtered);
       setSearchState(
         filtered.length > 0 ? SEARCH_STATES.FOUND : SEARCH_STATES.NOT_FOUND
       );
     } else {
-      setCurrentFilteredOptions(options);
+      setFilteredOptions(options);
       setSearchState(SEARCH_STATES.IDLE);
     }
   }, [options, debouncedSearchTerm, searchList]);
@@ -59,11 +59,17 @@ export const useDropdownSearch = (
     setSearchState(SEARCH_STATES.IDLE);
   }, []);
 
+  const updateSearchState = useCallback((state: SearchState) => {
+    setSearchState(state);
+  }, []);
+
   return {
     searchTerm,
+    debouncedSearchTerm,
     searchState,
-    currentFilteredOptions,
+    filteredOptions,
     handleSearchChange,
     resetSearch,
+    updateSearchState,
   };
 };

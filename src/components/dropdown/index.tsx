@@ -5,14 +5,12 @@ import DropdownButton from './components/DropdownButton';
 import DropdownMenu from './components/DropdownMenu';
 import { DropdownProvider } from './providers/DropdownContext';
 import { useDropdownState } from './hooks/useDropdownState';
-import { useSearch } from './hooks/search/useSearch';
-import { useOptionsFilter } from './hooks/search/useOptionsFilter';
+import { useDropdownSearch } from './hooks/useDropdownSearch';
 import { useDropdownValidation } from './hooks/useDropdownValidation';
 import { useDropdownPosition } from './hooks/useDropdownPosition';
-import { useKeyboardEvents } from './hooks/keyboard/useKeyboardEvents';
-import { useNavigationState } from './hooks/keyboard/useNavigationState';
-import { useDropdownHover } from './hooks/useDropdownHover';
-import { useScrollState } from './hooks/useScrollState';
+import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
+// useDropdownHover merged into useDropdownEffects
+// useScrollState merged into useScrollManagement
 import { useTextExpansion } from './hooks/useTextExpansion';
 import { useFocusManagement } from './hooks/useFocusManagement';
 import { useScrollManagement } from './hooks/useScrollManagement';
@@ -57,19 +55,11 @@ const Dropdown = ({
 
   const {
     searchTerm,
-    debouncedSearchTerm,
     searchState,
+    filteredOptions,
     handleSearchChange,
     resetSearch,
-    updateSearchState,
-  } = useSearch();
-
-  const { filteredOptions } = useOptionsFilter({
-    options,
-    debouncedSearchTerm,
-    searchList,
-    updateSearchState,
-  });
+  } = useDropdownSearch(options, searchList);
 
   const {
     hasError,
@@ -98,42 +88,46 @@ const Dropdown = ({
     resetPosition,
   } = useDropdownPosition(isOpen, buttonRef, dropdownMenuRef);
 
-  const { expandedId, setExpandedId, handleExpansion } = useTextExpansion(
+  const { expandedId, setExpandedId, handleExpansion } = useTextExpansion({
     buttonRef,
-    selectedOption
-  );
+    selectedOption,
+    isOpen
+  });
 
-  const {
-    isHovered,
-    setIsHovered,
-    leaveTimeoutRef,
-    handleTriggerAreaEnter,
-    handleMenuEnter,
-    handleMouseLeaveWithCloseIntent,
-    clearTimeouts,
-  } = useDropdownHover(
-    hoverToOpen,
-    isOpen,
-    isClosing,
-    openThisDropdown,
-    actualCloseDropdown
-  );
+  // Hover functionality now handled by useDropdownEffects
 
-  const { scrollState, checkScroll } = useScrollState(optionsContainerRef);
+  // scrollState and checkScroll now handled by useScrollManagement
+
+  const handleSelect = useCallback(
+    (optionId: string) => {
+      onChange(optionId);
+      if (optionId && optionId.trim() !== '') {
+        handleCloseValidation();
+      }
+      actualCloseDropdown();
+      resetSearch();
+      setTimeout(() => buttonRef.current?.focus(), 150);
+    },
+    [onChange, actualCloseDropdown, handleCloseValidation, resetSearch]
+  );
 
   const {
     highlightedIndex,
     isKeyboardNavigation,
     setHighlightedIndex,
     setIsKeyboardNavigation,
-    handleNavigate,
+    handleDropdownKeyDown,
     scrollToHighlightedOption,
-    handleEscape,
-    handleEnter,
-  } = useNavigationState({
+  } = useKeyboardNavigation({
     isOpen,
     currentFilteredOptions: filteredOptions,
     setExpandedId,
+    searchState,
+    searchTerm,
+    onSelect: handleSelect,
+    onAddNew,
+    onCloseDropdown: actualCloseDropdown,
+    onCloseValidation: handleCloseValidation,
     optionsContainerRef,
   });
 
@@ -149,67 +143,42 @@ const Dropdown = ({
     optionsContainerRef,
   });
 
-  const handleSelect = useCallback(
-    (optionId: string) => {
-      onChange(optionId);
-      if (optionId && optionId.trim() !== '') {
-        handleCloseValidation();
-      }
-      actualCloseDropdown();
-      resetSearch();
-      setTimeout(() => buttonRef.current?.focus(), 150);
-    },
-    [onChange, actualCloseDropdown, handleCloseValidation, resetSearch]
-  );
+  // handleKeyDown functionality now provided by useKeyboardNavigation as handleDropdownKeyDown
 
-  const { handleKeyDown } = useKeyboardEvents({
-    isOpen,
-    currentFilteredOptions: filteredOptions,
-    highlightedIndex,
-    searchState,
-    searchTerm,
-    onSelect: handleSelect,
-    onAddNew,
-    onCloseDropdown: () => {
-      actualCloseDropdown();
-      setExpandedId(null);
-    },
-    onCloseValidation: handleCloseValidation,
-    onNavigate: handleNavigate,
-    onEscape: handleEscape,
-    onEnter: handleEnter,
-  });
-
-  // Use dropdown effects hook
-  useDropdownEffects({
+  // Use dropdown effects hook with hover functionality
+  const {
+    isHovered,
+    setIsHovered,
+    leaveTimeoutRef,
+    handleTriggerAreaEnter,
+    handleMenuEnter,
+    handleMouseLeaveWithCloseIntent,
+  } = useDropdownEffects({
     isOpen,
     applyOpenStyles,
     filteredOptions,
     value,
     setApplyOpenStyles,
-    setHighlightedIndex,
     setExpandedId,
     calculateDropdownPosition,
     manageFocusOnOpen,
     handleFocusOut,
-    clearTimeouts,
     resetPosition,
     resetSearch,
-    checkScroll,
-    scrollToHighlightedOption,
     buttonRef,
     dropdownMenuRef,
-    optionsContainerRef,
-    highlightedIndex,
+    hoverToOpen,
+    isClosing,
+    openThisDropdown,
+    actualCloseDropdown,
   });
 
   // Use scroll management hook
-  useScrollManagement({
+  const { scrollState, checkScroll } = useScrollManagement({
     isOpen,
     applyOpenStyles,
     filteredOptions,
     highlightedIndex,
-    checkScroll,
     scrollToHighlightedOption,
     optionsContainerRef,
   });
@@ -250,10 +219,10 @@ const Dropdown = ({
           'Escape',
         ].includes(e.key)
       ) {
-        handleKeyDown(e as never);
+        handleDropdownKeyDown(e as never);
       }
     },
-    [handleKeyDown]
+    [handleDropdownKeyDown]
   );
 
   const contextValue = {
@@ -295,7 +264,7 @@ const Dropdown = ({
     onSelect: handleSelect,
     onAddNew,
     onSearchChange: handleSearchChange,
-    onKeyDown: handleKeyDown,
+    onKeyDown: handleDropdownKeyDown,
     onSetHighlightedIndex: setHighlightedIndex,
     onSetIsKeyboardNavigation: setIsKeyboardNavigation,
     onExpansion: handleExpansion,
@@ -331,7 +300,7 @@ const Dropdown = ({
                 name={name}
                 tabIndex={tabIndex}
                 onClick={toggleDropdown}
-                onKeyDown={!searchList ? handleKeyDown : undefined}
+                onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
                 onBlur={handleButtonBlur}
               />
             </div>

@@ -1,15 +1,43 @@
-import { useEffect } from 'react';
-import type { UseScrollManagementProps } from '../types';
+import { useState, useCallback, useEffect, RefObject } from 'react';
+import { DROPDOWN_CONSTANTS } from '../constants';
+
+interface UseScrollManagementProps {
+  isOpen: boolean;
+  applyOpenStyles: boolean;
+  filteredOptions: Array<{ id: string; name: string }>;
+  highlightedIndex: number;
+  scrollToHighlightedOption: () => void;
+  optionsContainerRef: RefObject<HTMLDivElement | null>;
+}
 
 export const useScrollManagement = ({
   isOpen,
   applyOpenStyles,
   filteredOptions,
   highlightedIndex,
-  checkScroll,
   scrollToHighlightedOption,
   optionsContainerRef,
 }: UseScrollManagementProps) => {
+  const [scrollState, setScrollState] = useState({
+    isScrollable: false,
+    reachedBottom: false,
+    scrolledFromTop: false,
+  });
+
+  const checkScroll = useCallback(() => {
+    if (!optionsContainerRef.current) return;
+    const container = optionsContainerRef.current;
+    setScrollState({
+      isScrollable: container.scrollHeight > container.clientHeight,
+      reachedBottom:
+        Math.abs(
+          container.scrollHeight - container.scrollTop - container.clientHeight
+        ) < DROPDOWN_CONSTANTS.SCROLL_THRESHOLD,
+      scrolledFromTop:
+        container.scrollTop > DROPDOWN_CONSTANTS.SCROLL_THRESHOLD,
+    });
+  }, [optionsContainerRef]);
+
   // Scroll state management
   useEffect(() => {
     if (isOpen) {
@@ -50,4 +78,9 @@ export const useScrollManagement = ({
     scrollToHighlightedOption,
     optionsContainerRef,
   ]);
+
+  return {
+    scrollState,
+    checkScroll,
+  };
 };
