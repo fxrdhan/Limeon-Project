@@ -3,6 +3,7 @@ import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
+import { ItemCodeField } from '../atoms';
 import { itemNameSchema } from '@/schemas/itemValidation';
 import type { DropdownOption } from '@/types/components';
 
@@ -60,16 +61,16 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
   ) => {
     return (
       <div className="border-2 border-gray-200 rounded-lg mb-6 overflow-hidden">
-        <div className="bg-gray-100 p-3 border-b-2 border-gray-200 flex justify-between items-center">
+        <div className="bg-gray-100 p-3 border-b-2 border-gray-200">
           <h2 className="text-lg font-semibold">Data Umum</h2>
-          {formData.code && (
-            <div className="text-sm text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded border">
-              Kode: {formData.code}
-            </div>
-          )}
         </div>
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <ItemCodeField
+              code={formData.code}
+              onChange={onChange}
+            />
+            
             <FormField
               label="Nama Item"
               className="md:col-span-2"

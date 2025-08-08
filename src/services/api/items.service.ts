@@ -32,14 +32,6 @@ export class ItemsService extends BaseService<DBItem> {
         return result;
       }
 
-      // Get manufacturer data separately
-      const { data: manufacturers } = await supabase
-        .from('item_manufacturers')
-        .select('id, name');
-
-      const manufacturerMap = new Map(
-        manufacturers?.map(m => [m.id, m.name]) || []
-      );
 
       // Transform the data to the expected format
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,10 +50,8 @@ export class ItemsService extends BaseService<DBItem> {
           }
         }
 
-        // Get manufacturer name from map
-        const manufacturerName = item.manufacturer
-          ? manufacturerMap.get(item.manufacturer) || ''
-          : '';
+        // Manufacturer is already stored as name (varchar), use directly
+        const manufacturerName = item.manufacturer || '';
 
         // Transform to Item interface
         return {
@@ -104,16 +94,8 @@ export class ItemsService extends BaseService<DBItem> {
         return { data: null, error };
       }
 
-      // Get manufacturer name if exists
-      let manufacturerName = '';
-      if (item.manufacturer) {
-        const { data: manufacturer } = await supabase
-          .from('item_manufacturers')
-          .select('name')
-          .eq('id', item.manufacturer)
-          .single();
-        manufacturerName = manufacturer?.name || '';
-      }
+      // Manufacturer is already stored as name (varchar), use directly
+      const manufacturerName = item.manufacturer || '';
 
       // Parse unit conversions
       let packageConversions: PackageConversion[] = [];
@@ -172,14 +154,6 @@ export class ItemsService extends BaseService<DBItem> {
         return result;
       }
 
-      // Get manufacturer data separately
-      const { data: manufacturers } = await supabase
-        .from('item_manufacturers')
-        .select('id, name');
-
-      const manufacturerMap = new Map(
-        manufacturers?.map(m => [m.id, m.name]) || []
-      );
 
       // Transform the data to the expected format
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -198,10 +172,8 @@ export class ItemsService extends BaseService<DBItem> {
           }
         }
 
-        // Get manufacturer name from map
-        const manufacturerName = item.manufacturer
-          ? manufacturerMap.get(item.manufacturer) || ''
-          : '';
+        // Manufacturer is already stored as name (varchar), use directly
+        const manufacturerName = item.manufacturer || '';
 
         // Transform to Item interface
         return {
@@ -260,14 +232,6 @@ export class ItemsService extends BaseService<DBItem> {
         return { data, error };
       }
 
-      // Get manufacturer data separately
-      const { data: manufacturers } = await supabase
-        .from('item_manufacturers')
-        .select('id, name');
-
-      const manufacturerMap = new Map(
-        manufacturers?.map(m => [m.id, m.name]) || []
-      );
 
       // Transform the data to the expected format
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -286,10 +250,8 @@ export class ItemsService extends BaseService<DBItem> {
           }
         }
 
-        // Get manufacturer name from map
-        const manufacturerName = item.manufacturer
-          ? manufacturerMap.get(item.manufacturer) || ''
-          : '';
+        // Manufacturer is already stored as name (varchar), use directly
+        const manufacturerName = item.manufacturer || '';
 
         // Transform to Item interface
         return {

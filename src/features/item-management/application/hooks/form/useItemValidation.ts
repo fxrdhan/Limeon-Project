@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 interface ValidationFormData {
+  code: string;
   name: string;
   category_id: string;
   type_id: string;
@@ -24,6 +25,7 @@ export const useItemFormValidation = ({
 }: UseItemFormValidationProps) => {
   const formIsInvalid = useMemo(
     () =>
+      !formData.code?.trim() ||
       !formData.name?.trim() ||
       !formData.category_id ||
       !formData.type_id ||
