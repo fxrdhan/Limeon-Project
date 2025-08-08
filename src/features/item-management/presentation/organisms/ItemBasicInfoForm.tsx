@@ -6,12 +6,12 @@ import DescriptiveTextarea from '@/components/descriptive-textarea';
 import { ItemCodeField } from '../atoms';
 import { itemNameSchema } from '@/schemas/itemValidation';
 import type { DropdownOption } from '@/types/components';
-import { 
+import {
   createOptimizedCategoryDetailFetcher,
   createOptimizedTypeDetailFetcher,
   createOptimizedUnitDetailFetcher,
   createOptimizedDosageDetailFetcher,
-  createOptimizedManufacturerDetailFetcher
+  createOptimizedManufacturerDetailFetcher,
 } from '@/utils/optimizedCategoryDetailFetcher';
 
 interface ItemBasicInfoFormProps {

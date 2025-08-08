@@ -33,21 +33,20 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
   ) => {
     const buttonRef = ref as React.RefObject<HTMLButtonElement>;
 
-    const { 
-      isExpanded, 
-      handleExpansionChange,
-      isButtonTextExpanded 
-    } = useTextExpansion({
-      buttonRef,
-      selectedOption,
-      isOpen,
-    });
+    const { isExpanded, handleExpansionChange, isButtonTextExpanded } =
+      useTextExpansion({
+        buttonRef,
+        selectedOption,
+        isOpen,
+      });
 
     // Calculate display text based on expansion state
-    const displayText = selectedOption 
-      ? (isButtonTextExpanded ? selectedOption.name : selectedOption.name)
+    const displayText = selectedOption
+      ? isButtonTextExpanded
+        ? selectedOption.name
+        : selectedOption.name
       : placeholder;
-    
+
     const titleText = selectedOption?.name || placeholder;
     const isPlaceholder = !selectedOption;
 

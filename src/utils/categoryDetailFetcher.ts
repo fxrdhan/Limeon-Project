@@ -1,7 +1,9 @@
 import type { HoverDetailData } from '@/types';
 import { supabase } from '@/lib/supabase';
 
-export const fetchCategoryDetail = async (categoryId: string): Promise<HoverDetailData | null> => {
+export const fetchCategoryDetail = async (
+  categoryId: string
+): Promise<HoverDetailData | null> => {
   try {
     const { data, error } = await supabase
       .from('item_categories')

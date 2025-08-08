@@ -163,11 +163,11 @@ export const useEntityModalLogic = ({
       name: name.trim(),
     };
 
-    if (description.trim()) {
-      submitData.description = description.trim();
-    }
+    // Always include description field, even if empty, to ensure database updates
+    submitData.description = description.trim();
 
-    if (address.trim()) {
+    // Only include address field for Produsen (manufacturers)
+    if (entityName === 'Produsen') {
       submitData.address = address.trim();
     }
 

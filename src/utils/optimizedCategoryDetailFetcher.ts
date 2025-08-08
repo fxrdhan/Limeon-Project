@@ -4,12 +4,14 @@ import type { HoverDetailData, DropdownOption } from '@/types';
  * Optimized category detail fetcher that uses cached realtime data
  * instead of making database requests
  */
-export const createOptimizedCategoryDetailFetcher = (categories: DropdownOption[]) => {
+export const createOptimizedCategoryDetailFetcher = (
+  categories: DropdownOption[]
+) => {
   return async (categoryId: string): Promise<HoverDetailData | null> => {
     try {
       // Find category in cached data (no database request needed!)
       const category = categories.find(cat => cat.id === categoryId);
-      
+
       if (!category) {
         console.warn(`Category with ID ${categoryId} not found in cached data`);
         return null;
@@ -40,7 +42,7 @@ export const createOptimizedTypeDetailFetcher = (types: DropdownOption[]) => {
     try {
       // Find type in cached data (no database request needed!)
       const type = types.find(t => t.id === typeId);
-      
+
       if (!type) {
         console.warn(`Type with ID ${typeId} not found in cached data`);
         return null;
@@ -71,7 +73,7 @@ export const createOptimizedUnitDetailFetcher = (units: DropdownOption[]) => {
     try {
       // Find unit in cached data (no database request needed!)
       const unit = units.find(u => u.id === unitId);
-      
+
       if (!unit) {
         console.warn(`Unit with ID ${unitId} not found in cached data`);
         return null;
@@ -97,12 +99,14 @@ export const createOptimizedUnitDetailFetcher = (units: DropdownOption[]) => {
  * Optimized dosage detail fetcher that uses cached realtime data
  * instead of making database requests
  */
-export const createOptimizedDosageDetailFetcher = (dosages: DropdownOption[]) => {
+export const createOptimizedDosageDetailFetcher = (
+  dosages: DropdownOption[]
+) => {
   return async (dosageId: string): Promise<HoverDetailData | null> => {
     try {
       // Find dosage in cached data (no database request needed!)
       const dosage = dosages.find(d => d.id === dosageId);
-      
+
       if (!dosage) {
         console.warn(`Dosage with ID ${dosageId} not found in cached data`);
         return null;
@@ -128,14 +132,18 @@ export const createOptimizedDosageDetailFetcher = (dosages: DropdownOption[]) =>
  * Optimized manufacturer detail fetcher that uses cached realtime data
  * instead of making database requests. Uses address field instead of description.
  */
-export const createOptimizedManufacturerDetailFetcher = (manufacturers: DropdownOption[]) => {
+export const createOptimizedManufacturerDetailFetcher = (
+  manufacturers: DropdownOption[]
+) => {
   return async (manufacturerId: string): Promise<HoverDetailData | null> => {
     try {
       // Find manufacturer in cached data (no database request needed!)
       const manufacturer = manufacturers.find(m => m.id === manufacturerId);
-      
+
       if (!manufacturer) {
-        console.warn(`Manufacturer with ID ${manufacturerId} not found in cached data`);
+        console.warn(
+          `Manufacturer with ID ${manufacturerId} not found in cached data`
+        );
         return null;
       }
 
