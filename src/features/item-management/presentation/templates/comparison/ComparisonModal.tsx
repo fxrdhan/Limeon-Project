@@ -48,13 +48,18 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
   const nameRef = useRef<HTMLDivElement>(null);
   const descriptionRef = useRef<HTMLDivElement>(null);
 
+  // State to track overflow status
+  const [overflowStates, setOverflowStates] = React.useState({
+    kode: false,
+    name: false,
+    description: false,
+  });
 
   // Function to check if element overflows
   const checkOverflow = (element: HTMLElement | null) => {
     if (!element) return false;
     return element.scrollHeight > element.clientHeight;
   };
-
 
   // Auto-scroll to first highlighted text EVERY TIME content changes (must be before early returns)
   useEffect(() => {
@@ -116,14 +121,42 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     versionB?.version_number,
   ]); // Trigger on content changes - retry mechanism handles equal->diff transitions
 
+  // Update overflow states when content changes
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const updateOverflowStates = () => {
+      setOverflowStates({
+        kode: checkOverflow(kodeRef.current),
+        name: checkOverflow(nameRef.current),
+        description: checkOverflow(descriptionRef.current),
+      });
+    };
+
+    // Check overflow after content is rendered
+    const timer = setTimeout(updateOverflowStates, 100);
+    
+    // Also check on resize
+    window.addEventListener('resize', updateOverflowStates);
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateOverflowStates);
+    };
+  }, [
+    isOpen,
+    isFlipped,
+    selectedVersion?.version_number,
+    versionA?.version_number,
+    versionB?.version_number,
+  ]);
+
   // Helper function to get code field from entity data (supports both 'code' and 'kode')
-  const getCodeField = (entityData: Record<string, unknown> | undefined | null) => {
+  const getCodeField = (
+    entityData: Record<string, unknown> | undefined | null
+  ) => {
     return String(entityData?.code || entityData?.kode || '');
   };
-
-  // Early return for invalid states
-  if (!isDualMode && !selectedVersion) return null;
-  if (isDualMode && (!versionA || !versionB)) return null;
 
   // Helper functions to get effective versions based on flip state
   const getEffectiveVersionA = () => (isFlipped ? versionB : versionA);
@@ -182,7 +215,8 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
         leftVersion: effectiveVersionA,
         rightVersion: effectiveVersionB,
         isKodeDifferent:
-          getCodeField(versionA.entity_data) !== getCodeField(versionB.entity_data),
+          getCodeField(versionA.entity_data) !==
+          getCodeField(versionB.entity_data),
         isNameDifferent:
           versionA.entity_data?.name !== versionB.entity_data?.name,
         isDescriptionDifferent: isManufacturer
@@ -208,7 +242,8 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
         rightDescription: currentData.description,
         leftVersion: selectedVersion,
         rightVersion: null,
-        isKodeDifferent: (currentData.code || currentData.kode || '') !== versionKode,
+        isKodeDifferent:
+          (currentData.code || currentData.kode || '') !== versionKode,
         isNameDifferent: currentData.name !== versionName,
         isDescriptionDifferent: currentData.description !== versionDescription,
       };
@@ -216,9 +251,61 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     return null;
   };
 
-  // Get comparison data
+  // Get comparison data first (needed for overflow detection dependencies)
   const compData = getComparisonData();
   const originalData = getOriginalComparisonData();
+
+  // Update overflow states when modal opens or content changes (must be before early return)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const updateOverflowStatesWithRetry = (retryCount = 0) => {
+      const updateOverflowStates = () => {
+        setOverflowStates({
+          kode: checkOverflow(kodeRef.current),
+          name: checkOverflow(nameRef.current),
+          description: checkOverflow(descriptionRef.current),
+        });
+      };
+
+      // For equal->diff transitions, we need to wait for AnimatePresence to mount elements
+      const hasAnyDiff = compData?.isKodeDifferent || compData?.isNameDifferent || compData?.isDescriptionDifferent;
+      
+      if (hasAnyDiff) {
+        // Check if refs are available (elements are mounted)
+        const refsReady = (compData?.isKodeDifferent ? kodeRef.current : true) &&
+                         (compData?.isNameDifferent ? nameRef.current : true) &&
+                         (compData?.isDescriptionDifferent ? descriptionRef.current : true);
+        
+        if (!refsReady && retryCount < 5) {
+          // Retry with increasing delay for AnimatePresence mounting
+          setTimeout(() => updateOverflowStatesWithRetry(retryCount + 1), 100 + (retryCount * 50));
+          return;
+        }
+      }
+      
+      updateOverflowStates();
+    };
+
+    // Initial delay, then retry mechanism for equal->diff transitions
+    const timer = setTimeout(() => updateOverflowStatesWithRetry(), 200);
+    
+    return () => clearTimeout(timer);
+  }, [
+    isOpen,
+    isFlipped,
+    selectedVersion?.version_number,
+    versionA?.version_number,
+    versionB?.version_number,
+    // Also trigger when diff content status changes (equal <-> diff)
+    compData?.isKodeDifferent,
+    compData?.isNameDifferent,
+    compData?.isDescriptionDifferent,
+  ]);
+
+  // Early return for invalid states
+  if (!isDualMode && !selectedVersion) return null;
+  if (isDualMode && (!versionA || !versionB)) return null;
   if (!compData) return null;
 
   const handleRestore = async () => {
@@ -607,13 +694,15 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                     isFlipped={isFlipped}
                                   />
                                 </div>
-                                {/* Enhanced gradient fade overlay on all sides */}
-                                <div className="absolute inset-0 pointer-events-none rounded">
-                                  <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white via-white/60 to-transparent"></div>
-                                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/60 to-transparent"></div>
-                                  <div className="absolute top-0 bottom-0 left-0 w-4 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
-                                  <div className="absolute top-0 bottom-0 right-0 w-4 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
-                                </div>
+                                {/* Conditional gradient fade overlay - only when content overflows */}
+                                {overflowStates.kode && (
+                                  <div className="absolute inset-0 pointer-events-none rounded">
+                                    <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white via-white/60 to-transparent"></div>
+                                    <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/60 to-transparent"></div>
+                                    <div className="absolute top-0 bottom-0 left-0 w-4 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
+                                    <div className="absolute top-0 bottom-0 right-0 w-4 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
+                                  </div>
+                                )}
                               </div>
                             </motion.div>
                           )}
@@ -649,13 +738,15 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                     isFlipped={isFlipped}
                                   />
                                 </div>
-                                {/* Enhanced gradient fade overlay on all sides */}
-                                <div className="absolute inset-0 pointer-events-none rounded">
-                                  <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white via-white/60 to-transparent"></div>
-                                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/60 to-transparent"></div>
-                                  <div className="absolute top-0 bottom-0 left-0 w-4 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
-                                  <div className="absolute top-0 bottom-0 right-0 w-4 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
-                                </div>
+                                {/* Conditional gradient fade overlay - only when content overflows */}
+                                {overflowStates.name && (
+                                  <div className="absolute inset-0 pointer-events-none rounded">
+                                    <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white via-white/60 to-transparent"></div>
+                                    <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/60 to-transparent"></div>
+                                    <div className="absolute top-0 bottom-0 left-0 w-4 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
+                                    <div className="absolute top-0 bottom-0 right-0 w-4 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
+                                  </div>
+                                )}
                               </div>
                             </motion.div>
                           )}
@@ -693,13 +784,15 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                                     isFlipped={isFlipped}
                                   />
                                 </div>
-                                {/* Enhanced gradient fade overlay on all sides */}
-                                <div className="absolute inset-0 pointer-events-none rounded">
-                                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white via-white/65 to-transparent"></div>
-                                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/65 to-transparent"></div>
-                                  <div className="absolute top-0 bottom-0 left-0 w-5 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
-                                  <div className="absolute top-0 bottom-0 right-0 w-5 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
-                                </div>
+                                {/* Conditional gradient fade overlay - only when content overflows */}
+                                {overflowStates.description && (
+                                  <div className="absolute inset-0 pointer-events-none rounded">
+                                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white via-white/65 to-transparent"></div>
+                                    <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/65 to-transparent"></div>
+                                    <div className="absolute top-0 bottom-0 left-0 w-5 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
+                                    <div className="absolute top-0 bottom-0 right-0 w-5 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
+                                  </div>
+                                )}
                               </div>
                             </motion.div>
                           )}
