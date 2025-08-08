@@ -79,18 +79,30 @@ const BasicInfoSection: React.FC = () => {
   const transformedCategories = categories.map(cat => ({
     id: cat.id,
     name: cat.name,
+    code: cat.code,
+    description: cat.description,
+    updated_at: cat.updated_at,
   }));
   const transformedTypes = types.map(type => ({
     id: type.id,
     name: type.name,
+    code: type.code,
+    description: type.description,
+    updated_at: type.updated_at,
   }));
   const transformedUnits = units.map(unit => ({
     id: unit.id,
     name: unit.name,
+    code: unit.code,
+    description: unit.description,
+    updated_at: unit.updated_at,
   }));
   const transformedDosages = dosages.map(dosage => ({
     id: dosage.id,
     name: dosage.name,
+    code: dosage.code,
+    description: dosage.description,
+    updated_at: dosage.updated_at,
   }));
   const transformedManufacturers = manufacturers.map(manufacturer => ({
     id: manufacturer.id,

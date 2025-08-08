@@ -22,6 +22,8 @@ const OptionItem: FC<OptionItemProps> = ({
     buttonRef,
     onSelect,
     onExpansion,
+    onHoverDetailShow,
+    onHoverDetailHide,
   } = useDropdownContext();
   const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
   const maxTextWidth =
@@ -49,6 +51,9 @@ const OptionItem: FC<OptionItemProps> = ({
       onExpansion={onExpansion}
       dropdownMenuRef={dropdownMenuRef}
       optionName={option.name}
+      option={option}
+      onHoverDetailShow={onHoverDetailShow}
+      onHoverDetailHide={onHoverDetailHide}
     >
       {withRadio && (
         <RadioIndicator isSelected={isSelected} isExpanded={shouldExpand} />

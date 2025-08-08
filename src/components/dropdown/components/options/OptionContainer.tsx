@@ -1,4 +1,5 @@
 import React, { RefObject, ReactNode } from 'react';
+import type { DropdownOption } from '@/types';
 
 interface OptionContainerProps {
   optionId: string;
@@ -16,6 +17,10 @@ interface OptionContainerProps {
   dropdownMenuRef: RefObject<HTMLDivElement | null>;
   optionName: string;
   children: ReactNode;
+  // Hover detail props
+  option?: DropdownOption;
+  onHoverDetailShow?: (optionId: string, element: HTMLElement, optionData?: Partial<DropdownOption>) => Promise<void>;
+  onHoverDetailHide?: () => void;
 }
 
 const OptionContainer: React.FC<OptionContainerProps> = ({
@@ -30,14 +35,33 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
   dropdownMenuRef,
   optionName,
   children,
+  option,
+  onHoverDetailShow,
+  onHoverDetailHide,
 }) => {
-  const handleMouseEnter = () => {
+  const handleMouseEnter = async (e: React.MouseEvent<HTMLButtonElement>) => {
     onHighlight(index);
     onExpansion(optionId, optionName, true);
+    
+    // Trigger hover detail if enabled
+    if (onHoverDetailShow && option) {
+      await onHoverDetailShow(optionId, e.currentTarget, {
+        id: option.id,
+        name: option.name,
+        code: option.code,
+        description: option.description,
+        updated_at: option.updated_at,
+      });
+    }
   };
 
   const handleMouseLeave = () => {
     onExpansion(optionId, optionName, false);
+    
+    // Hide hover detail
+    if (onHoverDetailHide) {
+      onHoverDetailHide();
+    }
   };
 
   const handleFocus = () => {
