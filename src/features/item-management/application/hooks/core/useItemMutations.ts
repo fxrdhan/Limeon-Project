@@ -168,18 +168,29 @@ export const useAddItemMutations = ({
   /**
    * Prepares item data for database insertion/update
    */
-  const prepareItemData = (
+  const prepareItemData = async (
     formData: ItemFormData,
     conversions: PackageConversion[],
     baseUnit: string,
     isUpdate: boolean = false
   ) => {
+    // Get manufacturer name from ID
+    let manufacturerName = null;
+    if (formData.manufacturer_id) {
+      const { data: manufacturerData } = await supabase
+        .from('item_manufacturers')
+        .select('name')
+        .eq('id', formData.manufacturer_id)
+        .single();
+      manufacturerName = manufacturerData?.name || null;
+    }
+
     const baseData = {
       name: formData.name,
-      manufacturer: formData.manufacturer_id || null,
+      manufacturer: manufacturerName,
       category_id: formData.category_id,
       type_id: formData.type_id,
-      unit_id: formData.unit_id,
+      package_id: formData.unit_id,
       base_price: formData.base_price,
       sell_price: formData.sell_price,
       min_stock: formData.min_stock,
@@ -225,58 +236,16 @@ export const useAddItemMutations = ({
       isEditMode: boolean;
       itemId?: string;
     }) => {
-      // Generate item code if missing (for new items) or explicitly requested
+      // Validate that code is manually filled
       const finalFormData = { ...formData };
 
-      if (!isEditMode || !finalFormData.code) {
-        // Generate code for new items or when code is empty
-        if (
-          finalFormData.type_id &&
-          finalFormData.unit_id &&
-          finalFormData.category_id
-        ) {
-          try {
-            const { data, error } = await supabase.functions.invoke(
-              'generate-item-code',
-              {
-                body: {
-                  type_id: finalFormData.type_id,
-                  unit_id: finalFormData.unit_id,
-                  category_id: finalFormData.category_id,
-                  exclude_item_id: isEditMode && itemId ? itemId : undefined,
-                },
-              }
-            );
-
-            if (error) {
-              throw new Error(`Code generation failed: ${error.message}`);
-            }
-
-            const response = data as {
-              success: boolean;
-              data?: { code: string };
-              error?: string;
-            };
-
-            if (!response.success) {
-              throw new Error(response.error || 'Failed to generate item code');
-            }
-
-            finalFormData.code = response.data!.code;
-          } catch (error) {
-            console.error('Error generating item code during save:', error);
-            throw new Error('Gagal generate kode item. Silakan coba lagi.');
-          }
-        } else {
-          throw new Error(
-            'Silakan lengkapi jenis, kemasan, dan kategori item terlebih dahulu.'
-          );
-        }
+      if (!finalFormData.code?.trim()) {
+        throw new Error('Kode item harus diisi secara manual.');
       }
 
       if (isEditMode && itemId) {
         // Update existing item
-        const itemUpdateData = prepareItemData(
+        const itemUpdateData = await prepareItemData(
           finalFormData,
           conversions,
           baseUnit,
@@ -287,10 +256,10 @@ export const useAddItemMutations = ({
           .update(itemUpdateData)
           .eq('id', itemId);
         if (updateError) throw updateError;
-        return { action: 'update', itemId, generatedCode: finalFormData.code };
+        return { action: 'update', itemId, code: finalFormData.code };
       } else {
         // Create new item
-        const mainItemData = prepareItemData(
+        const mainItemData = await prepareItemData(
           finalFormData,
           conversions,
           baseUnit,
@@ -308,16 +277,16 @@ export const useAddItemMutations = ({
         return {
           action: 'create',
           itemId: insertedItem.id,
-          generatedCode: finalFormData.code,
+          code: finalFormData.code,
         };
       }
     },
     onSuccess: result => {
-      // Show success message with generated code
-      if (result.generatedCode) {
+      // Show success message with item code
+      if (result.code) {
         const actionText = result.action === 'create' ? 'dibuat' : 'diperbarui';
         alert(
-          `Item berhasil ${actionText} dengan kode: ${result.generatedCode}`
+          `Item berhasil ${actionText} dengan kode: ${result.code}`
         );
       }
 

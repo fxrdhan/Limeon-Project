@@ -1,46 +1,29 @@
 import React from 'react';
-import { FaRedo } from 'react-icons/fa';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 
 interface ItemCodeFieldProps {
   code: string;
-  onRegenerate: () => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
 }
 
 export default function ItemCodeField({
   code,
-  onRegenerate,
+  onChange,
+  error,
 }: ItemCodeFieldProps) {
-  const [isHovered, setIsHovered] = React.useState(false);
-
   return (
     <FormField label="Kode Item" className="md:col-span-1">
-      <div
-        className="relative"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <Input
-          name="code"
-          value={code}
-          placeholder={code ? '' : 'Kode akan di-generate otomatis saat simpan'}
-          readOnly={true}
-          className="w-full transition-all duration-200"
-        />
-        {isHovered && (
-          <div
-            className="absolute inset-0 flex items-center justify-center gap-1 cursor-pointer"
-            onClick={onRegenerate}
-            title="Generate kode item secara manual (opsional - otomatis saat simpan)"
-          >
-            <FaRedo size={16} className="text-blue-500" />
-            <span className="text-sm text-blue-600 font-medium">
-              Regenerate
-            </span>
-          </div>
-        )}
-      </div>
+      <Input
+        name="code"
+        value={code}
+        onChange={onChange}
+        placeholder="Masukkan kode item"
+        className="w-full"
+        error={error}
+        required
+      />
     </FormField>
   );
 }

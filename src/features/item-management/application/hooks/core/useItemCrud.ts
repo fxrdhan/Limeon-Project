@@ -26,7 +26,6 @@ import type {
  * - Data validation
  * - CRUD operations
  * - Unit conversion handling
- * - Code generation via edge function
  * 
  * REFACTORED: Now orchestrates multiple specialized hooks while maintaining exact same API
  */

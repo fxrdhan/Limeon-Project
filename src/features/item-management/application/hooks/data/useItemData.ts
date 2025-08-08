@@ -51,7 +51,8 @@ export const useItemData = ({
             `
           *, updated_at,
           package_conversions,
-          manufacturer
+          manufacturer,
+          package_id
         `
           )
           .eq('id', id)
@@ -60,14 +61,25 @@ export const useItemData = ({
         if (itemError) throw itemError;
         if (!itemData) throw new Error('Item tidak ditemukan');
 
+        // Reverse lookup manufacturer name to ID for edit mode
+        let manufacturerId = '';
+        if (itemData.manufacturer) {
+          const { data: manufacturerData } = await supabase
+            .from('item_manufacturers')
+            .select('id')
+            .eq('name', itemData.manufacturer)
+            .single();
+          manufacturerId = manufacturerData?.id || '';
+        }
+
         // Transform database data to form data structure
         const fetchedFormData: ItemFormData = {
           code: itemData.code || '',
           name: itemData.name || '',
-          manufacturer_id: itemData.manufacturer || '',
+          manufacturer_id: manufacturerId,
           type_id: itemData.type_id || '',
           category_id: itemData.category_id || '',
-          unit_id: itemData.unit_id || '',
+          unit_id: itemData.package_id || '',
           dosage_id: itemData.dosage_id || '',
           barcode: itemData.barcode || '',
           description: itemData.description || '',
