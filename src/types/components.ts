@@ -132,6 +132,7 @@ export interface ImageUploaderProps {
   onImageUpload: (file: File) => Promise<void> | void;
   onImageDelete?: () => Promise<void> | void;
   children: React.ReactNode;
+  hasImage?: boolean; // Explicit prop to indicate if image exists
   maxSizeMB?: number;
   validTypes?: string[];
   className?: string;

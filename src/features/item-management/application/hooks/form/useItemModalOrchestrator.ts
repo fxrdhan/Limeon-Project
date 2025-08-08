@@ -16,16 +16,16 @@ interface EntitySaveData {
 }
 
 interface EntitySaveResult {
-  newCategory?: any;
-  updatedCategories?: any[];
-  newType?: any;
-  updatedTypes?: any[];
-  newUnit?: any;
-  updatedUnits?: any[];
-  newDosage?: any;
-  updatedDosages?: any[];
-  newManufacturer?: any;
-  updatedManufacturers?: any[];
+  newCategory?: ItemCategory;
+  updatedCategories?: ItemCategory[];
+  newType?: ItemTypeEntity;
+  updatedTypes?: ItemTypeEntity[];
+  newUnit?: ItemPackage;
+  updatedUnits?: ItemPackage[];
+  newDosage?: ItemDosageEntity;
+  updatedDosages?: ItemDosageEntity[];
+  newManufacturer?: ItemManufacturerEntity;
+  updatedManufacturers?: ItemManufacturerEntity[];
 }
 
 interface UseItemModalOrchestratorProps {

@@ -106,7 +106,7 @@ export const useAddItemMutations = ({
       const { data, error } = await supabase
         .from('item_dosages')
         .insert(newDosage)
-        .select('id, code, name, description')
+        .select('id, code, name, description, created_at, updated_at')
         .single();
       if (error) throw error;
       return data;
@@ -131,7 +131,7 @@ export const useAddItemMutations = ({
       const { data, error } = await supabase
         .from('item_manufacturers')
         .insert(newManufacturer)
-        .select('id, code, name, address')
+        .select('id, code, name, address, created_at, updated_at')
         .single();
       if (error) throw error;
       return data;
