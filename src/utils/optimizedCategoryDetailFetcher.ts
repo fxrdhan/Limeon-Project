@@ -123,3 +123,35 @@ export const createOptimizedDosageDetailFetcher = (dosages: DropdownOption[]) =>
     }
   };
 };
+
+/**
+ * Optimized manufacturer detail fetcher that uses cached realtime data
+ * instead of making database requests. Uses address field instead of description.
+ */
+export const createOptimizedManufacturerDetailFetcher = (manufacturers: DropdownOption[]) => {
+  return async (manufacturerId: string): Promise<HoverDetailData | null> => {
+    try {
+      // Find manufacturer in cached data (no database request needed!)
+      const manufacturer = manufacturers.find(m => m.id === manufacturerId);
+      
+      if (!manufacturer) {
+        console.warn(`Manufacturer with ID ${manufacturerId} not found in cached data`);
+        return null;
+      }
+
+      // Return formatted data immediately (no database request needed!)
+      // Use address field as description for manufacturers
+      return {
+        id: manufacturer.id,
+        code: manufacturer.code,
+        name: manufacturer.name,
+        description: manufacturer.description, // This will be the address field
+        created_at: undefined, // Not needed for hover display
+        updated_at: manufacturer.updated_at,
+      };
+    } catch (error) {
+      console.error('Error getting manufacturer detail from cache:', error);
+      return null;
+    }
+  };
+};

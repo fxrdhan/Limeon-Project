@@ -9,6 +9,7 @@ interface HoverDetailPortalProps {
   position: {
     top: number;
     left: number;
+    direction: 'right' | 'left';
   };
   data: HoverDetailData | null;
 }
@@ -50,13 +51,8 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
             left: position.left,
           }}
         >
-          <div
-            className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 min-w-[280px] max-w-[580px] relative"
-            style={{
-              width: 'max-content',
-            }}
-          >
-            {/* Header with code and name - controls the width */}
+          <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-4 min-w-[250px] max-w-[500px] w-max relative">
+            {/* Header with code and name */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 whitespace-nowrap">
                 {data.code && (
@@ -68,7 +64,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
               </div>
             </div>
 
-            {/* Description - wraps within established width */}
+            {/* Description */}
             {data.description && (
               <div className="mb-3">
                 <p className="text-sm text-gray-600 leading-relaxed break-words">
@@ -91,20 +87,36 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
               </div>
             )}
 
-            {/* Seamless arrow pointing left */}
+            {/* Dynamic arrow based on position */}
             <div
               className="absolute"
-              style={{
-                left: '-6px',
-                top: '18px',
-                width: '12px',
-                height: '12px',
-                background: 'white',
-                border: '1px solid #D1D5DB',
-                borderRight: 'none',
-                borderTop: 'none',
-                transform: 'rotate(45deg)',
-              }}
+              style={
+                position.direction === 'right'
+                  ? {
+                      // Arrow pointing left (portal to right of option)
+                      left: '-6px',
+                      top: '18px',
+                      width: '12px',
+                      height: '12px',
+                      background: 'white',
+                      border: '1px solid #D1D5DB',
+                      borderRight: 'none',
+                      borderTop: 'none',
+                      transform: 'rotate(45deg)',
+                    }
+                  : {
+                      // Arrow pointing right (portal to left of option)
+                      right: '-6px',
+                      top: '18px',
+                      width: '12px',
+                      height: '12px',
+                      background: 'white',
+                      border: '1px solid #D1D5DB',
+                      borderLeft: 'none',
+                      borderBottom: 'none',
+                      transform: 'rotate(45deg)',
+                    }
+              }
             />
           </div>
         </motion.div>
