@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { DROPDOWN_CONSTANTS } from '../constants';
 import type { UseDropdownEffectsProps } from '../types';
 
@@ -8,32 +8,78 @@ export const useDropdownEffects = ({
   filteredOptions,
   value,
   setApplyOpenStyles,
-  setHighlightedIndex,
   setExpandedId,
   calculateDropdownPosition,
   manageFocusOnOpen,
   handleFocusOut,
-  clearTimeouts,
   resetPosition,
   resetSearch,
-  checkScroll,
-  scrollToHighlightedOption,
   buttonRef,
   dropdownMenuRef,
-  optionsContainerRef,
-  highlightedIndex,
+  hoverToOpen,
+  isClosing,
+  openThisDropdown,
+  actualCloseDropdown,
 }: UseDropdownEffectsProps) => {
-  // Set initial highlighted index when dropdown opens
+  // Hover state management
+  const [isHovered, setIsHovered] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearTimeouts = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleTriggerAreaEnter = useCallback(() => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
+    // Only open on hover if explicitly enabled and not already open
+    if (hoverToOpen && !isOpen && !isClosing) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        openThisDropdown();
+      }, DROPDOWN_CONSTANTS.HOVER_TIMEOUT);
+    }
+  }, [hoverToOpen, openThisDropdown, isOpen, isClosing]);
+
+  const handleMenuEnter = useCallback(() => {
+    [leaveTimeoutRef, hoverTimeoutRef].forEach(ref => {
+      if (ref.current) {
+        clearTimeout(ref.current);
+        ref.current = null;
+      }
+    });
+  }, []);
+
+  const handleMouseLeaveWithCloseIntent = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    // Only set close timeout if hover-to-open is enabled and dropdown is actually open
+    if (hoverToOpen && isOpen) {
+      leaveTimeoutRef.current = setTimeout(
+        actualCloseDropdown,
+        DROPDOWN_CONSTANTS.CLOSE_TIMEOUT
+      );
+    }
+  }, [actualCloseDropdown, hoverToOpen, isOpen]);
+  // Set initial expanded text when dropdown opens
   useEffect(() => {
     if (isOpen && filteredOptions.length > 0) {
       const selectedIndex = value
         ? filteredOptions.findIndex(option => option.id === value)
         : -1;
-      const initialIndex = selectedIndex >= 0 ? selectedIndex : -1;
-      setHighlightedIndex(initialIndex);
-
       const highlightedOption =
-        initialIndex >= 0 ? filteredOptions[initialIndex] : null;
+        selectedIndex >= 0 ? filteredOptions[selectedIndex] : null;
       if (highlightedOption && buttonRef.current) {
         const buttonWidth = buttonRef.current.getBoundingClientRect().width;
         const maxTextWidth = buttonWidth - DROPDOWN_CONSTANTS.BUTTON_PADDING;
@@ -56,15 +102,12 @@ export const useDropdownEffects = ({
           setExpandedId(highlightedOption.id);
         }
       }
-    } else {
-      setHighlightedIndex(-1);
     }
   }, [
     filteredOptions,
     isOpen,
     value,
     setExpandedId,
-    setHighlightedIndex,
     buttonRef,
   ]);
 
@@ -133,43 +176,12 @@ export const useDropdownEffects = ({
     }
   }, [filteredOptions, isOpen, applyOpenStyles, calculateDropdownPosition]);
 
-  // Scroll state management
-  useEffect(() => {
-    if (isOpen) {
-      const timer = setTimeout(checkScroll, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, filteredOptions, checkScroll]);
-
-  useEffect(() => {
-    const optionsContainer = optionsContainerRef.current;
-    if (optionsContainer && isOpen) {
-      optionsContainer.addEventListener('scroll', checkScroll);
-      return () => optionsContainer.removeEventListener('scroll', checkScroll);
-    }
-  }, [isOpen, checkScroll, optionsContainerRef]);
-
-  // Scroll to highlighted option
-  useEffect(() => {
-    scrollToHighlightedOption();
-  }, [highlightedIndex, isOpen, filteredOptions, scrollToHighlightedOption]);
-
-  // Reset scroll position when dropdown opens
-  useEffect(() => {
-    if (
-      isOpen &&
-      applyOpenStyles &&
-      optionsContainerRef.current &&
-      filteredOptions.length > 0
-    ) {
-      scrollToHighlightedOption();
-    }
-  }, [
-    isOpen,
-    applyOpenStyles,
-    filteredOptions.length,
-    highlightedIndex,
-    scrollToHighlightedOption,
-    optionsContainerRef,
-  ]);
+  return {
+    isHovered,
+    setIsHovered,
+    leaveTimeoutRef,
+    handleTriggerAreaEnter,
+    handleMenuEnter,
+    handleMouseLeaveWithCloseIntent,
+  };
 };

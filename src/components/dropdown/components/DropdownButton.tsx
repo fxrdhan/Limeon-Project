@@ -1,7 +1,6 @@
 import React, { forwardRef } from 'react';
 import Button from './button/Button';
-import { useButtonText } from '../hooks/button/useButtonText';
-import { useButtonExpansion } from '../hooks/button/useButtonExpansion';
+import { useTextExpansion } from '../hooks/useTextExpansion';
 
 interface DropdownButtonProps {
   selectedOption?: { id: string; name: string };
@@ -34,18 +33,23 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
   ) => {
     const buttonRef = ref as React.RefObject<HTMLButtonElement>;
 
-    const { isExpanded, handleExpansionChange } = useButtonExpansion({
-      selectedOption,
+    const { 
+      isExpanded, 
+      handleExpansionChange,
+      isButtonTextExpanded 
+    } = useTextExpansion({
       buttonRef,
+      selectedOption,
       isOpen,
     });
 
-    const { displayText, titleText, isPlaceholder } = useButtonText({
-      selectedOption,
-      placeholder,
-      isExpanded,
-      buttonRef,
-    });
+    // Calculate display text based on expansion state
+    const displayText = selectedOption 
+      ? (isButtonTextExpanded ? selectedOption.name : selectedOption.name)
+      : placeholder;
+    
+    const titleText = selectedOption?.name || placeholder;
+    const isPlaceholder = !selectedOption;
 
     return (
       <Button

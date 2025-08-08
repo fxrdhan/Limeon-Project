@@ -1,13 +1,28 @@
-import { useState, useCallback, RefObject } from 'react';
+import { useState, useCallback, useEffect, RefObject } from 'react';
 import { shouldTruncateText } from '@/utils/text';
 import { DROPDOWN_CONSTANTS } from '../constants';
 
-export const useTextExpansion = (
-  buttonRef: RefObject<HTMLButtonElement | null>,
-  selectedOption?: { id: string; name: string }
-) => {
+interface UseTextExpansionProps {
+  buttonRef: RefObject<HTMLButtonElement | null>;
+  selectedOption?: { id: string; name: string };
+  isOpen?: boolean;
+}
+
+export const useTextExpansion = ({
+  buttonRef,
+  selectedOption,
+  isOpen = false,
+}: UseTextExpansionProps) => {
   const [isButtonTextExpanded, setIsButtonTextExpanded] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const canExpand = useCallback((): boolean => {
+    if (!selectedOption || !buttonRef.current) return false;
+    const buttonWidth = buttonRef.current.getBoundingClientRect().width;
+    const maxTextWidth = buttonWidth - DROPDOWN_CONSTANTS.BUTTON_PADDING;
+    return shouldTruncateText(selectedOption.name, maxTextWidth);
+  }, [selectedOption, buttonRef]);
 
   const handleExpansion = useCallback(
     (optionId: string, optionName: string, shouldExpand: boolean) => {
@@ -36,11 +51,44 @@ export const useTextExpansion = (
     [selectedOption, buttonRef]
   );
 
+  const handleExpansionChange = useCallback(
+    (shouldExpand: boolean) => {
+      if (canExpand()) {
+        setIsExpanded(shouldExpand);
+      } else {
+        setIsExpanded(false);
+      }
+    },
+    [canExpand]
+  );
+
+  // Reset expansion when selectedOption changes or when it can't expand
+  useEffect(() => {
+    if (!canExpand()) {
+      setIsExpanded(false);
+      setIsButtonTextExpanded(false);
+    }
+  }, [canExpand, selectedOption]);
+
+  // Reset expansion when dropdown is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setIsExpanded(false);
+      setIsButtonTextExpanded(false);
+      setExpandedId(null);
+    }
+  }, [isOpen]);
+
   return {
+    // Original useTextExpansion API
     isButtonTextExpanded,
     expandedId,
     setExpandedId,
     handleExpansion,
     handleButtonExpansion,
+    // Added from useButtonExpansion
+    isExpanded,
+    canExpand: canExpand(),
+    handleExpansionChange,
   };
 };

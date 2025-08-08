@@ -1,11 +1,9 @@
-import { useState, useCallback, RefObject } from 'react';
+import { useState, useCallback, useEffect, RefObject } from 'react';
 import { KEYBOARD_KEYS, DROPDOWN_CONSTANTS, SEARCH_STATES } from '../constants';
 
 interface UseKeyboardNavigationProps {
   isOpen: boolean;
   currentFilteredOptions: Array<{ id: string; name: string }>;
-  highlightedIndex: number;
-  setHighlightedIndex: (index: number) => void;
   setExpandedId: (id: string | null) => void;
   searchState: string;
   searchTerm: string;
@@ -19,8 +17,6 @@ interface UseKeyboardNavigationProps {
 export const useKeyboardNavigation = ({
   isOpen,
   currentFilteredOptions,
-  highlightedIndex,
-  setHighlightedIndex,
   setExpandedId,
   searchState,
   searchTerm,
@@ -30,7 +26,16 @@ export const useKeyboardNavigation = ({
   onCloseValidation,
   optionsContainerRef,
 }: UseKeyboardNavigationProps) => {
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
+
+  // Reset highlighted index when dropdown closes
+  useEffect(() => {
+    if (!isOpen) {
+      setHighlightedIndex(-1);
+      setIsKeyboardNavigation(false);
+    }
+  }, [isOpen]);
 
   const handleDropdownKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
@@ -169,10 +174,18 @@ export const useKeyboardNavigation = ({
     }
   }, [highlightedIndex, isOpen, currentFilteredOptions, optionsContainerRef]);
 
+  // Simple wrapper for external components that just need basic key handling
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
+    handleDropdownKeyDown(e);
+  }, [handleDropdownKeyDown]);
+
   return {
+    highlightedIndex,
+    setHighlightedIndex,
     isKeyboardNavigation,
     setIsKeyboardNavigation,
     handleDropdownKeyDown,
+    handleKeyDown, // Alias for backward compatibility
     scrollToHighlightedOption,
   };
 };
