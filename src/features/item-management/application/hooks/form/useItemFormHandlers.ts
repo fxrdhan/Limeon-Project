@@ -5,7 +5,11 @@ import type { ItemFormData } from '../../../shared/types';
 
 interface UseItemFormHandlersProps {
   formState: {
-    handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+    handleChange: (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
+    ) => void;
     handleSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
     formData: ItemFormData;
   };
@@ -17,7 +21,7 @@ interface UseItemFormHandlersProps {
 
 /**
  * Hook for managing form event handlers and interactions
- * 
+ *
  * Handles:
  * - Form input changes with price synchronization
  * - Select field changes
@@ -27,7 +31,6 @@ export const useItemFormHandlers = ({
   formState,
   packageConversionHook,
 }: UseItemFormHandlersProps) => {
-
   // Enhanced form change handler with package conversion sync
   const handleChange = useCallback(
     (

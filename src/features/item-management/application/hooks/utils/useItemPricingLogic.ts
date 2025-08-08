@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { 
+import {
   calculateProfitPercentage,
   calculateSellPriceFromMargin,
 } from '../../../shared/utils/PriceCalculator';
@@ -13,16 +13,13 @@ interface UseItemPricingLogicProps {
 
 /**
  * Hook for managing pricing calculations and logic
- * 
+ *
  * Handles:
  * - Profit percentage calculations
  * - Sell price calculation from margin
  * - Price validation and formatting
  */
-export const useItemPricingLogic = ({
-  formData,
-}: UseItemPricingLogicProps) => {
-
+export const useItemPricingLogic = ({ formData }: UseItemPricingLogicProps) => {
   // Memoized wrapper functions for performance
   const calculateProfitPercentageWrapper = useCallback(
     (base_price?: number, sell_price?: number) => {

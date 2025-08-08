@@ -285,9 +285,7 @@ export const useAddItemMutations = ({
       // Show success message with item code
       if (result.code) {
         const actionText = result.action === 'create' ? 'dibuat' : 'diperbarui';
-        alert(
-          `Item berhasil ${actionText} dengan kode: ${result.code}`
-        );
+        alert(`Item berhasil ${actionText} dengan kode: ${result.code}`);
       }
 
       // Invalidate and refetch items

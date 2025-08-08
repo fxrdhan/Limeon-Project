@@ -14,17 +14,16 @@ interface UseItemCacheManagerProps {
 
 /**
  * Hook for managing form cache and persistence
- * 
+ *
  * Handles:
  * - Cache loading and saving
- * - Dirty state tracking  
+ * - Dirty state tracking
  * - Search query cache updates
  */
 export const useItemCacheManager = ({
   formState,
   conversions,
 }: UseItemCacheManagerProps) => {
-
   // Initialize cache management
   const cache = useFormCache({
     cacheKey: CACHE_KEY,

@@ -5,7 +5,7 @@ import { formatDateTime } from '@/lib/formatters';
 import { useAddItemFormState } from '../form/useItemFormState';
 import { useAddItemMutations } from './useItemMutations';
 import { useItemData } from '../data/useItemData';
-import { 
+import {
   useItemModalOrchestrator,
   useItemCacheManager,
   useItemFormHandlers,
@@ -26,7 +26,7 @@ import type {
  * - Data validation
  * - CRUD operations
  * - Unit conversion handling
- * 
+ *
  * REFACTORED: Now orchestrates multiple specialized hooks while maintaining exact same API
  */
 
@@ -62,7 +62,7 @@ export const useAddItemForm = ({
     formState: {
       isEditMode: formState.isEditMode,
       saving: formState.saving,
-      isDirty: (conversions) => formState.isDirty(conversions),
+      isDirty: conversions => formState.isDirty(conversions),
       formData: formState.formData,
     },
     conversions: packageConversionHook.conversions,
@@ -89,7 +89,7 @@ export const useAddItemForm = ({
   const userInteractions = useItemUserInteractions({
     formState: {
       formData: formState.formData,
-      isDirty: (conversions) => formState.isDirty(conversions),
+      isDirty: conversions => formState.isDirty(conversions),
     },
     packageConversionHook,
     mutations,

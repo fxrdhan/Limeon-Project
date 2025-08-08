@@ -32,7 +32,6 @@ export class ItemsService extends BaseService<DBItem> {
         return result;
       }
 
-
       // Transform the data to the expected format
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformedData = (result.data as any[]).map((item: any) => {
@@ -154,7 +153,6 @@ export class ItemsService extends BaseService<DBItem> {
         return result;
       }
 
-
       // Transform the data to the expected format
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transformedData = (result.data as any[]).map((item: any) => {
@@ -231,7 +229,6 @@ export class ItemsService extends BaseService<DBItem> {
       if (error || !data) {
         return { data, error };
       }
-
 
       // Transform the data to the expected format
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
