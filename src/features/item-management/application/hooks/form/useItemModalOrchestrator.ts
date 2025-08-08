@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
-import type { 
+import type {
   ItemCategory,
-  ItemTypeEntity, 
+  ItemTypeEntity,
   ItemPackage,
   ItemDosageEntity,
-  ItemManufacturerEntity
+  ItemManufacturerEntity,
 } from '../../../domain/entities';
 import type { ItemFormData } from '../../../shared/types';
 
@@ -46,17 +46,21 @@ interface UseItemModalOrchestratorProps {
   mutations: {
     saveCategory: (data: EntitySaveData) => Promise<EntitySaveResult>;
     saveType: (data: EntitySaveData) => Promise<EntitySaveResult>;
-    saveUnit: (data: Omit<EntitySaveData, 'address'>) => Promise<EntitySaveResult>;
+    saveUnit: (
+      data: Omit<EntitySaveData, 'address'>
+    ) => Promise<EntitySaveResult>;
     saveDosage: (data: EntitySaveData) => Promise<EntitySaveResult>;
-    saveManufacturer: (data: Omit<EntitySaveData, 'description'> & { address?: string }) => Promise<EntitySaveResult>;
+    saveManufacturer: (
+      data: Omit<EntitySaveData, 'description'> & { address?: string }
+    ) => Promise<EntitySaveResult>;
   };
 }
 
 /**
  * Hook for orchestrating modal operations and entity creation workflows
- * 
+ *
  * Handles:
- * - Modal state management  
+ * - Modal state management
  * - Entity creation workflows
  * - Form data updates after entity creation
  */
@@ -64,7 +68,6 @@ export const useItemModalOrchestrator = ({
   formState,
   mutations,
 }: UseItemModalOrchestratorProps) => {
-
   // Modal opening handlers
   const handleAddNewCategory = useCallback(
     (searchTerm?: string) => {
@@ -185,7 +188,8 @@ export const useItemModalOrchestrator = ({
       address?: string;
     }) => {
       try {
-        const { newDosage, updatedDosages } = await mutations.saveDosage(dosageData);
+        const { newDosage, updatedDosages } =
+          await mutations.saveDosage(dosageData);
         if (updatedDosages) formState.setDosages(updatedDosages);
         if (newDosage?.id)
           formState.updateFormData({ dosage_id: newDosage.id });
@@ -227,14 +231,14 @@ export const useItemModalOrchestrator = ({
     handleAddNewUnit,
     handleAddNewDosage,
     handleAddNewManufacturer,
-    
+
     // Entity save handlers
     handleSaveCategory,
     handleSaveType,
     handleSaveUnit,
     handleSaveDosage,
     handleSaveManufacturer,
-    
+
     // Utility functions
     closeModalAndClearSearch,
     clearSearchTerm,

@@ -23,10 +23,10 @@ interface UseItemUserInteractionsProps {
 
 /**
  * Hook for managing user interactions and confirmations
- * 
+ *
  * Handles:
  * - Delete confirmations
- * - Unsaved changes confirmations  
+ * - Unsaved changes confirmations
  * - Cancel operations
  */
 export const useItemUserInteractions = ({
@@ -37,7 +37,6 @@ export const useItemUserInteractions = ({
   onClose,
   itemId,
 }: UseItemUserInteractionsProps) => {
-
   const confirmDialog = useConfirmDialog();
 
   const isDirtyWrapper = useCallback(() => {
@@ -56,37 +55,46 @@ export const useItemUserInteractions = ({
         cache.clearCache();
       },
     });
-  }, [itemId, confirmDialog, formState.formData.name, mutations.deleteItemMutation, cache]);
+  }, [
+    itemId,
+    confirmDialog,
+    formState.formData.name,
+    mutations.deleteItemMutation,
+    cache,
+  ]);
 
-  const handleCancel = useCallback((
-    setIsClosing?:
-      | ((value: boolean) => void)
-      | React.Dispatch<React.SetStateAction<boolean>>
-  ) => {
-    if (isDirtyWrapper()) {
-      confirmDialog.openConfirmDialog({
-        title: 'Konfirmasi Keluar',
-        message:
-          'Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.',
-        confirmText: 'Tinggalkan',
-        cancelText: 'Batal',
-        onConfirm: () => {
-          if (setIsClosing) {
-            setIsClosing(true);
-          } else {
-            onClose();
-          }
-        },
-        variant: 'danger',
-      });
-    } else {
-      if (setIsClosing) {
-        setIsClosing(true);
+  const handleCancel = useCallback(
+    (
+      setIsClosing?:
+        | ((value: boolean) => void)
+        | React.Dispatch<React.SetStateAction<boolean>>
+    ) => {
+      if (isDirtyWrapper()) {
+        confirmDialog.openConfirmDialog({
+          title: 'Konfirmasi Keluar',
+          message:
+            'Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan yang belum disimpan akan hilang.',
+          confirmText: 'Tinggalkan',
+          cancelText: 'Batal',
+          onConfirm: () => {
+            if (setIsClosing) {
+              setIsClosing(true);
+            } else {
+              onClose();
+            }
+          },
+          variant: 'danger',
+        });
       } else {
-        onClose();
+        if (setIsClosing) {
+          setIsClosing(true);
+        } else {
+          onClose();
+        }
       }
-    }
-  }, [isDirtyWrapper, confirmDialog, onClose]);
+    },
+    [isDirtyWrapper, confirmDialog, onClose]
+  );
 
   return {
     confirmDialog,

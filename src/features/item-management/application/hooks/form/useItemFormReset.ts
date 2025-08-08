@@ -25,7 +25,7 @@ interface UseItemFormResetProps {
 
 /**
  * Hook for managing form reset operations
- * 
+ *
  * Handles:
  * - Form data reset
  * - Package conversion reset
@@ -37,7 +37,6 @@ export const useItemFormReset = ({
   packageConversionHook,
   cache,
 }: UseItemFormResetProps) => {
-
   const resetFormWrapper = useCallback(() => {
     formState.resetForm();
 
@@ -85,11 +84,7 @@ export const useItemFormReset = ({
       packageConversionHook.setSellPrice(0);
       cache.clearCache();
     }
-  }, [
-    formState,
-    packageConversionHook,
-    cache,
-  ]);
+  }, [formState, packageConversionHook, cache]);
 
   return {
     resetForm: resetFormWrapper,
