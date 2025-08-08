@@ -212,7 +212,6 @@ const SupplierListNew = () => {
               }
               autoSizeColumns={['name', 'phone', 'email', 'contact_person']}
               onFirstDataRendered={() => {}}
-              animateRows={true}
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
               style={{

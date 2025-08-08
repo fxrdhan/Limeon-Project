@@ -233,7 +233,6 @@ const PatientListNew = () => {
               }
               sizeColumnsToFit={true}
               onFirstDataRendered={() => {}}
-              animateRows={true}
               isExternalFilterPresent={isExternalFilterPresent}
               doesExternalFilterPass={doesExternalFilterPass}
               style={{

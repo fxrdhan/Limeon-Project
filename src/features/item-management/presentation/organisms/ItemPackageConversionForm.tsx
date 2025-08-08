@@ -113,7 +113,6 @@ export default function ItemPackageConversionManager({
               domLayout="normal"
               overlayNoRowsTemplate="<span class='text-gray-500'>Belum ada data konversi</span>"
               rowClass=""
-              animateRows={false}
               suppressMovableColumns={true}
               cellSelection={false}
               rowSelection={undefined}
