@@ -14,6 +14,7 @@ export interface ColumnConfig {
   field: string;
   headerName: string;
   minWidth?: number;
+  maxWidth?: number; // Add maxWidth support to prevent excessive column expansion
   flex?: number;
   sortable?: boolean;
   resizable?: boolean;

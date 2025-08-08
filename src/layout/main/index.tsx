@@ -45,27 +45,7 @@ const MainLayout = () => {
   }, [sidebarCollapsed]);
 
   useEffect(() => {
-    const expandTimer = setTimeout(() => {
-      if (!isLockedRef.current) {
-        setSidebarCollapsed(false); // Expand
-      }
-    }, 500); // Expand after 0.5s
-
-    const collapseTimer = setTimeout(() => {
-      if (!isLockedRef.current) {
-        setSidebarCollapsed(true); // Collapse
-      }
-    }, 1500); // Collapse after 1.5s from start
-
-    const animationEndTimer = setTimeout(() => {
-      setIsAnimating(false); // Enable mouse interactions
-    }, 2000); // Animation complete after 2s (1.5s collapse + 0.5s buffer)
-
-    return () => {
-      clearTimeout(expandTimer);
-      clearTimeout(collapseTimer);
-      clearTimeout(animationEndTimer);
-    };
+    setIsAnimating(false); // Enable mouse interactions immediately
   }, []);
 
   useEffect(() => {
