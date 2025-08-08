@@ -1,5 +1,6 @@
 import { RefObject } from 'react';
 import { DropDirection } from '../constants';
+import type { DropdownOption } from '@/types';
 
 export interface DropdownContextType {
   // State
@@ -55,4 +56,7 @@ export interface DropdownContextType {
   onMenuEnter: () => void;
   onMenuLeave: () => void;
   onScroll: () => void;
+  // Hover detail handlers
+  onHoverDetailShow?: (optionId: string, element: HTMLElement, optionData?: Partial<DropdownOption>) => Promise<void>;
+  onHoverDetailHide?: () => void;
 }

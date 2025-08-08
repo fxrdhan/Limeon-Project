@@ -3,6 +3,7 @@ import type { DropdownProps } from '@/types';
 import ValidationOverlay from '@/components/validation-overlay';
 import DropdownButton from './components/DropdownButton';
 import DropdownMenu from './components/DropdownMenu';
+import HoverDetailPortal from './components/HoverDetailPortal';
 import { DropdownProvider } from './providers/DropdownContext';
 import { useDropdownState } from './hooks/useDropdownState';
 import { useDropdownSearch } from './hooks/useDropdownSearch';
@@ -15,6 +16,7 @@ import { useTextExpansion } from './hooks/useTextExpansion';
 import { useFocusManagement } from './hooks/useFocusManagement';
 import { useScrollManagement } from './hooks/useScrollManagement';
 import { useDropdownEffects } from './hooks/useDropdownEffects';
+import { useHoverDetail } from './hooks/useHoverDetail';
 
 const Dropdown = ({
   options,
@@ -32,6 +34,10 @@ const Dropdown = ({
   validationAutoHideDelay,
   name, // Used for form field identification and validation
   hoverToOpen = false,
+  // Hover detail props
+  enableHoverDetail = false,
+  hoverDetailDelay = 800,
+  onFetchHoverDetail,
 }: DropdownProps) => {
   const selectedOption = options.find(option => option?.id === value);
 
@@ -183,6 +189,19 @@ const Dropdown = ({
     optionsContainerRef,
   });
 
+  // Use hover detail hook
+  const {
+    isVisible: isHoverDetailVisible,
+    position: hoverDetailPosition,
+    data: hoverDetailData,
+    handleOptionHover,
+    handleOptionLeave,
+  } = useHoverDetail({
+    isEnabled: enableHoverDetail,
+    hoverDelay: hoverDetailDelay,
+    onFetchData: onFetchHoverDetail,
+  });
+
   const handleButtonBlur = useCallback(() => {
     // Always set touched to true
     setTouched(true);
@@ -271,6 +290,9 @@ const Dropdown = ({
     onMenuEnter: handleMenuEnter,
     onMenuLeave: handleMouseLeaveWithCloseIntent,
     onScroll: checkScroll,
+    // Hover detail handlers
+    onHoverDetailShow: enableHoverDetail ? handleOptionHover : undefined,
+    onHoverDetailHide: enableHoverDetail ? handleOptionLeave : undefined,
   };
 
   return (
@@ -323,6 +345,13 @@ const Dropdown = ({
             isHovered={isHovered}
             hasAutoHidden={hasAutoHidden}
             isOpen={isOpen}
+          />
+        )}
+        {enableHoverDetail && (
+          <HoverDetailPortal
+            isVisible={isHoverDetailVisible}
+            position={hoverDetailPosition}
+            data={hoverDetailData}
           />
         )}
       </div>

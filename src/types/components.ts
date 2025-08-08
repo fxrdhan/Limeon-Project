@@ -6,6 +6,18 @@ import { Category, Item } from './database';
 export interface DropdownOption {
   id: string;
   name: string;
+  code?: string;
+  description?: string;
+  updated_at?: string | null;
+}
+
+export interface HoverDetailData {
+  id: string;
+  code?: string;
+  name: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string | null;
 }
 
 export interface DropdownProps {
@@ -24,6 +36,10 @@ export interface DropdownProps {
   validationAutoHide?: boolean;
   validationAutoHideDelay?: number;
   hoverToOpen?: boolean;
+  // Hover detail functionality
+  enableHoverDetail?: boolean;
+  hoverDetailDelay?: number;
+  onFetchHoverDetail?: (optionId: string) => Promise<HoverDetailData | null>;
 }
 
 export type BadgeVariant =

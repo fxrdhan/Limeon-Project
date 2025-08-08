@@ -36,7 +36,7 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
             style={portalStyle}
             className={`
               ${dropDirection === 'down' ? 'origin-top' : 'origin-bottom'}
-              bg-white/50 backdrop-blur-md rounded-xl border border-gray-200
+              bg-white rounded-xl border border-gray-200
               transition-all duration-300 ease-out transform
               ${
                 isClosing

@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useMemo } from 'react';
 import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
@@ -6,6 +6,12 @@ import DescriptiveTextarea from '@/components/descriptive-textarea';
 import { ItemCodeField } from '../atoms';
 import { itemNameSchema } from '@/schemas/itemValidation';
 import type { DropdownOption } from '@/types/components';
+import { 
+  createOptimizedCategoryDetailFetcher,
+  createOptimizedTypeDetailFetcher,
+  createOptimizedUnitDetailFetcher,
+  createOptimizedDosageDetailFetcher
+} from '@/utils/optimizedCategoryDetailFetcher';
 
 interface ItemBasicInfoFormProps {
   formData: {
@@ -59,6 +65,23 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
     },
     ref
   ) => {
+    // Create optimized detail fetchers using cached data
+    const optimizedCategoryDetailFetcher = useMemo(() => {
+      return createOptimizedCategoryDetailFetcher(categories);
+    }, [categories]);
+
+    const optimizedTypeDetailFetcher = useMemo(() => {
+      return createOptimizedTypeDetailFetcher(types);
+    }, [types]);
+
+    const optimizedUnitDetailFetcher = useMemo(() => {
+      return createOptimizedUnitDetailFetcher(units);
+    }, [units]);
+
+    const optimizedDosageDetailFetcher = useMemo(() => {
+      return createOptimizedDosageDetailFetcher(dosages);
+    }, [dosages]);
+
     return (
       <div className="border-2 border-gray-200 rounded-lg mb-6 overflow-hidden">
         <div className="bg-gray-100 p-3 border-b-2 border-gray-200">
@@ -161,6 +184,9 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={onAddNewCategory}
+                  enableHoverDetail={true}
+                  hoverDetailDelay={400}
+                  onFetchHoverDetail={optimizedCategoryDetailFetcher}
                 />
               )}
             </FormField>
@@ -182,6 +208,9 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={onAddNewType}
+                  enableHoverDetail={true}
+                  hoverDetailDelay={400}
+                  onFetchHoverDetail={optimizedTypeDetailFetcher}
                 />
               )}
             </FormField>
@@ -203,6 +232,9 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={onAddNewUnit}
+                  enableHoverDetail={true}
+                  hoverDetailDelay={400}
+                  onFetchHoverDetail={optimizedUnitDetailFetcher}
                 />
               )}
             </FormField>
@@ -224,6 +256,9 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={onAddNewDosage}
+                  enableHoverDetail={true}
+                  hoverDetailDelay={400}
+                  onFetchHoverDetail={optimizedDosageDetailFetcher}
                 />
               )}
             </FormField>
