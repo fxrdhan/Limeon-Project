@@ -84,10 +84,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   updateProfilePhoto: async (file: File) => {
     const { user, session } = get();
     if (!session || !user) {
-      set({ error: 'User not authenticated', loading: false });
+      set({ error: 'User not authenticated' });
       return;
     }
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
       if (user.profilephoto) {
         const oldPath = StorageService.extractPathFromUrl(
@@ -117,7 +117,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set(state => ({
         user: state.user ? { ...state.user, profilephoto: publicUrl } : null,
-        loading: false,
       }));
     } catch (error: unknown) {
       set({
@@ -125,18 +124,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           error instanceof Error
             ? error.message
             : 'Failed to update profile photo',
-        loading: false,
       });
+      throw error; // Re-throw so the component can handle it
     }
   },
 
   deleteProfilePhoto: async () => {
     const { user, session } = get();
     if (!session || !user) {
-      set({ error: 'User not authenticated', loading: false });
+      set({ error: 'User not authenticated' });
       return;
     }
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
       // Delete the current profile photo from storage if it exists
       if (user.profilephoto) {
@@ -163,7 +162,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Update state
       set(state => ({
         user: state.user ? { ...state.user, profilephoto: null } : null,
-        loading: false,
       }));
     } catch (error: unknown) {
       set({
@@ -171,8 +169,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           error instanceof Error
             ? error.message
             : 'Failed to delete profile photo',
-        loading: false,
       });
+      throw error; // Re-throw so the component can handle it
     }
   },
 }));

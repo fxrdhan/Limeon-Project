@@ -59,6 +59,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
+    event.stopPropagation();
+    
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -239,7 +241,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       options.push({
         label: 'Hapus',
         icon: <FaTrash className="w-3 h-3" />,
-        action: onImageDelete ? handleDeleteImage : () => alert('Fitur hapus gambar belum tersedia untuk komponen ini'),
+        action: onImageDelete ? handleDeleteImage : () => {
+          alert('Fitur hapus gambar belum tersedia untuk komponen ini');
+        },
         disabled: isUploading || isDeleting,
       });
     }
@@ -303,7 +307,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               {getPopupOptions().map(option => (
                 <button
                   key={option.label}
-                  onClick={option.action}
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    option.action();
+                  }}
                   disabled={option.disabled}
                   className="w-full px-3 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer"
                 >
@@ -315,13 +324,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             {/* Dynamic Arrow */}
             {popupPosition === 'right' ? (
               <div className="absolute right-full top-1/2 transform -translate-y-1/2">
-                <div className="w-0 h-0 border-t-4 border-b-4 border-r-4 border-t-transparent border-b-transparent border-r-gray-200"></div>
-                <div className="absolute w-0 h-0 border-t-4 border-b-4 border-r-4 border-t-transparent border-b-transparent border-r-white right-[-1px] top-[-4px]"></div>
+                <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-gray-200"></div>
+                <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2"></div>
               </div>
             ) : (
               <div className="absolute left-full top-1/2 transform -translate-y-1/2">
-                <div className="w-0 h-0 border-t-4 border-b-4 border-l-4 border-t-transparent border-b-transparent border-l-gray-200"></div>
-                <div className="absolute w-0 h-0 border-t-4 border-b-4 border-l-4 border-t-transparent border-b-transparent border-l-white left-[-1px] top-[-4px]"></div>
+                <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-gray-200"></div>
+                <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2"></div>
               </div>
             )}
           </div>,
