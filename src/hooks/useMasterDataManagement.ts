@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box';
 import { fuzzyMatch, getScore } from '@/utils/search';
 import { useAlert } from '@/components/alert/hooks';
+import type { PostgrestError } from '@supabase/supabase-js';
 import type {
   Category,
   ItemType,
@@ -558,12 +559,18 @@ export const useMasterDataManagement = (
 
         // Manually refetch to ensure current tab updates immediately after mutation
         refetch();
-      } catch (error) {
+      } catch (error: unknown) {
         // Check for duplicate code constraint error (409 Conflict)
         // PostgrestError structure: {message: string, details: string, hint: string, code: string}
-        const errorMessage = error?.message || error?.toString() || 'Unknown error';
-        const errorDetails = error?.details || '';
-        const errorCode = error?.code || '';
+        const isPostgrestError = (err: unknown): err is PostgrestError => {
+          return typeof err === 'object' && err !== null && 'message' in err && 'code' in err;
+        };
+        
+        const errorMessage = isPostgrestError(error) 
+          ? error.message 
+          : (typeof error === 'string' ? error : String(error)) || 'Unknown error';
+        const errorDetails = isPostgrestError(error) ? (error.details ?? '') : '';
+        const errorCode = isPostgrestError(error) ? (error.code ?? '') : '';
         
         const isDuplicateCodeError = 
           errorCode === '23505' || // PostgreSQL unique violation code
