@@ -122,7 +122,12 @@ const Profile = () => {
   return (
     <div className="relative w-12 h-12 flex items-center justify-center">
       <button
-        onClick={handleProfileClick}
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleProfileClick();
+        }}
         className="flex items-center space-x-3 p-1 rounded-xl hover:bg-gray-50 transition-all duration-200 group"
         aria-expanded={portalOpen}
         aria-haspopup="true"
@@ -319,11 +324,6 @@ const Profile = () => {
                         />
                       </ImageUploader>
                     </motion.div>
-                    {isUploading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full">
-                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    )}
                   </div>
                   <div className="mt-3 text-center">
                     <h3 className="font-semibold text-gray-800 text-lg">
@@ -346,7 +346,10 @@ const Profile = () => {
 
               <div className="p-2">
                 <button
-                  onClick={() => {
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     setPortalOpen(false);
                   }}
                   className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150 group"
@@ -355,7 +358,12 @@ const Profile = () => {
                   <span>Pengaturan Profil</span>
                 </button>
                 <button
-                  onClick={handleLogout}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleLogout();
+                  }}
                   className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 group"
                 >
                   <FaSignOutAlt className="text-red-500 group-hover:text-red-600 transition-colors" />
