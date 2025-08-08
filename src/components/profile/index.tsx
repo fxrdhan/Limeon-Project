@@ -122,12 +122,7 @@ const Profile = () => {
   return (
     <div className="relative w-12 h-12 flex items-center justify-center">
       <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          handleProfileClick();
-        }}
+        onClick={handleProfileClick}
         className="flex items-center space-x-3 p-1 rounded-xl hover:bg-gray-50 transition-all duration-200 group"
         aria-expanded={portalOpen}
         aria-haspopup="true"
@@ -346,24 +341,14 @@ const Profile = () => {
 
               <div className="p-2">
                 <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setPortalOpen(false);
-                  }}
+                  onClick={() => setPortalOpen(false)}
                   className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-150 group"
                 >
                   <FaCog className="text-gray-400 group-hover:text-gray-600 transition-colors" />
                   <span>Pengaturan Profil</span>
                 </button>
                 <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleLogout();
-                  }}
+                  onClick={handleLogout}
                   className="w-full flex items-center space-x-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-150 group"
                 >
                   <FaSignOutAlt className="text-red-500 group-hover:text-red-600 transition-colors" />

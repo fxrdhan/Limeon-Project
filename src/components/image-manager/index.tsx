@@ -307,9 +307,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               {getPopupOptions().map(option => (
                 <button
                   key={option.label}
-                  type="button"
                   onClick={(event) => {
-                    event.preventDefault();
                     event.stopPropagation();
                     option.action();
                   }}
