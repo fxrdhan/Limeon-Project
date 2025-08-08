@@ -23,8 +23,8 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
 
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.95 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       scale: 1,
       x: comparison.isOpen ? -200 : 0,
     },
@@ -42,7 +42,7 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
           exit="exit"
           transition={{ duration: 0.15 }}
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 backdrop-blur-xs"
-          onClick={(e) => {
+          onClick={e => {
             if (e.target === e.currentTarget && !isClosing) {
               handleBackdropClick(e);
             }
@@ -55,7 +55,7 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
             animate={isClosing ? 'exit' : 'visible'}
             exit="exit"
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             {children}
           </motion.div>

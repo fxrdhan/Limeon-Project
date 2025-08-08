@@ -43,9 +43,7 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
         name={entityName === 'Produsen' ? 'address' : 'description'}
         value={compData.leftDescription}
         onChange={() => {}} // No-op since readOnly
-        placeholder={
-          entityName === 'Produsen' ? 'Alamat' : 'Deskripsi'
-        }
+        placeholder={entityName === 'Produsen' ? 'Alamat' : 'Deskripsi'}
         readOnly
         autoFocus={false}
         tabIndex={-1}

@@ -1,5 +1,10 @@
 import { BaseService } from './base.service';
-import type { Category, MedicineType, ItemPackage, Supplier } from '@/types/database';
+import type {
+  Category,
+  MedicineType,
+  ItemPackage,
+  Supplier,
+} from '@/types/database';
 
 // Define ItemUnit type (same structure as Unit but for item_units table)
 export interface ItemUnit {
