@@ -129,4 +129,50 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     }
   },
+
+  deleteProfilePhoto: async () => {
+    const { user, session } = get();
+    if (!session || !user) {
+      set({ error: 'User not authenticated', loading: false });
+      return;
+    }
+    set({ loading: true, error: null });
+    try {
+      // Delete the current profile photo from storage if it exists
+      if (user.profilephoto) {
+        const oldPath = StorageService.extractPathFromUrl(
+          user.profilephoto,
+          'profiles'
+        );
+        if (oldPath) {
+          await StorageService.deleteEntityImage('profiles', oldPath);
+        }
+      }
+
+      // Update database to remove profile photo
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          profilephoto: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Update state
+      set(state => ({
+        user: state.user ? { ...state.user, profilephoto: null } : null,
+        loading: false,
+      }));
+    } catch (error: unknown) {
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete profile photo',
+        loading: false,
+      });
+    }
+  },
 }));

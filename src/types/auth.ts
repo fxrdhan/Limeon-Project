@@ -10,6 +10,7 @@ export interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfilePhoto: (file: File) => Promise<void>;
+  deleteProfilePhoto: () => Promise<void>;
   initialize: () => Promise<void>;
 }
 

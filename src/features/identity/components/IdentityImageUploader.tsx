@@ -1,5 +1,5 @@
 import React from 'react';
-import ImageUploader from '@/components/image-uploader';
+import ImageUploader from '@/components/image-manager';
 import { FaPencilAlt, FaSpinner } from 'react-icons/fa';
 import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
 
