@@ -65,7 +65,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
           <h2 className="text-lg font-semibold">Data Umum</h2>
         </div>
         <div className="p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             <ItemCodeField
               code={formData.code}
               onChange={onChange}
