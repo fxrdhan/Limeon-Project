@@ -1,5 +1,5 @@
 -- Table Definition: item_types
--- Exported from Supabase on: 2025-08-05T13:14:25.975Z
+-- Exported from Supabase on: 2025-08-08T12:52:51.349Z
 
 CREATE TABLE public.item_types (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

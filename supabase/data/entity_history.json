@@ -1,1541 +1,956 @@
 [
   {
-    "id": "e00b5b7a-75f3-46bc-ad90-37157a8129e2",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T12:57:34.180Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T12:57:34.180579+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "688199a1-f0d8-4ce3-b2c7-98513811a0b1",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T12:57:54.745Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T12:57:54.745013+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "dc6d0592-ec11-460e-b7ae-5b6ec6ff9cce",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 3,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T12:58:04.038Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T12:58:04.038025+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "e0ee81f8-a6b0-4c31-8c6b-4f8bb676cb6b",
-    "entity_table": "item_categories",
-    "entity_id": "896548ed-c390-44f5-a637-03edd725487c",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T12:58:18.544Z",
-    "entity_data": {
-      "id": "896548ed-c390-44f5-a637-03edd725487c",
-      "kode": "AAR",
-      "name": "Antiaritmial",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T12:58:18.544244+00:00",
-      "description": "Mengatur irama jantung"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiaritmial",
-        "from": "Antiaritmia"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "349d5b1b-8bc7-44fd-ba53-3b6fdb8ebd32",
-    "entity_table": "item_categories",
-    "entity_id": "896548ed-c390-44f5-a637-03edd725487c",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T12:58:23.907Z",
-    "entity_data": {
-      "id": "896548ed-c390-44f5-a637-03edd725487c",
-      "kode": "AAR",
-      "name": "Antiaritmia",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T12:58:23.907362+00:00",
-      "description": "Mengatur irama jantung"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiaritmia",
-        "from": "Antiaritmial"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "4c2ba2a4-6a3a-4a2a-b631-3cb5c380982f",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T13:13:56.524Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "NarkotikaA",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T13:13:56.524272+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "NarkotikaA",
-        "from": "Narkotika"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "817207e2-adbb-4035-97ec-7990ca22862b",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T13:14:13.269Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T13:14:13.269727+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Narkotika",
-        "from": "NarkotikaA"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "73a9a765-ae8f-4ca6-a2ba-2627c1ca1d86",
-    "entity_table": "item_packages",
-    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T13:26:54.453Z",
-    "entity_data": {
-      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-      "kode": "AMP",
-      "name": "AMPULEp",
-      "nci_code": "C43165",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T13:26:54.4537+00:00",
-      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AMPULEp",
-        "from": "AMPULE"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "651fb81e-dcef-4596-9148-42372807f214",
-    "entity_table": "item_packages",
-    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T13:43:09.287Z",
-    "entity_data": {
-      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-      "kode": "AMP",
-      "name": "AMPULE",
-      "nci_code": "C43165",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T13:43:09.287648+00:00",
-      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AMPULE",
-        "from": "AMPULEp"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "e2b98cc8-d906-4256-bb5f-82013969cc1b",
-    "entity_table": "item_manufacturers",
-    "entity_id": "395fdf27-b841-4031-899f-941db99edfaa",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T14:02:15.644Z",
-    "entity_data": {
-      "id": "395fdf27-b841-4031-899f-941db99edfaa",
-      "kode": "DM",
-      "name": "PT Dexa Medican",
-      "address": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224",
-      "created_at": "2025-08-02T01:32:35.857726+00:00",
-      "updated_at": "2025-08-04T14:02:15.644845+00:00"
-    },
-    "changed_fields": {
-      "kode": {
-        "new": "DM",
-        "old": "DM"
-      },
-      "name": {
-        "new": "PT Dexa Medican",
-        "old": "PT Dexa Medica"
-      },
-      "address": {
-        "new": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224",
-        "old": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224"
-      }
-    },
-    "change_description": "Updated manufacturer: PT Dexa Medican"
-  },
-  {
-    "id": "66f936a0-583c-4f8a-bcbd-e3788f249903",
-    "entity_table": "item_manufacturers",
-    "entity_id": "395fdf27-b841-4031-899f-941db99edfaa",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T14:02:21.446Z",
-    "entity_data": {
-      "id": "395fdf27-b841-4031-899f-941db99edfaa",
-      "kode": "DM",
-      "name": "PT Dexa Medica",
-      "address": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224",
-      "created_at": "2025-08-02T01:32:35.857726+00:00",
-      "updated_at": "2025-08-04T14:02:21.446751+00:00"
-    },
-    "changed_fields": {
-      "kode": {
-        "new": "DM",
-        "old": "DM"
-      },
-      "name": {
-        "new": "PT Dexa Medica",
-        "old": "PT Dexa Medican"
-      },
-      "address": {
-        "new": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224",
-        "old": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224"
-      }
-    },
-    "change_description": "Updated manufacturer: PT Dexa Medica"
-  },
-  {
-    "id": "2d171e2b-9235-4727-9cda-2616853a3a6d",
-    "entity_table": "item_packages",
-    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-    "version_number": 3,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T14:08:52.688Z",
-    "entity_data": {
-      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-      "kode": "AMP",
-      "name": "AMPULEw",
-      "nci_code": "C43165",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T14:08:52.688129+00:00",
-      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AMPULEw",
-        "from": "AMPULE"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "52621c64-b188-4366-b9ad-b17a58bed78e",
-    "entity_table": "item_packages",
-    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-    "version_number": 4,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T14:11:26.438Z",
-    "entity_data": {
-      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-      "kode": "AMP",
-      "name": "AMPULE",
-      "nci_code": "C43165",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T14:11:26.438246+00:00",
-      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AMPULE",
-        "from": "AMPULEw"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "1bd1fb2a-ba8c-4d07-8ce8-82d16f7e67f2",
-    "entity_table": "item_packages",
-    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-    "version_number": 5,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T14:12:52.731Z",
-    "entity_data": {
-      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-      "kode": "AMP",
-      "name": "AMPULEq",
-      "nci_code": "C43165",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T14:12:52.73129+00:00",
-      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AMPULEq",
-        "from": "AMPULE"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "5c18bb92-590d-4719-8502-9a296ce05ac5",
-    "entity_table": "item_packages",
-    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-    "version_number": 6,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T14:12:59.084Z",
-    "entity_data": {
-      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-      "kode": "AMP",
-      "name": "AMPULE",
-      "nci_code": "C43165",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T14:12:59.084865+00:00",
-      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AMPULE",
-        "from": "AMPULEq"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "c3615bcc-f41a-4f5b-afcb-b761d6baad88",
-    "entity_table": "item_dosages",
-    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T15:07:34.533Z",
-    "entity_data": {
-      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-      "kode": "AER",
-      "name": "AEROSOLd",
-      "nci_code": "C42887",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-04T15:07:34.533322+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AEROSOLd",
-        "from": "AEROSOL"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "dc1ea0d4-bde7-4048-8b11-453b87bf54de",
-    "entity_table": "item_dosages",
-    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T15:36:06.082Z",
-    "entity_data": {
-      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-      "kode": "AER",
-      "name": "AEROSOL",
-      "nci_code": "C42887",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-04T15:36:06.08275+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AEROSOL",
-        "from": "AEROSOLd"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "7a23d068-95f5-4841-8d09-c55a0b7d381a",
+    "id": "f9886153-adb0-428e-bc82-8eae21b937e4",
     "entity_table": "item_units",
     "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
     "version_number": 1,
     "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T15:51:19.114Z",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-06T17:46:44.758Z",
     "entity_data": {
       "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
       "code": "AMP",
-      "name": "Ampoule",
+      "name": "Ampoule,",
       "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T15:51:19.114882+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoule",
-        "from": "Ampoule22"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "b02acc53-267a-4a66-8a4f-0f658ff0adbe",
-    "entity_table": "item_units",
-    "entity_id": "e050df48-161f-4f96-b247-10d02ef72adc",
-    "version_number": 1,
-    "action_type": "INSERT",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T16:46:30.856Z",
-    "entity_data": {
-      "id": "e050df48-161f-4f96-b247-10d02ef72adc",
-      "code": "mL",
-      "name": "mili",
-      "created_at": "2025-08-04T16:46:30.856842+00:00",
-      "updated_at": "2025-08-04T16:46:30.856842+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "a4c0bff3-301c-4f64-b262-0e45b0b9974e",
-    "entity_table": "item_units",
-    "entity_id": "e050df48-161f-4f96-b247-10d02ef72adc",
-    "version_number": 2,
-    "action_type": "DELETE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T16:48:26.168Z",
-    "entity_data": {
-      "id": "e050df48-161f-4f96-b247-10d02ef72adc",
-      "code": "mL",
-      "name": "mili",
-      "created_at": "2025-08-04T16:46:30.856842+00:00",
-      "updated_at": "2025-08-04T16:46:30.856842+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "fd9ccbc4-9745-4279-8ca7-36ba8b430c9c",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T16:48:35.127Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoulem",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T16:48:35.12753+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoulem",
-        "from": "Ampoule"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "7261b312-5033-4e0d-b315-1057125e280b",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 3,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T16:48:45.608Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoule",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T16:48:45.608164+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoule",
-        "from": "Ampoulem"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "2d1fcf91-c95a-46e0-a3c4-5b2d7d5ea666",
-    "entity_table": "item_units",
-    "entity_id": "53b8a4ba-7cd3-4d50-ac97-55d42167fc23",
-    "version_number": 1,
-    "action_type": "INSERT",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T16:59:17.459Z",
-    "entity_data": {
-      "id": "53b8a4ba-7cd3-4d50-ac97-55d42167fc23",
-      "code": "mL",
-      "name": "mililiter",
-      "created_at": "2025-08-04T16:59:17.459768+00:00",
-      "updated_at": "2025-08-04T16:59:17.459768+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "12ccbbb2-209d-447e-bce9-bbe848563ce9",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 4,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:00:13.697Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoulem",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T17:00:13.697451+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoulem",
-        "from": "Ampoule"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "764991b3-ec97-4f7f-8823-5b15e4683497",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 5,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:00:24.781Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoule",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T17:00:24.781285+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoule",
-        "from": "Ampoulem"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "80d812f7-0415-4092-b537-e8d6fe4fa9ab",
-    "entity_table": "item_units",
-    "entity_id": "53b8a4ba-7cd3-4d50-ac97-55d42167fc23",
-    "version_number": 2,
-    "action_type": "DELETE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:00:32.374Z",
-    "entity_data": {
-      "id": "53b8a4ba-7cd3-4d50-ac97-55d42167fc23",
-      "code": "mL",
-      "name": "mililiter",
-      "created_at": "2025-08-04T16:59:17.459768+00:00",
-      "updated_at": "2025-08-04T16:59:17.459768+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "cb2fe990-7135-4af2-87a5-6ce52f368fea",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 6,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:00:52.527Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoulen",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T17:00:52.52776+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoulen",
-        "from": "Ampoule"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "8616842f-8b58-4926-bea3-b1ed16a65d1a",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 4,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:01:09.936Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T17:01:09.936399+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "28fccf9c-8492-49b3-bc31-9dd2a3c42763",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 5,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:15:48.416Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T17:15:48.416761+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "17d0b959-3bfa-48df-b2c7-7f95378c0419",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 6,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:21:39.642Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginap",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T17:21:39.642847+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginap",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "3c34c145-9ebb-432b-aee7-445ccb084441",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 7,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:21:45.946Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T17:21:45.946789+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginap"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "407d7c9e-5ef3-4f86-88cc-2ec15967aa2d",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 7,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:22:04.022Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoule",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T17:22:04.022849+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoule",
-        "from": "Ampoulen"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "bbf2b725-369b-4a56-aa1f-65ce2e149eb1",
-    "entity_table": "item_units",
-    "entity_id": "bed167ca-5383-499e-83bf-91ef118408e7",
-    "version_number": 1,
-    "action_type": "INSERT",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:22:15.655Z",
-    "entity_data": {
-      "id": "bed167ca-5383-499e-83bf-91ef118408e7",
-      "code": "ml",
-      "name": "ml",
-      "created_at": "2025-08-04T17:22:15.655373+00:00",
-      "updated_at": "2025-08-04T17:22:15.655373+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "558eaa53-fceb-4b2e-878e-8cec6fe3ed4a",
-    "entity_table": "item_units",
-    "entity_id": "bed167ca-5383-499e-83bf-91ef118408e7",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:22:27.315Z",
-    "entity_data": {
-      "id": "bed167ca-5383-499e-83bf-91ef118408e7",
-      "code": "mlm",
-      "name": "ml",
-      "created_at": "2025-08-04T17:22:15.655373+00:00",
-      "updated_at": "2025-08-04T17:22:27.315247+00:00",
-      "description": null
-    },
-    "changed_fields": {
-      "code": {
-        "to": "mlm",
-        "from": "ml"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "80d6efa3-8615-4d75-b125-d26301e6b8d2",
-    "entity_table": "item_units",
-    "entity_id": "bed167ca-5383-499e-83bf-91ef118408e7",
-    "version_number": 3,
-    "action_type": "DELETE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:22:32.324Z",
-    "entity_data": {
-      "id": "bed167ca-5383-499e-83bf-91ef118408e7",
-      "code": "mlm",
-      "name": "ml",
-      "created_at": "2025-08-04T17:22:15.655373+00:00",
-      "updated_at": "2025-08-04T17:22:27.315247+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "31cfe96b-7615-4eea-9c38-d3914910c1df",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 8,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:22:36.991Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoulem",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T17:22:36.991306+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoulem",
-        "from": "Ampoule"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "33414b2a-7cab-4d15-ad64-90e21748c921",
-    "entity_table": "item_manufacturers",
-    "entity_id": "79f79e66-3a5d-4df0-8942-b2f84f5291a7",
-    "version_number": 1,
-    "action_type": "INSERT",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:22:56.476Z",
-    "entity_data": {
-      "id": "79f79e66-3a5d-4df0-8942-b2f84f5291a7",
-      "kode": "n",
-      "name": "m",
-      "address": null,
-      "created_at": "2025-08-04T17:22:56.47694+00:00",
-      "updated_at": "2025-08-04T17:22:56.47694+00:00"
-    },
-    "changed_fields": null,
-    "change_description": "Created new manufacturer: m"
-  },
-  {
-    "id": "699b09dc-d2da-4ce2-a702-b8d65cc83d8d",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 9,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:22:45.320Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoule",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T17:22:45.320521+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoule",
-        "from": "Ampoulem"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "6f513c70-7773-4d5f-a28e-78d8a4f8e8e9",
-    "entity_table": "item_manufacturers",
-    "entity_id": "79f79e66-3a5d-4df0-8942-b2f84f5291a7",
-    "version_number": 2,
-    "action_type": "DELETE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:23:08.672Z",
-    "entity_data": {
-      "id": "79f79e66-3a5d-4df0-8942-b2f84f5291a7",
-      "kode": "n",
-      "name": "m",
-      "address": null,
-      "created_at": "2025-08-04T17:22:56.47694+00:00",
-      "updated_at": "2025-08-04T17:22:56.47694+00:00"
-    },
-    "changed_fields": null,
-    "change_description": "Deleted manufacturer: m"
-  },
-  {
-    "id": "584419c9-12d6-4f59-8d18-b2bf525609b1",
-    "entity_table": "item_categories",
-    "entity_id": "fa5adbf9-a6a3-40ef-823f-5a7c846867dd",
-    "version_number": 1,
-    "action_type": "INSERT",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:23:20.928Z",
-    "entity_data": {
-      "id": "fa5adbf9-a6a3-40ef-823f-5a7c846867dd",
-      "kode": "aaa",
-      "name": "aaaa",
-      "created_at": "2025-08-04T17:23:20.928322+00:00",
-      "updated_at": "2025-08-04T17:23:20.928322+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "1ff276c7-5278-45ac-9be4-c1d91eb2f4e9",
-    "entity_table": "item_categories",
-    "entity_id": "fa5adbf9-a6a3-40ef-823f-5a7c846867dd",
-    "version_number": 2,
-    "action_type": "DELETE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:23:26.522Z",
-    "entity_data": {
-      "id": "fa5adbf9-a6a3-40ef-823f-5a7c846867dd",
-      "kode": "aaa",
-      "name": "aaaa",
-      "created_at": "2025-08-04T17:23:20.928322+00:00",
-      "updated_at": "2025-08-04T17:23:20.928322+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "183ac287-1777-4124-82f7-1d0355bfe8a5",
-    "entity_table": "item_types",
-    "entity_id": "1b5a84cb-3703-4c23-b90a-aa9195249525",
-    "version_number": 1,
-    "action_type": "INSERT",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:24:19.263Z",
-    "entity_data": {
-      "id": "1b5a84cb-3703-4c23-b90a-aa9195249525",
-      "kode": "aaaa",
-      "name": "aaaa",
-      "created_at": "2025-08-04T17:24:19.263984+00:00",
-      "updated_at": "2025-08-04T17:24:19.263984+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "2df54395-883b-4414-8441-0145a3eccbcf",
-    "entity_table": "item_types",
-    "entity_id": "1b5a84cb-3703-4c23-b90a-aa9195249525",
-    "version_number": 2,
-    "action_type": "DELETE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:24:24.421Z",
-    "entity_data": {
-      "id": "1b5a84cb-3703-4c23-b90a-aa9195249525",
-      "kode": "aaaa",
-      "name": "aaaa",
-      "created_at": "2025-08-04T17:24:19.263984+00:00",
-      "updated_at": "2025-08-04T17:24:19.263984+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "9793020a-7def-49e6-9c87-f647cb32e9dd",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 8,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:25:50.250Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina.",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T17:25:50.250626+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina.",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "70bb5b7f-6b2a-4e25-800f-28aa2bf0d870",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 3,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:29:04.647Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "NarkotikaQ",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T17:29:04.647598+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "NarkotikaQ",
-        "from": "Narkotika"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "22c07069-cfac-42dd-bc5c-eaf027cfca31",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 4,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:39:01.239Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T17:39:01.239041+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Narkotika",
-        "from": "NarkotikaQ"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "6d57994d-038f-4902-bac6-5fdf50df4213",
-    "entity_table": "item_types",
-    "entity_id": "a39eaa1a-b873-475a-9850-c37739d550df",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:39:13.238Z",
-    "entity_data": {
-      "id": "a39eaa1a-b873-475a-9850-c37739d550df",
-      "kode": "OBT",
-      "name": "Obat Bebas Terbatasa",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T17:39:13.238455+00:00",
-      "description": "Dengan Peringatan (Lingkaran Biru)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Obat Bebas Terbatasa",
-        "from": "Obat Bebas Terbatas"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "e994f2da-2db3-4349-a25c-b0d4a847a353",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 5,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:42:42.095Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "NarkotikaQ",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T17:42:42.095325+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "NarkotikaQ",
-        "from": "Narkotika"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "322fa580-be79-483c-bf16-5ae7b72d064a",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 6,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:42:50.986Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T17:42:50.986998+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Narkotika",
-        "from": "NarkotikaQ"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "c4cf8532-2b02-4d91-96dc-2f1f1a6b9fb6",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 7,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:45:09.921Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotikaa",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T17:45:09.921918+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Narkotikaa",
-        "from": "Narkotika"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "931e646b-0341-4824-bbe6-2fbd9f87efd8",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 8,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:47:22.063Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T17:47:22.063726+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Narkotika",
-        "from": "Narkotikaa"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "ef63ecb3-6642-46ff-b030-1de75eb5451c",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 9,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:47:26.272Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotikaa",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T17:47:26.272716+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Narkotikaa",
-        "from": "Narkotika"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "c80a3daa-d145-4d0e-b7fe-22a6659c0620",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 9,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:47:34.596Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T17:47:34.596788+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antiangina."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "4b270202-70d9-4218-b0cb-72daa1b0b8a0",
-    "entity_table": "item_manufacturers",
-    "entity_id": "395fdf27-b841-4031-899f-941db99edfaa",
-    "version_number": 3,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:47:46.151Z",
-    "entity_data": {
-      "id": "395fdf27-b841-4031-899f-941db99edfaa",
-      "kode": "DM",
-      "name": "PT Dexa MedicaQ",
-      "address": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224",
-      "created_at": "2025-08-02T01:32:35.857726+00:00",
-      "updated_at": "2025-08-04T17:47:46.151283+00:00"
-    },
-    "changed_fields": {
-      "kode": {
-        "new": "DM",
-        "old": "DM"
-      },
-      "name": {
-        "new": "PT Dexa MedicaQ",
-        "old": "PT Dexa Medica"
-      },
-      "address": {
-        "new": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224",
-        "old": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224"
-      }
-    },
-    "change_description": "Updated manufacturer: PT Dexa MedicaQ"
-  },
-  {
-    "id": "03ad47be-3d52-4a9d-b146-9400ff67c143",
-    "entity_table": "item_manufacturers",
-    "entity_id": "395fdf27-b841-4031-899f-941db99edfaa",
-    "version_number": 4,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:47:50.543Z",
-    "entity_data": {
-      "id": "395fdf27-b841-4031-899f-941db99edfaa",
-      "kode": "DM",
-      "name": "PT Dexa Medica",
-      "address": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224",
-      "created_at": "2025-08-02T01:32:35.857726+00:00",
-      "updated_at": "2025-08-04T17:47:50.54327+00:00"
-    },
-    "changed_fields": {
-      "kode": {
-        "new": "DM",
-        "old": "DM"
-      },
-      "name": {
-        "new": "PT Dexa Medica",
-        "old": "PT Dexa MedicaQ"
-      },
-      "address": {
-        "new": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224",
-        "old": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224"
-      }
-    },
-    "change_description": "Updated manufacturer: PT Dexa Medica"
-  },
-  {
-    "id": "72ffe5ad-8ce2-4110-94a9-b1db3d90bcc3",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 10,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:48:06.004Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "AmpouleA",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T17:48:06.004854+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AmpouleA",
-        "from": "Ampoule"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "5cfb0f2c-4190-44f6-8e5b-846a94f2c59c",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 11,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:48:10.145Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoule",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T17:48:10.145524+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoule",
-        "from": "AmpouleA"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "5e592cc0-573f-4a91-ad41-3d899311afd9",
-    "entity_table": "item_dosages",
-    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-    "version_number": 3,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T17:52:19.051Z",
-    "entity_data": {
-      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-      "kode": "AER",
-      "name": "AEROSOLa",
-      "nci_code": "C42887",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-04T17:52:19.051739+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AEROSOLa",
-        "from": "AEROSOL"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "b5c7ced7-503e-42d1-8258-7b65effa6210",
-    "entity_table": "item_dosages",
-    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-    "version_number": 4,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T17:52:22.940Z",
-    "entity_data": {
-      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-      "kode": "AER",
-      "name": "AEROSOL",
-      "nci_code": "C42887",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-04T17:52:22.940738+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AEROSOL",
-        "from": "AEROSOLa"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "424dc28f-eec0-44c7-8a06-c69ecd2d36cf",
-    "entity_table": "item_types",
-    "entity_id": "a39eaa1a-b873-475a-9850-c37739d550df",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T18:27:00.764Z",
-    "entity_data": {
-      "id": "a39eaa1a-b873-475a-9850-c37739d550df",
-      "kode": "OBT",
-      "name": "Obat Bebas Terbatas",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T18:27:00.764629+00:00",
-      "description": "Dengan Peringatan (Lingkaran Biru)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Obat Bebas Terbatas",
-        "from": "Obat Bebas Terbatasa"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "6eccd832-c956-4cbd-a4af-7b15ce7f82d3",
-    "entity_table": "item_types",
-    "entity_id": "a39eaa1a-b873-475a-9850-c37739d550df",
-    "version_number": 3,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T18:27:07.177Z",
-    "entity_data": {
-      "id": "a39eaa1a-b873-475a-9850-c37739d550df",
-      "kode": "OBT",
-      "name": "Obat Bebas Terbatas",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T18:27:07.17741+00:00",
-      "description": "Dengan Peringatan (Lingkaran Biru)."
+      "updated_at": "2025-08-06T17:46:44.758714+00:00",
+      "description": "Ampoule container."
     },
     "changed_fields": {
       "description": {
-        "to": "Dengan Peringatan (Lingkaran Biru).",
-        "from": "Dengan Peringatan (Lingkaran Biru)"
+        "to": "Ampoule container.",
+        "from": "Ampoule container"
       }
     },
     "change_description": null
   },
   {
-    "id": "a76de29f-9a43-4efe-aa00-d46cf9f3b56f",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 10,
+    "id": "2baf32a2-e4f7-495d-ab5b-1ce0ca3b30ef",
+    "entity_table": "item_packages",
+    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+    "version_number": 6,
     "action_type": "UPDATE",
     "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T18:30:11.528Z",
+    "changed_at": "2025-08-07T09:48:55.263Z",
     "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T18:30:11.528803+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
+      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+      "code": "AMPl",
+      "name": "AMPULE",
+      "nci_code": "C43165",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-07T09:48:55.263605+00:00",
+      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "AMPl",
+        "from": "AMP"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "d9225905-9dd4-4349-876b-eaf1d557b288",
+    "entity_table": "item_packages",
+    "entity_id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+    "version_number": 6,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T13:59:48.747Z",
+    "entity_data": {
+      "id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+      "code": "BLP",
+      "name": "BLISTER PACK",
+      "nci_code": "C43168",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-07T13:59:48.74763+00:00",
+      "description": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanyaaa. Suppositoria yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister."
     },
     "changed_fields": {
       "name": {
-        "to": "Narkotika",
-        "from": "Narkotikaa"
+        "to": "BLISTER PACK",
+        "from": "BLISTER PACK."
       }
     },
     "change_description": null
   },
   {
-    "id": "3837bba1-58d0-4924-b4eb-8b48ef8d1691",
+    "id": "f45c6fdd-325b-4040-a15e-cbe7c73677ef",
     "entity_table": "item_units",
     "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 12,
+    "version_number": 2,
     "action_type": "UPDATE",
     "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T18:30:23.801Z",
+    "changed_at": "2025-08-06T17:46:57.405Z",
     "entity_data": {
       "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
       "code": "AMP",
-      "name": "Ampouleq",
+      "name": "Ampoule,",
       "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T18:30:23.801241+00:00",
-      "description": "Ampoule container"
+      "updated_at": "2025-08-06T17:46:57.405984+00:00",
+      "description": "Ampoule ahaha contine"
     },
     "changed_fields": {
-      "name": {
-        "to": "Ampouleq",
-        "from": "Ampoule"
+      "description": {
+        "to": "Ampoule ahaha contine",
+        "from": "Ampoule container."
       }
     },
     "change_description": null
   },
   {
-    "id": "f5b93963-abcd-4be9-bbe6-d63615aaeed1",
+    "id": "a6898075-7f3e-4538-9c0f-86a293672d60",
+    "entity_table": "item_packages",
+    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+    "version_number": 7,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T09:48:59.006Z",
+    "entity_data": {
+      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+      "code": "AMP",
+      "name": "AMPULE",
+      "nci_code": "C43165",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-07T09:48:59.006954+00:00",
+      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "AMP",
+        "from": "AMPl"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "e5412349-4521-43ac-af59-380f0ad8c50e",
+    "entity_table": "item_packages",
+    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+    "version_number": 8,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-08T06:00:31.170Z",
+    "entity_data": {
+      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+      "code": "nAMP",
+      "name": "AMPULE",
+      "nci_code": "C43165",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-08T06:00:31.170783+00:00",
+      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "nAMP",
+        "from": "AMP"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "e321fce8-05ce-4452-b53c-9593ab8aa44c",
+    "entity_table": "item_packages",
+    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+    "version_number": 9,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-08T06:00:43.188Z",
+    "entity_data": {
+      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+      "code": "AMP",
+      "name": "AMPULE",
+      "nci_code": "C43165",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-08T06:00:43.188203+00:00",
+      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "AMP",
+        "from": "nAMP"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "b5c09c40-10f0-4c2b-b4f4-1db80d353209",
     "entity_table": "item_units",
     "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 13,
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-06T18:20:12.905Z",
+    "entity_data": {
+      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
+      "code": "AMP",
+      "name": "Ampoule,",
+      "created_at": "2025-08-04T05:44:15.128329+00:00",
+      "updated_at": "2025-08-06T18:20:12.905857+00:00",
+      "description": "Ampoule container."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Ampoule container.",
+        "from": "Ampoule ahaha contine"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "2183cb56-357f-46f8-b152-a72beeb3ebd9",
+    "entity_table": "item_packages",
+    "entity_id": "acc1050b-3471-4d6e-8b3b-6cf02d598df1",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T09:50:03.387Z",
+    "entity_data": {
+      "id": "acc1050b-3471-4d6e-8b3b-6cf02d598df1",
+      "code": "BTLAa",
+      "name": "BOTTLE, WITH APPLICATOR",
+      "nci_code": "C43177",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-07T09:50:03.387868+00:00",
+      "description": "Sebuah botol yang dilengkapi dengan alat untuk mengaplikasikan isinya."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "BTLAa",
+        "from": "BTLA"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "b629c43c-855c-40c7-814b-22fc189fb0ab",
+    "entity_table": "items",
+    "entity_id": "6d314f93-7e8c-43ec-96ab-cd7226e13a7d",
+    "version_number": 1,
+    "action_type": "INSERT",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-08T12:18:32.427Z",
+    "entity_data": {
+      "id": "6d314f93-7e8c-43ec-96ab-cd7226e13a7d",
+      "code": "www",
+      "name": "aaaaa",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "a39eaa1a-b873-475a-9850-c37739d550df",
+      "base_unit": "",
+      "dosage_id": "47d4f1c0-6889-454f-bcfd-1d46c88a29d4",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-08-08T12:18:32.427194+00:00",
+      "package_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+      "sell_price": 333,
+      "updated_at": "2025-08-08T12:18:32.427194+00:00",
+      "category_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "PT Kimia Farma",
+      "has_expiry_date": true,
+      "package_conversions": []
+    },
+    "changed_fields": null,
+    "change_description": null
+  },
+  {
+    "id": "b38940af-3762-4107-96ac-e13e7fd5a64b",
+    "entity_table": "item_units",
+    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-06T18:58:37.571Z",
+    "entity_data": {
+      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
+      "code": "AMP",
+      "name": "Ampoule,",
+      "created_at": "2025-08-04T05:44:15.128329+00:00",
+      "updated_at": "2025-08-06T18:58:37.571003+00:00",
+      "description": "Ampoule container"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Ampoule container",
+        "from": "Ampoule container."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "b37e52d9-da6c-41db-ae03-d64ebcf3ab37",
+    "entity_table": "item_packages",
+    "entity_id": "acc1050b-3471-4d6e-8b3b-6cf02d598df1",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T09:50:06.714Z",
+    "entity_data": {
+      "id": "acc1050b-3471-4d6e-8b3b-6cf02d598df1",
+      "code": "BTLA",
+      "name": "BOTTLE, WITH APPLICATOR",
+      "nci_code": "C43177",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-07T09:50:06.714039+00:00",
+      "description": "Sebuah botol yang dilengkapi dengan alat untuk mengaplikasikan isinya."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "BTLA",
+        "from": "BTLAa"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "f090f4b6-d71c-4b88-9a0a-001d47a9366e",
+    "entity_table": "items",
+    "entity_id": "6d314f93-7e8c-43ec-96ab-cd7226e13a7d",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-08T12:18:57.669Z",
+    "entity_data": {
+      "id": "6d314f93-7e8c-43ec-96ab-cd7226e13a7d",
+      "code": "www",
+      "name": "aaaaa",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "a39eaa1a-b873-475a-9850-c37739d550df",
+      "base_unit": "APPLICATOR",
+      "dosage_id": "47d4f1c0-6889-454f-bcfd-1d46c88a29d4",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-08-08T12:18:32.427194+00:00",
+      "package_id": "6d03a502-f7c0-408e-b1c2-2cda4095157c",
+      "sell_price": 333,
+      "updated_at": "2025-08-08T12:18:57.66963+00:00",
+      "category_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "PT Dexa Medica",
+      "has_expiry_date": true,
+      "package_conversions": []
+    },
+    "changed_fields": {
+      "base_unit": {
+        "to": "APPLICATOR",
+        "from": ""
+      },
+      "package_id": {
+        "to": "6d03a502-f7c0-408e-b1c2-2cda4095157c",
+        "from": "e533ebc6-25f1-4eec-9689-05e8842c8285"
+      },
+      "manufacturer": {
+        "to": "PT Dexa Medica",
+        "from": "PT Kimia Farma"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "5f8a976e-fb73-4af6-bf73-a8175c1581ba",
+    "entity_table": "item_types",
+    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-06T19:23:34.427Z",
+    "entity_data": {
+      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
+      "code": "NAR",
+      "name": "Narkotika",
+      "created_at": "2025-07-31T13:34:38.85522+00:00",
+      "updated_at": "2025-08-06T19:23:34.427579+00:00",
+      "description": "Resep Khusus (Lingkaran Merah + Plus).."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Resep Khusus (Lingkaran Merah + Plus)..",
+        "from": "Resep Khusus (Lingkaran Merah + Plus)"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "baee01f6-913b-4b08-8a9c-c5f5d4adbc14",
+    "entity_table": "item_types",
+    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-06T19:23:47.762Z",
+    "entity_data": {
+      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
+      "code": "NAR",
+      "name": "Narkotika",
+      "created_at": "2025-07-31T13:34:38.85522+00:00",
+      "updated_at": "2025-08-06T19:23:47.762907+00:00",
+      "description": "Resep Khusus (Logo lingkaran Merah + Plus)."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Resep Khusus (Logo lingkaran Merah + Plus).",
+        "from": "Resep Khusus (Lingkaran Merah + Plus).."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "526fe080-46e7-4747-a342-cbc3cb7ea097",
+    "entity_table": "item_dosages",
+    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:10:06.092Z",
+    "entity_data": {
+      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
+      "code": "AERSL",
+      "name": "AEROSOL",
+      "nci_code": "C42887",
+      "created_at": "2025-08-02T11:40:15.421834+00:00",
+      "updated_at": "2025-08-07T10:10:06.092473+00:00",
+      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan"
+    },
+    "changed_fields": {
+      "code": {
+        "to": "AERSL",
+        "from": "AER"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "2562618a-f352-4549-af89-8b5ef407d2bf",
+    "entity_table": "items",
+    "entity_id": "6d314f93-7e8c-43ec-96ab-cd7226e13a7d",
+    "version_number": 3,
     "action_type": "UPDATE",
     "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T18:30:29.446Z",
+    "changed_at": "2025-08-08T12:28:35.719Z",
+    "entity_data": {
+      "id": "6d314f93-7e8c-43ec-96ab-cd7226e13a7d",
+      "code": "www",
+      "name": "bbb",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "a39eaa1a-b873-475a-9850-c37739d550df",
+      "base_unit": "APPLICATOR",
+      "dosage_id": "47d4f1c0-6889-454f-bcfd-1d46c88a29d4",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-08-08T12:18:32.427194+00:00",
+      "package_id": "6d03a502-f7c0-408e-b1c2-2cda4095157c",
+      "sell_price": 333,
+      "updated_at": "2025-08-08T12:28:35.71965+00:00",
+      "category_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "PT Dexa Medica",
+      "has_expiry_date": true,
+      "package_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "bbb",
+        "from": "aaaaa"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "73e01073-0938-4200-8f94-ba213a90c1ee",
+    "entity_table": "item_units",
+    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
+    "version_number": 5,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-06T20:33:52.653Z",
     "entity_data": {
       "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
       "code": "AMP",
       "name": "Ampoule",
       "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-04T18:30:29.446251+00:00",
+      "updated_at": "2025-08-06T20:33:52.653326+00:00",
       "description": "Ampoule container"
     },
     "changed_fields": {
       "name": {
         "to": "Ampoule",
-        "from": "Ampouleq"
+        "from": "Ampoule,"
       }
     },
     "change_description": null
   },
   {
-    "id": "5a5adcc7-6220-44c3-8884-73d98330c363",
-    "entity_table": "item_manufacturers",
-    "entity_id": "395fdf27-b841-4031-899f-941db99edfaa",
-    "version_number": 5,
+    "id": "42dc20e5-6e09-4a8e-8197-cb4ed16f0de3",
+    "entity_table": "item_dosages",
+    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:10:13.818Z",
+    "entity_data": {
+      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
+      "code": "AER",
+      "name": "AEROSOL",
+      "nci_code": "C42887",
+      "created_at": "2025-08-02T11:40:15.421834+00:00",
+      "updated_at": "2025-08-07T10:10:13.818758+00:00",
+      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan"
+    },
+    "changed_fields": {
+      "code": {
+        "to": "AER",
+        "from": "AERSL"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "14899a57-f9f3-4f75-b8fa-adb84d1be042",
+    "entity_table": "item_types",
+    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:11:24.632Z",
+    "entity_data": {
+      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
+      "code": "NARm",
+      "name": "Narkotika",
+      "created_at": "2025-07-31T13:34:38.85522+00:00",
+      "updated_at": "2025-08-07T10:11:24.63291+00:00",
+      "description": "Resep Khusus (Logo lingkaran Merah + Plus)."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "NARm",
+        "from": "NAR"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "1551d4e9-61bc-457c-b275-88ff00ee22b0",
+    "entity_table": "items",
+    "entity_id": "6d314f93-7e8c-43ec-96ab-cd7226e13a7d",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-08T12:28:48.297Z",
+    "entity_data": {
+      "id": "6d314f93-7e8c-43ec-96ab-cd7226e13a7d",
+      "code": "www",
+      "name": "bubub",
+      "rack": null,
+      "stock": 0,
+      "barcode": null,
+      "type_id": "a39eaa1a-b873-475a-9850-c37739d550df",
+      "base_unit": "APPLICATOR",
+      "dosage_id": "47d4f1c0-6889-454f-bcfd-1d46c88a29d4",
+      "is_active": true,
+      "min_stock": 10,
+      "base_price": 222,
+      "created_at": "2025-08-08T12:18:32.427194+00:00",
+      "package_id": "6d03a502-f7c0-408e-b1c2-2cda4095157c",
+      "sell_price": 333,
+      "updated_at": "2025-08-08T12:28:48.297115+00:00",
+      "category_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+      "description": null,
+      "is_medicine": true,
+      "manufacturer": "PT Dexa Medica",
+      "has_expiry_date": true,
+      "package_conversions": []
+    },
+    "changed_fields": {
+      "name": {
+        "to": "bubub",
+        "from": "bbb"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "52f129cd-97d7-414b-be83-510c50cad2ab",
+    "entity_table": "item_packages",
+    "entity_id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-06T20:53:06.671Z",
+    "entity_data": {
+      "id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+      "code": "BLP",
+      "name": "BLISTER PACK",
+      "nci_code": "C43168",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-06T20:53:06.671697+00:00",
+      "description": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. supp yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. supp yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister.",
+        "from": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. Supositoria yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "f1505fcb-86e5-4114-861b-6c69272779d3",
+    "entity_table": "item_dosages",
+    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:10:46.933Z",
+    "entity_data": {
+      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
+      "code": "AFM",
+      "name": "AEROSOL",
+      "nci_code": "C42887",
+      "created_at": "2025-08-02T11:40:15.421834+00:00",
+      "updated_at": "2025-08-07T10:10:46.933827+00:00",
+      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan"
+    },
+    "changed_fields": {
+      "code": {
+        "to": "AFM",
+        "from": "AER"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "91f30195-76f2-4ee8-8deb-d1f181cc9718",
+    "entity_table": "item_types",
+    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:11:34.784Z",
+    "entity_data": {
+      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
+      "code": "NAR",
+      "name": "Narkotika",
+      "created_at": "2025-07-31T13:34:38.85522+00:00",
+      "updated_at": "2025-08-07T10:11:34.784709+00:00",
+      "description": "Resep Khusus (Logo lingkaran Merah + Plus)."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "NAR",
+        "from": "NARm"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "1cb0f4b2-6f12-4f0d-b01e-8dd741fe2c86",
+    "entity_table": "item_categories",
+    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+    "version_number": 3,
     "action_type": "UPDATE",
     "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T18:31:30.489Z",
+    "changed_at": "2025-08-08T12:48:53.154Z",
+    "entity_data": {
+      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+      "code": "AAN",
+      "name": "Antianginalm",
+      "created_at": "2025-08-01T03:54:49.798644+00:00",
+      "updated_at": "2025-08-08T12:48:53.154788+00:00",
+      "description": "Obat jantung koroner."
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Antianginalm",
+        "from": "Antianginal"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "b46ed2a2-9d25-4dad-b95b-a90bf40f7c28",
+    "entity_table": "item_categories",
+    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
+    "changed_at": "2025-08-08T12:48:59.610Z",
+    "entity_data": {
+      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+      "code": "AAN",
+      "name": "Antianginal",
+      "created_at": "2025-08-01T03:54:49.798644+00:00",
+      "updated_at": "2025-08-08T12:48:59.610471+00:00",
+      "description": "Obat jantung koroner"
+    },
+    "changed_fields": {
+      "name": {
+        "to": "Antianginal",
+        "from": "Antianginalm"
+      },
+      "description": {
+        "to": "Obat jantung koroner",
+        "from": "Obat jantung koroner."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "7b516dd5-d924-4f72-81e1-495cd3f8b4e5",
+    "entity_table": "item_packages",
+    "entity_id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-06T20:53:43.551Z",
+    "entity_data": {
+      "id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+      "code": "BLP",
+      "name": "BLISTER PACK",
+      "nci_code": "C43168",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-06T20:53:43.551436+00:00",
+      "description": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. Suppositoria yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. Suppositoria yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister.",
+        "from": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. supp yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "606e0956-bbb4-4358-99a4-bd50b46f2473",
+    "entity_table": "item_dosages",
+    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:10:55.881Z",
+    "entity_data": {
+      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
+      "code": "AER",
+      "name": "AEROSOL",
+      "nci_code": "C42887",
+      "created_at": "2025-08-02T11:40:15.421834+00:00",
+      "updated_at": "2025-08-07T10:10:55.881104+00:00",
+      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan"
+    },
+    "changed_fields": {
+      "code": {
+        "to": "AER",
+        "from": "AFM"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "79b65401-69eb-4a68-83dd-faf0900bb42d",
+    "entity_table": "item_packages",
+    "entity_id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T01:43:16.261Z",
+    "entity_data": {
+      "id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
+      "code": "BOXUD",
+      "name": "BOX, UNIT-DOSE",
+      "nci_code": "C43179",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-07T01:43:16.261186+00:00",
+      "description": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.].mm"
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.].mm",
+        "from": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.]."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "c15135c8-f343-4bd1-a444-b111db39825b",
+    "entity_table": "item_packages",
+    "entity_id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T01:43:24.110Z",
+    "entity_data": {
+      "id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
+      "code": "BOXUD",
+      "name": "BOX, UNIT-DOSE",
+      "nci_code": "C43179",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-07T01:43:24.110241+00:00",
+      "description": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.]."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.].",
+        "from": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.].mm"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "ebe83032-572a-49ae-b3d9-ea01f5178052",
+    "entity_table": "item_categories",
+    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:11:57.366Z",
+    "entity_data": {
+      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+      "code": "AANM",
+      "name": "Antianginal",
+      "created_at": "2025-08-01T03:54:49.798644+00:00",
+      "updated_at": "2025-08-07T10:11:57.366616+00:00",
+      "description": "Obat jantung koroner."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "AANM",
+        "from": "AAN"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "9e9a0775-a498-4e78-80cf-9cc1c5b0f91b",
+    "entity_table": "item_packages",
+    "entity_id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+    "version_number": 3,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T01:46:58.506Z",
+    "entity_data": {
+      "id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+      "code": "BLP",
+      "name": "BLISTER PACK",
+      "nci_code": "C43168",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-07T01:46:58.506472+00:00",
+      "description": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. Suppositoria yang dikemas dalam strip kkk di antara dua lapisan foil juga dianggap sebagai kemasan blister."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. Suppositoria yang dikemas dalam strip kkk di antara dua lapisan foil juga dianggap sebagai kemasan blister.",
+        "from": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. Suppositoria yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "90c0d049-1148-4bf9-b333-1f19446d2082",
+    "entity_table": "item_packages",
+    "entity_id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T01:47:04.356Z",
+    "entity_data": {
+      "id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+      "code": "BLP",
+      "name": "BLISTER PACK",
+      "nci_code": "C43168",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-07T01:47:04.356983+00:00",
+      "description": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. Suppositoria yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister."
+    },
+    "changed_fields": {
+      "description": {
+        "to": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. Suppositoria yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister.",
+        "from": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. Suppositoria yang dikemas dalam strip kkk di antara dua lapisan foil juga dianggap sebagai kemasan blister."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "2e47a62a-bd63-4834-8a83-79cdb1701bc3",
+    "entity_table": "item_categories",
+    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+    "version_number": 2,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:12:05.638Z",
+    "entity_data": {
+      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
+      "code": "AAN",
+      "name": "Antianginal",
+      "created_at": "2025-08-01T03:54:49.798644+00:00",
+      "updated_at": "2025-08-07T10:12:05.638556+00:00",
+      "description": "Obat jantung koroner."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "AAN",
+        "from": "AANM"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "07838ff7-408d-4cda-a641-b28a21d068de",
+    "entity_table": "item_packages",
+    "entity_id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+    "version_number": 5,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T08:05:12.349Z",
+    "entity_data": {
+      "id": "12256da7-453c-4ce1-b5a7-63440abc35e1",
+      "code": "BLP",
+      "name": "BLISTER PACK.",
+      "nci_code": "C43168",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-07T08:05:12.349683+00:00",
+      "description": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanyaaa. Suppositoria yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister."
+    },
+    "changed_fields": {
+      "name": {
+        "to": "BLISTER PACK.",
+        "from": "BLISTER PACK"
+      },
+      "description": {
+        "to": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanyaaa. Suppositoria yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister.",
+        "from": "Kemasan yang terdiri dari plastik cetakan atau laminasi yang memiliki cekungan (dikenal sebagai ‘blister’ saat dibalik) di mana bentuk dosis ditempatkan. Sebuah penutup, biasanya terbuat dari bahan laminasi, kemudian disegel ke bagian cetakan. Sebuah kemasan strip adalah jenis khusus dari kemasan blister di mana tidak ada bagian yang sudah dibentuk atau dicetak; dalam hal ini terdapat dua lapisan fleksibel yang disegel dengan bentuk dosis di antara keduanya. Suppositoria yang dikemas dalam strip di antara dua lapisan foil juga dianggap sebagai kemasan blister."
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "c2345b77-541e-4aed-bb67-035e1b36ed38",
+    "entity_table": "item_manufacturers",
+    "entity_id": "395fdf27-b841-4031-899f-941db99edfaa",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:13:41.693Z",
     "entity_data": {
       "id": "395fdf27-b841-4031-899f-941db99edfaa",
-      "kode": "DM",
+      "code": "DM,",
       "name": "PT Dexa Medica",
       "address": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224.",
       "created_at": "2025-08-02T01:32:35.857726+00:00",
-      "updated_at": "2025-08-04T18:31:30.489288+00:00"
+      "updated_at": "2025-08-07T10:13:41.693823+00:00"
     },
     "changed_fields": {
-      "kode": {
-        "new": "DM",
+      "code": {
+        "new": "DM,",
         "old": "DM"
       },
       "name": {
@@ -1544,31 +959,63 @@
       },
       "address": {
         "new": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224.",
-        "old": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224"
+        "old": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224."
       }
     },
     "change_description": "Updated manufacturer: PT Dexa Medica"
   },
   {
-    "id": "df8c43a4-a4d2-4f8d-aa5e-dc5fe86c50b8",
+    "id": "d7147f27-5ed5-4f89-99a9-29d45c416a35",
     "entity_table": "item_manufacturers",
     "entity_id": "395fdf27-b841-4031-899f-941db99edfaa",
-    "version_number": 6,
+    "version_number": 2,
     "action_type": "UPDATE",
     "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T18:31:37.728Z",
+    "changed_at": "2025-08-07T10:13:57.390Z",
     "entity_data": {
       "id": "395fdf27-b841-4031-899f-941db99edfaa",
-      "kode": "DM",
+      "code": "DM",
+      "name": "PT Dexa Medica",
+      "address": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224.",
+      "created_at": "2025-08-02T01:32:35.857726+00:00",
+      "updated_at": "2025-08-07T10:13:57.390135+00:00"
+    },
+    "changed_fields": {
+      "code": {
+        "new": "DM",
+        "old": "DM,"
+      },
+      "name": {
+        "new": "PT Dexa Medica",
+        "old": "PT Dexa Medica"
+      },
+      "address": {
+        "new": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224.",
+        "old": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224."
+      }
+    },
+    "change_description": "Updated manufacturer: PT Dexa Medica"
+  },
+  {
+    "id": "ebd7ce7d-1683-4175-9ce1-e5b4f33914c2",
+    "entity_table": "item_manufacturers",
+    "entity_id": "395fdf27-b841-4031-899f-941db99edfaa",
+    "version_number": 4,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:14:09.553Z",
+    "entity_data": {
+      "id": "395fdf27-b841-4031-899f-941db99edfaa",
+      "code": "DXM",
       "name": "PT Dexa Medica",
       "address": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224",
       "created_at": "2025-08-02T01:32:35.857726+00:00",
-      "updated_at": "2025-08-04T18:31:37.728885+00:00"
+      "updated_at": "2025-08-07T10:14:09.553929+00:00"
     },
     "changed_fields": {
-      "kode": {
-        "new": "DM",
-        "old": "DM"
+      "code": {
+        "new": "DXM",
+        "old": "DXM"
       },
       "name": {
         "new": "PT Dexa Medica",
@@ -1582,105 +1029,73 @@
     "change_description": "Updated manufacturer: PT Dexa Medica"
   },
   {
-    "id": "64a1f6c4-74a3-45e1-9f5b-1289e849b674",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 10,
+    "id": "b47182d5-83ba-4e90-b9ce-2eede4cd3076",
+    "entity_table": "item_units",
+    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
+    "version_number": 6,
     "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T18:44:40.568Z",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:14:47.500Z",
     "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginaq",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T18:44:40.568814+00:00",
-      "description": "Obat jantung koroner"
+      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
+      "code": "AMPA",
+      "name": "Ampoule",
+      "created_at": "2025-08-04T05:44:15.128329+00:00",
+      "updated_at": "2025-08-07T10:14:47.50073+00:00",
+      "description": "Ampoule container"
     },
     "changed_fields": {
-      "name": {
-        "to": "Antianginaq",
-        "from": "Antiangina"
+      "code": {
+        "to": "AMPA",
+        "from": "AMP"
       }
     },
     "change_description": null
   },
   {
-    "id": "af12ce5b-2150-42c0-b1dd-b88de489445c",
+    "id": "145bac6c-fb56-4d2b-b5d6-91726192e96c",
     "entity_table": "item_packages",
-    "entity_id": "6d03a502-f7c0-408e-b1c2-2cda4095157c",
-    "version_number": 1,
+    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+    "version_number": 4,
     "action_type": "UPDATE",
     "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T19:20:27.573Z",
+    "changed_at": "2025-08-07T09:33:28.630Z",
     "entity_data": {
-      "id": "6d03a502-f7c0-408e-b1c2-2cda4095157c",
-      "kode": "APP",
-      "name": "APPLICATOR",
-      "nci_code": "C43166",
+      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+      "code": "AMPL",
+      "name": "AMPULE",
+      "nci_code": "C43165",
       "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T19:20:27.573773+00:00",
-      "description": "Pipet, jarum suntik, atau tabung yang sudah diisi sebelumnya dan tidak dapat disuntikkan"
+      "updated_at": "2025-08-07T09:33:28.630249+00:00",
+      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi."
     },
     "changed_fields": {
-      "description": {
-        "to": "Pipet, jarum suntik, atau tabung yang sudah diisi sebelumnya dan tidak dapat disuntikkan",
-        "from": "Pipet, jarum suntik, atau tabung yang sudah diisi sebelumnya dan tidak dapat disuntikkan."
+      "code": {
+        "to": "AMPL",
+        "from": "AMP"
       }
     },
     "change_description": null
   },
   {
-    "id": "045e25b4-b2fb-4283-8fee-75227523b474",
+    "id": "0b9b7471-06d4-40a8-9183-fca3780cb5fe",
     "entity_table": "item_manufacturers",
     "entity_id": "395fdf27-b841-4031-899f-941db99edfaa",
-    "version_number": 7,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T19:35:23.275Z",
-    "entity_data": {
-      "id": "395fdf27-b841-4031-899f-941db99edfaa",
-      "kode": "DM",
-      "name": "PT Dexa Medica",
-      "address": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224/",
-      "created_at": "2025-08-02T01:32:35.857726+00:00",
-      "updated_at": "2025-08-04T19:35:23.275445+00:00"
-    },
-    "changed_fields": {
-      "kode": {
-        "new": "DM",
-        "old": "DM"
-      },
-      "name": {
-        "new": "PT Dexa Medica",
-        "old": "PT Dexa Medica"
-      },
-      "address": {
-        "new": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224/",
-        "old": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224"
-      }
-    },
-    "change_description": "Updated manufacturer: PT Dexa Medica"
-  },
-  {
-    "id": "c2d7a5c8-5010-4029-8987-bf3c7a5174c7",
-    "entity_table": "item_manufacturers",
-    "entity_id": "395fdf27-b841-4031-899f-941db99edfaa",
-    "version_number": 8,
+    "version_number": 3,
     "action_type": "UPDATE",
     "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T19:35:29.306Z",
+    "changed_at": "2025-08-07T10:14:04.587Z",
     "entity_data": {
       "id": "395fdf27-b841-4031-899f-941db99edfaa",
-      "kode": "DM",
+      "code": "DXM",
       "name": "PT Dexa Medica",
       "address": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224.",
       "created_at": "2025-08-02T01:32:35.857726+00:00",
-      "updated_at": "2025-08-04T19:35:29.306395+00:00"
+      "updated_at": "2025-08-07T10:14:04.58732+00:00"
     },
     "changed_fields": {
-      "kode": {
-        "new": "DM",
+      "code": {
+        "new": "DXM",
         "old": "DM"
       },
       "name": {
@@ -1689,1658 +1104,150 @@
       },
       "address": {
         "new": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224.",
-        "old": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224/"
+        "old": "Jl. Cibolerang No.160, Margasuka, Kec. Babakan Ciparay, Kota Bandung, Jawa Barat 40224."
       }
     },
     "change_description": "Updated manufacturer: PT Dexa Medica"
   },
   {
-    "id": "b682b3bc-a0e7-45bb-942a-0f4607ea9c43",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 11,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T19:46:44.817Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T19:46:44.817976+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antianginaq"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "38f7ebdb-250c-4939-9825-4825a64f955e",
-    "entity_table": "item_types",
-    "entity_id": "a39eaa1a-b873-475a-9850-c37739d550df",
-    "version_number": 4,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T19:55:24.726Z",
-    "entity_data": {
-      "id": "a39eaa1a-b873-475a-9850-c37739d550df",
-      "kode": "OBT",
-      "name": "Obat Bebas Terbatas",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T19:55:24.726538+00:00",
-      "description": "Dengan Peringatan (Lingkaran Biru)"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Dengan Peringatan (Lingkaran Biru)",
-        "from": "Dengan Peringatan (Lingkaran Biru)."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "b282e5a5-ec88-4c6d-bd9a-8a92bbb41a46",
-    "entity_table": "item_types",
-    "entity_id": "e8c3fdae-b61f-431d-a6d4-2a14a1252ff0",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T19:55:49.215Z",
-    "entity_data": {
-      "id": "e8c3fdae-b61f-431d-a6d4-2a14a1252ff0",
-      "kode": "OTC",
-      "name": "Obat Bebas",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-04T19:55:49.215657+00:00",
-      "description": "Over The Counter (Lingkaran Hijau)."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Over The Counter (Lingkaran Hijau).",
-        "from": "Over The Counter (Lingkaran Hijau)"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "ab920564-5f0b-47b8-90f1-bb96510bc3e2",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 12,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T19:58:23.742Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T19:58:23.742695+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "847ab990-de29-4dc7-8996-a40a48523f2a",
-    "entity_table": "item_packages",
-    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+    "id": "b21a2027-d68e-479b-9507-868840d20810",
+    "entity_table": "item_units",
+    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
     "version_number": 7,
     "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T19:58:36.699Z",
-    "entity_data": {
-      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-      "kode": "AMP",
-      "name": "AMPULEm",
-      "nci_code": "C43165",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T19:58:36.699965+00:00",
-      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AMPULEm",
-        "from": "AMPULE"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "7bc011aa-32a3-4a01-8624-a796cefa874e",
-    "entity_table": "item_packages",
-    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-    "version_number": 8,
-    "action_type": "UPDATE",
     "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T19:58:40.991Z",
-    "entity_data": {
-      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-      "kode": "AMP",
-      "name": "AMPULE",
-      "nci_code": "C43165",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T19:58:40.991565+00:00",
-      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AMPULE",
-        "from": "AMPULEm"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "997dd234-fc8a-4c4c-8e89-753243456d22",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 13,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T19:58:51.378Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginam",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T19:58:51.378386+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginam",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "a7f0d6a9-9bac-4a34-8ad3-541a27628cd1",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 14,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T19:58:58.876Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T19:58:58.876791+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginam"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "fc88d0ba-d992-418f-86bf-638dc3cde15e",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 15,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T20:23:51.946Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:23:51.94638+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "51962b33-770e-4c31-84db-c19c1ff3d533",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 16,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T20:24:01.974Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:24:01.974611+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "fa0db4b3-befe-45e9-9c45-8687500efe5f",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 17,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T20:27:33.734Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:27:33.734484+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "9e7e79df-e7da-4c48-bd30-ce391af4327d",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 18,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T20:29:23.092Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:29:23.092722+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "2757e6d7-8f4a-403f-8ae1-6e56789eec3d",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 19,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T20:32:35.858Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:32:35.858286+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "fa367ed3-da21-4bb3-98fc-4586be16205d",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 20,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T20:32:46.410Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:32:46.410003+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "8b395011-c66a-4ce6-8543-e3b890b9e7b6",
-    "entity_table": "item_dosages",
-    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-    "version_number": 5,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T20:40:42.719Z",
-    "entity_data": {
-      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-      "kode": "AER",
-      "name": "AEROSOLk",
-      "nci_code": "C42887",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-04T20:40:42.719538+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AEROSOLk",
-        "from": "AEROSOL"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "2939052a-879e-4957-95ca-e73a98f499d7",
-    "entity_table": "item_dosages",
-    "entity_id": "4b709cf1-271a-4b27-b8f2-724fc86a8a90",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T20:40:49.430Z",
-    "entity_data": {
-      "id": "4b709cf1-271a-4b27-b8f2-724fc86a8a90",
-      "kode": "AFM",
-      "name": "AEROSOL, FOAMh",
-      "nci_code": "C42888",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-04T20:40:49.430872+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengeluarkan busa mengandung bahan aktif yang terdispersi dalam sistem propelan."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AEROSOL, FOAMh",
-        "from": "AEROSOL, FOAM"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "9b1bcb1e-63aa-4504-8de3-32a6970c8b71",
-    "entity_table": "item_dosages",
-    "entity_id": "4b709cf1-271a-4b27-b8f2-724fc86a8a90",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T20:49:25.265Z",
-    "entity_data": {
-      "id": "4b709cf1-271a-4b27-b8f2-724fc86a8a90",
-      "kode": "AFM",
-      "name": "AEROSOL, FOAM",
-      "nci_code": "C42888",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-04T20:49:25.26521+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengeluarkan busa mengandung bahan aktif yang terdispersi dalam sistem propelan."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AEROSOL, FOAM",
-        "from": "AEROSOL, FOAMh"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "f2de0a0a-30df-4741-b75f-dfe0f3c21ec7",
-    "entity_table": "item_dosages",
-    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-    "version_number": 6,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T20:49:39.259Z",
-    "entity_data": {
-      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-      "kode": "AER",
-      "name": "AEROSOL",
-      "nci_code": "C42887",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-04T20:49:39.259948+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "AEROSOL",
-        "from": "AEROSOLk"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "3363d12c-a183-4042-b1c8-5220f7c78dcf",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 21,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T20:50:50.817Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:50:50.817242+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "3c18fddb-7bd9-428a-9d06-ab482f978677",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 22,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T20:50:58.098Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginall",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:50:58.098646+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginall",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "1f99c603-3a69-47e2-926d-ac2240a24b97",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 23,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T20:51:03.494Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:51:03.49419+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antianginall"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "22fbf722-8371-4399-b691-09e27e584c73",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 24,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T20:52:18.943Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:52:18.943049+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "ceb0a8df-a6b2-4087-80a9-b30c851ee32c",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 25,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T20:52:24.488Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:52:24.488581+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "0a4f8869-19f4-44d7-add2-6ee75b68029e",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 26,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T20:57:00.236Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:57:00.23638+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "cc048bad-0fdd-4d0a-9a85-68ffb1063ddd",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 27,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T20:57:39.310Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginam",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:57:39.310493+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginam",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "ed85967b-8d84-4133-9a72-f8dc36732a78",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 28,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T20:57:47.808Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T20:57:47.808308+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antianginam"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "b93e310b-b90d-4544-8b1b-e82c4d53d356",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 29,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T21:03:37.411Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T21:03:37.411578+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "b27e9a32-87b8-4705-b79c-0863434fa797",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 30,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T21:03:41.722Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginaw",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T21:03:41.722841+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginaw",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "edc96cfc-90a1-40a8-942a-e8dbc3c7ebad",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 31,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T21:03:47.650Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T21:03:47.650197+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginaw"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "e0582908-076c-4c52-9ed6-54994640fdd3",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 32,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T21:03:52.887Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T21:03:52.887764+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "cf115658-ca45-4c13-86ec-b6f40c5ff4c7",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 33,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T21:06:10.315Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T21:06:10.31541+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "38247218-c3e4-4a68-91c4-4efc782d6954",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 34,
-    "action_type": "UPDATE",
-    "changed_by": null,
-    "changed_at": "2025-08-04T21:06:15.259Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-04T21:06:15.259639+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "e085ef82-c2d4-4137-b10a-5a4e25444607",
-    "entity_table": "item_packages",
-    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-    "version_number": 9,
-    "action_type": "UPDATE",
-    "changed_by": null,
-    "changed_at": "2025-08-04T21:06:54.481Z",
-    "entity_data": {
-      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-      "kode": "AMP",
-      "name": "AMPULE",
-      "nci_code": "C43165",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T21:06:54.481629+00:00",
-      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi.",
-        "from": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "e5d05957-d5d6-4e9b-b5b7-fa728af8a501",
-    "entity_table": "item_packages",
-    "entity_id": "6d03a502-f7c0-408e-b1c2-2cda4095157c",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T21:07:04.572Z",
-    "entity_data": {
-      "id": "6d03a502-f7c0-408e-b1c2-2cda4095157c",
-      "kode": "APP",
-      "name": "APPLICATOR",
-      "nci_code": "C43166",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-04T21:07:04.572834+00:00",
-      "description": "Pipet, jarum suntik, atau tabung yang sudah diisi sebelumnya dan tidak dapat disuntikkan."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Pipet, jarum suntik, atau tabung yang sudah diisi sebelumnya dan tidak dapat disuntikkan.",
-        "from": "Pipet, jarum suntik, atau tabung yang sudah diisi sebelumnya dan tidak dapat disuntikkan"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "032b28db-ce20-41e8-834a-19341fe58f14",
-    "entity_table": "item_units",
-    "entity_id": "abee34cb-b65c-478d-9e3a-f5a8917ce7ed",
-    "version_number": 1,
-    "action_type": "INSERT",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-04T21:11:25.772Z",
-    "entity_data": {
-      "id": "abee34cb-b65c-478d-9e3a-f5a8917ce7ed",
-      "code": "ml",
-      "name": "ml",
-      "created_at": "2025-08-04T21:11:25.77255+00:00",
-      "updated_at": "2025-08-04T21:11:25.77255+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "67d1d9df-6592-42ef-8356-1a2c9c1881f8",
-    "entity_table": "item_units",
-    "entity_id": "abee34cb-b65c-478d-9e3a-f5a8917ce7ed",
-    "version_number": 2,
-    "action_type": "DELETE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-04T21:12:02.036Z",
-    "entity_data": {
-      "id": "abee34cb-b65c-478d-9e3a-f5a8917ce7ed",
-      "code": "ml",
-      "name": "ml",
-      "created_at": "2025-08-04T21:11:25.77255+00:00",
-      "updated_at": "2025-08-04T21:11:25.77255+00:00",
-      "description": null
-    },
-    "changed_fields": null,
-    "change_description": null
-  },
-  {
-    "id": "ccb474d4-400f-486a-b75b-0b4430f79f77",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 14,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:05:02.144Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoulea",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-05T05:05:02.144652+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoulea",
-        "from": "Ampoule"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "0cacd2d0-c54b-4c21-a493-df8edcd3ad47",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 15,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:07:00.898Z",
+    "changed_at": "2025-08-07T10:14:59.588Z",
     "entity_data": {
       "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
       "code": "AMP",
       "name": "Ampoule",
       "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-05T05:07:00.898071+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoule",
-        "from": "Ampoulea"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "806e1a04-6706-4a67-bd2e-c0bcfdb49c3c",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 16,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:07:18.662Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMPmm",
-      "name": "Ampoule",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-05T05:07:18.662393+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "code": {
-        "to": "AMPmm",
-        "from": "AMP"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "c135df50-a2be-4ca5-862e-7b2aba267f72",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 17,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T05:08:27.062Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoule",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-05T05:08:27.062451+00:00",
+      "updated_at": "2025-08-07T10:14:59.588204+00:00",
       "description": "Ampoule container"
     },
     "changed_fields": {
       "code": {
         "to": "AMP",
-        "from": "AMPmm"
+        "from": "AMPA"
       }
     },
     "change_description": null
   },
   {
-    "id": "2a6a9a4d-ac65-4bb9-90c8-aa9a341ce7d3",
-    "entity_table": "item_units",
-    "entity_id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-    "version_number": 18,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:10:34.267Z",
-    "entity_data": {
-      "id": "e785d6b6-21cc-4d0a-984b-35f1f4986c76",
-      "code": "AMP",
-      "name": "Ampoule,",
-      "created_at": "2025-08-04T05:44:15.128329+00:00",
-      "updated_at": "2025-08-05T05:10:34.267702+00:00",
-      "description": "Ampoule container"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Ampoule,",
-        "from": "Ampoule"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "24f61a6c-2a2f-4681-80e8-a0929b19a053",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 35,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:19:43.059Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:19:43.059405+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginal"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "e9b3b2e5-4ade-41a4-8663-94fcf6d058ac",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 36,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:21:03.096Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginaj",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:21:03.096784+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginaj",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "d157bc07-de63-420a-9e07-0e7c2d41815b",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 37,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T05:21:11.403Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:21:11.403369+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginaj"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "f7e3d97d-c04a-45c5-b780-b5d873425cd9",
+    "id": "ce725fe8-28f4-4e67-9651-a9085623d406",
     "entity_table": "item_dosages",
     "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-    "version_number": 7,
+    "version_number": 5,
     "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:22:55.537Z",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:15:08.925Z",
     "entity_data": {
       "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-      "kode": "AER",
+      "code": "AMT",
       "name": "AEROSOL",
       "nci_code": "C42887",
       "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-05T05:22:55.537+00:00",
+      "updated_at": "2025-08-07T10:15:08.925617+00:00",
       "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan"
     },
     "changed_fields": {
-      "description": {
-        "to": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan",
-        "from": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan."
+      "code": {
+        "to": "AMT",
+        "from": "AER"
       }
     },
     "change_description": null
   },
   {
-    "id": "6b22f126-3254-4f01-8794-7fcd65b2a9fc",
+    "id": "38cc1cec-f44e-4ecf-9f92-8a282035126e",
     "entity_table": "item_dosages",
-    "entity_id": "4b709cf1-271a-4b27-b8f2-724fc86a8a90",
-    "version_number": 3,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T05:23:05.057Z",
-    "entity_data": {
-      "id": "4b709cf1-271a-4b27-b8f2-724fc86a8a90",
-      "kode": "AFM",
-      "name": "AEROSOL, FOAM",
-      "nci_code": "C42888",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-05T05:23:05.057235+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengeluarkan busa mengandung bahan aktif yang terdispersi dalam sistem propelan"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Bentuk sediaan bertekanan yang mengeluarkan busa mengandung bahan aktif yang terdispersi dalam sistem propelan",
-        "from": "Bentuk sediaan bertekanan yang mengeluarkan busa mengandung bahan aktif yang terdispersi dalam sistem propelan."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "49b19ed1-c80f-440d-a74f-b39d3a725719",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 38,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T05:24:23.151Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginan",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:24:23.151383+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginan",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "b4d1a598-213a-4fb1-919a-5e51bfc9c276",
-    "entity_table": "item_categories",
-    "entity_id": "896548ed-c390-44f5-a637-03edd725487c",
-    "version_number": 3,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:24:53.466Z",
-    "entity_data": {
-      "id": "896548ed-c390-44f5-a637-03edd725487c",
-      "kode": "AAR",
-      "name": "Antiaritmia,",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:24:53.466519+00:00",
-      "description": "Mengatur irama jantung"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiaritmia,",
-        "from": "Antiaritmia"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "05c90eb0-30da-4342-93b2-1091f250bdf7",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 39,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:25:02.000Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangina",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:25:02.000475+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangina",
-        "from": "Antianginan"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "90bdedc5-517a-49c3-82c7-c0d46d0131a1",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 40,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:31:56.434Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangin",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:31:56.434121+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangin",
-        "from": "Antiangina"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "5bb5e5b0-1886-4217-b484-1758368b123f",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 11,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:32:44.344Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T05:32:44.34465+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Resep Khusus (Lingkaran Merah + Plus).",
-        "from": "Resep Khusus (Lingkaran Merah + Plus)"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "a6a6cc63-f7a9-46d7-9b8b-6523c20c7138",
-    "entity_table": "item_categories",
-    "entity_id": "896548ed-c390-44f5-a637-03edd725487c",
-    "version_number": 4,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T05:34:03.949Z",
-    "entity_data": {
-      "id": "896548ed-c390-44f5-a637-03edd725487c",
-      "kode": "AAR",
-      "name": "Antiaritmia",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:34:03.949262+00:00",
-      "description": "Mengatur irama jantung"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiaritmia",
-        "from": "Antiaritmia,"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "7935e3c1-b1ef-4829-96de-98bf36ce6c7e",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 41,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:34:21.791Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangin",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:34:21.79138+00:00",
-      "description": "Obat jantung koroner."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Obat jantung koroner.",
-        "from": "Obat jantung koroner"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "eca87b95-ff2f-4077-bff6-b094247b6a55",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 42,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T05:36:36.696Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginm",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:36:36.696561+00:00",
-      "description": "Obat jantung koroner."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginm",
-        "from": "Antiangin"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "7dac47f8-2a5b-413b-ab14-fc6d9cbc59db",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 43,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:37:00.044Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangi",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:37:00.04471+00:00",
-      "description": "Obat jantung koroner."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangi",
-        "from": "Antianginm"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "6797e846-f4a3-4e02-af9b-0d5c264e1d3c",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 44,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T05:39:44.142Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangin",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:39:44.142487+00:00",
-      "description": "Obat jantung koroner."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangin",
-        "from": "Antiangi"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "15802dda-6b87-4f5e-8c20-8529a401488d",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 45,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:42:08.637Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangi",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:42:08.637139+00:00",
-      "description": "Obat jantung koroner."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangi",
-        "from": "Antiangin"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "0ae36472-8ec4-4600-8309-58a78d7b9096",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 46,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:42:41.595Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangi",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:42:41.595746+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Obat jantung koroner",
-        "from": "Obat jantung koroner."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "807324f3-968f-40d8-867a-94866d5be421",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 47,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T05:44:32.131Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangin",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:44:32.131917+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangin",
-        "from": "Antiangi"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "935c4e4d-65a8-437e-80d6-4124fe26f786",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 48,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:44:47.721Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangin",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:44:47.721105+00:00",
-      "description": "Obat jantung koroner."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Obat jantung koroner.",
-        "from": "Obat jantung koroner"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "660939e9-314e-483c-b3eb-9d6d0c868e4d",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 49,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:47:16.134Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangin",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:47:16.134823+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Obat jantung koroner",
-        "from": "Obat jantung koroner."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "1ef5b66e-8b0a-4269-8f49-4b108e7e11a9",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 50,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:47:49.294Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginn",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:47:49.294896+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginn",
-        "from": "Antiangin"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "3d1a4830-8dc1-4376-ae68-c4c01666d2ae",
-    "entity_table": "item_categories",
-    "entity_id": "896548ed-c390-44f5-a637-03edd725487c",
-    "version_number": 5,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:52:20.801Z",
-    "entity_data": {
-      "id": "896548ed-c390-44f5-a637-03edd725487c",
-      "kode": "AAR",
-      "name": "Antiaritmiaw",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:52:20.801246+00:00",
-      "description": "Mengatur irama jantung"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiaritmiaw",
-        "from": "Antiaritmia"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "63b5cbbe-ca91-460a-ad62-8ef38d4060d6",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 51,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:55:55.724Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antiangin",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:55:55.724619+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antiangin",
-        "from": "Antianginn"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "766a2d60-1efa-4bc3-aaf2-ca7daff55914",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 52,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:58:49.667Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:58:49.667251+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Antianginal",
-        "from": "Antiangin"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "f0d6ebc8-eec2-4cba-9505-ca9c519f17ab",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 12,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:59:09.090Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T05:59:09.090658+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Resep Khusus (Lingkaran Merah + Plus)",
-        "from": "Resep Khusus (Lingkaran Merah + Plus)."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "6d8ae730-13f7-4371-92eb-6192f451fb78",
-    "entity_table": "item_categories",
-    "entity_id": "896548ed-c390-44f5-a637-03edd725487c",
+    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
     "version_number": 6,
     "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T05:59:26.741Z",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T10:15:14.408Z",
     "entity_data": {
-      "id": "896548ed-c390-44f5-a637-03edd725487c",
-      "kode": "AAR",
-      "name": "Antiaritmia",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T05:59:26.741766+00:00",
-      "description": "Mengatur irama jantung"
+      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
+      "code": "AER",
+      "name": "AEROSOL",
+      "nci_code": "C42887",
+      "created_at": "2025-08-02T11:40:15.421834+00:00",
+      "updated_at": "2025-08-07T10:15:14.408948+00:00",
+      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan"
     },
     "changed_fields": {
-      "name": {
-        "to": "Antiaritmia",
-        "from": "Antiaritmiaw"
+      "code": {
+        "to": "AER",
+        "from": "AMT"
       }
     },
     "change_description": null
   },
   {
-    "id": "bdf52496-51ef-4f4f-a110-a7a3a55f0fb7",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 53,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T06:02:28.796Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T06:02:28.796+00:00",
-      "description": "Obat jantung koroner."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Obat jantung koroner.",
-        "from": "Obat jantung koroner"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "e4b38841-caf9-48e2-a2f7-073573c170ae",
+    "id": "1710ee46-24ab-4e4d-8648-7230b127eebf",
     "entity_table": "item_packages",
     "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-    "version_number": 10,
+    "version_number": 5,
     "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T06:03:01.023Z",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-07T09:33:33.966Z",
     "entity_data": {
       "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
-      "kode": "AMP",
+      "code": "AMP",
       "name": "AMPULE",
       "nci_code": "C43165",
       "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-05T06:03:01.023909+00:00",
+      "updated_at": "2025-08-07T09:33:33.966099+00:00",
+      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "AMP",
+        "from": "AMPL"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "252499be-8c27-4dd4-a6da-8cc5ce9a852a",
+    "entity_table": "item_dosages",
+    "entity_id": "1a0ceb4e-5bb1-4fb3-8940-a565bcea09c1",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": null,
+    "changed_at": "2025-08-07T10:22:49.876Z",
+    "entity_data": {
+      "id": "1a0ceb4e-5bb1-4fb3-8940-a565bcea09c1",
+      "code": "ISLI",
+      "name": "INJECTION, SUSPENSION, LIPOSOMAL",
+      "nci_code": "C42951",
+      "created_at": "2025-08-02T11:40:15.421834+00:00",
+      "updated_at": "2025-08-07T10:22:49.876679+00:00",
+      "description": "Suspensi injeksi dalam bentuk liposomal."
+    },
+    "changed_fields": {
+      "code": {
+        "to": "ISLI",
+        "from": "ISL"
+      }
+    },
+    "change_description": null
+  },
+  {
+    "id": "d85123fa-fa0d-43be-9802-45f242ba44c3",
+    "entity_table": "item_packages",
+    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+    "version_number": 1,
+    "action_type": "UPDATE",
+    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
+    "changed_at": "2025-08-06T16:57:32.956Z",
+    "entity_data": {
+      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+      "code": "AMP",
+      "name": "AMPULE",
+      "nci_code": "C43165",
+      "created_at": "2025-08-02T12:20:34.674235+00:00",
+      "updated_at": "2025-08-06T16:57:32.956093+00:00",
       "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
     },
     "changed_fields": {
@@ -3352,656 +1259,51 @@
     "change_description": null
   },
   {
-    "id": "367c20ad-dd58-4538-a112-cecbdb09f869",
-    "entity_table": "item_dosages",
-    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-    "version_number": 8,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T06:03:10.952Z",
-    "entity_data": {
-      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-      "kode": "AER",
-      "name": "AEROSOL",
-      "nci_code": "C42887",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-05T06:03:10.952882+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan.",
-        "from": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "01b4f5e5-76f8-492d-bdb0-bbd7fde71b07",
-    "entity_table": "item_dosages",
-    "entity_id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-    "version_number": 9,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T06:13:02.142Z",
-    "entity_data": {
-      "id": "65b3a2b5-6456-466c-b7c6-9c7c1f113408",
-      "kode": "AER",
-      "name": "AEROSOL",
-      "nci_code": "C42887",
-      "created_at": "2025-08-02T11:40:15.421834+00:00",
-      "updated_at": "2025-08-05T06:13:02.142507+00:00",
-      "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan",
-        "from": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "d7798e27-6dc0-47bd-8346-4e2eab447420",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 54,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T07:04:59.092Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T07:04:59.092963+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Obat jantung koroner",
-        "from": "Obat jantung koroner."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "6969ffbf-8e47-4b46-84e1-3957345277d2",
+    "id": "90aeb06b-23de-4b7d-8496-de1bf1b0172a",
     "entity_table": "item_packages",
-    "entity_id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T07:06:20.286Z",
-    "entity_data": {
-      "id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
-      "kode": "BOXUD",
-      "name": "BOX, UNIT-DOSEw",
-      "nci_code": "C43179",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-05T07:06:20.286482+00:00",
-      "description": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.]"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "BOX, UNIT-DOSEw",
-        "from": "BOX, UNIT-DOSE"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "28e35db7-50a4-4936-a88d-ba99d9f10c45",
-    "entity_table": "item_packages",
-    "entity_id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
+    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
     "version_number": 2,
     "action_type": "UPDATE",
     "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T07:06:25.091Z",
+    "changed_at": "2025-08-06T16:57:38.127Z",
     "entity_data": {
-      "id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
-      "kode": "BOXUD",
-      "name": "BOX, UNIT-DOSE",
-      "nci_code": "C43179",
+      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+      "code": "AMP",
+      "name": "AMPULE",
+      "nci_code": "C43165",
       "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-05T07:06:25.091447+00:00",
-      "description": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.]"
+      "updated_at": "2025-08-06T16:57:38.127825+00:00",
+      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi.."
     },
     "changed_fields": {
-      "name": {
-        "to": "BOX, UNIT-DOSE",
-        "from": "BOX, UNIT-DOSEw"
+      "description": {
+        "to": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi..",
+        "from": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi"
       }
     },
     "change_description": null
   },
   {
-    "id": "81b23bce-ad5c-4ac8-ba8c-6c531b8eb8f6",
+    "id": "da05870d-cc06-46ff-ba59-df6243fe18ed",
     "entity_table": "item_packages",
-    "entity_id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
+    "entity_id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
     "version_number": 3,
     "action_type": "UPDATE",
     "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T07:06:44.992Z",
+    "changed_at": "2025-08-06T16:57:44.341Z",
     "entity_data": {
-      "id": "365d8954-50e2-4ddb-9cf5-597e3e970eac",
-      "kode": "BOXUD",
-      "name": "BOX, UNIT-DOSE",
-      "nci_code": "C43179",
+      "id": "e533ebc6-25f1-4eec-9689-05e8842c8285",
+      "code": "AMP",
+      "name": "AMPULE",
+      "nci_code": "C43165",
       "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-05T07:06:44.992194+00:00",
-      "description": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.]."
+      "updated_at": "2025-08-06T16:57:44.341611+00:00",
+      "description": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi."
     },
     "changed_fields": {
       "description": {
-        "to": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.].",
-        "from": "Kotak yang berisi satu dosis produk obat non-parenteral. [Catatan: Kotak yang berisi 100 kemasan blister dosis tunggal harus diklasifikasikan sebagai kemasan blister, karena ini adalah wadah langsung tempat bentuk dosis diletakkan.]"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "62a7e210-70f3-4b3b-87de-2089806a8c69",
-    "entity_table": "item_packages",
-    "entity_id": "aca23959-4110-4a60-a2ea-f9fcecdbde22",
-    "version_number": 1,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T07:12:29.995Z",
-    "entity_data": {
-      "id": "aca23959-4110-4a60-a2ea-f9fcecdbde22",
-      "kode": "PAT",
-      "name": "PATCH",
-      "nci_code": "C82332",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-05T07:12:29.995193+00:00",
-      "description": "Sistem pengiriman obat yang seringkali dilengkapi dengan lapisan perekat yang biasanya ditempelkan pada bagian luar tubuh. Bahan-bahannya dapat menyebar secara pasif dari, atau diangkut secara aktif dari, sebagian area patch. Tergantung pada jenis patch, bahan-bahan tersebut dapat disalurkan ke permukaan luar tubuh atau ke dalam tubuh"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Sistem pengiriman obat yang seringkali dilengkapi dengan lapisan perekat yang biasanya ditempelkan pada bagian luar tubuh. Bahan-bahannya dapat menyebar secara pasif dari, atau diangkut secara aktif dari, sebagian area patch. Tergantung pada jenis patch, bahan-bahan tersebut dapat disalurkan ke permukaan luar tubuh atau ke dalam tubuh",
-        "from": "Sistem pengiriman obat yang seringkali dilengkapi dengan lapisan perekat yang biasanya ditempelkan pada bagian luar tubuh. Bahan-bahannya dapat menyebar secara pasif dari, atau diangkut secara aktif dari, sebagian area patch. Tergantung pada jenis patch, bahan-bahan tersebut dapat disalurkan ke permukaan luar tubuh atau ke dalam tubuh."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "733db763-6c5c-44cd-a79b-5d29049644bf",
-    "entity_table": "item_packages",
-    "entity_id": "aca23959-4110-4a60-a2ea-f9fcecdbde22",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T07:12:35.758Z",
-    "entity_data": {
-      "id": "aca23959-4110-4a60-a2ea-f9fcecdbde22",
-      "kode": "PAT",
-      "name": "PATCH",
-      "nci_code": "C82332",
-      "created_at": "2025-08-02T12:20:34.674235+00:00",
-      "updated_at": "2025-08-05T07:12:35.758515+00:00",
-      "description": "Sistem pengiriman obat yang seringkali dilengkapi dengan lapisan perekat yang biasanya ditempelkan pada bagian luar tubuh. Bahan-bahannya dapat menyebar secara pasif dari, atau diangkut secara aktif dari, sebagian area patch. Tergantung pada jenis patch, bahan-bahan tersebut dapat disalurkan ke permukaan luar tubuh atau ke dalam tubuh."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Sistem pengiriman obat yang seringkali dilengkapi dengan lapisan perekat yang biasanya ditempelkan pada bagian luar tubuh. Bahan-bahannya dapat menyebar secara pasif dari, atau diangkut secara aktif dari, sebagian area patch. Tergantung pada jenis patch, bahan-bahan tersebut dapat disalurkan ke permukaan luar tubuh atau ke dalam tubuh.",
-        "from": "Sistem pengiriman obat yang seringkali dilengkapi dengan lapisan perekat yang biasanya ditempelkan pada bagian luar tubuh. Bahan-bahannya dapat menyebar secara pasif dari, atau diangkut secara aktif dari, sebagian area patch. Tergantung pada jenis patch, bahan-bahan tersebut dapat disalurkan ke permukaan luar tubuh atau ke dalam tubuh"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "03ccfb94-83e6-4568-bc2c-2a7f4f23c822",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 55,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T07:59:26.883Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T07:59:26.883212+00:00",
-      "description": "Obat jantung koroner."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Obat jantung koroner.",
-        "from": "Obat jantung koroner"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "ca036753-dad8-4f69-afd2-8bfa9ee4c8b7",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 56,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T08:02:46.367Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T08:02:46.367123+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Obat jantung koroner",
-        "from": "Obat jantung koroner."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "c2fa0b42-57ad-4442-9a8a-6dee5e8f7ce4",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 57,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T08:02:55.193Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T08:02:55.193202+00:00",
-      "description": "Obat jantung koroner."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Obat jantung koroner.",
-        "from": "Obat jantung koroner"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "5a259211-8690-4af2-a8f2-0675e2080293",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 13,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T08:13:47.516Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika.",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:13:47.516007+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Narkotika.",
-        "from": "Narkotika"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "91cd7e1c-9628-44c5-9bda-fb1ca0eb18bc",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 14,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T08:13:52.784Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:13:52.784461+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Narkotika",
-        "from": "Narkotika."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "f8e1f524-7cc7-4fdf-943a-a342b9188dad",
-    "entity_table": "item_types",
-    "entity_id": "e8c3fdae-b61f-431d-a6d4-2a14a1252ff0",
-    "version_number": 2,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T08:14:19.829Z",
-    "entity_data": {
-      "id": "e8c3fdae-b61f-431d-a6d4-2a14a1252ff0",
-      "kode": "OTC",
-      "name": "Obat Bebas",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:14:19.829391+00:00",
-      "description": "Over The Counter (Lingkaran Hijau)"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Over The Counter (Lingkaran Hijau)",
-        "from": "Over The Counter (Lingkaran Hijau)."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "bd9c784e-0469-40d3-a6b3-3d33e32ac0a5",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 15,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T08:15:15.413Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:15:15.41396+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Resep Khusus (Lingkaran Merah + Plus).",
-        "from": "Resep Khusus (Lingkaran Merah + Plus)"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "ae2b091b-6942-4182-b431-2377b0f40a2d",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 16,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T08:16:24.109Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:16:24.109722+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Resep Khusus (Lingkaran Merah + Plus)",
-        "from": "Resep Khusus (Lingkaran Merah + Plus)."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "ea66b48e-29e7-4705-b22c-a98b822e32a4",
-    "entity_table": "item_types",
-    "entity_id": "e8c3fdae-b61f-431d-a6d4-2a14a1252ff0",
-    "version_number": 3,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T08:16:33.308Z",
-    "entity_data": {
-      "id": "e8c3fdae-b61f-431d-a6d4-2a14a1252ff0",
-      "kode": "OTC",
-      "name": "Obat Bebas.",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:16:33.308713+00:00",
-      "description": "Over The Counter (Lingkaran Hijau)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Obat Bebas.",
-        "from": "Obat Bebas"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "8926edf0-5818-4ab9-be4d-e99d718b63c9",
-    "entity_table": "item_types",
-    "entity_id": "e8c3fdae-b61f-431d-a6d4-2a14a1252ff0",
-    "version_number": 4,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T08:16:38.845Z",
-    "entity_data": {
-      "id": "e8c3fdae-b61f-431d-a6d4-2a14a1252ff0",
-      "kode": "OTC",
-      "name": "Obat Bebas",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:16:38.845119+00:00",
-      "description": "Over The Counter (Lingkaran Hijau)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Obat Bebas",
-        "from": "Obat Bebas."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "f3d1f98d-73eb-4942-b3fc-0039944c34aa",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 17,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T08:16:52.654Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:16:52.654781+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Resep Khusus (Lingkaran Merah + Plus).",
-        "from": "Resep Khusus (Lingkaran Merah + Plus)"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "72e7cdeb-0bb8-4ac3-94b1-edf6226a6894",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 18,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T08:29:31.128Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:29:31.128717+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Resep Khusus (Lingkaran Merah + Plus)",
-        "from": "Resep Khusus (Lingkaran Merah + Plus)."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "5556bb4f-e95d-4024-b040-0c5cf14c4aef",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 19,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T08:29:39.964Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotikan",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:29:39.96439+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Narkotikan",
-        "from": "Narkotika"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "f0644dd7-a0ca-417d-83d6-d452db21250a",
-    "entity_table": "item_types",
-    "entity_id": "a39eaa1a-b873-475a-9850-c37739d550df",
-    "version_number": 5,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T08:30:16.807Z",
-    "entity_data": {
-      "id": "a39eaa1a-b873-475a-9850-c37739d550df",
-      "kode": "OBT",
-      "name": "Obat Bebas Terbatas",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:30:16.807457+00:00",
-      "description": "Dengan Peringatan (Lingkaran Biru)."
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Dengan Peringatan (Lingkaran Biru).",
-        "from": "Dengan Peringatan (Lingkaran Biru)"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "b2e25f85-06a9-41c1-96ad-92bdb8ea8296",
-    "entity_table": "item_types",
-    "entity_id": "a39eaa1a-b873-475a-9850-c37739d550df",
-    "version_number": 6,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T08:41:06.605Z",
-    "entity_data": {
-      "id": "a39eaa1a-b873-475a-9850-c37739d550df",
-      "kode": "OBT",
-      "name": "Obat Bebas Terbatasm",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:41:06.605541+00:00",
-      "description": "Dengan Peringatan (Lingkaran Biru)."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Obat Bebas Terbatasm",
-        "from": "Obat Bebas Terbatas"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "9657bc93-a130-48e6-a0f8-2ccb37b5fc78",
-    "entity_table": "item_types",
-    "entity_id": "a39eaa1a-b873-475a-9850-c37739d550df",
-    "version_number": 7,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T08:41:22.753Z",
-    "entity_data": {
-      "id": "a39eaa1a-b873-475a-9850-c37739d550df",
-      "kode": "OBT",
-      "name": "Obat Bebas Terbatas",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:41:22.753118+00:00",
-      "description": "Dengan Peringatan (Lingkaran Biru)."
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Obat Bebas Terbatas",
-        "from": "Obat Bebas Terbatasm"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "08688bf1-d054-412d-aa45-c4a75c76fdd8",
-    "entity_table": "item_types",
-    "entity_id": "a39eaa1a-b873-475a-9850-c37739d550df",
-    "version_number": 8,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T08:42:04.161Z",
-    "entity_data": {
-      "id": "a39eaa1a-b873-475a-9850-c37739d550df",
-      "kode": "OBT",
-      "name": "Obat Bebas Terbatas",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:42:04.161474+00:00",
-      "description": "Dengan Peringatan (Lingkaran Biru)"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Dengan Peringatan (Lingkaran Biru)",
-        "from": "Dengan Peringatan (Lingkaran Biru)."
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "69e5cc92-83b6-4a5b-a7f1-146214c1ab7d",
-    "entity_table": "item_types",
-    "entity_id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-    "version_number": 20,
-    "action_type": "UPDATE",
-    "changed_by": "3dc5f797-4bd0-4c68-895a-cbce61d01000",
-    "changed_at": "2025-08-05T08:44:15.911Z",
-    "entity_data": {
-      "id": "ee23059b-7ea2-4eaa-8bc2-0c91f596cbef",
-      "kode": "NAR",
-      "name": "Narkotika",
-      "created_at": "2025-07-31T13:34:38.85522+00:00",
-      "updated_at": "2025-08-05T08:44:15.911339+00:00",
-      "description": "Resep Khusus (Lingkaran Merah + Plus)"
-    },
-    "changed_fields": {
-      "name": {
-        "to": "Narkotika",
-        "from": "Narkotikan"
-      }
-    },
-    "change_description": null
-  },
-  {
-    "id": "8057ff22-6c58-41a2-97ed-b91fbe1b206b",
-    "entity_table": "item_categories",
-    "entity_id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-    "version_number": 58,
-    "action_type": "UPDATE",
-    "changed_by": "18babd2b-1621-4b8f-bb2c-e4de266d8a55",
-    "changed_at": "2025-08-05T08:53:01.383Z",
-    "entity_data": {
-      "id": "320f52d4-4b09-465a-818f-22ddf443f36f",
-      "kode": "AAN",
-      "name": "Antianginal",
-      "created_at": "2025-08-01T03:54:49.798644+00:00",
-      "updated_at": "2025-08-05T08:53:01.383486+00:00",
-      "description": "Obat jantung koroner"
-    },
-    "changed_fields": {
-      "description": {
-        "to": "Obat jantung koroner",
-        "from": "Obat jantung koroner."
+        "to": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi.",
+        "from": "Ampul kaca tersegel yang berisi cairan steril untuk injeksi, harus dipecah saat akan digunakan untuk memastikan sterilitas dan mencegah kontaminasi.."
       }
     },
     "change_description": null

@@ -9,6 +9,15 @@
     "nci_code": "C47914"
   },
   {
+    "id": "1a0ceb4e-5bb1-4fb3-8940-a565bcea09c1",
+    "name": "INJECTION, SUSPENSION, LIPOSOMAL",
+    "code": "ISLI",
+    "description": "Suspensi injeksi dalam bentuk liposomal.",
+    "created_at": "2025-08-02T11:40:15.421Z",
+    "updated_at": "2025-08-07T10:22:49.876Z",
+    "nci_code": "C42951"
+  },
+  {
     "id": "1c87bdfc-0c1b-4b12-a43d-bf599be51915",
     "name": "INJECTION, SOLUTION",
     "code": "ISL",
@@ -520,15 +529,6 @@
     "created_at": "2025-08-02T11:40:15.421Z",
     "updated_at": "2025-08-02T12:32:58.891Z",
     "nci_code": "C42926"
-  },
-  {
-    "id": "1a0ceb4e-5bb1-4fb3-8940-a565bcea09c1",
-    "name": "INJECTION, SUSPENSION, LIPOSOMAL",
-    "code": "ISL",
-    "description": "Suspensi injeksi dalam bentuk liposomal.",
-    "created_at": "2025-08-02T11:40:15.421Z",
-    "updated_at": "2025-08-02T12:32:58.891Z",
-    "nci_code": "C42951"
   },
   {
     "id": "357263dd-1e4d-4e0f-991c-40c887ff6285",
@@ -1400,7 +1400,7 @@
     "code": "AER",
     "description": "Bentuk sediaan bertekanan yang mengandung satu atau lebih bahan aktif yang tersuspensi atau terlarut dalam propelan",
     "created_at": "2025-08-02T11:40:15.421Z",
-    "updated_at": "2025-08-05T06:13:02.142Z",
+    "updated_at": "2025-08-07T10:15:14.408Z",
     "nci_code": "C42887"
   },
   {

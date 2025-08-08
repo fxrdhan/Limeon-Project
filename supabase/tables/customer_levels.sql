@@ -1,5 +1,5 @@
 -- Table Definition: customer_levels
--- Exported from Supabase on: 2025-08-05T13:14:25.968Z
+-- Exported from Supabase on: 2025-08-08T12:52:51.348Z
 
 CREATE TABLE public.customer_levels (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
