@@ -80,6 +80,8 @@ export const useItemGridColumns = () => {
       createCenterAlignColumn({
         field: 'stock',
         headerName: 'Stok',
+        minWidth: 70,
+        maxWidth: 100, // Reduced from 120 to 100 for more compact width
       }),
     ];
 
@@ -96,7 +98,7 @@ export const useItemGridColumns = () => {
     'package_conversions',
     'base_price',
     'sell_price',
-    'stock',
+    // 'stock' - excluded from autoSize, using fixed width range instead
   ];
 
   return {

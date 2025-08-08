@@ -1,7 +1,6 @@
 import {
   forwardRef,
   useRef,
-  useEffect,
   useImperativeHandle,
   useMemo,
   useCallback,
@@ -106,28 +105,19 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       },
     }));
 
-    useEffect(() => {
-      if (rowData && rowData.length > 0 && gridRef.current?.api) {
-        // Use requestAnimationFrame for smoother performance
-        requestAnimationFrame(() => {
-          if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
-            if (autoSizeColumns && autoSizeColumns.length > 0) {
-              gridRef.current.api.autoSizeColumns(autoSizeColumns);
-            } else if (sizeColumnsToFit) {
-              gridRef.current.api.sizeColumnsToFit();
-            }
-          }
-          if (onFirstDataRendered) {
-            onFirstDataRendered();
-          }
-        });
+    // Handle first data rendered - this is the right place for autoSize
+    const handleFirstDataRendered = useCallback(() => {
+      if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
+        if (autoSizeColumns && autoSizeColumns.length > 0) {
+          gridRef.current.api.autoSizeColumns(autoSizeColumns);
+        } else if (sizeColumnsToFit) {
+          gridRef.current.api.sizeColumnsToFit();
+        }
       }
-    }, [
-      rowData, // Include full rowData to satisfy deps
-      autoSizeColumns,
-      sizeColumnsToFit,
-      onFirstDataRendered,
-    ]);
+      if (onFirstDataRendered) {
+        onFirstDataRendered();
+      }
+    }, [autoSizeColumns, sizeColumnsToFit, onFirstDataRendered]);
 
     const defaultColDef: ColDef = {
       sortable: true,
@@ -182,6 +172,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           colResizeDefault={colResizeDefault}
           onRowClicked={onRowClicked}
           onGridReady={handleGridReady}
+          onFirstDataRendered={handleFirstDataRendered}
           onGridPreDestroyed={handleGridPreDestroyed}
           {...(normalizedRowSelection && {
             rowSelection: normalizedRowSelection,

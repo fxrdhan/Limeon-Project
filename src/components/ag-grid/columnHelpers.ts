@@ -7,6 +7,7 @@ export const createTextColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
   minWidth: config.minWidth || 100,
+  maxWidth: config.maxWidth,
   flex: config.flex,
   cellStyle: config.cellStyle || {
     overflow: 'hidden',
@@ -24,6 +25,7 @@ export const createWrapTextColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
   minWidth: config.minWidth || 120,
+  maxWidth: config.maxWidth,
   cellStyle: config.cellStyle || {
     overflow: 'visible',
     textOverflow: 'unset',
@@ -39,6 +41,7 @@ export const createNumberColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
   minWidth: config.minWidth || 120,
+  maxWidth: config.maxWidth,
   cellStyle: config.cellStyle || { textAlign: 'right' },
   valueGetter: config.valueGetter,
   valueFormatter: config.valueFormatter,
@@ -50,6 +53,7 @@ export const createCurrencyColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
   minWidth: config.minWidth || 120,
+  maxWidth: config.maxWidth,
   cellStyle: config.cellStyle || { textAlign: 'right' },
   valueFormatter:
     config.valueFormatter ||
@@ -69,6 +73,7 @@ export const createCenterAlignColumn = (config: ColumnConfig): ColDef => ({
   field: config.field,
   headerName: config.headerName,
   minWidth: config.minWidth || 80,
+  maxWidth: config.maxWidth, // Support maxWidth to prevent excessive expansion
   cellStyle: config.cellStyle || { textAlign: 'center' },
   valueGetter: config.valueGetter,
   valueFormatter: config.valueFormatter,
