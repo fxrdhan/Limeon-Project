@@ -1,5 +1,5 @@
 -- Function: process_purchase
--- Exported from Supabase on: 2025-08-05T13:14:25.924Z
+-- Exported from Supabase on: 2025-08-08T12:52:51.283Z
 
 CREATE OR REPLACE FUNCTION public.process_purchase(p_supplier_id uuid, p_invoice_number character varying, p_date date, p_total numeric, p_payment_status character varying, p_payment_method character varying, p_notes text, p_so_number character varying, p_due_date date, p_vat_amount numeric, p_is_vat_included boolean, p_items jsonb)
  RETURNS uuid

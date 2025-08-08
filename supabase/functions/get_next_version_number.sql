@@ -1,5 +1,5 @@
 -- Function: get_next_version_number
--- Exported from Supabase on: 2025-08-05T13:14:25.919Z
+-- Exported from Supabase on: 2025-08-08T12:52:51.283Z
 
 CREATE OR REPLACE FUNCTION public.get_next_version_number(p_table text, p_entity_id uuid)
  RETURNS integer

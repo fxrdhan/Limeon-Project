@@ -1,5 +1,5 @@
 -- Table Definition: company_profiles
--- Exported from Supabase on: 2025-08-05T13:14:25.967Z
+-- Exported from Supabase on: 2025-08-08T12:52:51.348Z
 
 CREATE TABLE public.company_profiles (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

@@ -1,5 +1,5 @@
 -- Function: update_item_units_updated_at
--- Exported from Supabase on: 2025-08-05T13:14:25.919Z
+-- Exported from Supabase on: 2025-08-08T12:52:51.282Z
 
 CREATE OR REPLACE FUNCTION public.update_item_units_updated_at()
  RETURNS trigger

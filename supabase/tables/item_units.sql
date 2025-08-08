@@ -1,5 +1,5 @@
 -- Table Definition: item_units
--- Exported from Supabase on: 2025-08-05T13:14:25.976Z
+-- Exported from Supabase on: 2025-08-08T12:52:51.349Z
 
 CREATE TABLE public.item_units (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
