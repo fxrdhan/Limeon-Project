@@ -117,7 +117,6 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           overlayNoRowsTemplate={shouldSuppressOverlay ? '' : overlayTemplate}
           autoSizeColumns={columnsToAutoSize}
           onFirstDataRendered={undefined}
-          animateRows={false}
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
           style={{
