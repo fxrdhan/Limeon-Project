@@ -1,6 +1,7 @@
 import React from 'react';
 import ImageUploader from '@/components/image-manager';
-import { FaPencilAlt, FaSpinner } from 'react-icons/fa';
+import { FaPencilAlt } from 'react-icons/fa';
+import { ClipLoader } from 'react-spinners';
 import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
 
 const IdentityImageUploader: React.FC = () => {
@@ -106,7 +107,7 @@ const IdentityImageUploader: React.FC = () => {
           onImageDelete={handleImageDeleteInternal}
           disabled={isUploadingImage || mode !== 'add'}
           loadingIcon={
-            <FaSpinner className="text-white text-xl animate-spin" />
+            <ClipLoader color="#ffffff" size={20} loading={true} />
           }
           defaultIcon={<FaPencilAlt className="text-white text-lg" />}
         >

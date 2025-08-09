@@ -197,7 +197,7 @@ const Profile = () => {
                   duration: 0.3,
                 },
               }}
-              className="fixed top-0 right-0 w-60 bg-white rounded-bl-2xl shadow-xl z-50 border border-gray-100 overflow-hidden backdrop-blur-xs"
+              className="fixed top-0 right-0 w-72 bg-white rounded-bl-2xl shadow-xl z-50 border border-gray-100 overflow-hidden backdrop-blur-xs"
               style={{ marginTop: '0px' }}
             >
               <div className="p-4 pt-6">

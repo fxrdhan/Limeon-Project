@@ -66,8 +66,10 @@ This project incorporates and builds upon several outstanding open-source librar
 - **[jsdiff](https://github.com/kpdecker/jsdiff)** by Kevin Decker - Text diff implementation using Myers O(ND) algorithm.
 - **[fuzzysort](https://github.com/farzher/fuzzysort)** by Stephen Kamenar - Fast SublimeText-like fuzzy search for JavaScript with intelligent ranking and highlighting.
 - **[React Icons](https://github.com/react-icons/react-icons)** - Popular icon libraries as React components with ES6 imports and TypeScript support.
+- **[CompressorJS](https://github.com/fengyuanchen/compressorjs)** by Chen Fengyuan - Client-side image compression library using native browser canvas with automatic format conversion and quality optimization.
+- **[React Spinners](https://github.com/davidhu2000/react-spinners)** by David Hu - Collection of loading spinner components for React with TypeScript support and customizable animations.
 
-We are grateful to all maintainers and contributors of these projects for their excellent work that makes this PharmaSys possible.
+We are grateful to all maintainers and contributors of these projects for their excellent work that has accelerated the development process of PharmaSys.
 
 ---
 

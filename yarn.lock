@@ -1764,9 +1764,9 @@ __metadata:
     ag-grid-community: ^34.1.0
     ag-grid-react: ^34.1.0
     axios: ^1.11.0
-    browser-image-compression: ^2.0.2
     chart.js: ^4.5.0
     classnames: ^2.5.1
+    compressorjs: ^1.2.1
     concurrently: ^9.2.0
     dotenv: ^17.2.1
     eslint: ^9.32.0
@@ -1784,6 +1784,7 @@ __metadata:
     react-dom: ^19.1.1
     react-icons: ^5.5.0
     react-router-dom: ^7.7.1
+    react-spinners: ^0.17.0
     supabase: ^2.33.9
     tailwindcss: ^4.1.11
     tsx: ^4.20.3
@@ -1840,6 +1841,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"blueimp-canvas-to-blob@npm:^3.29.0":
+  version: 3.29.0
+  resolution: "blueimp-canvas-to-blob@npm:3.29.0"
+  checksum: 6a55b90fbe958b75f7c78ff9e7617c01254d29cc8567ea6c853cd26a52518b3dfce28635f6964130ac738ee8ff9fb9c0ca094db2ceeaa021ff0432c1985416eb
+  languageName: node
+  linkType: hard
+
 "brace-expansion@npm:^1.1.7":
   version: 1.1.12
   resolution: "brace-expansion@npm:1.1.12"
@@ -1865,15 +1873,6 @@ __metadata:
   dependencies:
     fill-range: ^7.1.1
   checksum: b95aa0b3bd909f6cd1720ffcf031aeaf46154dd88b4da01f9a1d3f7ea866a79eba76a6d01cbc3c422b2ee5cdc39a4f02491058d5df0d7bf6e6a162a832df1f69
-  languageName: node
-  linkType: hard
-
-"browser-image-compression@npm:^2.0.2":
-  version: 2.0.2
-  resolution: "browser-image-compression@npm:2.0.2"
-  dependencies:
-    uzip: 0.20201231.0
-  checksum: 16051f07b0ec3927d30600d244d07d46bd41de16d6c44b872efe89f4b2b22dbd9dfbb66e3d1ff2c6282057722456a53759996e1478774dc520843ffb48f7441e
   languageName: node
   linkType: hard
 
@@ -1994,6 +1993,16 @@ __metadata:
   dependencies:
     delayed-stream: ~1.0.0
   checksum: 49fa4aeb4916567e33ea81d088f6584749fc90c7abec76fd516bf1c5aa5c79f3584b5ba3de6b86d26ddd64bae5329c4c7479343250cfe71c75bb366eae53bb7c
+  languageName: node
+  linkType: hard
+
+"compressorjs@npm:^1.2.1":
+  version: 1.2.1
+  resolution: "compressorjs@npm:1.2.1"
+  dependencies:
+    blueimp-canvas-to-blob: ^3.29.0
+    is-blob: ^2.1.0
+  checksum: 8b25fc29b7908216f7029e807623ae9c034fb0e77a72a752686bdd255bd3b1a5cc004b6651cf7ca948c1f86f3151ac3fc00800119d17f8a248d2f0a54570c8b8
   languageName: node
   linkType: hard
 
@@ -2894,6 +2903,13 @@ __metadata:
     jsbn: 1.1.0
     sprintf-js: ^1.1.3
   checksum: aa15f12cfd0ef5e38349744e3654bae649a34c3b10c77a674a167e99925d1549486c5b14730eebce9fea26f6db9d5e42097b00aa4f9f612e68c79121c71652dc
+  languageName: node
+  linkType: hard
+
+"is-blob@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "is-blob@npm:2.1.0"
+  checksum: ce24917bf50a52736e37702a14bc729a0e1eab6bf61ac0b8e6ee86caf33d73eba297131736f8e54615732d08168859493ba7ced4fc840bb5b7c2ae21a5de6861
   languageName: node
   linkType: hard
 
@@ -3836,6 +3852,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-spinners@npm:^0.17.0":
+  version: 0.17.0
+  resolution: "react-spinners@npm:0.17.0"
+  peerDependencies:
+    react: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 5790462437cae07763657cc32e7ebd2252465df70b1ee822a34c92191496219e8c77a2a10f55b9a9f804ec6d79c690c6dedfefd96333228b0a4ffd6d9dcf3d04
+  languageName: node
+  linkType: hard
+
 "react@npm:^19.1.1":
   version: 19.1.1
   resolution: "react@npm:19.1.1"
@@ -4361,13 +4387,6 @@ __metadata:
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
   checksum: 5e639c9273200adb6985b512c96a3a02c458bc8ca1a72e91da9cdc6426144fc6538dca434b0f99b28fb1baabc82e1c383ba7900b25ccdcb43758fb058dc66c34
-  languageName: node
-  linkType: hard
-
-"uzip@npm:0.20201231.0":
-  version: 0.20201231.0
-  resolution: "uzip@npm:0.20201231.0"
-  checksum: 34253f4c3d996571b10b659eea415bec952bde940e1fd44090ce19687b6dbaae411d8e6321b9028e44aa442379659d71bb39e95ba15de0626cfe970d90b24f40
   languageName: node
   linkType: hard
 

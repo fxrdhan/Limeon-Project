@@ -60,7 +60,7 @@ export interface BadgeProps {
   animate?: boolean;
 }
 
-export type ButtonVariant = 'primary' | 'secondary' | 'text' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'text' | 'danger' | 'text-danger';
 
 export type ButtonSize = 'sm' | 'md' | 'lg';
 

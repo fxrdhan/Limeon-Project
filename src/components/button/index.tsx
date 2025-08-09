@@ -4,7 +4,7 @@ import React from 'react';
 
 const Button = React.forwardRef<
   HTMLButtonElement,
-  ButtonProps & { withGlow?: boolean }
+  ButtonProps & { withGlow?: boolean; withUnderline?: boolean }
 >(
   (
     {
@@ -15,18 +15,29 @@ const Button = React.forwardRef<
       isLoading = false,
       fullWidth = false,
       withGlow = false,
+      withUnderline = true,
       ...props
     },
     ref
   ) => {
+    const getTextVariantClass = () => {
+      const baseClass = 'text-gray-500 hover:text-black';
+      const underlineClass = withUnderline
+        ? 'hover:underline underline-offset-2 decoration-2'
+        : '';
+      return `${baseClass} ${underlineClass}`;
+    };
+
     const variants: Record<ButtonVariant, string> = {
-      text: 'text-gray-500 hover:text-black hover:underline underline-offset-2 decoration-2',
+      text: getTextVariantClass(),
       primary:
         'rounded-lg ring-0 outline-hidden shadow-md bg-primary flex items-center text-white hover:text-white',
       secondary:
         'rounded-lg bg-secondary bg-secondary ring-0 outline-hidden flex items-center text-white hover:text-white',
       danger:
         'text-danger hover:text-white hover:bg-danger/80 outline-hidden hover:opacity-100!',
+      'text-danger':
+        'text-danger hover:text-danger hover:bg-danger/10 outline-hidden hover:opacity-100!',
     };
 
     const sizes = {
@@ -48,7 +59,7 @@ const Button = React.forwardRef<
       if (variant === 'primary') {
         glowClass =
           'hover:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)] focus:shadow-[0_0_5px_var(--color-primary),0_0_15px_var(--color-primary),0_0_30px_var(--color-primary)]';
-      } else if (variant === 'danger') {
+      } else if (variant === 'danger' || variant === 'text-danger') {
         glowClass =
           'focus:shadow-[0_0_5px_var(--color-danger),0_0_15px_var(--color-danger),0_0_30px_var(--color-danger)] hover:shadow-[0_0_5px_var(--color-danger),0_0_15px_var(--color-danger),0_0_30px_var(--color-danger)]';
       }
