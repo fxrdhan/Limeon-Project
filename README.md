@@ -57,13 +57,15 @@ This project is built with:
 - **Storage:** [Supabase Storage](https://supabase.com/storage)
 - **Server Side Caching:** [Upstash Redis](https://upstash.com/)
 
-### Special Thanks
+### Another Libraries
 
 This project incorporates and builds upon several outstanding open-source libraries:
 
 - **[AG Grid](https://ag-grid.com/)** - High-performance data grid for displaying and managing large datasets with a lot of advanced features.
 - **[classnames](https://github.com/JedWatson/classnames)** by Jed Watson - A utility for conditionally joining CSS class names, making dynamic styling more elegant and maintainable.
 - **[jsdiff](https://github.com/kpdecker/jsdiff)** by Kevin Decker - Text diff implementation using Myers O(ND) algorithm.
+- **[fuzzysort](https://github.com/farzher/fuzzysort)** by Stephen Kamenar - Fast SublimeText-like fuzzy search for JavaScript with intelligent ranking and highlighting.
+- **[React Icons](https://github.com/react-icons/react-icons)** - Popular icon libraries as React components with ES6 imports and TypeScript support.
 
 We are grateful to all maintainers and contributors of these projects for their excellent work that makes this PharmaSys possible.
 

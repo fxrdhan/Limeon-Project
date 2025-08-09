@@ -1768,7 +1768,6 @@ __metadata:
     chart.js: ^4.5.0
     classnames: ^2.5.1
     concurrently: ^9.2.0
-    dayjs: ^1.11.13
     dotenv: ^17.2.1
     eslint: ^9.32.0
     eslint-config-prettier: ^10.1.8
@@ -2052,13 +2051,6 @@ __metadata:
   version: 4.0.1
   resolution: "data-uri-to-buffer@npm:4.0.1"
   checksum: 0d0790b67ffec5302f204c2ccca4494f70b4e2d940fea3d36b09f0bb2b8539c2e86690429eb1f1dc4bcc9e4df0644193073e63d9ee48ac9fce79ec1506e4aa4c
-  languageName: node
-  linkType: hard
-
-"dayjs@npm:^1.11.13":
-  version: 1.11.13
-  resolution: "dayjs@npm:1.11.13"
-  checksum: f388db88a6aa93956c1f6121644e783391c7b738b73dbc54485578736565c8931bdfba4bb94e9b1535c6e509c97d5deb918bbe1ae6b34358d994de735055cca9
   languageName: node
   linkType: hard
 

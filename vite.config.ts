@@ -46,7 +46,6 @@ export default defineConfig({
           'ui-libs': [
             '@headlessui/react',
             'react-icons',
-            'dayjs',
             'browser-image-compression',
           ],
         },
