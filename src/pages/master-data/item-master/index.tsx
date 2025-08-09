@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { GridApi, GridReadyEvent } from 'ag-grid-community';
 
 // Components
 import PageTitle from '@/components/page-title';
@@ -108,6 +109,9 @@ const ItemMasterNew = memo(() => {
     getTabFromPath(location.pathname)
   );
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // AG Grid API reference for items tab filtering
+  const [itemGridApi, setItemGridApi] = useState<GridApi | null>(null);
 
   // ✅ REALTIME WORKING! Use postgres_changes approach
   useItemMasterRealtime({ enabled: true });
@@ -205,10 +209,28 @@ const ItemMasterNew = memo(() => {
 
   const handleItemFilterSearch = useCallback(
     async (filterSearch: FilterSearch | null) => {
-      // Handle AG Grid filter for items
-      console.log('Item filter search:', filterSearch);
+      if (!filterSearch) {
+        if (itemGridApi && !itemGridApi.isDestroyed()) {
+          itemGridApi.setFilterModel(null);
+          itemGridApi.onFilterChanged();
+        }
+        return;
+      }
+
+      if (itemGridApi && !itemGridApi.isDestroyed()) {
+        try {
+          await itemGridApi.setColumnFilterModel(filterSearch.field, {
+            filterType: 'text',
+            type: filterSearch.operator,
+            filter: filterSearch.value,
+          });
+          itemGridApi.onFilterChanged();
+        } catch (error) {
+          console.error('Failed to apply filter:', error);
+        }
+      }
     },
-    []
+    [itemGridApi]
   );
 
   const {
@@ -226,6 +248,22 @@ const ItemMasterNew = memo(() => {
     onClear: handleItemClear,
     onFilterSearch: handleItemFilterSearch,
   });
+
+  // Enhanced onGridReady to capture grid API for items tab
+  const enhancedItemOnGridReady = useCallback(
+    (params: GridReadyEvent) => {
+      setItemGridApi(params.api);
+      itemOnGridReady(params);
+    },
+    [itemOnGridReady]
+  );
+
+  // Cleanup grid API reference when activeTab changes or component unmounts
+  useEffect(() => {
+    if (activeTab !== 'items') {
+      setItemGridApi(null);
+    }
+  }, [activeTab]);
 
   // Memoize SearchToolbar callback props for stable references (after itemSearch is declared)
   const memoizedOnAdd = useCallback(() => {
@@ -337,7 +375,7 @@ const ItemMasterNew = memo(() => {
                   onItemsPerPageChange={
                     itemsManagement.handleItemsPerPageChange
                   }
-                  onGridReady={itemOnGridReady}
+                  onGridReady={enhancedItemOnGridReady}
                   isExternalFilterPresent={itemIsExternalFilterPresent}
                   doesExternalFilterPass={itemDoesExternalFilterPass}
                 />
