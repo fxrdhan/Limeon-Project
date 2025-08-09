@@ -5,7 +5,10 @@ interface ValidationFormData {
   name: string;
   category_id: string;
   type_id: string;
+  package_id: string;
   unit_id: string;
+  dosage_id: string;
+  manufacturer_id: string;
   base_price: number;
   sell_price: number;
 }
@@ -25,11 +28,12 @@ export const useItemFormValidation = ({
 }: UseItemFormValidationProps) => {
   const formIsInvalid = useMemo(
     () =>
-      !formData.code?.trim() ||
       !formData.name?.trim() ||
       !formData.category_id ||
       !formData.type_id ||
-      !formData.unit_id ||
+      !formData.package_id ||
+      !formData.dosage_id ||
+      !formData.manufacturer_id ||
       !formData.base_price ||
       formData.base_price <= 0 ||
       !formData.sell_price ||

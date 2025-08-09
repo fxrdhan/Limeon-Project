@@ -1,26 +1,27 @@
-import React from 'react';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 
 interface ItemCodeFieldProps {
   code: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  generatedCode?: string;
   error?: string;
 }
 
 export default function ItemCodeField({
   code,
-  onChange,
+  generatedCode,
   error,
 }: ItemCodeFieldProps) {
+  const displayCode = generatedCode || code;
+  
   return (
     <FormField label="Kode Item" className="md:col-span-1">
       <Input
         name="code"
-        value={code}
-        onChange={onChange}
-        placeholder="Masukkan kode item"
-        className="w-full"
+        value={displayCode}
+        readOnly
+        placeholder="Auto-generated"
+        className="w-full bg-gray-50"
         error={error}
         required
       />
