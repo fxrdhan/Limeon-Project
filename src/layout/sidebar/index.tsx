@@ -8,9 +8,8 @@ import {
   FaChartBar,
   FaCog,
   FaAngleDown,
-  FaLock,
-  FaUnlock,
 } from 'react-icons/fa';
+import { HiLockClosed, HiLockOpen } from 'react-icons/hi';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useMemo, useCallback, useEffect, useRef, JSX } from 'react';
@@ -30,30 +29,10 @@ interface SidebarProps {
   collapseSidebar: () => void;
 }
 
-const LockIcon = () => (
-  <motion.div
-    key="lock"
-    initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-    animate={{ opacity: 1, rotate: 0, scale: 1 }}
-    exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-    transition={{ duration: 0.2 }}
-    className="absolute inset-0 flex items-center justify-center"
-  >
-    <FaLock />
-  </motion.div>
-);
-
-const UnlockIcon = () => (
-  <motion.div
-    key="unlock"
-    initial={{ opacity: 0, rotate: 90, scale: 0.5 }}
-    animate={{ opacity: 1, rotate: 0, scale: 1 }}
-    exit={{ opacity: 0, rotate: -90, scale: 0.5 }}
-    transition={{ duration: 0.2 }}
-    className="absolute inset-0 flex items-center justify-center"
-  >
-    <FaUnlock />
-  </motion.div>
+const LockToggleIcon = ({ isLocked }: { isLocked: boolean }) => (
+  <div className="transition-all duration-200">
+    {isLocked ? <HiLockClosed /> : <HiLockOpen />}
+  </div>
 );
 
 const Sidebar = ({
@@ -417,15 +396,11 @@ const Sidebar = ({
           {!collapsed && (
             <motion.button
               onClick={toggleLock}
-              className="p-2 rounded-full text-gray-400 hover:bg-gray-100 focus:outline-hidden transition-colors duration-150 relative overflow-hidden"
+              className="text-gray-400 hover:text-gray-600 focus:outline-hidden transition-colors duration-150 relative cursor-pointer"
               title={isLocked ? 'Buka Kunci Sidebar' : 'Kunci Sidebar'}
               aria-label={isLocked ? 'Buka Kunci Sidebar' : 'Kunci Sidebar'}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
             >
-              <AnimatePresence mode="wait">
-                {isLocked ? <LockIcon /> : <UnlockIcon />}
-              </AnimatePresence>
+              <LockToggleIcon isLocked={isLocked} />
             </motion.button>
           )}
         </div>

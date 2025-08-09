@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import Button from '@/components/button';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
+import { ColumnVisibilityDropdown } from '@/components/column-visibility';
 import { FaPlus } from 'react-icons/fa';
 import type { SearchColumn, FilterSearch } from '@/types/search';
 
@@ -24,6 +25,13 @@ interface SearchToolbarProps<T = unknown> {
   // Optional props for items tab specific behavior
   items?: T[];
   onItemSelect?: (item: T) => void;
+  // Column visibility props
+  columnOptions?: Array<{
+    key: string;
+    label: string;
+    visible: boolean;
+  }>;
+  onColumnToggle?: (columnKey: string, visible: boolean) => void;
 }
 
 const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
@@ -36,6 +44,8 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   onKeyDown,
   items,
   onItemSelect,
+  columnOptions,
+  onColumnToggle,
 }: SearchToolbarProps<T>) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Use custom onKeyDown if provided
@@ -75,6 +85,12 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
         <FaPlus className="mr-2" />
         {buttonText}
       </Button>
+      {columnOptions && onColumnToggle && (
+        <ColumnVisibilityDropdown
+          columns={columnOptions}
+          onColumnToggle={onColumnToggle}
+        />
+      )}
     </div>
   );
 });
