@@ -9,10 +9,16 @@ import {
   formatBaseCurrency,
 } from '@/components/ag-grid';
 import type { PackageConversion } from '@/types';
+interface UseItemGridColumnsProps {
+  visibleColumns?: string[];
+  isColumnVisible?: (columnKey: string) => boolean;
+}
 
-export const useItemGridColumns = () => {
+export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
+  const { isColumnVisible } = props;
+  
   const columnDefs: ColDef[] = useMemo(() => {
-    const columns: ColDef[] = [
+    const allColumns: ColDef[] = [
       createTextColumn({
         field: 'name',
         headerName: 'Nama Item',
@@ -85,21 +91,35 @@ export const useItemGridColumns = () => {
       }),
     ];
 
-    return columns;
-  }, []);
+    // Filter columns based on visibility
+    if (isColumnVisible) {
+      return allColumns.filter(column => isColumnVisible(column.field as string));
+    }
 
-  const columnsToAutoSize = [
-    'code',
-    'manufacturer',
-    'barcode',
-    'category.name',
-    'type.name',
-    'unit.name',
-    'package_conversions',
-    'base_price',
-    'sell_price',
-    // 'stock' - excluded from autoSize, using fixed width range instead
-  ];
+    return allColumns;
+  }, [isColumnVisible]);
+
+  const columnsToAutoSize = useMemo(() => {
+    const allColumnsToAutoSize = [
+      'code',
+      'manufacturer',
+      'barcode',
+      'category.name',
+      'type.name',
+      'unit.name',
+      'package_conversions',
+      'base_price',
+      'sell_price',
+      // 'stock' - excluded from autoSize, using fixed width range instead
+    ];
+    
+    // Filter columns to auto-size based on visibility
+    if (isColumnVisible) {
+      return allColumnsToAutoSize.filter(columnKey => isColumnVisible(columnKey));
+    }
+    
+    return allColumnsToAutoSize;
+  }, [isColumnVisible]);
 
   return {
     columnDefs,

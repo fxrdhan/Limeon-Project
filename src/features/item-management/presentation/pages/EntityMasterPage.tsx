@@ -24,6 +24,7 @@ import {
   useEntityManager,
   useGenericEntityManagement,
 } from '../../application/hooks/collections';
+import { useEntityColumnVisibility } from '../../application/hooks/ui';
 import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
 import { EntityManagementModal } from '../templates/entity';
 
@@ -57,8 +58,6 @@ const GRID_STYLE = {
   marginBottom: '1rem',
 } as const;
 
-const getAutoSizeColumns = (hasNciCode?: boolean) =>
-  hasNciCode ? ['code', 'name', 'nci_code'] : ['code', 'name'];
 
 const getOverlayTemplate = (
   search: string,
@@ -137,6 +136,17 @@ const EntityMasterPage: React.FC = memo(() => {
     [activeTab, entityManager.entityConfigs]
   );
 
+  // Column visibility management
+  const {
+    columnOptions,
+    isColumnVisible,
+    handleColumnToggle,
+    autoSizeColumns,
+  } = useEntityColumnVisibility({
+    entityType: activeTab,
+    currentConfig,
+  });
+
   // Simple wrappers - no memoization needed
 
   // Handle filter from search bar
@@ -206,8 +216,8 @@ const EntityMasterPage: React.FC = memo(() => {
   }, [activeTab]);
 
   // Memoize column definitions
-  const columnDefs: ColDef[] = useMemo(
-    () => [
+  const columnDefs: ColDef[] = useMemo(() => {
+    const allColumns: ColDef[] = [
       createTextColumn({
         field: 'code',
         headerName: 'Kode',
@@ -268,9 +278,11 @@ const EntityMasterPage: React.FC = memo(() => {
           return params.data.description || '-';
         },
       }),
-    ],
-    [currentConfig]
-  );
+    ];
+
+    // Filter columns based on visibility
+    return allColumns.filter(column => isColumnVisible(column.field as string));
+  }, [currentConfig, isColumnVisible]);
 
   const onRowClicked = useCallback(
     (event: RowClickedEvent) => {
@@ -338,6 +350,8 @@ const EntityMasterPage: React.FC = memo(() => {
             placeholder={memoizedPlaceholder}
             onAdd={entityManager.openAddModal}
             onKeyDown={handleKeyDown}
+            columnOptions={columnOptions}
+            onColumnToggle={handleColumnToggle}
           />
         </div>
       </div>
@@ -390,7 +404,7 @@ const EntityMasterPage: React.FC = memo(() => {
                   search,
                   currentConfig
                 )}
-                autoSizeColumns={getAutoSizeColumns(currentConfig?.hasNciCode)}
+                autoSizeColumns={autoSizeColumns}
                 isExternalFilterPresent={isExternalFilterPresent}
                 doesExternalFilterPass={doesExternalFilterPass}
                 style={{
