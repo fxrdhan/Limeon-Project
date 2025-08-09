@@ -46,7 +46,8 @@ export default defineConfig({
           'ui-libs': [
             '@headlessui/react',
             'react-icons',
-            'browser-image-compression',
+            'compressorjs',
+            'react-spinners',
           ],
         },
       },

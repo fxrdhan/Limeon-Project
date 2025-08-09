@@ -1,7 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { ImageUploaderProps } from '@/types';
-import { FaSpinner, FaUpload, FaEdit, FaTrash } from 'react-icons/fa';
+import { ClipLoader } from 'react-spinners';
+import { RxPencil2, RxTrash } from 'react-icons/rx';
+import { LuUpload } from 'react-icons/lu';
+import Button from '@/components/button';
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
   id,
@@ -12,7 +15,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'],
   className = '',
   disabled = false,
-  loadingIcon = <FaSpinner className="text-white text-xl animate-spin" />,
+  loadingIcon = <ClipLoader color="#ffffff" size={20} loading={true} />,
   shape = 'full',
 }) => {
   const [isHoveringContainer, setIsHoveringContainer] = useState(false);
@@ -88,7 +91,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   };
 
-  const handleDeleteImage = async () => {
+  const handleDeleteImage = useCallback(async () => {
     if (!onImageDelete || isDeleting || disabled) return;
 
     setIsDeleting(true);
@@ -102,13 +105,53 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [onImageDelete, isDeleting, disabled]);
 
-  const handleUploadClick = () => {
+  const handleUploadClick = useCallback(() => {
     if (fileInputRef.current && !disabled && !isUploading && !isDeleting) {
       fileInputRef.current.click();
     }
-  };
+  }, [disabled, isUploading, isDeleting]);
+
+  const getPopupOptions = useCallback(() => {
+    const options = [];
+
+    if (!hasImage) {
+      options.push({
+        label: 'Upload',
+        icon: <LuUpload className="w-4 h-4" />,
+        action: handleUploadClick,
+        disabled: isUploading || isDeleting,
+      });
+    } else {
+      options.push({
+        label: 'Edit',
+        icon: <RxPencil2 className="w-4 h-4" />,
+        action: handleUploadClick,
+        disabled: isUploading || isDeleting,
+      });
+      // Always show delete option when image exists
+      options.push({
+        label: 'Hapus',
+        icon: <RxTrash className="w-4 h-4" />,
+        action: onImageDelete
+          ? handleDeleteImage
+          : () => {
+              alert('Fitur hapus gambar belum tersedia untuk komponen ini');
+            },
+        disabled: isUploading || isDeleting,
+      });
+    }
+
+    return options;
+  }, [
+    hasImage,
+    handleUploadClick,
+    isUploading,
+    isDeleting,
+    onImageDelete,
+    handleDeleteImage,
+  ]);
 
   const handleMouseEnter = (target: 'container' | 'popup') => {
     if (hideTimeoutRef.current) {
@@ -134,14 +177,27 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     }, 100); // 100ms delay for smoother transition
   };
 
-  const calculatePopupPosition = () => {
+  const calculatePopupPosition = useCallback(() => {
     if (!containerRef.current) return;
 
     const containerRect = containerRef.current.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
-    const popupWidth = 80; // Estimated popup width + smaller margin
-    const spaceOnRight = viewportWidth - containerRect.right;
-    const spaceOnLeft = containerRect.left;
+
+    // Get actual popup width by measuring the portal content
+    let popupWidth = 120; // Default fallback width
+    if (portalRef.current) {
+      const popupRect = portalRef.current.getBoundingClientRect();
+      popupWidth = popupRect.width || 120;
+    } else {
+      // Estimate based on content - more conservative estimate
+      const options = getPopupOptions();
+      const hasDelete = options.some(option => option.label === 'Hapus');
+      popupWidth = hasDelete ? 120 : 100; // Wider if delete option exists
+    }
+
+    const margin = 8; // Margin from container edge
+    const spaceOnRight = viewportWidth - containerRect.right - margin;
+    const spaceOnLeft = containerRect.left - margin;
 
     // Calculate popup coordinates relative to viewport
     const centerY = containerRect.top + containerRect.height / 2;
@@ -151,34 +207,49 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     // Prefer right if there's enough space, otherwise use left if there's space there
     if (spaceOnRight >= popupWidth) {
       position = 'right';
-      popupX = containerRect.right + 4; // 4px margin - closer to image
+      popupX = containerRect.right + margin;
     } else if (spaceOnLeft >= popupWidth) {
       position = 'left';
-      popupX = containerRect.left - popupWidth - 4; // 4px margin - closer to image
+      popupX = containerRect.left - popupWidth - margin;
     } else {
       // If neither side has enough space, use the side with more space
+      // But still respect the minimum space requirements
       if (spaceOnRight >= spaceOnLeft) {
         position = 'right';
-        popupX = containerRect.right + 4;
+        popupX = Math.min(
+          containerRect.right + margin,
+          viewportWidth - popupWidth - 8
+        );
       } else {
         position = 'left';
-        popupX = containerRect.left - popupWidth - 4;
+        popupX = Math.max(containerRect.left - popupWidth - margin, 8);
       }
     }
 
     setPopupPosition(position);
     setPopupCoordinates({ x: popupX, y: centerY });
-  };
+  }, [getPopupOptions]);
 
   useEffect(() => {
     if (isVisible) {
+      // Initial calculation
       calculatePopupPosition();
+
+      // Recalculate after popup is rendered to get accurate dimensions
+      const timer = setTimeout(() => {
+        calculatePopupPosition();
+      }, 10);
+
       // Recalculate on window resize
       const handleResize = () => calculatePopupPosition();
       window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('resize', handleResize);
+      };
     }
-  }, [isVisible]);
+  }, [isVisible, hasImage, calculatePopupPosition]); // Added hasImage dependency to recalculate when popup content changes
 
   useEffect(() => {
     // Handle click outside and escape key
@@ -219,39 +290,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       }
     };
   }, []);
-
-  const getPopupOptions = () => {
-    const options = [];
-
-    if (!hasImage) {
-      options.push({
-        label: 'Upload',
-        icon: <FaUpload className="w-3 h-3" />,
-        action: handleUploadClick,
-        disabled: isUploading || isDeleting,
-      });
-    } else {
-      options.push({
-        label: 'Edit',
-        icon: <FaEdit className="w-3 h-3" />,
-        action: handleUploadClick,
-        disabled: isUploading || isDeleting,
-      });
-      // Always show delete option when image exists
-      options.push({
-        label: 'Hapus',
-        icon: <FaTrash className="w-3 h-3" />,
-        action: onImageDelete
-          ? handleDeleteImage
-          : () => {
-              alert('Fitur hapus gambar belum tersedia untuk komponen ini');
-            },
-        disabled: isUploading || isDeleting,
-      });
-    }
-
-    return options;
-  };
 
   return (
     <div className="relative inline-block">
@@ -305,20 +343,27 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             onMouseEnter={() => handleMouseEnter('popup')}
             onMouseLeave={() => handleMouseLeave('popup')}
           >
-            <div className="bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[90px] animate-in fade-in-0 zoom-in-95 duration-200">
+            <div className="px-1 py-1 bg-white border border-gray-200 rounded-xl shadow-lg min-w-[90px] animate-in fade-in-0 zoom-in-95 duration-200">
               {getPopupOptions().map(option => (
-                <button
+                <Button
                   key={option.label}
+                  variant={option.label === 'Hapus' ? 'text-danger' : 'text'}
+                  size="sm"
+                  withUnderline={false}
                   onClick={event => {
                     event.stopPropagation();
                     option.action();
                   }}
                   disabled={option.disabled}
-                  className="w-full px-3 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer"
+                  className={`w-full px-3 py-2 text-left disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 first:rounded-t-lg last:rounded-b-lg flex items-center gap-2 cursor-pointer justify-start ${
+                    option.label === 'Hapus'
+                      ? ''
+                      : 'hover:bg-gray-200 text-gray-700 hover:text-gray-900'
+                  }`}
                 >
                   {option.icon}
                   {option.label}
-                </button>
+                </Button>
               ))}
             </div>
             {/* Dynamic Arrow */}
