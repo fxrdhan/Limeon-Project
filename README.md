@@ -39,35 +39,39 @@ PharmaSys is a modern web-based application designed to streamline pharmacy and 
 
 This project is built with:
 
-- **Language:** [TypeScript](https://www.typescriptlang.org/)
-- **Linter:** [TypeScript ESLint](https://typescript-eslint.io/)
-- **Code Formatter:** [Prettier](https://prettier.io/)
-- **Library:** [React](https://react.dev/)
-- **Package Manager:** [Yarn](https://www.yarnpkg.com/)
-- **Build Tool:** [Vite](https://vitejs.dev/)
-- **Compiler:** [SWC](https://swc.rs/) (via @vitejs/plugin-react-swc)
-- **Schema Validation:** [Zod](https://zod.dev/)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Routing:** [React Router DOM](https://reactrouter.com/)
-- **Data Fetching & Caching:** [TanStack Query](https://tanstack.com/query/latest)
-- **State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
-- **Animation:** [Framer Motion](https://www.framer.com/motion/)
-- **Database:** [Supabase](https://supabase.com/database)
-- **Serverless Backend:** [Supabase Edge Functions](https://supabase.com/edge-functions)
-- **Storage:** [Supabase Storage](https://supabase.com/storage)
-- **Server Side Caching:** [Upstash Redis](https://upstash.com/)
+| Technology | Link | Description |
+|------------|------|-------------|
+| **TypeScript** | [Website](https://www.typescriptlang.org/) | Typed programming language that builds on JavaScript |
+| **TypeScript ESLint** | [Website](https://typescript-eslint.io/) | Linter for code quality |
+| **Prettier** | [Website](https://prettier.io/) | Code formatter for consistent styling |
+| **React** | [Website](https://react.dev/) | UI library for building user interfaces |
+| **Yarn** | [Website](https://www.yarnpkg.com/) | Package manager for dependency management |
+| **Vite** | [Website](https://vitejs.dev/) | Build tool for fast development and bundling |
+| **SWC** | [Website](https://swc.rs/) | Fast TypeScript/JavaScript compiler via @vitejs/plugin-react-swc |
+| **Zod** | [Website](https://zod.dev/) | Schema validation library for type-safe data handling |
+| **Tailwind CSS** | [Website](https://tailwindcss.com/) | Utility-first CSS framework for styling |
+| **React Router DOM** | [Website](https://reactrouter.com/) | Client-side routing for single page applications |
+| **TanStack Query** | [Website](https://tanstack.com/query/latest) | Data fetching and caching library |
+| **Zustand** | [Website](https://zustand-demo.pmnd.rs/) | Bear necessities for state management in React  |
+| **Framer Motion** | [Website](https://www.framer.com/motion/) | Animation library for React components |
+| **Supabase Database** | [Website](https://supabase.com/database) | PostgreSQL database with real-time capabilities |
+| **Supabase Edge Functions** | [Website](https://supabase.com/edge-functions) | Serverless backend functions |
+| **Supabase Storage** | [Website](https://supabase.com/storage) | File storage and management |
+| **Upstash Redis** | [Website](https://upstash.com/) | Server-side caching |
 
-### Another Libraries
+### Additional Libraries
 
 This project incorporates and builds upon several outstanding open-source libraries:
 
-- **[AG Grid](https://ag-grid.com/)** - High-performance data grid for displaying and managing large datasets with a lot of advanced features.
-- **[classnames](https://github.com/JedWatson/classnames)** by Jed Watson - A utility for conditionally joining CSS class names, making dynamic styling more elegant and maintainable.
-- **[jsdiff](https://github.com/kpdecker/jsdiff)** by Kevin Decker - Text diff implementation using Myers O(ND) algorithm.
-- **[fuzzysort](https://github.com/farzher/fuzzysort)** by Stephen Kamenar - Fast SublimeText-like fuzzy search for JavaScript with intelligent ranking and highlighting.
-- **[React Icons](https://github.com/react-icons/react-icons)** - Popular icon libraries as React components with ES6 imports and TypeScript support.
-- **[CompressorJS](https://github.com/fengyuanchen/compressorjs)** by Chen Fengyuan - Client-side image compression library using native browser canvas with automatic format conversion and quality optimization.
-- **[React Spinners](https://github.com/davidhu2000/react-spinners)** by David Hu - Collection of loading spinner components for React with TypeScript support and customizable animations.
+| Library | Link | Description |
+|---------|------|-------------|
+| **AG Grid** | [Website](https://ag-grid.com/) | High-performance, feature rich, and fully customisable Data Grids |
+| **classnames** | [GitHub](https://github.com/JedWatson/classnames) | Utility for conditionally joining CSS class names by Jed Watson |
+| **jsdiff** | [GitHub](https://github.com/kpdecker/jsdiff) | Text diff implementation using Myers O(ND) algorithm by Kevin Decker |
+| **fuzzysort** | [GitHub](https://github.com/farzher/fuzzysort) | Fast SublimeText-like fuzzy search with intelligent ranking by Stephen Kamenar |
+| **React Icons** | [GitHub](https://github.com/react-icons/react-icons) | Popular icon libraries as React components |
+| **CompressorJS** | [GitHub](https://github.com/fengyuanchen/compressorjs) | Client-side image compression by Chen Fengyuan |
+| **React Spinners** | [GitHub](https://github.com/davidhu2000/react-spinners) | Collection of loading spinner components by David Hu |
 
 We are grateful to all maintainers and contributors of these projects for their excellent work that has accelerated the development process of PharmaSys.
 
