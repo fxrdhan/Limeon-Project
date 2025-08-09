@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import type { VersionData } from '../../../../shared/types';
+import { useEffect, useRef, useCallback } from 'react';
 
 interface ComparisonData {
   isKodeDifferent?: boolean;
@@ -9,95 +8,97 @@ interface ComparisonData {
 
 interface UseAutoScrollProps {
   isOpen: boolean;
-  isFlipped: boolean;
-  selectedVersion?: VersionData;
-  versionA?: VersionData;
-  versionB?: VersionData;
   kodeRef: React.RefObject<HTMLDivElement | null>;
   nameRef: React.RefObject<HTMLDivElement | null>;
   descriptionRef: React.RefObject<HTMLDivElement | null>;
-  checkOverflow: (element: HTMLElement | null) => boolean;
   compData: ComparisonData | null;
 }
 
 export const useAutoScroll = ({
   isOpen,
-  isFlipped,
-  selectedVersion,
-  versionA,
-  versionB,
   kodeRef,
   nameRef,
   descriptionRef,
-  checkOverflow,
   compData,
 }: UseAutoScrollProps) => {
-  // Auto-scroll to first highlighted text EVERY TIME content changes (must be before early returns)
+  const userIsScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+
+  // Track user scroll activity
+  const handleScroll = useCallback(() => {
+    userIsScrollingRef.current = true;
+    
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    
+    // Reset user scrolling flag after user stops scrolling
+    scrollTimeoutRef.current = setTimeout(() => {
+      userIsScrollingRef.current = false;
+    }, 2000);
+  }, []);
+
+  // Add scroll listeners to containers
   useEffect(() => {
-    // Only run when modal is actually opened
     if (!isOpen) return;
 
-    const scrollToFirstHighlight = (
-      container: HTMLDivElement | null,
-      retryCount = 0
-    ) => {
-      if (!container) return;
+    const containers = [
+      kodeRef.current,
+      nameRef.current, 
+      descriptionRef.current
+    ].filter(Boolean);
 
-      // Use multiple requestAnimationFrame for better timing - especially for equal->diff transitions
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            // Find first highlighted element (either added or removed text)
-            const highlightedElement = container.querySelector(
-              '.bg-green-400, .bg-red-400'
-            );
+    containers.forEach(container => {
+      container?.addEventListener('scroll', handleScroll);
+    });
 
-            if (highlightedElement) {
-              // Smooth scroll to first highlight - no jarring reset to top
-              highlightedElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'nearest',
-              });
-            } else if (retryCount < 8) {
-              // Retry if highlighted elements not found yet (useful for equal->diff transitions)
-              setTimeout(
-                () => scrollToFirstHighlight(container, retryCount + 1),
-                150 + retryCount * 100 // Increased delay with progressive backoff
-              );
-            }
-          });
-        });
+    return () => {
+      containers.forEach(container => {
+        container?.removeEventListener('scroll', handleScroll);
       });
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [isOpen, handleScroll, kodeRef, nameRef, descriptionRef]);
+
+  // Simple rule: if description has diff -> auto scroll
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!compData?.isDescriptionDifferent) return;
+    if (userIsScrollingRef.current) return;
+
+    const scrollToFirstHighlight = (retryCount = 0) => {
+      if (!descriptionRef.current || userIsScrollingRef.current) return;
+      
+      const highlightedElement = descriptionRef.current.querySelector(
+        '.bg-green-400, .bg-red-400'
+      );
+
+      if (highlightedElement) {
+        highlightedElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'nearest',
+        });
+      } else if (retryCount < 8) {
+        // Retry for equal->diff transitions where AnimatePresence needs time
+        setTimeout(
+          () => scrollToFirstHighlight(retryCount + 1),
+          150 + retryCount * 50
+        );
+      }
     };
 
-    // Longer delay to ensure DOM is fully updated with new content and highlights
-    const timer = setTimeout(() => {
-      // Priority order: description (usually longest), name, then kode
-      // Only scroll if container actually overflows (is scrollable)
-      if (descriptionRef.current && checkOverflow(descriptionRef.current)) {
-        scrollToFirstHighlight(descriptionRef.current);
-      } else if (nameRef.current && checkOverflow(nameRef.current)) {
-        scrollToFirstHighlight(nameRef.current);
-      } else if (kodeRef.current && checkOverflow(kodeRef.current)) {
-        scrollToFirstHighlight(kodeRef.current);
-      }
-    }, 200);
-
+    // Wait for AnimatePresence transition (300ms) + buffer
+    const timer = setTimeout(() => scrollToFirstHighlight(), 400);
     return () => clearTimeout(timer);
-  }, [
-    isOpen,
-    isFlipped,
-    selectedVersion?.version_number,
-    versionA?.version_number,
-    versionB?.version_number,
-    // Also trigger when diff content status changes (equal <-> diff)
-    compData?.isKodeDifferent,
-    compData?.isNameDifferent,
-    compData?.isDescriptionDifferent,
-    kodeRef,
-    nameRef,
-    descriptionRef,
-    checkOverflow,
-  ]); // Trigger on content changes - retry mechanism handles equal->diff transitions
+  }, [isOpen, compData?.isDescriptionDifferent, descriptionRef]);
+
+  // Reset user scrolling flag when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      userIsScrollingRef.current = false;
+    }
+  }, [isOpen]);
 };
