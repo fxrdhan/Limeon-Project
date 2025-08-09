@@ -6,6 +6,7 @@ import DescriptiveTextarea from '@/components/descriptive-textarea';
 import { ItemCodeField } from '../atoms';
 import { itemNameSchema } from '@/schemas/itemValidation';
 import type { DropdownOption } from '@/types/components';
+import { useItemCodeGenerator } from '../../application/hooks/utils';
 import {
   createOptimizedCategoryDetailFetcher,
   createOptimizedTypeDetailFetcher,
@@ -70,6 +71,20 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
     },
     ref
   ) => {
+    // Generate item code based on selected values
+    const codeGeneration = useItemCodeGenerator({
+      categoryId: formData.category_id,
+      typeId: formData.type_id,
+      packageId: formData.package_id,
+      dosageId: formData.dosage_id,
+      manufacturerId: formData.manufacturer_id,
+      categories,
+      types,
+      packages,
+      dosages,
+      manufacturers,
+    });
+
     // Create optimized detail fetchers using cached data
     const optimizedCategoryDetailFetcher = useMemo(() => {
       return createOptimizedCategoryDetailFetcher(categories);
@@ -103,7 +118,10 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             <div className="md:col-span-2">
-              <ItemCodeField code={formData.code} onChange={onChange} />
+              <ItemCodeField 
+                code={formData.code} 
+                generatedCode={codeGeneration.generatedCode}
+              />
             </div>
 
             <FormField

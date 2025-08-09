@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
+import { generateItemCodeWithSequence } from '../utils/useItemCodeGenerator';
 
 interface UseAddItemMutationsProps {
   onClose: () => void;
@@ -190,7 +191,7 @@ export const useAddItemMutations = ({
       manufacturer: manufacturerName,
       category_id: formData.category_id,
       type_id: formData.type_id,
-      package_id: formData.unit_id,
+      package_id: formData.package_id,
       base_price: formData.base_price,
       sell_price: formData.sell_price,
       min_stock: formData.min_stock,
@@ -220,6 +221,51 @@ export const useAddItemMutations = ({
   };
 
   /**
+   * Helper function to check existing codes in database
+   */
+  const checkExistingCodes = async (pattern: string): Promise<string[]> => {
+    const { data, error } = await supabase
+      .from('items')
+      .select('code')
+      .like('code', pattern);
+    
+    if (error) throw error;
+    return data?.map(item => item.code).filter(Boolean) || [];
+  };
+
+  /**
+   * Generate item code based on form data
+   */
+  const generateItemCode = async (formData: ItemFormData): Promise<string> => {
+    // Fetch codes for all related entities
+    const [categoryData, typeData, packageData, dosageData, manufacturerData] = await Promise.all([
+      supabase.from('item_categories').select('code').eq('id', formData.category_id).single(),
+      supabase.from('item_types').select('code').eq('id', formData.type_id).single(),
+      supabase.from('item_packages').select('code').eq('id', formData.package_id).single(),
+      supabase.from('item_dosages').select('code').eq('id', formData.dosage_id).single(),
+      supabase.from('item_manufacturers').select('code').eq('id', formData.manufacturer_id).single(),
+    ]);
+
+    // Build base code from components
+    const parts = [
+      categoryData.data?.code,
+      typeData.data?.code,
+      packageData.data?.code,
+      dosageData.data?.code,
+      manufacturerData.data?.code,
+    ].filter(Boolean);
+
+    if (parts.length !== 5) {
+      throw new Error('Semua field kategori, jenis, kemasan, sediaan, dan produsen harus dipilih untuk generate kode.');
+    }
+
+    const baseCode = parts.join('-');
+    
+    // Generate final code with sequence number
+    return await generateItemCodeWithSequence(baseCode, checkExistingCodes);
+  };
+
+  /**
    * Main mutation for saving items (create or update)
    */
   const saveItemMutation = useMutation({
@@ -236,11 +282,14 @@ export const useAddItemMutations = ({
       isEditMode: boolean;
       itemId?: string;
     }) => {
-      // Validate that code is manually filled
       const finalFormData = { ...formData };
 
-      if (!finalFormData.code?.trim()) {
-        throw new Error('Kode item harus diisi secara manual.');
+      // For new items, auto-generate the code
+      if (!isEditMode) {
+        finalFormData.code = await generateItemCode(finalFormData);
+      } else if (!finalFormData.code?.trim()) {
+        // For edit mode, generate code only if it's empty
+        finalFormData.code = await generateItemCode(finalFormData);
       }
 
       if (isEditMode && itemId) {
@@ -439,6 +488,8 @@ export const useAddItemMutations = ({
     saveDosage,
     saveManufacturer,
     prepareItemData,
+    generateItemCode,
+    checkExistingCodes,
 
     // Loading states
     isSaving: saveItemMutation.isPending,
