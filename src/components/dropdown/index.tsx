@@ -200,6 +200,7 @@ const Dropdown = ({
     isEnabled: enableHoverDetail,
     hoverDelay: hoverDetailDelay,
     onFetchData: onFetchHoverDetail,
+    isDropdownOpen: isOpen,
   });
 
   const handleButtonBlur = useCallback(() => {

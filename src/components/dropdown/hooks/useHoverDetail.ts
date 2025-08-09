@@ -12,6 +12,7 @@ interface UseHoverDetailProps {
   hoverDelay?: number;
   hideDelay?: number;
   onFetchData?: (optionId: string) => Promise<HoverDetailData | null>;
+  isDropdownOpen?: boolean;
 }
 
 export const useHoverDetail = ({
@@ -19,6 +20,7 @@ export const useHoverDetail = ({
   hoverDelay = 800,
   hideDelay = 300,
   onFetchData,
+  isDropdownOpen = true,
 }: UseHoverDetailProps = {}) => {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState<HoverDetailPosition>({
@@ -186,6 +188,13 @@ export const useHoverDetail = ({
       setData(null);
     }, 200); // Match the animation duration
   }, [clearTimeouts]);
+
+  // Hide portal when dropdown closes
+  useEffect(() => {
+    if (!isDropdownOpen && isVisible) {
+      hidePortal();
+    }
+  }, [isDropdownOpen, isVisible, hidePortal]);
 
   // Clean up on unmount
   useEffect(() => {
