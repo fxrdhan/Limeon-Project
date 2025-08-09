@@ -81,7 +81,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
               size="md"
               onClick={onReset}
               className="text-gray-600 hover:text-orange-600 flex items-center"
-              title="Reset Form"
+              title="Ctrl+Shift+R"
             >
               <FaUndoAlt className="mr-1.5" size={12} /> Reset All
             </Button>

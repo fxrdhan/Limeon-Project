@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   ItemManagementModalProps,
   ItemManagementContextValue,
@@ -116,11 +116,11 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
   });
 
   // UI event handlers
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     resetForm();
     setResetKey(prev => prev + 1); // Force re-mount of form sections to clear validation
     nameInputRef.current?.focus();
-  };
+  }, [resetForm]);
 
   const handleBackdropClick = () => {
     if (!isClosing) {
@@ -142,6 +142,24 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
   const handleGoBackToForm = () => {
     setMode(isEditMode ? 'edit' : 'add');
   };
+
+  // Keyboard shortcut for Reset All (Ctrl+Shift+R)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only trigger when modal is open and not in edit mode (reset button only shows in add mode)
+      if (isOpen && !isEditMode && !isClosing && event.ctrlKey && event.shiftKey && event.key === 'R') {
+        event.preventDefault();
+        handleReset();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isOpen, isEditMode, isClosing, handleReset]);
 
   // Auto focus management
   useEffect(() => {
