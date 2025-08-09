@@ -70,7 +70,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
               animate={isClosing ? 'exit' : 'visible'}
               exit="exit"
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="rounded-xl bg-white shadow-xl w-[90vw] max-w-7xl min-w-7xl max-h-[90vh] flex flex-col"
+              className="rounded-xl bg-white shadow-xl w-[75vw] max-h-[90vh] flex flex-col"
               onClick={e => e.stopPropagation()}
             >
               <motion.div

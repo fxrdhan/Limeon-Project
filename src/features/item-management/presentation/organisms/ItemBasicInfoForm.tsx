@@ -101,12 +101,14 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
           <h2 className="text-lg font-semibold">Data Umum</h2>
         </div>
         <div className="p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            <ItemCodeField code={formData.code} onChange={onChange} />
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div className="md:col-span-2">
+              <ItemCodeField code={formData.code} onChange={onChange} />
+            </div>
 
             <FormField
               label="Nama Item"
-              className="md:col-span-2"
+              className="md:col-span-3"
               required={true}
             >
               <Input
@@ -125,7 +127,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               />
             </FormField>
 
-            <FormField label="Barcode" className="md:col-span-1">
+            <FormField label="Barcode" className="md:col-span-2">
               <Input
                 name="barcode"
                 value={formData.barcode}
@@ -136,7 +138,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               />
             </FormField>
 
-            <FormField label="Produsen" className="md:col-span-1">
+            <FormField label="Produsen" className="md:col-span-2">
               {loading && manufacturers.length === 0 ? (
                 <Input value="Memuat produsen..." readOnly disabled />
               ) : (
@@ -154,6 +156,38 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 />
               )}
             </FormField>
+
+            <FormField label="Jumlah" className="md:col-span-1">
+              <Input
+                name="quantity"
+                type="number"
+                value={formData.quantity.toString()}
+                tabIndex={4}
+                onChange={onChange}
+                className="w-full"
+                placeholder="Masukkan jumlah"
+                min="0"
+                step="1"
+              />
+            </FormField>
+
+            <FormField label="Satuan" className="md:col-span-2">
+              {loading && units.length === 0 ? (
+                <Input value="Memuat satuan..." readOnly disabled />
+              ) : (
+                <Dropdown
+                  name="unit_id"
+                  tabIndex={5}
+                  value={formData.unit_id}
+                  onChange={value => onDropdownChange('unit_id', value)}
+                  options={units}
+                  placeholder="Pilih Satuan"
+                  enableHoverDetail={true}
+                  hoverDetailDelay={400}
+                  onFetchHoverDetail={optimizedUnitDetailFetcher}
+                />
+              )}
+            </FormField>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -164,7 +198,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             >
               <Dropdown
                 name="is_medicine"
-                tabIndex={4}
+                tabIndex={6}
                 value={formData.is_medicine ? 'obat' : 'non-obat'}
                 onChange={value => {
                   if (value === 'obat') {
@@ -189,7 +223,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               ) : (
                 <Dropdown
                   name="category_id"
-                  tabIndex={5}
+                  tabIndex={7}
                   value={formData.category_id}
                   onChange={value => onDropdownChange('category_id', value)}
                   options={categories}
@@ -213,7 +247,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               ) : (
                 <Dropdown
                   name="type_id"
-                  tabIndex={6}
+                  tabIndex={8}
                   value={formData.type_id}
                   onChange={value => onDropdownChange('type_id', value)}
                   options={types}
@@ -237,7 +271,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               ) : (
                 <Dropdown
                   name="package_id"
-                  tabIndex={7}
+                  tabIndex={9}
                   value={formData.package_id}
                   onChange={value => onDropdownChange('package_id', value)}
                   options={packages}
@@ -261,7 +295,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               ) : (
                 <Dropdown
                   name="dosage_id"
-                  tabIndex={8}
+                  tabIndex={10}
                   value={formData.dosage_id}
                   onChange={value => onDropdownChange('dosage_id', value)}
                   options={dosages}
@@ -275,40 +309,6 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedDosageDetailFetcher}
-                />
-              )}
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            <FormField label="Jumlah" className="md:col-span-1">
-              <Input
-                name="quantity"
-                type="number"
-                value={formData.quantity.toString()}
-                tabIndex={9}
-                onChange={onChange}
-                className="w-full"
-                placeholder="Masukkan jumlah"
-                min="0"
-                step="1"
-              />
-            </FormField>
-
-            <FormField label="Satuan Ukuran" className="md:col-span-1">
-              {loading && units.length === 0 ? (
-                <Input value="Memuat satuan..." readOnly disabled />
-              ) : (
-                <Dropdown
-                  name="unit_id"
-                  tabIndex={10}
-                  value={formData.unit_id}
-                  onChange={value => onDropdownChange('unit_id', value)}
-                  options={units}
-                  placeholder="Pilih Satuan"
-                  enableHoverDetail={true}
-                  hoverDetailDelay={400}
-                  onFetchHoverDetail={optimizedUnitDetailFetcher}
                 />
               )}
             </FormField>
