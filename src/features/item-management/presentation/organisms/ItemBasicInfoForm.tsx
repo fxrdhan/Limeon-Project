@@ -23,12 +23,15 @@ interface ItemBasicInfoFormProps {
     is_medicine: boolean;
     category_id: string;
     type_id: string;
-    unit_id: string;
+    package_id: string;
     dosage_id: string;
     description: string;
+    quantity: number;
+    unit_id: string;
   };
   categories: DropdownOption[];
   types: DropdownOption[];
+  packages: DropdownOption[];
   units: DropdownOption[];
   dosages: DropdownOption[];
   manufacturers: DropdownOption[];
@@ -51,6 +54,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       formData,
       categories,
       types,
+      packages,
       units,
       dosages,
       manufacturers,
@@ -74,6 +78,10 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
     const optimizedTypeDetailFetcher = useMemo(() => {
       return createOptimizedTypeDetailFetcher(types);
     }, [types]);
+
+    const optimizedPackageDetailFetcher = useMemo(() => {
+      return createOptimizedUnitDetailFetcher(packages);
+    }, [packages]);
 
     const optimizedUnitDetailFetcher = useMemo(() => {
       return createOptimizedUnitDetailFetcher(units);
@@ -224,15 +232,15 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             </FormField>
 
             <FormField label="Kemasan" required={true}>
-              {loading && units.length === 0 ? (
+              {loading && packages.length === 0 ? (
                 <Input value="Memuat kemasan..." readOnly disabled />
               ) : (
                 <Dropdown
-                  name="unit_id"
+                  name="package_id"
                   tabIndex={7}
-                  value={formData.unit_id}
-                  onChange={value => onDropdownChange('unit_id', value)}
-                  options={units}
+                  value={formData.package_id}
+                  onChange={value => onDropdownChange('package_id', value)}
+                  options={packages}
                   placeholder="Pilih Kemasan"
                   required
                   validate={true}
@@ -242,7 +250,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   onAddNew={onAddNewUnit}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
-                  onFetchHoverDetail={optimizedUnitDetailFetcher}
+                  onFetchHoverDetail={optimizedPackageDetailFetcher}
                 />
               )}
             </FormField>
@@ -272,10 +280,44 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             </FormField>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+            <FormField label="Jumlah" className="md:col-span-1">
+              <Input
+                name="quantity"
+                type="number"
+                value={formData.quantity.toString()}
+                tabIndex={9}
+                onChange={onChange}
+                className="w-full"
+                placeholder="Masukkan jumlah"
+                min="0"
+                step="1"
+              />
+            </FormField>
+
+            <FormField label="Satuan Ukuran" className="md:col-span-1">
+              {loading && units.length === 0 ? (
+                <Input value="Memuat satuan..." readOnly disabled />
+              ) : (
+                <Dropdown
+                  name="unit_id"
+                  tabIndex={10}
+                  value={formData.unit_id}
+                  onChange={value => onDropdownChange('unit_id', value)}
+                  options={units}
+                  placeholder="Pilih Satuan"
+                  enableHoverDetail={true}
+                  hoverDetailDelay={400}
+                  onFetchHoverDetail={optimizedUnitDetailFetcher}
+                />
+              )}
+            </FormField>
+          </div>
+
           <div>
             <DescriptiveTextarea
               label="Keterangan"
-              tabIndex={9}
+              tabIndex={11}
               name="description"
               value={formData.description}
               onChange={onChange}

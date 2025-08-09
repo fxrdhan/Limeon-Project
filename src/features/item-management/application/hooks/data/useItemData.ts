@@ -79,7 +79,7 @@ export const useItemData = ({
           manufacturer_id: manufacturerId,
           type_id: itemData.type_id || '',
           category_id: itemData.category_id || '',
-          unit_id: itemData.package_id || '',
+          package_id: itemData.package_id || '',
           dosage_id: itemData.dosage_id || '',
           barcode: itemData.barcode || '',
           description: itemData.description || '',
@@ -94,6 +94,8 @@ export const useItemData = ({
             itemData.has_expiry_date !== undefined
               ? itemData.has_expiry_date
               : false,
+          quantity: itemData.quantity || 0,
+          unit_id: itemData.unit_id || '',
           updated_at: itemData.updated_at,
         };
 

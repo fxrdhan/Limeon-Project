@@ -6,6 +6,7 @@ import {
   ItemPackage,
   ItemDosageEntity,
   ItemManufacturerEntity,
+  ItemUnitEntity,
 } from '../../../domain/entities';
 
 export const useItemQueries = () => {
@@ -33,11 +34,23 @@ export const useItemQueries = () => {
     },
   });
 
-  const { data: unitsData } = useQuery<ItemPackage[]>({
-    queryKey: ['units'],
+  const { data: packagesData } = useQuery<ItemPackage[]>({
+    queryKey: ['packages'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('item_packages')
+        .select('id, code, name, description, created_at, updated_at')
+        .order('code');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: unitsData } = useQuery<ItemUnitEntity[]>({
+    queryKey: ['units'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('item_units')
         .select('id, code, name, description, created_at, updated_at')
         .order('code');
       if (error) throw error;
@@ -72,6 +85,7 @@ export const useItemQueries = () => {
   return {
     categoriesData,
     typesData,
+    packagesData,
     unitsData,
     dosagesData,
     manufacturersData,

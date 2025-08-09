@@ -105,7 +105,7 @@ export const useAddItemForm = ({
       isEditMode: formState.isEditMode,
       initialFormData: formState.initialFormData,
       initialPackageConversions: formState.initialPackageConversions,
-      units: formState.units,
+      units: formState.packages,
     },
     packageConversionHook,
     cache,
@@ -122,6 +122,7 @@ export const useAddItemForm = ({
       setIsAddManufacturerModalOpen: formState.setIsAddManufacturerModalOpen,
       setCategories: formState.setCategories,
       setTypes: formState.setTypes,
+      setPackages: formState.setPackages,
       setUnits: formState.setUnits,
       setDosages: formState.setDosages,
       setManufacturers: formState.setManufacturers,
@@ -167,7 +168,11 @@ export const useAddItemForm = ({
             cachedData,
             initialSearchQuery
           );
-          setInitialDataForForm(updatedCacheData.formData);
+          setInitialDataForForm({
+            ...updatedCacheData.formData,
+            quantity: updatedCacheData.formData.quantity ?? 0,
+            unit_id: updatedCacheData.formData.unit_id ?? '',
+          });
           packageConversionHook.setConversions(
             updatedCacheData.conversions || []
           );
@@ -279,6 +284,7 @@ export const useAddItemForm = ({
     displaySellPrice: formState.displaySellPrice,
     categories: formState.categories,
     types: formState.types,
+    packages: formState.packages,
     units: formState.units,
     dosages: formState.dosages,
     manufacturers: formState.manufacturers,
@@ -344,8 +350,9 @@ export const useAddItemForm = ({
 
     // Setters (from formState)
     setCategories: formState.setCategories,
-    setUnits: formState.setUnits,
     setTypes: formState.setTypes,
+    setPackages: formState.setPackages,
+    setUnits: formState.setUnits,
     setDosages: formState.setDosages,
     setManufacturers: formState.setManufacturers,
 

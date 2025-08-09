@@ -7,13 +7,15 @@ export interface ItemFormData {
   manufacturer_id: string;
   type_id: string;
   category_id: string;
-  unit_id: string;
+  package_id: string;
   dosage_id: string;
   barcode: string;
   description: string;
   base_price: number;
   sell_price: number;
   min_stock: number;
+  quantity: number;
+  unit_id: string;
   is_active: boolean;
   is_medicine: boolean;
   has_expiry_date: boolean;
