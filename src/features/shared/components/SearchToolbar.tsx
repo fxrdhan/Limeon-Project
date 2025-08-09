@@ -56,7 +56,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
 
     // Don't intercept Enter if in targeted search mode (contains # for column/operator selection)
     const isTargetedSearch = searchBarProps.value.includes('#');
-    
+
     // Default behavior for items tab - only if NOT in targeted search mode
     if (e.key === 'Enter' && items && onItemSelect && !isTargetedSearch) {
       e.preventDefault();

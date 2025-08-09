@@ -228,7 +228,7 @@ export const useAddItemMutations = ({
       .from('items')
       .select('code')
       .like('code', pattern);
-    
+
     if (error) throw error;
     return data?.map(item => item.code).filter(Boolean) || [];
   };
@@ -238,13 +238,34 @@ export const useAddItemMutations = ({
    */
   const generateItemCode = async (formData: ItemFormData): Promise<string> => {
     // Fetch codes for all related entities
-    const [categoryData, typeData, packageData, dosageData, manufacturerData] = await Promise.all([
-      supabase.from('item_categories').select('code').eq('id', formData.category_id).single(),
-      supabase.from('item_types').select('code').eq('id', formData.type_id).single(),
-      supabase.from('item_packages').select('code').eq('id', formData.package_id).single(),
-      supabase.from('item_dosages').select('code').eq('id', formData.dosage_id).single(),
-      supabase.from('item_manufacturers').select('code').eq('id', formData.manufacturer_id).single(),
-    ]);
+    const [categoryData, typeData, packageData, dosageData, manufacturerData] =
+      await Promise.all([
+        supabase
+          .from('item_categories')
+          .select('code')
+          .eq('id', formData.category_id)
+          .single(),
+        supabase
+          .from('item_types')
+          .select('code')
+          .eq('id', formData.type_id)
+          .single(),
+        supabase
+          .from('item_packages')
+          .select('code')
+          .eq('id', formData.package_id)
+          .single(),
+        supabase
+          .from('item_dosages')
+          .select('code')
+          .eq('id', formData.dosage_id)
+          .single(),
+        supabase
+          .from('item_manufacturers')
+          .select('code')
+          .eq('id', formData.manufacturer_id)
+          .single(),
+      ]);
 
     // Build base code from components
     const parts = [
@@ -256,11 +277,13 @@ export const useAddItemMutations = ({
     ].filter(Boolean);
 
     if (parts.length !== 5) {
-      throw new Error('Semua field kategori, jenis, kemasan, sediaan, dan produsen harus dipilih untuk generate kode.');
+      throw new Error(
+        'Semua field kategori, jenis, kemasan, sediaan, dan produsen harus dipilih untuk generate kode.'
+      );
     }
 
     const baseCode = parts.join('-');
-    
+
     // Generate final code with sequence number
     return await generateItemCodeWithSequence(baseCode, checkExistingCodes);
   };

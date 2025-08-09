@@ -41,7 +41,9 @@ export function useItemCodeGenerator({
     const typeCode = types.find(type => type.id === typeId)?.code;
     const packageCode = packages.find(pkg => pkg.id === packageId)?.code;
     const dosageCode = dosages.find(dos => dos.id === dosageId)?.code;
-    const manufacturerCode = manufacturers.find(mfr => mfr.id === manufacturerId)?.code;
+    const manufacturerCode = manufacturers.find(
+      mfr => mfr.id === manufacturerId
+    )?.code;
 
     // Check which fields are missing
     if (!categoryId || !categoryCode) {
@@ -75,10 +77,10 @@ export function useItemCodeGenerator({
     }
 
     const isComplete = missingFields.length === 0;
-    const generatedCode = isComplete 
-      ? `${codeParts.join('-')}-[XXX]` 
-      : codeParts.length > 0 
-        ? `${codeParts.join('-')}-...` 
+    const generatedCode = isComplete
+      ? `${codeParts.join('-')}-[XXX]`
+      : codeParts.length > 0
+        ? `${codeParts.join('-')}-...`
         : '';
 
     return {
@@ -106,7 +108,7 @@ export async function generateItemCodeWithSequence(
 ): Promise<string> {
   // Get existing codes that match the base pattern
   const existingCodes = await checkExistingCodesFn(`${baseCode}-%`);
-  
+
   // Extract sequence numbers from existing codes
   const sequenceNumbers = existingCodes
     .map(code => {
@@ -129,6 +131,6 @@ export async function generateItemCodeWithSequence(
 
   // Format sequence number with leading zeros (e.g., 000, 001, 002)
   const formattedSequence = nextSequence.toString().padStart(3, '0');
-  
+
   return `${baseCode}-${formattedSequence}`;
 }

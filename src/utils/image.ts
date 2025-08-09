@@ -18,7 +18,7 @@ export async function compressImageIfNeeded(file: File): Promise<File | Blob> {
   console.log(
     `Compressing image: ${file.name}, original size: ${(file.size / 1024 / 1024).toFixed(2)} MB`
   );
-  
+
   return new Promise<File | Blob>((resolve, reject) => {
     new Compressor(file, {
       ...COMPRESSION_OPTIONS,
@@ -26,7 +26,7 @@ export async function compressImageIfNeeded(file: File): Promise<File | Blob> {
         console.log(
           `Compressed image size: ${(result.size / 1024 / 1024).toFixed(2)} MB`
         );
-        
+
         // Convert Blob to File if needed to maintain compatibility
         if (result instanceof File) {
           resolve(result);

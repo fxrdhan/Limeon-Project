@@ -147,7 +147,14 @@ const ItemManagementModal: React.FC<ItemManagementModalProps> = ({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Only trigger when modal is open and not in edit mode (reset button only shows in add mode)
-      if (isOpen && !isEditMode && !isClosing && event.ctrlKey && event.shiftKey && event.key === 'R') {
+      if (
+        isOpen &&
+        !isEditMode &&
+        !isClosing &&
+        event.ctrlKey &&
+        event.shiftKey &&
+        event.key === 'R'
+      ) {
         event.preventDefault();
         handleReset();
       }

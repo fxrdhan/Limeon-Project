@@ -13,7 +13,7 @@ export default function ItemCodeField({
   error,
 }: ItemCodeFieldProps) {
   const displayCode = generatedCode || code;
-  
+
   return (
     <FormField label="Kode Item" className="md:col-span-1">
       <Input

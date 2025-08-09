@@ -58,7 +58,6 @@ const GRID_STYLE = {
   marginBottom: '1rem',
 } as const;
 
-
 const getOverlayTemplate = (
   search: string,
   currentConfig: { searchNoDataMessage?: string; noDataMessage?: string } | null
