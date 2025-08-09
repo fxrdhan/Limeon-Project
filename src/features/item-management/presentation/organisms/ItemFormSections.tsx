@@ -56,6 +56,7 @@ const BasicInfoSection: React.FC = () => {
     formData,
     categories,
     types,
+    packages,
     units,
     dosages,
     manufacturers,
@@ -89,6 +90,13 @@ const BasicInfoSection: React.FC = () => {
     code: type.code,
     description: type.description,
     updated_at: type.updated_at,
+  }));
+  const transformedPackages = packages.map(pkg => ({
+    id: pkg.id,
+    name: pkg.name,
+    code: pkg.code,
+    description: pkg.description,
+    updated_at: pkg.updated_at,
   }));
   const transformedUnits = units.map(unit => ({
     id: unit.id,
@@ -132,13 +140,15 @@ const BasicInfoSection: React.FC = () => {
       updateFormData({ category_id: value });
     } else if (field === 'type_id') {
       updateFormData({ type_id: value });
+    } else if (field === 'package_id') {
+      updateFormData({ package_id: value });
+      // Also update baseUnit for unit conversion synchronization
+      const selectedPackage = packages.find(pkg => pkg.id === value);
+      if (selectedPackage) {
+        packageConversionHook.setBaseUnit(selectedPackage.name);
+      }
     } else if (field === 'unit_id') {
       updateFormData({ unit_id: value });
-      // Also update baseUnit for unit conversion synchronization
-      const selectedUnit = units.find(unit => unit.id === value);
-      if (selectedUnit) {
-        packageConversionHook.setBaseUnit(selectedUnit.name);
-      }
     } else if (field === 'dosage_id') {
       updateFormData({ dosage_id: value });
     } else if (field === 'manufacturer_id') {
@@ -157,12 +167,15 @@ const BasicInfoSection: React.FC = () => {
         is_medicine: formData.is_medicine || false,
         category_id: formData.category_id || '',
         type_id: formData.type_id || '',
-        unit_id: formData.unit_id || '',
+        package_id: formData.package_id || '',
         dosage_id: formData.dosage_id || '',
         description: formData.description || '',
+        quantity: formData.quantity || 0,
+        unit_id: formData.unit_id || '',
       }}
       categories={transformedCategories}
       types={transformedTypes}
+      packages={transformedPackages}
       units={transformedUnits}
       dosages={transformedDosages}
       manufacturers={transformedManufacturers}

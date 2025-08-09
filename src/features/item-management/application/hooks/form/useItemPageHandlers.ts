@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useAddItemForm } from '../core/useItemCrud';
-import type { ItemTypeEntity, ItemUnitEntity } from '../../../domain/entities';
+import type { ItemTypeEntity } from '../../../domain/entities';
 import type { UseItemManagementProps } from '../../../shared/types';
 
 interface AddItemPageHandlersProps extends UseItemManagementProps {
@@ -38,6 +38,7 @@ export const useAddItemPageHandlers = ({
   const {
     categoriesData,
     typesData,
+    packagesData,
     unitsData,
     dosagesData,
     manufacturersData,
@@ -72,8 +73,14 @@ export const useAddItemPageHandlers = ({
   }, [typesData, addItemForm.setTypes, addItemForm]);
 
   useEffect(() => {
+    if (packagesData) {
+      addItemForm.setPackages(packagesData);
+    }
+  }, [packagesData, addItemForm.setPackages, addItemForm]);
+
+  useEffect(() => {
     if (unitsData) {
-      addItemForm.setUnits(unitsData as ItemUnitEntity[]);
+      addItemForm.setUnits(unitsData);
     }
   }, [unitsData, addItemForm.setUnits, addItemForm]);
 

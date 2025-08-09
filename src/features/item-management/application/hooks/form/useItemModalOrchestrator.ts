@@ -5,6 +5,7 @@ import type {
   ItemPackage,
   ItemDosageEntity,
   ItemManufacturerEntity,
+  ItemUnitEntity,
 } from '../../../domain/entities';
 import type { ItemFormData } from '../../../shared/types';
 
@@ -21,7 +22,7 @@ interface EntitySaveResult {
   newType?: ItemTypeEntity;
   updatedTypes?: ItemTypeEntity[];
   newUnit?: ItemPackage;
-  updatedUnits?: ItemPackage[];
+  updatedPackages?: ItemPackage[];
   newDosage?: ItemDosageEntity;
   updatedDosages?: ItemDosageEntity[];
   newManufacturer?: ItemManufacturerEntity;
@@ -38,7 +39,8 @@ interface UseItemModalOrchestratorProps {
     setIsAddManufacturerModalOpen: (isOpen: boolean) => void;
     setCategories: (categories: ItemCategory[]) => void;
     setTypes: (types: ItemTypeEntity[]) => void;
-    setUnits: (units: ItemPackage[]) => void;
+    setPackages: (packages: ItemPackage[]) => void;
+    setUnits: (units: ItemUnitEntity[]) => void;
     setDosages: (dosages: ItemDosageEntity[]) => void;
     setManufacturers: (manufacturers: ItemManufacturerEntity[]) => void;
     updateFormData: (data: Partial<ItemFormData>) => void;
@@ -168,9 +170,9 @@ export const useItemModalOrchestrator = ({
   const handleSaveUnit = useCallback(
     async (unitData: { code?: string; name: string; description?: string }) => {
       try {
-        const { newUnit, updatedUnits } = await mutations.saveUnit(unitData);
-        if (updatedUnits) formState.setUnits(updatedUnits);
-        if (newUnit?.id) formState.updateFormData({ unit_id: newUnit.id });
+        const { newUnit, updatedPackages } = await mutations.saveUnit(unitData);
+        if (updatedPackages) formState.setPackages(updatedPackages);
+        if (newUnit?.id) formState.updateFormData({ package_id: newUnit.id });
         formState.setIsAddUnitModalOpen(false);
         clearSearchTerm();
       } catch {

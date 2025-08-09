@@ -51,7 +51,7 @@ export default function ItemPackageConversionManager({
   );
 
   return (
-    <FormSection title="Kemasan dan Konversi">
+    <FormSection title="Konversi Kemasan">
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 md:w-1/3 lg:w-1/4">
           <PackageConversionInput

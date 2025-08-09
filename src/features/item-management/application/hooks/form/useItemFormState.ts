@@ -8,6 +8,7 @@ import type {
   ItemPackage,
   ItemDosageEntity,
   ItemManufacturerEntity,
+  ItemUnitEntity,
 } from '../../../domain/entities';
 
 interface UseAddItemFormStateProps {
@@ -27,13 +28,15 @@ export const useAddItemFormState = ({
     manufacturer_id: '',
     type_id: '',
     category_id: '',
-    unit_id: '',
+    package_id: '',
     dosage_id: '',
     barcode: '',
     description: '',
     base_price: 0,
     sell_price: 0,
     min_stock: 10,
+    quantity: 0,
+    unit_id: '',
     is_active: true,
     is_medicine: true,
     has_expiry_date: false,
@@ -79,7 +82,8 @@ export const useAddItemFormState = ({
   // Data collections
   const [categories, setCategories] = useState<ItemCategory[]>([]);
   const [types, setTypes] = useState<ItemTypeEntity[]>([]);
-  const [units, setUnits] = useState<ItemPackage[]>([]);
+  const [packages, setPackages] = useState<ItemPackage[]>([]);
+  const [units, setUnits] = useState<ItemUnitEntity[]>([]);
   const [dosages, setDosages] = useState<ItemDosageEntity[]>([]);
   const [manufacturers, setManufacturers] = useState<ItemManufacturerEntity[]>(
     []
@@ -205,13 +209,15 @@ export const useAddItemFormState = ({
       manufacturer_id: '',
       type_id: '',
       category_id: '',
-      unit_id: '',
+      package_id: '',
       dosage_id: '',
       barcode: '',
       description: '',
       base_price: 0,
       sell_price: 0,
       min_stock: 10,
+      quantity: 0,
+      unit_id: '',
       is_active: true,
       is_medicine: true,
       has_expiry_date: false,
@@ -308,6 +314,8 @@ export const useAddItemFormState = ({
     setCategories,
     types,
     setTypes,
+    packages,
+    setPackages,
     units,
     setUnits,
     dosages,

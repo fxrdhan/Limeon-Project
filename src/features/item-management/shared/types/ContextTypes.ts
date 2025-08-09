@@ -5,6 +5,7 @@ import type {
   ItemPackage,
   ItemDosageEntity,
   ItemManufacturerEntity,
+  ItemUnitEntity,
 } from '../../domain/entities';
 import type { UsePackageConversionReturn } from '@/types/hooks';
 import type { ItemFormData } from './FormTypes';
@@ -15,7 +16,8 @@ export interface ItemFormState {
   formData: Partial<ItemFormData>;
   categories: ItemCategory[];
   types: ItemTypeEntity[];
-  units: ItemPackage[];
+  packages: ItemPackage[];
+  units: ItemUnitEntity[];
   dosages: ItemDosageEntity[];
   manufacturers: ItemManufacturerEntity[];
   loading: boolean;
