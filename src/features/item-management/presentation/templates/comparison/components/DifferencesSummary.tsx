@@ -33,6 +33,10 @@ interface DifferencesSummaryProps {
     name: boolean;
     description: boolean;
   };
+  descriptionScrollPosition: {
+    isAtTop: boolean;
+    isAtBottom: boolean;
+  };
 }
 
 const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
@@ -45,6 +49,7 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
   nameRef,
   descriptionRef,
   overflowStates,
+  descriptionScrollPosition,
 }) => {
   if (!compData) return null;
 
@@ -193,8 +198,15 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                       {/* Conditional gradient fade overlay - only when content overflows */}
                       {overflowStates.description && (
                         <div className="absolute inset-0 pointer-events-none rounded">
-                          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white via-white/65 to-transparent"></div>
-                          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/65 to-transparent"></div>
+                          {/* Top fade - hide when scrolled to top */}
+                          {!descriptionScrollPosition.isAtTop && (
+                            <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white via-white/65 to-transparent"></div>
+                          )}
+                          {/* Bottom fade - hide when scrolled to bottom */}
+                          {!descriptionScrollPosition.isAtBottom && (
+                            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/65 to-transparent"></div>
+                          )}
+                          {/* Left and right fade - always show */}
                           <div className="absolute top-0 bottom-0 left-0 w-5 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
                           <div className="absolute top-0 bottom-0 right-0 w-5 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
                         </div>

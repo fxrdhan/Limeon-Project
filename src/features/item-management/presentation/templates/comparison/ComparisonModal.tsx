@@ -8,6 +8,7 @@ import {
   useComparisonData,
   useOverflowDetection,
   useAutoScroll,
+  useScrollPosition,
 } from './hooks';
 import {
   ComparisonHeader,
@@ -69,7 +70,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     entityName,
   });
 
-  const { overflowStates, checkOverflow } = useOverflowDetection({
+  const { overflowStates } = useOverflowDetection({
     isOpen,
     isFlipped,
     selectedVersion,
@@ -83,15 +84,15 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
   useAutoScroll({
     isOpen,
-    isFlipped,
-    selectedVersion,
-    versionA,
-    versionB,
     kodeRef,
     nameRef,
     descriptionRef,
-    checkOverflow,
     compData,
+  });
+
+  const descriptionScrollPosition = useScrollPosition({
+    elementRef: descriptionRef,
+    isOpen,
   });
 
   // Early return for invalid states
@@ -177,6 +178,7 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                 nameRef={nameRef}
                 descriptionRef={descriptionRef}
                 overflowStates={overflowStates}
+                descriptionScrollPosition={descriptionScrollPosition}
               />
             </div>
 
