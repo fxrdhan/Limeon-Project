@@ -106,9 +106,7 @@ const IdentityImageUploader: React.FC = () => {
           onImageUpload={handleImageUpload}
           onImageDelete={handleImageDeleteInternal}
           disabled={isUploadingImage || mode !== 'add'}
-          loadingIcon={
-            <ClipLoader color="#ffffff" size={20} loading={true} />
-          }
+          loadingIcon={<ClipLoader color="#ffffff" size={20} loading={true} />}
           defaultIcon={<FaPencilAlt className="text-white text-lg" />}
         >
           {renderImageContent()}

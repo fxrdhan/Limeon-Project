@@ -10,19 +10,22 @@ interface UseScrollPositionProps {
   isOpen: boolean;
 }
 
-export const useScrollPosition = ({ elementRef, isOpen }: UseScrollPositionProps) => {
+export const useScrollPosition = ({
+  elementRef,
+  isOpen,
+}: UseScrollPositionProps) => {
   const [scrollPosition, setScrollPosition] = useState<ScrollPosition>({
     isAtTop: true,
     isAtBottom: true,
   });
-  
+
   const rafRef = useRef<number | undefined>(undefined);
 
   const checkScrollPosition = useCallback(() => {
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
     }
-    
+
     rafRef.current = requestAnimationFrame(() => {
       const element = elementRef.current;
       if (!element) return;
@@ -37,7 +40,10 @@ export const useScrollPosition = ({ elementRef, isOpen }: UseScrollPositionProps
 
       // Only update if values actually changed to prevent unnecessary renders
       setScrollPosition(prev => {
-        if (prev.isAtTop !== newPosition.isAtTop || prev.isAtBottom !== newPosition.isAtBottom) {
+        if (
+          prev.isAtTop !== newPosition.isAtTop ||
+          prev.isAtBottom !== newPosition.isAtBottom
+        ) {
           return newPosition;
         }
         return prev;
@@ -80,7 +86,7 @@ export const useScrollPosition = ({ elementRef, isOpen }: UseScrollPositionProps
       const timer1 = setTimeout(checkScrollPosition, 100);
       const timer2 = setTimeout(checkScrollPosition, 300);
       const timer3 = setTimeout(checkScrollPosition, 500);
-      
+
       return () => {
         clearTimeout(timer1);
         clearTimeout(timer2);

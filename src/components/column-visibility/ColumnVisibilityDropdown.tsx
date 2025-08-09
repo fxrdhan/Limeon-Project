@@ -100,7 +100,6 @@ const ColumnVisibilityDropdown: React.FC<ColumnVisibilityDropdownProps> = ({
     return { top, left };
   };
 
-
   const dropdownContent = (
     <AnimatePresence>
       {isOpen && (
@@ -138,13 +137,18 @@ const ColumnVisibilityDropdown: React.FC<ColumnVisibilityDropdownProps> = ({
                 transition={{ duration: 0.3, ease: 'easeOut' }}
               >
                 <div className="max-h-80 overflow-y-auto">
-                  {columns.map((column) => (
-                    <div key={column.key} className="px-3 py-2 hover:bg-gray-50">
+                  {columns.map(column => (
+                    <div
+                      key={column.key}
+                      className="px-3 py-2 hover:bg-gray-50"
+                    >
                       <Checkbox
                         id={`column-${column.key}`}
                         label={column.label}
                         checked={column.visible}
-                        onChange={(checked) => handleColumnToggle(column.key, checked)}
+                        onChange={checked =>
+                          handleColumnToggle(column.key, checked)
+                        }
                       />
                     </div>
                   ))}
@@ -168,7 +172,7 @@ const ColumnVisibilityDropdown: React.FC<ColumnVisibilityDropdownProps> = ({
       >
         <HiOutlineBars3 className="h-4 w-4" />
       </Button>
-      {typeof document !== 'undefined' && 
+      {typeof document !== 'undefined' &&
         createPortal(dropdownContent, document.body)}
     </>
   );

@@ -55,9 +55,9 @@ interface UseEntityColumnVisibilityProps {
   currentConfig?: EntityConfig | null;
 }
 
-export const useEntityColumnVisibility = ({ 
-  entityType, 
-  currentConfig 
+export const useEntityColumnVisibility = ({
+  entityType,
+  currentConfig,
 }: UseEntityColumnVisibilityProps) => {
   // Get column configs for current entity type
   const columnConfigs = useMemo(() => {
@@ -66,15 +66,15 @@ export const useEntityColumnVisibility = ({
   }, [entityType]);
 
   // Initialize visibility state from column configs
-  const [visibilityState, setVisibilityState] = useState<Record<string, boolean>>(
-    () => {
-      const initialState: Record<string, boolean> = {};
-      columnConfigs.forEach(config => {
-        initialState[config.key] = config.defaultVisible;
-      });
-      return initialState;
-    }
-  );
+  const [visibilityState, setVisibilityState] = useState<
+    Record<string, boolean>
+  >(() => {
+    const initialState: Record<string, boolean> = {};
+    columnConfigs.forEach(config => {
+      initialState[config.key] = config.defaultVisible;
+    });
+    return initialState;
+  });
 
   // Update visibility state when entity type changes
   useEffect(() => {
@@ -95,7 +95,7 @@ export const useEntityColumnVisibility = ({
       if (config.key === 'name' && currentConfig?.nameColumnHeader) {
         label = currentConfig.nameColumnHeader;
       }
-      
+
       return {
         key: config.key,
         label,
@@ -117,19 +117,22 @@ export const useEntityColumnVisibility = ({
       .map(([key]) => key);
   }, [visibilityState]);
 
-  const isColumnVisible = useCallback((columnKey: string): boolean => {
-    return visibilityState[columnKey] ?? true;
-  }, [visibilityState]);
+  const isColumnVisible = useCallback(
+    (columnKey: string): boolean => {
+      return visibilityState[columnKey] ?? true;
+    },
+    [visibilityState]
+  );
 
   // Get auto-size columns (only visible ones)
   const autoSizeColumns = useMemo(() => {
     const baseColumns = ['code', 'name'];
     const conditionalColumns = [];
-    
+
     if (currentConfig?.hasNciCode && isColumnVisible('nci_code')) {
       conditionalColumns.push('nci_code');
     }
-    
+
     return baseColumns
       .concat(conditionalColumns)
       .filter(col => isColumnVisible(col));

@@ -300,7 +300,11 @@ function BaseSelector<T>({
               >
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>Enter to select</span>
-                  <span>{filteredItems.length} {config.footerSingular.charAt(0).toUpperCase() + config.footerSingular.slice(1)}</span>
+                  <span>
+                    {filteredItems.length}{' '}
+                    {config.footerSingular.charAt(0).toUpperCase() +
+                      config.footerSingular.slice(1)}
+                  </span>
                 </div>
               </motion.div>
             )}

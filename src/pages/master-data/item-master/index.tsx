@@ -21,7 +21,10 @@ import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
 
 // Hooks and utilities
 import { useMasterDataManagement } from '@/hooks/useMasterDataManagement';
-import { useItemGridColumns, useColumnVisibility } from '@/features/item-management/application/hooks/ui';
+import {
+  useItemGridColumns,
+  useColumnVisibility,
+} from '@/features/item-management/application/hooks/ui';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import { itemSearchColumns } from '@/utils/searchColumns';
 
@@ -109,7 +112,7 @@ const ItemMasterNew = memo(() => {
     getTabFromPath(location.pathname)
   );
   const searchInputRef = useRef<HTMLInputElement>(null);
-  
+
   // AG Grid API reference for items tab filtering
   const [itemGridApi, setItemGridApi] = useState<GridApi | null>(null);
 
@@ -141,15 +144,13 @@ const ItemMasterNew = memo(() => {
   });
 
   // Column visibility management
-  const {
-    columnOptions,
+  const { columnOptions, visibleColumns, isColumnVisible, handleColumnToggle } =
+    useColumnVisibility();
+
+  const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns({
     visibleColumns,
     isColumnVisible,
-    handleColumnToggle,
-  } = useColumnVisibility();
-
-  const { columnDefs: itemColumnDefs, columnsToAutoSize } =
-    useItemGridColumns({ visibleColumns, isColumnVisible });
+  });
 
   // Memoize modal handlers
   const openAddItemModal = useCallback(

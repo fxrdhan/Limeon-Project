@@ -27,11 +27,11 @@ export const useAutoScroll = ({
   // Track user scroll activity
   const handleScroll = useCallback(() => {
     userIsScrollingRef.current = true;
-    
+
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
-    
+
     // Reset user scrolling flag after user stops scrolling
     scrollTimeoutRef.current = setTimeout(() => {
       userIsScrollingRef.current = false;
@@ -44,8 +44,8 @@ export const useAutoScroll = ({
 
     const containers = [
       kodeRef.current,
-      nameRef.current, 
-      descriptionRef.current
+      nameRef.current,
+      descriptionRef.current,
     ].filter(Boolean);
 
     containers.forEach(container => {
@@ -70,7 +70,7 @@ export const useAutoScroll = ({
 
     const scrollToFirstHighlight = (retryCount = 0) => {
       if (!descriptionRef.current || userIsScrollingRef.current) return;
-      
+
       const highlightedElement = descriptionRef.current.querySelector(
         '.bg-green-400, .bg-red-400'
       );

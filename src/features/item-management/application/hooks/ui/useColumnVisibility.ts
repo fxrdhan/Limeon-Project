@@ -20,7 +20,11 @@ const COLUMN_CONFIGS: ColumnVisibilityConfig[] = [
   { key: 'category.name', label: 'Kategori', defaultVisible: true },
   { key: 'type.name', label: 'Jenis', defaultVisible: true },
   { key: 'unit.name', label: 'Kemasan', defaultVisible: true },
-  { key: 'package_conversions', label: 'Kemasan Turunan', defaultVisible: true },
+  {
+    key: 'package_conversions',
+    label: 'Kemasan Turunan',
+    defaultVisible: true,
+  },
   { key: 'base_price', label: 'Harga Pokok', defaultVisible: true },
   { key: 'sell_price', label: 'Harga Jual', defaultVisible: true },
   { key: 'stock', label: 'Stok', defaultVisible: true },
@@ -28,15 +32,15 @@ const COLUMN_CONFIGS: ColumnVisibilityConfig[] = [
 
 export const useColumnVisibility = () => {
   // Initialize visibility state from column configs
-  const [visibilityState, setVisibilityState] = useState<Record<string, boolean>>(
-    () => {
-      const initialState: Record<string, boolean> = {};
-      COLUMN_CONFIGS.forEach(config => {
-        initialState[config.key] = config.defaultVisible;
-      });
-      return initialState;
-    }
-  );
+  const [visibilityState, setVisibilityState] = useState<
+    Record<string, boolean>
+  >(() => {
+    const initialState: Record<string, boolean> = {};
+    COLUMN_CONFIGS.forEach(config => {
+      initialState[config.key] = config.defaultVisible;
+    });
+    return initialState;
+  });
 
   const columnOptions: ColumnOption[] = useMemo(() => {
     return COLUMN_CONFIGS.map(config => ({

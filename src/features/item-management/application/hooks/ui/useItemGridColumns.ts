@@ -16,7 +16,7 @@ interface UseItemGridColumnsProps {
 
 export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
   const { isColumnVisible } = props;
-  
+
   const columnDefs: ColDef[] = useMemo(() => {
     const allColumns: ColDef[] = [
       createTextColumn({
@@ -93,7 +93,9 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
 
     // Filter columns based on visibility
     if (isColumnVisible) {
-      return allColumns.filter(column => isColumnVisible(column.field as string));
+      return allColumns.filter(column =>
+        isColumnVisible(column.field as string)
+      );
     }
 
     return allColumns;
@@ -112,12 +114,14 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
       'sell_price',
       // 'stock' - excluded from autoSize, using fixed width range instead
     ];
-    
+
     // Filter columns to auto-size based on visibility
     if (isColumnVisible) {
-      return allColumnsToAutoSize.filter(columnKey => isColumnVisible(columnKey));
+      return allColumnsToAutoSize.filter(columnKey =>
+        isColumnVisible(columnKey)
+      );
     }
-    
+
     return allColumnsToAutoSize;
   }, [isColumnVisible]);
 
