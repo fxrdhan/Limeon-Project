@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { HiOutlineSparkles } from 'react-icons/hi2';
 import fuzzysort from 'fuzzysort';
 import { BaseSelectorProps } from '../../types';
-import { AnimationPhase, SEARCH_CONSTANTS } from '../../constants';
+import { SEARCH_CONSTANTS } from '../../constants';
 
 function BaseSelector<T>({
   items,
@@ -15,19 +16,17 @@ function BaseSelector<T>({
 }: BaseSelectorProps<T>) {
   const [filteredItems, setFilteredItems] = useState<T[]>(items);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [animationPhase, setAnimationPhase] =
-    useState<AnimationPhase>('hidden');
+  const [showHeader, setShowHeader] = useState(false);
+  const [showContent, setShowContent] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Reset selectedIndex when portal opens
   useEffect(() => {
     if (isOpen) {
       setSelectedIndex(0);
     }
   }, [isOpen]);
 
-  // Ensure selectedIndex stays within bounds when filteredItems change
   useEffect(() => {
     if (filteredItems.length > 0 && selectedIndex >= filteredItems.length) {
       setSelectedIndex(Math.max(0, filteredItems.length - 1));
@@ -37,20 +36,25 @@ function BaseSelector<T>({
   }, [filteredItems.length, selectedIndex]);
 
   useEffect(() => {
-    if (isOpen && animationPhase === 'hidden') {
-      setAnimationPhase('opening');
-      setTimeout(
-        () => setAnimationPhase('open'),
-        SEARCH_CONSTANTS.ANIMATION_OPENING_DURATION
-      );
-    } else if (!isOpen && animationPhase !== 'hidden') {
-      setAnimationPhase('closing');
-      setTimeout(
-        () => setAnimationPhase('hidden'),
-        SEARCH_CONSTANTS.ANIMATION_CLOSING_DURATION
-      );
+    if (isOpen && !showHeader) {
+      setShowHeader(true);
+      setTimeout(() => {
+        setShowContent(true);
+      }, 200);
+    } else if (!isOpen && (showHeader || showContent)) {
+      setShowContent(false);
+      setTimeout(() => {
+        setShowHeader(false);
+      }, 200);
     }
-  }, [isOpen, animationPhase]);
+  }, [isOpen, showHeader, showContent]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setShowHeader(false);
+      setShowContent(false);
+    }
+  }, [isOpen]);
 
   const searchFieldsConfig = useMemo(() => {
     if (items.length === 0) return [];
@@ -97,11 +101,9 @@ function BaseSelector<T>({
         .map(item => item.item);
 
       setFilteredItems(filtered);
-      // Only reset selectedIndex if current selection would be out of bounds
       setSelectedIndex(prev => (prev >= filtered.length ? 0 : prev));
     } else {
       setFilteredItems(items);
-      // Only reset selectedIndex if current selection would be out of bounds
       setSelectedIndex(prev => (prev >= items.length ? 0 : prev));
     }
   }, [searchTerm, items, searchFieldsConfig, config]);
@@ -160,7 +162,15 @@ function BaseSelector<T>({
         modalRef.current &&
         !modalRef.current.contains(event.target as Node)
       ) {
-        onClose();
+        if (isOpen) {
+          setShowContent(false);
+          setTimeout(() => {
+            setShowHeader(false);
+          }, 200);
+          setTimeout(() => {
+            onClose();
+          }, 350);
+        }
       }
     };
 
@@ -173,111 +183,131 @@ function BaseSelector<T>({
     };
   }, [isOpen, onClose]);
 
-  if (animationPhase === 'hidden') return null;
-
   return (
-    <div
-      ref={modalRef}
-      className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-80 flex flex-col"
-      style={{
-        top: position.top + 5,
-        left: position.left,
-        maxHeight: config.maxHeight,
-      }}
-    >
-      <div
-        className={`flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg transition-all duration-300 ease-out ${
-          animationPhase === 'open'
-            ? 'opacity-100 transform translate-y-0'
-            : 'opacity-0 transform -translate-y-2'
-        }`}
-      >
-        <div className="flex items-center gap-2 text-xs text-gray-600">
-          <HiOutlineSparkles className="w-3 h-3" />
-          <span>{config.headerText}</span>
-        </div>
-      </div>
-
-      <div
-        className={`flex-1 overflow-y-auto min-h-0 transition-all duration-300 ease-out ${
-          animationPhase === 'open'
-            ? 'opacity-100 transform translate-y-0 scale-100'
-            : animationPhase === 'opening'
-              ? 'opacity-0 max-h-0 transform translate-y-4 scale-95'
-              : 'opacity-0 max-h-0 transform -translate-y-2 scale-98'
-        }`}
-      >
-        {filteredItems.length === 0 ? (
-          <div className="px-3 py-4 text-sm text-gray-500 text-center">
-            {config.noResultsText.replace('{searchTerm}', searchTerm)}
-          </div>
-        ) : (
-          <div className="py-1">
-            {filteredItems.map((item, index) => (
-              <div
-                key={config.getItemKey(item)}
-                ref={el => {
-                  itemRefs.current[index] = el;
-                }}
-                className={`px-3 py-2 cursor-pointer flex items-start gap-3 mx-1 rounded-md transition-all duration-200 ease-out ${
-                  index === selectedIndex
-                    ? config.theme === 'blue'
-                      ? 'bg-blue-100'
-                      : 'bg-purple-100'
-                    : 'bg-transparent hover:bg-gray-50'
-                }`}
-                onClick={() => onSelect(item)}
-              >
-                <div className="flex-shrink-0 mt-0.5">
-                  {config.getItemIcon(item)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-sm font-medium ${
-                        index === selectedIndex
-                          ? config.theme === 'blue'
-                            ? 'text-blue-700'
-                            : 'text-purple-700'
-                          : 'text-gray-900'
-                      }`}
-                    >
-                      {config.getItemLabel(item)}
-                    </span>
-                    {config.getItemSecondaryText && (
-                      <span className="text-xs text-gray-400 font-mono">
-                        {config.getItemSecondaryText(item)}
-                      </span>
-                    )}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          ref={modalRef}
+          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] overflow-hidden"
+          style={{
+            top: position.top + 5,
+            left: position.left,
+          }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.15 }}
+        >
+          <AnimatePresence>
+            {showHeader && (
+              <>
+                <motion.div
+                  className="flex-shrink-0 bg-white border-b border-gray-100 px-3 py-2 rounded-t-lg"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                >
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <HiOutlineSparkles className="w-3 h-3" />
+                    <span>{config.headerText}</span>
                   </div>
-                  {config.getItemDescription &&
-                    config.getItemDescription(item) && (
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                        {config.getItemDescription(item)}
-                      </p>
-                    )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
 
-      <div
-        className={`flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg transition-all duration-300 ease-out ${
-          animationPhase === 'open'
-            ? 'opacity-100 transform translate-y-0'
-            : 'opacity-0 transform translate-y-2'
-        }`}
-      >
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>↑↓ navigasi • Enter pilih • Esc tutup</span>
-          <span>
-            {filteredItems.length} {config.footerSingular}
-          </span>
-        </div>
-      </div>
-    </div>
+          <AnimatePresence>
+            {showContent && (
+              <motion.div
+                className="overflow-hidden"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{
+                  duration: 0.25,
+                  ease: 'easeInOut',
+                }}
+              >
+                <div className="max-h-65 overflow-y-auto py-1">
+                  {filteredItems.length === 0 ? (
+                    <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                      {config.noResultsText.replace('{searchTerm}', searchTerm)}
+                    </div>
+                  ) : (
+                    <div className="pb-1">
+                      {filteredItems.map((item, index) => (
+                        <div
+                          key={config.getItemKey(item)}
+                          ref={el => {
+                            itemRefs.current[index] = el;
+                          }}
+                          className={`px-3 py-2 cursor-pointer flex items-start gap-3 mx-1 rounded-md transition-all duration-200 ease-out ${
+                            index === selectedIndex
+                              ? config.theme === 'blue'
+                                ? 'bg-blue-100'
+                                : 'bg-purple-100'
+                              : 'bg-transparent hover:bg-gray-50'
+                          }`}
+                          onClick={() => onSelect(item)}
+                        >
+                          <div className="flex-shrink-0 mt-0.5">
+                            {config.getItemIcon(item)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-sm font-medium ${
+                                  index === selectedIndex
+                                    ? config.theme === 'blue'
+                                      ? 'text-blue-700'
+                                      : 'text-purple-700'
+                                    : 'text-gray-900'
+                                }`}
+                              >
+                                {config.getItemLabel(item)}
+                              </span>
+                              {config.getItemSecondaryText && (
+                                <span className="text-xs text-gray-400 font-mono">
+                                  {config.getItemSecondaryText(item)}
+                                </span>
+                              )}
+                            </div>
+                            {config.getItemDescription &&
+                              config.getItemDescription(item) && (
+                                <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                                  {config.getItemDescription(item)}
+                                </p>
+                              )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {showHeader && (
+              <motion.div
+                className="flex-shrink-0 bg-gray-50 border-t border-gray-100 px-3 py-2 rounded-b-lg"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+              >
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Enter to select</span>
+                  <span>{filteredItems.length} {config.footerSingular.charAt(0).toUpperCase() + config.footerSingular.slice(1)}</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
