@@ -35,7 +35,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   const [currentHeight] = useState(sizeConfig.height);
 
   // Custom hooks
-  const { isOpen, isClosing, openCalendar, closeCalendar } = useCalendarState(
+  const { isOpen, isClosing, isOpening, openCalendar, closeCalendar } = useCalendarState(
     {
       value,
       mode,
@@ -210,6 +210,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     // Calendar state
     isOpen,
     isClosing,
+    isOpening,
     isPositionReady,
     displayDate,
     currentView,

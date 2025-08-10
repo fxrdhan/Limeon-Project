@@ -9,6 +9,7 @@ export interface CalendarContextState {
   // Calendar state
   isOpen: boolean;
   isClosing: boolean;
+  isOpening: boolean;
   isPositionReady: boolean;
   displayDate: Date;
   currentView: CalendarView;

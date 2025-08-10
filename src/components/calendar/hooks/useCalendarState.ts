@@ -12,6 +12,7 @@ export const useCalendarState = (
 
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
 
   const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -22,6 +23,13 @@ export const useCalendarState = (
 
     setIsOpen(true);
     setIsClosing(false);
+    setIsOpening(true);
+    
+    // Start opening animation after a brief delay to ensure the component is rendered
+    openTimeoutRef.current = setTimeout(() => {
+      setIsOpening(false);
+    }, 10); // Small delay to ensure DOM is ready
+    
     onOpen?.();
   }, [onOpen]);
 
@@ -30,7 +38,8 @@ export const useCalendarState = (
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
 
     setIsClosing(true);
-    setTimeout(() => {
+    setIsOpening(false);
+    closeTimeoutRef.current = setTimeout(() => {
       setIsOpen(false);
       setIsClosing(false);
       onClose?.();
@@ -48,6 +57,7 @@ export const useCalendarState = (
   return {
     isOpen,
     isClosing,
+    isOpening,
     openCalendar,
     closeCalendar,
   };
