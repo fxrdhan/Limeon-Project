@@ -52,10 +52,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           type="button"
           name={name}
           tabIndex={tabIndex}
-          className={`inline-flex items-center gap-1 text-sm text-gray-800 hover:text-gray-900 focus:outline-hidden transition duration-200 ease-in-out cursor-pointer ${
+          className={`inline-flex items-center gap-1 min-h-[1.5rem] text-base font-medium text-gray-700 hover:text-gray-800 focus:outline-hidden transition duration-200 ease-in-out cursor-pointer ${
             isPlaceholder 
               ? 'text-gray-500 hover:text-gray-600' 
-              : 'text-gray-800 hover:text-gray-900'
+              : 'text-gray-700 hover:text-gray-800'
           }`}
           aria-haspopup="menu"
           aria-expanded={isOpen || isClosing}
@@ -71,7 +71,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             displayText={displayText}
             titleText={titleText}
             isPlaceholder={isPlaceholder}
-            isExpanded={isExpanded}
+            isExpanded={false}
           />
           <ButtonIcon
             isOpen={isOpen}
