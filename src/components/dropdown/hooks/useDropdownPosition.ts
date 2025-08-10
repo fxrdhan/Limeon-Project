@@ -1,4 +1,4 @@
-import { useState, useCallback, RefObject, CSSProperties } from 'react';
+import { useState, useCallback, useEffect, RefObject, CSSProperties } from 'react';
 import { DROPDOWN_CONSTANTS, DropDirection } from '../constants';
 import type { DropdownPortalWidth, DropdownPosition } from '@/types';
 
@@ -13,9 +13,16 @@ export const useDropdownPosition = (
   const [initialDropDirection, setInitialDropDirection] =
     useState<DropDirection | null>(null);
   const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
+  const [isPositionReady, setIsPositionReady] = useState(false);
 
   const calculateDropdownPosition = useCallback(() => {
-    if (!isOpen || !dropdownMenuRef.current || !buttonRef.current) {
+    if (!isOpen) {
+      setIsPositionReady(false);
+      return;
+    }
+    
+    if (!dropdownMenuRef.current || !buttonRef.current) {
+      // Wait for refs to be available
       if (isOpen && !dropdownMenuRef.current) {
         requestAnimationFrame(calculateDropdownPosition);
       }
@@ -87,7 +94,7 @@ export const useDropdownPosition = (
     const portalStyleBase: CSSProperties = {
       position: 'fixed',
       left: `${leftPosition}px`,
-      zIndex: 1050,
+      zIndex: DROPDOWN_CONSTANTS.PORTAL_Z_INDEX,
       top: `${topPosition}px`,
     };
 
@@ -105,11 +112,24 @@ export const useDropdownPosition = (
 
   const resetPosition = useCallback(() => {
     setInitialDropDirection(null);
+    setIsPositionReady(false);
   }, []);
+
+  // Auto calculate position when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      // Set position ready immediately, then calculate actual position
+      setIsPositionReady(true);
+      calculateDropdownPosition();
+    } else {
+      setIsPositionReady(false);
+    }
+  }, [isOpen, calculateDropdownPosition]);
 
   return {
     dropDirection,
     portalStyle,
+    isPositionReady,
     calculateDropdownPosition,
     resetPosition,
   };

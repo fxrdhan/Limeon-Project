@@ -95,6 +95,7 @@ const Dropdown = ({
   const {
     dropDirection,
     portalStyle,
+    isPositionReady,
     calculateDropdownPosition,
     resetPosition,
   } = useDropdownPosition(isOpen, buttonRef, dropdownMenuRef, portalWidth, position);
@@ -280,6 +281,7 @@ const Dropdown = ({
     // Position state
     dropDirection,
     portalStyle,
+    isPositionReady,
 
     // Refs
     buttonRef: buttonRef as RefObject<HTMLButtonElement>,

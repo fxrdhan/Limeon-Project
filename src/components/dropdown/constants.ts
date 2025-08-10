@@ -13,6 +13,8 @@ export const DROPDOWN_CONSTANTS = {
   PAGE_SIZE: 5,
   BUTTON_PADDING: 48,
   RADIO_EXTRA_PADDING: 24,
+  // Z-index for dropdown portal (higher than calendar portal)
+  PORTAL_Z_INDEX: 1060,
 } as const;
 
 export const KEYBOARD_KEYS = {

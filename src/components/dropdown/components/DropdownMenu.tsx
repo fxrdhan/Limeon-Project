@@ -15,6 +15,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       applyOpenStyles,
       dropDirection,
       portalStyle,
+      isPositionReady,
       searchList,
       searchTerm,
       searchState,
@@ -42,6 +43,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         applyOpenStyles={applyOpenStyles}
         dropDirection={dropDirection}
         portalStyle={portalStyle}
+        isPositionReady={isPositionReady}
         onMouseEnter={onMenuEnter}
         onMouseLeave={onMenuLeave}
       >
