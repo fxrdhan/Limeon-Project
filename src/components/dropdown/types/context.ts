@@ -34,6 +34,7 @@ export interface DropdownContextType {
   // Position state
   dropDirection: DropDirection;
   portalStyle: React.CSSProperties;
+  isPositionReady: boolean;
 
   // Refs
   buttonRef: RefObject<HTMLButtonElement>;

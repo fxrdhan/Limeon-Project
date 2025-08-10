@@ -114,15 +114,16 @@ export const useDropdownEffects = ({
       clearTimeouts();
 
       document.body.style.overflow = 'hidden';
+      // Immediately set open styles and calculate position  
+      setApplyOpenStyles(true);
+      
+      // Calculate position after DOM is ready
       openStyleTimerId = setTimeout(() => {
-        setApplyOpenStyles(true);
-        requestAnimationFrame(() => {
-          if (dropdownMenuRef.current) {
-            calculateDropdownPosition();
-            manageFocusOnOpen();
-          }
-        });
-      }, 20);
+        if (dropdownMenuRef.current) {
+          calculateDropdownPosition();
+          manageFocusOnOpen();
+        }
+      }, 10);
 
       const events = [
         ['scroll', calculateDropdownPosition, true],
@@ -160,6 +161,7 @@ export const useDropdownEffects = ({
     resetSearch,
     setApplyOpenStyles,
     dropdownMenuRef,
+    buttonRef,
   ]);
 
   // Position recalculation
