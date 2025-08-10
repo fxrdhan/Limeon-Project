@@ -16,6 +16,7 @@ import {
   RowClickedEvent,
   GridApi,
   GridReadyEvent,
+  ColumnPinnedEvent,
 } from 'ag-grid-community';
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
 
@@ -141,6 +142,8 @@ const EntityMasterPage: React.FC = memo(() => {
     isColumnVisible,
     handleColumnToggle,
     autoSizeColumns,
+    getColumnPinning,
+    handleColumnPinning,
   } = useEntityColumnVisibility({
     entityType: activeTab,
     currentConfig,
@@ -214,6 +217,25 @@ const EntityMasterPage: React.FC = memo(() => {
     };
   }, [activeTab]);
 
+  // Handle column pinning events
+  const handleEntityColumnPinned = useCallback(
+    (event: ColumnPinnedEvent) => {
+      // Save pinning state to database
+      if (event.column && handleColumnPinning) {
+        const colId = event.column.getColId();
+        // AG Grid returns true for left pin, 'right' for right pin, false/null/undefined for unpinned
+        let pinned: 'left' | 'right' | null = null;
+        if (event.pinned === true || event.pinned === 'left') {
+          pinned = 'left';
+        } else if (event.pinned === 'right') {
+          pinned = 'right';
+        }
+        handleColumnPinning(colId, pinned);
+      }
+    },
+    [handleColumnPinning]
+  );
+
   // Memoize column definitions
   const columnDefs: ColDef[] = useMemo(() => {
     const allColumns: ColDef[] = [
@@ -233,15 +255,18 @@ const EntityMasterPage: React.FC = memo(() => {
         cellStyle: { textAlign: 'center', fontWeight: 'bold' },
         valueGetter: 'node.rowIndex + 1',
       },
-      createTextColumn({
-        field: 'code',
-        headerName: 'Kode',
-        minWidth: 80,
-        valueGetter: params => {
-          // All master data tables now use 'code'
-          return params.data.code || '-';
-        },
-      }),
+      {
+        ...createTextColumn({
+          field: 'code',
+          headerName: 'Kode',
+          minWidth: 80,
+          valueGetter: params => {
+            // All master data tables now use 'code'
+            return params.data.code || '-';
+          },
+        }),
+        pinned: getColumnPinning('code') || undefined,
+      },
       {
         field: 'name',
         headerName: currentConfig?.nameColumnHeader || 'Nama',
@@ -268,36 +293,43 @@ const EntityMasterPage: React.FC = memo(() => {
         tooltipField: 'name',
         sortable: true,
         resizable: true,
+        pinned: getColumnPinning('name') || undefined,
       },
       // Add NCI Code column for packages and dosages
       ...(currentConfig?.hasNciCode
         ? [
-            createTextColumn({
-              field: 'nci_code',
-              headerName: 'Kode NCI',
-              minWidth: 120,
-              valueGetter: params => params.data.nci_code || '-',
-            }),
+            {
+              ...createTextColumn({
+                field: 'nci_code',
+                headerName: 'Kode NCI',
+                minWidth: 120,
+                valueGetter: params => params.data.nci_code || '-',
+              }),
+              pinned: getColumnPinning('nci_code') || undefined,
+            },
           ]
         : []),
       // Note: abbreviation field removed as it doesn't exist in item_units table
-      createTextColumn({
-        field: currentConfig?.hasAddress ? 'address' : 'description',
-        headerName: currentConfig?.hasAddress ? 'Alamat' : 'Deskripsi',
-        minWidth: 200,
-        flex: 1,
-        valueGetter: params => {
-          if (currentConfig?.hasAddress) {
-            return params.data.address || '-';
-          }
-          return params.data.description || '-';
-        },
-      }),
+      {
+        ...createTextColumn({
+          field: currentConfig?.hasAddress ? 'address' : 'description',
+          headerName: currentConfig?.hasAddress ? 'Alamat' : 'Deskripsi',
+          minWidth: 200,
+          flex: 1,
+          valueGetter: params => {
+            if (currentConfig?.hasAddress) {
+              return params.data.address || '-';
+            }
+            return params.data.description || '-';
+          },
+        }),
+        pinned: getColumnPinning(currentConfig?.hasAddress ? 'address' : 'description') || undefined,
+      },
     ];
 
     // Filter columns based on visibility
     return allColumns.filter(column => isColumnVisible(column.field as string));
-  }, [currentConfig, isColumnVisible]);
+  }, [currentConfig, isColumnVisible, getColumnPinning]);
 
   const onRowClicked = useCallback(
     (event: RowClickedEvent) => {
@@ -418,6 +450,7 @@ const EntityMasterPage: React.FC = memo(() => {
                 isExternalFilterPresent={isExternalFilterPresent}
                 doesExternalFilterPass={doesExternalFilterPass}
                 mainMenuItems={getPinOnlyMenuItems}
+                onColumnPinned={handleEntityColumnPinned}
                 style={{
                   ...GRID_STYLE,
                   opacity:

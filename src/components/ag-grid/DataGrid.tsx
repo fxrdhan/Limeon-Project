@@ -69,6 +69,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       disableFiltering = false,
       columnMenuTabs,
       mainMenuItems,
+      onColumnPinned,
     },
     ref
   ) => {
@@ -208,6 +209,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           loadThemeGoogleFonts={loadThemeGoogleFonts}
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
+          onColumnPinned={onColumnPinned}
         />
       </div>
     );

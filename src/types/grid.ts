@@ -10,6 +10,7 @@ import {
   RowDataTransaction,
   ColumnMenuTab,
   GetMainMenuItems,
+  ColumnPinnedEvent,
 } from 'ag-grid-community';
 
 export interface ColumnConfig {
@@ -55,6 +56,7 @@ export interface DataGridProps {
   disableFiltering?: boolean;
   columnMenuTabs?: ColumnMenuTab[];
   mainMenuItems?: GetMainMenuItems;
+  onColumnPinned?: (event: ColumnPinnedEvent) => void;
 }
 
 export interface DataGridRef {

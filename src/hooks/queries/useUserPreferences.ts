@@ -144,6 +144,17 @@ export const ENTITY_PREFERENCE_KEY_MAP = {
   units: PREFERENCE_KEYS.UNIT_COLUMN_VISIBILITY,
 } as const;
 
+// Entity type to column pinning preference key mapping
+export const ENTITY_PINNING_PREFERENCE_KEY_MAP = {
+  items: PREFERENCE_KEYS.ITEM_COLUMN_PINNING,
+  categories: PREFERENCE_KEYS.CATEGORY_COLUMN_PINNING,
+  types: PREFERENCE_KEYS.TYPE_COLUMN_PINNING,
+  packages: PREFERENCE_KEYS.PACKAGE_COLUMN_PINNING,
+  dosages: PREFERENCE_KEYS.DOSAGE_COLUMN_PINNING,
+  manufacturers: PREFERENCE_KEYS.MANUFACTURER_COLUMN_PINNING,
+  units: PREFERENCE_KEYS.UNIT_COLUMN_PINNING,
+} as const;
+
 export type UserPreferenceEntityType = keyof typeof ENTITY_PREFERENCE_KEY_MAP;
 
 /**
@@ -175,8 +186,43 @@ export const useEntityColumnVisibilityPreference = (entityType: UserPreferenceEn
 };
 
 /**
+ * Generic hook for entity column pinning preferences
+ */
+export const useEntityColumnPinningPreference = (entityType: UserPreferenceEntityType) => {
+  const preferenceKey = ENTITY_PINNING_PREFERENCE_KEY_MAP[entityType];
+  
+  const { data: preference, isLoading, error } = useUserPreference(
+    preferenceKey,
+    { enabled: true }
+  );
+  
+  const { setPreference } = useUserPreferenceMutations();
+
+  const setColumnPinning = async (pinning: Record<string, 'left' | 'right' | null>) => {
+    await setPreference.mutateAsync({
+      key: preferenceKey,
+      value: pinning,
+    });
+  };
+
+  return {
+    columnPinning: preference?.preference_value as Record<string, 'left' | 'right' | null> | undefined,
+    isLoading: isLoading || setPreference.isPending,
+    error: error || setPreference.error,
+    setColumnPinning,
+  };
+};
+
+/**
  * Utility hook for item column visibility preference (backward compatibility)
  */
 export const useColumnVisibilityPreference = () => {
   return useEntityColumnVisibilityPreference('items');
+};
+
+/**
+ * Utility hook for item column pinning preference (backward compatibility)
+ */
+export const useColumnPinningPreference = () => {
+  return useEntityColumnPinningPreference('items');
 };

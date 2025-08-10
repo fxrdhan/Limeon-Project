@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useColumnVisibilityPreference } from '@/hooks/queries/useUserPreferences';
+import { useColumnVisibilityPreference, useColumnPinningPreference } from '@/hooks/queries/useUserPreferences';
 
 interface ColumnVisibilityConfig {
   key: string;
@@ -49,8 +49,17 @@ export const useColumnVisibility = () => {
     error: dbError,
   } = useColumnVisibilityPreference();
 
+  // Column pinning preferences
+  const {
+    columnPinning: dbColumnPinning,
+    setColumnPinning: setDbColumnPinning,
+    isLoading: isPinningLoading,
+    error: pinningError,
+  } = useColumnPinningPreference();
+
   // Local state for optimistic updates
   const [optimisticState, setOptimisticState] = useState<Record<string, boolean> | null>(null);
+  const [optimisticPinningState, setOptimisticPinningState] = useState<Record<string, 'left' | 'right' | null> | null>(null);
 
   // Use optimistic state during saves, otherwise use DB state or defaults
   const visibilityState = useMemo(() => {
@@ -69,6 +78,14 @@ export const useColumnVisibility = () => {
 
     return getDefaultVisibility();
   }, [dbColumnVisibility, optimisticState]);
+
+  // Column pinning state
+  const pinningState = useMemo(() => {
+    if (optimisticPinningState) {
+      return optimisticPinningState;
+    }
+    return dbColumnPinning || {};
+  }, [dbColumnPinning, optimisticPinningState]);
 
   const columnOptions: ColumnOption[] = useMemo(() => {
     return COLUMN_CONFIGS.map(config => ({
@@ -111,8 +128,39 @@ export const useColumnVisibility = () => {
       .map(([key]) => key);
   }, [visibilityState]);
 
+  const handleColumnPinning = useCallback(
+    async (columnKey: string, pinned: 'left' | 'right' | null) => {
+      // Create new pinning state
+      const newPinningState = {
+        ...pinningState,
+        [columnKey]: pinned,
+      };
+      
+      // Set optimistic state for immediate UI update
+      setOptimisticPinningState(newPinningState);
+      
+      try {
+        // Save to database
+        await setDbColumnPinning(newPinningState);
+        
+        // Clear optimistic state after successful save
+        setOptimisticPinningState(null);
+      } catch (error) {
+        console.error('Failed to save column pinning to database:', error);
+        
+        // Revert optimistic state on error
+        setOptimisticPinningState(null);
+      }
+    },
+    [pinningState, setDbColumnPinning]
+  );
+
   const isColumnVisible = (columnKey: string): boolean => {
     return visibilityState[columnKey] ?? true;
+  };
+
+  const getColumnPinning = (columnKey: string): 'left' | 'right' | null => {
+    return pinningState[columnKey] ?? null;
   };
 
   return {
@@ -120,7 +168,10 @@ export const useColumnVisibility = () => {
     visibleColumns,
     isColumnVisible,
     handleColumnToggle,
-    isLoading: isDbLoading,
-    error: dbError,
+    pinningState,
+    getColumnPinning,
+    handleColumnPinning,
+    isLoading: isDbLoading || isPinningLoading,
+    error: dbError || pinningError,
   };
 };
