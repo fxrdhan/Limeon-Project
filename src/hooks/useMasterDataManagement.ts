@@ -241,6 +241,8 @@ export const useMasterDataManagement = (
     isError,
     error,
     refetch,
+    isFetching,
+    isPlaceholderData,
   } = hooks.useData({
     enabled: true,
   });
@@ -785,7 +787,8 @@ export const useMasterDataManagement = (
     isLoading,
     isError,
     queryError,
-    isFetching: isLoading, // Alias for compatibility
+    isFetching, // Now use actual isFetching from React Query
+    isPlaceholderData, // Indicates if data is from cache or fresh
     addMutation,
     updateMutation,
     deleteMutation,

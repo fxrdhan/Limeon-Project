@@ -92,6 +92,7 @@ export const useGenericEntityManagement = (
     isError,
     error,
     isFetching,
+    isPlaceholderData,
   } = hooks.useData({ enabled });
 
   // Get mutations
@@ -256,6 +257,7 @@ export const useGenericEntityManagement = (
     isError,
     error,
     isFetching,
+    isPlaceholderData,
 
     // Mutations
     mutations,
