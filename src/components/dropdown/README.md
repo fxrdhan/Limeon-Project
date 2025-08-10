@@ -269,13 +269,3 @@ export const DROPDOWN_CONSTANTS = {
   VIEWPORT_MARGIN: 16,
 };
 ```
-
-## Contributing
-
-When modifying the component:
-
-1. Maintain single responsibility principle
-2. Update TypeScript interfaces in `types/` folder
-3. Write unit tests for new functionality
-4. Follow existing naming conventions
-5. Update this documentation for API changes

@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
-import { DATEPICKER_CONSTANTS } from '../constants';
+import { CALENDAR_CONSTANTS } from '../constants';
 import type {
-  UseDatepickerNavigationParams,
-  UseDatepickerNavigationReturn,
+  UseCalendarNavigationParams,
+  UseCalendarNavigationReturn,
 } from '../types';
 
-export const useDatepickerNavigation = (
-  params: UseDatepickerNavigationParams
-): UseDatepickerNavigationReturn => {
+export const useCalendarNavigation = (
+  params: UseCalendarNavigationParams
+): UseCalendarNavigationReturn => {
   const { currentView, setDisplayDate } = params;
 
   const navigateYear = useCallback(
@@ -37,7 +37,7 @@ export const useDatepickerNavigation = (
             newDate.getFullYear() + (direction === 'prev' ? -1 : 1)
           );
         } else if (currentView === 'years') {
-          const decadeShift = DATEPICKER_CONSTANTS.DECADE_SHIFT;
+          const decadeShift = CALENDAR_CONSTANTS.DECADE_SHIFT;
           newDate.setFullYear(
             newDate.getFullYear() +
               (direction === 'prev' ? -decadeShift : decadeShift)
@@ -54,3 +54,6 @@ export const useDatepickerNavigation = (
     navigateYear,
   };
 };
+
+// Backward compatibility alias
+export const useDatepickerNavigation = useCalendarNavigation;

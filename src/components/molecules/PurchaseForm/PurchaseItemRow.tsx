@@ -1,7 +1,7 @@
 import React from 'react';
 import { TableRow, TableCell } from '@/components/table';
 import Button from '@/components/button';
-import Datepicker from '@/components/datepicker';
+import Calendar from '@/components/calendar';
 import { FaTrash } from 'react-icons/fa';
 import { formatRupiah, extractNumericValue } from '@/lib/formatters';
 import type { PurchaseItem, CustomDateValueType } from '@/types';
@@ -80,7 +80,7 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
         />
       </TableCell>
       <TableCell className="text-center">
-        <Datepicker
+        <Calendar
           value={item.expiry_date ? new Date(item.expiry_date) : null}
           onChange={(newDate: CustomDateValueType) => {
             onExpiryDateChange(

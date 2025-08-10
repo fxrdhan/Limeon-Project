@@ -1,14 +1,20 @@
 import { useState, useCallback, useEffect } from 'react';
-import { DATEPICKER_CONSTANTS } from '../constants';
+import { CALENDAR_CONSTANTS } from '../constants';
 import type {
-  UseDatepickerPositionParams,
-  UseDatepickerPositionReturn,
+  UseCalendarPositionParams,
+  UseCalendarPositionReturn,
 } from '../types';
 
-export const useDatepickerPosition = (
-  params: UseDatepickerPositionParams
-): UseDatepickerPositionReturn => {
-  const { triggerRef, isOpen, portalWidth } = params;
+export const useCalendarPosition = (
+  params: UseCalendarPositionParams
+): UseCalendarPositionReturn => {
+  const {
+    triggerRef,
+    isOpen,
+    portalWidth,
+    currentHeight = CALENDAR_CONSTANTS.CALENDAR_HEIGHT,
+    resizable = false,
+  } = params;
 
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
   const [isPositionReady, setIsPositionReady] = useState(false);
@@ -18,7 +24,7 @@ export const useDatepickerPosition = (
     if (!triggerRef.current) return;
 
     const buttonRect = triggerRef.current.getBoundingClientRect();
-    const calendarHeight = DATEPICKER_CONSTANTS.CALENDAR_HEIGHT;
+    const calendarHeight = resizable ? currentHeight : CALENDAR_CONSTANTS.CALENDAR_HEIGHT;
     const viewportHeight = window.innerHeight;
     const spaceBelow = viewportHeight - buttonRect.bottom;
     const shouldDropUp =
@@ -34,10 +40,10 @@ export const useDatepickerPosition = (
           ? `${portalWidth}px`
           : portalWidth
         : `${buttonRect.width}px`,
-      zIndex: DATEPICKER_CONSTANTS.PORTAL_Z_INDEX,
+      zIndex: CALENDAR_CONSTANTS.PORTAL_Z_INDEX,
     };
 
-    const margin = DATEPICKER_CONSTANTS.POSITION_MARGIN;
+    const margin = CALENDAR_CONSTANTS.POSITION_MARGIN;
     if (shouldDropUp) {
       newMenuStyle.top = `${
         buttonRect.top + window.scrollY - calendarHeight - margin
@@ -48,7 +54,7 @@ export const useDatepickerPosition = (
 
     setPortalStyle(newMenuStyle);
     setIsPositionReady(true);
-  }, [triggerRef, portalWidth]);
+  }, [triggerRef, portalWidth, currentHeight, resizable]);
 
   useEffect(() => {
     if (isOpen) {
@@ -73,3 +79,6 @@ export const useDatepickerPosition = (
     calculatePosition,
   };
 };
+
+// Backward compatibility alias
+export const useDatepickerPosition = useCalendarPosition;

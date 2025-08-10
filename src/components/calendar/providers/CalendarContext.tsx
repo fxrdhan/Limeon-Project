@@ -1,20 +1,26 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { DatepickerContext } from './datepickerContext';
-import { useDatepickerState } from '../hooks/useDatepickerState';
-import { useDatepickerPosition } from '../hooks/useDatepickerPosition';
-import { useDatepickerNavigation } from '../hooks/useDatepickerNavigation';
-import { useDatepickerHover } from '../hooks/useDatepickerHover';
-import { useDatepickerKeyboard } from '../hooks/useDatepickerKeyboard';
-import type { DatepickerProviderProps, CalendarView } from '../types';
+import { CalendarContext } from './calendarContext';
+import { useCalendarState } from '../hooks/useCalendarState';
+import { useCalendarPosition } from '../hooks/useCalendarPosition';
+import { useCalendarNavigation } from '../hooks/useCalendarNavigation';
+import { useCalendarHover } from '../hooks/useCalendarHover';
+import { useCalendarKeyboard } from '../hooks/useCalendarKeyboard';
+import { CALENDAR_SIZE_PRESETS } from '../constants';
+import type { CalendarProviderProps, CalendarView } from '../types';
 
-export const DatepickerProvider: React.FC<DatepickerProviderProps> = ({
+export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   children,
+  mode = 'datepicker',
+  size = 'md',
   value,
   onChange,
   minDate,
   maxDate,
   portalWidth,
+  resizable = false,
 }) => {
+  // Get size preset
+  const sizeConfig = CALENDAR_SIZE_PRESETS[size];
   // Refs
   const triggerInputRef = useRef<HTMLInputElement>(null);
   const portalContentRef = useRef<HTMLDivElement>(null);
@@ -25,11 +31,14 @@ export const DatepickerProvider: React.FC<DatepickerProviderProps> = ({
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
   const [highlightedMonth, setHighlightedMonth] = useState<number | null>(null);
   const [highlightedYear, setHighlightedYear] = useState<number | null>(null);
+  const [currentWidth] = useState(sizeConfig.width);
+  const [currentHeight] = useState(sizeConfig.height);
 
   // Custom hooks
-  const { isOpen, isClosing, openCalendar, closeCalendar } = useDatepickerState(
+  const { isOpen, isClosing, openCalendar, closeCalendar } = useCalendarState(
     {
       value,
+      mode,
       onOpen: () => {
         setDisplayDate(value || new Date());
         setCurrentView('days');
@@ -46,14 +55,17 @@ export const DatepickerProvider: React.FC<DatepickerProviderProps> = ({
   );
 
   const { portalStyle, isPositionReady, dropDirection, calculatePosition } =
-    useDatepickerPosition({
+    useCalendarPosition({
       triggerRef: triggerInputRef,
       portalRef: portalContentRef,
       isOpen,
       portalWidth,
+      currentWidth,
+      currentHeight,
+      resizable,
     });
 
-  const { navigateViewDate, navigateYear } = useDatepickerNavigation({
+  const { navigateViewDate, navigateYear } = useCalendarNavigation({
     displayDate,
     currentView,
     setDisplayDate,
@@ -142,13 +154,13 @@ export const DatepickerProvider: React.FC<DatepickerProviderProps> = ({
     handleTriggerMouseLeave,
     handleCalendarMouseEnter,
     handleCalendarMouseLeave,
-  } = useDatepickerHover({
+  } = useCalendarHover({
     openCalendar,
     closeCalendar,
     portalRef: portalContentRef,
   });
 
-  const { handleInputKeyDown, handleCalendarKeyDown } = useDatepickerKeyboard({
+  const { handleInputKeyDown, handleCalendarKeyDown } = useCalendarKeyboard({
     isOpen,
     currentView,
     highlightedDate,
@@ -209,9 +221,18 @@ export const DatepickerProvider: React.FC<DatepickerProviderProps> = ({
     highlightedYear,
 
     // Configuration
+    mode,
+    size,
     minDate,
     maxDate,
     portalWidth,
+    resizable,
+    currentWidth,
+    currentHeight,
+    minWidth: sizeConfig.minWidth,
+    minHeight: sizeConfig.minHeight,
+    maxWidth: sizeConfig.maxWidth,
+    maxHeight: sizeConfig.maxHeight,
 
     // Portal styling
     portalStyle,
@@ -258,8 +279,11 @@ export const DatepickerProvider: React.FC<DatepickerProviderProps> = ({
   };
 
   return (
-    <DatepickerContext.Provider value={contextValue}>
+    <CalendarContext.Provider value={contextValue}>
       {children}
-    </DatepickerContext.Provider>
+    </CalendarContext.Provider>
   );
 };
+
+// Backward compatibility alias
+export const DatepickerProvider = CalendarProvider;

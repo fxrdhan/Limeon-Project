@@ -190,8 +190,12 @@ export interface CheckboxProps {
 }
 
 export type CustomDateValueType = Date | null;
+export type CalendarMode = 'datepicker' | 'calendar';
+export type CalendarSize = 'sm' | 'md' | 'lg' | 'xl';
 
-export interface DatepickerProps {
+export interface CalendarProps {
+  mode?: CalendarMode;
+  size?: CalendarSize;
   value: CustomDateValueType;
   onChange: (date: CustomDateValueType) => void;
   label?: string;
@@ -200,6 +204,12 @@ export interface DatepickerProps {
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
+  resizable?: boolean;
+}
+
+// Backward compatibility alias
+export interface DatepickerProps extends CalendarProps {
+  mode?: 'datepicker';
 }
 
 export interface PageTitleProps {

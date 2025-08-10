@@ -1,7 +1,7 @@
 import React from 'react';
-import { CalendarView, CustomDateValueType } from './components';
+import { CalendarView, CustomDateValueType, CalendarMode, CalendarSize } from './components';
 
-export interface DatepickerContextState {
+export interface CalendarContextState {
   // Core state
   value: CustomDateValueType;
   onChange: (date: CustomDateValueType) => void;
@@ -20,9 +20,18 @@ export interface DatepickerContextState {
   highlightedYear: number | null;
 
   // Configuration
+  mode: CalendarMode;
+  size: CalendarSize;
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
+  resizable: boolean;
+  currentWidth: number;
+  currentHeight: number;
+  minWidth: number;
+  minHeight: number;
+  maxWidth: number;
+  maxHeight: number;
 
   // Portal styling
   portalStyle: React.CSSProperties;
@@ -62,11 +71,18 @@ export interface DatepickerContextState {
   calculatePosition: () => void;
 }
 
-export interface DatepickerProviderProps {
+export interface CalendarProviderProps {
   children: React.ReactNode;
+  mode?: CalendarMode;
+  size?: CalendarSize;
   value: CustomDateValueType;
   onChange: (date: CustomDateValueType) => void;
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
+  resizable?: boolean;
+}
+
+export interface DatepickerProviderProps extends CalendarProviderProps {
+  mode?: 'datepicker';
 }

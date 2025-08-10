@@ -15,7 +15,7 @@ const YearsGrid: React.FC<YearsGridProps> = ({
   const yearsToDisplay = getYearsToDisplay(displayDate.getFullYear());
 
   return (
-    <div className="grid grid-cols-3 gap-2 py-1">
+    <div className="grid grid-cols-4 gap-1 py-1">
       {yearsToDisplay.map(yearVal => {
         let isDisabled = false;
         if (minDate) {
@@ -38,7 +38,7 @@ const YearsGrid: React.FC<YearsGridProps> = ({
             onMouseLeave={() => onYearHighlight(null)}
             disabled={isDisabled}
             className={classNames(
-              'p-2 rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-1 focus:ring-primary/50',
+              'py-2 px-2 rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-1 focus:ring-primary/50',
               isDisabled
                 ? 'text-gray-300 cursor-not-allowed'
                 : 'hover:bg-emerald-100 text-gray-700',
