@@ -37,6 +37,8 @@ const Dropdown = ({
   hoverToOpen = false,
   // Portal width control
   portalWidth = 'auto',
+  // Position control
+  position = 'auto',
   // Hover detail props
   enableHoverDetail = false,
   hoverDetailDelay = 800,
@@ -95,7 +97,7 @@ const Dropdown = ({
     portalStyle,
     calculateDropdownPosition,
     resetPosition,
-  } = useDropdownPosition(isOpen, buttonRef, dropdownMenuRef, portalWidth);
+  } = useDropdownPosition(isOpen, buttonRef, dropdownMenuRef, portalWidth, position);
 
   const { expandedId, setExpandedId, handleExpansion } = useTextExpansion({
     buttonRef,

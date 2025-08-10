@@ -43,18 +43,8 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
               ${dropDirection === 'down' ? 'origin-top' : 'origin-bottom'}
               bg-white rounded-xl border border-gray-200
               ${dropDirection === 'down' ? 'shadow-xl' : ''}
-              transition-all duration-300 ease-out transform
-              ${
-                isClosing
-                  ? 'opacity-0 scale-y-0 translate-y-0'
-                  : isOpen && applyOpenStyles
-                    ? 'opacity-100 scale-y-100 translate-y-0'
-                    : `opacity-0 scale-y-0 ${
-                        dropDirection === 'down'
-                          ? 'translate-y-2'
-                          : '-translate-y-2'
-                      } pointer-events-none`
-              }
+              transition-all duration-150 ease-out
+              ${(isClosing || !applyOpenStyles) ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
           `}
             role="menu"
             onClick={e => e.stopPropagation()}

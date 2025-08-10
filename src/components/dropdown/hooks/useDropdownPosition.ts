@@ -1,12 +1,13 @@
 import { useState, useCallback, RefObject, CSSProperties } from 'react';
 import { DROPDOWN_CONSTANTS, DropDirection } from '../constants';
-import type { DropdownPortalWidth } from '@/types';
+import type { DropdownPortalWidth, DropdownPosition } from '@/types';
 
 export const useDropdownPosition = (
   isOpen: boolean,
   buttonRef: RefObject<HTMLButtonElement | null>,
   dropdownMenuRef: RefObject<HTMLDivElement | null>,
-  portalWidth: DropdownPortalWidth = 'auto'
+  portalWidth: DropdownPortalWidth = 'auto',
+  position: DropdownPosition = 'auto'
 ) => {
   const [dropDirection, setDropDirection] = useState<DropDirection>('down');
   const [initialDropDirection, setInitialDropDirection] =
@@ -30,16 +31,25 @@ export const useDropdownPosition = (
     const spaceBelow = viewportHeight - buttonRect.bottom - margin;
     const spaceAbove = buttonRect.top - margin;
 
-    const shouldDropUp =
-      (spaceBelow < dropdownActualHeight &&
-        spaceAbove > dropdownActualHeight) ||
-      (spaceBelow < dropdownActualHeight && spaceAbove > spaceBelow);
+    // Determine drop direction based on position prop
+    let targetDirection: DropDirection;
+    if (position === 'top') {
+      targetDirection = 'up';
+    } else if (position === 'bottom') {
+      targetDirection = 'down';
+    } else {
+      // Auto positioning logic
+      const shouldDropUp =
+        (spaceBelow < dropdownActualHeight &&
+          spaceAbove > dropdownActualHeight) ||
+        (spaceBelow < dropdownActualHeight && spaceAbove > spaceBelow);
+      targetDirection = shouldDropUp ? 'up' : 'down';
+    }
 
     // Set initial direction only once when dropdown first opens
     if (initialDropDirection === null) {
-      const direction = shouldDropUp ? 'up' : 'down';
-      setDropDirection(direction);
-      setInitialDropDirection(direction);
+      setDropDirection(targetDirection);
+      setInitialDropDirection(targetDirection);
     } else {
       setDropDirection(initialDropDirection);
     }
@@ -56,8 +66,7 @@ export const useDropdownPosition = (
       leftPosition = DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
     }
 
-    const finalDirection =
-      initialDropDirection || (shouldDropUp ? 'up' : 'down');
+    const finalDirection = initialDropDirection || targetDirection;
     const isDropUp = finalDirection === 'up';
 
     let topPosition: number;
@@ -92,7 +101,7 @@ export const useDropdownPosition = (
     }
 
     setPortalStyle(portalStyleBase);
-  }, [isOpen, initialDropDirection, buttonRef, dropdownMenuRef, portalWidth]);
+  }, [isOpen, initialDropDirection, buttonRef, dropdownMenuRef, portalWidth, position]);
 
   const resetPosition = useCallback(() => {
     setInitialDropDirection(null);
