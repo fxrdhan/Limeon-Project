@@ -8,6 +8,7 @@ import {
   ColDef,
   GridReadyEvent,
   IRowNode,
+  ColumnPinnedEvent,
 } from 'ag-grid-community';
 import type { Item } from '@/types/database';
 
@@ -29,6 +30,7 @@ interface ItemDataTableProps {
   onGridReady: (params: GridReadyEvent) => void;
   isExternalFilterPresent: () => boolean;
   doesExternalFilterPass: (node: IRowNode) => boolean;
+  onColumnPinned?: (event: ColumnPinnedEvent) => void;
 }
 
 const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
@@ -49,6 +51,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   onGridReady,
   isExternalFilterPresent,
   doesExternalFilterPass,
+  onColumnPinned,
 }: ItemDataTableProps) {
   // Smart loading state with cache-first strategy
   const { showSkeleton, showBackgroundLoading, shouldSuppressOverlay } =
@@ -120,6 +123,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
           mainMenuItems={getPinOnlyMenuItems}
+          onColumnPinned={onColumnPinned}
           style={{
             width: '100%',
             marginTop: '1rem',

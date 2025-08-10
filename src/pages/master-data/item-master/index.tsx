@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { GridApi, GridReadyEvent } from 'ag-grid-community';
+import { GridApi, GridReadyEvent, ColumnPinnedEvent } from 'ag-grid-community';
 
 // Components
 import PageTitle from '@/components/page-title';
@@ -144,12 +144,13 @@ const ItemMasterNew = memo(() => {
   });
 
   // Column visibility management
-  const { columnOptions, visibleColumns, isColumnVisible, handleColumnToggle } =
+  const { columnOptions, visibleColumns, isColumnVisible, handleColumnToggle, getColumnPinning, handleColumnPinning } =
     useColumnVisibility();
 
   const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns({
     visibleColumns,
     isColumnVisible,
+    getColumnPinning,
   });
 
   // Memoize modal handlers
@@ -266,6 +267,25 @@ const ItemMasterNew = memo(() => {
     }
   }, [activeTab]);
 
+  // Handle column pinning events
+  const handleColumnPinned = useCallback(
+    (event: ColumnPinnedEvent) => {
+      // Save pinning state to database
+      if (event.column && handleColumnPinning) {
+        const colId = event.column.getColId();
+        // AG Grid returns true for left pin, 'right' for right pin, false/null/undefined for unpinned
+        let pinned: 'left' | 'right' | null = null;
+        if (event.pinned === true || event.pinned === 'left') {
+          pinned = 'left';
+        } else if (event.pinned === 'right') {
+          pinned = 'right';
+        }
+        handleColumnPinning(colId, pinned);
+      }
+    },
+    [handleColumnPinning]
+  );
+
   // Memoize SearchToolbar callback props for stable references (after itemSearch is declared)
   const memoizedOnAdd = useCallback(() => {
     handleAddItem(undefined, itemSearch);
@@ -378,6 +398,7 @@ const ItemMasterNew = memo(() => {
                   onGridReady={enhancedItemOnGridReady}
                   isExternalFilterPresent={itemIsExternalFilterPresent}
                   doesExternalFilterPass={itemDoesExternalFilterPass}
+                  onColumnPinned={handleColumnPinned}
                 />
               )}
             </div>

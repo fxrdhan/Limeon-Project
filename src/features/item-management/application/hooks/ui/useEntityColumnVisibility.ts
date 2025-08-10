@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { EntityType, EntityConfig } from '../collections/useEntityManager';
-import { useEntityColumnVisibilityPreference, type UserPreferenceEntityType } from '@/hooks/queries/useUserPreferences';
+import { useEntityColumnVisibilityPreference, useEntityColumnPinningPreference, type UserPreferenceEntityType } from '@/hooks/queries/useUserPreferences';
 
 interface ColumnVisibilityConfig {
   key: string;
@@ -82,8 +82,17 @@ export const useEntityColumnVisibility = ({
     error: dbError,
   } = useEntityColumnVisibilityPreference(entityType as UserPreferenceEntityType);
 
+  // Column pinning preferences
+  const {
+    columnPinning: dbColumnPinning,
+    setColumnPinning: setDbColumnPinning,
+    isLoading: isPinningLoading,
+    error: pinningError,
+  } = useEntityColumnPinningPreference(entityType as UserPreferenceEntityType);
+
   // Local state for optimistic updates
   const [optimisticState, setOptimisticState] = useState<Record<string, boolean> | null>(null);
+  const [optimisticPinningState, setOptimisticPinningState] = useState<Record<string, 'left' | 'right' | null> | null>(null);
 
   // Use optimistic state during saves, otherwise use DB state or defaults
   const visibilityState = useMemo(() => {
@@ -102,6 +111,14 @@ export const useEntityColumnVisibility = ({
 
     return getDefaultVisibility(columnConfigs);
   }, [dbColumnVisibility, optimisticState, columnConfigs]);
+
+  // Column pinning state
+  const pinningState = useMemo(() => {
+    if (optimisticPinningState) {
+      return optimisticPinningState;
+    }
+    return dbColumnPinning || {};
+  }, [dbColumnPinning, optimisticPinningState]);
 
   const columnOptions: ColumnOption[] = useMemo(() => {
     return columnConfigs.map(config => {
@@ -146,6 +163,33 @@ export const useEntityColumnVisibility = ({
     [visibilityState, setDbColumnVisibility]
   );
 
+  const handleColumnPinning = useCallback(
+    async (columnKey: string, pinned: 'left' | 'right' | null) => {
+      // Create new pinning state
+      const newPinningState = {
+        ...pinningState,
+        [columnKey]: pinned,
+      };
+      
+      // Set optimistic state for immediate UI update
+      setOptimisticPinningState(newPinningState);
+      
+      try {
+        // Save to database
+        await setDbColumnPinning(newPinningState);
+        
+        // Clear optimistic state after successful save
+        setOptimisticPinningState(null);
+      } catch (error) {
+        console.error('Failed to save entity column pinning to database:', error);
+        
+        // Revert optimistic state on error
+        setOptimisticPinningState(null);
+      }
+    },
+    [pinningState, setDbColumnPinning]
+  );
+
   const visibleColumns = useMemo(() => {
     return Object.entries(visibilityState)
       .filter(([, visible]) => visible)
@@ -157,6 +201,13 @@ export const useEntityColumnVisibility = ({
       return visibilityState[columnKey] ?? true;
     },
     [visibilityState]
+  );
+
+  const getColumnPinning = useCallback(
+    (columnKey: string): 'left' | 'right' | null => {
+      return pinningState[columnKey] ?? null;
+    },
+    [pinningState]
   );
 
   // Get auto-size columns (only visible ones)
@@ -179,7 +230,10 @@ export const useEntityColumnVisibility = ({
     isColumnVisible,
     handleColumnToggle,
     autoSizeColumns,
-    isLoading: isDbLoading,
-    error: dbError,
+    pinningState,
+    getColumnPinning,
+    handleColumnPinning,
+    isLoading: isDbLoading || isPinningLoading,
+    error: dbError || pinningError,
   };
 };
