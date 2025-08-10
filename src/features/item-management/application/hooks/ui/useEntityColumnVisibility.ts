@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { EntityType, EntityConfig } from '../collections/useEntityManager';
+import { useEntityColumnVisibilityPreference, type UserPreferenceEntityType } from '@/hooks/queries/useUserPreferences';
 
 interface ColumnVisibilityConfig {
   key: string;
@@ -55,6 +56,14 @@ interface UseEntityColumnVisibilityProps {
   currentConfig?: EntityConfig | null;
 }
 
+const getDefaultVisibility = (columnConfigs: ColumnVisibilityConfig[]): Record<string, boolean> => {
+  const defaultState: Record<string, boolean> = {};
+  columnConfigs.forEach(config => {
+    defaultState[config.key] = config.defaultVisible;
+  });
+  return defaultState;
+};
+
 export const useEntityColumnVisibility = ({
   entityType,
   currentConfig,
@@ -65,28 +74,34 @@ export const useEntityColumnVisibility = ({
     return ENTITY_COLUMN_CONFIGS[entityType] || [];
   }, [entityType]);
 
-  // Initialize visibility state from column configs
-  const [visibilityState, setVisibilityState] = useState<
-    Record<string, boolean>
-  >(() => {
-    const initialState: Record<string, boolean> = {};
-    columnConfigs.forEach(config => {
-      initialState[config.key] = config.defaultVisible;
-    });
-    return initialState;
-  });
+  // Use database-backed preferences (skip for items as it has its own hook)
+  const {
+    columnVisibility: dbColumnVisibility,
+    setColumnVisibility: setDbColumnVisibility,
+    isLoading: isDbLoading,
+    error: dbError,
+  } = useEntityColumnVisibilityPreference(entityType as UserPreferenceEntityType);
 
-  // Update visibility state when entity type changes
-  useEffect(() => {
-    if (columnConfigs.length > 0) {
-      const newState: Record<string, boolean> = {};
-      columnConfigs.forEach(config => {
-        // Use default for new entity type, don't preserve old state
-        newState[config.key] = config.defaultVisible;
-      });
-      setVisibilityState(newState);
+  // Local state for optimistic updates
+  const [optimisticState, setOptimisticState] = useState<Record<string, boolean> | null>(null);
+
+  // Use optimistic state during saves, otherwise use DB state or defaults
+  const visibilityState = useMemo(() => {
+    if (optimisticState) {
+      return optimisticState;
     }
-  }, [entityType, columnConfigs]);
+
+    if (dbColumnVisibility) {
+      // Merge DB state with defaults (for new columns)
+      const mergedState: Record<string, boolean> = {};
+      columnConfigs.forEach(config => {
+        mergedState[config.key] = dbColumnVisibility[config.key] ?? config.defaultVisible;
+      });
+      return mergedState;
+    }
+
+    return getDefaultVisibility(columnConfigs);
+  }, [dbColumnVisibility, optimisticState, columnConfigs]);
 
   const columnOptions: ColumnOption[] = useMemo(() => {
     return columnConfigs.map(config => {
@@ -104,12 +119,32 @@ export const useEntityColumnVisibility = ({
     });
   }, [columnConfigs, visibilityState, currentConfig]);
 
-  const handleColumnToggle = (columnKey: string, visible: boolean) => {
-    setVisibilityState(prev => ({
-      ...prev,
-      [columnKey]: visible,
-    }));
-  };
+  const handleColumnToggle = useCallback(
+    async (columnKey: string, visible: boolean) => {
+      // Create new visibility state
+      const newVisibilityState = {
+        ...visibilityState,
+        [columnKey]: visible,
+      };
+      
+      // Set optimistic state for immediate UI update
+      setOptimisticState(newVisibilityState);
+      
+      try {
+        // Save to database
+        await setDbColumnVisibility(newVisibilityState);
+        
+        // Clear optimistic state after successful save
+        setOptimisticState(null);
+      } catch (error) {
+        console.error('Failed to save entity column visibility to database:', error);
+        
+        // Revert optimistic state on error
+        setOptimisticState(null);
+      }
+    },
+    [visibilityState, setDbColumnVisibility]
+  );
 
   const visibleColumns = useMemo(() => {
     return Object.entries(visibilityState)
@@ -144,5 +179,7 @@ export const useEntityColumnVisibility = ({
     isColumnVisible,
     handleColumnToggle,
     autoSizeColumns,
+    isLoading: isDbLoading,
+    error: dbError,
   };
 };
