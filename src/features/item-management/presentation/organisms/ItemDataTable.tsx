@@ -2,7 +2,6 @@ import React, { memo, useCallback, useMemo } from 'react';
 import { DataGrid, getPinOnlyMenuItems } from '@/components/ag-grid';
 import Pagination from '@/components/pagination';
 import { TableSkeleton } from '@/components/skeleton';
-import { useCacheFirstLoading } from '@/hooks/useCacheFirstLoading';
 import {
   RowClickedEvent,
   ColDef,
@@ -53,16 +52,14 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   doesExternalFilterPass,
   onColumnPinned,
 }: ItemDataTableProps) {
-  // Smart loading state with cache-first strategy
-  const { showSkeleton, showBackgroundLoading, shouldSuppressOverlay } =
-    useCacheFirstLoading({
-      isLoading,
-      hasData: items.length > 0,
-      isInitialLoad: items.length === 0,
-      minSkeletonTime: 300,
-      gracePeriod: 150, // Prevent flash of empty content
-      tabKey: 'items', // Static key for items tab
-    });
+  // SIMPLE SOLUTION: Show skeleton ONLY when truly no data exists
+  // If totalItems > 0, NEVER show skeleton (data is cached/available)
+  const shouldShowSkeleton = isLoading && totalItems === 0;
+  
+  // Skip complex useCacheFirstLoading - use direct simple logic
+  const showSkeleton = shouldShowSkeleton;
+  const showBackgroundLoading = isLoading && totalItems > 0;
+  const shouldSuppressOverlay = isLoading;
 
   const handleRowClicked = useCallback(
     (event: RowClickedEvent) => {

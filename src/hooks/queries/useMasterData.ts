@@ -19,8 +19,6 @@ export const useCategories = (options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 0,
-    gcTime: 0,
   });
 };
 
@@ -33,8 +31,6 @@ export const useCategory = (id: string, options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 0,
-    gcTime: 0,
   });
 };
 
@@ -120,8 +116,6 @@ export const useMedicineTypes = (options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 0,
-    gcTime: 0,
   });
 };
 
@@ -137,8 +131,6 @@ export const useMedicineType = (
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 0,
-    gcTime: 0,
   });
 };
 
@@ -203,8 +195,6 @@ export const usePackages = (options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 0,
-    gcTime: 0,
   });
 };
 
@@ -217,8 +207,6 @@ export const usePackage = (id: string, options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 0,
-    gcTime: 0,
   });
 };
 
@@ -283,8 +271,6 @@ export const useItemUnits = (options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 0,
-    gcTime: 0,
   });
 };
 
@@ -297,8 +283,6 @@ export const useItemUnit = (id: string, options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 0,
-    gcTime: 0,
   });
 };
 

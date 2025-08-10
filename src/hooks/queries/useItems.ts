@@ -20,8 +20,6 @@ export const useItems = (options?: {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 0,
-    gcTime: 0,
   });
 };
 
@@ -34,8 +32,6 @@ export const useItem = (id: string, options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 0,
-    gcTime: 0,
   });
 };
 

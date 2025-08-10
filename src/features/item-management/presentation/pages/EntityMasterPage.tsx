@@ -409,8 +409,7 @@ const EntityMasterPage: React.FC = memo(() => {
           <div className="text-center p-6 text-red-500">
             Error: {entityData.error?.message || 'Gagal memuat data'}
           </div>
-        ) : entityData.isLoading &&
-          (!entityData.data || entityData.data.length === 0) ? (
+        ) : entityData.isLoading && entityData.totalItems === 0 ? (
           <TableSkeleton
             rows={entityManager.itemsPerPage || 10}
             columns={
@@ -422,16 +421,14 @@ const EntityMasterPage: React.FC = memo(() => {
         ) : (
           <>
             {/* Background loading indicator for realtime updates */}
-            {entityData.isLoading &&
-              entityData.data &&
-              entityData.data.length > 0 && (
-                <div className="absolute top-0 right-0 z-10 mt-2 mr-4">
-                  <div className="flex items-center space-x-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm shadow-sm">
-                    <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Memperbarui data...</span>
-                  </div>
+            {entityData.isLoading && entityData.totalItems > 0 && (
+              <div className="absolute top-0 right-0 z-10 mt-2 mr-4">
+                <div className="flex items-center space-x-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm shadow-sm">
+                  <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Memperbarui data...</span>
                 </div>
-              )}
+              </div>
+            )}
 
             <div className="relative">
               <DataGrid
@@ -453,12 +450,7 @@ const EntityMasterPage: React.FC = memo(() => {
                 onColumnPinned={handleEntityColumnPinned}
                 style={{
                   ...GRID_STYLE,
-                  opacity:
-                    entityData.isLoading &&
-                    entityData.data &&
-                    entityData.data.length > 0
-                      ? 0.8
-                      : 1,
+                  opacity: entityData.isLoading && entityData.totalItems > 0 ? 0.8 : 1,
                   transition: 'opacity 0.2s ease-in-out',
                 }}
               />
