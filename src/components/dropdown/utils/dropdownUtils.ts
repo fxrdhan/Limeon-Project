@@ -28,25 +28,6 @@ export const filterAndSortOptions = (
     });
 };
 
-export const getContextualBoxShadow = (direction: 'up' | 'down') => {
-  if (direction === 'up') {
-    return [
-      '0 -8px 16px -4px rgba(0, 0, 0, 0.2)',
-      '-8px 0 16px -4px rgba(0, 0, 0, 0.15)',
-      '8px 0 16px -4px rgba(0, 0, 0, 0.15)',
-      '0 -20px 40px -8px rgba(0, 0, 0, 0.15)',
-      '0 -4px 8px -2px rgba(0, 0, 0, 0.1)',
-    ].join(', ');
-  } else {
-    return [
-      '0 8px 16px -4px rgba(0, 0, 0, 0.2)',
-      '-8px 0 16px -4px rgba(0, 0, 0, 0.15)',
-      '8px 0 16px -4px rgba(0, 0, 0, 0.15)',
-      '0 20px 40px -8px rgba(0, 0, 0, 0.15)',
-      '0 4px 8px -2px rgba(0, 0, 0, 0.1)',
-    ].join(', ');
-  }
-};
 
 export const getSearchIconColor = (searchState: string) => {
   const colors: Record<string, string> = {

@@ -26,9 +26,14 @@ export const useCalendarPosition = (
     const buttonRect = triggerRef.current.getBoundingClientRect();
     const calendarHeight = resizable ? currentHeight : CALENDAR_CONSTANTS.CALENDAR_HEIGHT;
     const viewportHeight = window.innerHeight;
-    const spaceBelow = viewportHeight - buttonRect.bottom;
+    
+    const margin = CALENDAR_CONSTANTS.POSITION_MARGIN;
+    const spaceBelow = viewportHeight - buttonRect.bottom - margin;
+    const spaceAbove = buttonRect.top - margin;
+    
     const shouldDropUp =
-      spaceBelow < calendarHeight + 10 && buttonRect.top > calendarHeight + 10;
+      (spaceBelow < calendarHeight && spaceAbove > calendarHeight) ||
+      (spaceBelow < calendarHeight && spaceAbove > spaceBelow);
 
     setDropDirection(shouldDropUp ? 'up' : 'down');
 
@@ -46,8 +51,8 @@ export const useCalendarPosition = (
     const margin = CALENDAR_CONSTANTS.POSITION_MARGIN;
     if (shouldDropUp) {
       newMenuStyle.top = `${
-        buttonRect.top + window.scrollY - calendarHeight - margin
-      }px`;
+        buttonRect.top + window.scrollY - calendarHeight - margin - 3
+      }px`; // Extra offset untuk calendar yang muncul ke atas
     } else {
       newMenuStyle.top = `${buttonRect.bottom + window.scrollY + margin}px`;
     }

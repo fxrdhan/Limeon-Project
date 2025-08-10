@@ -43,9 +43,13 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
         height: resizable ? `${currentHeight}px` : undefined,
         resize: resizable ? 'both' : 'none',
         overflow: resizable ? 'auto' : 'visible',
+        ...(dropDirection === 'up' && {
+          boxShadow: '0 -20px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04)'
+        })
       }}
       className={classNames(
-        'bg-white shadow-lg rounded-xl border border-gray-200 p-4',
+        'bg-white rounded-xl border border-gray-200 p-4',
+        dropDirection === 'down' ? 'shadow-xl' : '',
         !resizable && `w-[${currentWidth}px]`,
         resizable && `min-w-[${minWidth}px] min-h-[${minHeight}px]`,
         mode === 'calendar' && 'relative',

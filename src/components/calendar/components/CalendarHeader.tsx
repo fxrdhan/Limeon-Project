@@ -29,15 +29,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
   return (
     <div className="flex items-center justify-between mb-3 gap-2">
-      <button
-        onClick={onNavigatePrev}
-        className="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-hidden transition-colors flex-shrink-0"
-        aria-label="Previous month"
-      >
-        <FaChevronLeft size={12} />
-      </button>
-
-      <div className="flex items-center gap-2 flex-1 justify-center">
+      <div className="flex items-center gap-2">
         <Dropdown
           mode="text"
           portalWidth="120px"
@@ -61,13 +53,23 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         />
       </div>
 
-      <button
-        onClick={onNavigateNext}
-        className="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-hidden transition-colors flex-shrink-0"
-        aria-label="Next month"
-      >
-        <FaChevronRight size={12} />
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={onNavigatePrev}
+          className="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-hidden transition-colors flex-shrink-0 cursor-pointer"
+          aria-label="Previous month"
+        >
+          <FaChevronLeft size={12} />
+        </button>
+
+        <button
+          onClick={onNavigateNext}
+          className="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-hidden transition-colors flex-shrink-0 cursor-pointer"
+          aria-label="Next month"
+        >
+          <FaChevronRight size={12} />
+        </button>
+      </div>
     </div>
   );
 };
