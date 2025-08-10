@@ -14,6 +14,7 @@ export interface CalendarContextState {
   displayDate: Date;
   currentView: CalendarView;
   dropDirection: 'down' | 'up';
+  navigationDirection: 'prev' | 'next' | null;
 
   // Highlighting state
   highlightedDate: Date | null;

@@ -31,6 +31,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
   const [highlightedMonth, setHighlightedMonth] = useState<number | null>(null);
   const [highlightedYear, setHighlightedYear] = useState<number | null>(null);
+  const [navigationDirection, setNavigationDirection] = useState<'prev' | 'next' | null>(null);
   const [currentWidth] = useState(sizeConfig.width);
   const [currentHeight] = useState(sizeConfig.height);
 
@@ -65,11 +66,25 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
       resizable,
     });
 
-  const { navigateViewDate, navigateYear } = useCalendarNavigation({
+  const { navigateViewDate: originalNavigateViewDate, navigateYear } = useCalendarNavigation({
     displayDate,
     currentView,
     setDisplayDate,
   });
+
+  // Wrapper for navigateViewDate to track direction
+  const navigateViewDate = useCallback(
+    (direction: 'prev' | 'next') => {
+      setNavigationDirection(direction);
+      originalNavigateViewDate(direction);
+      
+      // Clear direction after animation completes
+      setTimeout(() => {
+        setNavigationDirection(null);
+      }, 300); // Match animation duration
+    },
+    [originalNavigateViewDate]
+  );
 
   const focusPortal = useCallback(() => {
     setTimeout(() => {
@@ -235,6 +250,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     displayDate,
     currentView,
     dropDirection,
+    navigationDirection,
 
     // Highlighting state
     highlightedDate,
