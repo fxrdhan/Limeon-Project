@@ -76,7 +76,6 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <ButtonIcon
             isOpen={isOpen}
             isClosing={isClosing}
-            isExpanded={isExpanded}
           />
         </button>
       );
@@ -115,7 +114,6 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         <ButtonIcon
           isOpen={isOpen}
           isClosing={isClosing}
-          isExpanded={isExpanded}
         />
       </button>
     );

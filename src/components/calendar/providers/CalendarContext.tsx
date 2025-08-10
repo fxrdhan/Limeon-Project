@@ -35,7 +35,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   const [currentHeight] = useState(sizeConfig.height);
 
   // Custom hooks
-  const { isOpen, isClosing, isOpening, openCalendar, closeCalendar } = useCalendarState(
+  const { isOpen, isClosing, isOpening, openCalendar, closeCalendar, setIsOpening } = useCalendarState(
     {
       value,
       mode,
@@ -185,16 +185,36 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     focusPortal,
   });
 
+  // Start animation timer only after portal is ready
+  useEffect(() => {
+    if (isOpen && isPositionReady && isOpening) {
+      const timer = setTimeout(() => {
+        setIsOpening(false);
+      }, 150); // Match CSS transition duration
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isPositionReady, isOpening, setIsOpening]);
+
   // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isOpen &&
-        portalContentRef.current &&
-        !portalContentRef.current.contains(event.target as Node) &&
-        triggerInputRef.current &&
-        !triggerInputRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      
+      // Check if click is inside calendar portal
+      if (portalContentRef.current?.contains(target)) return;
+      
+      // Check if click is inside trigger input
+      if (triggerInputRef.current?.contains(target)) return;
+      
+      // Check if click is inside dropdown menu (calendar header dropdowns)
+      const dropdownMenu = (target as Element).closest('[role="menu"]');
+      if (dropdownMenu) return;
+      
+      // Check if target itself is a dropdown menu
+      if ((target as Element).getAttribute?.('role') === 'menu') return;
+      
+      // If none of the above, close calendar
+      if (isOpen) {
         closeCalendar();
       }
     };

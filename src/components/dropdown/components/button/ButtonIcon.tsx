@@ -3,19 +3,17 @@ import React from 'react';
 interface ButtonIconProps {
   isOpen: boolean;
   isClosing: boolean;
-  isExpanded: boolean;
 }
 
 const ButtonIcon: React.FC<ButtonIconProps> = ({
   isOpen,
   isClosing,
-  isExpanded,
 }) => {
   return (
     <svg
       className={`transition-transform duration-200 ${
         isOpen || isClosing ? 'rotate-180' : ''
-      } w-4 h-4 ml-2 flex-shrink-0 ${isExpanded ? 'mt-0.5' : ''}`}
+      } w-4 h-4 ml-2 flex-shrink-0 self-center`}
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"

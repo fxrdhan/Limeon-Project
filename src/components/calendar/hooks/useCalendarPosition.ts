@@ -48,7 +48,6 @@ export const useCalendarPosition = (
       zIndex: CALENDAR_CONSTANTS.PORTAL_Z_INDEX,
     };
 
-    const margin = CALENDAR_CONSTANTS.POSITION_MARGIN;
     if (shouldDropUp) {
       newMenuStyle.top = `${
         buttonRect.top + window.scrollY - calendarHeight - margin - 3

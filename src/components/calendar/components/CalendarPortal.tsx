@@ -14,8 +14,6 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
     dropDirection,
     portalContentRef,
     handleCalendarKeyDown,
-    handleCalendarMouseEnter,
-    handleCalendarMouseLeave,
     resizable,
     currentWidth,
     currentHeight,
@@ -57,8 +55,6 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
         'transition-all duration-150 ease-out focus:outline-hidden',
         (isClosing || isOpening) ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
       )}
-      onMouseEnter={handleCalendarMouseEnter}
-      onMouseLeave={handleCalendarMouseLeave}
       onKeyDown={handleCalendarKeyDown}
     >
       {children}

@@ -15,6 +15,7 @@ export interface UseCalendarStateReturn {
   isOpening: boolean;
   openCalendar: () => void;
   closeCalendar: () => void;
+  setIsOpening: (value: boolean) => void;
 }
 
 // Backward compatibility aliases
