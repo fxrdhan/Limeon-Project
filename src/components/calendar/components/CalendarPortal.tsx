@@ -8,6 +8,7 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
   const {
     isOpen,
     isClosing,
+    isOpening,
     isPositionReady,
     portalStyle,
     dropDirection,
@@ -50,7 +51,7 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
         mode === 'calendar' && 'relative',
         dropDirection === 'down' ? 'origin-top' : 'origin-bottom',
         'transition-all duration-150 ease-out focus:outline-hidden',
-        isClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+        (isClosing || isOpening) ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
       )}
       onMouseEnter={handleCalendarMouseEnter}
       onMouseLeave={handleCalendarMouseLeave}

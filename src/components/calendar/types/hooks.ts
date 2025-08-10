@@ -12,6 +12,7 @@ export interface UseCalendarStateParams {
 export interface UseCalendarStateReturn {
   isOpen: boolean;
   isClosing: boolean;
+  isOpening: boolean;
   openCalendar: () => void;
   closeCalendar: () => void;
 }
