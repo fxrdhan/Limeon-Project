@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, RefObject } from 'react';
+import { useState, useCallback, useEffect, RefObject, useRef } from 'react';
 import { KEYBOARD_KEYS, DROPDOWN_CONSTANTS, SEARCH_STATES } from '../constants';
 
 interface UseKeyboardNavigationProps {
@@ -30,6 +30,10 @@ export const useKeyboardNavigation = ({
 }: UseKeyboardNavigationProps) => {
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
+  
+  // Track mouse movement to exit keyboard mode
+  const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastMousePositionRef = useRef({ x: 0, y: 0 });
 
   // Handle highlighted index on dropdown open/close
   useEffect(() => {
@@ -37,26 +41,14 @@ export const useKeyboardNavigation = ({
       // Reset highlighted index when dropdown closes
       setHighlightedIndex(-1);
       setIsKeyboardNavigation(false);
-    } else if (currentFilteredOptions.length > 0) {
-      // Set highlighted index when dropdown opens
+    } else if (currentFilteredOptions.length > 0 && !isKeyboardNavigation) {
+      // Only set highlighted index when dropdown first opens, not during active keyboard navigation
       if (value) {
-        // If there's a selected value, highlight and scroll to it
+        // If there's a selected value, highlight it
         const selectedIndex = currentFilteredOptions.findIndex(option => option.id === value);
         if (selectedIndex >= 0) {
           setHighlightedIndex(selectedIndex);
           setExpandedId(currentFilteredOptions[selectedIndex].id);
-          // Scroll to selected option after a brief delay to ensure DOM is ready
-          setTimeout(() => {
-            if (optionsContainerRef.current) {
-              const optionElements = optionsContainerRef.current.querySelectorAll('[role="option"]');
-              if (optionElements[selectedIndex]) {
-                (optionElements[selectedIndex] as HTMLElement).scrollIntoView({
-                  block: 'nearest',
-                  behavior: 'auto',
-                });
-              }
-            }
-          }, 50);
         }
       } else {
         // If no value selected, pre-select first option
@@ -64,7 +56,45 @@ export const useKeyboardNavigation = ({
         setExpandedId(currentFilteredOptions[0].id);
       }
     }
-  }, [isOpen, currentFilteredOptions, value, setExpandedId, optionsContainerRef]);
+  }, [isOpen, currentFilteredOptions, value, setExpandedId, isKeyboardNavigation]);
+
+  // Mouse movement detection to exit keyboard navigation mode
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const currentPos = { x: e.clientX, y: e.clientY };
+      const lastPos = lastMousePositionRef.current;
+      
+      // Only reset if mouse actually moved (not just micro movements)
+      const mouseMoved = Math.abs(currentPos.x - lastPos.x) > 5 || 
+                        Math.abs(currentPos.y - lastPos.y) > 5;
+      
+      if (mouseMoved && isKeyboardNavigation) {
+        // Clear existing timeout
+        if (mouseTimeoutRef.current) {
+          clearTimeout(mouseTimeoutRef.current);
+        }
+        
+        // Reset keyboard navigation after short delay
+        mouseTimeoutRef.current = setTimeout(() => {
+          setIsKeyboardNavigation(false);
+        }, 50);
+      }
+      
+      lastMousePositionRef.current = currentPos;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      if (mouseTimeoutRef.current) {
+        clearTimeout(mouseTimeoutRef.current);
+      }
+    };
+  }, [isOpen, isKeyboardNavigation]);
+
 
   const handleDropdownKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
@@ -165,6 +195,20 @@ export const useKeyboardNavigation = ({
           if (newIndex >= 0 && items[newIndex]) {
             setExpandedId(items[newIndex].id);
           }
+          
+          // Immediately scroll to the new highlighted option for keyboard navigation
+          setTimeout(() => {
+            if (optionsContainerRef.current && newIndex >= 0) {
+              const optionElements = optionsContainerRef.current.querySelectorAll('[role="option"]');
+              if (optionElements[newIndex]) {
+                (optionElements[newIndex] as HTMLElement).scrollIntoView({
+                  block: 'nearest',
+                  behavior: 'auto',
+                });
+              }
+            }
+            // Don't auto-reset here, let mouse movement handle it
+          }, 10);
         }
       }
     },

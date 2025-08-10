@@ -1,4 +1,5 @@
 import { RefObject } from 'react';
+import type { DropdownMode } from '@/types';
 
 export interface UseDropdownEffectsProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export interface UseFocusManagementProps {
   dropdownMenuRef: RefObject<HTMLDivElement | null>;
   searchInputRef: RefObject<HTMLInputElement | null>;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
+  mode?: DropdownMode;
 }
 
 export interface UseScrollManagementProps {
