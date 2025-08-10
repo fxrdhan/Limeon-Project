@@ -109,12 +109,43 @@ export const useColumnVisibility = () => {
   }, [dbColumnOrder, optimisticOrderingState]);
 
   const columnOptions: ColumnOption[] = useMemo(() => {
-    return COLUMN_CONFIGS.map(config => ({
-      key: config.key,
-      label: config.label,
-      visible: visibilityState[config.key] ?? config.defaultVisible,
-    }));
-  }, [visibilityState]);
+    // Create a map of all column configs for quick lookup
+    const configMap: Record<string, ColumnVisibilityConfig> = {};
+    COLUMN_CONFIGS.forEach(config => {
+      configMap[config.key] = config;
+    });
+
+    // Use ordering state to determine column order
+    const orderedKeys = orderingState;
+    
+    // Create ordered column options
+    const orderedOptions: ColumnOption[] = [];
+    
+    // Add columns in the specified order
+    orderedKeys.forEach(key => {
+      const config = configMap[key];
+      if (config) {
+        orderedOptions.push({
+          key: config.key,
+          label: config.label,
+          visible: visibilityState[config.key] ?? config.defaultVisible,
+        });
+      }
+    });
+
+    // Add any columns that aren't in the ordering (fallback)
+    COLUMN_CONFIGS.forEach(config => {
+      if (!orderedKeys.includes(config.key)) {
+        orderedOptions.push({
+          key: config.key,
+          label: config.label,
+          visible: visibilityState[config.key] ?? config.defaultVisible,
+        });
+      }
+    });
+
+    return orderedOptions;
+  }, [visibilityState, orderingState]);
 
   const handleColumnToggle = useCallback(
     async (columnKey: string, visible: boolean) => {

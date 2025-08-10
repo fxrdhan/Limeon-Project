@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, memo } from 'react';
+import { useState, useRef, useCallback, useEffect, memo, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { GridApi, GridReadyEvent, ColumnPinnedEvent, ColumnMovedEvent } from 'ag-grid-community';
 
@@ -26,7 +26,7 @@ import {
   useColumnVisibility,
 } from '@/features/item-management/application/hooks/ui';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
-import { itemSearchColumns } from '@/utils/searchColumns';
+import { getOrderedSearchColumnsByEntity } from '@/utils/searchColumns';
 
 // Types
 import type { Item as ItemDataType } from '@/types/database';
@@ -236,6 +236,11 @@ const ItemMasterNew = memo(() => {
     [itemGridApi]
   );
 
+  // Get ordered search columns based on user preferences
+  const orderedSearchColumns = useMemo(() => {
+    return getOrderedSearchColumnsByEntity('items', orderingState);
+  }, [orderingState]);
+
   const {
     search: itemSearch,
     onGridReady: itemOnGridReady,
@@ -243,7 +248,7 @@ const ItemMasterNew = memo(() => {
     doesExternalFilterPass: itemDoesExternalFilterPass,
     searchBarProps: itemSearchBarProps,
   } = useUnifiedSearch({
-    columns: itemSearchColumns,
+    columns: orderedSearchColumns,
     searchMode: 'hybrid',
     useFuzzySearch: true,
     data: itemsManagement.data as ItemDataType[],

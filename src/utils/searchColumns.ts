@@ -397,6 +397,44 @@ export const itemUnitsSearchColumns: SearchColumn[] = [
 ];
 
 /**
+ * Order search columns based on user's column ordering preference
+ */
+export const orderSearchColumns = (
+  columns: SearchColumn[],
+  columnOrder?: string[]
+): SearchColumn[] => {
+  if (!columnOrder || columnOrder.length === 0) {
+    return columns;
+  }
+
+  // Create a map of columns for quick lookup
+  const columnMap: Record<string, SearchColumn> = {};
+  columns.forEach(column => {
+    columnMap[column.field] = column;
+  });
+
+  // Create ordered array based on column order
+  const orderedColumns: SearchColumn[] = [];
+
+  // Add columns in the specified order
+  columnOrder.forEach(field => {
+    const column = columnMap[field];
+    if (column) {
+      orderedColumns.push(column);
+    }
+  });
+
+  // Add any columns that aren't in the ordering (fallback)
+  columns.forEach(column => {
+    if (!columnOrder.includes(column.field)) {
+      orderedColumns.push(column);
+    }
+  });
+
+  return orderedColumns;
+};
+
+/**
  * Get search columns by entity type
  */
 export const getSearchColumnsByEntity = (
@@ -433,4 +471,15 @@ export const getSearchColumnsByEntity = (
     default:
       return [];
   }
+};
+
+/**
+ * Get ordered search columns by entity type
+ */
+export const getOrderedSearchColumnsByEntity = (
+  entityType: string,
+  columnOrder?: string[]
+): SearchColumn[] => {
+  const baseColumns = getSearchColumnsByEntity(entityType);
+  return orderSearchColumns(baseColumns, columnOrder);
 };
