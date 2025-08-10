@@ -308,10 +308,6 @@ const EntityMasterPage: React.FC = memo(() => {
   );
 
   // Memoize SearchToolbar props for stable references
-  const memoizedButtonText = useMemo(
-    () => currentConfig?.addButtonText || 'Tambah',
-    [currentConfig?.addButtonText]
-  );
 
   const memoizedPlaceholder = useMemo(
     () =>
@@ -345,7 +341,6 @@ const EntityMasterPage: React.FC = memo(() => {
             searchInputRef={searchInputRef as React.RefObject<HTMLInputElement>}
             searchBarProps={searchBarProps}
             search={search}
-            buttonText={memoizedButtonText}
             placeholder={memoizedPlaceholder}
             onAdd={entityManager.openAddModal}
             onKeyDown={handleKeyDown}

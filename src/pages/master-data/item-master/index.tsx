@@ -335,7 +335,6 @@ const ItemMasterNew = memo(() => {
                   }
                   searchBarProps={itemSearchBarProps}
                   search={itemSearch}
-                  buttonText="Tambah Item Baru"
                   placeholder="Cari nama, kode, atau deskripsi item atau ketik # untuk pencarian kolom spesifik"
                   onAdd={memoizedOnAdd}
                   items={itemsManagement.data as ItemDataType[]}

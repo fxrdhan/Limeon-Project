@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useColumnVisibilityPreference } from '@/hooks/queries/useUserPreferences';
 
 interface ColumnVisibilityConfig {
   key: string;
@@ -20,6 +21,7 @@ const COLUMN_CONFIGS: ColumnVisibilityConfig[] = [
   { key: 'category.name', label: 'Kategori', defaultVisible: true },
   { key: 'type.name', label: 'Jenis', defaultVisible: true },
   { key: 'unit.name', label: 'Kemasan', defaultVisible: true },
+  { key: 'dosage.name', label: 'Sediaan', defaultVisible: true },
   {
     key: 'package_conversions',
     label: 'Kemasan Turunan',
@@ -30,17 +32,43 @@ const COLUMN_CONFIGS: ColumnVisibilityConfig[] = [
   { key: 'stock', label: 'Stok', defaultVisible: true },
 ];
 
-export const useColumnVisibility = () => {
-  // Initialize visibility state from column configs
-  const [visibilityState, setVisibilityState] = useState<
-    Record<string, boolean>
-  >(() => {
-    const initialState: Record<string, boolean> = {};
-    COLUMN_CONFIGS.forEach(config => {
-      initialState[config.key] = config.defaultVisible;
-    });
-    return initialState;
+const getDefaultVisibility = (): Record<string, boolean> => {
+  const defaultState: Record<string, boolean> = {};
+  COLUMN_CONFIGS.forEach(config => {
+    defaultState[config.key] = config.defaultVisible;
   });
+  return defaultState;
+};
+
+export const useColumnVisibility = () => {
+  // Use database-backed user preferences
+  const {
+    columnVisibility: dbColumnVisibility,
+    setColumnVisibility: setDbColumnVisibility,
+    isLoading: isDbLoading,
+    error: dbError,
+  } = useColumnVisibilityPreference();
+
+  // Local state for optimistic updates
+  const [optimisticState, setOptimisticState] = useState<Record<string, boolean> | null>(null);
+
+  // Use optimistic state during saves, otherwise use DB state or defaults
+  const visibilityState = useMemo(() => {
+    if (optimisticState) {
+      return optimisticState;
+    }
+
+    if (dbColumnVisibility) {
+      // Merge DB state with defaults (for new columns)
+      const mergedState: Record<string, boolean> = {};
+      COLUMN_CONFIGS.forEach(config => {
+        mergedState[config.key] = dbColumnVisibility[config.key] ?? config.defaultVisible;
+      });
+      return mergedState;
+    }
+
+    return getDefaultVisibility();
+  }, [dbColumnVisibility, optimisticState]);
 
   const columnOptions: ColumnOption[] = useMemo(() => {
     return COLUMN_CONFIGS.map(config => ({
@@ -50,12 +78,32 @@ export const useColumnVisibility = () => {
     }));
   }, [visibilityState]);
 
-  const handleColumnToggle = (columnKey: string, visible: boolean) => {
-    setVisibilityState(prev => ({
-      ...prev,
-      [columnKey]: visible,
-    }));
-  };
+  const handleColumnToggle = useCallback(
+    async (columnKey: string, visible: boolean) => {
+      // Create new visibility state
+      const newVisibilityState = {
+        ...visibilityState,
+        [columnKey]: visible,
+      };
+      
+      // Set optimistic state for immediate UI update
+      setOptimisticState(newVisibilityState);
+      
+      try {
+        // Save to database
+        await setDbColumnVisibility(newVisibilityState);
+        
+        // Clear optimistic state after successful save
+        setOptimisticState(null);
+      } catch (error) {
+        console.error('Failed to save column visibility to database:', error);
+        
+        // Revert optimistic state on error
+        setOptimisticState(null);
+      }
+    },
+    [visibilityState, setDbColumnVisibility]
+  );
 
   const visibleColumns = useMemo(() => {
     return Object.entries(visibilityState)
@@ -72,5 +120,7 @@ export const useColumnVisibility = () => {
     visibleColumns,
     isColumnVisible,
     handleColumnToggle,
+    isLoading: isDbLoading,
+    error: dbError,
   };
 };

@@ -20,7 +20,8 @@ export class ItemsService extends BaseService<DBItem> {
         *,
         item_categories!inner(id, name),
         item_types!inner(id, name),
-        item_packages!inner(id, name)
+        item_packages!inner(id, name),
+        item_dosages(id, name)
       `;
 
       const result = await super.getAll({
@@ -58,6 +59,7 @@ export class ItemsService extends BaseService<DBItem> {
           category: item.item_categories || { name: '' },
           type: item.item_types || { name: '' },
           unit: item.item_packages || { name: '' },
+          dosage: item.item_dosages || { name: '' },
           manufacturer: manufacturerName,
           package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
@@ -83,7 +85,8 @@ export class ItemsService extends BaseService<DBItem> {
           *,
           item_categories!inner(id, name),
           item_types!inner(id, name),
-          item_packages!inner(id, name)
+          item_packages!inner(id, name),
+          item_dosages(id, name)
         `
         )
         .eq('id', id)
@@ -116,6 +119,7 @@ export class ItemsService extends BaseService<DBItem> {
         category: item.item_categories || { name: '' },
         type: item.item_types || { name: '' },
         unit: item.item_packages || { name: '' },
+        dosage: item.item_dosages || { name: '' },
         manufacturer: manufacturerName,
         package_conversions: packageConversions,
         base_unit: item.item_packages?.name || '',
@@ -137,7 +141,8 @@ export class ItemsService extends BaseService<DBItem> {
         *,
         item_categories!inner(id, name),
         item_types!inner(id, name),
-        item_packages!inner(id, name)
+        item_packages!inner(id, name),
+        item_dosages(id, name)
       `;
 
       const result = await this.search(
@@ -179,6 +184,7 @@ export class ItemsService extends BaseService<DBItem> {
           category: item.item_categories || { name: '' },
           type: item.item_types || { name: '' },
           unit: item.item_packages || { name: '' },
+          dosage: item.item_dosages || { name: '' },
           manufacturer: manufacturerName,
           package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
@@ -220,7 +226,8 @@ export class ItemsService extends BaseService<DBItem> {
           *,
           item_categories!inner(id, name),
           item_types!inner(id, name),
-          item_packages!inner(id, name)
+          item_packages!inner(id, name),
+          item_dosages(id, name)
         `
         )
         .lte('stock', threshold)
@@ -256,6 +263,7 @@ export class ItemsService extends BaseService<DBItem> {
           category: item.item_categories || { name: '' },
           type: item.item_types || { name: '' },
           unit: item.item_packages || { name: '' },
+          dosage: item.item_dosages || { name: '' },
           manufacturer: manufacturerName,
           package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
