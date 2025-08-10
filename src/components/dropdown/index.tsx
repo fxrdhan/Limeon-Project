@@ -129,6 +129,7 @@ const Dropdown = ({
     scrollToHighlightedOption,
   } = useKeyboardNavigation({
     isOpen,
+    value,
     currentFilteredOptions: filteredOptions,
     setExpandedId,
     searchState,

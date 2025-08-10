@@ -3,6 +3,7 @@ import { KEYBOARD_KEYS, DROPDOWN_CONSTANTS, SEARCH_STATES } from '../constants';
 
 interface UseKeyboardNavigationProps {
   isOpen: boolean;
+  value?: string;
   currentFilteredOptions: Array<{ id: string; name: string }>;
   setExpandedId: (id: string | null) => void;
   searchState: string;
@@ -16,6 +17,7 @@ interface UseKeyboardNavigationProps {
 
 export const useKeyboardNavigation = ({
   isOpen,
+  value,
   currentFilteredOptions,
   setExpandedId,
   searchState,
@@ -29,13 +31,40 @@ export const useKeyboardNavigation = ({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
 
-  // Reset highlighted index when dropdown closes
+  // Handle highlighted index on dropdown open/close
   useEffect(() => {
     if (!isOpen) {
+      // Reset highlighted index when dropdown closes
       setHighlightedIndex(-1);
       setIsKeyboardNavigation(false);
+    } else if (currentFilteredOptions.length > 0) {
+      // Set highlighted index when dropdown opens
+      if (value) {
+        // If there's a selected value, highlight and scroll to it
+        const selectedIndex = currentFilteredOptions.findIndex(option => option.id === value);
+        if (selectedIndex >= 0) {
+          setHighlightedIndex(selectedIndex);
+          setExpandedId(currentFilteredOptions[selectedIndex].id);
+          // Scroll to selected option after a brief delay to ensure DOM is ready
+          setTimeout(() => {
+            if (optionsContainerRef.current) {
+              const optionElements = optionsContainerRef.current.querySelectorAll('[role="option"]');
+              if (optionElements[selectedIndex]) {
+                (optionElements[selectedIndex] as HTMLElement).scrollIntoView({
+                  block: 'nearest',
+                  behavior: 'auto',
+                });
+              }
+            }
+          }, 50);
+        }
+      } else {
+        // If no value selected, pre-select first option
+        setHighlightedIndex(0);
+        setExpandedId(currentFilteredOptions[0].id);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, currentFilteredOptions, value, setExpandedId, optionsContainerRef]);
 
   const handleDropdownKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {

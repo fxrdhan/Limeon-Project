@@ -25,11 +25,9 @@ export const useCalendarState = (
     setIsClosing(false);
     setIsOpening(true);
     
-    // Start opening animation after a brief delay to ensure the component is rendered
-    openTimeoutRef.current = setTimeout(() => {
-      setIsOpening(false);
-    }, 10); // Small delay to ensure DOM is ready
+    // Animation timing is now handled in CalendarContext after portal is ready
     
+    // Call onOpen after setting animation states
     onOpen?.();
   }, [onOpen]);
 
@@ -60,6 +58,7 @@ export const useCalendarState = (
     isOpening,
     openCalendar,
     closeCalendar,
+    setIsOpening,
   };
 };
 
