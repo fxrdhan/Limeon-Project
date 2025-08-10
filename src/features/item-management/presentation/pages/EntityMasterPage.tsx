@@ -9,7 +9,7 @@ import React, {
 import { useLocation } from 'react-router-dom';
 // Components
 import Pagination from '@/components/pagination';
-import { DataGrid, DataGridRef, createTextColumn } from '@/components/ag-grid';
+import { DataGrid, DataGridRef, createTextColumn, getPinOnlyMenuItems } from '@/components/ag-grid';
 import { TableSkeleton } from '@/components/skeleton';
 import {
   ColDef,
@@ -217,6 +217,22 @@ const EntityMasterPage: React.FC = memo(() => {
   // Memoize column definitions
   const columnDefs: ColDef[] = useMemo(() => {
     const allColumns: ColDef[] = [
+      // Row number column
+      {
+        field: 'rowNumber',
+        headerName: 'No.',
+        width: 60,
+        minWidth: 60,
+        maxWidth: 60,
+        pinned: 'left',
+        sortable: false,
+        filter: false,
+        resizable: false,
+        suppressMovable: true,
+        suppressHeaderMenuButton: true,
+        cellStyle: { textAlign: 'center', fontWeight: 'bold' },
+        valueGetter: 'node.rowIndex + 1',
+      },
       createTextColumn({
         field: 'code',
         headerName: 'Kode',
@@ -401,6 +417,7 @@ const EntityMasterPage: React.FC = memo(() => {
                 autoSizeColumns={autoSizeColumns}
                 isExternalFilterPresent={isExternalFilterPresent}
                 doesExternalFilterPass={doesExternalFilterPass}
+                mainMenuItems={getPinOnlyMenuItems}
                 style={{
                   ...GRID_STYLE,
                   opacity:

@@ -8,6 +8,8 @@ import {
   GridReadyEvent,
   ColDef,
   RowDataTransaction,
+  ColumnMenuTab,
+  GetMainMenuItems,
 } from 'ag-grid-community';
 
 export interface ColumnConfig {
@@ -51,6 +53,8 @@ export interface DataGridProps {
   isExternalFilterPresent?: () => boolean;
   doesExternalFilterPass?: (node: IRowNode) => boolean;
   disableFiltering?: boolean;
+  columnMenuTabs?: ColumnMenuTab[];
+  mainMenuItems?: GetMainMenuItems;
 }
 
 export interface DataGridRef {

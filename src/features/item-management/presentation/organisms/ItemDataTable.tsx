@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { DataGrid } from '@/components/ag-grid';
+import { DataGrid, getPinOnlyMenuItems } from '@/components/ag-grid';
 import Pagination from '@/components/pagination';
 import { TableSkeleton } from '@/components/skeleton';
 import { useCacheFirstLoading } from '@/hooks/useCacheFirstLoading';
@@ -119,6 +119,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           onFirstDataRendered={undefined}
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
+          mainMenuItems={getPinOnlyMenuItems}
           style={{
             width: '100%',
             marginTop: '1rem',

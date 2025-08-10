@@ -9,5 +9,12 @@ export {
   createMatchScoreColumn,
   formatCurrency,
   formatBaseCurrency,
+  COLUMN_MENU_TABS,
+  MENU_PRESETS,
+  getPinOnlyMenuItems,
+  getSortOnlyMenuItems,
+  getAutosizeOnlyMenuItems,
+  getPinAndSortMenuItems,
+  getPinAndAutosizeMenuItems,
 } from './columnHelpers';
 export type { ColumnConfig } from './columnHelpers';
