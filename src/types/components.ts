@@ -20,7 +20,11 @@ export interface HoverDetailData {
   updated_at?: string | null;
 }
 
+export type DropdownMode = 'input' | 'text';
+export type DropdownPortalWidth = 'auto' | string | number;
+
 export interface DropdownProps {
+  mode?: DropdownMode;
   options: DropdownOption[];
   value: string;
   tabIndex?: number;
@@ -36,6 +40,8 @@ export interface DropdownProps {
   validationAutoHide?: boolean;
   validationAutoHideDelay?: number;
   hoverToOpen?: boolean;
+  // Portal width control
+  portalWidth?: DropdownPortalWidth;
   // Hover detail functionality
   enableHoverDetail?: boolean;
   hoverDetailDelay?: number;

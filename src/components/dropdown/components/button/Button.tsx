@@ -1,8 +1,10 @@
 import React, { forwardRef } from 'react';
 import ButtonText from './ButtonText';
 import ButtonIcon from './ButtonIcon';
+import type { DropdownMode } from '@/types';
 
 interface ButtonProps {
+  mode?: DropdownMode;
   displayText: string;
   titleText?: string;
   isPlaceholder: boolean;
@@ -23,6 +25,7 @@ interface ButtonProps {
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
+      mode = 'input',
       displayText,
       titleText,
       isPlaceholder,
@@ -41,6 +44,45 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
+    // For text mode, render as plain text appearance
+    if (mode === 'text') {
+      return (
+        <button
+          ref={ref}
+          type="button"
+          name={name}
+          tabIndex={tabIndex}
+          className={`inline-flex items-center gap-1 text-sm text-gray-800 hover:text-gray-900 focus:outline-hidden transition duration-200 ease-in-out cursor-pointer ${
+            isPlaceholder 
+              ? 'text-gray-500 hover:text-gray-600' 
+              : 'text-gray-800 hover:text-gray-900'
+          }`}
+          aria-haspopup="menu"
+          aria-expanded={isOpen || isClosing}
+          onClick={onClick}
+          onKeyDown={onKeyDown}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          aria-controls={isOpen ? 'dropdown-options-list' : undefined}
+        >
+          <ButtonText
+            displayText={displayText}
+            titleText={titleText}
+            isPlaceholder={isPlaceholder}
+            isExpanded={isExpanded}
+          />
+          <ButtonIcon
+            isOpen={isOpen}
+            isClosing={isClosing}
+            isExpanded={isExpanded}
+          />
+        </button>
+      );
+    }
+
+    // Default input mode rendering
     return (
       <button
         ref={ref}
