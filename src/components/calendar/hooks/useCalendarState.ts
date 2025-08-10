@@ -1,13 +1,13 @@
 import { useState, useRef, useCallback } from 'react';
-import { DATEPICKER_CONSTANTS } from '../constants';
+import { CALENDAR_CONSTANTS } from '../constants';
 import type {
-  UseDatepickerStateParams,
-  UseDatepickerStateReturn,
+  UseCalendarStateParams,
+  UseCalendarStateReturn,
 } from '../types';
 
-export const useDatepickerState = (
-  params: UseDatepickerStateParams
-): UseDatepickerStateReturn => {
+export const useCalendarState = (
+  params: UseCalendarStateParams
+): UseCalendarStateReturn => {
   const { onOpen, onClose } = params;
 
   const [isOpen, setIsOpen] = useState(false);
@@ -34,7 +34,7 @@ export const useDatepickerState = (
       setIsOpen(false);
       setIsClosing(false);
       onClose?.();
-    }, DATEPICKER_CONSTANTS.ANIMATION_DURATION);
+    }, CALENDAR_CONSTANTS.ANIMATION_DURATION);
   }, [onClose]);
 
   // Cleanup timeouts on unmount
@@ -52,3 +52,6 @@ export const useDatepickerState = (
     closeCalendar,
   };
 };
+
+// Backward compatibility alias
+export const useDatepickerState = useCalendarState;

@@ -18,7 +18,7 @@ export const MONTH_NAMES_ID = [
 export const DAY_LABELS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
 // Calendar configuration constants
-export const DATEPICKER_CONSTANTS = {
+export const CALENDAR_CONSTANTS = {
   // Positioning
   CALENDAR_HEIGHT: 320,
   VIEWPORT_MARGIN: 16,
@@ -34,7 +34,7 @@ export const DATEPICKER_CONSTANTS = {
   HOVER_CLOSE_DELAY: 200,
 
   // Calendar dimensions
-  CALENDAR_WIDTH: 280,
+  CALENDAR_WIDTH: 320,
 
   // Grid layouts
   DAYS_PER_WEEK: 7,
@@ -54,13 +54,52 @@ export const DATEPICKER_CONSTANTS = {
 // Years grid configuration
 export const getYearsToDisplay = (year: number): number[] => {
   const startYear =
-    Math.floor(year / DATEPICKER_CONSTANTS.DECADE_SHIFT) *
-    DATEPICKER_CONSTANTS.DECADE_SHIFT;
+    Math.floor(year / CALENDAR_CONSTANTS.DECADE_SHIFT) *
+    CALENDAR_CONSTANTS.DECADE_SHIFT;
   return Array.from(
-    { length: DATEPICKER_CONSTANTS.YEARS_PER_DECADE },
+    { length: CALENDAR_CONSTANTS.YEARS_PER_DECADE },
     (_, i) => startYear + i - 1
   );
 };
+
+// Calendar size presets
+export const CALENDAR_SIZE_PRESETS = {
+  sm: {
+    width: 280,
+    height: 300,
+    minWidth: 260,
+    minHeight: 280,
+    maxWidth: 320,
+    maxHeight: 340,
+  },
+  md: {
+    width: 320,
+    height: 320,
+    minWidth: 300,
+    minHeight: 300,
+    maxWidth: 380,
+    maxHeight: 380,
+  },
+  lg: {
+    width: 380,
+    height: 360,
+    minWidth: 340,
+    minHeight: 320,
+    maxWidth: 450,
+    maxHeight: 420,
+  },
+  xl: {
+    width: 450,
+    height: 400,
+    minWidth: 400,
+    minHeight: 360,
+    maxWidth: 520,
+    maxHeight: 480,
+  },
+} as const;
+
+// Backward compatibility alias
+export const DATEPICKER_CONSTANTS = CALENDAR_CONSTANTS;
 
 // Date formatting configuration
 export const DATE_FORMAT_CONFIG = {

@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 import { getYearsToDisplay } from '../constants';
 import type {
-  UseDatepickerKeyboardParams,
-  UseDatepickerKeyboardReturn,
+  UseCalendarKeyboardParams,
+  UseCalendarKeyboardReturn,
 } from '../types';
 
-export const useDatepickerKeyboard = (
-  params: UseDatepickerKeyboardParams
-): UseDatepickerKeyboardReturn => {
+export const useCalendarKeyboard = (
+  params: UseCalendarKeyboardParams
+): UseCalendarKeyboardReturn => {
   const {
     isOpen,
     currentView,
@@ -370,3 +370,6 @@ export const useDatepickerKeyboard = (
     handleCalendarKeyDown,
   };
 };
+
+// Backward compatibility alias
+export const useDatepickerKeyboard = useCalendarKeyboard;

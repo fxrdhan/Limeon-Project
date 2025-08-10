@@ -1,35 +1,47 @@
 import React from 'react';
-import { CalendarView, CustomDateValueType } from './components';
+import { CalendarView, CustomDateValueType, CalendarMode } from './components';
 
 // Hook parameter interfaces
-export interface UseDatepickerStateParams {
+export interface UseCalendarStateParams {
   value: CustomDateValueType;
+  mode?: CalendarMode;
   onOpen?: () => void;
   onClose?: () => void;
 }
 
-export interface UseDatepickerStateReturn {
+export interface UseCalendarStateReturn {
   isOpen: boolean;
   isClosing: boolean;
   openCalendar: () => void;
   closeCalendar: () => void;
 }
 
-export interface UseDatepickerPositionParams {
+// Backward compatibility aliases
+export type UseDatepickerStateParams = UseCalendarStateParams;
+export type UseDatepickerStateReturn = UseCalendarStateReturn;
+
+export interface UseCalendarPositionParams {
   triggerRef: React.RefObject<HTMLInputElement | null>;
   portalRef: React.RefObject<HTMLDivElement | null>;
   isOpen: boolean;
   portalWidth?: string | number;
+  currentWidth?: number;
+  currentHeight?: number;
+  resizable?: boolean;
 }
 
-export interface UseDatepickerPositionReturn {
+export interface UseCalendarPositionReturn {
   portalStyle: React.CSSProperties;
   isPositionReady: boolean;
   dropDirection: 'down' | 'up';
   calculatePosition: () => void;
 }
 
-export interface UseDatepickerKeyboardParams {
+// Backward compatibility aliases
+export type UseDatepickerPositionParams = UseCalendarPositionParams;
+export type UseDatepickerPositionReturn = UseCalendarPositionReturn;
+
+export interface UseCalendarKeyboardParams {
   isOpen: boolean;
   currentView: CalendarView;
   highlightedDate: Date | null;
@@ -54,31 +66,41 @@ export interface UseDatepickerKeyboardParams {
   focusPortal: () => void;
 }
 
-export interface UseDatepickerKeyboardReturn {
+export interface UseCalendarKeyboardReturn {
   handleInputKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   handleCalendarKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
 }
 
-export interface UseDatepickerNavigationParams {
+// Backward compatibility aliases
+export type UseDatepickerKeyboardParams = UseCalendarKeyboardParams;
+export type UseDatepickerKeyboardReturn = UseCalendarKeyboardReturn;
+
+export interface UseCalendarNavigationParams {
   displayDate: Date;
   currentView: CalendarView;
   setDisplayDate: React.Dispatch<React.SetStateAction<Date>>;
 }
 
-export interface UseDatepickerNavigationReturn {
+export interface UseCalendarNavigationReturn {
   navigateViewDate: (direction: 'prev' | 'next') => void;
   navigateYear: (direction: 'prev' | 'next') => void;
 }
 
-export interface UseDatepickerHoverParams {
+export interface UseCalendarHoverParams {
   openCalendar: () => void;
   closeCalendar: () => void;
   portalRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export interface UseDatepickerHoverReturn {
+export interface UseCalendarHoverReturn {
   handleTriggerMouseEnter: () => void;
   handleTriggerMouseLeave: () => void;
   handleCalendarMouseEnter: () => void;
   handleCalendarMouseLeave: () => void;
 }
+
+// Backward compatibility aliases
+export type UseDatepickerNavigationParams = UseCalendarNavigationParams;
+export type UseDatepickerNavigationReturn = UseCalendarNavigationReturn;
+export type UseDatepickerHoverParams = UseCalendarHoverParams;
+export type UseDatepickerHoverReturn = UseCalendarHoverReturn;

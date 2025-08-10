@@ -30,15 +30,15 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   for (let i = 1; i <= numDays; i++) calendarDays.push(i);
 
   return (
-    <div className="grid grid-cols-7 gap-px text-center text-xs">
+    <div className="grid grid-cols-7 gap-1 text-center text-sm">
       {DAY_LABELS.map(day => (
-        <div key={day} className="font-medium text-gray-500 py-1.5">
+        <div key={day} className="font-medium text-gray-500 py-2 px-1">
           {day}
         </div>
       ))}
       {calendarDays.map((day, index) => {
         if (day === null)
-          return <div key={`empty-${index}`} className="py-1.5"></div>;
+          return <div key={`empty-${index}`} className="py-2 px-2"></div>;
 
         const currentDate = new Date(year, month, day);
         const isSelected =
@@ -71,7 +71,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
             onMouseLeave={() => onDateHighlight(null)}
             disabled={isDisabled}
             className={classNames(
-              'py-1.5 rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary/50',
+              'py-2 px-2 min-w-[32px] min-h-[32px] rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary/50',
               isDisabled
                 ? 'text-gray-300 cursor-not-allowed'
                 : 'hover:bg-emerald-100',

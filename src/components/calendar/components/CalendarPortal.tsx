@@ -1,8 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import classNames from 'classnames';
-import { useDatepickerContext } from '../hooks';
-import { DATEPICKER_CONSTANTS } from '../constants';
+import { useCalendarContext } from '../hooks';
 import type { CalendarPortalProps } from '../types';
 
 const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
@@ -16,7 +15,13 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
     handleCalendarKeyDown,
     handleCalendarMouseEnter,
     handleCalendarMouseLeave,
-  } = useDatepickerContext();
+    resizable,
+    currentWidth,
+    currentHeight,
+    minWidth,
+    minHeight,
+    mode,
+  } = useCalendarContext();
 
   if (!isOpen && !isClosing) {
     return null;
@@ -33,10 +38,16 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
       style={{
         ...portalStyle,
         outline: 'none',
+        width: resizable ? `${currentWidth}px` : undefined,
+        height: resizable ? `${currentHeight}px` : undefined,
+        resize: resizable ? 'both' : 'none',
+        overflow: resizable ? 'auto' : 'visible',
       }}
       className={classNames(
         'bg-white shadow-lg rounded-xl border border-gray-200 p-4',
-        `w-[${DATEPICKER_CONSTANTS.CALENDAR_WIDTH}px]`,
+        !resizable && `w-[${currentWidth}px]`,
+        resizable && `min-w-[${minWidth}px] min-h-[${minHeight}px]`,
+        mode === 'calendar' && 'relative',
         dropDirection === 'down' ? 'origin-top' : 'origin-bottom',
         'transition-all duration-150 ease-out focus:outline-hidden',
         isClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'

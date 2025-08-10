@@ -1,7 +1,7 @@
 import React from 'react';
 import classNames from 'classnames';
 import Input from '@/components/input';
-import { useDatepickerContext } from '../hooks';
+import { useCalendarContext } from '../hooks';
 import { DATE_FORMAT_CONFIG } from '../constants';
 import type { CalendarButtonProps } from '../types';
 
@@ -17,7 +17,7 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
     handleInputKeyDown,
     handleTriggerMouseEnter,
     handleTriggerMouseLeave,
-  } = useDatepickerContext();
+  } = useCalendarContext();
 
   const formattedDisplayValue = () => {
     if (value) {

@@ -2,7 +2,7 @@ import React from 'react';
 import FormSection from '@/components/form-section';
 import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
-import Datepicker from '@/components/datepicker';
+import Calendar from '@/components/calendar';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
 import type { CustomDateValueType } from '@/types';
 
@@ -86,7 +86,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Tanggal Pembelian
           </label>
-          <Datepicker
+          <Calendar
             value={formData.date ? new Date(formData.date) : null}
             onChange={newDate => handleDateChange('date', newDate)}
             inputClassName="w-full p-2.5 border rounded-lg text-sm"
@@ -99,7 +99,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Tanggal Jatuh Tempo
           </label>
-          <Datepicker
+          <Calendar
             value={formData.due_date ? new Date(formData.due_date) : null}
             onChange={newDate => handleDateChange('due_date', newDate)}
             inputClassName="w-full p-2.5 border rounded-lg text-sm"

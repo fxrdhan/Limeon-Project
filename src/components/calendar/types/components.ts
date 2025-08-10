@@ -4,7 +4,12 @@ export type CalendarView = 'days' | 'months' | 'years';
 
 export type CustomDateValueType = Date | null;
 
-export interface DatepickerProps {
+export type CalendarMode = 'datepicker' | 'calendar';
+export type CalendarSize = 'sm' | 'md' | 'lg' | 'xl';
+
+export interface CalendarProps {
+  mode?: CalendarMode;
+  size?: CalendarSize;
   value: CustomDateValueType;
   onChange: (date: CustomDateValueType) => void;
   label?: string;
@@ -13,6 +18,11 @@ export interface DatepickerProps {
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
+  resizable?: boolean;
+}
+
+export interface DatepickerProps extends CalendarProps {
+  mode?: 'datepicker';
 }
 
 export interface CalendarButtonProps {
@@ -27,11 +37,11 @@ export interface CalendarPortalProps {
 }
 
 export interface CalendarHeaderProps {
-  currentView: CalendarView;
   displayDate: Date;
   onNavigatePrev: () => void;
   onNavigateNext: () => void;
-  onHeaderClick: () => void;
+  onMonthChange: (month: number) => void;
+  onYearChange: (year: number) => void;
 }
 
 export interface DaysGridProps {

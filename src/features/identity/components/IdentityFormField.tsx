@@ -1,7 +1,7 @@
 import React from 'react';
 import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
-import Datepicker from '@/components/datepicker';
+import Calendar from '@/components/calendar';
 import Button from '@/components/button';
 import { FaPencilAlt, FaSave, FaBan } from 'react-icons/fa';
 import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
@@ -94,7 +94,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
 
     if (field.type === 'date') {
       return (
-        <Datepicker
+        <Calendar
           value={fieldValue ? new Date(String(fieldValue)) : null}
           onChange={(date: CustomDateValueType) => {
             const formattedDate = date

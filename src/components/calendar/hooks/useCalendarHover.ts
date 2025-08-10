@@ -1,13 +1,13 @@
 import { useRef, useCallback } from 'react';
-import { DATEPICKER_CONSTANTS } from '../constants';
+import { CALENDAR_CONSTANTS } from '../constants';
 import type {
-  UseDatepickerHoverParams,
-  UseDatepickerHoverReturn,
+  UseCalendarHoverParams,
+  UseCalendarHoverReturn,
 } from '../types';
 
-export const useDatepickerHover = (
-  params: UseDatepickerHoverParams
-): UseDatepickerHoverReturn => {
+export const useCalendarHover = (
+  params: UseCalendarHoverParams
+): UseCalendarHoverReturn => {
   const { openCalendar, closeCalendar, portalRef } = params;
 
   const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -21,8 +21,8 @@ export const useDatepickerHover = (
         if (portalRef.current) {
           portalRef.current.focus();
         }
-      }, DATEPICKER_CONSTANTS.PORTAL_FOCUS_DELAY);
-    }, DATEPICKER_CONSTANTS.HOVER_OPEN_DELAY);
+      }, CALENDAR_CONSTANTS.PORTAL_FOCUS_DELAY);
+    }, CALENDAR_CONSTANTS.HOVER_OPEN_DELAY);
   }, [openCalendar, portalRef]);
 
   const handleTriggerMouseLeave = useCallback(() => {
@@ -31,7 +31,7 @@ export const useDatepickerHover = (
       if (portalRef.current && !portalRef.current.matches(':hover')) {
         closeCalendar();
       }
-    }, DATEPICKER_CONSTANTS.HOVER_CLOSE_DELAY);
+    }, CALENDAR_CONSTANTS.HOVER_CLOSE_DELAY);
   }, [closeCalendar, portalRef]);
 
   const handleCalendarMouseEnter = useCallback(() => {
@@ -41,7 +41,7 @@ export const useDatepickerHover = (
   const handleCalendarMouseLeave = useCallback(() => {
     closeTimeoutRef.current = setTimeout(() => {
       closeCalendar();
-    }, DATEPICKER_CONSTANTS.HOVER_CLOSE_DELAY);
+    }, CALENDAR_CONSTANTS.HOVER_CLOSE_DELAY);
   }, [closeCalendar]);
 
   return {
@@ -51,3 +51,6 @@ export const useDatepickerHover = (
     handleCalendarMouseLeave,
   };
 };
+
+// Backward compatibility alias
+export const useDatepickerHover = useCalendarHover;
