@@ -1,11 +1,13 @@
 import { useState, useCallback, RefObject, CSSProperties } from 'react';
 import { DROPDOWN_CONSTANTS, DropDirection } from '../constants';
 import { getContextualBoxShadow } from '../utils/dropdownUtils';
+import type { DropdownPortalWidth } from '@/types';
 
 export const useDropdownPosition = (
   isOpen: boolean,
   buttonRef: RefObject<HTMLButtonElement | null>,
-  dropdownMenuRef: RefObject<HTMLDivElement | null>
+  dropdownMenuRef: RefObject<HTMLDivElement | null>,
+  portalWidth: DropdownPortalWidth = 'auto'
 ) => {
   const [dropDirection, setDropDirection] = useState<DropDirection>('down');
   const [initialDropDirection, setInitialDropDirection] =
@@ -73,15 +75,25 @@ export const useDropdownPosition = (
         DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
     }
 
-    setPortalStyle({
+    const portalStyleBase: CSSProperties = {
       position: 'fixed',
       left: `${leftPosition}px`,
-      width: `${buttonRect.width}px`,
       zIndex: 1050,
       top: `${topPosition}px`,
       boxShadow: getContextualBoxShadow(finalDirection),
-    });
-  }, [isOpen, initialDropDirection, buttonRef, dropdownMenuRef]);
+    };
+
+    // Set width based on portalWidth value
+    if (portalWidth === 'auto') {
+      // Auto: use button width
+      portalStyleBase.width = `${buttonRect.width}px`;
+    } else if (portalWidth !== 'auto') {
+      // Custom width: use provided value
+      portalStyleBase.width = typeof portalWidth === 'number' ? `${portalWidth}px` : portalWidth;
+    }
+
+    setPortalStyle(portalStyleBase);
+  }, [isOpen, initialDropDirection, buttonRef, dropdownMenuRef, portalWidth]);
 
   const resetPosition = useCallback(() => {
     setInitialDropDirection(null);

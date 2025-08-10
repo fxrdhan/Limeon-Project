@@ -19,6 +19,7 @@ import { useDropdownEffects } from './hooks/useDropdownEffects';
 import { useHoverDetail } from './hooks/useHoverDetail';
 
 const Dropdown = ({
+  mode = 'input',
   options,
   value,
   onChange,
@@ -34,6 +35,8 @@ const Dropdown = ({
   validationAutoHideDelay,
   name, // Used for form field identification and validation
   hoverToOpen = false,
+  // Portal width control
+  portalWidth = 'auto',
   // Hover detail props
   enableHoverDetail = false,
   hoverDetailDelay = 800,
@@ -92,7 +95,7 @@ const Dropdown = ({
     portalStyle,
     calculateDropdownPosition,
     resetPosition,
-  } = useDropdownPosition(isOpen, buttonRef, dropdownMenuRef);
+  } = useDropdownPosition(isOpen, buttonRef, dropdownMenuRef, portalWidth);
 
   const { expandedId, setExpandedId, handleExpansion } = useTextExpansion({
     buttonRef,
@@ -251,6 +254,7 @@ const Dropdown = ({
     isClosing,
     applyOpenStyles,
     value,
+    mode,
     withRadio,
     searchList,
 
@@ -315,6 +319,7 @@ const Dropdown = ({
             <div className="relative w-full">
               <DropdownButton
                 ref={buttonRef}
+                mode={mode}
                 selectedOption={selectedOption}
                 placeholder={placeholder}
                 isOpen={isOpen}

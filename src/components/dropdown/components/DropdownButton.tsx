@@ -1,8 +1,10 @@
 import React, { forwardRef } from 'react';
 import Button from './button/Button';
 import { useTextExpansion } from '../hooks/useTextExpansion';
+import type { DropdownMode } from '@/types';
 
 interface DropdownButtonProps {
+  mode?: DropdownMode;
   selectedOption?: { id: string; name: string };
   placeholder?: string;
   isOpen: boolean;
@@ -18,6 +20,7 @@ interface DropdownButtonProps {
 const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
   (
     {
+      mode = 'input',
       selectedOption,
       placeholder = 'Pilih',
       isOpen,
@@ -53,6 +56,7 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
     return (
       <Button
         ref={ref}
+        mode={mode}
         displayText={displayText}
         titleText={titleText}
         isPlaceholder={isPlaceholder}

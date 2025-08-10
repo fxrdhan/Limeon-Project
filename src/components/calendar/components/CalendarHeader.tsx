@@ -39,6 +39,8 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
       <div className="flex items-center gap-2 flex-1 justify-center">
         <Dropdown
+          mode="text"
+          portalWidth="150px"
           options={monthOptions}
           value={displayDate.getMonth().toString()}
           onChange={(value) => onMonthChange(parseInt(value))}
@@ -48,6 +50,8 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         />
         
         <Dropdown
+          mode="text"
+          portalWidth="100px"
           options={yearOptions}
           value={displayDate.getFullYear().toString()}
           onChange={(value) => onYearChange(parseInt(value))}
