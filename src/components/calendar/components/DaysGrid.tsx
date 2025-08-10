@@ -1,6 +1,8 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import classNames from 'classnames';
 import { DAY_LABELS } from '../constants';
+import { useCalendarContext } from '../hooks';
 import type { DaysGridProps } from '../types';
 
 const DaysGrid: React.FC<DaysGridProps> = ({
@@ -11,32 +13,75 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   maxDate,
   onDateSelect,
   onDateHighlight,
+  animated = false,
 }) => {
-  const year = displayDate.getFullYear();
-  const month = displayDate.getMonth();
+  const { 
+    navigationDirection, 
+    yearNavigationDirection
+  } = useCalendarContext();
 
-  // Calculate days in month and first day
-  const daysInMonth = (year: number, month: number) =>
-    new Date(year, month + 1, 0).getDate();
-  const firstDayOfMonth = (year: number, month: number) =>
-    new Date(year, month, 1).getDay();
+  // Create unique key based on year and month for AnimatePresence
+  const gridKey = `${displayDate.getFullYear()}-${displayDate.getMonth()}`;
 
-  const numDays = daysInMonth(year, month);
-  let firstDay = firstDayOfMonth(year, month);
-  if (firstDay === 0) firstDay = 6;
-  else firstDay -= 1;
+  const getAnimationDirection = () => {
+    // Year navigation (vertical)
+    if (yearNavigationDirection === 'prev') {
+      return { y: '-100%', x: 0 };
+    } else if (yearNavigationDirection === 'next') {
+      return { y: '100%', x: 0 };
+    }
+    // Month navigation (horizontal)
+    else if (navigationDirection === 'prev') {
+      return { x: '-100%', y: 0 };
+    } else if (navigationDirection === 'next') {
+      return { x: '100%', y: 0 };
+    }
+    return { x: 0, y: 0 };
+  };
 
-  const calendarDays: (number | null)[] = Array(firstDay).fill(null);
-  for (let i = 1; i <= numDays; i++) calendarDays.push(i);
+  const getExitDirection = () => {
+    // Year navigation (vertical)
+    if (yearNavigationDirection === 'prev') {
+      return { y: '100%', x: 0 };
+    } else if (yearNavigationDirection === 'next') {
+      return { y: '-100%', x: 0 };
+    }
+    // Month navigation (horizontal)
+    else if (navigationDirection === 'prev') {
+      return { x: '100%', y: 0 };
+    } else if (navigationDirection === 'next') {
+      return { x: '-100%', y: 0 };
+    }
+    return { x: 0, y: 0 };
+  };
+  // Calendar calculation logic
+  const renderDatesGrid = (displayDate: Date) => {
+    const year = displayDate.getFullYear();
+    const month = displayDate.getMonth();
 
-  return (
-    <div className="grid grid-cols-7 gap-1 text-center text-sm">
-      {DAY_LABELS.map(day => (
-        <div key={day} className="font-medium text-gray-500 py-2 px-1">
-          {day}
-        </div>
-      ))}
-      {calendarDays.map((day, index) => {
+    // Calculate days in month and first day
+    const daysInMonth = (year: number, month: number) =>
+      new Date(year, month + 1, 0).getDate();
+    const firstDayOfMonth = (year: number, month: number) =>
+      new Date(year, month, 1).getDay();
+
+    const numDays = daysInMonth(year, month);
+    let firstDay = firstDayOfMonth(year, month);
+    if (firstDay === 0) firstDay = 6;
+    else firstDay -= 1;
+
+    const calendarDays: (number | null)[] = Array(firstDay).fill(null);
+    for (let i = 1; i <= numDays; i++) calendarDays.push(i);
+
+    return (
+      <div className={`grid grid-cols-7 gap-1 text-center text-sm ${animated ? 'm-1' : ''}`}>
+        {/* Day labels - show only if not animated (static version) */}
+        {!animated && DAY_LABELS.map(day => (
+          <div key={day} className="font-medium text-gray-500 py-2 px-1">
+            {day}
+          </div>
+        ))}
+        {calendarDays.map((day, index) => {
         if (day === null)
           return <div key={`empty-${index}`} className="py-2 px-2"></div>;
 
@@ -71,7 +116,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
             onMouseLeave={() => onDateHighlight(null)}
             disabled={isDisabled}
             className={classNames(
-              'py-2 px-2 min-w-[32px] min-h-[32px] rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary/50',
+              `py-2 px-2 min-w-[32px] min-h-[32px] rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-${animated ? '1' : '2'} focus:ring-primary/50`,
               isDisabled
                 ? 'text-gray-300 cursor-not-allowed'
                 : 'hover:bg-emerald-100',
@@ -88,7 +133,51 @@ const DaysGrid: React.FC<DaysGridProps> = ({
             {day}
           </button>
         );
-      })}
+        })}
+      </div>
+    );
+  };
+
+  // Render with or without animation based on prop
+  if (!animated) {
+    return (
+      <div className="text-center text-sm">
+        {renderDatesGrid(displayDate)}
+      </div>
+    );
+  }
+
+  // Animated version
+  return (
+    <div className="text-center text-sm">
+      {/* Static day labels header */}
+      <div className="grid grid-cols-7 gap-1 text-center text-sm mb-1">
+        {DAY_LABELS.map(day => (
+          <div key={day} className="font-medium text-gray-500 py-2 px-1">
+            {day}
+          </div>
+        ))}
+      </div>
+      
+      {/* Animated dates grid */}
+      <div className="relative overflow-hidden px-1 pb-1">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={gridKey}
+            initial={(navigationDirection || yearNavigationDirection) ? getAnimationDirection() : false}
+            animate={{ x: 0, y: 0 }}
+            exit={getExitDirection()}
+            transition={{
+              type: "tween",
+              ease: [0.4, 0.0, 0.2, 1],
+              duration: 0.25
+            }}
+            className="w-full"
+          >
+            {renderDatesGrid(displayDate)}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

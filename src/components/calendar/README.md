@@ -100,9 +100,101 @@ CalendarProvider (Context Provider)
 - **xl**: 450x400px (min: 400x360, max: 520x480)
 
 ### 7. Animation System
+
+#### 7.1 Open/Close Transitions
 - Open/close transitions (200ms duration)
 - Smooth state transitions with intermediate states
 - Focus management during animations
+
+#### 7.2 Month/Year Navigation Animations (Framer Motion)
+
+The calendar implements sophisticated swipe animations for month and year navigation using Framer Motion through the `DaysGrid` component with `animated={true}` prop:
+
+**Animation Architecture:**
+- **Horizontal swipe** for month navigation (left/right)
+- **Vertical swipe** for year navigation (up/down)
+- Uses `AnimatePresence` with `mode="wait"` for seamless transitions
+- Material Design easing curve `[0.4, 0.0, 0.2, 1]` for natural motion
+
+**Technical Implementation:**
+
+```tsx
+// State management for tracking animation direction
+const [navigationDirection, setNavigationDirection] = useState<'prev' | 'next' | null>(null);
+const [yearNavigationDirection, setYearNavigationDirection] = useState<'prev' | 'next' | null>(null);
+
+// Unique key generation for AnimatePresence
+const gridKey = `${displayDate.getFullYear()}-${displayDate.getMonth()}`;
+
+// Animation configuration
+<AnimatePresence mode="wait" initial={false}>
+  <motion.div
+    key={gridKey}                        // Triggers re-render and animation
+    initial={getAnimationDirection()}    // Start position based on direction
+    animate={{ x: 0, y: 0 }}            // Always animate to center
+    exit={getExitDirection()}           // Exit in opposite direction
+    transition={{
+      type: "tween",
+      ease: [0.4, 0.0, 0.2, 1],         // Material Design curve
+      duration: 0.25                    // 250ms for smooth feel
+    }}
+  >
+    {renderDatesGrid(displayDate)}
+  </motion.div>
+</AnimatePresence>
+```
+
+**Direction Calculations:**
+
+```tsx
+// Initial position based on navigation direction
+const getAnimationDirection = () => {
+  // Year navigation (vertical movement)
+  if (yearNavigationDirection === 'prev') return { y: '-100%', x: 0 };  // Enter from top
+  if (yearNavigationDirection === 'next') return { y: '100%', x: 0 };   // Enter from bottom
+  
+  // Month navigation (horizontal movement)
+  if (navigationDirection === 'prev') return { x: '-100%', y: 0 };      // Enter from left
+  if (navigationDirection === 'next') return { x: '100%', y: 0 };       // Enter from right
+  
+  return { x: 0, y: 0 };  // No animation on initial render
+};
+
+// Exit position (opposite of entry for smooth transition)
+const getExitDirection = () => {
+  // Year navigation
+  if (yearNavigationDirection === 'prev') return { y: '100%', x: 0 };   // Exit to bottom
+  if (yearNavigationDirection === 'next') return { y: '-100%', x: 0 };  // Exit to top
+  
+  // Month navigation
+  if (navigationDirection === 'prev') return { x: '100%', y: 0 };       // Exit to right
+  if (navigationDirection === 'next') return { x: '-100%', y: 0 };      // Exit to left
+  
+  return { x: 0, y: 0 };
+};
+```
+
+**Animation Flow Control:**
+
+1. **Navigation Trigger**: User clicks prev/next month or changes year
+2. **Direction Setting**: `navigationDirection` or `yearNavigationDirection` is set
+3. **Key Update**: New `gridKey` triggers AnimatePresence
+4. **Animation Execution**: 
+   - Old grid exits in opposite direction
+   - New grid enters from corresponding direction
+   - Both animate over 250ms with Material easing
+5. **Cleanup**: Direction state cleared after 300ms
+
+**Performance Optimizations:**
+- Container has `overflow-hidden` to hide sliding elements
+- Static day labels remain fixed during animation
+- Uses `tween` animation type for consistent performance
+- Direction state auto-clears to prevent memory leaks
+
+**Files Involved:**
+- `components/DaysGrid.tsx`: Main animation implementation (via `animated` prop)
+- `providers/CalendarContext.tsx`: Direction state management
+- `hooks/useCalendarNavigation.ts`: Navigation logic
 
 ### 8. Date Validation
 - Min/max date constraints
@@ -138,7 +230,7 @@ calendar/
     CalendarButton.tsx           # Datepicker input field
     CalendarHeader.tsx           # Month/year navigation
     CalendarPortal.tsx           # Portal container
-    DaysGrid.tsx                # Date selection grid
+    DaysGrid.tsx                # Date selection grid (supports animated prop)
     MonthsGrid.tsx              # Month selection grid
     YearsGrid.tsx               # Year selection grid
     index.ts                    # Component exports
@@ -429,5 +521,29 @@ const maxDate = new Date('2023-12-31');
   onChange={setSelectedDate}
   portalWidth={400}
   resizable={true}
+/>
+```
+
+### Using DaysGrid Component Directly
+
+```tsx
+// With animation
+<DaysGrid
+  displayDate={new Date()}
+  value={selectedDate}
+  highlightedDate={null}
+  onDateSelect={handleDateSelect}
+  onDateHighlight={handleDateHighlight}
+  animated={true}
+/>
+
+// Without animation (static)
+<DaysGrid
+  displayDate={new Date()}
+  value={selectedDate}
+  highlightedDate={null}
+  onDateSelect={handleDateSelect}
+  onDateHighlight={handleDateHighlight}
+  animated={false}
 />
 ```

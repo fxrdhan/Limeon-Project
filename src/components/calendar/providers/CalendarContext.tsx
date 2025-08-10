@@ -32,6 +32,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   const [highlightedMonth, setHighlightedMonth] = useState<number | null>(null);
   const [highlightedYear, setHighlightedYear] = useState<number | null>(null);
   const [navigationDirection, setNavigationDirection] = useState<'prev' | 'next' | null>(null);
+  const [yearNavigationDirection, setYearNavigationDirection] = useState<'prev' | 'next' | null>(null);
   const [currentWidth] = useState(sizeConfig.width);
   const [currentHeight] = useState(sizeConfig.height);
 
@@ -84,6 +85,46 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
       }, 300); // Match animation duration
     },
     [originalNavigateViewDate]
+  );
+
+  // Wrapper for year navigation to track vertical direction
+  const navigateYearWithAnimation = useCallback(
+    (direction: 'prev' | 'next') => {
+      setYearNavigationDirection(direction);
+      navigateYear(direction);
+      
+      // Clear direction after animation completes
+      setTimeout(() => {
+        setYearNavigationDirection(null);
+      }, 300); // Match animation duration
+    },
+    [navigateYear]
+  );
+
+  // Function to trigger year animation direction without changing date
+  const triggerYearAnimation = useCallback(
+    (direction: 'prev' | 'next') => {
+      setYearNavigationDirection(direction);
+      
+      // Clear direction after animation completes
+      setTimeout(() => {
+        setYearNavigationDirection(null);
+      }, 300); // Match animation duration
+    },
+    []
+  );
+
+  // Function to trigger month animation direction without changing date
+  const triggerMonthAnimation = useCallback(
+    (direction: 'prev' | 'next') => {
+      setNavigationDirection(direction);
+      
+      // Clear direction after animation completes
+      setTimeout(() => {
+        setNavigationDirection(null);
+      }, 300); // Match animation duration
+    },
+    []
   );
 
   const focusPortal = useCallback(() => {
@@ -197,6 +238,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     setCurrentView,
     navigateViewDate,
     navigateYear,
+    navigateYearWithAnimation,
     focusPortal,
   });
 
@@ -251,6 +293,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     currentView,
     dropDirection,
     navigationDirection,
+    yearNavigationDirection,
 
     // Highlighting state
     highlightedDate,
@@ -291,6 +334,9 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     // Navigation
     navigateViewDate,
     navigateYear,
+    navigateYearWithAnimation,
+    triggerYearAnimation,
+    triggerMonthAnimation,
 
     // Refs
     triggerInputRef,
