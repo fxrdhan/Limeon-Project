@@ -19,6 +19,22 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
 
   const columnDefs: ColDef[] = useMemo(() => {
     const allColumns: ColDef[] = [
+      // Row number column
+      {
+        field: 'rowNumber',
+        headerName: 'No.',
+        width: 60,
+        minWidth: 60,
+        maxWidth: 60,
+        pinned: 'left',
+        sortable: false,
+        filter: false,
+        resizable: false,
+        suppressMovable: true,
+        suppressHeaderMenuButton: true,
+        cellStyle: { textAlign: 'center', fontWeight: 'bold' },
+        valueGetter: 'node.rowIndex + 1',
+      },
       createTextColumn({
         field: 'name',
         headerName: 'Nama Item',

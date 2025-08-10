@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect } from 'react';
+import { memo, useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
@@ -157,6 +157,30 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   const handleColumnSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.stopPropagation();
   };
+
+  // Filter search columns based on column visibility
+  const filteredSearchBarProps = useMemo(() => {
+    if (!columnOptions) {
+      return searchBarProps;
+    }
+
+    // Create a map of visible column keys for fast lookup
+    const visibleColumnKeys = new Set(
+      columnOptions.filter(col => col.visible).map(col => col.key)
+    );
+
+    // Filter search columns to only include visible ones
+    const filteredColumns = searchBarProps.columns.filter(searchCol => {
+      // Map search column fields to column keys
+      const columnKey = searchCol.field;
+      return visibleColumnKeys.has(columnKey);
+    });
+
+    return {
+      ...searchBarProps,
+      columns: filteredColumns,
+    };
+  }, [searchBarProps, columnOptions]);
 
   // Close column dropdown when clicking outside
   useEffect(() => {
@@ -322,7 +346,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
       <div className="flex items-center">
         <EnhancedSearchBar
           inputRef={searchInputRef}
-          {...searchBarProps}
+          {...filteredSearchBarProps}
           onKeyDown={handleKeyDown}
           placeholder={placeholder || searchBarProps.placeholder || 'Cari...'}
           className="grow"

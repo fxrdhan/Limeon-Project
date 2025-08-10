@@ -1,4 +1,4 @@
-import { ColDef } from 'ag-grid-community';
+import { ColDef, ColumnMenuTab, GetMainMenuItems } from 'ag-grid-community';
 import { ColumnConfig } from '@/types';
 
 export type { ColumnConfig };
@@ -118,3 +118,104 @@ export const createMatchScoreColumn = (
   },
   cellStyle: { textAlign: 'center' },
 });
+
+/**
+ * Column Menu Tabs Configuration Helper
+ * Available menu tabs for AG Grid columns
+ */
+export const COLUMN_MENU_TABS = {
+  FILTER: 'filterMenuTab' as ColumnMenuTab,      // Filter options (text filter, date filter, etc.)
+  GENERAL: 'generalMenuTab' as ColumnMenuTab,    // Sort, Pin, Autosize options
+  COLUMNS: 'columnsMenuTab' as ColumnMenuTab     // Choose/Reset Columns visibility
+} as const;
+
+/**
+ * Pre-configured menu tab combinations for common use cases
+ */
+export const MENU_PRESETS = {
+  // All menu options (default)
+  ALL: [COLUMN_MENU_TABS.FILTER, COLUMN_MENU_TABS.GENERAL, COLUMN_MENU_TABS.COLUMNS] as ColumnMenuTab[],
+  
+  // Only sort and filter
+  BASIC: [COLUMN_MENU_TABS.FILTER, COLUMN_MENU_TABS.GENERAL] as ColumnMenuTab[],
+  
+  // Only sort options (no filter, no column chooser)
+  SORT_ONLY: [COLUMN_MENU_TABS.GENERAL] as ColumnMenuTab[],
+  
+  // Only filter options
+  FILTER_ONLY: [COLUMN_MENU_TABS.FILTER] as ColumnMenuTab[],
+  
+  // Only column visibility controls
+  COLUMNS_ONLY: [COLUMN_MENU_TABS.COLUMNS] as ColumnMenuTab[],
+  
+  // No menu at all
+  NONE: [] as ColumnMenuTab[]
+} as const;
+
+/**
+ * Main Menu Items Helpers - for granular control over individual menu items
+ */
+
+/**
+ * Show only Pin Column options
+ */
+export const getPinOnlyMenuItems: GetMainMenuItems = () => {
+  return [
+    'pinSubMenu'  // Pin Column submenu with Left/Right/No Pin options
+  ];
+};
+
+/**
+ * Show only Sort options
+ */
+export const getSortOnlyMenuItems: GetMainMenuItems = () => {
+  return [
+    'sortAscending',
+    'sortDescending'
+  ];
+};
+
+/**
+ * Show only Autosize options
+ */
+export const getAutosizeOnlyMenuItems: GetMainMenuItems = () => {
+  return [
+    'autoSizeThis',
+    'autoSizeAll'
+  ];
+};
+
+/**
+ * Show Pin + Sort options
+ */
+export const getPinAndSortMenuItems: GetMainMenuItems = () => {
+  return [
+    'pinSubMenu',
+    'separator',
+    'sortAscending', 
+    'sortDescending'
+  ];
+};
+
+/**
+ * Show Pin + Autosize options  
+ */
+export const getPinAndAutosizeMenuItems: GetMainMenuItems = () => {
+  return [
+    'pinSubMenu',
+    'separator',
+    'autoSizeThis',
+    'autoSizeAll'
+  ];
+};
+
+/**
+ * Available menu item keys for reference:
+ * - 'sortAscending'
+ * - 'sortDescending' 
+ * - 'pinSubMenu' (contains pinLeft, pinRight, clearPinned)
+ * - 'autoSizeThis'
+ * - 'autoSizeAll'
+ * - 'resetColumns'
+ * - 'separator'
+ */

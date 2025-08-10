@@ -1665,32 +1665,85 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ag-charts-types@npm:12.1.0":
-  version: 12.1.0
-  resolution: "ag-charts-types@npm:12.1.0"
-  checksum: 2844db77e37fbc91f5c3d827a452322170ff174cc3565b8ee2daad909eac44019e385c27f168b48c1ffafbff22992324281de7565dad24e4f688abe43960cbd1
+"ag-charts-community@npm:12.1.1":
+  version: 12.1.1
+  resolution: "ag-charts-community@npm:12.1.1"
+  dependencies:
+    ag-charts-core: 12.1.1
+    ag-charts-locale: 12.1.1
+    ag-charts-types: 12.1.1
+  checksum: 1025a130ce469cbed8e10d303aebd71e10b19ad6680e019a3f98302f54664ad782807fda289cf5e77e8c3b7d5c33f9f639534ca941e812c6c6893e382c92d411
   languageName: node
   linkType: hard
 
-"ag-grid-community@npm:34.1.0, ag-grid-community@npm:^34.1.0":
-  version: 34.1.0
-  resolution: "ag-grid-community@npm:34.1.0"
+"ag-charts-core@npm:12.1.1":
+  version: 12.1.1
+  resolution: "ag-charts-core@npm:12.1.1"
   dependencies:
-    ag-charts-types: 12.1.0
-  checksum: d590088c9cfd9b9f348abfc9c6569b18780248e7535b2a64a55f4d3dd3e58310cfcbbed61785e0af4d7c3328ddd0f9f52c09bc0ec9d52b5bde36670725506db1
+    ag-charts-types: 12.1.1
+  checksum: 035bae0b5fdfad2e1b1515433626de0aecfc6ecb957ab8717a7248f9cc76e5dd6e501eebc6da159bb49fa7ac661489b35a7e29989c2be13aefb2444a722949de
   languageName: node
   linkType: hard
 
-"ag-grid-react@npm:^34.1.0":
-  version: 34.1.0
-  resolution: "ag-grid-react@npm:34.1.0"
+"ag-charts-enterprise@npm:12.1.1":
+  version: 12.1.1
+  resolution: "ag-charts-enterprise@npm:12.1.1"
   dependencies:
-    ag-grid-community: 34.1.0
+    ag-charts-community: 12.1.1
+    ag-charts-core: 12.1.1
+  checksum: 40e69bab8e10693b550922620e7729ec57672b55a95199f586460dfbe35eb4918d64a40049a5f989211d5c3e188d2eafd00afc73076d82c14b5d89474a5cfe76
+  languageName: node
+  linkType: hard
+
+"ag-charts-locale@npm:12.1.1":
+  version: 12.1.1
+  resolution: "ag-charts-locale@npm:12.1.1"
+  checksum: 9b1154f8a494b6f25867d0974332bb4e3a93b8707479de67a888d35870a74f36daacff49c2b99aa1a84fad5c4a808b2391f16b08988b7fe0f7e62ec7b29cb098
+  languageName: node
+  linkType: hard
+
+"ag-charts-types@npm:12.1.1":
+  version: 12.1.1
+  resolution: "ag-charts-types@npm:12.1.1"
+  checksum: 34a1538add35e0446c4a41d3c3a6a9828ec529ec7cf375d49145535906c80d8cf76dd9b9e663dd39def0561ce8088b5add16861d471dde3c505cb3f58cb526af
+  languageName: node
+  linkType: hard
+
+"ag-grid-community@npm:34.1.1":
+  version: 34.1.1
+  resolution: "ag-grid-community@npm:34.1.1"
+  dependencies:
+    ag-charts-types: 12.1.1
+  checksum: 7868f2e7137ceacb43b60da4852a5b3cd6a79ff4ee6952d8c536ca23cee0baad6af8d60b7a5ee97f145a2c2c9a3ef10e5a3d28034b802a9910064421607d7ab2
+  languageName: node
+  linkType: hard
+
+"ag-grid-enterprise@npm:^34.1.1":
+  version: 34.1.1
+  resolution: "ag-grid-enterprise@npm:34.1.1"
+  dependencies:
+    ag-charts-community: 12.1.1
+    ag-charts-enterprise: 12.1.1
+    ag-grid-community: 34.1.1
+  dependenciesMeta:
+    ag-charts-community:
+      optional: true
+    ag-charts-enterprise:
+      optional: true
+  checksum: 5f0fbd6b96f3407fed0642b846f242ef09dc21c026256107e778985bb5819d29e6afbd55855f5624162488cf367c11ab5e8e526a96eaf49ee95e436527e6b1c0
+  languageName: node
+  linkType: hard
+
+"ag-grid-react@npm:^34.1.1":
+  version: 34.1.1
+  resolution: "ag-grid-react@npm:34.1.1"
+  dependencies:
+    ag-grid-community: 34.1.1
     prop-types: ^15.8.1
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: e3ad90ae381b3852639268c0582c2d31d4f846f8f83c87a6a8eb007422c6cf33b17b537957619d6721a5ce66fef14cef2dcb4b3d03139eb73a766ad85634824c
+  checksum: f2ab6a3093ed8a61ab99923f26f66f9ffa378f9b56a0192beed25618d3957b90c35d366f3ec7164f240ac97e2729b1f1c5a1dc5dbc9bd60b37b416d13a2fd18a
   languageName: node
   linkType: hard
 
@@ -1761,8 +1814,8 @@ __metadata:
     "@types/react": ^19.1.9
     "@types/react-dom": ^19.1.7
     "@vitejs/plugin-react-swc": ^3.11.0
-    ag-grid-community: ^34.1.0
-    ag-grid-react: ^34.1.0
+    ag-grid-enterprise: ^34.1.1
+    ag-grid-react: ^34.1.1
     axios: ^1.11.0
     chart.js: ^4.5.0
     classnames: ^2.5.1

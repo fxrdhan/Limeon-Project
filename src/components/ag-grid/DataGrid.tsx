@@ -8,16 +8,26 @@ import {
 import { AgGridReact } from 'ag-grid-react';
 import {
   ColDef,
-  ModuleRegistry,
-  AllCommunityModule,
   themeQuartz,
   GridReadyEvent,
   GetRowIdParams,
   RowDataTransaction,
+  ModuleRegistry,
+  ColumnMenuTab,
 } from 'ag-grid-community';
+import {
+  AllEnterpriseModule,
+  LicenseManager,
+} from 'ag-grid-enterprise';
 import { DataGridProps, DataGridRef } from '@/types';
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+// Register AG Grid Enterprise modules
+ModuleRegistry.registerModules([
+  AllEnterpriseModule,
+]);
+
+// Configure AG Grid Enterprise License
+LicenseManager.setLicenseKey('[TRIAL]_this_{AG_Charts_and_AG_Grid}_Enterprise_key_{AG-090576}_is_granted_for_evaluation_only___Use_in_production_is_not_permitted___Please_report_misuse_to_legal@ag-grid.com___For_help_with_purchasing_a_production_key_please_contact_info@ag-grid.com___You_are_granted_a_{Single_Application}_Developer_License_for_one_application_only___All_Front-End_JavaScript_developers_working_on_the_application_would_need_to_be_licensed___This_key_will_deactivate_on_{31 August 2025}____[v3]_[0102]_MTc1NjU5NDgwMDAwMA==055771d37eabf862ce4b35dbb0d2a1df');
 
 // Custom theme with secondary color for input focus border
 const customTheme = themeQuartz.withParams({
@@ -57,6 +67,8 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       isExternalFilterPresent,
       doesExternalFilterPass,
       disableFiltering = false,
+      columnMenuTabs,
+      mainMenuItems,
     },
     ref
   ) => {
@@ -122,8 +134,15 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
     const defaultColDef: ColDef = {
       sortable: true,
       resizable: true,
-      filter: disableFiltering ? false : true,
-      menuTabs: disableFiltering ? [] : undefined,
+      filter: disableFiltering ? false : 'agTextColumnFilter',
+      menuTabs: disableFiltering 
+        ? [] 
+        : columnMenuTabs || [
+            'filterMenuTab' as ColumnMenuTab,    // Filter options
+            'generalMenuTab' as ColumnMenuTab,   // Sort, Pin, Autosize, etc.
+            'columnsMenuTab' as ColumnMenuTab    // Choose/Reset Columns
+          ],
+      mainMenuItems: mainMenuItems,
       cellDataType: false,
       minWidth: 80,
     };
