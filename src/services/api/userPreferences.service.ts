@@ -181,6 +181,15 @@ export const PREFERENCE_KEYS = {
   MANUFACTURER_COLUMN_PINNING: 'manufacturer_column_pinning',
   UNIT_COLUMN_PINNING: 'unit_column_pinning',
   
+  // Column ordering preferences
+  ITEM_COLUMN_ORDER: 'item_column_order',
+  CATEGORY_COLUMN_ORDER: 'category_column_order',
+  TYPE_COLUMN_ORDER: 'type_column_order',
+  PACKAGE_COLUMN_ORDER: 'package_column_order',
+  DOSAGE_COLUMN_ORDER: 'dosage_column_order',
+  MANUFACTURER_COLUMN_ORDER: 'manufacturer_column_order',
+  UNIT_COLUMN_ORDER: 'unit_column_order',
+  
   // Other preferences
   THEME: 'theme',
   LANGUAGE: 'language',

@@ -224,6 +224,7 @@ export const useKeyboardNavigation = ({
       onCloseValidation,
       setHighlightedIndex,
       setExpandedId,
+      optionsContainerRef,
     ]
   );
 

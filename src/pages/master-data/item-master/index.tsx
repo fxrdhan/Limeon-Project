@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { GridApi, GridReadyEvent, ColumnPinnedEvent } from 'ag-grid-community';
+import { GridApi, GridReadyEvent, ColumnPinnedEvent, ColumnMovedEvent } from 'ag-grid-community';
 
 // Components
 import PageTitle from '@/components/page-title';
@@ -144,13 +144,14 @@ const ItemMasterNew = memo(() => {
   });
 
   // Column visibility management
-  const { columnOptions, visibleColumns, isColumnVisible, handleColumnToggle, getColumnPinning, handleColumnPinning } =
+  const { columnOptions, visibleColumns, isColumnVisible, handleColumnToggle, getColumnPinning, handleColumnPinning, orderingState, handleColumnOrdering } =
     useColumnVisibility();
 
   const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns({
     visibleColumns,
     isColumnVisible,
     getColumnPinning,
+    columnOrder: orderingState,
   });
 
   // Memoize modal handlers
@@ -286,6 +287,34 @@ const ItemMasterNew = memo(() => {
     [handleColumnPinning]
   );
 
+  // Handle column moved events
+  const handleColumnMoved = useCallback(
+    (event: ColumnMovedEvent) => {
+      // Only save if the column was actually moved (not just during initialization)
+      if (event.finished && itemGridApi && !itemGridApi.isDestroyed()) {
+        try {
+          // Get current column order from the grid API
+          const allColumns = itemGridApi.getAllGridColumns();
+          const newOrder: string[] = [];
+
+          allColumns.forEach(column => {
+            const colId = column.getColId();
+            // Skip the row number column as it's not movable and not part of ordering
+            if (colId !== 'rowNumber') {
+              newOrder.push(colId);
+            }
+          });
+
+          // Save new column order
+          handleColumnOrdering(newOrder);
+        } catch (error) {
+          console.error('Failed to update column order:', error);
+        }
+      }
+    },
+    [handleColumnOrdering, itemGridApi]
+  );
+
   // Memoize SearchToolbar callback props for stable references (after itemSearch is declared)
   const memoizedOnAdd = useCallback(() => {
     handleAddItem(undefined, itemSearch);
@@ -399,6 +428,7 @@ const ItemMasterNew = memo(() => {
                   isExternalFilterPresent={itemIsExternalFilterPresent}
                   doesExternalFilterPass={itemDoesExternalFilterPass}
                   onColumnPinned={handleColumnPinned}
+                  onColumnMoved={handleColumnMoved}
                 />
               )}
             </div>

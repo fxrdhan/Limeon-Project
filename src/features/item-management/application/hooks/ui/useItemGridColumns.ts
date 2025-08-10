@@ -13,30 +13,33 @@ interface UseItemGridColumnsProps {
   visibleColumns?: string[];
   isColumnVisible?: (columnKey: string) => boolean;
   getColumnPinning?: (columnKey: string) => 'left' | 'right' | null;
+  columnOrder?: string[];
 }
 
 export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
-  const { isColumnVisible, getColumnPinning } = props;
+  const { isColumnVisible, getColumnPinning, columnOrder } = props;
 
   const columnDefs: ColDef[] = useMemo(() => {
-    const allColumns: ColDef[] = [
-      // Row number column
-      {
-        field: 'rowNumber',
-        headerName: 'No.',
-        width: 60,
-        minWidth: 60,
-        maxWidth: 60,
-        pinned: 'left',
-        sortable: false,
-        filter: false,
-        resizable: false,
-        suppressMovable: true,
-        suppressHeaderMenuButton: true,
-        cellStyle: { textAlign: 'center', fontWeight: 'bold' },
-        valueGetter: 'node.rowIndex + 1',
-      },
-      {
+    // Row number column - always first and not movable
+    const rowNumberColumn: ColDef = {
+      field: 'rowNumber',
+      headerName: 'No.',
+      width: 60,
+      minWidth: 60,
+      maxWidth: 60,
+      pinned: 'left',
+      sortable: false,
+      filter: false,
+      resizable: false,
+      suppressMovable: true,
+      suppressHeaderMenuButton: true,
+      cellStyle: { textAlign: 'center', fontWeight: 'bold' },
+      valueGetter: 'node.rowIndex + 1',
+    };
+
+    // Create column definitions map for ordering
+    const columnDefinitionsMap: Record<string, ColDef> = {
+      'name': {
         ...createTextColumn({
           field: 'name',
           headerName: 'Nama Item',
@@ -45,7 +48,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('name') || undefined,
       },
-      {
+      'manufacturer': {
         ...createTextColumn({
           field: 'manufacturer',
           headerName: 'Produsen',
@@ -54,7 +57,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('manufacturer') || undefined,
       },
-      {
+      'code': {
         ...createTextColumn({
           field: 'code',
           headerName: 'Kode',
@@ -62,7 +65,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('code') || undefined,
       },
-      {
+      'barcode': {
         ...createTextColumn({
           field: 'barcode',
           headerName: 'Barcode',
@@ -71,7 +74,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('barcode') || undefined,
       },
-      {
+      'category.name': {
         ...createTextColumn({
           field: 'category.name',
           headerName: 'Kategori',
@@ -79,7 +82,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('category.name') || undefined,
       },
-      {
+      'type.name': {
         ...createWrapTextColumn({
           field: 'type.name',
           headerName: 'Jenis',
@@ -87,7 +90,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('type.name') || undefined,
       },
-      {
+      'unit.name': {
         ...createTextColumn({
           field: 'unit.name',
           headerName: 'Kemasan',
@@ -95,7 +98,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('unit.name') || undefined,
       },
-      {
+      'dosage.name': {
         ...createTextColumn({
           field: 'dosage.name',
           headerName: 'Sediaan',
@@ -104,7 +107,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('dosage.name') || undefined,
       },
-      {
+      'package_conversions': {
         ...createTextColumn({
           field: 'package_conversions',
           headerName: 'Kemasan Turunan',
@@ -121,7 +124,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('package_conversions') || undefined,
       },
-      {
+      'base_price': {
         ...createCurrencyColumn({
           field: 'base_price',
           headerName: 'Harga Pokok',
@@ -130,7 +133,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('base_price') || undefined,
       },
-      {
+      'sell_price': {
         ...createCurrencyColumn({
           field: 'sell_price',
           headerName: 'Harga Jual',
@@ -139,7 +142,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('sell_price') || undefined,
       },
-      {
+      'stock': {
         ...createCenterAlignColumn({
           field: 'stock',
           headerName: 'Stok',
@@ -148,7 +151,41 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         }),
         pinned: getColumnPinning?.('stock') || undefined,
       },
+    };
+
+    // Default column order if not specified
+    const defaultOrder = [
+      'name',
+      'manufacturer',
+      'code',
+      'barcode',
+      'category.name',
+      'type.name',
+      'unit.name',
+      'dosage.name',
+      'package_conversions',
+      'base_price',
+      'sell_price',
+      'stock',
     ];
+
+    // Use provided order or default order
+    const orderedColumns = columnOrder || defaultOrder;
+
+    // Create ordered column array
+    const orderedColumnDefs = orderedColumns
+      .map(fieldName => columnDefinitionsMap[fieldName])
+      .filter(Boolean); // Remove undefined columns
+
+    // Add any missing columns that aren't in the order (fallback)
+    Object.keys(columnDefinitionsMap).forEach(fieldName => {
+      if (!orderedColumns.includes(fieldName)) {
+        orderedColumnDefs.push(columnDefinitionsMap[fieldName]);
+      }
+    });
+
+    // Combine row number column with ordered columns
+    const allColumns = [rowNumberColumn, ...orderedColumnDefs];
 
     // Filter columns based on visibility
     if (isColumnVisible) {
@@ -158,7 +195,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
     }
 
     return allColumns;
-  }, [isColumnVisible, getColumnPinning]);
+  }, [isColumnVisible, getColumnPinning, columnOrder]);
 
   const columnsToAutoSize = useMemo(() => {
     const allColumnsToAutoSize = [

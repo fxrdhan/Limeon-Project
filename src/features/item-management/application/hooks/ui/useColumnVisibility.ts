@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useColumnVisibilityPreference, useColumnPinningPreference } from '@/hooks/queries/useUserPreferences';
+import { useColumnVisibilityPreference, useColumnPinningPreference, useColumnOrderingPreference } from '@/hooks/queries/useUserPreferences';
 
 interface ColumnVisibilityConfig {
   key: string;
@@ -57,9 +57,18 @@ export const useColumnVisibility = () => {
     error: pinningError,
   } = useColumnPinningPreference();
 
+  // Column ordering preferences
+  const {
+    columnOrder: dbColumnOrder,
+    setColumnOrder: setDbColumnOrder,
+    isLoading: isOrderingLoading,
+    error: orderingError,
+  } = useColumnOrderingPreference();
+
   // Local state for optimistic updates
   const [optimisticState, setOptimisticState] = useState<Record<string, boolean> | null>(null);
   const [optimisticPinningState, setOptimisticPinningState] = useState<Record<string, 'left' | 'right' | null> | null>(null);
+  const [optimisticOrderingState, setOptimisticOrderingState] = useState<string[] | null>(null);
 
   // Use optimistic state during saves, otherwise use DB state or defaults
   const visibilityState = useMemo(() => {
@@ -86,6 +95,18 @@ export const useColumnVisibility = () => {
     }
     return dbColumnPinning || {};
   }, [dbColumnPinning, optimisticPinningState]);
+
+  // Column ordering state - get default order from COLUMN_CONFIGS
+  const getDefaultOrder = (): string[] => {
+    return COLUMN_CONFIGS.map(config => config.key);
+  };
+
+  const orderingState = useMemo(() => {
+    if (optimisticOrderingState) {
+      return optimisticOrderingState;
+    }
+    return dbColumnOrder || getDefaultOrder();
+  }, [dbColumnOrder, optimisticOrderingState]);
 
   const columnOptions: ColumnOption[] = useMemo(() => {
     return COLUMN_CONFIGS.map(config => ({
@@ -163,6 +184,27 @@ export const useColumnVisibility = () => {
     return pinningState[columnKey] ?? null;
   };
 
+  const handleColumnOrdering = useCallback(
+    async (newOrder: string[]) => {
+      // Set optimistic state for immediate UI update
+      setOptimisticOrderingState(newOrder);
+      
+      try {
+        // Save to database
+        await setDbColumnOrder(newOrder);
+        
+        // Clear optimistic state after successful save
+        setOptimisticOrderingState(null);
+      } catch (error) {
+        console.error('Failed to save column order to database:', error);
+        
+        // Revert optimistic state on error
+        setOptimisticOrderingState(null);
+      }
+    },
+    [setDbColumnOrder]
+  );
+
   return {
     columnOptions,
     visibleColumns,
@@ -171,7 +213,9 @@ export const useColumnVisibility = () => {
     pinningState,
     getColumnPinning,
     handleColumnPinning,
-    isLoading: isDbLoading || isPinningLoading,
-    error: dbError || pinningError,
+    orderingState,
+    handleColumnOrdering,
+    isLoading: isDbLoading || isPinningLoading || isOrderingLoading,
+    error: dbError || pinningError || orderingError,
   };
 };

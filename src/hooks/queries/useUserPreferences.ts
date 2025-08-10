@@ -155,6 +155,17 @@ export const ENTITY_PINNING_PREFERENCE_KEY_MAP = {
   units: PREFERENCE_KEYS.UNIT_COLUMN_PINNING,
 } as const;
 
+// Entity type to column ordering preference key mapping
+export const ENTITY_ORDERING_PREFERENCE_KEY_MAP = {
+  items: PREFERENCE_KEYS.ITEM_COLUMN_ORDER,
+  categories: PREFERENCE_KEYS.CATEGORY_COLUMN_ORDER,
+  types: PREFERENCE_KEYS.TYPE_COLUMN_ORDER,
+  packages: PREFERENCE_KEYS.PACKAGE_COLUMN_ORDER,
+  dosages: PREFERENCE_KEYS.DOSAGE_COLUMN_ORDER,
+  manufacturers: PREFERENCE_KEYS.MANUFACTURER_COLUMN_ORDER,
+  units: PREFERENCE_KEYS.UNIT_COLUMN_ORDER,
+} as const;
+
 export type UserPreferenceEntityType = keyof typeof ENTITY_PREFERENCE_KEY_MAP;
 
 /**
@@ -214,6 +225,34 @@ export const useEntityColumnPinningPreference = (entityType: UserPreferenceEntit
 };
 
 /**
+ * Generic hook for entity column ordering preferences
+ */
+export const useEntityColumnOrderingPreference = (entityType: UserPreferenceEntityType) => {
+  const preferenceKey = ENTITY_ORDERING_PREFERENCE_KEY_MAP[entityType];
+  
+  const { data: preference, isLoading, error } = useUserPreference(
+    preferenceKey,
+    { enabled: true }
+  );
+  
+  const { setPreference } = useUserPreferenceMutations();
+
+  const setColumnOrder = async (order: string[]) => {
+    await setPreference.mutateAsync({
+      key: preferenceKey,
+      value: { order },
+    });
+  };
+
+  return {
+    columnOrder: preference?.preference_value?.order as string[] | undefined,
+    isLoading: isLoading || setPreference.isPending,
+    error: error || setPreference.error,
+    setColumnOrder,
+  };
+};
+
+/**
  * Utility hook for item column visibility preference (backward compatibility)
  */
 export const useColumnVisibilityPreference = () => {
@@ -225,4 +264,11 @@ export const useColumnVisibilityPreference = () => {
  */
 export const useColumnPinningPreference = () => {
   return useEntityColumnPinningPreference('items');
+};
+
+/**
+ * Utility hook for item column ordering preference (backward compatibility)
+ */
+export const useColumnOrderingPreference = () => {
+  return useEntityColumnOrderingPreference('items');
 };
