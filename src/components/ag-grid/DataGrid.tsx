@@ -56,7 +56,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       sizeColumnsToFit = false,
       getRowHeight,
       rowClass = 'cursor-pointer',
-      suppressMovableColumns = true,
+      suppressMovableColumns = false,
       cellSelection = false,
       suppressScrollOnNewData = true,
       suppressAnimationFrame = false,
@@ -70,6 +70,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       columnMenuTabs,
       mainMenuItems,
       onColumnPinned,
+      onColumnMoved,
     },
     ref
   ) => {
@@ -210,6 +211,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
           onColumnPinned={onColumnPinned}
+          onColumnMoved={onColumnMoved}
         />
       </div>
     );

@@ -8,6 +8,7 @@ import {
   GridReadyEvent,
   IRowNode,
   ColumnPinnedEvent,
+  ColumnMovedEvent,
 } from 'ag-grid-community';
 import type { Item } from '@/types/database';
 
@@ -30,6 +31,7 @@ interface ItemDataTableProps {
   isExternalFilterPresent: () => boolean;
   doesExternalFilterPass: (node: IRowNode) => boolean;
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
+  onColumnMoved?: (event: ColumnMovedEvent) => void;
 }
 
 const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
@@ -51,6 +53,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   isExternalFilterPresent,
   doesExternalFilterPass,
   onColumnPinned,
+  onColumnMoved,
 }: ItemDataTableProps) {
   // SIMPLE SOLUTION: Show skeleton ONLY when truly no data exists
   // If totalItems > 0, NEVER show skeleton (data is cached/available)
@@ -121,6 +124,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           doesExternalFilterPass={doesExternalFilterPass}
           mainMenuItems={getPinOnlyMenuItems}
           onColumnPinned={onColumnPinned}
+          onColumnMoved={onColumnMoved}
           style={{
             width: '100%',
             marginTop: '1rem',

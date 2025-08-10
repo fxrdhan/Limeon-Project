@@ -11,6 +11,7 @@ import {
   ColumnMenuTab,
   GetMainMenuItems,
   ColumnPinnedEvent,
+  ColumnMovedEvent,
 } from 'ag-grid-community';
 
 export interface ColumnConfig {
@@ -57,6 +58,7 @@ export interface DataGridProps {
   columnMenuTabs?: ColumnMenuTab[];
   mainMenuItems?: GetMainMenuItems;
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
+  onColumnMoved?: (event: ColumnMovedEvent) => void;
 }
 
 export interface DataGridRef {
