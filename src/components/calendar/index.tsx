@@ -5,7 +5,7 @@ import {
   CalendarButton,
   CalendarPortal,
   CalendarHeader,
-  DaysGrid,
+  AnimatedDaysGrid,
 } from './components';
 import type { CalendarProps } from './types';
 
@@ -42,9 +42,9 @@ const CalendarContent: React.FC<{
     calculatePosition?.();
   };
 
-  // Always render DaysGrid - no more view switching
+  // Always render AnimatedDaysGrid with slide animations
   const renderCalendarContent = () => (
-    <DaysGrid
+    <AnimatedDaysGrid
       displayDate={displayDate}
       value={value}
       highlightedDate={highlightedDate}
