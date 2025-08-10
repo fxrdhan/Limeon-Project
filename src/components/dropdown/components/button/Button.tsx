@@ -89,7 +89,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type="button"
         name={name}
         tabIndex={tabIndex}
-        className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border bg-white text-gray-800 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-3 transition duration-200 ease-in-out ${
+        className={`py-2.5 px-3 w-full inline-flex justify-between text-sm font-medium rounded-lg border bg-white text-gray-800 hover:bg-gray-50 focus:outline-hidden focus:ring-3 transition duration-200 ease-in-out ${
           isExpanded ? 'items-start' : 'items-center'
         } ${
           hasError

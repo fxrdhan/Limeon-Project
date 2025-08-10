@@ -1,6 +1,5 @@
 import { useState, useCallback, RefObject, CSSProperties } from 'react';
 import { DROPDOWN_CONSTANTS, DropDirection } from '../constants';
-import { getContextualBoxShadow } from '../utils/dropdownUtils';
 import type { DropdownPortalWidth } from '@/types';
 
 export const useDropdownPosition = (
@@ -67,7 +66,8 @@ export const useDropdownPosition = (
         buttonRect.top +
         window.scrollY -
         dropdownActualHeight -
-        DROPDOWN_CONSTANTS.DROPDOWN_SPACING;
+        DROPDOWN_CONSTANTS.DROPDOWN_SPACING -
+        3; // Extra offset untuk portal yang muncul ke atas
     } else {
       topPosition =
         buttonRect.bottom +
@@ -80,7 +80,6 @@ export const useDropdownPosition = (
       left: `${leftPosition}px`,
       zIndex: 1050,
       top: `${topPosition}px`,
-      boxShadow: getContextualBoxShadow(finalDirection),
     };
 
     // Set width based on portalWidth value
