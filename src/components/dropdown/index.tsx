@@ -154,6 +154,7 @@ const Dropdown = ({
     dropdownMenuRef,
     searchInputRef,
     optionsContainerRef,
+    mode,
   });
 
   // handleKeyDown functionality now provided by useKeyboardNavigation as handleDropdownKeyDown
@@ -191,7 +192,6 @@ const Dropdown = ({
     isOpen,
     applyOpenStyles,
     filteredOptions,
-    highlightedIndex,
     scrollToHighlightedOption,
     optionsContainerRef,
   });
@@ -308,7 +308,9 @@ const Dropdown = ({
   return (
     <DropdownProvider value={contextValue}>
       <div
-        className="relative inline-flex w-full"
+        className={`relative inline-flex w-full ${
+          isKeyboardNavigation ? 'cursor-none' : ''
+        }`}
         ref={dropdownRef}
         onMouseEnter={() => {
           handleTriggerAreaEnter();

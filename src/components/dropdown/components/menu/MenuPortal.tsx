@@ -9,6 +9,7 @@ interface MenuPortalProps {
   dropDirection: DropDirection;
   portalStyle: CSSProperties;
   isPositionReady: boolean;
+  isKeyboardNavigation?: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   children: ReactNode;
@@ -23,6 +24,7 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
       dropDirection,
       portalStyle,
       isPositionReady,
+      isKeyboardNavigation = false,
       onMouseEnter,
       onMouseLeave,
       children,
@@ -47,6 +49,7 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
               ${dropDirection === 'down' ? 'shadow-xl' : ''}
               transition-all duration-150 ease-out
               ${(isClosing || !applyOpenStyles || !isPositionReady) ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
+              ${isKeyboardNavigation ? 'cursor-none' : ''}
           `}
             role="menu"
             onClick={e => e.stopPropagation()}

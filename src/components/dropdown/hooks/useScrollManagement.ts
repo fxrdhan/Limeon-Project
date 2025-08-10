@@ -5,7 +5,6 @@ interface UseScrollManagementProps {
   isOpen: boolean;
   applyOpenStyles: boolean;
   filteredOptions: Array<{ id: string; name: string }>;
-  highlightedIndex: number;
   scrollToHighlightedOption: () => void;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
 }
@@ -14,7 +13,6 @@ export const useScrollManagement = ({
   isOpen,
   applyOpenStyles,
   filteredOptions,
-  highlightedIndex,
   scrollToHighlightedOption,
   optionsContainerRef,
 }: UseScrollManagementProps) => {
@@ -24,9 +22,13 @@ export const useScrollManagement = ({
     scrolledFromTop: false,
   });
 
+  // Track if dropdown just opened (allow initial scroll only)
+  const [hasInitialScrolled, setHasInitialScrolled] = useState(false);
+
   const checkScroll = useCallback(() => {
     if (!optionsContainerRef.current) return;
     const container = optionsContainerRef.current;
+    
     setScrollState({
       isScrollable: container.scrollHeight > container.clientHeight,
       reachedBottom:
@@ -55,26 +57,27 @@ export const useScrollManagement = ({
     }
   }, [isOpen, checkScroll, optionsContainerRef]);
 
-  // Scroll to highlighted option
-  useEffect(() => {
-    scrollToHighlightedOption();
-  }, [highlightedIndex, isOpen, filteredOptions, scrollToHighlightedOption]);
+  // Keyboard navigation scrolling is now handled directly in useKeyboardNavigation
+  // This effect is intentionally removed to prevent conflicts
 
-  // Reset scroll position when dropdown opens
+  // Initial scroll ONLY when dropdown first opens
   useEffect(() => {
-    if (
-      isOpen &&
-      applyOpenStyles &&
-      optionsContainerRef.current &&
-      filteredOptions.length > 0
-    ) {
-      scrollToHighlightedOption();
+    if (isOpen && applyOpenStyles && !hasInitialScrolled) {
+      if (optionsContainerRef.current && filteredOptions.length > 0) {
+        scrollToHighlightedOption();
+        setHasInitialScrolled(true);
+      }
+    }
+    
+    // Reset when dropdown closes
+    if (!isOpen) {
+      setHasInitialScrolled(false);
     }
   }, [
     isOpen,
     applyOpenStyles,
+    hasInitialScrolled,
     filteredOptions.length,
-    highlightedIndex,
     scrollToHighlightedOption,
     optionsContainerRef,
   ]);
