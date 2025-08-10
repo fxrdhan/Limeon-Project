@@ -64,7 +64,8 @@ export interface UseCalendarKeyboardParams {
   setDisplayDate: React.Dispatch<React.SetStateAction<Date>>;
   setCurrentView: React.Dispatch<React.SetStateAction<CalendarView>>;
   navigateViewDate: (direction: 'prev' | 'next') => void;
-  navigateYear: (direction: 'prev' | 'next') => void;
+  navigateYear?: (direction: 'prev' | 'next') => void; // Optional, use navigateYearWithAnimation instead
+  navigateYearWithAnimation: (direction: 'prev' | 'next') => void;
   focusPortal: () => void;
 }
 

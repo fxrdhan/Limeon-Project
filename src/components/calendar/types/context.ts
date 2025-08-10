@@ -15,6 +15,7 @@ export interface CalendarContextState {
   currentView: CalendarView;
   dropDirection: 'down' | 'up';
   navigationDirection: 'prev' | 'next' | null;
+  yearNavigationDirection: 'prev' | 'next' | null;
 
   // Highlighting state
   highlightedDate: Date | null;
@@ -55,6 +56,9 @@ export interface CalendarContextState {
   // Navigation
   navigateViewDate: (direction: 'prev' | 'next') => void;
   navigateYear: (direction: 'prev' | 'next') => void;
+  navigateYearWithAnimation: (direction: 'prev' | 'next') => void;
+  triggerYearAnimation: (direction: 'prev' | 'next') => void;
+  triggerMonthAnimation: (direction: 'prev' | 'next') => void;
 
   // Refs
   triggerInputRef: React.RefObject<HTMLInputElement | null>;

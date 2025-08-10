@@ -29,7 +29,7 @@ export const useCalendarKeyboard = (
     setDisplayDate,
     setCurrentView,
     navigateViewDate,
-    navigateYear,
+    navigateYearWithAnimation,
     focusPortal,
   } = params;
 
@@ -211,11 +211,11 @@ export const useCalendarKeyboard = (
             navigated = true;
             break;
           case 'ArrowUp':
-            navigateYear('prev');
+            navigateYearWithAnimation('prev');
             navigated = true;
             break;
           case 'ArrowDown':
-            navigateYear('next');
+            navigateYearWithAnimation('next');
             navigated = true;
             break;
         }
@@ -236,7 +236,7 @@ export const useCalendarKeyboard = (
     [
       currentView,
       navigateViewDate,
-      navigateYear,
+      navigateYearWithAnimation,
       handleDaysNavigation,
       handleMonthsNavigation,
       handleYearsNavigation,

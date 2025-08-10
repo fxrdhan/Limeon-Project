@@ -52,6 +52,7 @@ export interface DaysGridProps {
   maxDate?: Date;
   onDateSelect: (date: Date) => void;
   onDateHighlight: (date: Date | null) => void;
+  animated?: boolean;
 }
 
 export interface MonthsGridProps {
