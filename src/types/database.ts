@@ -106,6 +106,7 @@ export interface Item {
   id: string;
   name: string;
   manufacturer?: string;
+  manufacturer_info?: { id?: string; code?: string | null; name: string };
   code?: string;
   barcode?: string | null;
   base_price: number;
@@ -118,6 +119,7 @@ export interface Item {
   category: { name: string };
   type: { name: string };
   unit: { name: string };
+  dosage?: { name: string };
 }
 
 export interface PackageConversion {
