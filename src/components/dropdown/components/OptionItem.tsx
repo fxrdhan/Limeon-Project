@@ -3,6 +3,7 @@ import { truncateText, shouldTruncateText } from '@/utils/text';
 import { DROPDOWN_CONSTANTS } from '../constants';
 import OptionContainer from './options/OptionContainer';
 import RadioIndicator from './options/RadioIndicator';
+import CheckboxIndicator from './options/CheckboxIndicator';
 import OptionText from './options/OptionText';
 import { useDropdownContext } from '../hooks/useDropdownContext';
 import type { OptionItemProps } from '../types';
@@ -18,6 +19,7 @@ const OptionItem: FC<OptionItemProps> = ({
 }) => {
   const {
     withRadio = false,
+    withCheckbox = false,
     isKeyboardNavigation,
     buttonRef,
     portalStyle,
@@ -37,7 +39,7 @@ const OptionItem: FC<OptionItemProps> = ({
 
   const maxTextWidth =
     portalWidth -
-    (withRadio
+    (withRadio || withCheckbox
       ? DROPDOWN_CONSTANTS.BUTTON_PADDING +
         DROPDOWN_CONSTANTS.RADIO_EXTRA_PADDING
       : DROPDOWN_CONSTANTS.BUTTON_PADDING);
@@ -66,6 +68,9 @@ const OptionItem: FC<OptionItemProps> = ({
     >
       {withRadio && (
         <RadioIndicator isSelected={isSelected} isExpanded={shouldExpand} />
+      )}
+      {withCheckbox && (
+        <CheckboxIndicator isSelected={isSelected} isExpanded={shouldExpand} />
       )}
       <OptionText
         text={shouldExpand ? option.name : displayText}

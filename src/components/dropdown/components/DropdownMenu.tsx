@@ -24,6 +24,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       highlightedIndex,
       expandedId,
       value,
+      withCheckbox,
       onAddNew,
       onKeyDown,
       onSetHighlightedIndex,
@@ -74,7 +75,11 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                     key={option.id}
                     option={option}
                     index={index}
-                    isSelected={option.id === value}
+                    isSelected={
+                      withCheckbox && Array.isArray(value)
+                        ? value.includes(option.id)
+                        : option.id === value
+                    }
                     isHighlighted={highlightedIndex === index}
                     isExpanded={expandedId === option.id}
                     onHighlight={index => {
