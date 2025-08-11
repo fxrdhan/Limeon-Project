@@ -1,9 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { CALENDAR_CONSTANTS } from '../constants';
-import type {
-  UseCalendarStateParams,
-  UseCalendarStateReturn,
-} from '../types';
+import type { UseCalendarStateParams, UseCalendarStateReturn } from '../types';
 
 export const useCalendarState = (
   params: UseCalendarStateParams
@@ -24,9 +21,9 @@ export const useCalendarState = (
     setIsOpen(true);
     setIsClosing(false);
     setIsOpening(true);
-    
+
     // Animation timing is now handled in CalendarContext after portal is ready
-    
+
     // Call onOpen after setting animation states
     onOpen?.();
   }, [onOpen]);

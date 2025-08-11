@@ -7,6 +7,7 @@ A powerful, accessible React calendar/datepicker component with Indonesian local
 The Calendar component is a sophisticated date selection interface that can function as both a standalone calendar and a datepicker with input field. It features smooth animations, comprehensive keyboard navigation, intelligent positioning, and full accessibility support with Indonesian language defaults.
 
 **Key Features:**
+
 - **Dual Modes**: Datepicker with input field or standalone calendar
 - **Indonesian Localization**: Built-in Indonesian month names and date formatting
 - **Smart Positioning**: Automatic up/down positioning based on viewport space
@@ -65,16 +66,19 @@ CalendarProvider (Context Provider)
 ## Current Features
 
 ### 1. Mode Flexibility
+
 - **Datepicker Mode**: Input field that opens calendar overlay
 - **Calendar Mode**: Standalone calendar widget
 
 ### 2. Date Selection & Navigation
+
 - Single date selection with onChange callback
 - Month/year header navigation with dropdowns
 - Previous/next navigation buttons
 - Direct year selection through dropdown
 
 ### 3. Keyboard Navigation
+
 - `Arrow Keys`: Navigate through dates
 - `Enter`: Select highlighted date
 - `Escape`: Close calendar
@@ -82,18 +86,21 @@ CalendarProvider (Context Provider)
 - `Page Up/Down`: Navigate months/years quickly
 
 ### 4. Mouse Interactions
+
 - Click to select dates
 - Hover highlighting
 - Optional hover-to-open (configurable delay)
 - Click outside to close
 
 ### 5. Positioning System
+
 - Automatic position calculation relative to trigger
 - Viewport-aware positioning (up/down detection)
 - Configurable portal width
 - Resizable calendar support (with size constraints)
 
 ### 6. Size Presets
+
 - **sm**: 280x300px (min: 260x280, max: 320x340)
 - **md**: 320x320px (min: 300x300, max: 380x380) - Default
 - **lg**: 380x360px (min: 340x320, max: 450x420)
@@ -102,6 +109,7 @@ CalendarProvider (Context Provider)
 ### 7. Animation System
 
 #### 7.1 Open/Close Transitions
+
 - Open/close transitions (200ms duration)
 - Smooth state transitions with intermediate states
 - Focus management during animations
@@ -111,6 +119,7 @@ CalendarProvider (Context Provider)
 The calendar implements sophisticated swipe animations for month and year navigation using Framer Motion through the `DaysGrid` component with `animated={true}` prop:
 
 **Animation Architecture:**
+
 - **Horizontal swipe** for month navigation (left/right)
 - **Vertical swipe** for year navigation (up/down)
 - Uses `AnimatePresence` with `mode="wait"` for seamless transitions
@@ -120,8 +129,12 @@ The calendar implements sophisticated swipe animations for month and year naviga
 
 ```tsx
 // State management for tracking animation direction
-const [navigationDirection, setNavigationDirection] = useState<'prev' | 'next' | null>(null);
-const [yearNavigationDirection, setYearNavigationDirection] = useState<'prev' | 'next' | null>(null);
+const [navigationDirection, setNavigationDirection] = useState<
+  'prev' | 'next' | null
+>(null);
+const [yearNavigationDirection, setYearNavigationDirection] = useState<
+  'prev' | 'next' | null
+>(null);
 
 // Unique key generation for AnimatePresence
 const gridKey = `${displayDate.getFullYear()}-${displayDate.getMonth()}`;
@@ -129,19 +142,19 @@ const gridKey = `${displayDate.getFullYear()}-${displayDate.getMonth()}`;
 // Animation configuration
 <AnimatePresence mode="wait" initial={false}>
   <motion.div
-    key={gridKey}                        // Triggers re-render and animation
-    initial={getAnimationDirection()}    // Start position based on direction
-    animate={{ x: 0, y: 0 }}            // Always animate to center
-    exit={getExitDirection()}           // Exit in opposite direction
+    key={gridKey} // Triggers re-render and animation
+    initial={getAnimationDirection()} // Start position based on direction
+    animate={{ x: 0, y: 0 }} // Always animate to center
+    exit={getExitDirection()} // Exit in opposite direction
     transition={{
-      type: "tween",
-      ease: [0.4, 0.0, 0.2, 1],         // Material Design curve
-      duration: 0.25                    // 250ms for smooth feel
+      type: 'tween',
+      ease: [0.4, 0.0, 0.2, 1], // Material Design curve
+      duration: 0.25, // 250ms for smooth feel
     }}
   >
     {renderDatesGrid(displayDate)}
   </motion.div>
-</AnimatePresence>
+</AnimatePresence>;
 ```
 
 **Direction Calculations:**
@@ -150,26 +163,26 @@ const gridKey = `${displayDate.getFullYear()}-${displayDate.getMonth()}`;
 // Initial position based on navigation direction
 const getAnimationDirection = () => {
   // Year navigation (vertical movement)
-  if (yearNavigationDirection === 'prev') return { y: '-100%', x: 0 };  // Enter from top
-  if (yearNavigationDirection === 'next') return { y: '100%', x: 0 };   // Enter from bottom
-  
+  if (yearNavigationDirection === 'prev') return { y: '-100%', x: 0 }; // Enter from top
+  if (yearNavigationDirection === 'next') return { y: '100%', x: 0 }; // Enter from bottom
+
   // Month navigation (horizontal movement)
-  if (navigationDirection === 'prev') return { x: '-100%', y: 0 };      // Enter from left
-  if (navigationDirection === 'next') return { x: '100%', y: 0 };       // Enter from right
-  
-  return { x: 0, y: 0 };  // No animation on initial render
+  if (navigationDirection === 'prev') return { x: '-100%', y: 0 }; // Enter from left
+  if (navigationDirection === 'next') return { x: '100%', y: 0 }; // Enter from right
+
+  return { x: 0, y: 0 }; // No animation on initial render
 };
 
 // Exit position (opposite of entry for smooth transition)
 const getExitDirection = () => {
   // Year navigation
-  if (yearNavigationDirection === 'prev') return { y: '100%', x: 0 };   // Exit to bottom
-  if (yearNavigationDirection === 'next') return { y: '-100%', x: 0 };  // Exit to top
-  
+  if (yearNavigationDirection === 'prev') return { y: '100%', x: 0 }; // Exit to bottom
+  if (yearNavigationDirection === 'next') return { y: '-100%', x: 0 }; // Exit to top
+
   // Month navigation
-  if (navigationDirection === 'prev') return { x: '100%', y: 0 };       // Exit to right
-  if (navigationDirection === 'next') return { x: '-100%', y: 0 };      // Exit to left
-  
+  if (navigationDirection === 'prev') return { x: '100%', y: 0 }; // Exit to right
+  if (navigationDirection === 'next') return { x: '-100%', y: 0 }; // Exit to left
+
   return { x: 0, y: 0 };
 };
 ```
@@ -179,29 +192,33 @@ const getExitDirection = () => {
 1. **Navigation Trigger**: User clicks prev/next month or changes year
 2. **Direction Setting**: `navigationDirection` or `yearNavigationDirection` is set
 3. **Key Update**: New `gridKey` triggers AnimatePresence
-4. **Animation Execution**: 
+4. **Animation Execution**:
    - Old grid exits in opposite direction
    - New grid enters from corresponding direction
    - Both animate over 250ms with Material easing
 5. **Cleanup**: Direction state cleared after 300ms
 
 **Performance Optimizations:**
+
 - Container has `overflow-hidden` to hide sliding elements
 - Static day labels remain fixed during animation
 - Uses `tween` animation type for consistent performance
 - Direction state auto-clears to prevent memory leaks
 
 **Files Involved:**
+
 - `components/DaysGrid.tsx`: Main animation implementation (via `animated` prop)
 - `providers/CalendarContext.tsx`: Direction state management
 - `hooks/useCalendarNavigation.ts`: Navigation logic
 
 ### 8. Date Validation
+
 - Min/max date constraints
 - Range validation for dates, months, and years
 - Disabled state styling for invalid dates
 
 ### 9. Indonesian Localization
+
 - Indonesian month names (Januari, Februari, etc.)
 - Indonesian day labels (Sen, Sel, Rab, etc.)
 - Indonesian date formatting (dd MMM yyyy)
@@ -212,12 +229,12 @@ const getExitDirection = () => {
 ```
 calendar/
   index.tsx                      # Main component orchestrator
-  README.md                      # This documentation  
+  README.md                      # This documentation
   constants.ts                   # Configuration constants & localization
 
   types/                         # TypeScript interfaces
     components.ts                # Component prop interfaces
-    context.ts                   # Context state definitions  
+    context.ts                   # Context state definitions
     hooks.ts                     # Hook parameter interfaces
     index.ts                     # Type exports
 
@@ -226,7 +243,7 @@ calendar/
     calendarContext.ts           # Context definition
     index.ts                     # Provider exports
 
-  components/                    # UI Components  
+  components/                    # UI Components
     CalendarButton.tsx           # Datepicker input field
     CalendarHeader.tsx           # Month/year navigation
     CalendarPortal.tsx           # Portal container
@@ -254,6 +271,7 @@ calendar/
 **index.tsx**: Main component that combines CalendarProvider with CalendarContent. Handles mode switching and prop distribution.
 
 **providers/CalendarContext.tsx**: Central state management with all hooks integrated. Manages:
+
 - Open/close states with animation timing
 - Date selection and navigation
 - Positioning calculations
@@ -263,19 +281,22 @@ calendar/
 **hooks/useCalendarState.ts**: Manages opening/closing with proper animation timing:
 
 ```tsx
-const { isOpen, isClosing, isOpening, openCalendar, closeCalendar } = useCalendarState({
-  onOpen: () => setHighlightedDate(value || new Date()),
-  onClose: () => setHighlightedDate(null)
-});
+const { isOpen, isClosing, isOpening, openCalendar, closeCalendar } =
+  useCalendarState({
+    onOpen: () => setHighlightedDate(value || new Date()),
+    onClose: () => setHighlightedDate(null),
+  });
 ```
 
 **hooks/useCalendarPosition.ts**: Calculates portal positioning:
+
 - Measures trigger element position
 - Detects viewport space availability
 - Returns CSS styles and drop direction
 - Handles resizing and width constraints
 
 **utils/calendarUtils.ts**: Core date manipulation utilities:
+
 - Date validation and range checking
 - Calendar grid generation
 - Date formatting with Indonesian locale
@@ -290,13 +311,20 @@ The component uses a comprehensive context to eliminate prop drilling:
 ```tsx
 // All state and handlers available via context
 const {
-  value, onChange,                    // Core date state
-  isOpen, openCalendar, closeCalendar, // Open/close state
-  displayDate, setDisplayDate,         // Navigation state
-  highlightedDate, setHighlightedDate, // Keyboard highlighting
-  handleDateSelect,                   // Event handlers
-  portalStyle, dropDirection,         // Positioning data
-  triggerInputRef, portalContentRef   // DOM refs
+  value,
+  onChange, // Core date state
+  isOpen,
+  openCalendar,
+  closeCalendar, // Open/close state
+  displayDate,
+  setDisplayDate, // Navigation state
+  highlightedDate,
+  setHighlightedDate, // Keyboard highlighting
+  handleDateSelect, // Event handlers
+  portalStyle,
+  dropDirection, // Positioning data
+  triggerInputRef,
+  portalContentRef, // DOM refs
 } = useCalendarContext();
 ```
 
@@ -309,7 +337,11 @@ Complex behaviors are split into focused, testable hooks:
 const stateHook = useCalendarState({ onOpen, onClose });
 const positionHook = useCalendarPosition({ triggerRef, portalRef, isOpen });
 const navHook = useCalendarNavigation({ displayDate, setDisplayDate });
-const keyboardHook = useCalendarKeyboard({ isOpen, highlightedDate, onDateSelect });
+const keyboardHook = useCalendarKeyboard({
+  isOpen,
+  highlightedDate,
+  onDateSelect,
+});
 const hoverHook = useCalendarHover({ openCalendar, closeCalendar });
 ```
 
@@ -320,10 +352,10 @@ The component manages multiple animation states:
 ```tsx
 // Animation states for smooth transitions
 type AnimationState = {
-  isOpen: boolean;      // Calendar is visible
-  isClosing: boolean;   // Closing animation in progress
-  isOpening: boolean;   // Opening animation in progress
-}
+  isOpen: boolean; // Calendar is visible
+  isClosing: boolean; // Closing animation in progress
+  isOpening: boolean; // Opening animation in progress
+};
 
 // Prevents interaction conflicts during transitions
 const canInteract = isOpen && !isClosing && !isOpening;
@@ -337,18 +369,21 @@ Portal positioning uses comprehensive viewport calculations:
 const calculatePosition = () => {
   const trigger = triggerRef.current?.getBoundingClientRect();
   const viewport = { height: window.innerHeight, width: window.innerWidth };
-  
+
   // Determine if there's space below or above
   const spaceBelow = viewport.height - trigger.bottom - VIEWPORT_MARGIN;
   const spaceAbove = trigger.top - VIEWPORT_MARGIN;
-  
+
   const dropDirection = spaceBelow >= calendarHeight ? 'down' : 'up';
-  
+
   return {
     position: 'fixed',
     left: trigger.left,
-    top: dropDirection === 'down' ? trigger.bottom + POSITION_MARGIN : trigger.top - calendarHeight - POSITION_MARGIN,
-    zIndex: PORTAL_Z_INDEX
+    top:
+      dropDirection === 'down'
+        ? trigger.bottom + POSITION_MARGIN
+        : trigger.top - calendarHeight - POSITION_MARGIN,
+    zIndex: PORTAL_Z_INDEX,
   };
 };
 ```
@@ -389,7 +424,7 @@ const DAY_LABELS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 const formatDisplayValue = (value: Date | null): string => {
   return value?.toLocaleDateString('id-ID', {
     day: '2-digit',
-    month: 'short', 
+    month: 'short',
     year: 'numeric'
   }) ?? '';
 };
@@ -406,15 +441,15 @@ const formatDisplayValue = (value: Date | null): string => {
 
 ```tsx
 // ARIA attributes for screen readers
-<div 
-  role="grid" 
+<div
+  role="grid"
   aria-label="Calendar"
   aria-activedescendant={`date-${highlightedDate?.getDate()}`}
   tabIndex={0}
   onKeyDown={handleCalendarKeyDown}
 >
   <div role="row">
-    <button 
+    <button
       role="gridcell"
       aria-selected={isSelected}
       aria-disabled={isDisabled}
@@ -434,7 +469,7 @@ The modular architecture enables focused testing:
 // Test individual hooks in isolation
 test('useCalendarState manages open/close correctly', () => {
   const { result } = renderHook(() => useCalendarState({ onOpen: jest.fn() }));
-  
+
   act(() => result.current.openCalendar());
   expect(result.current.isOpen).toBe(true);
 });
@@ -446,7 +481,7 @@ test('CalendarButton displays formatted date', () => {
       <CalendarButton value={new Date('2023-12-25')} />
     </CalendarContext.Provider>
   );
-  
+
   expect(screen.getByDisplayValue('25 Des 2023')).toBeInTheDocument();
 });
 ```
@@ -484,7 +519,7 @@ const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   onChange={setSelectedDate}
   placeholder="Pilih tanggal"
   label="Tanggal Lahir"
-/>
+/>;
 ```
 
 ### Standalone Calendar
@@ -510,7 +545,7 @@ const maxDate = new Date('2023-12-31');
   minDate={minDate}
   maxDate={maxDate}
   size="md"
-/>
+/>;
 ```
 
 ### Custom Portal Width

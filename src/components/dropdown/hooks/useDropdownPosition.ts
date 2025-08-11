@@ -1,4 +1,10 @@
-import { useState, useCallback, useEffect, RefObject, CSSProperties } from 'react';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  RefObject,
+  CSSProperties,
+} from 'react';
 import { DROPDOWN_CONSTANTS, DropDirection } from '../constants';
 import type { DropdownPortalWidth, DropdownPosition } from '@/types';
 
@@ -20,7 +26,7 @@ export const useDropdownPosition = (
       setIsPositionReady(false);
       return;
     }
-    
+
     if (!dropdownMenuRef.current || !buttonRef.current) {
       // Wait for refs to be available
       if (isOpen && !dropdownMenuRef.current) {
@@ -104,11 +110,19 @@ export const useDropdownPosition = (
       portalStyleBase.width = `${buttonRect.width}px`;
     } else if (portalWidth !== 'auto') {
       // Custom width: use provided value
-      portalStyleBase.width = typeof portalWidth === 'number' ? `${portalWidth}px` : portalWidth;
+      portalStyleBase.width =
+        typeof portalWidth === 'number' ? `${portalWidth}px` : portalWidth;
     }
 
     setPortalStyle(portalStyleBase);
-  }, [isOpen, initialDropDirection, buttonRef, dropdownMenuRef, portalWidth, position]);
+  }, [
+    isOpen,
+    initialDropDirection,
+    buttonRef,
+    dropdownMenuRef,
+    portalWidth,
+    position,
+  ]);
 
   const resetPosition = useCallback(() => {
     setInitialDropDirection(null);

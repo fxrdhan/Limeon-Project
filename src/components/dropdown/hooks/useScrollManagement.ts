@@ -28,7 +28,7 @@ export const useScrollManagement = ({
   const checkScroll = useCallback(() => {
     if (!optionsContainerRef.current) return;
     const container = optionsContainerRef.current;
-    
+
     setScrollState({
       isScrollable: container.scrollHeight > container.clientHeight,
       reachedBottom:
@@ -68,7 +68,7 @@ export const useScrollManagement = ({
         setHasInitialScrolled(true);
       }
     }
-    
+
     // Reset when dropdown closes
     if (!isOpen) {
       setHasInitialScrolled(false);

@@ -1,6 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { EntityType, EntityConfig } from '../collections/useEntityManager';
-import { useEntityColumnVisibilityPreference, useEntityColumnPinningPreference, type UserPreferenceEntityType } from '@/hooks/queries/useUserPreferences';
+import {
+  useEntityColumnVisibilityPreference,
+  useEntityColumnPinningPreference,
+  type UserPreferenceEntityType,
+} from '@/hooks/queries/useUserPreferences';
 
 interface ColumnVisibilityConfig {
   key: string;
@@ -56,7 +60,9 @@ interface UseEntityColumnVisibilityProps {
   currentConfig?: EntityConfig | null;
 }
 
-const getDefaultVisibility = (columnConfigs: ColumnVisibilityConfig[]): Record<string, boolean> => {
+const getDefaultVisibility = (
+  columnConfigs: ColumnVisibilityConfig[]
+): Record<string, boolean> => {
   const defaultState: Record<string, boolean> = {};
   columnConfigs.forEach(config => {
     defaultState[config.key] = config.defaultVisible;
@@ -80,7 +86,9 @@ export const useEntityColumnVisibility = ({
     setColumnVisibility: setDbColumnVisibility,
     isLoading: isDbLoading,
     error: dbError,
-  } = useEntityColumnVisibilityPreference(entityType as UserPreferenceEntityType);
+  } = useEntityColumnVisibilityPreference(
+    entityType as UserPreferenceEntityType
+  );
 
   // Column pinning preferences
   const {
@@ -91,8 +99,14 @@ export const useEntityColumnVisibility = ({
   } = useEntityColumnPinningPreference(entityType as UserPreferenceEntityType);
 
   // Local state for optimistic updates
-  const [optimisticState, setOptimisticState] = useState<Record<string, boolean> | null>(null);
-  const [optimisticPinningState, setOptimisticPinningState] = useState<Record<string, 'left' | 'right' | null> | null>(null);
+  const [optimisticState, setOptimisticState] = useState<Record<
+    string,
+    boolean
+  > | null>(null);
+  const [optimisticPinningState, setOptimisticPinningState] = useState<Record<
+    string,
+    'left' | 'right' | null
+  > | null>(null);
 
   // Use optimistic state during saves, otherwise use DB state or defaults
   const visibilityState = useMemo(() => {
@@ -104,7 +118,8 @@ export const useEntityColumnVisibility = ({
       // Merge DB state with defaults (for new columns)
       const mergedState: Record<string, boolean> = {};
       columnConfigs.forEach(config => {
-        mergedState[config.key] = dbColumnVisibility[config.key] ?? config.defaultVisible;
+        mergedState[config.key] =
+          dbColumnVisibility[config.key] ?? config.defaultVisible;
       });
       return mergedState;
     }
@@ -143,19 +158,22 @@ export const useEntityColumnVisibility = ({
         ...visibilityState,
         [columnKey]: visible,
       };
-      
+
       // Set optimistic state for immediate UI update
       setOptimisticState(newVisibilityState);
-      
+
       try {
         // Save to database
         await setDbColumnVisibility(newVisibilityState);
-        
+
         // Clear optimistic state after successful save
         setOptimisticState(null);
       } catch (error) {
-        console.error('Failed to save entity column visibility to database:', error);
-        
+        console.error(
+          'Failed to save entity column visibility to database:',
+          error
+        );
+
         // Revert optimistic state on error
         setOptimisticState(null);
       }
@@ -170,19 +188,22 @@ export const useEntityColumnVisibility = ({
         ...pinningState,
         [columnKey]: pinned,
       };
-      
+
       // Set optimistic state for immediate UI update
       setOptimisticPinningState(newPinningState);
-      
+
       try {
         // Save to database
         await setDbColumnPinning(newPinningState);
-        
+
         // Clear optimistic state after successful save
         setOptimisticPinningState(null);
       } catch (error) {
-        console.error('Failed to save entity column pinning to database:', error);
-        
+        console.error(
+          'Failed to save entity column pinning to database:',
+          error
+        );
+
         // Revert optimistic state on error
         setOptimisticPinningState(null);
       }

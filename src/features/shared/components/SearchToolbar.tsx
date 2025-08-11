@@ -74,7 +74,9 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   const [showColumnHeader, setShowColumnHeader] = useState(false);
   const [showColumnContent, setShowColumnContent] = useState(false);
   const [columnSearchQuery, setColumnSearchQuery] = useState('');
-  const [columnSearchState, setColumnSearchState] = useState<SearchState>(SEARCH_STATES.IDLE);
+  const [columnSearchState, setColumnSearchState] = useState<SearchState>(
+    SEARCH_STATES.IDLE
+  );
   const columnButtonRef = useRef<HTMLSpanElement>(null);
   const columnDropdownRef = useRef<HTMLDivElement>(null);
   const columnSearchInputRef = useRef<HTMLInputElement>(null);
@@ -129,9 +131,10 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
     }
   };
 
-  const filteredColumnOptions = columnOptions?.filter(column =>
-    column.label.toLowerCase().includes(columnSearchQuery.toLowerCase())
-  ) || [];
+  const filteredColumnOptions =
+    columnOptions?.filter(column =>
+      column.label.toLowerCase().includes(columnSearchQuery.toLowerCase())
+    ) || [];
 
   const handleColumnSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -143,9 +146,10 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
       setColumnSearchState(SEARCH_STATES.TYPING);
       // Update search state based on results after a brief delay
       setTimeout(() => {
-        const filteredResults = columnOptions?.filter(column =>
-          column.label.toLowerCase().includes(value.toLowerCase())
-        ) || [];
+        const filteredResults =
+          columnOptions?.filter(column =>
+            column.label.toLowerCase().includes(value.toLowerCase())
+          ) || [];
         const hasResults = filteredResults.length > 0;
         setColumnSearchState(
           hasResults ? SEARCH_STATES.FOUND : SEARCH_STATES.NOT_FOUND
@@ -154,7 +158,9 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
     }
   };
 
-  const handleColumnSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleColumnSearchKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
     e.stopPropagation();
   };
 
@@ -225,7 +231,11 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
 
   // Focus on column search input when dropdown opens
   useEffect(() => {
-    if (isColumnDropdownOpen && showColumnContent && columnSearchInputRef.current) {
+    if (
+      isColumnDropdownOpen &&
+      showColumnContent &&
+      columnSearchInputRef.current
+    ) {
       setTimeout(() => {
         columnSearchInputRef.current?.focus();
       }, 50);
@@ -369,9 +379,10 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
           </span>
         )}
       </div>
-      {columnOptions && onColumnToggle && typeof document !== 'undefined' &&
-        createPortal(columnDropdownContent, document.body)
-      }
+      {columnOptions &&
+        onColumnToggle &&
+        typeof document !== 'undefined' &&
+        createPortal(columnDropdownContent, document.body)}
     </>
   );
 });

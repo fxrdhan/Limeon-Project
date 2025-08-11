@@ -290,10 +290,14 @@ export const useCalendarKeyboard = (
   const handleCalendarKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       // Check if any dropdown is currently open by looking for dropdown portals in the DOM
-      const isDropdownOpen = document.querySelector('[role="listbox"]') !== null;
-      
+      const isDropdownOpen =
+        document.querySelector('[role="listbox"]') !== null;
+
       // If a dropdown is open, don't handle calendar navigation for arrow keys
-      if (isDropdownOpen && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      if (
+        isDropdownOpen &&
+        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+      ) {
         return;
       }
 

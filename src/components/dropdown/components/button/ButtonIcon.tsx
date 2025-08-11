@@ -5,10 +5,7 @@ interface ButtonIconProps {
   isClosing: boolean;
 }
 
-const ButtonIcon: React.FC<ButtonIconProps> = ({
-  isOpen,
-  isClosing,
-}) => {
+const ButtonIcon: React.FC<ButtonIconProps> = ({ isOpen, isClosing }) => {
   return (
     <svg
       className={`transition-transform duration-200 ${

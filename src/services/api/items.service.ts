@@ -58,7 +58,9 @@ export class ItemsService extends BaseService<DBItem> {
 
         // Find manufacturer data by name for code mapping
         const manufacturerName = item.manufacturer || '';
-        const manufacturerInfo = manufacturerLookupAll?.find((m: ItemManufacturer) => m.name === manufacturerName);
+        const manufacturerInfo = manufacturerLookupAll?.find(
+          (m: ItemManufacturer) => m.name === manufacturerName
+        );
 
         // Transform to Item interface
         return {
@@ -68,7 +70,10 @@ export class ItemsService extends BaseService<DBItem> {
           unit: item.item_packages || { name: '' },
           dosage: item.item_dosages || { name: '' },
           manufacturer: manufacturerName,
-          manufacturer_info: manufacturerInfo || { code: null, name: manufacturerName },
+          manufacturer_info: manufacturerInfo || {
+            code: null,
+            name: manufacturerName,
+          },
           package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
         };
@@ -100,7 +105,7 @@ export class ItemsService extends BaseService<DBItem> {
         .eq('id', id)
         .single();
 
-      // Get manufacturer data separately for code mapping  
+      // Get manufacturer data separately for code mapping
       const { data: manufacturerLookupDetail } = await supabase
         .from('item_manufacturers')
         .select('id, code, name');
@@ -111,7 +116,9 @@ export class ItemsService extends BaseService<DBItem> {
 
       // Find manufacturer data by name for code mapping
       const manufacturerName = item.manufacturer || '';
-      const manufacturerInfo = manufacturerLookupDetail?.find((m: ItemManufacturer) => m.name === manufacturerName);
+      const manufacturerInfo = manufacturerLookupDetail?.find(
+        (m: ItemManufacturer) => m.name === manufacturerName
+      );
 
       // Parse unit conversions
       let packageConversions: PackageConversion[] = [];
@@ -135,7 +142,10 @@ export class ItemsService extends BaseService<DBItem> {
         unit: item.item_packages || { name: '' },
         dosage: item.item_dosages || { name: '' },
         manufacturer: manufacturerName,
-        manufacturer_info: manufacturerInfo || { code: null, name: manufacturerName },
+        manufacturer_info: manufacturerInfo || {
+          code: null,
+          name: manufacturerName,
+        },
         package_conversions: packageConversions,
         base_unit: item.item_packages?.name || '',
       };
@@ -197,7 +207,9 @@ export class ItemsService extends BaseService<DBItem> {
 
         // Find manufacturer data by name for code mapping
         const manufacturerName = item.manufacturer || '';
-        const manufacturerInfo = manufacturerLookupSearch?.find((m: ItemManufacturer) => m.name === manufacturerName);
+        const manufacturerInfo = manufacturerLookupSearch?.find(
+          (m: ItemManufacturer) => m.name === manufacturerName
+        );
 
         // Transform to Item interface
         return {
@@ -207,7 +219,10 @@ export class ItemsService extends BaseService<DBItem> {
           unit: item.item_packages || { name: '' },
           dosage: item.item_dosages || { name: '' },
           manufacturer: manufacturerName,
-          manufacturer_info: manufacturerInfo || { code: null, name: manufacturerName },
+          manufacturer_info: manufacturerInfo || {
+            code: null,
+            name: manufacturerName,
+          },
           package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
         };
@@ -283,7 +298,9 @@ export class ItemsService extends BaseService<DBItem> {
 
         // Find manufacturer data by name for code mapping
         const manufacturerName = item.manufacturer || '';
-        const manufacturerInfo = manufacturerLookupLowStock?.find((m: ItemManufacturer) => m.name === manufacturerName);
+        const manufacturerInfo = manufacturerLookupLowStock?.find(
+          (m: ItemManufacturer) => m.name === manufacturerName
+        );
 
         // Transform to Item interface
         return {
@@ -293,7 +310,10 @@ export class ItemsService extends BaseService<DBItem> {
           unit: item.item_packages || { name: '' },
           dosage: item.item_dosages || { name: '' },
           manufacturer: manufacturerName,
-          manufacturer_info: manufacturerInfo || { code: null, name: manufacturerName },
+          manufacturer_info: manufacturerInfo || {
+            code: null,
+            name: manufacturerName,
+          },
           package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
         };

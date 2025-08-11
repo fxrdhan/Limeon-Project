@@ -1,9 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { CALENDAR_CONSTANTS } from '../constants';
-import type {
-  UseCalendarHoverParams,
-  UseCalendarHoverReturn,
-} from '../types';
+import type { UseCalendarHoverParams, UseCalendarHoverReturn } from '../types';
 
 export const useCalendarHover = (
   params: UseCalendarHoverParams

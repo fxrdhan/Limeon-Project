@@ -31,30 +31,39 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
   const [highlightedMonth, setHighlightedMonth] = useState<number | null>(null);
   const [highlightedYear, setHighlightedYear] = useState<number | null>(null);
-  const [navigationDirection, setNavigationDirection] = useState<'prev' | 'next' | null>(null);
-  const [yearNavigationDirection, setYearNavigationDirection] = useState<'prev' | 'next' | null>(null);
+  const [navigationDirection, setNavigationDirection] = useState<
+    'prev' | 'next' | null
+  >(null);
+  const [yearNavigationDirection, setYearNavigationDirection] = useState<
+    'prev' | 'next' | null
+  >(null);
   const [currentWidth] = useState(sizeConfig.width);
   const [currentHeight] = useState(sizeConfig.height);
 
   // Custom hooks
-  const { isOpen, isClosing, isOpening, openCalendar, closeCalendar, setIsOpening } = useCalendarState(
-    {
-      value,
-      mode,
-      onOpen: () => {
-        setDisplayDate(value || new Date());
-        setCurrentView('days');
-        setHighlightedDate(value || new Date());
-        setHighlightedMonth(null);
-        setHighlightedYear(null);
-      },
-      onClose: () => {
-        setHighlightedDate(null);
-        setHighlightedMonth(null);
-        setHighlightedYear(null);
-      },
-    }
-  );
+  const {
+    isOpen,
+    isClosing,
+    isOpening,
+    openCalendar,
+    closeCalendar,
+    setIsOpening,
+  } = useCalendarState({
+    value,
+    mode,
+    onOpen: () => {
+      setDisplayDate(value || new Date());
+      setCurrentView('days');
+      setHighlightedDate(value || new Date());
+      setHighlightedMonth(null);
+      setHighlightedYear(null);
+    },
+    onClose: () => {
+      setHighlightedDate(null);
+      setHighlightedMonth(null);
+      setHighlightedYear(null);
+    },
+  });
 
   const { portalStyle, isPositionReady, dropDirection, calculatePosition } =
     useCalendarPosition({
@@ -67,18 +76,19 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
       resizable,
     });
 
-  const { navigateViewDate: originalNavigateViewDate, navigateYear } = useCalendarNavigation({
-    displayDate,
-    currentView,
-    setDisplayDate,
-  });
+  const { navigateViewDate: originalNavigateViewDate, navigateYear } =
+    useCalendarNavigation({
+      displayDate,
+      currentView,
+      setDisplayDate,
+    });
 
   // Wrapper for navigateViewDate to track direction
   const navigateViewDate = useCallback(
     (direction: 'prev' | 'next') => {
       setNavigationDirection(direction);
       originalNavigateViewDate(direction);
-      
+
       // Clear direction after animation completes
       setTimeout(() => {
         setNavigationDirection(null);
@@ -92,7 +102,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     (direction: 'prev' | 'next') => {
       setYearNavigationDirection(direction);
       navigateYear(direction);
-      
+
       // Clear direction after animation completes
       setTimeout(() => {
         setYearNavigationDirection(null);
@@ -102,30 +112,24 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   );
 
   // Function to trigger year animation direction without changing date
-  const triggerYearAnimation = useCallback(
-    (direction: 'prev' | 'next') => {
-      setYearNavigationDirection(direction);
-      
-      // Clear direction after animation completes
-      setTimeout(() => {
-        setYearNavigationDirection(null);
-      }, 300); // Match animation duration
-    },
-    []
-  );
+  const triggerYearAnimation = useCallback((direction: 'prev' | 'next') => {
+    setYearNavigationDirection(direction);
+
+    // Clear direction after animation completes
+    setTimeout(() => {
+      setYearNavigationDirection(null);
+    }, 300); // Match animation duration
+  }, []);
 
   // Function to trigger month animation direction without changing date
-  const triggerMonthAnimation = useCallback(
-    (direction: 'prev' | 'next') => {
-      setNavigationDirection(direction);
-      
-      // Clear direction after animation completes
-      setTimeout(() => {
-        setNavigationDirection(null);
-      }, 300); // Match animation duration
-    },
-    []
-  );
+  const triggerMonthAnimation = useCallback((direction: 'prev' | 'next') => {
+    setNavigationDirection(direction);
+
+    // Clear direction after animation completes
+    setTimeout(() => {
+      setNavigationDirection(null);
+    }, 300); // Match animation duration
+  }, []);
 
   const focusPortal = useCallback(() => {
     setTimeout(() => {
@@ -256,20 +260,20 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      
+
       // Check if click is inside calendar portal
       if (portalContentRef.current?.contains(target)) return;
-      
+
       // Check if click is inside trigger input
       if (triggerInputRef.current?.contains(target)) return;
-      
+
       // Check if click is inside dropdown menu (calendar header dropdowns)
       const dropdownMenu = (target as Element).closest('[role="menu"]');
       if (dropdownMenu) return;
-      
+
       // Check if target itself is a dropdown menu
       if ((target as Element).getAttribute?.('role') === 'menu') return;
-      
+
       // If none of the above, close calendar
       if (isOpen) {
         closeCalendar();

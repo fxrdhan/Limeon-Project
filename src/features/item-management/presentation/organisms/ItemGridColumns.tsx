@@ -16,51 +16,47 @@ export const useItemGridColumns = () => {
       createWrapTextColumn({
         field: 'name',
         headerName: 'Nama Item',
-        
+
         flex: 1,
       }),
       createTextColumn({
         field: 'manufacturer',
         headerName: 'Produsen',
-        
+
         valueGetter: params => params.data.manufacturer || '-',
       }),
       createTextColumn({
         field: 'code',
         headerName: 'Kode',
-        
       }),
       createTextColumn({
         field: 'barcode',
         headerName: 'Barcode',
-        
+
         valueGetter: params => params.data.barcode || '-',
       }),
       createTextColumn({
         field: 'category.name',
         headerName: 'Kategori',
-        
       }),
       createWrapTextColumn({
         field: 'type.name',
         headerName: 'Jenis',
-        
       }),
       createTextColumn({
         field: 'unit.name',
         headerName: 'Kemasan',
-        
       }),
       createTextColumn({
         field: 'dosage.name',
         headerName: 'Sediaan',
-        
+
         valueGetter: params => params.data.dosage?.name || '-',
       }),
       createTextColumn({
         field: 'package_conversions',
         headerName: 'Kemasan Turunan',
-        
+
         valueGetter: params => {
           const conversions = params.data.package_conversions;
           if (conversions && conversions.length > 0) {
@@ -74,13 +70,13 @@ export const useItemGridColumns = () => {
       createCurrencyColumn({
         field: 'base_price',
         headerName: 'Harga Pokok',
-        
+
         valueFormatter: params => formatBaseCurrency(params.value),
       }),
       createCurrencyColumn({
         field: 'sell_price',
         headerName: 'Harga Jual',
-        
+
         valueFormatter: params => formatCurrency(params.value),
       }),
       createCenterAlignColumn({

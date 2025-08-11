@@ -32,10 +32,15 @@ export class UserPreferencesService extends BaseService<UserPreference> {
     preferenceKey: string
   ): Promise<ServiceResponse<UserPreference | null>> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
-        return { data: null, error: { message: 'User not authenticated' } as PostgrestError };
+        return {
+          data: null,
+          error: { message: 'User not authenticated' } as PostgrestError,
+        };
       }
 
       const { data, error } = await supabase
@@ -56,10 +61,15 @@ export class UserPreferencesService extends BaseService<UserPreference> {
    */
   async getAllUserPreferences(): Promise<ServiceResponse<UserPreference[]>> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
-        return { data: null, error: { message: 'User not authenticated' } as PostgrestError };
+        return {
+          data: null,
+          error: { message: 'User not authenticated' } as PostgrestError,
+        };
       }
 
       const { data, error } = await supabase
@@ -82,10 +92,15 @@ export class UserPreferencesService extends BaseService<UserPreference> {
     preferenceValue: Record<string, unknown>
   ): Promise<ServiceResponse<UserPreference>> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
-        return { data: null, error: { message: 'User not authenticated' } as PostgrestError };
+        return {
+          data: null,
+          error: { message: 'User not authenticated' } as PostgrestError,
+        };
       }
 
       // Use upsert to handle both create and update cases
@@ -118,10 +133,15 @@ export class UserPreferencesService extends BaseService<UserPreference> {
     preferenceKey: string
   ): Promise<ServiceResponse<void>> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
-        return { data: null, error: { message: 'User not authenticated' } as PostgrestError };
+        return {
+          data: null,
+          error: { message: 'User not authenticated' } as PostgrestError,
+        };
       }
 
       const { error } = await supabase
@@ -141,10 +161,15 @@ export class UserPreferencesService extends BaseService<UserPreference> {
    */
   async resetAllUserPreferences(): Promise<ServiceResponse<void>> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
-        return { data: null, error: { message: 'User not authenticated' } as PostgrestError };
+        return {
+          data: null,
+          error: { message: 'User not authenticated' } as PostgrestError,
+        };
       }
 
       const { error } = await supabase
@@ -166,12 +191,12 @@ export const PREFERENCE_KEYS = {
   // Column visibility preferences
   ITEM_COLUMN_VISIBILITY: 'item_column_visibility',
   CATEGORY_COLUMN_VISIBILITY: 'category_column_visibility',
-  TYPE_COLUMN_VISIBILITY: 'type_column_visibility', 
+  TYPE_COLUMN_VISIBILITY: 'type_column_visibility',
   PACKAGE_COLUMN_VISIBILITY: 'package_column_visibility',
   DOSAGE_COLUMN_VISIBILITY: 'dosage_column_visibility',
   MANUFACTURER_COLUMN_VISIBILITY: 'manufacturer_column_visibility',
   UNIT_COLUMN_VISIBILITY: 'unit_column_visibility',
-  
+
   // Column pinning preferences
   ITEM_COLUMN_PINNING: 'item_column_pinning',
   CATEGORY_COLUMN_PINNING: 'category_column_pinning',
@@ -180,7 +205,7 @@ export const PREFERENCE_KEYS = {
   DOSAGE_COLUMN_PINNING: 'dosage_column_pinning',
   MANUFACTURER_COLUMN_PINNING: 'manufacturer_column_pinning',
   UNIT_COLUMN_PINNING: 'unit_column_pinning',
-  
+
   // Column ordering preferences
   ITEM_COLUMN_ORDER: 'item_column_order',
   CATEGORY_COLUMN_ORDER: 'category_column_order',
@@ -189,11 +214,12 @@ export const PREFERENCE_KEYS = {
   DOSAGE_COLUMN_ORDER: 'dosage_column_order',
   MANUFACTURER_COLUMN_ORDER: 'manufacturer_column_order',
   UNIT_COLUMN_ORDER: 'unit_column_order',
-  
+
   // Other preferences
   THEME: 'theme',
   LANGUAGE: 'language',
   DASHBOARD_LAYOUT: 'dashboard_layout',
 } as const;
 
-export type PreferenceKey = typeof PREFERENCE_KEYS[keyof typeof PREFERENCE_KEYS];
+export type PreferenceKey =
+  (typeof PREFERENCE_KEYS)[keyof typeof PREFERENCE_KEYS];
