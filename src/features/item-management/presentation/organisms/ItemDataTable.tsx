@@ -140,7 +140,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   const getMainMenuItems: GetMainMenuItems = useCallback(
     (params: GetMainMenuItemsParams) => {
       if (!params.column) {
-        return ['columnFilter', 'separator', 'pinSubMenu'] as any;
+        return ['columnFilter', 'separator', 'pinSubMenu'] as (string | MenuItemDef)[];
       }
 
       const colId = params.column.getColId();
@@ -166,53 +166,32 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
         } as MenuItemDef);
       }
 
-      return baseMenuItems as any;
+      return baseMenuItems as (string | MenuItemDef)[];
     },
     [isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]
   );
 
   // Modified items data based on column display modes
   const modifiedItems = useMemo(() => {
-    // Debug: Log first item structure to understand data format
-    if (items.length > 0) {
-      console.log('🔍 DEBUG: Sample item data:', items[0]);
-      console.log('🔍 DEBUG: Category data:', items[0].category);
-      console.log('🔍 DEBUG: Type data:', items[0].type);
-      console.log('🔍 DEBUG: Unit data:', items[0].unit);
-    }
 
     return items.map(item => {
       const modifiedItem = { ...item };
 
       // Apply display mode transformations
       Object.entries(columnDisplayModes).forEach(([colId, mode]) => {
-        console.log(`🔄 TRANSFORM: Column ${colId}, Mode: ${mode}`);
         if (mode === 'code') {
           switch (colId) {
             case 'manufacturer':
               if (item.manufacturer_info && item.manufacturer_info.code) {
-                console.log(
-                  `✅ MANUFACTURER TRANSFORM: ${item.manufacturer} -> ${item.manufacturer_info.code}`
-                );
                 modifiedItem.manufacturer = item.manufacturer_info.code;
-              } else {
-                console.log(
-                  `❌ MANUFACTURER NO CODE: `,
-                  item.manufacturer_info
-                );
               }
               break;
             case 'category.name':
               if (item.category && (item.category as Category).code) {
-                console.log(
-                  `✅ CATEGORY TRANSFORM: ${item.category.name} -> ${(item.category as Category).code}`
-                );
                 modifiedItem.category = {
                   ...item.category,
                   name: (item.category as Category).code!,
                 };
-              } else {
-                console.log(`❌ CATEGORY NO CODE: `, item.category);
               }
               break;
             case 'type.name':
