@@ -1,5 +1,9 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useColumnVisibilityPreference, useColumnPinningPreference, useColumnOrderingPreference } from '@/hooks/queries/useUserPreferences';
+import {
+  useColumnVisibilityPreference,
+  useColumnPinningPreference,
+  useColumnOrderingPreference,
+} from '@/hooks/queries/useUserPreferences';
 
 interface ColumnVisibilityConfig {
   key: string;
@@ -66,9 +70,17 @@ export const useColumnVisibility = () => {
   } = useColumnOrderingPreference();
 
   // Local state for optimistic updates
-  const [optimisticState, setOptimisticState] = useState<Record<string, boolean> | null>(null);
-  const [optimisticPinningState, setOptimisticPinningState] = useState<Record<string, 'left' | 'right' | null> | null>(null);
-  const [optimisticOrderingState, setOptimisticOrderingState] = useState<string[] | null>(null);
+  const [optimisticState, setOptimisticState] = useState<Record<
+    string,
+    boolean
+  > | null>(null);
+  const [optimisticPinningState, setOptimisticPinningState] = useState<Record<
+    string,
+    'left' | 'right' | null
+  > | null>(null);
+  const [optimisticOrderingState, setOptimisticOrderingState] = useState<
+    string[] | null
+  >(null);
 
   // Use optimistic state during saves, otherwise use DB state or defaults
   const visibilityState = useMemo(() => {
@@ -80,7 +92,8 @@ export const useColumnVisibility = () => {
       // Merge DB state with defaults (for new columns)
       const mergedState: Record<string, boolean> = {};
       COLUMN_CONFIGS.forEach(config => {
-        mergedState[config.key] = dbColumnVisibility[config.key] ?? config.defaultVisible;
+        mergedState[config.key] =
+          dbColumnVisibility[config.key] ?? config.defaultVisible;
       });
       return mergedState;
     }
@@ -117,10 +130,10 @@ export const useColumnVisibility = () => {
 
     // Use ordering state to determine column order
     const orderedKeys = orderingState;
-    
+
     // Create ordered column options
     const orderedOptions: ColumnOption[] = [];
-    
+
     // Add columns in the specified order
     orderedKeys.forEach(key => {
       const config = configMap[key];
@@ -154,19 +167,19 @@ export const useColumnVisibility = () => {
         ...visibilityState,
         [columnKey]: visible,
       };
-      
+
       // Set optimistic state for immediate UI update
       setOptimisticState(newVisibilityState);
-      
+
       try {
         // Save to database
         await setDbColumnVisibility(newVisibilityState);
-        
+
         // Clear optimistic state after successful save
         setOptimisticState(null);
       } catch (error) {
         console.error('Failed to save column visibility to database:', error);
-        
+
         // Revert optimistic state on error
         setOptimisticState(null);
       }
@@ -187,19 +200,19 @@ export const useColumnVisibility = () => {
         ...pinningState,
         [columnKey]: pinned,
       };
-      
+
       // Set optimistic state for immediate UI update
       setOptimisticPinningState(newPinningState);
-      
+
       try {
         // Save to database
         await setDbColumnPinning(newPinningState);
-        
+
         // Clear optimistic state after successful save
         setOptimisticPinningState(null);
       } catch (error) {
         console.error('Failed to save column pinning to database:', error);
-        
+
         // Revert optimistic state on error
         setOptimisticPinningState(null);
       }
@@ -219,16 +232,16 @@ export const useColumnVisibility = () => {
     async (newOrder: string[]) => {
       // Set optimistic state for immediate UI update
       setOptimisticOrderingState(newOrder);
-      
+
       try {
         // Save to database
         await setDbColumnOrder(newOrder);
-        
+
         // Clear optimistic state after successful save
         setOptimisticOrderingState(null);
       } catch (error) {
         console.error('Failed to save column order to database:', error);
-        
+
         // Revert optimistic state on error
         setOptimisticOrderingState(null);
       }

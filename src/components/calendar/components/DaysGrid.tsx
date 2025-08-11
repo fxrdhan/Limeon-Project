@@ -15,10 +15,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   onDateHighlight,
   animated = false,
 }) => {
-  const { 
-    navigationDirection, 
-    yearNavigationDirection
-  } = useCalendarContext();
+  const { navigationDirection, yearNavigationDirection } = useCalendarContext();
 
   // Create unique key based on year and month for AnimatePresence
   const gridKey = `${displayDate.getFullYear()}-${displayDate.getMonth()}`;
@@ -74,65 +71,68 @@ const DaysGrid: React.FC<DaysGridProps> = ({
     for (let i = 1; i <= numDays; i++) calendarDays.push(i);
 
     return (
-      <div className={`grid grid-cols-7 gap-1 text-center text-sm ${animated ? 'm-1' : ''}`}>
+      <div
+        className={`grid grid-cols-7 gap-1 text-center text-sm ${animated ? 'm-1' : ''}`}
+      >
         {/* Day labels - show only if not animated (static version) */}
-        {!animated && DAY_LABELS.map(day => (
-          <div key={day} className="font-medium text-gray-500 py-2 px-1">
-            {day}
-          </div>
-        ))}
+        {!animated &&
+          DAY_LABELS.map(day => (
+            <div key={day} className="font-medium text-gray-500 py-2 px-1">
+              {day}
+            </div>
+          ))}
         {calendarDays.map((day, index) => {
-        if (day === null)
-          return <div key={`empty-${index}`} className="py-2 px-2"></div>;
+          if (day === null)
+            return <div key={`empty-${index}`} className="py-2 px-2"></div>;
 
-        const currentDate = new Date(year, month, day);
-        const isSelected =
-          value && currentDate.toDateString() === value.toDateString();
-        const isHighlighted =
-          highlightedDate &&
-          currentDate.toDateString() === highlightedDate.toDateString();
+          const currentDate = new Date(year, month, day);
+          const isSelected =
+            value && currentDate.toDateString() === value.toDateString();
+          const isHighlighted =
+            highlightedDate &&
+            currentDate.toDateString() === highlightedDate.toDateString();
 
-        let isDisabled = false;
-        if (minDate) {
-          const min = new Date(minDate);
-          min.setHours(0, 0, 0, 0);
-          if (currentDate < min) isDisabled = true;
-        }
-        if (maxDate) {
-          const max = new Date(maxDate);
-          max.setHours(0, 0, 0, 0);
-          if (currentDate > max) isDisabled = true;
-        }
+          let isDisabled = false;
+          if (minDate) {
+            const min = new Date(minDate);
+            min.setHours(0, 0, 0, 0);
+            if (currentDate < min) isDisabled = true;
+          }
+          if (maxDate) {
+            const max = new Date(maxDate);
+            max.setHours(0, 0, 0, 0);
+            if (currentDate > max) isDisabled = true;
+          }
 
-        const isToday =
-          new Date(year, month, day).toDateString() ===
-          new Date().toDateString();
+          const isToday =
+            new Date(year, month, day).toDateString() ===
+            new Date().toDateString();
 
-        return (
-          <button
-            key={day}
-            onClick={() => !isDisabled && onDateSelect(currentDate)}
-            onMouseEnter={() => !isDisabled && onDateHighlight(currentDate)}
-            onMouseLeave={() => onDateHighlight(null)}
-            disabled={isDisabled}
-            className={classNames(
-              `py-2 px-2 min-w-[32px] min-h-[32px] rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-${animated ? '1' : '2'} focus:ring-primary/50`,
-              isDisabled
-                ? 'text-gray-300 cursor-not-allowed'
-                : 'hover:bg-emerald-100',
-              !isDisabled &&
-                (isSelected
-                  ? 'bg-primary text-white hover:text-primary hover:bg-primary'
-                  : isHighlighted
-                    ? 'bg-primary/30 text-primary-dark ring-2 ring-primary/50'
-                    : isToday
-                      ? 'border border-primary text-primary'
-                      : 'text-gray-700')
-            )}
-          >
-            {day}
-          </button>
-        );
+          return (
+            <button
+              key={day}
+              onClick={() => !isDisabled && onDateSelect(currentDate)}
+              onMouseEnter={() => !isDisabled && onDateHighlight(currentDate)}
+              onMouseLeave={() => onDateHighlight(null)}
+              disabled={isDisabled}
+              className={classNames(
+                `py-2 px-2 min-w-[32px] min-h-[32px] rounded-lg text-sm transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-${animated ? '1' : '2'} focus:ring-primary/50`,
+                isDisabled
+                  ? 'text-gray-300 cursor-not-allowed'
+                  : 'hover:bg-emerald-100',
+                !isDisabled &&
+                  (isSelected
+                    ? 'bg-primary text-white hover:text-primary hover:bg-primary'
+                    : isHighlighted
+                      ? 'bg-primary/30 text-primary-dark ring-2 ring-primary/50'
+                      : isToday
+                        ? 'border border-primary text-primary'
+                        : 'text-gray-700')
+              )}
+            >
+              {day}
+            </button>
+          );
         })}
       </div>
     );
@@ -141,9 +141,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   // Render with or without animation based on prop
   if (!animated) {
     return (
-      <div className="text-center text-sm">
-        {renderDatesGrid(displayDate)}
-      </div>
+      <div className="text-center text-sm">{renderDatesGrid(displayDate)}</div>
     );
   }
 
@@ -158,19 +156,23 @@ const DaysGrid: React.FC<DaysGridProps> = ({
           </div>
         ))}
       </div>
-      
+
       {/* Animated dates grid */}
       <div className="relative overflow-hidden px-1 pb-1">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={gridKey}
-            initial={(navigationDirection || yearNavigationDirection) ? getAnimationDirection() : false}
+            initial={
+              navigationDirection || yearNavigationDirection
+                ? getAnimationDirection()
+                : false
+            }
             animate={{ x: 0, y: 0 }}
             exit={getExitDirection()}
             transition={{
-              type: "tween",
+              type: 'tween',
               ease: [0.4, 0.0, 0.2, 1],
-              duration: 0.25
+              duration: 0.25,
             }}
             className="w-full"
           >

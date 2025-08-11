@@ -53,8 +53,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           name={name}
           tabIndex={tabIndex}
           className={`inline-flex items-center gap-1 min-h-[1.5rem] text-base font-medium text-gray-700 hover:text-gray-800 focus:outline-hidden transition duration-200 ease-in-out cursor-pointer ${
-            isPlaceholder 
-              ? 'text-gray-500 hover:text-gray-600' 
+            isPlaceholder
+              ? 'text-gray-500 hover:text-gray-600'
               : 'text-gray-700 hover:text-gray-800'
           }`}
           aria-haspopup="menu"
@@ -73,10 +73,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             isPlaceholder={isPlaceholder}
             isExpanded={false}
           />
-          <ButtonIcon
-            isOpen={isOpen}
-            isClosing={isClosing}
-          />
+          <ButtonIcon isOpen={isOpen} isClosing={isClosing} />
         </button>
       );
     }
@@ -111,10 +108,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           isPlaceholder={isPlaceholder}
           isExpanded={isExpanded}
         />
-        <ButtonIcon
-          isOpen={isOpen}
-          isClosing={isClosing}
-        />
+        <ButtonIcon isOpen={isOpen} isClosing={isClosing} />
       </button>
     );
   }

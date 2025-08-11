@@ -32,39 +32,39 @@ const CalendarContent: React.FC<{
 
   const handleMonthChange = (month: number) => {
     const currentMonth = displayDate.getMonth();
-    
+
     if (month !== currentMonth) {
       // Determine direction based on month comparison
       const direction = month > currentMonth ? 'next' : 'prev';
-      
+
       // Trigger horizontal animation before updating the date
       triggerMonthAnimation(direction);
-      
+
       // Update the display date
       const newDate = new Date(displayDate);
       newDate.setMonth(month);
       setDisplayDate(newDate);
     }
-    
+
     calculatePosition?.();
   };
 
   const handleYearChange = (year: number) => {
     const currentYear = displayDate.getFullYear();
-    
+
     if (year !== currentYear) {
       // Determine direction based on year comparison
       const direction = year > currentYear ? 'next' : 'prev';
-      
+
       // Trigger vertical animation before updating the date
       triggerYearAnimation(direction);
-      
+
       // Update the display date
       const newDate = new Date(displayDate);
       newDate.setFullYear(year);
       setDisplayDate(newDate);
     }
-    
+
     calculatePosition?.();
   };
 

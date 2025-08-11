@@ -11,11 +11,8 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
   inputClassName,
   label,
 }) => {
-  const {
-    triggerInputRef,
-    handleTriggerClick,
-    handleInputKeyDown,
-  } = useCalendarContext();
+  const { triggerInputRef, handleTriggerClick, handleInputKeyDown } =
+    useCalendarContext();
 
   const formattedDisplayValue = () => {
     if (value) {

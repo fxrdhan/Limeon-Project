@@ -124,9 +124,9 @@ export const createMatchScoreColumn = (
  * Available menu tabs for AG Grid columns
  */
 export const COLUMN_MENU_TABS = {
-  FILTER: 'filterMenuTab' as ColumnMenuTab,      // Filter options (text filter, date filter, etc.)
-  GENERAL: 'generalMenuTab' as ColumnMenuTab,    // Sort, Pin, Autosize options
-  COLUMNS: 'columnsMenuTab' as ColumnMenuTab     // Choose/Reset Columns visibility
+  FILTER: 'filterMenuTab' as ColumnMenuTab, // Filter options (text filter, date filter, etc.)
+  GENERAL: 'generalMenuTab' as ColumnMenuTab, // Sort, Pin, Autosize options
+  COLUMNS: 'columnsMenuTab' as ColumnMenuTab, // Choose/Reset Columns visibility
 } as const;
 
 /**
@@ -134,22 +134,26 @@ export const COLUMN_MENU_TABS = {
  */
 export const MENU_PRESETS = {
   // All menu options (default)
-  ALL: [COLUMN_MENU_TABS.FILTER, COLUMN_MENU_TABS.GENERAL, COLUMN_MENU_TABS.COLUMNS] as ColumnMenuTab[],
-  
+  ALL: [
+    COLUMN_MENU_TABS.FILTER,
+    COLUMN_MENU_TABS.GENERAL,
+    COLUMN_MENU_TABS.COLUMNS,
+  ] as ColumnMenuTab[],
+
   // Only sort and filter
   BASIC: [COLUMN_MENU_TABS.FILTER, COLUMN_MENU_TABS.GENERAL] as ColumnMenuTab[],
-  
+
   // Only sort options (no filter, no column chooser)
   SORT_ONLY: [COLUMN_MENU_TABS.GENERAL] as ColumnMenuTab[],
-  
+
   // Only filter options
   FILTER_ONLY: [COLUMN_MENU_TABS.FILTER] as ColumnMenuTab[],
-  
+
   // Only column visibility controls
   COLUMNS_ONLY: [COLUMN_MENU_TABS.COLUMNS] as ColumnMenuTab[],
-  
+
   // No menu at all
-  NONE: [] as ColumnMenuTab[]
+  NONE: [] as ColumnMenuTab[],
 } as const;
 
 /**
@@ -161,7 +165,7 @@ export const MENU_PRESETS = {
  */
 export const getPinOnlyMenuItems: GetMainMenuItems = () => {
   return [
-    'pinSubMenu'  // Pin Column submenu with Left/Right/No Pin options
+    'pinSubMenu', // Pin Column submenu with Left/Right/No Pin options
   ];
 };
 
@@ -172,7 +176,7 @@ export const getPinAndFilterMenuItems: GetMainMenuItems = () => {
   return [
     'columnFilter', // Column filter option
     'separator',
-    'pinSubMenu',   // Pin Column submenu with Left/Right/No Pin options
+    'pinSubMenu', // Pin Column submenu with Left/Right/No Pin options
   ];
 };
 
@@ -180,50 +184,34 @@ export const getPinAndFilterMenuItems: GetMainMenuItems = () => {
  * Show only Sort options
  */
 export const getSortOnlyMenuItems: GetMainMenuItems = () => {
-  return [
-    'sortAscending',
-    'sortDescending'
-  ];
+  return ['sortAscending', 'sortDescending'];
 };
 
 /**
  * Show only Autosize options
  */
 export const getAutosizeOnlyMenuItems: GetMainMenuItems = () => {
-  return [
-    'autoSizeThis',
-    'autoSizeAll'
-  ];
+  return ['autoSizeThis', 'autoSizeAll'];
 };
 
 /**
  * Show Pin + Sort options
  */
 export const getPinAndSortMenuItems: GetMainMenuItems = () => {
-  return [
-    'pinSubMenu',
-    'separator',
-    'sortAscending', 
-    'sortDescending'
-  ];
+  return ['pinSubMenu', 'separator', 'sortAscending', 'sortDescending'];
 };
 
 /**
- * Show Pin + Autosize options  
+ * Show Pin + Autosize options
  */
 export const getPinAndAutosizeMenuItems: GetMainMenuItems = () => {
-  return [
-    'pinSubMenu',
-    'separator',
-    'autoSizeThis',
-    'autoSizeAll'
-  ];
+  return ['pinSubMenu', 'separator', 'autoSizeThis', 'autoSizeAll'];
 };
 
 /**
  * Available menu item keys for reference:
  * - 'sortAscending'
- * - 'sortDescending' 
+ * - 'sortDescending'
  * - 'pinSubMenu' (contains pinLeft, pinRight, clearPinned)
  * - 'autoSizeThis'
  * - 'autoSizeAll'

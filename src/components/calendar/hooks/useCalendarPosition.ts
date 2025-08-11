@@ -24,13 +24,15 @@ export const useCalendarPosition = (
     if (!triggerRef.current) return;
 
     const buttonRect = triggerRef.current.getBoundingClientRect();
-    const calendarHeight = resizable ? currentHeight : CALENDAR_CONSTANTS.CALENDAR_HEIGHT;
+    const calendarHeight = resizable
+      ? currentHeight
+      : CALENDAR_CONSTANTS.CALENDAR_HEIGHT;
     const viewportHeight = window.innerHeight;
-    
+
     const margin = CALENDAR_CONSTANTS.POSITION_MARGIN;
     const spaceBelow = viewportHeight - buttonRect.bottom - margin;
     const spaceAbove = buttonRect.top - margin;
-    
+
     const shouldDropUp =
       (spaceBelow < calendarHeight && spaceAbove > calendarHeight) ||
       (spaceBelow < calendarHeight && spaceAbove > spaceBelow);

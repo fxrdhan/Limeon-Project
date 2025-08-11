@@ -114,9 +114,9 @@ export const useDropdownEffects = ({
       clearTimeouts();
 
       document.body.style.overflow = 'hidden';
-      // Immediately set open styles and calculate position  
+      // Immediately set open styles and calculate position
       setApplyOpenStyles(true);
-      
+
       // Calculate position after DOM is ready
       openStyleTimerId = setTimeout(() => {
         if (dropdownMenuRef.current) {

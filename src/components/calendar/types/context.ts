@@ -1,5 +1,10 @@
 import React from 'react';
-import { CalendarView, CustomDateValueType, CalendarMode, CalendarSize } from './components';
+import {
+  CalendarView,
+  CustomDateValueType,
+  CalendarMode,
+  CalendarSize,
+} from './components';
 
 export interface CalendarContextState {
   // Core state

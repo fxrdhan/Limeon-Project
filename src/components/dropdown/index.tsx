@@ -98,7 +98,13 @@ const Dropdown = ({
     isPositionReady,
     calculateDropdownPosition,
     resetPosition,
-  } = useDropdownPosition(isOpen, buttonRef, dropdownMenuRef, portalWidth, position);
+  } = useDropdownPosition(
+    isOpen,
+    buttonRef,
+    dropdownMenuRef,
+    portalWidth,
+    position
+  );
 
   const { expandedId, setExpandedId, handleExpansion } = useTextExpansion({
     buttonRef,

@@ -40,15 +40,16 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
             style={{
               ...portalStyle,
               ...(dropDirection === 'up' && {
-                boxShadow: '0 -20px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04)'
-              })
+                boxShadow:
+                  '0 -20px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04)',
+              }),
             }}
             className={`
               ${dropDirection === 'down' ? 'origin-top' : 'origin-bottom'}
               bg-white rounded-xl border border-gray-200
               ${dropDirection === 'down' ? 'shadow-xl' : ''}
               transition-all duration-150 ease-out
-              ${(isClosing || !applyOpenStyles || !isPositionReady) ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
+              ${isClosing || !applyOpenStyles || !isPositionReady ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
               ${isKeyboardNavigation ? 'cursor-none' : ''}
           `}
             role="menu"

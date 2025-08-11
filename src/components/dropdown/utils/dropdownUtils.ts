@@ -28,7 +28,6 @@ export const filterAndSortOptions = (
     });
 };
 
-
 export const getSearchIconColor = (searchState: string) => {
   const colors: Record<string, string> = {
     idle: 'text-gray-400',

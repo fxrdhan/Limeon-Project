@@ -26,15 +26,15 @@ const OptionItem: FC<OptionItemProps> = ({
     onHoverDetailShow,
     onHoverDetailHide,
   } = useDropdownContext();
-  
+
   // Use portal width if available, otherwise fall back to button width
   const buttonWidth = buttonRef.current?.getBoundingClientRect().width || 200;
-  const portalWidth = portalStyle?.width ? 
-    (typeof portalStyle.width === 'string' ? 
-      parseInt(portalStyle.width.replace('px', '')) : 
-      Number(portalStyle.width)) : 
-    buttonWidth;
-    
+  const portalWidth = portalStyle?.width
+    ? typeof portalStyle.width === 'string'
+      ? parseInt(portalStyle.width.replace('px', ''))
+      : Number(portalStyle.width)
+    : buttonWidth;
+
   const maxTextWidth =
     portalWidth -
     (withRadio

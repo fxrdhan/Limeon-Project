@@ -52,9 +52,9 @@ This project is built with:
 
 This project incorporates and builds upon several outstanding open-source libraries:
 
-| Library            | Link                                                    | Description                                                                    |
-| ------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| **AG Grid**        | [Website](https://ag-grid.com/)                         | High-performance, feature rich, and fully customisable Data Grids              |
-| **classnames**     | [GitHub](https://github.com/JedWatson/classnames)       | Utility for conditionally joining CSS class names by Jed Watson                |
-| **jsdiff**         | [GitHub](https://github.com/kpdecker/jsdiff)            | Text diff implementation using Myers O(ND) algorithm by Kevin Decker           |
-| **fuzzysort**      | [GitHub](https://github.com/farzher/fuzzysort)          | Fast SublimeText-like fuzzy search with intelligent ranking by Stephen Kamenar |
+| Library        | Link                                              | Description                                                                    |
+| -------------- | ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **AG Grid**    | [Website](https://ag-grid.com/)                   | High-performance, feature rich, and fully customisable Data Grids              |
+| **classnames** | [GitHub](https://github.com/JedWatson/classnames) | Utility for conditionally joining CSS class names by Jed Watson                |
+| **jsdiff**     | [GitHub](https://github.com/kpdecker/jsdiff)      | Text diff implementation using Myers O(ND) algorithm by Kevin Decker           |
+| **fuzzysort**  | [GitHub](https://github.com/farzher/fuzzysort)    | Fast SublimeText-like fuzzy search with intelligent ranking by Stephen Kamenar |

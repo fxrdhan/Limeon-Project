@@ -9,7 +9,12 @@ import React, {
 import { useLocation } from 'react-router-dom';
 // Components
 import Pagination from '@/components/pagination';
-import { DataGrid, DataGridRef, createTextColumn, getPinAndFilterMenuItems } from '@/components/ag-grid';
+import {
+  DataGrid,
+  DataGridRef,
+  createTextColumn,
+  getPinAndFilterMenuItems,
+} from '@/components/ag-grid';
 import { TableSkeleton } from '@/components/skeleton';
 import {
   ColDef,
@@ -171,7 +176,7 @@ const EntityMasterPage: React.FC = memo(() => {
       if (gridApi && !gridApi.isDestroyed()) {
         try {
           const isMultiFilter = isMultiFilterColumn(filterSearch.field);
-          
+
           if (isMultiFilter) {
             // For multi-filter columns, use the multi-filter structure
             await gridApi.setColumnFilterModel(filterSearch.field, {
@@ -181,8 +186,8 @@ const EntityMasterPage: React.FC = memo(() => {
                   filterType: 'text',
                   type: filterSearch.operator,
                   filter: filterSearch.value,
-                }
-              ]
+                },
+              ],
             });
           } else {
             // For single filter columns, use the original structure
@@ -192,7 +197,7 @@ const EntityMasterPage: React.FC = memo(() => {
               filter: filterSearch.value,
             });
           }
-          
+
           gridApi.onFilterChanged();
         } catch (error) {
           console.error('Failed to apply filter:', error);
@@ -260,7 +265,6 @@ const EntityMasterPage: React.FC = memo(() => {
     [handleColumnPinning]
   );
 
-
   // Memoize column definitions
   const columnDefs: ColDef[] = useMemo(() => {
     const allColumns: ColDef[] = [
@@ -268,7 +272,7 @@ const EntityMasterPage: React.FC = memo(() => {
         ...createTextColumn({
           field: 'code',
           headerName: 'Kode',
-          minWidth: 80,
+
           valueGetter: params => {
             // All master data tables now use 'code'
             return params.data.code || '-';
@@ -285,12 +289,13 @@ const EntityMasterPage: React.FC = memo(() => {
             },
           ],
         },
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning('code') || undefined,
       },
       {
         field: 'name',
         headerName: currentConfig?.nameColumnHeader || 'Nama',
-        minWidth: 120,
+
         filter: 'agTextColumnFilter',
         filterParams: {
           filterOptions: [
@@ -323,7 +328,7 @@ const EntityMasterPage: React.FC = memo(() => {
               ...createTextColumn({
                 field: 'nci_code',
                 headerName: 'Kode NCI',
-                minWidth: 120,
+
                 valueGetter: params => params.data.nci_code || '-',
               }),
               filter: 'agMultiColumnFilter',
@@ -347,7 +352,7 @@ const EntityMasterPage: React.FC = memo(() => {
         ...createTextColumn({
           field: currentConfig?.hasAddress ? 'address' : 'description',
           headerName: currentConfig?.hasAddress ? 'Alamat' : 'Deskripsi',
-          minWidth: 200,
+
           flex: 1,
           valueGetter: params => {
             if (currentConfig?.hasAddress) {
@@ -357,7 +362,10 @@ const EntityMasterPage: React.FC = memo(() => {
           },
         }),
         suppressHeaderFilterButton: true,
-        pinned: getColumnPinning(currentConfig?.hasAddress ? 'address' : 'description') || undefined,
+        pinned:
+          getColumnPinning(
+            currentConfig?.hasAddress ? 'address' : 'description'
+          ) || undefined,
       },
     ];
 
@@ -485,7 +493,8 @@ const EntityMasterPage: React.FC = memo(() => {
                 rowNumbers={true}
                 style={{
                   ...GRID_STYLE,
-                  opacity: entityData.isLoading && entityData.totalItems > 0 ? 0.8 : 1,
+                  opacity:
+                    entityData.isLoading && entityData.totalItems > 0 ? 0.8 : 1,
                   transition: 'opacity 0.2s ease-in-out',
                 }}
               />

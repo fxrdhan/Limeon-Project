@@ -1,11 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { userPreferencesService, PREFERENCE_KEYS, type PreferenceKey } from '@/services/api/userPreferences.service';
+import {
+  userPreferencesService,
+  PREFERENCE_KEYS,
+  type PreferenceKey,
+} from '@/services/api/userPreferences.service';
 import { useAlert } from '@/components/alert/hooks';
 
 // Query keys for user preferences
 export const USER_PREFERENCES_QUERY_KEYS = {
   all: ['userPreferences'] as const,
-  byKey: (key: string) => [...USER_PREFERENCES_QUERY_KEYS.all, 'key', key] as const,
+  byKey: (key: string) =>
+    [...USER_PREFERENCES_QUERY_KEYS.all, 'key', key] as const,
   allPreferences: () => [...USER_PREFERENCES_QUERY_KEYS.all, 'list'] as const,
 } as const;
 
@@ -19,7 +24,8 @@ export const useUserPreference = (
   return useQuery({
     queryKey: USER_PREFERENCES_QUERY_KEYS.byKey(preferenceKey),
     queryFn: async () => {
-      const result = await userPreferencesService.getUserPreference(preferenceKey);
+      const result =
+        await userPreferencesService.getUserPreference(preferenceKey);
       if (result.error) throw result.error;
       return result.data;
     },
@@ -71,13 +77,13 @@ export const useUserPreferenceMutations = () => {
         USER_PREFERENCES_QUERY_KEYS.byKey(variables.key),
         data
       );
-      
+
       // Invalidate all preferences to keep them in sync
       queryClient.invalidateQueries({
         queryKey: USER_PREFERENCES_QUERY_KEYS.allPreferences(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Failed to save user preference:', error);
       alert.error('Gagal menyimpan pengaturan pengguna');
     },
@@ -95,13 +101,13 @@ export const useUserPreferenceMutations = () => {
         USER_PREFERENCES_QUERY_KEYS.byKey(variables),
         null
       );
-      
+
       // Invalidate all preferences
       queryClient.invalidateQueries({
         queryKey: USER_PREFERENCES_QUERY_KEYS.allPreferences(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Failed to delete user preference:', error);
       alert.error('Gagal menghapus pengaturan pengguna');
     },
@@ -120,7 +126,7 @@ export const useUserPreferenceMutations = () => {
       });
       alert.success('Semua pengaturan berhasil direset');
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Failed to reset user preferences:', error);
       alert.error('Gagal mereset pengaturan pengguna');
     },
@@ -171,14 +177,17 @@ export type UserPreferenceEntityType = keyof typeof ENTITY_PREFERENCE_KEY_MAP;
 /**
  * Generic hook for entity column visibility preferences
  */
-export const useEntityColumnVisibilityPreference = (entityType: UserPreferenceEntityType) => {
+export const useEntityColumnVisibilityPreference = (
+  entityType: UserPreferenceEntityType
+) => {
   const preferenceKey = ENTITY_PREFERENCE_KEY_MAP[entityType];
-  
-  const { data: preference, isLoading, error } = useUserPreference(
-    preferenceKey,
-    { enabled: true }
-  );
-  
+
+  const {
+    data: preference,
+    isLoading,
+    error,
+  } = useUserPreference(preferenceKey, { enabled: true });
+
   const { setPreference } = useUserPreferenceMutations();
 
   const setColumnVisibility = async (visibility: Record<string, boolean>) => {
@@ -189,7 +198,9 @@ export const useEntityColumnVisibilityPreference = (entityType: UserPreferenceEn
   };
 
   return {
-    columnVisibility: preference?.preference_value as Record<string, boolean> | undefined,
+    columnVisibility: preference?.preference_value as
+      | Record<string, boolean>
+      | undefined,
     isLoading: isLoading || setPreference.isPending,
     error: error || setPreference.error,
     setColumnVisibility,
@@ -199,17 +210,22 @@ export const useEntityColumnVisibilityPreference = (entityType: UserPreferenceEn
 /**
  * Generic hook for entity column pinning preferences
  */
-export const useEntityColumnPinningPreference = (entityType: UserPreferenceEntityType) => {
+export const useEntityColumnPinningPreference = (
+  entityType: UserPreferenceEntityType
+) => {
   const preferenceKey = ENTITY_PINNING_PREFERENCE_KEY_MAP[entityType];
-  
-  const { data: preference, isLoading, error } = useUserPreference(
-    preferenceKey,
-    { enabled: true }
-  );
-  
+
+  const {
+    data: preference,
+    isLoading,
+    error,
+  } = useUserPreference(preferenceKey, { enabled: true });
+
   const { setPreference } = useUserPreferenceMutations();
 
-  const setColumnPinning = async (pinning: Record<string, 'left' | 'right' | null>) => {
+  const setColumnPinning = async (
+    pinning: Record<string, 'left' | 'right' | null>
+  ) => {
     await setPreference.mutateAsync({
       key: preferenceKey,
       value: pinning,
@@ -217,7 +233,9 @@ export const useEntityColumnPinningPreference = (entityType: UserPreferenceEntit
   };
 
   return {
-    columnPinning: preference?.preference_value as Record<string, 'left' | 'right' | null> | undefined,
+    columnPinning: preference?.preference_value as
+      | Record<string, 'left' | 'right' | null>
+      | undefined,
     isLoading: isLoading || setPreference.isPending,
     error: error || setPreference.error,
     setColumnPinning,
@@ -227,14 +245,17 @@ export const useEntityColumnPinningPreference = (entityType: UserPreferenceEntit
 /**
  * Generic hook for entity column ordering preferences
  */
-export const useEntityColumnOrderingPreference = (entityType: UserPreferenceEntityType) => {
+export const useEntityColumnOrderingPreference = (
+  entityType: UserPreferenceEntityType
+) => {
   const preferenceKey = ENTITY_ORDERING_PREFERENCE_KEY_MAP[entityType];
-  
-  const { data: preference, isLoading, error } = useUserPreference(
-    preferenceKey,
-    { enabled: true }
-  );
-  
+
+  const {
+    data: preference,
+    isLoading,
+    error,
+  } = useUserPreference(preferenceKey, { enabled: true });
+
   const { setPreference } = useUserPreferenceMutations();
 
   const setColumnOrder = async (order: string[]) => {

@@ -20,10 +20,9 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
   const { isColumnVisible, getColumnPinning, columnOrder } = props;
 
   const columnDefs: ColDef[] = useMemo(() => {
-
     // Create column definitions map for ordering
     const columnDefinitionsMap: Record<string, ColDef> = {
-      'name': {
+      name: {
         ...createWrapTextColumn({
           field: 'name',
           headerName: 'Nama Item',
@@ -32,7 +31,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('name') || undefined,
       },
-      'manufacturer': {
+      manufacturer: {
         ...createTextColumn({
           field: 'manufacturer',
           headerName: 'Produsen',
@@ -52,11 +51,10 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('manufacturer') || undefined,
       },
-      'code': {
+      code: {
         ...createTextColumn({
           field: 'code',
           headerName: 'Kode',
-          
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -72,11 +70,11 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('code') || undefined,
       },
-      'barcode': {
+      barcode: {
         ...createTextColumn({
           field: 'barcode',
           headerName: 'Barcode',
-          
+
           valueGetter: params => params.data.barcode || '-',
         }),
         filter: 'agMultiColumnFilter',
@@ -97,7 +95,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'category.name',
           headerName: 'Kategori',
-          
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -117,7 +114,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createWrapTextColumn({
           field: 'type.name',
           headerName: 'Jenis',
-          
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -137,7 +133,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'unit.name',
           headerName: 'Kemasan',
-          
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -157,7 +152,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'dosage.name',
           headerName: 'Sediaan',
-          
+
           valueGetter: params => params.data.dosage?.name || '-',
         }),
         filter: 'agMultiColumnFilter',
@@ -174,11 +169,11 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('dosage.name') || undefined,
       },
-      'package_conversions': {
+      package_conversions: {
         ...createTextColumn({
           field: 'package_conversions',
           headerName: 'Kemasan Turunan',
-          
+
           valueGetter: params => {
             const conversions = params.data.package_conversions;
             if (conversions && conversions.length > 0) {
@@ -203,31 +198,31 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('package_conversions') || undefined,
       },
-      'base_price': {
+      base_price: {
         ...createCurrencyColumn({
           field: 'base_price',
           headerName: 'Harga Pokok',
-          
+
           valueFormatter: params => formatBaseCurrency(params.value),
         }),
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('base_price') || undefined,
       },
-      'sell_price': {
+      sell_price: {
         ...createCurrencyColumn({
           field: 'sell_price',
           headerName: 'Harga Jual',
-          
+
           valueFormatter: params => formatCurrency(params.value),
         }),
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('sell_price') || undefined,
       },
-      'stock': {
+      stock: {
         ...createCenterAlignColumn({
           field: 'stock',
           headerName: 'Stok',
-          
+
           maxWidth: 100, // Reduced from 120 to 100 for more compact width
         }),
         filter: 'agMultiColumnFilter',

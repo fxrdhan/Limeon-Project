@@ -1,6 +1,11 @@
 import { useState, useRef, useCallback, useEffect, memo, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { GridApi, GridReadyEvent, ColumnPinnedEvent, ColumnMovedEvent } from 'ag-grid-community';
+import {
+  GridApi,
+  GridReadyEvent,
+  ColumnPinnedEvent,
+  ColumnMovedEvent,
+} from 'ag-grid-community';
 
 // Components
 import PageTitle from '@/components/page-title';
@@ -144,8 +149,16 @@ const ItemMasterNew = memo(() => {
   });
 
   // Column visibility management
-  const { columnOptions, visibleColumns, isColumnVisible, handleColumnToggle, getColumnPinning, handleColumnPinning, orderingState, handleColumnOrdering } =
-    useColumnVisibility();
+  const {
+    columnOptions,
+    visibleColumns,
+    isColumnVisible,
+    handleColumnToggle,
+    getColumnPinning,
+    handleColumnPinning,
+    orderingState,
+    handleColumnOrdering,
+  } = useColumnVisibility();
 
   const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns({
     visibleColumns,
@@ -213,15 +226,15 @@ const ItemMasterNew = memo(() => {
   // Helper function to determine if column uses multi-filter
   const isMultiFilterColumn = useCallback((columnField: string) => {
     const multiFilterColumns = [
-      'manufacturer', 
-      'code', 
-      'barcode', 
-      'category.name', 
-      'type.name', 
-      'unit.name', 
-      'dosage.name', 
-      'package_conversions', 
-      'stock'
+      'manufacturer',
+      'code',
+      'barcode',
+      'category.name',
+      'type.name',
+      'unit.name',
+      'dosage.name',
+      'package_conversions',
+      'stock',
     ];
     return multiFilterColumns.includes(columnField);
   }, []);
@@ -239,10 +252,11 @@ const ItemMasterNew = memo(() => {
       if (itemGridApi && !itemGridApi.isDestroyed()) {
         try {
           const isMultiFilter = isMultiFilterColumn(filterSearch.field);
-          
+
           if (isMultiFilter) {
             // For multi-filter columns, use the multi-filter structure
-            const filterType = filterSearch.field === 'stock' ? 'number' : 'text';
+            const filterType =
+              filterSearch.field === 'stock' ? 'number' : 'text';
             await itemGridApi.setColumnFilterModel(filterSearch.field, {
               filterType: 'multi',
               filterModels: [
@@ -250,8 +264,8 @@ const ItemMasterNew = memo(() => {
                   filterType,
                   type: filterSearch.operator,
                   filter: filterSearch.value,
-                }
-              ]
+                },
+              ],
             });
           } else {
             // For single filter columns, use the original structure
@@ -261,7 +275,7 @@ const ItemMasterNew = memo(() => {
               filter: filterSearch.value,
             });
           }
-          
+
           itemGridApi.onFilterChanged();
         } catch (error) {
           console.error('Failed to apply filter:', error);
@@ -354,7 +368,6 @@ const ItemMasterNew = memo(() => {
     },
     [handleColumnOrdering, itemGridApi]
   );
-
 
   // Memoize SearchToolbar callback props for stable references (after itemSearch is declared)
   const memoizedOnAdd = useCallback(() => {

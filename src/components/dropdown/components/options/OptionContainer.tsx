@@ -46,7 +46,7 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
   const handleMouseEnter = async (e: React.MouseEvent<HTMLButtonElement>) => {
     // Ignore mouse events during keyboard navigation
     if (isKeyboardNavigation) return;
-    
+
     onHighlight(index);
     onExpansion(optionId, optionName, true);
 
@@ -65,7 +65,7 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
   const handleMouseLeave = () => {
     // Ignore mouse events during keyboard navigation
     if (isKeyboardNavigation) return;
-    
+
     onExpansion(optionId, optionName, false);
 
     // Hide hover detail
