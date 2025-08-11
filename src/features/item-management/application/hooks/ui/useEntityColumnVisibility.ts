@@ -3,6 +3,7 @@ import { EntityType, EntityConfig } from '../collections/useEntityManager';
 import {
   useEntityColumnVisibilityPreference,
   useEntityColumnPinningPreference,
+  useEntityColumnOrderingPreference,
   type UserPreferenceEntityType,
 } from '@/hooks/queries/useUserPreferences';
 
@@ -98,6 +99,14 @@ export const useEntityColumnVisibility = ({
     error: pinningError,
   } = useEntityColumnPinningPreference(entityType as UserPreferenceEntityType);
 
+  // Column ordering preferences
+  const {
+    columnOrder: dbColumnOrder,
+    setColumnOrder: setDbColumnOrder,
+    isLoading: isOrderingLoading,
+    error: orderingError,
+  } = useEntityColumnOrderingPreference(entityType as UserPreferenceEntityType);
+
   // Local state for optimistic updates
   const [optimisticState, setOptimisticState] = useState<Record<
     string,
@@ -107,6 +116,9 @@ export const useEntityColumnVisibility = ({
     string,
     'left' | 'right' | null
   > | null>(null);
+  const [optimisticOrderingState, setOptimisticOrderingState] = useState<
+    string[] | null
+  >(null);
 
   // Use optimistic state during saves, otherwise use DB state or defaults
   const visibilityState = useMemo(() => {
@@ -135,21 +147,67 @@ export const useEntityColumnVisibility = ({
     return dbColumnPinning || {};
   }, [dbColumnPinning, optimisticPinningState]);
 
-  const columnOptions: ColumnOption[] = useMemo(() => {
-    return columnConfigs.map(config => {
-      // Use dynamic labels from currentConfig if available
-      let label = config.label;
-      if (config.key === 'name' && currentConfig?.nameColumnHeader) {
-        label = currentConfig.nameColumnHeader;
-      }
+  // Column ordering state - get default order from column configs
+  const getDefaultOrder = (configs: ColumnVisibilityConfig[]): string[] => {
+    return configs.map(config => config.key);
+  };
 
-      return {
-        key: config.key,
-        label,
-        visible: visibilityState[config.key] ?? config.defaultVisible,
-      };
+  const orderingState = useMemo(() => {
+    if (optimisticOrderingState) {
+      return optimisticOrderingState;
+    }
+    return dbColumnOrder || getDefaultOrder(columnConfigs);
+  }, [dbColumnOrder, optimisticOrderingState, columnConfigs]);
+
+  const columnOptions: ColumnOption[] = useMemo(() => {
+    // Create a map of all column configs for quick lookup
+    const configMap: Record<string, ColumnVisibilityConfig> = {};
+    columnConfigs.forEach(config => {
+      configMap[config.key] = config;
     });
-  }, [columnConfigs, visibilityState, currentConfig]);
+
+    // Use ordering state to determine column order
+    const orderedKeys = orderingState;
+
+    // Create ordered column options
+    const orderedOptions: ColumnOption[] = [];
+
+    // Add columns in the specified order
+    orderedKeys.forEach(key => {
+      const config = configMap[key];
+      if (config) {
+        // Use dynamic labels from currentConfig if available
+        let label = config.label;
+        if (config.key === 'name' && currentConfig?.nameColumnHeader) {
+          label = currentConfig.nameColumnHeader;
+        }
+
+        orderedOptions.push({
+          key: config.key,
+          label,
+          visible: visibilityState[config.key] ?? config.defaultVisible,
+        });
+      }
+    });
+
+    // Add any columns that aren't in the ordering (fallback)
+    columnConfigs.forEach(config => {
+      if (!orderedKeys.includes(config.key)) {
+        let label = config.label;
+        if (config.key === 'name' && currentConfig?.nameColumnHeader) {
+          label = currentConfig.nameColumnHeader;
+        }
+
+        orderedOptions.push({
+          key: config.key,
+          label,
+          visible: visibilityState[config.key] ?? config.defaultVisible,
+        });
+      }
+    });
+
+    return orderedOptions;
+  }, [columnConfigs, visibilityState, currentConfig, orderingState]);
 
   const handleColumnToggle = useCallback(
     async (columnKey: string, visible: boolean) => {
@@ -231,6 +289,27 @@ export const useEntityColumnVisibility = ({
     [pinningState]
   );
 
+  const handleColumnOrdering = useCallback(
+    async (newOrder: string[]) => {
+      // Set optimistic state for immediate UI update
+      setOptimisticOrderingState(newOrder);
+
+      try {
+        // Save to database
+        await setDbColumnOrder(newOrder);
+
+        // Clear optimistic state after successful save
+        setOptimisticOrderingState(null);
+      } catch (error) {
+        console.error('Failed to save entity column order to database:', error);
+
+        // Revert optimistic state on error
+        setOptimisticOrderingState(null);
+      }
+    },
+    [setDbColumnOrder]
+  );
+
   // Get auto-size columns (only visible ones)
   const autoSizeColumns = useMemo(() => {
     const baseColumns = ['code', 'name'];
@@ -254,7 +333,9 @@ export const useEntityColumnVisibility = ({
     pinningState,
     getColumnPinning,
     handleColumnPinning,
-    isLoading: isDbLoading || isPinningLoading,
-    error: dbError || pinningError,
+    orderingState,
+    handleColumnOrdering,
+    isLoading: isDbLoading || isPinningLoading || isOrderingLoading,
+    error: dbError || pinningError || orderingError,
   };
 };
