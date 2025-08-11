@@ -24,10 +24,9 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
     // Create column definitions map for ordering
     const columnDefinitionsMap: Record<string, ColDef> = {
       'name': {
-        ...createTextColumn({
+        ...createWrapTextColumn({
           field: 'name',
           headerName: 'Nama Item',
-          minWidth: 200,
           flex: 1,
         }),
         suppressHeaderFilterButton: true,
@@ -37,7 +36,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'manufacturer',
           headerName: 'Produsen',
-          minWidth: 120,
           valueGetter: params => params.data.manufacturer || '-',
         }),
         filter: 'agMultiColumnFilter',
@@ -58,7 +56,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'code',
           headerName: 'Kode',
-          minWidth: 80,
+          
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -78,7 +76,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'barcode',
           headerName: 'Barcode',
-          minWidth: 100,
+          
           valueGetter: params => params.data.barcode || '-',
         }),
         filter: 'agMultiColumnFilter',
@@ -99,7 +97,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'category.name',
           headerName: 'Kategori',
-          minWidth: 100,
+          
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -119,7 +117,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createWrapTextColumn({
           field: 'type.name',
           headerName: 'Jenis',
-          minWidth: 120,
+          
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -139,7 +137,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'unit.name',
           headerName: 'Kemasan',
-          minWidth: 80,
+          
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -159,7 +157,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'dosage.name',
           headerName: 'Sediaan',
-          minWidth: 100,
+          
           valueGetter: params => params.data.dosage?.name || '-',
         }),
         filter: 'agMultiColumnFilter',
@@ -180,7 +178,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'package_conversions',
           headerName: 'Kemasan Turunan',
-          minWidth: 140,
+          
           valueGetter: params => {
             const conversions = params.data.package_conversions;
             if (conversions && conversions.length > 0) {
@@ -209,7 +207,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createCurrencyColumn({
           field: 'base_price',
           headerName: 'Harga Pokok',
-          minWidth: 120,
+          
           valueFormatter: params => formatBaseCurrency(params.value),
         }),
         suppressHeaderFilterButton: true,
@@ -219,7 +217,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createCurrencyColumn({
           field: 'sell_price',
           headerName: 'Harga Jual',
-          minWidth: 120,
+          
           valueFormatter: params => formatCurrency(params.value),
         }),
         suppressHeaderFilterButton: true,
@@ -229,7 +227,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createCenterAlignColumn({
           field: 'stock',
           headerName: 'Stok',
-          minWidth: 70,
+          
           maxWidth: 100, // Reduced from 120 to 100 for more compact width
         }),
         filter: 'agMultiColumnFilter',
@@ -294,6 +292,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
 
   const columnsToAutoSize = useMemo(() => {
     const allColumnsToAutoSize = [
+      'name', // ← Added: Include name column in autosize
       'code',
       'manufacturer',
       'barcode',
