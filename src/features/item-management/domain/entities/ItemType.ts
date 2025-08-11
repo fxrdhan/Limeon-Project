@@ -1,52 +1,67 @@
-// ItemType entity definition
-export interface ItemType {
-  id: string;
-  code?: string;
-  name: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-}
+/**
+ * ItemType Entity - Refactored using BaseEntity system
+ * 
+ * This entity now uses the generic base system to eliminate code duplication
+ * while maintaining full backward compatibility and type safety.
+ */
 
-export interface ItemTypeCreateInput {
-  code?: string;
-  name: string;
-  description?: string;
-}
+import {
+  BaseEntityWithDescription,
+  CreateInputFor,
+  UpdateInputFor,
+  createEntityRulesWithDescription,
+  STANDARD_ENTITY_CONFIG,
+  type ValidationConfigWithDescription,
+} from './BaseEntity';
 
-export interface ItemTypeUpdateInput {
-  id: string;
-  code?: string;
-  name: string;
-  description?: string;
-}
+// ============================================================================
+// ENTITY DEFINITION
+// ============================================================================
 
-// Business rules for ItemType
-export const ItemTypeRules = {
-  maxNameLength: 100,
-  maxDescriptionLength: 500,
-  requiredFields: ['name'] as const,
+/**
+ * ItemType entity interface - extends base pattern
+ * 
+ * Note: This interface extends BaseEntityWithDescription and maintains
+ * backward compatibility with existing code while eliminating duplication.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ItemType extends BaseEntityWithDescription {}
 
-  validate: (data: Partial<ItemType>): string[] => {
-    const errors: string[] = [];
+/**
+ * ItemType create input interface - generated from base
+ */
+export type ItemTypeCreateInput = CreateInputFor<ItemType>;
 
-    if (!data.name?.trim()) {
-      errors.push('Nama jenis item wajib diisi');
-    } else if (data.name.length > ItemTypeRules.maxNameLength) {
-      errors.push(
-        `Nama jenis item maksimal ${ItemTypeRules.maxNameLength} karakter`
-      );
-    }
+/**
+ * ItemType update input interface - generated from base
+ */
+export type ItemTypeUpdateInput = UpdateInputFor<ItemType>;
 
-    if (
-      data.description &&
-      data.description.length > ItemTypeRules.maxDescriptionLength
-    ) {
-      errors.push(
-        `Deskripsi maksimal ${ItemTypeRules.maxDescriptionLength} karakter`
-      );
-    }
+// ============================================================================
+// VALIDATION CONFIGURATION
+// ============================================================================
 
-    return errors;
-  },
+/**
+ * Type-specific validation configuration
+ */
+const ITEM_TYPE_CONFIG: ValidationConfigWithDescription = {
+  ...STANDARD_ENTITY_CONFIG,
+  entityDisplayName: 'jenis item',
 };
+
+// ============================================================================
+// BUSINESS RULES
+// ============================================================================
+
+/**
+ * ItemType business rules - generated using base factory
+ * 
+ * Maintains the exact same interface as before for backward compatibility:
+ * - maxNameLength: number
+ * - maxDescriptionLength: number  
+ * - requiredFields: readonly string[]
+ * - validate: (data: Partial<ItemType>) => string[]
+ */
+export const ItemTypeRules = createEntityRulesWithDescription<ItemType>(
+  ITEM_TYPE_CONFIG
+);

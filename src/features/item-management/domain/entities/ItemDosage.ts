@@ -1,65 +1,70 @@
-// ItemDosage entity definition
-export interface ItemDosage {
-  id: string;
-  code?: string;
-  name: string;
-  nci_code?: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-}
+/**
+ * ItemDosage Entity - Refactored using BaseEntity system
+ * 
+ * This entity uses the NCI code pattern:
+ * - Optional code field
+ * - NCI code field for pharmaceutical classification
+ * - Standard description field
+ */
 
-export interface ItemDosageCreateInput {
-  code?: string;
-  name: string;
-  nci_code?: string;
-  description?: string;
-}
+import {
+  BaseEntityWithNciCode,
+  CreateInputFor,
+  UpdateInputFor,
+  createEntityRulesWithNciCode,
+  NCI_ENTITY_CONFIG,
+  type ValidationConfigWithNciCode,
+} from './BaseEntity';
 
-export interface ItemDosageUpdateInput {
-  id: string;
-  code?: string;
-  name: string;
-  nci_code?: string;
-  description?: string;
-}
+// ============================================================================
+// ENTITY DEFINITION
+// ============================================================================
 
-// Business rules for ItemDosage
-export const ItemDosageRules = {
-  maxNameLength: 100,
-  maxDescriptionLength: 500,
-  maxNciCodeLength: 20,
-  requiredFields: ['name'] as const,
+/**
+ * ItemDosage entity interface - extends NCI code pattern
+ * 
+ * Note: This interface extends BaseEntityWithNciCode and maintains
+ * backward compatibility with existing code while eliminating duplication.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ItemDosage extends BaseEntityWithNciCode {}
 
-  validate: (data: Partial<ItemDosage>): string[] => {
-    const errors: string[] = [];
+/**
+ * ItemDosage create input interface - generated from base
+ */
+export type ItemDosageCreateInput = CreateInputFor<ItemDosage>;
 
-    if (!data.name?.trim()) {
-      errors.push('Nama sediaan wajib diisi');
-    } else if (data.name.length > ItemDosageRules.maxNameLength) {
-      errors.push(
-        `Nama sediaan maksimal ${ItemDosageRules.maxNameLength} karakter`
-      );
-    }
+/**
+ * ItemDosage update input interface - generated from base
+ */
+export type ItemDosageUpdateInput = UpdateInputFor<ItemDosage>;
 
-    if (
-      data.description &&
-      data.description.length > ItemDosageRules.maxDescriptionLength
-    ) {
-      errors.push(
-        `Deskripsi maksimal ${ItemDosageRules.maxDescriptionLength} karakter`
-      );
-    }
+// ============================================================================
+// VALIDATION CONFIGURATION
+// ============================================================================
 
-    if (
-      data.nci_code &&
-      data.nci_code.length > ItemDosageRules.maxNciCodeLength
-    ) {
-      errors.push(
-        `Kode NCI maksimal ${ItemDosageRules.maxNciCodeLength} karakter`
-      );
-    }
-
-    return errors;
-  },
+/**
+ * Dosage-specific validation configuration
+ */
+const ITEM_DOSAGE_CONFIG: ValidationConfigWithNciCode = {
+  ...NCI_ENTITY_CONFIG,
+  entityDisplayName: 'sediaan',
 };
+
+// ============================================================================
+// BUSINESS RULES
+// ============================================================================
+
+/**
+ * ItemDosage business rules - generated using base factory
+ * 
+ * Maintains the exact same interface as before for backward compatibility:
+ * - maxNameLength: number
+ * - maxDescriptionLength: number
+ * - maxNciCodeLength: number
+ * - requiredFields: readonly string[]
+ * - validate: (data: Partial<ItemDosage>) => string[]
+ */
+export const ItemDosageRules = createEntityRulesWithNciCode<ItemDosage>(
+  ITEM_DOSAGE_CONFIG
+);
