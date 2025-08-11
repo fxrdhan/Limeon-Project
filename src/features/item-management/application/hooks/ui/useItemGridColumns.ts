@@ -20,22 +20,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
   const { isColumnVisible, getColumnPinning, columnOrder } = props;
 
   const columnDefs: ColDef[] = useMemo(() => {
-    // Row number column - always first and not movable
-    const rowNumberColumn: ColDef = {
-      field: 'rowNumber',
-      headerName: 'No.',
-      width: 60,
-      minWidth: 60,
-      maxWidth: 60,
-      pinned: 'left',
-      sortable: false,
-      filter: false,
-      resizable: false,
-      suppressMovable: true,
-      suppressHeaderMenuButton: true,
-      cellStyle: { textAlign: 'center', fontWeight: 'bold' },
-      valueGetter: 'node.rowIndex + 1',
-    };
 
     // Create column definitions map for ordering
     const columnDefinitionsMap: Record<string, ColDef> = {
@@ -55,6 +39,17 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           minWidth: 120,
           valueGetter: params => params.data.manufacturer || '-',
         }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            {
+              filter: 'agTextColumnFilter',
+            },
+            {
+              filter: 'agSetColumnFilter',
+            },
+          ],
+        },
         pinned: getColumnPinning?.('manufacturer') || undefined,
       },
       'code': {
@@ -63,6 +58,17 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           headerName: 'Kode',
           minWidth: 80,
         }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            {
+              filter: 'agTextColumnFilter',
+            },
+            {
+              filter: 'agSetColumnFilter',
+            },
+          ],
+        },
         pinned: getColumnPinning?.('code') || undefined,
       },
       'barcode': {
@@ -72,6 +78,17 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           minWidth: 100,
           valueGetter: params => params.data.barcode || '-',
         }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            {
+              filter: 'agTextColumnFilter',
+            },
+            {
+              filter: 'agSetColumnFilter',
+            },
+          ],
+        },
         pinned: getColumnPinning?.('barcode') || undefined,
       },
       'category.name': {
@@ -80,6 +97,17 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           headerName: 'Kategori',
           minWidth: 100,
         }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            {
+              filter: 'agTextColumnFilter',
+            },
+            {
+              filter: 'agSetColumnFilter',
+            },
+          ],
+        },
         pinned: getColumnPinning?.('category.name') || undefined,
       },
       'type.name': {
@@ -88,6 +116,17 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           headerName: 'Jenis',
           minWidth: 120,
         }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            {
+              filter: 'agTextColumnFilter',
+            },
+            {
+              filter: 'agSetColumnFilter',
+            },
+          ],
+        },
         pinned: getColumnPinning?.('type.name') || undefined,
       },
       'unit.name': {
@@ -96,6 +135,17 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           headerName: 'Kemasan',
           minWidth: 80,
         }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            {
+              filter: 'agTextColumnFilter',
+            },
+            {
+              filter: 'agSetColumnFilter',
+            },
+          ],
+        },
         pinned: getColumnPinning?.('unit.name') || undefined,
       },
       'dosage.name': {
@@ -105,6 +155,17 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           minWidth: 100,
           valueGetter: params => params.data.dosage?.name || '-',
         }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            {
+              filter: 'agTextColumnFilter',
+            },
+            {
+              filter: 'agSetColumnFilter',
+            },
+          ],
+        },
         pinned: getColumnPinning?.('dosage.name') || undefined,
       },
       'package_conversions': {
@@ -122,6 +183,17 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
             return '-';
           },
         }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            {
+              filter: 'agTextColumnFilter',
+            },
+            {
+              filter: 'agSetColumnFilter',
+            },
+          ],
+        },
         pinned: getColumnPinning?.('package_conversions') || undefined,
       },
       'base_price': {
@@ -149,6 +221,17 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           minWidth: 70,
           maxWidth: 100, // Reduced from 120 to 100 for more compact width
         }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            {
+              filter: 'agNumberColumnFilter',
+            },
+            {
+              filter: 'agSetColumnFilter',
+            },
+          ],
+        },
         pinned: getColumnPinning?.('stock') || undefined,
       },
     };
@@ -184,8 +267,8 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
       }
     });
 
-    // Combine row number column with ordered columns
-    const allColumns = [rowNumberColumn, ...orderedColumnDefs];
+    // Use ordered columns without manual row number column (AG Grid built-in rowNumbers will handle this)
+    const allColumns = orderedColumnDefs;
 
     // Filter columns based on visibility
     if (isColumnVisible) {

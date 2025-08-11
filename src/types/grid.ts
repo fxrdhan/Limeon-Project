@@ -59,6 +59,7 @@ export interface DataGridProps {
   mainMenuItems?: GetMainMenuItems;
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
+  rowNumbers?: boolean;
 }
 
 export interface DataGridRef {
