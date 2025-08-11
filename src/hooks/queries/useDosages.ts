@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
-import type { ItemDosage } from '@/features/item-management/domain/entities/ItemDosage';
+import type { ItemDosage } from '@/types/database';
 
 // Simple dosages hook without realtime
 export const useDosages = ({ enabled = true }: { enabled?: boolean } = {}) => {

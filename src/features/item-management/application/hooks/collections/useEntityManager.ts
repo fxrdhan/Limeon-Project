@@ -9,7 +9,7 @@ import type {
   ItemDosageEntity,
   ItemManufacturerEntity,
   ItemUnitEntity,
-} from '../../../domain/entities';
+} from '../../../shared/types';
 
 // Define entity types
 export type EntityType =

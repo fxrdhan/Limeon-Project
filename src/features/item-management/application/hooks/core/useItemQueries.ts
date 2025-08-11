@@ -23,7 +23,7 @@ import type {
   ItemDosageEntity,
   ItemManufacturerEntity,
   ItemUnitEntity,
-} from '../../../domain/entities';
+} from '../../../shared/types';
 
 /**
  * Unified item queries hook using the generic factory system

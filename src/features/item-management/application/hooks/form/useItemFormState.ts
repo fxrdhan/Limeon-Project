@@ -9,7 +9,7 @@ import type {
   ItemDosageEntity,
   ItemManufacturerEntity,
   ItemUnitEntity,
-} from '../../../domain/entities';
+} from '../../../shared/types';
 
 interface UseAddItemFormStateProps {
   initialSearchQuery?: string;

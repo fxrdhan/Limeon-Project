@@ -6,7 +6,7 @@ import type {
   ItemDosageEntity,
   ItemManufacturerEntity,
   ItemUnitEntity,
-} from '../../../domain/entities';
+} from '../../../shared/types';
 import type { ItemFormData } from '../../../shared/types';
 
 interface EntitySaveData {

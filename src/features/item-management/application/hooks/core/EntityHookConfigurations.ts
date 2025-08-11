@@ -30,7 +30,7 @@ import type {
   ItemPackageUpdateInput,
   ItemManufacturerCreateInput,
   ItemManufacturerUpdateInput,
-} from '../../../domain/entities';
+} from '../../../shared/types';
 
 // ============================================================================
 // ENTITY TYPE DEFINITIONS
