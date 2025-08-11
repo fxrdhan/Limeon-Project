@@ -17,7 +17,7 @@
  * - Centralized dropdown patterns
  */
 
-// @ts-ignore - React is used in JSX
+// @ts-expect-error - React is used in JSX
 import React from 'react';
 import Dropdown from '@/components/dropdown';
 import Input from '@/components/input';
@@ -191,6 +191,7 @@ export function SmartDropdown({
 /**
  * Standard entity dropdown configuration
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const ENTITY_DROPDOWN_CONFIG: Partial<DropdownFieldConfig> = {
   validation: {
     enabled: true,
@@ -208,6 +209,7 @@ export const ENTITY_DROPDOWN_CONFIG: Partial<DropdownFieldConfig> = {
 /**
  * Required entity dropdown configuration
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const REQUIRED_ENTITY_DROPDOWN_CONFIG: Partial<DropdownFieldConfig> = {
   ...ENTITY_DROPDOWN_CONFIG,
   required: true,

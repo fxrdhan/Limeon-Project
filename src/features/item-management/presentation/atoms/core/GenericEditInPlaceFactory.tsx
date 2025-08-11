@@ -228,6 +228,7 @@ export function GenericEditInPlace<T = unknown>({
 /**
  * Configuration for margin percentage fields
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const MARGIN_CONFIG: EditInPlaceConfig = {
   label: 'Margin',
   inputType: 'number',
@@ -256,6 +257,7 @@ export const MARGIN_CONFIG: EditInPlaceConfig = {
 /**
  * Configuration for minimum stock fields
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const MIN_STOCK_CONFIG: EditInPlaceConfig = {
   label: 'Stok Minimal:',
   inputType: 'number',
@@ -286,6 +288,7 @@ export const MIN_STOCK_CONFIG: EditInPlaceConfig = {
  * 
  * This allows creating backward-compatible components while using the generic foundation.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function createEditInPlaceComponent<T>(
   defaultConfig: EditInPlaceConfig
 ) {
