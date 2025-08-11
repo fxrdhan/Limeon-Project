@@ -137,17 +137,17 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
 
   // Custom menu items with reference column toggle
   const getMainMenuItems = useCallback(
-    (params: GetMainMenuItemsParams) => {
+    (params: GetMainMenuItemsParams): (string | MenuItemDef)[] => {
       if (!params.column) {
         return [
           'columnFilter',
           'separator', 
           'pinSubMenu',
-        ] as any;
+        ];
       }
 
       const colId = params.column.getColId();
-      const baseMenuItems: any[] = [
+      const baseMenuItems: (string | MenuItemDef)[] = [
         'columnFilter',
         'separator',
         'pinSubMenu',
