@@ -210,6 +210,22 @@ const ItemMasterNew = memo(() => {
     itemsManagement.setSearch('');
   }, [itemsManagement]);
 
+  // Helper function to determine if column uses multi-filter
+  const isMultiFilterColumn = useCallback((columnField: string) => {
+    const multiFilterColumns = [
+      'manufacturer', 
+      'code', 
+      'barcode', 
+      'category.name', 
+      'type.name', 
+      'unit.name', 
+      'dosage.name', 
+      'package_conversions', 
+      'stock'
+    ];
+    return multiFilterColumns.includes(columnField);
+  }, []);
+
   const handleItemFilterSearch = useCallback(
     async (filterSearch: FilterSearch | null) => {
       if (!filterSearch) {
@@ -222,18 +238,37 @@ const ItemMasterNew = memo(() => {
 
       if (itemGridApi && !itemGridApi.isDestroyed()) {
         try {
-          await itemGridApi.setColumnFilterModel(filterSearch.field, {
-            filterType: 'text',
-            type: filterSearch.operator,
-            filter: filterSearch.value,
-          });
+          const isMultiFilter = isMultiFilterColumn(filterSearch.field);
+          
+          if (isMultiFilter) {
+            // For multi-filter columns, use the multi-filter structure
+            const filterType = filterSearch.field === 'stock' ? 'number' : 'text';
+            await itemGridApi.setColumnFilterModel(filterSearch.field, {
+              filterType: 'multi',
+              filterModels: [
+                {
+                  filterType,
+                  type: filterSearch.operator,
+                  filter: filterSearch.value,
+                }
+              ]
+            });
+          } else {
+            // For single filter columns, use the original structure
+            await itemGridApi.setColumnFilterModel(filterSearch.field, {
+              filterType: 'text',
+              type: filterSearch.operator,
+              filter: filterSearch.value,
+            });
+          }
+          
           itemGridApi.onFilterChanged();
         } catch (error) {
           console.error('Failed to apply filter:', error);
         }
       }
     },
-    [itemGridApi]
+    [itemGridApi, isMultiFilterColumn]
   );
 
   // Get ordered search columns based on user preferences

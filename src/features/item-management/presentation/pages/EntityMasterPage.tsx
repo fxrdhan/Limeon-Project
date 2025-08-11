@@ -151,6 +151,12 @@ const EntityMasterPage: React.FC = memo(() => {
 
   // Simple wrappers - no memoization needed
 
+  // Helper function to determine if column uses multi-filter
+  const isMultiFilterColumn = useCallback((columnField: string) => {
+    const multiFilterColumns = ['code', 'nci_code'];
+    return multiFilterColumns.includes(columnField);
+  }, []);
+
   // Handle filter from search bar
   const handleFilterSearch = useCallback(
     async (filterSearch: FilterSearch | null) => {
@@ -164,18 +170,36 @@ const EntityMasterPage: React.FC = memo(() => {
 
       if (gridApi && !gridApi.isDestroyed()) {
         try {
-          await gridApi.setColumnFilterModel(filterSearch.field, {
-            filterType: 'text',
-            type: filterSearch.operator,
-            filter: filterSearch.value,
-          });
+          const isMultiFilter = isMultiFilterColumn(filterSearch.field);
+          
+          if (isMultiFilter) {
+            // For multi-filter columns, use the multi-filter structure
+            await gridApi.setColumnFilterModel(filterSearch.field, {
+              filterType: 'multi',
+              filterModels: [
+                {
+                  filterType: 'text',
+                  type: filterSearch.operator,
+                  filter: filterSearch.value,
+                }
+              ]
+            });
+          } else {
+            // For single filter columns, use the original structure
+            await gridApi.setColumnFilterModel(filterSearch.field, {
+              filterType: 'text',
+              type: filterSearch.operator,
+              filter: filterSearch.value,
+            });
+          }
+          
           gridApi.onFilterChanged();
         } catch (error) {
           console.error('Failed to apply filter:', error);
         }
       }
     },
-    [gridApi]
+    [gridApi, isMultiFilterColumn]
   );
 
   // Get search columns for current tab

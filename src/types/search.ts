@@ -4,6 +4,7 @@ export interface SearchColumn {
   searchable: boolean;
   type?: 'text' | 'number' | 'date' | 'currency';
   description?: string;
+  isMultiFilter?: boolean; // Indicates if column uses AG Grid multi-filter
 }
 
 export interface TargetedSearch {
