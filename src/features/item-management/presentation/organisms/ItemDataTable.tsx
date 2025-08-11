@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { DataGrid, getPinOnlyMenuItems } from '@/components/ag-grid';
+import { DataGrid, getPinAndFilterMenuItems } from '@/components/ag-grid';
 import Pagination from '@/components/pagination';
 import { TableSkeleton } from '@/components/skeleton';
 import {
@@ -123,7 +123,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           onFirstDataRendered={undefined}
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
-          mainMenuItems={getPinOnlyMenuItems}
+          mainMenuItems={getPinAndFilterMenuItems}
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
           rowNumbers={true}

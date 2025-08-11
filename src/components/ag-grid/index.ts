@@ -12,6 +12,7 @@ export {
   COLUMN_MENU_TABS,
   MENU_PRESETS,
   getPinOnlyMenuItems,
+  getPinAndFilterMenuItems,
   getSortOnlyMenuItems,
   getAutosizeOnlyMenuItems,
   getPinAndSortMenuItems,

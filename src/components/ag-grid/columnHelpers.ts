@@ -166,6 +166,17 @@ export const getPinOnlyMenuItems: GetMainMenuItems = () => {
 };
 
 /**
+ * Show Pin Column and Filter options
+ */
+export const getPinAndFilterMenuItems: GetMainMenuItems = () => {
+  return [
+    'columnFilter', // Column filter option
+    'separator',
+    'pinSubMenu',   // Pin Column submenu with Left/Right/No Pin options
+  ];
+};
+
+/**
  * Show only Sort options
  */
 export const getSortOnlyMenuItems: GetMainMenuItems = () => {
