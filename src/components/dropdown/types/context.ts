@@ -7,8 +7,9 @@ export interface DropdownContextType {
   isOpen: boolean;
   isClosing: boolean;
   applyOpenStyles: boolean;
-  value?: string;
+  value?: string | string[];
   withRadio?: boolean;
+  withCheckbox?: boolean;
   searchList: boolean;
 
   // Search state

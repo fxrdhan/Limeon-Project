@@ -1,5 +1,5 @@
-import { useRef, useCallback, RefObject } from 'react';
-import type { DropdownProps } from '@/types';
+import React, { useRef, useCallback, RefObject } from 'react';
+import type { DropdownProps, CheckboxDropdownProps } from '@/types';
 import ValidationOverlay from '@/components/validation-overlay';
 import DropdownButton from './components/DropdownButton';
 import DropdownMenu from './components/DropdownMenu';
@@ -18,33 +18,47 @@ import { useScrollManagement } from './hooks/useScrollManagement';
 import { useDropdownEffects } from './hooks/useDropdownEffects';
 import { useHoverDetail } from './hooks/useHoverDetail';
 
-const Dropdown = ({
-  mode = 'input',
-  options,
-  value,
-  onChange,
-  placeholder = '-- Pilih --',
-  withRadio = false,
-  onAddNew,
-  searchList = true,
-  tabIndex,
-  required = false,
-  validate = false,
-  showValidationOnBlur = true,
-  validationAutoHide = true,
-  validationAutoHideDelay,
-  name, // Used for form field identification and validation
-  hoverToOpen = false,
-  // Portal width control
-  portalWidth = 'auto',
-  // Position control
-  position = 'auto',
-  // Hover detail props
-  enableHoverDetail = false,
-  hoverDetailDelay = 800,
-  onFetchHoverDetail,
-}: DropdownProps) => {
-  const selectedOption = options.find(option => option?.id === value);
+// Function overloads for different modes
+function Dropdown(props: DropdownProps): React.JSX.Element;
+function Dropdown(props: CheckboxDropdownProps): React.JSX.Element;
+function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
+  const {
+    mode = 'input',
+    options,
+    value,
+    placeholder = '-- Pilih --',
+    onAddNew,
+    searchList = true,
+    tabIndex,
+    required = false,
+    validate = false,
+    showValidationOnBlur = true,
+    validationAutoHide = true,
+    validationAutoHideDelay,
+    name, // Used for form field identification and validation
+    hoverToOpen = false,
+    // Portal width control
+    portalWidth = 'auto',
+    // Position control
+    position = 'auto',
+    // Hover detail props
+    enableHoverDetail = false,
+    hoverDetailDelay = 800,
+    onFetchHoverDetail,
+  } = allProps;
+  
+  const withCheckbox = 'withCheckbox' in allProps && allProps.withCheckbox;
+  const withRadio = 'withRadio' in allProps ? allProps.withRadio : false;
+  
+  // Type guard for checkbox mode - memoized to prevent useCallback dependency changes
+  const isCheckboxMode = useCallback((props: DropdownProps | CheckboxDropdownProps): props is CheckboxDropdownProps => {
+    return 'withCheckbox' in props && props.withCheckbox === true;
+  }, []);
+  
+  // For single selection (radio) mode
+  const selectedOption = !withCheckbox 
+    ? options.find(option => option?.id === value)
+    : null;
 
   // Refs
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -86,7 +100,7 @@ const Dropdown = ({
   } = useDropdownValidation({
     validate,
     required,
-    value,
+    value: typeof value === 'string' ? value : (Array.isArray(value) && value.length > 0 ? value[0] : ''),
     showValidationOnBlur,
     validationAutoHide,
     validationAutoHideDelay,
@@ -108,7 +122,7 @@ const Dropdown = ({
 
   const { expandedId, setExpandedId, handleExpansion } = useTextExpansion({
     buttonRef,
-    selectedOption,
+    selectedOption: selectedOption || undefined,
     isOpen,
   });
 
@@ -118,15 +132,30 @@ const Dropdown = ({
 
   const handleSelect = useCallback(
     (optionId: string) => {
-      onChange(optionId);
-      if (optionId && optionId.trim() !== '') {
-        handleCloseValidation();
+      if (withCheckbox && isCheckboxMode(allProps)) {
+        // Multiple selection for checkbox mode
+        const currentValues = allProps.value;
+        const newValues = currentValues.includes(optionId)
+          ? currentValues.filter(id => id !== optionId)
+          : [...currentValues, optionId];
+        allProps.onChange(newValues);
+        if (newValues.length > 0) {
+          handleCloseValidation();
+        }
+        // Don't close dropdown in checkbox mode to allow multiple selections
+      } else {
+        // Single selection for radio/default mode
+        const singleProps = allProps as DropdownProps;
+        singleProps.onChange(optionId);
+        if (optionId && optionId.trim() !== '') {
+          handleCloseValidation();
+        }
+        actualCloseDropdown();
+        resetSearch();
+        setTimeout(() => buttonRef.current?.focus(), 150);
       }
-      actualCloseDropdown();
-      resetSearch();
-      setTimeout(() => buttonRef.current?.focus(), 150);
     },
-    [onChange, actualCloseDropdown, handleCloseValidation, resetSearch]
+    [withCheckbox, allProps, actualCloseDropdown, handleCloseValidation, resetSearch, isCheckboxMode]
   );
 
   const {
@@ -138,7 +167,7 @@ const Dropdown = ({
     scrollToHighlightedOption,
   } = useKeyboardNavigation({
     isOpen,
-    value,
+    value: typeof value === 'string' ? value : undefined,
     currentFilteredOptions: filteredOptions,
     setExpandedId,
     searchState,
@@ -177,7 +206,7 @@ const Dropdown = ({
     isOpen,
     applyOpenStyles,
     filteredOptions,
-    value,
+    value: typeof value === 'string' ? value : undefined,
     setApplyOpenStyles,
     setExpandedId,
     calculateDropdownPosition,
@@ -263,9 +292,10 @@ const Dropdown = ({
     isOpen,
     isClosing,
     applyOpenStyles,
-    value,
+    value: withCheckbox && isCheckboxMode(allProps) ? allProps.value : value,
     mode,
     withRadio,
+    withCheckbox,
     searchList,
 
     // Search state
@@ -333,7 +363,7 @@ const Dropdown = ({
               <DropdownButton
                 ref={buttonRef}
                 mode={mode}
-                selectedOption={selectedOption}
+                selectedOption={selectedOption || undefined}
                 placeholder={placeholder}
                 isOpen={isOpen}
                 isClosing={isClosing}

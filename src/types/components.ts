@@ -24,6 +24,7 @@ export type DropdownMode = 'input' | 'text';
 export type DropdownPortalWidth = 'auto' | string | number;
 export type DropdownPosition = 'auto' | 'top' | 'bottom';
 
+// Base dropdown props for single selection
 export interface DropdownProps {
   mode?: DropdownMode;
   options: DropdownOption[];
@@ -49,6 +50,13 @@ export interface DropdownProps {
   enableHoverDetail?: boolean;
   hoverDetailDelay?: number;
   onFetchHoverDetail?: (optionId: string) => Promise<HoverDetailData | null>;
+}
+
+// Extended dropdown props for checkbox mode (multiple selection)
+export interface CheckboxDropdownProps extends Omit<DropdownProps, 'value' | 'onChange' | 'withRadio'> {
+  value: string[];
+  onChange: (value: string[]) => void;
+  withCheckbox: true;
 }
 
 export type BadgeVariant =
