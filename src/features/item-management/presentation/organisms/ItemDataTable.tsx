@@ -140,19 +140,19 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
     (params: GetMainMenuItemsParams) => {
       if (!params.column) {
         return [
-          { name: 'columnFilter' },
-          { name: 'separator' },
-          { name: 'pinSubMenu' },
-        ] as MenuItemDef[];
+          'columnFilter',
+          'separator', 
+          'pinSubMenu',
+        ] as any;
       }
 
       const colId = params.column.getColId();
-      const baseMenuItems: MenuItemDef[] = [
-        { name: 'columnFilter' },
-        { name: 'separator' },
-        { name: 'pinSubMenu' },
-        { name: 'separator' },
-        { name: 'autoSizeAll' },
+      const baseMenuItems: any[] = [
+        'columnFilter',
+        'separator',
+        'pinSubMenu',
+        'separator',
+        'autoSizeAll',
       ];
 
       // Add toggle menu for reference columns only
@@ -160,7 +160,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
         const currentMode = columnDisplayModes[colId];
         const nextMode = currentMode === 'name' ? 'kode' : 'nama';
 
-        baseMenuItems.push({ name: 'separator' }, {
+        baseMenuItems.push('separator', {
           name: `Tampilkan ${nextMode}`,
           action: () => {
             toggleColumnDisplayMode(colId);
