@@ -71,6 +71,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       mainMenuItems,
       onColumnPinned,
       onColumnMoved,
+      rowNumbers = false,
     },
     ref
   ) => {
@@ -212,6 +213,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           doesExternalFilterPass={doesExternalFilterPass}
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
+          rowNumbers={rowNumbers}
         />
       </div>
     );

@@ -320,6 +320,7 @@ const ItemMasterNew = memo(() => {
     [handleColumnOrdering, itemGridApi]
   );
 
+
   // Memoize SearchToolbar callback props for stable references (after itemSearch is declared)
   const memoizedOnAdd = useCallback(() => {
     handleAddItem(undefined, itemSearch);

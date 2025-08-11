@@ -236,25 +236,10 @@ const EntityMasterPage: React.FC = memo(() => {
     [handleColumnPinning]
   );
 
+
   // Memoize column definitions
   const columnDefs: ColDef[] = useMemo(() => {
     const allColumns: ColDef[] = [
-      // Row number column
-      {
-        field: 'rowNumber',
-        headerName: 'No.',
-        width: 60,
-        minWidth: 60,
-        maxWidth: 60,
-        pinned: 'left',
-        sortable: false,
-        filter: false,
-        resizable: false,
-        suppressMovable: true,
-        suppressHeaderMenuButton: true,
-        cellStyle: { textAlign: 'center', fontWeight: 'bold' },
-        valueGetter: 'node.rowIndex + 1',
-      },
       {
         ...createTextColumn({
           field: 'code',
@@ -265,6 +250,17 @@ const EntityMasterPage: React.FC = memo(() => {
             return params.data.code || '-';
           },
         }),
+        filter: 'agMultiColumnFilter',
+        filterParams: {
+          filters: [
+            {
+              filter: 'agTextColumnFilter',
+            },
+            {
+              filter: 'agSetColumnFilter',
+            },
+          ],
+        },
         pinned: getColumnPinning('code') || undefined,
       },
       {
@@ -305,6 +301,17 @@ const EntityMasterPage: React.FC = memo(() => {
                 minWidth: 120,
                 valueGetter: params => params.data.nci_code || '-',
               }),
+              filter: 'agMultiColumnFilter',
+              filterParams: {
+                filters: [
+                  {
+                    filter: 'agTextColumnFilter',
+                  },
+                  {
+                    filter: 'agSetColumnFilter',
+                  },
+                ],
+              },
               pinned: getColumnPinning('nci_code') || undefined,
             },
           ]
@@ -448,6 +455,7 @@ const EntityMasterPage: React.FC = memo(() => {
                 doesExternalFilterPass={doesExternalFilterPass}
                 mainMenuItems={getPinOnlyMenuItems}
                 onColumnPinned={handleEntityColumnPinned}
+                rowNumbers={true}
                 style={{
                   ...GRID_STYLE,
                   opacity: entityData.isLoading && entityData.totalItems > 0 ? 0.8 : 1,

@@ -71,6 +71,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
     [onRowClick]
   );
 
+
   const overlayTemplate = useMemo(() => {
     if (search) {
       return `<span style="padding: 10px; color: #888;">Tidak ada item dengan nama "${search}"</span>`;
@@ -125,6 +126,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           mainMenuItems={getPinOnlyMenuItems}
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
+          rowNumbers={true}
           style={{
             width: '100%',
             marginTop: '1rem',
