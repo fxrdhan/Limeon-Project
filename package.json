@@ -18,7 +18,8 @@
     "add-admin:help": "tsx scripts/add-admin-user.ts --help",
     "update-password": "tsx scripts/update-user-password.ts",
     "update-password:help": "tsx scripts/update-user-password.ts --help",
-    "export": "tsx scripts/export.ts"
+    "export": "tsx scripts/export.ts",
+    "loc-stats": "tsx scripts/loc-stats.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
