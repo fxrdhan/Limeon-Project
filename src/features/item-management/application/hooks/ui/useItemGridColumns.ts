@@ -30,6 +30,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           minWidth: 200,
           flex: 1,
         }),
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('name') || undefined,
       },
       'manufacturer': {
@@ -50,6 +51,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
             },
           ],
         },
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('manufacturer') || undefined,
       },
       'code': {
@@ -69,6 +71,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
             },
           ],
         },
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('code') || undefined,
       },
       'barcode': {
@@ -89,6 +92,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
             },
           ],
         },
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('barcode') || undefined,
       },
       'category.name': {
@@ -108,6 +112,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
             },
           ],
         },
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('category.name') || undefined,
       },
       'type.name': {
@@ -127,6 +132,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
             },
           ],
         },
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('type.name') || undefined,
       },
       'unit.name': {
@@ -146,6 +152,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
             },
           ],
         },
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('unit.name') || undefined,
       },
       'dosage.name': {
@@ -166,6 +173,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
             },
           ],
         },
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('dosage.name') || undefined,
       },
       'package_conversions': {
@@ -194,6 +202,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
             },
           ],
         },
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('package_conversions') || undefined,
       },
       'base_price': {
@@ -203,6 +212,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           minWidth: 120,
           valueFormatter: params => formatBaseCurrency(params.value),
         }),
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('base_price') || undefined,
       },
       'sell_price': {
@@ -212,6 +222,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           minWidth: 120,
           valueFormatter: params => formatCurrency(params.value),
         }),
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('sell_price') || undefined,
       },
       'stock': {
@@ -232,6 +243,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
             },
           ],
         },
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('stock') || undefined,
       },
     };

@@ -72,6 +72,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       onColumnPinned,
       onColumnMoved,
       rowNumbers = false,
+      suppressHeaderFilterButton = false,
     },
     ref
   ) => {
@@ -138,6 +139,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       sortable: true,
       resizable: true,
       filter: disableFiltering ? false : 'agTextColumnFilter',
+      suppressHeaderFilterButton: suppressHeaderFilterButton,
       menuTabs: disableFiltering 
         ? [] 
         : columnMenuTabs || [
@@ -214,6 +216,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
           rowNumbers={rowNumbers}
+          suppressHeaderFilterButton={suppressHeaderFilterButton}
         />
       </div>
     );

@@ -9,7 +9,7 @@ import React, {
 import { useLocation } from 'react-router-dom';
 // Components
 import Pagination from '@/components/pagination';
-import { DataGrid, DataGridRef, createTextColumn, getPinOnlyMenuItems } from '@/components/ag-grid';
+import { DataGrid, DataGridRef, createTextColumn, getPinAndFilterMenuItems } from '@/components/ag-grid';
 import { TableSkeleton } from '@/components/skeleton';
 import {
   ColDef,
@@ -313,6 +313,7 @@ const EntityMasterPage: React.FC = memo(() => {
         tooltipField: 'name',
         sortable: true,
         resizable: true,
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning('name') || undefined,
       },
       // Add NCI Code column for packages and dosages
@@ -336,6 +337,7 @@ const EntityMasterPage: React.FC = memo(() => {
                   },
                 ],
               },
+              suppressHeaderFilterButton: true,
               pinned: getColumnPinning('nci_code') || undefined,
             },
           ]
@@ -354,6 +356,7 @@ const EntityMasterPage: React.FC = memo(() => {
             return params.data.description || '-';
           },
         }),
+        suppressHeaderFilterButton: true,
         pinned: getColumnPinning(currentConfig?.hasAddress ? 'address' : 'description') || undefined,
       },
     ];
@@ -477,7 +480,7 @@ const EntityMasterPage: React.FC = memo(() => {
                 autoSizeColumns={autoSizeColumns}
                 isExternalFilterPresent={isExternalFilterPresent}
                 doesExternalFilterPass={doesExternalFilterPass}
-                mainMenuItems={getPinOnlyMenuItems}
+                mainMenuItems={getPinAndFilterMenuItems}
                 onColumnPinned={handleEntityColumnPinned}
                 rowNumbers={true}
                 style={{

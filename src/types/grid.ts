@@ -60,6 +60,7 @@ export interface DataGridProps {
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
   rowNumbers?: boolean;
+  suppressHeaderFilterButton?: boolean;
 }
 
 export interface DataGridRef {
