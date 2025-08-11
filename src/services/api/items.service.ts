@@ -4,6 +4,7 @@ import type {
   DBItem,
   PackageConversion,
   DBPackageConversion,
+  ItemManufacturer,
 } from '@/types/database';
 import type { Item } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
@@ -57,7 +58,7 @@ export class ItemsService extends BaseService<DBItem> {
 
         // Find manufacturer data by name for code mapping
         const manufacturerName = item.manufacturer || '';
-        const manufacturerInfo = manufacturerLookupAll?.find((m: any) => m.name === manufacturerName);
+        const manufacturerInfo = manufacturerLookupAll?.find((m: ItemManufacturer) => m.name === manufacturerName);
 
         // Transform to Item interface
         return {
@@ -110,7 +111,7 @@ export class ItemsService extends BaseService<DBItem> {
 
       // Find manufacturer data by name for code mapping
       const manufacturerName = item.manufacturer || '';
-      const manufacturerInfo = manufacturerLookupDetail?.find((m: any) => m.name === manufacturerName);
+      const manufacturerInfo = manufacturerLookupDetail?.find((m: ItemManufacturer) => m.name === manufacturerName);
 
       // Parse unit conversions
       let packageConversions: PackageConversion[] = [];
@@ -196,7 +197,7 @@ export class ItemsService extends BaseService<DBItem> {
 
         // Find manufacturer data by name for code mapping
         const manufacturerName = item.manufacturer || '';
-        const manufacturerInfo = manufacturerLookupSearch?.find((m: any) => m.name === manufacturerName);
+        const manufacturerInfo = manufacturerLookupSearch?.find((m: ItemManufacturer) => m.name === manufacturerName);
 
         // Transform to Item interface
         return {
@@ -282,7 +283,7 @@ export class ItemsService extends BaseService<DBItem> {
 
         // Find manufacturer data by name for code mapping
         const manufacturerName = item.manufacturer || '';
-        const manufacturerInfo = manufacturerLookupLowStock?.find((m: any) => m.name === manufacturerName);
+        const manufacturerInfo = manufacturerLookupLowStock?.find((m: ItemManufacturer) => m.name === manufacturerName);
 
         // Transform to Item interface
         return {
