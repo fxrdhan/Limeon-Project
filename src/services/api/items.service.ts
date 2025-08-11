@@ -18,16 +18,21 @@ export class ItemsService extends BaseService<DBItem> {
     try {
       const defaultSelect = `
         *,
-        item_categories!inner(id, name),
-        item_types!inner(id, name),
-        item_packages!inner(id, name),
-        item_dosages(id, name)
+        item_categories!inner(id, code, name),
+        item_types!inner(id, code, name),
+        item_packages!inner(id, code, name),
+        item_dosages(id, code, name)
       `;
 
       const result = await super.getAll({
         ...options,
         select: options.select || defaultSelect,
       });
+
+      // Get manufacturer data separately for code mapping
+      const { data: manufacturerLookupAll } = await supabase
+        .from('item_manufacturers')
+        .select('id, code, name');
 
       if (result.error || !result.data) {
         return result;
@@ -50,8 +55,9 @@ export class ItemsService extends BaseService<DBItem> {
           }
         }
 
-        // Manufacturer is already stored as name (varchar), use directly
+        // Find manufacturer data by name for code mapping
         const manufacturerName = item.manufacturer || '';
+        const manufacturerInfo = manufacturerLookupAll?.find((m: any) => m.name === manufacturerName);
 
         // Transform to Item interface
         return {
@@ -61,6 +67,7 @@ export class ItemsService extends BaseService<DBItem> {
           unit: item.item_packages || { name: '' },
           dosage: item.item_dosages || { name: '' },
           manufacturer: manufacturerName,
+          manufacturer_info: manufacturerInfo || { code: null, name: manufacturerName },
           package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
         };
@@ -83,21 +90,27 @@ export class ItemsService extends BaseService<DBItem> {
         .select(
           `
           *,
-          item_categories!inner(id, name),
-          item_types!inner(id, name),
-          item_packages!inner(id, name),
-          item_dosages(id, name)
+          item_categories!inner(id, code, name),
+          item_types!inner(id, code, name),
+          item_packages!inner(id, code, name),
+          item_dosages(id, code, name)
         `
         )
         .eq('id', id)
         .single();
 
+      // Get manufacturer data separately for code mapping  
+      const { data: manufacturerLookupDetail } = await supabase
+        .from('item_manufacturers')
+        .select('id, code, name');
+
       if (error || !item) {
         return { data: null, error };
       }
 
-      // Manufacturer is already stored as name (varchar), use directly
+      // Find manufacturer data by name for code mapping
       const manufacturerName = item.manufacturer || '';
+      const manufacturerInfo = manufacturerLookupDetail?.find((m: any) => m.name === manufacturerName);
 
       // Parse unit conversions
       let packageConversions: PackageConversion[] = [];
@@ -121,6 +134,7 @@ export class ItemsService extends BaseService<DBItem> {
         unit: item.item_packages || { name: '' },
         dosage: item.item_dosages || { name: '' },
         manufacturer: manufacturerName,
+        manufacturer_info: manufacturerInfo || { code: null, name: manufacturerName },
         package_conversions: packageConversions,
         base_unit: item.item_packages?.name || '',
       };
@@ -139,10 +153,10 @@ export class ItemsService extends BaseService<DBItem> {
     try {
       const defaultSelect = `
         *,
-        item_categories!inner(id, name),
-        item_types!inner(id, name),
-        item_packages!inner(id, name),
-        item_dosages(id, name)
+        item_categories!inner(id, code, name),
+        item_types!inner(id, code, name),
+        item_packages!inner(id, code, name),
+        item_dosages(id, code, name)
       `;
 
       const result = await this.search(
@@ -153,6 +167,11 @@ export class ItemsService extends BaseService<DBItem> {
           select: options.select || defaultSelect,
         }
       );
+
+      // Get manufacturer data separately for code mapping
+      const { data: manufacturerLookupSearch } = await supabase
+        .from('item_manufacturers')
+        .select('id, code, name');
 
       if (result.error || !result.data) {
         return result;
@@ -175,8 +194,9 @@ export class ItemsService extends BaseService<DBItem> {
           }
         }
 
-        // Manufacturer is already stored as name (varchar), use directly
+        // Find manufacturer data by name for code mapping
         const manufacturerName = item.manufacturer || '';
+        const manufacturerInfo = manufacturerLookupSearch?.find((m: any) => m.name === manufacturerName);
 
         // Transform to Item interface
         return {
@@ -186,6 +206,7 @@ export class ItemsService extends BaseService<DBItem> {
           unit: item.item_packages || { name: '' },
           dosage: item.item_dosages || { name: '' },
           manufacturer: manufacturerName,
+          manufacturer_info: manufacturerInfo || { code: null, name: manufacturerName },
           package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
         };
@@ -224,14 +245,19 @@ export class ItemsService extends BaseService<DBItem> {
         .select(
           `
           *,
-          item_categories!inner(id, name),
-          item_types!inner(id, name),
-          item_packages!inner(id, name),
-          item_dosages(id, name)
+          item_categories!inner(id, code, name),
+          item_types!inner(id, code, name),
+          item_packages!inner(id, code, name),
+          item_dosages(id, code, name)
         `
         )
         .lte('stock', threshold)
         .order('stock', { ascending: true });
+
+      // Get manufacturer data separately for code mapping
+      const { data: manufacturerLookupLowStock } = await supabase
+        .from('item_manufacturers')
+        .select('id, code, name');
 
       if (error || !data) {
         return { data, error };
@@ -254,8 +280,9 @@ export class ItemsService extends BaseService<DBItem> {
           }
         }
 
-        // Manufacturer is already stored as name (varchar), use directly
+        // Find manufacturer data by name for code mapping
         const manufacturerName = item.manufacturer || '';
+        const manufacturerInfo = manufacturerLookupLowStock?.find((m: any) => m.name === manufacturerName);
 
         // Transform to Item interface
         return {
@@ -265,6 +292,7 @@ export class ItemsService extends BaseService<DBItem> {
           unit: item.item_packages || { name: '' },
           dosage: item.item_dosages || { name: '' },
           manufacturer: manufacturerName,
+          manufacturer_info: manufacturerInfo || { code: null, name: manufacturerName },
           package_conversions: packageConversions,
           base_unit: item.item_packages?.name || '',
         };

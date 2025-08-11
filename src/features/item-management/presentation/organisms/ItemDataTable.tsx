@@ -1,5 +1,5 @@
-import React, { memo, useCallback, useMemo } from 'react';
-import { DataGrid, getPinAndFilterMenuItems } from '@/components/ag-grid';
+import React, { memo, useCallback, useMemo, useState } from 'react';
+import { DataGrid } from '@/components/ag-grid';
 import Pagination from '@/components/pagination';
 import { TableSkeleton } from '@/components/skeleton';
 import {
@@ -9,6 +9,8 @@ import {
   IRowNode,
   ColumnPinnedEvent,
   ColumnMovedEvent,
+  GetMainMenuItems,
+  GridApi,
 } from 'ag-grid-community';
 import type { Item } from '@/types/database';
 
@@ -34,6 +36,9 @@ interface ItemDataTableProps {
   onColumnMoved?: (event: ColumnMovedEvent) => void;
 }
 
+// Column display mode state type
+type ColumnDisplayMode = 'name' | 'code';
+
 const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   items,
   columnDefs,
@@ -55,6 +60,38 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   onColumnPinned,
   onColumnMoved,
 }: ItemDataTableProps) {
+  // Grid API state for triggering autosize
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  
+  // Column display mode state - tracks whether to show name or code for reference columns
+  const [columnDisplayModes, setColumnDisplayModes] = useState<Record<string, ColumnDisplayMode>>({
+    'manufacturer': 'name',
+    'category.name': 'name', 
+    'type.name': 'name',
+    'unit.name': 'name',
+    'dosage.name': 'name'
+  });
+
+  // Helper to check if a column is a reference column
+  const isReferenceColumn = useCallback((colId: string) => {
+    return ['manufacturer', 'category.name', 'type.name', 'unit.name', 'dosage.name'].includes(colId);
+  }, []);
+
+  // Toggle display mode for a column
+  const toggleColumnDisplayMode = useCallback((colId: string) => {
+    setColumnDisplayModes(prev => ({
+      ...prev,
+      [colId]: prev[colId] === 'name' ? 'code' : 'name'
+    }));
+    
+    // Auto trigger autosize after toggle untuk menyesuaikan lebar kolom dengan konten baru
+    setTimeout(() => {
+      if (gridApi) {
+        gridApi.autoSizeAllColumns();
+      }
+    }, 50);
+  }, [gridApi]);
+
   // SIMPLE SOLUTION: Show skeleton ONLY when truly no data exists
   // If totalItems > 0, NEVER show skeleton (data is cached/available)
   const shouldShowSkeleton = isLoading && totalItems === 0;
@@ -71,6 +108,104 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
     [onRowClick]
   );
 
+  // Handle grid ready untuk capture API dan trigger original handler
+  const handleGridReady = useCallback((params: GridReadyEvent) => {
+    setGridApi(params.api);
+    onGridReady(params);
+  }, [onGridReady]);
+
+  // Custom menu items with reference column toggle
+  const getMainMenuItems: GetMainMenuItems = useCallback((params) => {
+    if (!params.column) {
+      return ['columnFilter', 'separator', 'pinSubMenu'];
+    }
+    
+    const colId = params.column.getColId();
+    const baseMenuItems: any[] = [
+      'columnFilter',
+      'separator', 
+      'pinSubMenu',
+      'separator',
+      'autoSizeAll'
+    ];
+
+    // Add toggle menu for reference columns only
+    if (isReferenceColumn(colId)) {
+      const currentMode = columnDisplayModes[colId];
+      const nextMode = currentMode === 'name' ? 'kode' : 'nama';
+      
+      baseMenuItems.push(
+        'separator',
+        {
+          name: `Tampilkan ${nextMode}`,
+          action: () => {
+            toggleColumnDisplayMode(colId);
+          },
+          icon: currentMode === 'name' ? '#' : 'T',
+        }
+      );
+    }
+
+    return baseMenuItems;
+  }, [isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]);
+
+
+  // Modified items data based on column display modes
+  const modifiedItems = useMemo(() => {
+    // Debug: Log first item structure to understand data format
+    if (items.length > 0) {
+      console.log('🔍 DEBUG: Sample item data:', items[0]);
+      console.log('🔍 DEBUG: Category data:', items[0].category);
+      console.log('🔍 DEBUG: Type data:', items[0].type);
+      console.log('🔍 DEBUG: Unit data:', items[0].unit);
+    }
+
+    return items.map(item => {
+      const modifiedItem = { ...item };
+
+      // Apply display mode transformations
+      Object.entries(columnDisplayModes).forEach(([colId, mode]) => {
+        console.log(`🔄 TRANSFORM: Column ${colId}, Mode: ${mode}`);
+        if (mode === 'code') {
+          switch (colId) {
+            case 'manufacturer':
+              if (item.manufacturer_info && item.manufacturer_info.code) {
+                console.log(`✅ MANUFACTURER TRANSFORM: ${item.manufacturer} -> ${item.manufacturer_info.code}`);
+                modifiedItem.manufacturer = item.manufacturer_info.code;
+              } else {
+                console.log(`❌ MANUFACTURER NO CODE: `, item.manufacturer_info);
+              }
+              break;
+            case 'category.name':
+              if (item.category && (item.category as any).code) {
+                console.log(`✅ CATEGORY TRANSFORM: ${item.category.name} -> ${(item.category as any).code}`);
+                modifiedItem.category = { ...item.category, name: (item.category as any).code };
+              } else {
+                console.log(`❌ CATEGORY NO CODE: `, item.category);
+              }
+              break;
+            case 'type.name':
+              if (item.type && (item.type as any).code) {
+                modifiedItem.type = { ...item.type, name: (item.type as any).code };
+              }
+              break;
+            case 'unit.name':
+              if (item.unit && (item.unit as any).code) {
+                modifiedItem.unit = { ...item.unit, name: (item.unit as any).code };
+              }
+              break;
+            case 'dosage.name':
+              if (item.dosage && (item.dosage as any).code) {
+                modifiedItem.dosage = { ...item.dosage, name: (item.dosage as any).code };
+              }
+              break;
+          }
+        }
+      });
+
+      return modifiedItem;
+    });
+  }, [items, columnDisplayModes]);
 
   const overlayTemplate = useMemo(() => {
     if (search) {
@@ -113,17 +248,17 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
       <div className="relative">
         <DataGrid
           key="items-data-grid"
-          rowData={items}
+          rowData={modifiedItems}
           columnDefs={columnDefs}
           onRowClicked={handleRowClicked}
-          onGridReady={onGridReady}
+          onGridReady={handleGridReady}
           loading={false}
           overlayNoRowsTemplate={shouldSuppressOverlay ? '' : overlayTemplate}
           autoSizeColumns={columnsToAutoSize}
           onFirstDataRendered={undefined}
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
-          mainMenuItems={getPinAndFilterMenuItems}
+          mainMenuItems={getMainMenuItems}
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
           rowNumbers={true}
