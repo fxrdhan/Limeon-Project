@@ -216,7 +216,6 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
           rowNumbers={rowNumbers}
-          suppressHeaderFilterButton={suppressHeaderFilterButton}
         />
       </div>
     );

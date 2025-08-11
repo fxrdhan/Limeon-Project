@@ -170,7 +170,7 @@ function analyzeLines(filePath: string): {
       blank: blankLines,
       comment: commentLines,
     };
-  } catch (error) {
+  } catch {
     return { total: 0, code: 0, blank: 0, comment: 0 };
   }
 }

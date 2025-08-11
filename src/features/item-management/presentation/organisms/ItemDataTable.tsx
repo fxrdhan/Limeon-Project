@@ -11,8 +11,10 @@ import {
   ColumnMovedEvent,
   GetMainMenuItems,
   GridApi,
+  MenuItemDef,
+  GetMainMenuItemsParams,
 } from 'ag-grid-community';
-import type { Item } from '@/types/database';
+import type { Item, Category, MedicineType, Unit, ItemPackage } from '@/types/database';
 
 interface ItemDataTableProps {
   items: Item[];
@@ -115,13 +117,13 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   }, [onGridReady]);
 
   // Custom menu items with reference column toggle
-  const getMainMenuItems: GetMainMenuItems = useCallback((params) => {
+  const getMainMenuItems: GetMainMenuItems = useCallback((params: GetMainMenuItemsParams) => {
     if (!params.column) {
-      return ['columnFilter', 'separator', 'pinSubMenu'];
+      return ['columnFilter', 'separator', 'pinSubMenu'] as any;
     }
     
     const colId = params.column.getColId();
-    const baseMenuItems: any[] = [
+    const baseMenuItems: (string | MenuItemDef)[] = [
       'columnFilter',
       'separator', 
       'pinSubMenu',
@@ -142,11 +144,11 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
             toggleColumnDisplayMode(colId);
           },
           icon: currentMode === 'name' ? '#' : 'T',
-        }
+        } as MenuItemDef
       );
     }
 
-    return baseMenuItems;
+    return baseMenuItems as any;
   }, [isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]);
 
 
@@ -177,26 +179,26 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
               }
               break;
             case 'category.name':
-              if (item.category && (item.category as any).code) {
-                console.log(`✅ CATEGORY TRANSFORM: ${item.category.name} -> ${(item.category as any).code}`);
-                modifiedItem.category = { ...item.category, name: (item.category as any).code };
+              if (item.category && (item.category as Category).code) {
+                console.log(`✅ CATEGORY TRANSFORM: ${item.category.name} -> ${(item.category as Category).code}`);
+                modifiedItem.category = { ...item.category, name: (item.category as Category).code! };
               } else {
                 console.log(`❌ CATEGORY NO CODE: `, item.category);
               }
               break;
             case 'type.name':
-              if (item.type && (item.type as any).code) {
-                modifiedItem.type = { ...item.type, name: (item.type as any).code };
+              if (item.type && (item.type as MedicineType).code) {
+                modifiedItem.type = { ...item.type, name: (item.type as MedicineType).code! };
               }
               break;
             case 'unit.name':
-              if (item.unit && (item.unit as any).code) {
-                modifiedItem.unit = { ...item.unit, name: (item.unit as any).code };
+              if (item.unit && (item.unit as Unit).code) {
+                modifiedItem.unit = { ...item.unit, name: (item.unit as Unit).code! };
               }
               break;
             case 'dosage.name':
-              if (item.dosage && (item.dosage as any).code) {
-                modifiedItem.dosage = { ...item.dosage, name: (item.dosage as any).code };
+              if (item.dosage && (item.dosage as ItemPackage).code) {
+                modifiedItem.dosage = { ...item.dosage, name: (item.dosage as ItemPackage).code! };
               }
               break;
           }
