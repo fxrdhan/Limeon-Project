@@ -9,7 +9,6 @@ import {
   IRowNode,
   ColumnPinnedEvent,
   ColumnMovedEvent,
-  GetMainMenuItems,
   GridApi,
   MenuItemDef,
   GetMainMenuItemsParams,
@@ -137,19 +136,23 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   );
 
   // Custom menu items with reference column toggle
-  const getMainMenuItems: GetMainMenuItems = useCallback(
+  const getMainMenuItems = useCallback(
     (params: GetMainMenuItemsParams) => {
       if (!params.column) {
-        return ['columnFilter', 'separator', 'pinSubMenu'] as (string | MenuItemDef)[];
+        return [
+          { name: 'columnFilter' },
+          { name: 'separator' },
+          { name: 'pinSubMenu' },
+        ] as MenuItemDef[];
       }
 
       const colId = params.column.getColId();
-      const baseMenuItems: (string | MenuItemDef)[] = [
-        'columnFilter',
-        'separator',
-        'pinSubMenu',
-        'separator',
-        'autoSizeAll',
+      const baseMenuItems: MenuItemDef[] = [
+        { name: 'columnFilter' },
+        { name: 'separator' },
+        { name: 'pinSubMenu' },
+        { name: 'separator' },
+        { name: 'autoSizeAll' },
       ];
 
       // Add toggle menu for reference columns only
@@ -157,7 +160,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
         const currentMode = columnDisplayModes[colId];
         const nextMode = currentMode === 'name' ? 'kode' : 'nama';
 
-        baseMenuItems.push('separator', {
+        baseMenuItems.push({ name: 'separator' }, {
           name: `Tampilkan ${nextMode}`,
           action: () => {
             toggleColumnDisplayMode(colId);
@@ -166,7 +169,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
         } as MenuItemDef);
       }
 
-      return baseMenuItems as (string | MenuItemDef)[];
+      return baseMenuItems;
     },
     [isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]
   );

@@ -280,6 +280,7 @@ export function UnifiedModal({
 /**
  * Entity modal configuration (simple content modal)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const ENTITY_MODAL_CONFIG: Partial<UnifiedModalProps> = {
   layout: {
     ...DEFAULT_LAYOUT,
@@ -291,6 +292,7 @@ export const ENTITY_MODAL_CONFIG: Partial<UnifiedModalProps> = {
 /**
  * Item modal configuration (complex form modal)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const ITEM_MODAL_CONFIG: Partial<UnifiedModalProps> = {
   layout: {
     ...DEFAULT_LAYOUT,
