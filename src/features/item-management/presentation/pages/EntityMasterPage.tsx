@@ -22,6 +22,7 @@ import {
   GridApi,
   GridReadyEvent,
   ColumnPinnedEvent,
+  ColumnMovedEvent,
 } from 'ag-grid-community';
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
 
@@ -149,6 +150,8 @@ const EntityMasterPage: React.FC = memo(() => {
     autoSizeColumns,
     getColumnPinning,
     handleColumnPinning,
+    orderingState,
+    handleColumnOrdering,
   } = useEntityColumnVisibility({
     entityType: activeTab,
     currentConfig,
@@ -265,10 +268,39 @@ const EntityMasterPage: React.FC = memo(() => {
     [handleColumnPinning]
   );
 
+  // Handle column moved events
+  const handleEntityColumnMoved = useCallback(
+    (event: ColumnMovedEvent) => {
+      // Only save if the column was actually moved (not just during initialization)
+      if (event.finished && gridApi && !gridApi.isDestroyed()) {
+        try {
+          // Get current column order from the grid API
+          const allColumns = gridApi.getAllGridColumns();
+          const newOrder: string[] = [];
+
+          allColumns.forEach(column => {
+            const colId = column.getColId();
+            // Skip the row number column as it's not movable and not part of ordering
+            if (colId !== 'rowNumber') {
+              newOrder.push(colId);
+            }
+          });
+
+          // Save new column order
+          handleColumnOrdering(newOrder);
+        } catch (error) {
+          console.error('Failed to update entity column order:', error);
+        }
+      }
+    },
+    [handleColumnOrdering, gridApi]
+  );
+
   // Memoize column definitions
   const columnDefs: ColDef[] = useMemo(() => {
-    const allColumns: ColDef[] = [
-      {
+    // Create column definitions map for ordering
+    const columnDefinitionsMap: Record<string, ColDef> = {
+      code: {
         ...createTextColumn({
           field: 'code',
           headerName: 'Kode',
@@ -292,7 +324,7 @@ const EntityMasterPage: React.FC = memo(() => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning('code') || undefined,
       },
-      {
+      name: {
         field: 'name',
         headerName: currentConfig?.nameColumnHeader || 'Nama',
 
@@ -323,8 +355,8 @@ const EntityMasterPage: React.FC = memo(() => {
       },
       // Add NCI Code column for packages and dosages
       ...(currentConfig?.hasNciCode
-        ? [
-            {
+        ? {
+            nci_code: {
               ...createTextColumn({
                 field: 'nci_code',
                 headerName: 'Kode NCI',
@@ -345,10 +377,10 @@ const EntityMasterPage: React.FC = memo(() => {
               suppressHeaderFilterButton: true,
               pinned: getColumnPinning('nci_code') || undefined,
             },
-          ]
-        : []),
-      // Note: abbreviation field removed as it doesn't exist in item_units table
-      {
+          }
+        : {}),
+      // Address or description column
+      [currentConfig?.hasAddress ? 'address' : 'description']: {
         ...createTextColumn({
           field: currentConfig?.hasAddress ? 'address' : 'description',
           headerName: currentConfig?.hasAddress ? 'Alamat' : 'Deskripsi',
@@ -367,11 +399,34 @@ const EntityMasterPage: React.FC = memo(() => {
             currentConfig?.hasAddress ? 'address' : 'description'
           ) || undefined,
       },
-    ];
+    };
+
+    // Default column order if not specified
+    const defaultOrder = ['code', 'name'];
+    if (currentConfig?.hasNciCode) defaultOrder.push('nci_code');
+    defaultOrder.push(currentConfig?.hasAddress ? 'address' : 'description');
+
+    // Use provided order or default order
+    const orderedColumns = orderingState.length > 0 ? orderingState : defaultOrder;
+
+    // Create ordered column array
+    const orderedColumnDefs = orderedColumns
+      .map(fieldName => columnDefinitionsMap[fieldName])
+      .filter(Boolean); // Remove undefined columns
+
+    // Add any missing columns that aren't in the order (fallback)
+    Object.keys(columnDefinitionsMap).forEach(fieldName => {
+      if (!orderedColumns.includes(fieldName)) {
+        orderedColumnDefs.push(columnDefinitionsMap[fieldName]);
+      }
+    });
+
+    // Use ordered columns
+    const allColumns = orderedColumnDefs;
 
     // Filter columns based on visibility
     return allColumns.filter(column => isColumnVisible(column.field as string));
-  }, [currentConfig, isColumnVisible, getColumnPinning]);
+  }, [currentConfig, isColumnVisible, getColumnPinning, orderingState]);
 
   const onRowClicked = useCallback(
     (event: RowClickedEvent) => {
@@ -490,6 +545,7 @@ const EntityMasterPage: React.FC = memo(() => {
                 doesExternalFilterPass={doesExternalFilterPass}
                 mainMenuItems={getPinAndFilterMenuItems}
                 onColumnPinned={handleEntityColumnPinned}
+                onColumnMoved={handleEntityColumnMoved}
                 rowNumbers={true}
                 style={{
                   ...GRID_STYLE,
