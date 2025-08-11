@@ -13,54 +13,54 @@ import type { PackageConversion } from '@/types';
 export const useItemGridColumns = () => {
   const columnDefs: ColDef[] = useMemo(() => {
     const columns: ColDef[] = [
-      createTextColumn({
+      createWrapTextColumn({
         field: 'name',
         headerName: 'Nama Item',
-        minWidth: 200,
+        
         flex: 1,
       }),
       createTextColumn({
         field: 'manufacturer',
         headerName: 'Produsen',
-        minWidth: 120,
+        
         valueGetter: params => params.data.manufacturer || '-',
       }),
       createTextColumn({
         field: 'code',
         headerName: 'Kode',
-        minWidth: 80,
+        
       }),
       createTextColumn({
         field: 'barcode',
         headerName: 'Barcode',
-        minWidth: 100,
+        
         valueGetter: params => params.data.barcode || '-',
       }),
       createTextColumn({
         field: 'category.name',
         headerName: 'Kategori',
-        minWidth: 100,
+        
       }),
       createWrapTextColumn({
         field: 'type.name',
         headerName: 'Jenis',
-        minWidth: 120,
+        
       }),
       createTextColumn({
         field: 'unit.name',
         headerName: 'Kemasan',
-        minWidth: 80,
+        
       }),
       createTextColumn({
         field: 'dosage.name',
         headerName: 'Sediaan',
-        minWidth: 100,
+        
         valueGetter: params => params.data.dosage?.name || '-',
       }),
       createTextColumn({
         field: 'package_conversions',
         headerName: 'Kemasan Turunan',
-        minWidth: 140,
+        
         valueGetter: params => {
           const conversions = params.data.package_conversions;
           if (conversions && conversions.length > 0) {
@@ -74,13 +74,13 @@ export const useItemGridColumns = () => {
       createCurrencyColumn({
         field: 'base_price',
         headerName: 'Harga Pokok',
-        minWidth: 120,
+        
         valueFormatter: params => formatBaseCurrency(params.value),
       }),
       createCurrencyColumn({
         field: 'sell_price',
         headerName: 'Harga Jual',
-        minWidth: 120,
+        
         valueFormatter: params => formatCurrency(params.value),
       }),
       createCenterAlignColumn({
@@ -93,6 +93,7 @@ export const useItemGridColumns = () => {
   }, []);
 
   const columnsToAutoSize = [
+    'name', // ← Added: Include name column in autosize
     'code',
     'manufacturer',
     'barcode',
