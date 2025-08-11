@@ -1,6 +1,5 @@
 import { memo, useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import { TbPlus } from 'react-icons/tb';
 import { FaMagnifyingGlass } from 'react-icons/fa6';
@@ -71,8 +70,8 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
 }: SearchToolbarProps<T>) {
   // Column visibility dropdown states
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
-  const [showColumnHeader, setShowColumnHeader] = useState(false);
-  const [showColumnContent, setShowColumnContent] = useState(false);
+  const [isColumnDropdownClosing, setIsColumnDropdownClosing] = useState(false);
+  const [applyOpenStyles, setApplyOpenStyles] = useState(false);
   const [columnSearchQuery, setColumnSearchQuery] = useState('');
   const [columnSearchState, setColumnSearchState] = useState<SearchState>(
     SEARCH_STATES.IDLE
@@ -107,21 +106,20 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   // Column visibility dropdown handlers
   const handleColumnDropdownToggle = () => {
     if (!isColumnDropdownOpen) {
-      // Opening sequence
       setIsColumnDropdownOpen(true);
-      setShowColumnHeader(true);
+      setIsColumnDropdownClosing(false);
+      setApplyOpenStyles(false);
+      // Add small delay for smooth opening animation
       setTimeout(() => {
-        setShowColumnContent(true);
-      }, 200); // Header completes first, then content
+        setApplyOpenStyles(true);
+      }, 10);
     } else {
-      // Closing sequence
-      setShowColumnContent(false);
-      setTimeout(() => {
-        setShowColumnHeader(false);
-      }, 150); // Content exits first, then header
+      setIsColumnDropdownClosing(true);
+      setApplyOpenStyles(false);
       setTimeout(() => {
         setIsColumnDropdownOpen(false);
-      }, 300); // Finally close dropdown
+        setIsColumnDropdownClosing(false);
+      }, 150); // Match duration-150 from CSS
     }
   };
 
@@ -197,15 +195,13 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
         columnButtonRef.current &&
         !columnButtonRef.current.contains(event.target as Node)
       ) {
-        if (isColumnDropdownOpen) {
-          // Use same closing sequence
-          setShowColumnContent(false);
-          setTimeout(() => {
-            setShowColumnHeader(false);
-          }, 150);
+        if (isColumnDropdownOpen && !isColumnDropdownClosing) {
+          setIsColumnDropdownClosing(true);
+          setApplyOpenStyles(false);
           setTimeout(() => {
             setIsColumnDropdownOpen(false);
-          }, 300);
+            setIsColumnDropdownClosing(false);
+          }, 150);
         }
       }
     };
@@ -217,13 +213,12 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isColumnDropdownOpen]);
+  }, [isColumnDropdownOpen, isColumnDropdownClosing]);
 
   // Reset column dropdown states when dropdown closes
   useEffect(() => {
     if (!isColumnDropdownOpen) {
-      setShowColumnHeader(false);
-      setShowColumnContent(false);
+      setApplyOpenStyles(false);
       setColumnSearchQuery('');
       setColumnSearchState(SEARCH_STATES.IDLE);
     }
@@ -231,16 +226,12 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
 
   // Focus on column search input when dropdown opens
   useEffect(() => {
-    if (
-      isColumnDropdownOpen &&
-      showColumnContent &&
-      columnSearchInputRef.current
-    ) {
+    if (isColumnDropdownOpen && applyOpenStyles && !isColumnDropdownClosing && columnSearchInputRef.current) {
       setTimeout(() => {
         columnSearchInputRef.current?.focus();
       }, 50);
     }
-  }, [isColumnDropdownOpen, showColumnContent]);
+  }, [isColumnDropdownOpen, applyOpenStyles, isColumnDropdownClosing]);
 
   // Calculate column dropdown position
   const getColumnDropdownPosition = () => {
@@ -254,101 +245,77 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   };
 
   const columnDropdownContent = (
-    <AnimatePresence>
-      {isColumnDropdownOpen && (
-        <motion.div
+    <>
+      {(isColumnDropdownOpen || isColumnDropdownClosing) && (
+        <div
           ref={columnDropdownRef}
-          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[240px] overflow-hidden"
+          className={`fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[240px] overflow-hidden origin-top transition-all duration-150 ease-out ${
+            isColumnDropdownClosing || !applyOpenStyles ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+          }`}
           style={getColumnDropdownPosition()}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.15 }}
         >
-          <AnimatePresence>
-            {showColumnHeader && (
-              <motion.div
-                className="px-3 py-2 border-b border-gray-100"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-              >
-                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Tampilkan/Sembunyikan Kolom
-                </h3>
-                <div className="relative flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      ref={columnSearchInputRef}
-                      type="text"
-                      placeholder="Cari kolom..."
-                      value={columnSearchQuery}
-                      onChange={handleColumnSearchChange}
-                      onKeyDown={handleColumnSearchKeyDown}
-                      onClick={e => e.stopPropagation()}
-                      className={`w-full py-2 text-sm border rounded-lg focus:outline-none transition-all duration-300 ease-in-out pl-2 ${
-                        columnSearchState === SEARCH_STATES.NOT_FOUND
-                          ? 'border-danger focus:border-danger focus:ring-3 focus:ring-red-200'
-                          : 'border-gray-300 focus:border-primary focus:ring-3 focus:ring-emerald-200'
-                      }`}
-                    />
-                    {!columnSearchQuery && (
-                      <FaMagnifyingGlass
-                        className={`absolute top-2.5 right-2 ${getSearchIconColor(columnSearchState)} transition-all duration-300 ease-in-out`}
-                        size={16}
-                      />
-                    )}
-                  </div>
-                  {columnSearchQuery && (
-                    <FaMagnifyingGlass
-                      className={`${getSearchIconColor(columnSearchState)} transition-all duration-300 ease-in-out scale-125`}
-                      size={16}
-                      style={{ minWidth: '16px' }}
-                    />
-                  )}
+          <div className="px-3 py-2 border-b border-gray-100">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">
+              Tampilkan/Sembunyikan Kolom
+            </h3>
+            <div className="relative flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  ref={columnSearchInputRef}
+                  type="text"
+                  placeholder="Cari kolom..."
+                  value={columnSearchQuery}
+                  onChange={handleColumnSearchChange}
+                  onKeyDown={handleColumnSearchKeyDown}
+                  onClick={e => e.stopPropagation()}
+                  className={`w-full py-2 text-sm border rounded-lg focus:outline-none transition-all duration-150 ease-out pl-2 ${
+                    columnSearchState === SEARCH_STATES.NOT_FOUND
+                      ? 'border-danger focus:border-danger focus:ring-1 focus:ring-red-200'
+                      : 'border-gray-300 focus:border-primary focus:ring-1 focus:ring-emerald-200'
+                  }`}
+                />
+                {!columnSearchQuery && (
+                  <FaMagnifyingGlass
+                    className={`absolute top-2.5 right-2 ${getSearchIconColor(columnSearchState)} transition-colors duration-150 ease-out`}
+                    size={16}
+                  />
+                )}
+              </div>
+              {columnSearchQuery && (
+                <FaMagnifyingGlass
+                  className={`${getSearchIconColor(columnSearchState)} transition-colors duration-150 ease-out`}
+                  size={16}
+                  style={{ minWidth: '16px' }}
+                />
+              )}
+            </div>
+          </div>
+          <div className="max-h-80 overflow-y-auto">
+            {filteredColumnOptions.length > 0 ? (
+              filteredColumnOptions.map(column => (
+                <div
+                  key={column.key}
+                  className="px-3 py-2 hover:bg-gray-50 transition-colors duration-150 ease-out"
+                >
+                  <Checkbox
+                    id={`column-${column.key}`}
+                    label={column.label}
+                    checked={column.visible}
+                    onChange={checked =>
+                      handleColumnToggleInternal(column.key, checked)
+                    }
+                  />
                 </div>
-              </motion.div>
+              ))
+            ) : (
+              <div className="px-3 py-4 text-center text-sm text-gray-500">
+                Tidak ada kolom yang ditemukan
+              </div>
             )}
-          </AnimatePresence>
-          <AnimatePresence>
-            {showColumnContent && (
-              <motion.div
-                className="overflow-hidden"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
-              >
-                <div className="max-h-80 overflow-y-auto">
-                  {filteredColumnOptions.length > 0 ? (
-                    filteredColumnOptions.map(column => (
-                      <div
-                        key={column.key}
-                        className="px-3 py-2 hover:bg-gray-50"
-                      >
-                        <Checkbox
-                          id={`column-${column.key}`}
-                          label={column.label}
-                          checked={column.visible}
-                          onChange={checked =>
-                            handleColumnToggleInternal(column.key, checked)
-                          }
-                        />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="px-3 py-4 text-center text-sm text-gray-500">
-                      Tidak ada kolom yang ditemukan
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 
   return (
