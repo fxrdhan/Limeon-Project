@@ -1,52 +1,67 @@
-// ItemCategory entity definition
-export interface ItemCategory {
-  id: string;
-  code?: string;
-  name: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-}
+/**
+ * ItemCategory Entity - Refactored using BaseEntity system
+ * 
+ * This entity now uses the generic base system to eliminate code duplication
+ * while maintaining full backward compatibility and type safety.
+ */
 
-export interface ItemCategoryCreateInput {
-  code?: string;
-  name: string;
-  description?: string;
-}
+import {
+  BaseEntityWithDescription,
+  CreateInputFor,
+  UpdateInputFor,
+  createEntityRulesWithDescription,
+  STANDARD_ENTITY_CONFIG,
+  type ValidationConfigWithDescription,
+} from './BaseEntity';
 
-export interface ItemCategoryUpdateInput {
-  id: string;
-  code?: string;
-  name: string;
-  description?: string;
-}
+// ============================================================================
+// ENTITY DEFINITION
+// ============================================================================
 
-// Business rules for ItemCategory
-export const ItemCategoryRules = {
-  maxNameLength: 100,
-  maxDescriptionLength: 500,
-  requiredFields: ['name'] as const,
+/**
+ * ItemCategory entity interface - extends base pattern
+ * 
+ * Note: This interface extends BaseEntityWithDescription and maintains
+ * backward compatibility with existing code while eliminating duplication.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ItemCategory extends BaseEntityWithDescription {}
 
-  validate: (data: Partial<ItemCategory>): string[] => {
-    const errors: string[] = [];
+/**
+ * ItemCategory create input interface - generated from base
+ */
+export type ItemCategoryCreateInput = CreateInputFor<ItemCategory>;
 
-    if (!data.name?.trim()) {
-      errors.push('Nama kategori wajib diisi');
-    } else if (data.name.length > ItemCategoryRules.maxNameLength) {
-      errors.push(
-        `Nama kategori maksimal ${ItemCategoryRules.maxNameLength} karakter`
-      );
-    }
+/**
+ * ItemCategory update input interface - generated from base
+ */
+export type ItemCategoryUpdateInput = UpdateInputFor<ItemCategory>;
 
-    if (
-      data.description &&
-      data.description.length > ItemCategoryRules.maxDescriptionLength
-    ) {
-      errors.push(
-        `Deskripsi maksimal ${ItemCategoryRules.maxDescriptionLength} karakter`
-      );
-    }
+// ============================================================================
+// VALIDATION CONFIGURATION
+// ============================================================================
 
-    return errors;
-  },
+/**
+ * Category-specific validation configuration
+ */
+const ITEM_CATEGORY_CONFIG: ValidationConfigWithDescription = {
+  ...STANDARD_ENTITY_CONFIG,
+  entityDisplayName: 'kategori',
 };
+
+// ============================================================================
+// BUSINESS RULES
+// ============================================================================
+
+/**
+ * ItemCategory business rules - generated using base factory
+ * 
+ * Maintains the exact same interface as before for backward compatibility:
+ * - maxNameLength: number
+ * - maxDescriptionLength: number  
+ * - requiredFields: readonly string[]
+ * - validate: (data: Partial<ItemCategory>) => string[]
+ */
+export const ItemCategoryRules = createEntityRulesWithDescription<ItemCategory>(
+  ITEM_CATEGORY_CONFIG
+);

@@ -1,65 +1,70 @@
-// ItemPackage entity definition
-export interface ItemPackage {
-  id: string;
-  code?: string;
-  name: string;
-  nci_code?: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-}
+/**
+ * ItemPackage Entity - Refactored using BaseEntity system
+ * 
+ * This entity uses the NCI code pattern:
+ * - Optional code field
+ * - NCI code field for pharmaceutical classification
+ * - Standard description field
+ */
 
-export interface ItemPackageCreateInput {
-  code?: string;
-  name: string;
-  nci_code?: string;
-  description?: string;
-}
+import {
+  BaseEntityWithNciCode,
+  CreateInputFor,
+  UpdateInputFor,
+  createEntityRulesWithNciCode,
+  NCI_ENTITY_CONFIG,
+  type ValidationConfigWithNciCode,
+} from './BaseEntity';
 
-export interface ItemPackageUpdateInput {
-  id: string;
-  code?: string;
-  name: string;
-  nci_code?: string;
-  description?: string;
-}
+// ============================================================================
+// ENTITY DEFINITION
+// ============================================================================
 
-// Business rules for ItemPackage
-export const ItemPackageRules = {
-  maxNameLength: 100,
-  maxDescriptionLength: 500,
-  maxNciCodeLength: 20,
-  requiredFields: ['name'] as const,
+/**
+ * ItemPackage entity interface - extends NCI code pattern
+ * 
+ * Note: This interface extends BaseEntityWithNciCode and maintains
+ * backward compatibility with existing code while eliminating duplication.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ItemPackage extends BaseEntityWithNciCode {}
 
-  validate: (data: Partial<ItemPackage>): string[] => {
-    const errors: string[] = [];
+/**
+ * ItemPackage create input interface - generated from base
+ */
+export type ItemPackageCreateInput = CreateInputFor<ItemPackage>;
 
-    if (!data.name?.trim()) {
-      errors.push('Nama kemasan wajib diisi');
-    } else if (data.name.length > ItemPackageRules.maxNameLength) {
-      errors.push(
-        `Nama kemasan maksimal ${ItemPackageRules.maxNameLength} karakter`
-      );
-    }
+/**
+ * ItemPackage update input interface - generated from base
+ */
+export type ItemPackageUpdateInput = UpdateInputFor<ItemPackage>;
 
-    if (
-      data.description &&
-      data.description.length > ItemPackageRules.maxDescriptionLength
-    ) {
-      errors.push(
-        `Deskripsi maksimal ${ItemPackageRules.maxDescriptionLength} karakter`
-      );
-    }
+// ============================================================================
+// VALIDATION CONFIGURATION
+// ============================================================================
 
-    if (
-      data.nci_code &&
-      data.nci_code.length > ItemPackageRules.maxNciCodeLength
-    ) {
-      errors.push(
-        `Kode NCI maksimal ${ItemPackageRules.maxNciCodeLength} karakter`
-      );
-    }
-
-    return errors;
-  },
+/**
+ * Package-specific validation configuration
+ */
+const ITEM_PACKAGE_CONFIG: ValidationConfigWithNciCode = {
+  ...NCI_ENTITY_CONFIG,
+  entityDisplayName: 'kemasan',
 };
+
+// ============================================================================
+// BUSINESS RULES
+// ============================================================================
+
+/**
+ * ItemPackage business rules - generated using base factory
+ * 
+ * Maintains the exact same interface as before for backward compatibility:
+ * - maxNameLength: number
+ * - maxDescriptionLength: number
+ * - maxNciCodeLength: number
+ * - requiredFields: readonly string[]
+ * - validate: (data: Partial<ItemPackage>) => string[]
+ */
+export const ItemPackageRules = createEntityRulesWithNciCode<ItemPackage>(
+  ITEM_PACKAGE_CONFIG
+);

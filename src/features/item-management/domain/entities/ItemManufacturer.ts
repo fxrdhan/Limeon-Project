@@ -1,52 +1,69 @@
-// ItemManufacturer entity definition
-export interface ItemManufacturer {
-  id: string;
-  code?: string;
-  name: string;
-  address?: string;
-  created_at: string;
-  updated_at: string;
-}
+/**
+ * ItemManufacturer Entity - Refactored using BaseEntity system
+ * 
+ * This entity uses the address pattern:
+ * - Optional code field
+ * - Address field instead of description (for manufacturer location)
+ * - Special validation for address length
+ */
 
-export interface ItemManufacturerCreateInput {
-  code?: string;
-  name: string;
-  address?: string;
-}
+import {
+  BaseEntityWithAddress,
+  CreateInputFor,
+  UpdateInputFor,
+  createEntityRulesWithAddress,
+  ADDRESS_ENTITY_CONFIG,
+  type ValidationConfigWithAddress,
+} from './BaseEntity';
 
-export interface ItemManufacturerUpdateInput {
-  id: string;
-  code?: string;
-  name: string;
-  address?: string;
-}
+// ============================================================================
+// ENTITY DEFINITION
+// ============================================================================
 
-// Business rules for ItemManufacturer
-export const ItemManufacturerRules = {
-  maxNameLength: 100,
-  maxAddressLength: 500,
-  requiredFields: ['name'] as const,
+/**
+ * ItemManufacturer entity interface - extends address pattern
+ * 
+ * Note: This interface extends BaseEntityWithAddress and maintains
+ * backward compatibility with existing code while eliminating duplication.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ItemManufacturer extends BaseEntityWithAddress {}
 
-  validate: (data: Partial<ItemManufacturer>): string[] => {
-    const errors: string[] = [];
+/**
+ * ItemManufacturer create input interface - generated from base
+ */
+export type ItemManufacturerCreateInput = CreateInputFor<ItemManufacturer>;
 
-    if (!data.name?.trim()) {
-      errors.push('Nama produsen wajib diisi');
-    } else if (data.name.length > ItemManufacturerRules.maxNameLength) {
-      errors.push(
-        `Nama produsen maksimal ${ItemManufacturerRules.maxNameLength} karakter`
-      );
-    }
+/**
+ * ItemManufacturer update input interface - generated from base
+ */
+export type ItemManufacturerUpdateInput = UpdateInputFor<ItemManufacturer>;
 
-    if (
-      data.address &&
-      data.address.length > ItemManufacturerRules.maxAddressLength
-    ) {
-      errors.push(
-        `Alamat maksimal ${ItemManufacturerRules.maxAddressLength} karakter`
-      );
-    }
+// ============================================================================
+// VALIDATION CONFIGURATION
+// ============================================================================
 
-    return errors;
-  },
+/**
+ * Manufacturer-specific validation configuration
+ */
+const ITEM_MANUFACTURER_CONFIG: ValidationConfigWithAddress = {
+  ...ADDRESS_ENTITY_CONFIG,
+  entityDisplayName: 'produsen',
 };
+
+// ============================================================================
+// BUSINESS RULES
+// ============================================================================
+
+/**
+ * ItemManufacturer business rules - generated using base factory
+ * 
+ * Maintains the exact same interface as before for backward compatibility:
+ * - maxNameLength: number
+ * - maxAddressLength: number  
+ * - requiredFields: readonly string[]
+ * - validate: (data: Partial<ItemManufacturer>) => string[]
+ */
+export const ItemManufacturerRules = createEntityRulesWithAddress<ItemManufacturer>(
+  ITEM_MANUFACTURER_CONFIG
+);
