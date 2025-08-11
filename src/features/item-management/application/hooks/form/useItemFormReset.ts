@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
-import type { ItemPackage } from '../../../domain/entities';
+import type { ItemPackage } from '../../../shared/types';
 
 interface UseItemFormResetProps {
   formState: {

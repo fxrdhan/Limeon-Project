@@ -11,6 +11,7 @@ export interface MedicineType {
   id: string;
   code?: string;
   name: string;
+  description?: string;
   updated_at?: string | null;
 }
 
@@ -23,6 +24,16 @@ export interface Unit {
 }
 
 export interface ItemPackage {
+  id: string;
+  code?: string;
+  name: string;
+  nci_code?: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string | null;
+}
+
+export interface ItemDosage {
   id: string;
   code?: string;
   name: string;

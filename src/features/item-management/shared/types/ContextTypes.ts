@@ -6,7 +6,7 @@ import type {
   ItemDosageEntity,
   ItemManufacturerEntity,
   ItemUnitEntity,
-} from '../../domain/entities';
+} from './EntityTypes';
 import type { UsePackageConversionReturn } from '@/types/hooks';
 import type { ItemFormData } from './FormTypes';
 import type { VersionData } from './ItemTypes';

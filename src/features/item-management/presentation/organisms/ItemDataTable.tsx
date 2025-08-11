@@ -12,6 +12,7 @@ import {
   GridApi,
   MenuItemDef,
   GetMainMenuItemsParams,
+  GetMainMenuItems,
 } from 'ag-grid-community';
 import type {
   Item,
@@ -137,7 +138,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
 
   // Custom menu items with reference column toggle
   const getMainMenuItems = useCallback(
-    (params: GetMainMenuItemsParams): (string | MenuItemDef)[] => {
+    (params: GetMainMenuItemsParams) => {
       if (!params.column) {
         return [
           'columnFilter',
@@ -280,7 +281,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           onFirstDataRendered={undefined}
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
-          mainMenuItems={getMainMenuItems}
+          mainMenuItems={getMainMenuItems as GetMainMenuItems}
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
           rowNumbers={true}

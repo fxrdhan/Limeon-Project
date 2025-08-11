@@ -1,5 +1,5 @@
 // Business rules for updating items
-import type { Item } from '../entities/Item';
+import type { Item } from '@/types/database';
 import { validateCreateItemInput, type CreateItemInput } from './CreateItem';
 
 export interface UpdateItemInput extends CreateItemInput {

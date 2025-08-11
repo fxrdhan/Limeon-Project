@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useAddItemForm } from '../core/useItemCrud';
-import type { ItemTypeEntity } from '../../../domain/entities';
+import type { ItemTypeEntity } from '../../../shared/types';
 import type { UseItemManagementProps } from '../../../shared/types';
 
 interface AddItemPageHandlersProps extends UseItemManagementProps {

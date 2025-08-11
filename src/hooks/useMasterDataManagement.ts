@@ -14,7 +14,7 @@ import type {
   Doctor,
   UseMasterDataManagementOptions,
 } from '@/types';
-import type { ItemDosage } from '@/features/item-management/domain/entities/ItemDosage';
+import type { ItemDosage } from '@/types/database';
 import type { ItemUnit } from '@/services/api/masterData.service';
 
 // Import regular query hooks (realtime handled at page level)
