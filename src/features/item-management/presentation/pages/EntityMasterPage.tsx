@@ -43,7 +43,7 @@ import {
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import { getSearchColumnsByEntity } from '@/utils/searchColumns';
 import { FilterSearch } from '@/types/search';
-import { useTableHeight } from '@/hooks/useTableHeight';
+import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 
 // Use EntityType directly since it now includes 'items'
 
@@ -88,9 +88,6 @@ const EntityMasterPage: React.FC = memo(() => {
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
   
-  // Calculate dynamic table height based on viewport
-  // Offset includes: navbar (~60px) + toolbar (~80px) + pagination (~60px) + margins (~40px) + bottom pagination (~80px) = ~320px
-  const dynamicTableHeight = useTableHeight(320);
   // Memoize tab detection function
   const getTabFromPath = useCallback((pathname: string): EntityType => {
     const pathSegments = pathname.split('/');
@@ -136,6 +133,14 @@ const EntityMasterPage: React.FC = memo(() => {
 
   // Generic entity data management - simplified realtime
   const entityData = useGenericEntityManagement(entityManagementOptions);
+  
+  // Use dynamic grid height hook
+  const { gridHeight } = useDynamicGridHeight({
+    data: entityData.data,
+    currentPageSize,
+    viewportOffset: 320, // navbar + toolbar + pagination + margins + bottom pagination
+    debug: false,
+  });
 
   // Simple loading state for realtime data
 
@@ -468,36 +473,6 @@ const EntityMasterPage: React.FC = memo(() => {
     [entityData.hasData, entityData.data, entityManager]
   );
 
-  // Calculate dynamic height based on viewport and data
-  const calculateGridHeight = useMemo(() => {
-    const baseHeight = 108; // Header and padding
-    const rowHeight = 36; // Height per row
-    
-    // Get available height from viewport (remove 'px' suffix and convert to number)
-    const availableHeight = parseInt(dynamicTableHeight.replace('px', ''), 10);
-    
-    // Calculate maximum rows that can fit in available space
-    const maxRowsByViewport = Math.floor((availableHeight - baseHeight) / rowHeight);
-    
-    // Calculate from data length and page size
-    const dataLength = entityData.data ? entityData.data.length : 0;
-    const displayedRows = Math.min(dataLength, currentPageSize);
-    
-    // Minimum 5 rows for reasonable space
-    const minRows = 5;
-    
-    // Maximum rows is the smaller of: viewport capacity or page size
-    const maxRows = Math.min(maxRowsByViewport, currentPageSize);
-    
-    // Actual rows to display
-    const actualRows = Math.max(minRows, Math.min(displayedRows, maxRows));
-    
-    const calculatedHeight = baseHeight + (actualRows * rowHeight);
-    
-    console.log(`Viewport height: ${availableHeight}px, max rows by viewport: ${maxRowsByViewport}, data length: ${dataLength}, displayed rows: ${displayedRows}, actual rows: ${actualRows}, final height: ${calculatedHeight}px`);
-    
-    return calculatedHeight;
-  }, [entityData.data, currentPageSize, dynamicTableHeight]);
 
   // Memoize SearchToolbar props for stable references
 
@@ -597,7 +572,7 @@ const EntityMasterPage: React.FC = memo(() => {
                 domLayout="normal"
                 style={{
                   ...GRID_STYLE,
-                  height: `${calculateGridHeight}px`, // Dynamic height based on pagination size
+                  height: `${gridHeight}px`, // Dynamic height based on pagination size
                   opacity:
                     entityData.isLoading && entityData.totalItems > 0 ? 0.8 : 1,
                   transition: 'opacity 0.2s ease-in-out, height 0.3s ease-in-out',

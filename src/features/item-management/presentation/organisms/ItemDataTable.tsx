@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
+import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 import { DataGrid } from '@/components/ag-grid';
 import { TableSkeleton } from '@/components/skeleton';
 import { AGGridPagination } from '@/components/pagination';
@@ -188,26 +189,13 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
     [isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]
   );
 
-  // Calculate dynamic height based on data length and page size
-  const calculateGridHeight = useMemo(() => {
-    const baseHeight = 108; // Header and padding (120 - 10% = 108)
-    const rowHeight = 36; // Height per row (40 - 10% = 36)
-    
-    // Calculate from data length and page size
-    const dataLength = items ? items.length : 0;
-    const displayedRows = Math.min(dataLength, currentPageSize);
-    
-    // Minimum 5 rows for reasonable space, maximum based on page size
-    const minRows = 5;
-    const maxRows = currentPageSize <= 20 ? currentPageSize : 20; // Cap at 20 for 50+ items
-    const actualRows = Math.max(minRows, Math.min(displayedRows, maxRows));
-    
-    const calculatedHeight = baseHeight + (actualRows * rowHeight);
-    
-    console.log(`Items data length: ${dataLength}, displayed rows: ${displayedRows}, actual rows for height: ${actualRows}, height: ${calculatedHeight}px`);
-    
-    return calculatedHeight;
-  }, [items, currentPageSize]);
+  // Use dynamic grid height hook
+  const { gridHeight } = useDynamicGridHeight({
+    data: items,
+    currentPageSize,
+    viewportOffset: 320, // navbar + toolbar + pagination + margins + bottom pagination
+    debug: false,
+  });
 
   // Modified items data based on column display modes
   const modifiedItems = useMemo(() => {
@@ -324,7 +312,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
             width: '100%',
             marginTop: '1rem',
             marginBottom: '1rem',
-            height: `${calculateGridHeight}px`, // Dynamic height based on pagination size
+            height: `${gridHeight}px`, // Dynamic height based on pagination size
             opacity: showBackgroundLoading ? 0.8 : 1,
             transition: 'opacity 0.2s ease-in-out, height 0.3s ease-in-out',
           }}
