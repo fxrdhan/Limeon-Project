@@ -146,7 +146,10 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
         {columnOptions && onColumnToggle && (
           <div className="inline-block ml-4 mb-2 mr-2 relative">
             {/* Custom dropdown wrapper with icon overlay */}
-            <div className="column-dropdown-wrapper relative">
+            <div
+              className="column-dropdown-wrapper relative"
+              title="Tampilkan/Sembunyikan Kolom"
+            >
               <style>{`
                 .column-dropdown-wrapper .hs-dropdown button {
                   background: transparent !important;
