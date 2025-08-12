@@ -56,12 +56,12 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   error,
   search,
   currentPage,
-  totalPages: _totalPages, // Unused but kept for backward compatibility
+  totalPages: _totalPages, // eslint-disable-line @typescript-eslint/no-unused-vars
   totalItems,
   itemsPerPage,
   onRowClick,
-  onPageChange: _onPageChange, // Not used - AG Grid handles its own state
-  onItemsPerPageChange: _onItemsPerPageChange, // Not used - AG Grid handles its own state
+  onPageChange: _onPageChange, // eslint-disable-line @typescript-eslint/no-unused-vars
+  onItemsPerPageChange: _onItemsPerPageChange, // eslint-disable-line @typescript-eslint/no-unused-vars
   onGridReady,
   isExternalFilterPresent,
   doesExternalFilterPass,

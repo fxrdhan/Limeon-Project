@@ -1,14 +1,14 @@
 import IdentityDataModal from '@/features/identity/IdentityDataModal';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import Button from '@/components/button';
-import Pagination from '@/components/pagination';
+import { AGGridPagination } from '@/components/pagination';
 import PageTitle from '@/components/page-title';
 
 import { FaPlus } from 'react-icons/fa';
 import { Card } from '@/components/card';
 import { DataGrid, createTextColumn } from '@/components/ag-grid';
-import { ColDef, RowClickedEvent } from 'ag-grid-community';
-import { useRef, useMemo, useCallback } from 'react';
+import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from 'ag-grid-community';
+import { useRef, useMemo, useCallback, useState } from 'react';
 // import { useLocation } from "react-router-dom";
 import type { Supplier as SupplierType, FieldConfig } from '@/types';
 
@@ -22,6 +22,9 @@ const SupplierListNew = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null
   ) as React.RefObject<HTMLInputElement>;
+  
+  // Grid API state for AG Grid pagination
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
 
   // Data management hook for server-side operations
   const {
@@ -31,17 +34,17 @@ const SupplierListNew = () => {
     setIsEditModalOpen,
     editingItem,
     data: suppliersData,
-    totalItems,
+    totalItems: _totalItems, // eslint-disable-line @typescript-eslint/no-unused-vars
     isLoading,
     isError,
     queryError,
     isFetching,
     handleEdit,
     handleModalSubmit,
-    handlePageChange,
-    handleItemsPerPageChange,
-    totalPages,
-    currentPage,
+    handlePageChange: _handlePageChange, // eslint-disable-line @typescript-eslint/no-unused-vars
+    handleItemsPerPageChange: _handleItemsPerPageChange, // eslint-disable-line @typescript-eslint/no-unused-vars
+    totalPages: _totalPages, // eslint-disable-line @typescript-eslint/no-unused-vars
+    currentPage: _currentPage, // eslint-disable-line @typescript-eslint/no-unused-vars
     itemsPerPage,
     deleteMutation,
     openConfirmDialog,
@@ -67,7 +70,7 @@ const SupplierListNew = () => {
   // Unified search functionality with hybrid mode
   const {
     search,
-    onGridReady,
+    onGridReady: unifiedSearchOnGridReady,
     isExternalFilterPresent,
     doesExternalFilterPass,
     searchBarProps,
@@ -79,6 +82,15 @@ const SupplierListNew = () => {
     onSearch: handleSearch,
     onClear: handleClear,
   });
+  
+  // Enhanced onGridReady to capture grid API for AGGridPagination
+  const handleGridReady = useCallback(
+    (params: GridReadyEvent) => {
+      setGridApi(params.api);
+      unifiedSearchOnGridReady(params);
+    },
+    [unifiedSearchOnGridReady]
+  );
 
   const suppliers = suppliersData || [];
 
@@ -203,7 +215,7 @@ const SupplierListNew = () => {
               rowData={suppliers as SupplierType[]}
               columnDefs={columnDefs}
               onRowClicked={onRowClicked}
-              onGridReady={onGridReady}
+              onGridReady={handleGridReady}
               loading={isLoading}
               overlayNoRowsTemplate={
                 search
@@ -218,16 +230,19 @@ const SupplierListNew = () => {
                 width: '100%',
                 marginTop: '1rem',
                 marginBottom: '1rem',
+                height: '500px', // Set fixed height for pagination
               }}
+              // AG Grid Built-in Pagination (hidden - we'll use custom component)
+              pagination={true}
+              paginationPageSize={itemsPerPage || 10}
+              suppressPaginationPanel={true} // Hide AG Grid's built-in pagination UI
             />
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems || 0}
-              itemsPerPage={itemsPerPage || 10}
-              itemsCount={suppliers?.length || 0}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
+            
+            {/* Custom Pagination Component using AG Grid API */}
+            <AGGridPagination
+              gridApi={gridApi}
+              pageSizeOptions={[10, 20, 50, 100]}
+              enableFloating={true}
               hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
             />
           </>

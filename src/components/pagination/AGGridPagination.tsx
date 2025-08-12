@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import classNames from 'classnames';
 import { GridApi } from 'ag-grid-community';
 import { useFloatingPagination, useAnimationDirection } from './hooks';
@@ -15,7 +15,7 @@ interface AGGridPaginationProps {
 }
 
 /**
- * Ultra simple AGGridPagination - no state, no effects, just direct API calls
+ * Optimized AGGridPagination using AG Grid events for automatic updates
  */
 const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   gridApi,
@@ -25,7 +25,7 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   pageSizeOptions = [10, 20, 50, 100],
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [updateKey, setUpdateKey] = useState(0);
+  const [paginationState, setPaginationState] = useState(0);
 
   // ALWAYS call hooks first
   const { showFloating } = useFloatingPagination({
@@ -41,6 +41,57 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   const { direction } = useAnimationDirection({
     currentPage,
   });
+  
+  // Optimized handlers using AG Grid API (defined before early return)
+  const handlePageChange = useCallback((page: number) => {
+    if (!gridApi || gridApi.isDestroyed() || page === currentPage) return;
+    
+    const totalPages = gridApi.paginationGetTotalPages();
+    if (page === 1) {
+      gridApi.paginationGoToFirstPage();
+    } else if (page === totalPages) {
+      gridApi.paginationGoToLastPage();
+    } else {
+      gridApi.paginationGoToPage(page - 1);
+    }
+  }, [gridApi, currentPage]);
+
+  const handlePageSizeChange = useCallback((newPageSize: number) => {
+    if (!gridApi || gridApi.isDestroyed()) return;
+    
+    const currentPageSize = gridApi.paginationGetPageSize();
+    if (newPageSize === currentPageSize) return;
+    
+    gridApi.setGridOption('paginationPageSize', newPageSize);
+  }, [gridApi]);
+
+  const handleItemsPerPageChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPageSize = Number(event.target.value);
+    handlePageSizeChange(newPageSize);
+  }, [handlePageSizeChange]);
+
+  const handleItemsPerPageClick = useCallback((value: number, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    handlePageSizeChange(value);
+  }, [handlePageSizeChange]);
+  
+  // Listen to AG Grid pagination events for automatic updates
+  useEffect(() => {
+    if (!gridApi || gridApi.isDestroyed()) return;
+    
+    const handlePaginationChanged = () => {
+      setPaginationState(prev => prev + 1);
+    };
+    
+    gridApi.addEventListener('paginationChanged', handlePaginationChanged);
+    
+    return () => {
+      if (!gridApi.isDestroyed()) {
+        gridApi.removeEventListener('paginationChanged', handlePaginationChanged);
+      }
+    };
+  }, [gridApi]);
 
   // Check grid API after hooks
   if (!gridApi || gridApi.isDestroyed()) {
@@ -51,44 +102,6 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   const totalPages = gridApi.paginationGetTotalPages();
   const itemsPerPage = gridApi.paginationGetPageSize();
   const selectedPageSizeIndex = pageSizeOptions.indexOf(itemsPerPage);
-
-  // Handlers with manual re-render trigger
-  const handlePageChange = (page: number) => {
-    if (page === currentPage) return;
-    
-    if (page === 1) {
-      gridApi.paginationGoToFirstPage();
-    } else if (page === totalPages) {
-      gridApi.paginationGoToLastPage();
-    } else {
-      gridApi.paginationGoToPage(page - 1);
-    }
-    
-    // Force re-render after change
-    setTimeout(() => setUpdateKey(prev => prev + 1), 100);
-  };
-
-  const handleItemsPerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newPageSize = Number(event.target.value);
-    if (newPageSize === itemsPerPage) return;
-    
-    gridApi.setGridOption('paginationPageSize', newPageSize);
-    
-    // Force re-render after change
-    setTimeout(() => setUpdateKey(prev => prev + 1), 100);
-  };
-
-  const handleItemsPerPageClick = (value: number, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    if (value === itemsPerPage) return;
-    
-    gridApi.setGridOption('paginationPageSize', value);
-    
-    // Force re-render after change
-    setTimeout(() => setUpdateKey(prev => prev + 1), 100);
-  };
 
   // Context value
   const contextValue: PaginationContextValue = {
@@ -108,7 +121,7 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   };
 
   return (
-    <PaginationProvider value={contextValue} key={updateKey}>
+    <PaginationProvider value={contextValue} key={paginationState}>
       <div
         ref={containerRef}
         className={classNames(
