@@ -70,6 +70,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
 }: ItemDataTableProps) {
   // Grid API state for triggering autosize
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage || 10);
 
   // Column display mode state - tracks whether to show name or code for reference columns
   const [columnDisplayModes, setColumnDisplayModes] = useState<
@@ -127,10 +128,15 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
     [onRowClick]
   );
 
+
   // Handle grid ready untuk capture API dan trigger original handler
   const handleGridReady = useCallback(
     (params: GridReadyEvent) => {
       setGridApi(params.api);
+      
+      // Sync current page size with grid
+      const gridPageSize = params.api.paginationGetPageSize();
+      setCurrentPageSize(gridPageSize);
       
       // Set initial page if needed
       if (currentPage > 1) {
@@ -181,6 +187,27 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
     },
     [isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]
   );
+
+  // Calculate dynamic height based on data length and page size
+  const calculateGridHeight = useMemo(() => {
+    const baseHeight = 108; // Header and padding (120 - 10% = 108)
+    const rowHeight = 36; // Height per row (40 - 10% = 36)
+    
+    // Calculate from data length and page size
+    const dataLength = items ? items.length : 0;
+    const displayedRows = Math.min(dataLength, currentPageSize);
+    
+    // Minimum 5 rows for reasonable space, maximum based on page size
+    const minRows = 5;
+    const maxRows = currentPageSize <= 20 ? currentPageSize : 20; // Cap at 20 for 50+ items
+    const actualRows = Math.max(minRows, Math.min(displayedRows, maxRows));
+    
+    const calculatedHeight = baseHeight + (actualRows * rowHeight);
+    
+    console.log(`Items data length: ${dataLength}, displayed rows: ${displayedRows}, actual rows for height: ${actualRows}, height: ${calculatedHeight}px`);
+    
+    return calculatedHeight;
+  }, [items, currentPageSize]);
 
   // Modified items data based on column display modes
   const modifiedItems = useMemo(() => {
@@ -297,9 +324,9 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
             width: '100%',
             marginTop: '1rem',
             marginBottom: '1rem',
-            height: '500px', // Set fixed height for pagination
+            height: `${calculateGridHeight}px`, // Dynamic height based on pagination size
             opacity: showBackgroundLoading ? 0.8 : 1,
-            transition: 'opacity 0.2s ease-in-out',
+            transition: 'opacity 0.2s ease-in-out, height 0.3s ease-in-out',
           }}
           // AG Grid Built-in Pagination (hidden - we'll use custom component)
           pagination={true}
@@ -314,6 +341,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
         pageSizeOptions={[10, 20, 50, 100]}
         enableFloating={true}
         hideFloatingWhenModalOpen={false}
+        onPageSizeChange={setCurrentPageSize}
       />
     </>
   );

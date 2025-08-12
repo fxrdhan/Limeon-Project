@@ -12,6 +12,7 @@ interface AGGridPaginationProps {
   enableFloating?: boolean;
   hideFloatingWhenModalOpen?: boolean;
   pageSizeOptions?: number[];
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 /**
@@ -23,6 +24,7 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   enableFloating = true,
   hideFloatingWhenModalOpen = false,
   pageSizeOptions = [10, 20, 50, 100],
+  onPageSizeChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [paginationState, setPaginationState] = useState(0);
@@ -63,7 +65,12 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
     if (newPageSize === currentPageSize) return;
     
     gridApi.setGridOption('paginationPageSize', newPageSize);
-  }, [gridApi]);
+    
+    // Call the callback to notify parent component
+    if (onPageSizeChange) {
+      onPageSizeChange(newPageSize);
+    }
+  }, [gridApi, onPageSizeChange]);
 
   const handleItemsPerPageChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
     const newPageSize = Number(event.target.value);
