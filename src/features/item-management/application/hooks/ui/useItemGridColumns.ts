@@ -222,8 +222,6 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createCenterAlignColumn({
           field: 'stock',
           headerName: 'Stok',
-
-          maxWidth: 100, // Reduced from 120 to 100 for more compact width
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -298,7 +296,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
       'package_conversions',
       'base_price',
       'sell_price',
-      // 'stock' - excluded from autoSize, using fixed width range instead
+      'stock', // ← Added: Include stock column in autosize
     ];
 
     // Filter columns to auto-size based on visibility
