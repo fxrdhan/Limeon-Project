@@ -179,7 +179,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
                 withCheckbox={true}
                 searchList={true}
                 mode="input"
-                portalWidth={280}
+                portalWidth="content"
                 position="bottom"
               />
               
