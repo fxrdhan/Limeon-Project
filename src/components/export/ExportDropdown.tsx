@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useState, useRef, useEffect } from 'react';
 import { GridApi } from 'ag-grid-community';
-import { TbTableExport, TbCsv, TbTableFilled } from 'react-icons/tb';
+import { TbTableExport, TbCsv, TbTableFilled, TbJson } from 'react-icons/tb';
 import Button from '@/components/button';
 
 interface ExportDropdownProps {
@@ -76,6 +76,29 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       setIsOpen(false);
     }, [gridApi, filename]);
 
+    const handleJsonExport = useCallback(() => {
+      if (gridApi && !gridApi.isDestroyed()) {
+        const rowData: unknown[] = [];
+        gridApi.forEachNodeAfterFilterAndSort(node => {
+          if (node.data) {
+            rowData.push(node.data);
+          }
+        });
+
+        const jsonString = JSON.stringify(rowData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+      setIsOpen(false);
+    }, [gridApi, filename]);
+
     // Handle click outside to close dropdown
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -137,6 +160,18 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
               >
                 <TbTableFilled className="h-6 w-6 text-gray-500 group-hover:text-primary" />
                 <span>Export ke Excel</span>
+              </Button>
+
+              {/* JSON Export Option */}
+              <Button
+                variant="text"
+                size="sm"
+                withUnderline={false}
+                onClick={handleJsonExport}
+                className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
+              >
+                <TbJson className="h-7 w-7 text-gray-500 group-hover:text-primary" />
+                <span>Export ke JSON</span>
               </Button>
             </div>
           </div>
