@@ -1,0 +1,6 @@
+/* AG Grid cell flash animation for real-time updates */
+
+.ag-cell-data-changed {
+  background-color: oklch(95% 0.052 163.051) !important; /* emerald-100 */
+  transition: background-color 0.8s ease-out !important;
+}

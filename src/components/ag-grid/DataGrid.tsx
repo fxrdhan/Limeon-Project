@@ -17,6 +17,8 @@ import {
 } from 'ag-grid-community';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { DataGridProps, DataGridRef } from '@/types';
+// Import CSS for green flash animation
+import '../../styles/ag-grid-flash.css';
 
 // Register AG Grid Enterprise modules
 ModuleRegistry.registerModules([AllEnterpriseModule]);
@@ -33,7 +35,7 @@ const customTheme = themeQuartz.withParams({
     style: 'solid',
     width: 1,
   },
-  accentColor: 'oklch(84.5% 0.143 164.978)',
+  accentColor: 'oklch(76.5% 0.177 163.223/0.7)',
 });
 
 const DataGrid = forwardRef<DataGridRef, DataGridProps>(
@@ -147,6 +149,8 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       mainMenuItems: mainMenuItems,
       cellDataType: false,
       minWidth: 80,
+      // Enable cell change flash animation for real-time updates
+      enableCellChangeFlash: true,
     };
 
     const handleGridReady = (event: GridReadyEvent) => {
