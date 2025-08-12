@@ -117,7 +117,8 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     buttonRef,
     dropdownMenuRef,
     portalWidth,
-    position
+    position,
+    filteredOptions
   );
 
   const { expandedId, setExpandedId, handleExpansion } = useTextExpansion({

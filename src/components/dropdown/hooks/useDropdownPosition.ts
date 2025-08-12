@@ -6,20 +6,46 @@ import {
   CSSProperties,
 } from 'react';
 import { DROPDOWN_CONSTANTS, DropDirection } from '../constants';
-import type { DropdownPortalWidth, DropdownPosition } from '@/types';
+import type { DropdownPortalWidth, DropdownPosition, DropdownOption } from '@/types';
 
 export const useDropdownPosition = (
   isOpen: boolean,
   buttonRef: RefObject<HTMLButtonElement | null>,
   dropdownMenuRef: RefObject<HTMLDivElement | null>,
   portalWidth: DropdownPortalWidth = 'auto',
-  position: DropdownPosition = 'auto'
+  position: DropdownPosition = 'auto',
+  options: DropdownOption[] = []
 ) => {
   const [dropDirection, setDropDirection] = useState<DropDirection>('down');
   const [initialDropDirection, setInitialDropDirection] =
     useState<DropDirection | null>(null);
   const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
   const [isPositionReady, setIsPositionReady] = useState(false);
+
+  // Calculate content-based width
+  const calculateContentWidth = useCallback(() => {
+    if (!options.length) return 200; // fallback width
+
+    // Create temporary element to measure text width
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return 200;
+
+    // Use typical dropdown font settings
+    context.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+    let maxWidth = 0;
+    options.forEach(option => {
+      const textWidth = context.measureText(option.name).width;
+      maxWidth = Math.max(maxWidth, textWidth);
+    });
+
+    // Add padding for checkboxes, icons, and spacing (roughly 80px)
+    const contentWidth = maxWidth + 80;
+    
+    // Ensure minimum and maximum width
+    return Math.max(180, Math.min(contentWidth, 400));
+  }, [options]);
 
   const calculateDropdownPosition = useCallback(() => {
     if (!isOpen) {
@@ -67,13 +93,20 @@ export const useDropdownPosition = (
       setDropDirection(initialDropDirection);
     }
 
-    let leftPosition = buttonRect.left;
-    if (
-      leftPosition + buttonRect.width >
-      viewportWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN
-    ) {
-      leftPosition =
-        viewportWidth - buttonRect.width - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
+    // Calculate dropdown width for positioning
+    let dropdownWidth = buttonRect.width; // default to button width
+    if (portalWidth === 'content') {
+      dropdownWidth = calculateContentWidth();
+    } else if (portalWidth !== 'auto') {
+      dropdownWidth = typeof portalWidth === 'number' ? portalWidth : parseInt(portalWidth as string, 10) || buttonRect.width;
+    }
+
+    // Right-align the dropdown to the button's right edge
+    let leftPosition = buttonRect.right - dropdownWidth;
+    
+    // Keep dropdown within viewport bounds
+    if (leftPosition + dropdownWidth > viewportWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN) {
+      leftPosition = viewportWidth - dropdownWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
     }
     if (leftPosition < DROPDOWN_CONSTANTS.VIEWPORT_MARGIN) {
       leftPosition = DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
@@ -108,7 +141,11 @@ export const useDropdownPosition = (
     if (portalWidth === 'auto') {
       // Auto: use button width
       portalStyleBase.width = `${buttonRect.width}px`;
-    } else if (portalWidth !== 'auto') {
+    } else if (portalWidth === 'content') {
+      // Content: calculate width based on option content
+      const contentWidth = calculateContentWidth();
+      portalStyleBase.width = `${contentWidth}px`;
+    } else {
       // Custom width: use provided value
       portalStyleBase.width =
         typeof portalWidth === 'number' ? `${portalWidth}px` : portalWidth;
@@ -122,6 +159,7 @@ export const useDropdownPosition = (
     dropdownMenuRef,
     portalWidth,
     position,
+    calculateContentWidth,
   ]);
 
   const resetPosition = useCallback(() => {
