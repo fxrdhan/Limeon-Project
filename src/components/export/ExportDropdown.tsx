@@ -1,7 +1,9 @@
 import React, { memo, useCallback, useState, useRef, useEffect } from 'react';
 import { GridApi } from 'ag-grid-community';
 import { TbTableExport, TbCsv, TbTableFilled, TbJson } from 'react-icons/tb';
+import { FaGoogle } from 'react-icons/fa';
 import Button from '@/components/button';
+import { googleSheetsService } from '@/utils/googleSheetsApi';
 
 interface ExportDropdownProps {
   gridApi: GridApi | null;
@@ -12,6 +14,7 @@ interface ExportDropdownProps {
 const ExportDropdown: React.FC<ExportDropdownProps> = memo(
   ({ gridApi, filename = 'data-export', className = '' }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isGoogleSheetsLoading, setIsGoogleSheetsLoading] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const handleCsvExport = useCallback(() => {
@@ -99,6 +102,106 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       setIsOpen(false);
     }, [gridApi, filename]);
 
+    const handleGoogleSheetsExport = useCallback(async () => {
+      if (!gridApi || gridApi.isDestroyed()) {
+        return;
+      }
+
+      setIsGoogleSheetsLoading(true);
+      try {
+        // Initialize Google Sheets service if not already done
+        await googleSheetsService.initialize();
+
+        // Extract data from AG Grid
+        const rowData: unknown[] = [];
+        gridApi.forEachNodeAfterFilterAndSort(node => {
+          if (node.data) {
+            rowData.push(node.data);
+          }
+        });
+
+        // Get column definitions from AG Grid
+        const columnDefs = gridApi.getColumnDefs() || [];
+        const visibleColumns = columnDefs
+          .filter((col): col is import('ag-grid-community').ColDef => 
+            'field' in col && col.field != null && !col.hide
+          );
+
+        // Create headers and extract processed data handling nested objects and valueGetters
+        const headers = visibleColumns.map(col => col.headerName || col.field!);
+        
+        // Extract data using column valueGetter or nested field access
+        const processedData: string[][] = [];
+        gridApi.forEachNodeAfterFilterAndSort(node => {
+          if (node.data) {
+            const rowValues = visibleColumns.map(col => {
+              let value: unknown;
+              
+              // If column has valueGetter function, use it
+              if (col.valueGetter && typeof col.valueGetter === 'function') {
+                value = col.valueGetter({
+                  data: node.data,
+                  node: node,
+                  colDef: col,
+                  api: gridApi,
+                  columnApi: gridApi,
+                  context: undefined,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  column: { getColId: () => col.field || '' } as any,
+                  getValue: (field: string) => {
+                    // Helper function for nested field access
+                    return getNestedValue(node.data, field);
+                  }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any);
+              } else if (col.field) {
+                // Handle nested field access (e.g., 'category.name')
+                value = getNestedValue(node.data, col.field);
+              }
+              
+              return value !== null && value !== undefined ? String(value) : '';
+            });
+            processedData.push(rowValues);
+          }
+        });
+        
+        // Helper function to get nested values
+        function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+          const keys = path.split('.');
+          let current: unknown = obj;
+          
+          for (const key of keys) {
+            if (current && typeof current === 'object' && current !== null) {
+              current = (current as Record<string, unknown>)[key];
+            } else {
+              return null;
+            }
+          }
+          
+          return current;
+        }
+
+        // Export to Google Sheets
+        const sheetUrl = await googleSheetsService.exportGridDataToSheets(
+          processedData,
+          headers,
+          filename
+        );
+
+        // Open the created Google Sheet in a new tab
+        if (sheetUrl) {
+          window.open(sheetUrl, '_blank');
+        }
+
+        setIsOpen(false);
+      } catch (error) {
+        console.error('Failed to export to Google Sheets:', error);
+        alert('Failed to export to Google Sheets. Please make sure you are signed in to your Google account.');
+      } finally {
+        setIsGoogleSheetsLoading(false);
+      }
+    }, [gridApi, filename]);
+
     // Handle click outside to close dropdown
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -172,6 +275,19 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
               >
                 <TbJson className="h-7 w-7 text-gray-500 group-hover:text-primary" />
                 <span>Export ke JSON</span>
+              </Button>
+
+              {/* Google Sheets Export Option */}
+              <Button
+                variant="text"
+                size="sm"
+                withUnderline={false}
+                onClick={handleGoogleSheetsExport}
+                disabled={isGoogleSheetsLoading}
+                className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FaGoogle className="h-6 w-6 text-gray-500 group-hover:text-green-600" />
+                <span>{isGoogleSheetsLoading ? 'Exporting...' : 'Export ke Google Sheets'}</span>
               </Button>
             </div>
           </div>
