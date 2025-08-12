@@ -122,21 +122,21 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
 
         // Get column definitions from AG Grid
         const columnDefs = gridApi.getColumnDefs() || [];
-        const visibleColumns = columnDefs
-          .filter((col): col is import('ag-grid-community').ColDef => 
+        const visibleColumns = columnDefs.filter(
+          (col): col is import('ag-grid-community').ColDef =>
             'field' in col && col.field != null && !col.hide
-          );
+        );
 
         // Create headers and extract processed data handling nested objects and valueGetters
         const headers = visibleColumns.map(col => col.headerName || col.field!);
-        
+
         // Extract data using column valueGetter or nested field access
         const processedData: string[][] = [];
         gridApi.forEachNodeAfterFilterAndSort(node => {
           if (node.data) {
             const rowValues = visibleColumns.map(col => {
               let value: unknown;
-              
+
               // If column has valueGetter function, use it
               if (col.valueGetter && typeof col.valueGetter === 'function') {
                 value = col.valueGetter({
@@ -151,25 +151,28 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                   getValue: (field: string) => {
                     // Helper function for nested field access
                     return getNestedValue(node.data, field);
-                  }
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  },
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any);
               } else if (col.field) {
                 // Handle nested field access (e.g., 'category.name')
                 value = getNestedValue(node.data, col.field);
               }
-              
+
               return value !== null && value !== undefined ? String(value) : '';
             });
             processedData.push(rowValues);
           }
         });
-        
+
         // Helper function to get nested values
-        function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+        function getNestedValue(
+          obj: Record<string, unknown>,
+          path: string
+        ): unknown {
           const keys = path.split('.');
           let current: unknown = obj;
-          
+
           for (const key of keys) {
             if (current && typeof current === 'object' && current !== null) {
               current = (current as Record<string, unknown>)[key];
@@ -177,7 +180,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
               return null;
             }
           }
-          
+
           return current;
         }
 
@@ -196,7 +199,9 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         setIsOpen(false);
       } catch (error) {
         console.error('Failed to export to Google Sheets:', error);
-        alert('Failed to export to Google Sheets. Please make sure you are signed in to your Google account.');
+        alert(
+          'Failed to export to Google Sheets. Please make sure you are signed in to your Google account.'
+        );
       } finally {
         setIsGoogleSheetsLoading(false);
       }
@@ -239,7 +244,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
 
         {/* Dropdown Portal */}
         {isOpen && gridApi && !gridApi.isDestroyed() && (
-          <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 min-w-[175px]">
+          <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 min-w-[230px]">
             <div className="px-1 py-1">
               {/* CSV Export Option */}
               <Button
@@ -249,7 +254,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                 onClick={handleCsvExport}
                 className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
               >
-                <TbCsv className="h-7 w-7 text-gray-500 group-hover:text-primary" />
+                <TbCsv className="h-6 w-6 text-gray-500 group-hover:text-primary" />
                 <span>Export ke CSV</span>
               </Button>
 
@@ -273,7 +278,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                 onClick={handleJsonExport}
                 className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
               >
-                <TbJson className="h-7 w-7 text-gray-500 group-hover:text-primary" />
+                <TbJson className="h-6 w-6 text-gray-500 group-hover:text-primary" />
                 <span>Export ke JSON</span>
               </Button>
 
@@ -286,8 +291,12 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                 disabled={isGoogleSheetsLoading}
                 className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaGoogle className="h-6 w-6 text-gray-500 group-hover:text-green-600" />
-                <span>{isGoogleSheetsLoading ? 'Exporting...' : 'Export ke Google Sheets'}</span>
+                <FaGoogle className="h-5 w-5 text-gray-500 group-hover:text-green-600" />
+                <span>
+                  {isGoogleSheetsLoading
+                    ? 'Exporting...'
+                    : 'Export ke Google Sheets'}
+                </span>
               </Button>
             </div>
           </div>
