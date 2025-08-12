@@ -665,9 +665,13 @@ export const useMasterDataManagement = (
   const handlePageChange = (newPage: number) => setCurrentPage(newPage);
 
   const handleItemsPerPageChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
+    newItemsPerPage: number | React.ChangeEvent<HTMLSelectElement>
   ) => {
-    setItemsPerPage(Number(e.target.value));
+    // Handle both number and event for backward compatibility
+    const value = typeof newItemsPerPage === 'number' 
+      ? newItemsPerPage 
+      : Number(newItemsPerPage.target.value);
+    setItemsPerPage(value);
     setCurrentPage(1);
   };
 

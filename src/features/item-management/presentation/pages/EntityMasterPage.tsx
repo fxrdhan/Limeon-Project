@@ -15,6 +15,7 @@ import {
   getPinAndFilterMenuItems,
 } from '@/components/ag-grid';
 import { TableSkeleton } from '@/components/skeleton';
+import { AGGridPagination } from '@/components/pagination';
 import {
   ColDef,
   RowClickedEvent,
@@ -22,7 +23,6 @@ import {
   GridReadyEvent,
   ColumnPinnedEvent,
   ColumnMovedEvent,
-  PaginationChangedEvent,
 } from 'ag-grid-community';
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
 
@@ -234,9 +234,15 @@ const EntityMasterPage: React.FC = memo(() => {
   const onGridReady = useCallback(
     (params: GridReadyEvent) => {
       setGridApi(params.api);
+      
+      // Set initial page if needed
+      if (entityManager.currentPage > 1) {
+        params.api.paginationGoToPage(entityManager.currentPage - 1);
+      }
+      
       originalOnGridReady(params);
     },
-    [originalOnGridReady]
+    [originalOnGridReady, entityManager.currentPage]
   );
 
   // Cleanup grid API reference when activeTab changes or component unmounts
@@ -433,23 +439,6 @@ const EntityMasterPage: React.FC = memo(() => {
     [entityManager]
   );
 
-  // Handle pagination changes from AG Grid
-  const onPaginationChanged = useCallback(
-    (event: PaginationChangedEvent) => {
-      // Update entity manager current page to stay in sync
-      const currentPage = event.api.paginationGetCurrentPage() + 1; // AG Grid is 0-based
-      const pageSize = event.api.paginationGetPageSize();
-      
-      // Only update if values changed to avoid infinite loops
-      if (currentPage !== entityManager.currentPage) {
-        entityManager.handlePageChange(currentPage);
-      }
-      if (pageSize !== entityManager.itemsPerPage) {
-        entityManager.handleItemsPerPageChange(pageSize);
-      }
-    },
-    [entityManager]
-  );
 
   // Use static functions - no memoization needed
 
@@ -571,11 +560,18 @@ const EntityMasterPage: React.FC = memo(() => {
                     entityData.isLoading && entityData.totalItems > 0 ? 0.8 : 1,
                   transition: 'opacity 0.2s ease-in-out',
                 }}
-                // AG Grid Pagination
+                // AG Grid Pagination (hidden - we'll use custom component)
                 pagination={true}
                 paginationPageSize={entityManager.itemsPerPage || 10}
-                paginationPageSizeSelector={[10, 20, 50, 100]}
-                onPaginationChanged={onPaginationChanged}
+                suppressPaginationPanel={true} // Hide AG Grid's built-in pagination UI
+              />
+              
+              {/* Custom Pagination Component using AG Grid API */}
+              <AGGridPagination
+                gridApi={gridApi}
+                pageSizeOptions={[10, 20, 50, 100]}
+                enableFloating={true}
+                hideFloatingWhenModalOpen={false}
               />
             </div>
           </>

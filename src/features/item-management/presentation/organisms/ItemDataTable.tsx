@@ -1,7 +1,7 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { DataGrid } from '@/components/ag-grid';
-import Pagination from '@/components/pagination';
 import { TableSkeleton } from '@/components/skeleton';
+import { AGGridPagination } from '@/components/pagination';
 import {
   RowClickedEvent,
   ColDef,
@@ -31,12 +31,12 @@ interface ItemDataTableProps {
   error: Error | unknown;
   search: string;
   currentPage: number;
-  totalPages: number;
+  totalPages: number; // Keep for backward compatibility
   totalItems: number;
   itemsPerPage: number;
   onRowClick: (item: Item) => void;
   onPageChange: (page: number) => void;
-  onItemsPerPageChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onItemsPerPageChange: (itemsPerPage: number) => void;
   onGridReady: (params: GridReadyEvent) => void;
   isExternalFilterPresent: () => boolean;
   doesExternalFilterPass: (node: IRowNode) => boolean;
@@ -56,12 +56,12 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   error,
   search,
   currentPage,
-  totalPages,
+  totalPages: _totalPages, // Unused but kept for backward compatibility
   totalItems,
   itemsPerPage,
   onRowClick,
-  onPageChange,
-  onItemsPerPageChange,
+  onPageChange: _onPageChange, // Not used - AG Grid handles its own state
+  onItemsPerPageChange: _onItemsPerPageChange, // Not used - AG Grid handles its own state
   onGridReady,
   isExternalFilterPresent,
   doesExternalFilterPass,
@@ -131,10 +131,17 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   const handleGridReady = useCallback(
     (params: GridReadyEvent) => {
       setGridApi(params.api);
+      
+      // Set initial page if needed
+      if (currentPage > 1) {
+        params.api.paginationGoToPage(currentPage - 1);
+      }
+      
       onGridReady(params);
     },
-    [onGridReady]
+    [onGridReady, currentPage]
   );
+
 
   // Custom menu items with reference column toggle
   const getMainMenuItems = useCallback(
@@ -285,24 +292,28 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
           rowNumbers={true}
+          domLayout="normal"
           style={{
             width: '100%',
             marginTop: '1rem',
             marginBottom: '1rem',
+            height: '500px', // Set fixed height for pagination
             opacity: showBackgroundLoading ? 0.8 : 1,
             transition: 'opacity 0.2s ease-in-out',
           }}
+          // AG Grid Built-in Pagination (hidden - we'll use custom component)
+          pagination={true}
+          paginationPageSize={itemsPerPage || 10}
+          suppressPaginationPanel={true} // Hide AG Grid's built-in pagination UI
         />
       </div>
-
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        itemsCount={items.length}
-        onPageChange={onPageChange}
-        onItemsPerPageChange={onItemsPerPageChange}
+      
+      {/* Custom Pagination Component using AG Grid API */}
+      <AGGridPagination
+        gridApi={gridApi}
+        pageSizeOptions={[10, 20, 50, 100]}
+        enableFloating={true}
+        hideFloatingWhenModalOpen={false}
       />
     </>
   );

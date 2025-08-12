@@ -96,3 +96,4 @@ const Pagination: React.FC<FloatingPaginationProps> = ({
 };
 
 export default Pagination;
+export { default as AGGridPagination } from './AGGridPagination';
