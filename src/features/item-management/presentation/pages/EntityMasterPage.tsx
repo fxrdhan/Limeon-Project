@@ -43,6 +43,7 @@ import {
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import { getSearchColumnsByEntity } from '@/utils/searchColumns';
 import { FilterSearch } from '@/types/search';
+import { useTableHeight } from '@/hooks/useTableHeight';
 
 // Use EntityType directly since it now includes 'items'
 
@@ -86,6 +87,10 @@ const EntityMasterPage: React.FC = memo(() => {
   const dataGridRef = useRef<DataGridRef>(null);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
+  
+  // Calculate dynamic table height based on viewport
+  // Offset includes: navbar (~60px) + toolbar (~80px) + pagination (~60px) + margins (~40px) = ~240px
+  const dynamicTableHeight = useTableHeight(240);
   // Memoize tab detection function
   const getTabFromPath = useCallback((pathname: string): EntityType => {
     const pathSegments = pathname.split('/');
@@ -463,26 +468,36 @@ const EntityMasterPage: React.FC = memo(() => {
     [entityData.hasData, entityData.data, entityManager]
   );
 
-  // Calculate dynamic height based on data length and page size
+  // Calculate dynamic height based on viewport and data
   const calculateGridHeight = useMemo(() => {
-    const baseHeight = 108; // Header and padding (120 - 10% = 108)
-    const rowHeight = 36; // Height per row (40 - 10% = 36)
+    const baseHeight = 108; // Header and padding
+    const rowHeight = 36; // Height per row
+    
+    // Get available height from viewport (remove 'px' suffix and convert to number)
+    const availableHeight = parseInt(dynamicTableHeight.replace('px', ''), 10);
+    
+    // Calculate maximum rows that can fit in available space
+    const maxRowsByViewport = Math.floor((availableHeight - baseHeight) / rowHeight);
     
     // Calculate from data length and page size
     const dataLength = entityData.data ? entityData.data.length : 0;
     const displayedRows = Math.min(dataLength, currentPageSize);
     
-    // Minimum 5 rows for reasonable space, maximum based on page size
+    // Minimum 5 rows for reasonable space
     const minRows = 5;
-    const maxRows = currentPageSize <= 20 ? currentPageSize : 20; // Cap at 20 for 50+ items
+    
+    // Maximum rows is the smaller of: viewport capacity, page size, or reasonable cap (25)
+    const maxRows = Math.min(maxRowsByViewport, currentPageSize, 25);
+    
+    // Actual rows to display
     const actualRows = Math.max(minRows, Math.min(displayedRows, maxRows));
     
     const calculatedHeight = baseHeight + (actualRows * rowHeight);
     
-    console.log(`Entity data length: ${dataLength}, displayed rows: ${displayedRows}, actual rows for height: ${actualRows}, height: ${calculatedHeight}px`);
+    console.log(`Viewport height: ${availableHeight}px, max rows by viewport: ${maxRowsByViewport}, data length: ${dataLength}, displayed rows: ${displayedRows}, actual rows: ${actualRows}, final height: ${calculatedHeight}px`);
     
     return calculatedHeight;
-  }, [entityData.data, currentPageSize]);
+  }, [entityData.data, currentPageSize, dynamicTableHeight]);
 
   // Memoize SearchToolbar props for stable references
 
