@@ -152,6 +152,7 @@ export const useDropdownPosition = (
     }
 
     setPortalStyle(portalStyleBase);
+    setIsPositionReady(true);
   }, [
     isOpen,
     initialDropDirection,
@@ -170,8 +171,8 @@ export const useDropdownPosition = (
   // Auto calculate position when dropdown opens
   useEffect(() => {
     if (isOpen) {
-      // Set position ready immediately, then calculate actual position
-      setIsPositionReady(true);
+      // Calculate position first, then set ready state
+      setIsPositionReady(false);
       calculateDropdownPosition();
     } else {
       setIsPositionReady(false);

@@ -117,13 +117,19 @@ export const useDropdownEffects = ({
       // Immediately set open styles and calculate position
       setApplyOpenStyles(true);
 
-      // Calculate position after DOM is ready
-      openStyleTimerId = setTimeout(() => {
-        if (dropdownMenuRef.current) {
-          calculateDropdownPosition();
-          manageFocusOnOpen();
-        }
-      }, 10);
+      // Calculate position immediately after DOM is ready
+      if (dropdownMenuRef.current) {
+        calculateDropdownPosition();
+        manageFocusOnOpen();
+      } else {
+        // If ref not ready, use minimal timeout
+        openStyleTimerId = setTimeout(() => {
+          if (dropdownMenuRef.current) {
+            calculateDropdownPosition();
+            manageFocusOnOpen();
+          }
+        }, 0);
+      }
 
       const events = [
         ['scroll', calculateDropdownPosition, true],
@@ -167,8 +173,7 @@ export const useDropdownEffects = ({
   // Position recalculation
   useEffect(() => {
     if (isOpen && applyOpenStyles) {
-      const timer = setTimeout(calculateDropdownPosition, 10);
-      return () => clearTimeout(timer);
+      calculateDropdownPosition();
     }
   }, [filteredOptions, isOpen, applyOpenStyles, calculateDropdownPosition]);
 

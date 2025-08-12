@@ -23,12 +23,10 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
     hidden: {
       opacity: 0,
       scale: 0.95,
-      x: -10,
     },
     visible: {
       opacity: 1,
       scale: 1,
-      x: 0,
     },
   };
 
