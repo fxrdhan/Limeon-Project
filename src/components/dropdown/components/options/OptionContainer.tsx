@@ -95,7 +95,7 @@ const OptionContainer: React.FC<OptionContainerProps> = ({
       role="option"
       aria-selected={isHighlighted}
       type="button"
-      className={`flex ${isExpanded ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-gray-800 ${
+      className={`flex ${isExpanded ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-gray-800 cursor-pointer ${
         !isKeyboardNavigation ? 'hover:bg-slate-300/50' : ''
       } focus:outline-hidden focus:bg-gray-100 ${
         isHighlighted ? 'bg-slate-300/30' : ''

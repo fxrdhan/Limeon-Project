@@ -85,6 +85,7 @@ const EntityMasterPage: React.FC = memo(() => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dataGridRef = useRef<DataGridRef>(null);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  const [currentPageSize, setCurrentPageSize] = useState<number>(10);
   // Memoize tab detection function
   const getTabFromPath = useCallback((pathname: string): EntityType => {
     const pathSegments = pathname.split('/');
@@ -235,6 +236,10 @@ const EntityMasterPage: React.FC = memo(() => {
     (params: GridReadyEvent) => {
       setGridApi(params.api);
       
+      // Sync current page size with grid
+      const gridPageSize = params.api.paginationGetPageSize();
+      setCurrentPageSize(gridPageSize);
+      
       // Set initial page if needed
       if (entityManager.currentPage > 1) {
         params.api.paginationGoToPage(entityManager.currentPage - 1);
@@ -244,6 +249,7 @@ const EntityMasterPage: React.FC = memo(() => {
     },
     [originalOnGridReady, entityManager.currentPage]
   );
+
 
   // Cleanup grid API reference when activeTab changes or component unmounts
   useEffect(() => {
@@ -457,6 +463,27 @@ const EntityMasterPage: React.FC = memo(() => {
     [entityData.hasData, entityData.data, entityManager]
   );
 
+  // Calculate dynamic height based on data length and page size
+  const calculateGridHeight = useMemo(() => {
+    const baseHeight = 108; // Header and padding (120 - 10% = 108)
+    const rowHeight = 36; // Height per row (40 - 10% = 36)
+    
+    // Calculate from data length and page size
+    const dataLength = entityData.data ? entityData.data.length : 0;
+    const displayedRows = Math.min(dataLength, currentPageSize);
+    
+    // Minimum 5 rows for reasonable space, maximum based on page size
+    const minRows = 5;
+    const maxRows = currentPageSize <= 20 ? currentPageSize : 20; // Cap at 20 for 50+ items
+    const actualRows = Math.max(minRows, Math.min(displayedRows, maxRows));
+    
+    const calculatedHeight = baseHeight + (actualRows * rowHeight);
+    
+    console.log(`Entity data length: ${dataLength}, displayed rows: ${displayedRows}, actual rows for height: ${actualRows}, height: ${calculatedHeight}px`);
+    
+    return calculatedHeight;
+  }, [entityData.data, currentPageSize]);
+
   // Memoize SearchToolbar props for stable references
 
   const memoizedPlaceholder = useMemo(
@@ -555,10 +582,10 @@ const EntityMasterPage: React.FC = memo(() => {
                 domLayout="normal"
                 style={{
                   ...GRID_STYLE,
-                  height: '500px', // Set fixed height for pagination
+                  height: `${calculateGridHeight}px`, // Dynamic height based on pagination size
                   opacity:
                     entityData.isLoading && entityData.totalItems > 0 ? 0.8 : 1,
-                  transition: 'opacity 0.2s ease-in-out',
+                  transition: 'opacity 0.2s ease-in-out, height 0.3s ease-in-out',
                 }}
                 // AG Grid Pagination (hidden - we'll use custom component)
                 pagination={true}
@@ -572,6 +599,7 @@ const EntityMasterPage: React.FC = memo(() => {
                 pageSizeOptions={[10, 20, 50, 100]}
                 enableFloating={true}
                 hideFloatingWhenModalOpen={false}
+                onPageSizeChange={setCurrentPageSize}
               />
             </div>
           </>
