@@ -3,6 +3,8 @@ import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import { TbPlus } from 'react-icons/tb';
 import { MdChecklist } from 'react-icons/md';
 import Dropdown from '@/components/dropdown';
+import { ExportDropdown } from '@/components/export';
+import { GridApi } from 'ag-grid-community';
 import type { SearchColumn, FilterSearch } from '@/types/search';
 
 interface ColumnOption {
@@ -33,8 +35,10 @@ interface SearchToolbarProps<T = unknown> {
   // Column visibility props
   columnOptions?: ColumnOption[];
   onColumnToggle?: (columnKey: string, visible: boolean) => void;
+  // Export props
+  gridApi?: GridApi | null;
+  exportFilename?: string;
 }
-
 
 const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   searchInputRef,
@@ -47,8 +51,9 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   onItemSelect,
   columnOptions,
   onColumnToggle,
+  gridApi,
+  exportFilename = 'data-export',
 }: SearchToolbarProps<T>) {
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Use custom onKeyDown if provided
     if (onKeyDown) {
@@ -82,9 +87,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
 
   // Get visible column IDs for dropdown value
   const visibleColumnIds = useMemo(() => {
-    return (columnOptions || [])
-      .filter(col => col.visible)
-      .map(col => col.key);
+    return (columnOptions || []).filter(col => col.visible).map(col => col.key);
   }, [columnOptions]);
 
   // Handle multiple column selection
@@ -99,7 +102,6 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
       });
     }
   };
-
 
   // Filter search columns based on column visibility
   const filteredSearchBarProps = useMemo(() => {
@@ -168,7 +170,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
                   opacity: 0.8;
                 }
               `}</style>
-              
+
               {/* Dropdown component */}
               <Dropdown
                 options={dropdownOptions}
@@ -182,7 +184,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
                 portalWidth="content"
                 position="bottom"
               />
-              
+
               {/* Icon overlay - positioned over the invisible button */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <MdChecklist className="column-icon h-8 w-8 text-primary transition-opacity duration-200" />
@@ -190,6 +192,9 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
             </div>
           </div>
         )}
+        <div className="inline-block ml-2 mb-2">
+          <ExportDropdown gridApi={gridApi || null} filename={exportFilename} />
+        </div>
       </div>
     </>
   );

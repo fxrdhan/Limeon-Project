@@ -3,6 +3,7 @@ import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import Button from '@/components/button';
 import { AGGridPagination } from '@/components/pagination';
 import PageTitle from '@/components/page-title';
+import { ExportDropdown } from '@/components/export';
 
 import { FaPlus } from 'react-icons/fa';
 import { Card } from '@/components/card';
@@ -227,6 +228,12 @@ const PatientListNew = () => {
             placeholder="Cari di semua kolom atau ketik # untuk pencarian kolom spesifik..."
             className="grow"
           />
+          <div className="ml-4 mb-2">
+            <ExportDropdown
+              gridApi={gridApi}
+              filename="daftar-pasien"
+            />
+          </div>
           <Button
             variant="primary"
             withGlow
