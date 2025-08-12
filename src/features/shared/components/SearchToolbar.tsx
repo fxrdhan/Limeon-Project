@@ -1,7 +1,6 @@
 import { memo, useMemo } from 'react';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
-import { TbPlus } from 'react-icons/tb';
-import { MdChecklist } from 'react-icons/md';
+import { TbTablePlus, TbTableOptions } from 'react-icons/tb';
 import Dropdown from '@/components/dropdown';
 import { ExportDropdown } from '@/components/export';
 import { GridApi } from 'ag-grid-community';
@@ -142,7 +141,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
           onClick={onAdd}
           title="Tambah Item Baru"
         >
-          <TbPlus className="h-8 w-8 text-primary cursor-pointer hover:text-primary/80 transition-colors duration-200" />
+          <TbTablePlus className="h-8 w-8 text-primary cursor-pointer hover:text-primary/80 transition-colors duration-200" />
         </span>
         {columnOptions && onColumnToggle && (
           <div className="inline-block ml-4 mb-2 mr-2 relative">
@@ -187,12 +186,12 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
 
               {/* Icon overlay - positioned over the invisible button */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <MdChecklist className="column-icon h-8 w-8 text-primary transition-opacity duration-200" />
+                <TbTableOptions className="column-icon h-8 w-8 text-primary transition-opacity duration-200" />
               </div>
             </div>
           </div>
         )}
-        <div className="inline-block ml-2 mb-2">
+        <div className="inline-block ml-2 mb-1">
           <ExportDropdown gridApi={gridApi || null} filename={exportFilename} />
         </div>
       </div>
