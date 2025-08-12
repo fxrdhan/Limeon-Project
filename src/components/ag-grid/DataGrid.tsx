@@ -14,6 +14,7 @@ import {
   RowDataTransaction,
   ModuleRegistry,
   ColumnMenuTab,
+  GetContextMenuItems,
 } from 'ag-grid-community';
 import { AllEnterpriseModule, LicenseManager } from 'ag-grid-enterprise';
 import { DataGridProps, DataGridRef } from '@/types';
@@ -68,6 +69,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       disableFiltering = false,
       columnMenuTabs,
       mainMenuItems,
+      getContextMenuItems: customGetContextMenuItems,
       onColumnPinned,
       onColumnMoved,
       rowNumbers = false,
@@ -190,6 +192,20 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       return params.data?.id || params.data?.kode || params.data?.code;
     }, []);
 
+    // Context menu configuration - only show copy menu items by default
+    const getContextMenuItems: GetContextMenuItems = useCallback((params) => {
+      // Use custom implementation if provided, otherwise use default copy-only menu
+      if (customGetContextMenuItems) {
+        return customGetContextMenuItems(params);
+      }
+      
+      return [
+        'copy',
+        'copyWithHeaders', 
+        'copyWithGroupHeaders'
+      ];
+    }, [customGetContextMenuItems]);
+
     return (
       <div className={className} style={style}>
         <AgGridReact
@@ -224,6 +240,7 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
           rowNumbers={rowNumbers}
+          getContextMenuItems={getContextMenuItems}
           // Pagination props
           pagination={pagination}
           paginationPageSize={paginationPageSize}

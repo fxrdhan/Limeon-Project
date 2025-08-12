@@ -475,12 +475,23 @@ const EntityMasterPage: React.FC = memo(() => {
 
 
   // Memoize SearchToolbar props for stable references
-
   const memoizedPlaceholder = useMemo(
     () =>
       `${currentConfig?.searchPlaceholder || 'Cari'} atau ketik # untuk pencarian kolom spesifik`,
     [currentConfig?.searchPlaceholder]
   );
+
+  const exportFilename = useMemo(() => {
+    const entityNameMap = {
+      categories: 'kategori-item',
+      types: 'jenis-item', 
+      packages: 'kemasan-item',
+      dosages: 'sediaan-item',
+      manufacturers: 'produsen-item',
+      units: 'satuan-item'
+    };
+    return entityNameMap[activeTab as keyof typeof entityNameMap] || 'master-data';
+  }, [activeTab]);
 
   // If items tab is selected, redirect to parent (handled by ItemMasterNew)
   if (activeTab === 'items') {
@@ -513,6 +524,8 @@ const EntityMasterPage: React.FC = memo(() => {
             onKeyDown={handleKeyDown}
             columnOptions={columnOptions}
             onColumnToggle={handleColumnToggle}
+            gridApi={gridApi}
+            exportFilename={exportFilename}
           />
         </div>
       </div>

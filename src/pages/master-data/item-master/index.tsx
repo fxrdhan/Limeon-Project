@@ -369,17 +369,6 @@ const ItemMasterNew = memo(() => {
     [handleColumnOrdering, itemGridApi]
   );
 
-  // Memoize SearchToolbar callback props for stable references (after itemSearch is declared)
-  const memoizedOnAdd = useCallback(() => {
-    handleAddItem(undefined, itemSearch);
-  }, [handleAddItem, itemSearch]);
-
-  const memoizedOnItemSelect = useCallback(
-    (item: { id: string }) => {
-      handleItemSelect(item.id);
-    },
-    [handleItemSelect]
-  );
 
   const handleTabChange = useCallback(
     (_key: string, value: MasterDataType) => {
@@ -438,12 +427,14 @@ const ItemMasterNew = memo(() => {
                   }
                   searchBarProps={itemSearchBarProps}
                   search={itemSearch}
-                  placeholder="Cari nama, kode, atau deskripsi item atau ketik # untuk pencarian kolom spesifik"
-                  onAdd={memoizedOnAdd}
+                  placeholder="Cari item..."
+                  onAdd={() => handleAddItem(undefined, itemSearch)}
                   items={itemsManagement.data as ItemDataType[]}
-                  onItemSelect={memoizedOnItemSelect}
+                  onItemSelect={(item: { id: string }) => handleItemSelect(item.id)}
                   columnOptions={columnOptions}
                   onColumnToggle={handleColumnToggle}
+                  gridApi={itemGridApi}
+                  exportFilename="daftar-item"
                 />
               </div>
             </div>

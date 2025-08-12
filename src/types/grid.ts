@@ -10,6 +10,7 @@ import {
   RowDataTransaction,
   ColumnMenuTab,
   GetMainMenuItems,
+  GetContextMenuItems,
   ColumnPinnedEvent,
   ColumnMovedEvent,
   PaginationChangedEvent,
@@ -58,6 +59,7 @@ export interface DataGridProps {
   disableFiltering?: boolean;
   columnMenuTabs?: ColumnMenuTab[];
   mainMenuItems?: GetMainMenuItems;
+  getContextMenuItems?: GetContextMenuItems;
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
   rowNumbers?: boolean;
