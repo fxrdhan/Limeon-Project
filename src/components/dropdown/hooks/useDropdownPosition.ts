@@ -44,7 +44,7 @@ export const useDropdownPosition = (
     const contentWidth = maxWidth + 80;
     
     // Ensure minimum and maximum width
-    return Math.max(180, Math.min(contentWidth, 400));
+    return Math.max(120, Math.min(contentWidth, 400));
   }, [options]);
 
   const calculateDropdownPosition = useCallback(() => {
