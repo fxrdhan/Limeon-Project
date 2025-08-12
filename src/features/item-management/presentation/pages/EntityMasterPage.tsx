@@ -89,8 +89,8 @@ const EntityMasterPage: React.FC = memo(() => {
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
   
   // Calculate dynamic table height based on viewport
-  // Offset includes: navbar (~60px) + toolbar (~80px) + pagination (~60px) + margins (~40px) = ~240px
-  const dynamicTableHeight = useTableHeight(240);
+  // Offset includes: navbar (~60px) + toolbar (~80px) + pagination (~60px) + margins (~40px) + bottom pagination (~80px) = ~320px
+  const dynamicTableHeight = useTableHeight(320);
   // Memoize tab detection function
   const getTabFromPath = useCallback((pathname: string): EntityType => {
     const pathSegments = pathname.split('/');
@@ -486,8 +486,8 @@ const EntityMasterPage: React.FC = memo(() => {
     // Minimum 5 rows for reasonable space
     const minRows = 5;
     
-    // Maximum rows is the smaller of: viewport capacity, page size, or reasonable cap (25)
-    const maxRows = Math.min(maxRowsByViewport, currentPageSize, 25);
+    // Maximum rows is the smaller of: viewport capacity or page size
+    const maxRows = Math.min(maxRowsByViewport, currentPageSize);
     
     // Actual rows to display
     const actualRows = Math.max(minRows, Math.min(displayedRows, maxRows));
