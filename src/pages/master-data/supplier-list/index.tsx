@@ -9,6 +9,7 @@ import { Card } from '@/components/card';
 import { DataGrid, createTextColumn } from '@/components/ag-grid';
 import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from 'ag-grid-community';
 import { useRef, useMemo, useCallback, useState } from 'react';
+import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 // import { useLocation } from "react-router-dom";
 import type { Supplier as SupplierType, FieldConfig } from '@/types';
 
@@ -25,6 +26,7 @@ const SupplierListNew = () => {
   
   // Grid API state for AG Grid pagination
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  const [currentPageSize, setCurrentPageSize] = useState<number>(10);
 
   // Data management hook for server-side operations
   const {
@@ -87,12 +89,25 @@ const SupplierListNew = () => {
   const handleGridReady = useCallback(
     (params: GridReadyEvent) => {
       setGridApi(params.api);
+      
+      // Sync current page size with grid
+      const gridPageSize = params.api.paginationGetPageSize();
+      setCurrentPageSize(gridPageSize);
+      
       unifiedSearchOnGridReady(params);
     },
     [unifiedSearchOnGridReady]
   );
 
   const suppliers = suppliersData || [];
+  
+  // Use dynamic grid height hook
+  const { gridHeight } = useDynamicGridHeight({
+    data: suppliers,
+    currentPageSize,
+    viewportOffset: 320, // navbar + toolbar + pagination + margins + bottom pagination
+    debug: false,
+  });
 
   const supplierFields: FieldConfig[] = [
     {
@@ -230,7 +245,8 @@ const SupplierListNew = () => {
                 width: '100%',
                 marginTop: '1rem',
                 marginBottom: '1rem',
-                height: '500px', // Set fixed height for pagination
+                height: `${gridHeight}px`, // Dynamic height based on pagination size
+                transition: 'height 0.3s ease-in-out',
               }}
               // AG Grid Built-in Pagination (hidden - we'll use custom component)
               pagination={true}
@@ -244,6 +260,7 @@ const SupplierListNew = () => {
               pageSizeOptions={[10, 20, 50, 100]}
               enableFloating={true}
               hideFloatingWhenModalOpen={isAddModalOpen || isEditModalOpen}
+              onPageSizeChange={setCurrentPageSize}
             />
           </>
         )}
