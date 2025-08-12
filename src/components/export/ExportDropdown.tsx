@@ -99,20 +99,15 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(({
     <div className={`relative inline-block ${className}`} ref={dropdownRef}>
       {/* Main Export Button */}
       <button
-        onClick={() => gridApi && setIsOpen(!isOpen)}
-        title={gridApi ? "Export Data" : "Export tidak tersedia"}
-        className={`inline-flex items-center justify-center w-8 h-8 transition-colors duration-200 ${
-          gridApi 
-            ? 'text-primary hover:text-primary/80 cursor-pointer'
-            : 'text-gray-300 cursor-not-allowed'
-        }`}
-        disabled={!gridApi}
+        onClick={() => gridApi && !gridApi.isDestroyed() && setIsOpen(!isOpen)}
+        title="Export Data"
+        className="inline-flex items-center justify-center w-8 h-8 text-primary hover:text-primary/80 transition-colors duration-200 cursor-pointer"
       >
         <TbTableExport className="h-8 w-8" />
       </button>
 
       {/* Dropdown Portal */}
-      {isOpen && gridApi && (
+      {isOpen && gridApi && !gridApi.isDestroyed() && (
         <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[160px]">
           <div className="py-1">
             {/* CSV Export Option */}
