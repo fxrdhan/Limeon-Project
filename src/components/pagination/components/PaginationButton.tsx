@@ -10,9 +10,15 @@ export const PaginationButton: React.FC<PaginationButtonProps> = ({
 }) => {
   const isNext = direction === 'next';
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (!disabled) {
+      onClick(e);
+    }
+  };
+
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       className={classNames(
         'p-2 rounded-full focus:outline-hidden transition-colors duration-150 cursor-pointer select-none',
         disabled

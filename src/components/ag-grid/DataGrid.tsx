@@ -72,6 +72,13 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       onColumnMoved,
       rowNumbers = false,
       suppressHeaderFilterButton = false,
+      // Pagination props
+      pagination = false,
+      paginationPageSize = 100,
+      paginationPageSizeSelector,
+      paginationAutoPageSize = false,
+      suppressPaginationPanel = false,
+      onPaginationChanged,
     },
     ref
   ) => {
@@ -217,6 +224,13 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
           rowNumbers={rowNumbers}
+          // Pagination props
+          pagination={pagination}
+          paginationPageSize={paginationPageSize}
+          paginationPageSizeSelector={paginationPageSizeSelector}
+          paginationAutoPageSize={paginationAutoPageSize}
+          suppressPaginationPanel={suppressPaginationPanel}
+          onPaginationChanged={onPaginationChanged}
         />
       </div>
     );
