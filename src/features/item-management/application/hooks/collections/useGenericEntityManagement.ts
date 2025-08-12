@@ -26,7 +26,6 @@ import {
 export interface UseGenericEntityManagementOptions {
   entityType: EntityType;
   search?: string;
-  currentPage?: number;
   itemsPerPage?: number;
   enabled?: boolean;
 }
@@ -50,7 +49,6 @@ export const useGenericEntityManagement = (
   const {
     entityType,
     search = '',
-    currentPage = 1,
     itemsPerPage = 10,
     enabled = true,
   } = options;
@@ -71,8 +69,8 @@ export const useGenericEntityManagement = (
   // Get mutations
   const mutations = hooks.useMutations();
 
-  // Filter and paginate data
-  const { currentData, totalItems, totalPages } = useMemo(() => {
+  // Filter data (no pagination - let AG Grid handle it)
+  const filteredData = useMemo(() => {
     let filteredData = allData as EntityData[];
 
     // Apply search filter
@@ -204,26 +202,15 @@ export const useGenericEntityManagement = (
         });
     }
 
-    // Apply pagination
-    const totalItems = filteredData.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedData = filteredData.slice(startIndex, endIndex);
-
-    return {
-      currentData: paginatedData,
-      totalItems,
-      totalPages,
-    };
-  }, [allData, search, currentPage, itemsPerPage]);
+    return filteredData;
+  }, [allData, search]);
 
   return {
-    // Data
-    data: currentData,
+    // Data - return all filtered data for AG Grid pagination
+    data: filteredData,
     allData,
-    totalItems,
-    totalPages,
+    totalItems: filteredData.length,
+    totalPages: Math.ceil((filteredData?.length || 0) / itemsPerPage),
 
     // Loading states
     isLoading,
@@ -236,7 +223,7 @@ export const useGenericEntityManagement = (
     mutations,
 
     // Computed
-    isEmpty: currentData.length === 0,
-    hasData: currentData.length > 0,
+    isEmpty: filteredData.length === 0,
+    hasData: filteredData.length > 0,
   };
 };

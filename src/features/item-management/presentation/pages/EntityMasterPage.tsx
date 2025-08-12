@@ -8,7 +8,6 @@ import React, {
 } from 'react';
 import { useLocation } from 'react-router-dom';
 // Components
-import Pagination from '@/components/pagination';
 import {
   DataGrid,
   DataGridRef,
@@ -23,6 +22,7 @@ import {
   GridReadyEvent,
   ColumnPinnedEvent,
   ColumnMovedEvent,
+  PaginationChangedEvent,
 } from 'ag-grid-community';
 import SearchToolbar from '@/features/shared/components/SearchToolbar';
 
@@ -118,14 +118,12 @@ const EntityMasterPage: React.FC = memo(() => {
     () => ({
       entityType: activeTab !== 'items' ? activeTab : 'categories',
       search: entityManager.search,
-      currentPage: entityManager.currentPage,
       itemsPerPage: entityManager.itemsPerPage,
       enabled: activeTab !== 'items',
     }),
     [
       activeTab,
       entityManager.search,
-      entityManager.currentPage,
       entityManager.itemsPerPage,
     ]
   );
@@ -435,6 +433,24 @@ const EntityMasterPage: React.FC = memo(() => {
     [entityManager]
   );
 
+  // Handle pagination changes from AG Grid
+  const onPaginationChanged = useCallback(
+    (event: PaginationChangedEvent) => {
+      // Update entity manager current page to stay in sync
+      const currentPage = event.api.paginationGetCurrentPage() + 1; // AG Grid is 0-based
+      const pageSize = event.api.paginationGetPageSize();
+      
+      // Only update if values changed to avoid infinite loops
+      if (currentPage !== entityManager.currentPage) {
+        entityManager.handlePageChange(currentPage);
+      }
+      if (pageSize !== entityManager.itemsPerPage) {
+        entityManager.handleItemsPerPageChange(pageSize);
+      }
+    },
+    [entityManager]
+  );
+
   // Use static functions - no memoization needed
 
   const handleKeyDown = useCallback(
@@ -547,29 +563,21 @@ const EntityMasterPage: React.FC = memo(() => {
                 onColumnPinned={handleEntityColumnPinned}
                 onColumnMoved={handleEntityColumnMoved}
                 rowNumbers={true}
+                domLayout="normal"
                 style={{
                   ...GRID_STYLE,
+                  height: '500px', // Set fixed height for pagination
                   opacity:
                     entityData.isLoading && entityData.totalItems > 0 ? 0.8 : 1,
                   transition: 'opacity 0.2s ease-in-out',
                 }}
+                // AG Grid Pagination
+                pagination={true}
+                paginationPageSize={entityManager.itemsPerPage || 10}
+                paginationPageSizeSelector={[10, 20, 50, 100]}
+                onPaginationChanged={onPaginationChanged}
               />
             </div>
-
-            <Pagination
-              currentPage={entityManager.currentPage}
-              totalPages={entityData.totalPages}
-              totalItems={entityData.totalItems || 0}
-              itemsPerPage={entityManager.itemsPerPage || 10}
-              itemsCount={entityData.data?.length || 0}
-              onPageChange={entityManager.handlePageChange}
-              onItemsPerPageChange={e =>
-                entityManager.handleItemsPerPageChange(Number(e.target.value))
-              }
-              hideFloatingWhenModalOpen={
-                entityManager.isAddModalOpen || entityManager.isEditModalOpen
-              }
-            />
           </>
         )}
       </div>
