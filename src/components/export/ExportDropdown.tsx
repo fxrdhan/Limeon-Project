@@ -136,7 +136,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
 
         {/* Dropdown Portal */}
         {isOpen && gridApi && !gridApi.isDestroyed() && (
-          <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 min-w-[170px]">
+          <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 min-w-[175px]">
             <div className="px-1 py-1">
               {/* CSV Export Option */}
               <Button
