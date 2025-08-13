@@ -1,4 +1,11 @@
-import React, { memo, useCallback, useState, useRef, useEffect, CSSProperties } from 'react';
+import React, {
+  memo,
+  useCallback,
+  useState,
+  useRef,
+  useEffect,
+  CSSProperties,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GridApi } from 'ag-grid-community';
@@ -24,7 +31,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
     // Simple toggle function
     const toggleDropdown = useCallback(() => {
       if (!gridApi || gridApi.isDestroyed()) return;
-      
+
       if (isOpen) {
         setIsOpen(false);
       } else {
@@ -36,7 +43,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
           const margin = 8;
 
           let leftPosition = buttonRect.right - dropdownWidth;
-          
+
           if (leftPosition + dropdownWidth > viewportWidth - margin) {
             leftPosition = viewportWidth - dropdownWidth - margin;
           }
@@ -251,13 +258,14 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       }
     }, [gridApi, filename, closeDropdown]);
 
-
     // Handle click outside to close dropdown
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         if (
-          (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) &&
-          (buttonRef.current && !buttonRef.current.contains(event.target as Node))
+          dropdownRef.current &&
+          !dropdownRef.current.contains(event.target as Node) &&
+          buttonRef.current &&
+          !buttonRef.current.contains(event.target as Node)
         ) {
           closeDropdown();
         }
@@ -285,7 +293,9 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         </button>
 
         {/* Export Dropdown Portal */}
-        {gridApi && !gridApi.isDestroyed() && typeof document !== 'undefined' &&
+        {gridApi &&
+          !gridApi.isDestroyed() &&
+          typeof document !== 'undefined' &&
           createPortal(
             <AnimatePresence>
               {isOpen && (
@@ -300,66 +310,65 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                   role="menu"
                   onClick={e => e.stopPropagation()}
                 >
-              <div className="px-1 py-1">
-                {/* CSV Export Option */}
-                <Button
-                  variant="text"
-                  size="sm"
-                  withUnderline={false}
-                  onClick={handleCsvExport}
-                  className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
-                >
-                  <TbCsv className="h-6 w-6 text-gray-500 group-hover:text-primary" />
-                  <span>Export ke CSV</span>
-                </Button>
+                  <div className="px-1 py-1">
+                    {/* CSV Export Option */}
+                    <Button
+                      variant="text"
+                      size="sm"
+                      withUnderline={false}
+                      onClick={handleCsvExport}
+                      className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
+                    >
+                      <TbCsv className="h-6 w-6 text-gray-500 group-hover:text-primary" />
+                      <span>Export ke CSV</span>
+                    </Button>
 
-                {/* Excel Export Option */}
-                <Button
-                  variant="text"
-                  size="sm"
-                  withUnderline={false}
-                  onClick={handleExcelExport}
-                  className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
-                >
-                  <TbTableFilled className="h-6 w-6 text-gray-500 group-hover:text-primary" />
-                  <span>Export ke Excel</span>
-                </Button>
+                    {/* Excel Export Option */}
+                    <Button
+                      variant="text"
+                      size="sm"
+                      withUnderline={false}
+                      onClick={handleExcelExport}
+                      className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
+                    >
+                      <TbTableFilled className="h-6 w-6 text-gray-500 group-hover:text-primary" />
+                      <span>Export ke Excel</span>
+                    </Button>
 
-                {/* JSON Export Option */}
-                <Button
-                  variant="text"
-                  size="sm"
-                  withUnderline={false}
-                  onClick={handleJsonExport}
-                  className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
-                >
-                  <TbJson className="h-6 w-6 text-gray-500 group-hover:text-primary" />
-                  <span>Export ke JSON</span>
-                </Button>
+                    {/* JSON Export Option */}
+                    <Button
+                      variant="text"
+                      size="sm"
+                      withUnderline={false}
+                      onClick={handleJsonExport}
+                      className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
+                    >
+                      <TbJson className="h-6 w-6 text-gray-500 group-hover:text-primary" />
+                      <span>Export ke JSON</span>
+                    </Button>
 
-                {/* Google Sheets Export Option */}
-                <Button
-                  variant="text"
-                  size="sm"
-                  withUnderline={false}
-                  onClick={handleGoogleSheetsExport}
-                  disabled={isGoogleSheetsLoading}
-                  className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <FaGoogle className="h-5 w-5 text-gray-500 group-hover:text-primary" />
-                  <span>
-                    {isGoogleSheetsLoading
-                      ? 'Exporting...'
-                      : 'Export ke Google Sheets'}
-                  </span>
-                </Button>
-              </div>
+                    {/* Google Sheets Export Option */}
+                    <Button
+                      variant="text"
+                      size="sm"
+                      withUnderline={false}
+                      onClick={handleGoogleSheetsExport}
+                      disabled={isGoogleSheetsLoading}
+                      className="w-full px-3 py-2 text-left text-gray-700 hover:text-gray-900 hover:bg-gray-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <FaGoogle className="h-5 w-5 text-gray-500 group-hover:text-primary" />
+                      <span>
+                        {isGoogleSheetsLoading
+                          ? 'Exporting...'
+                          : 'Export ke Google Sheets'}
+                      </span>
+                    </Button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>,
             document.body
-          )
-        }
+          )}
       </div>
     );
   }

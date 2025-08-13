@@ -1,14 +1,14 @@
 /**
  * Unified Modal Template System
- * 
+ *
  * This system eliminates duplication between EntityModalTemplate and ItemModalTemplate
  * by providing a flexible, unified modal foundation with configurable content patterns.
- * 
+ *
  * Replaces:
  * - EntityModalTemplate.tsx (~70 lines)
- * - ItemModalTemplate.tsx (~165 lines) 
+ * - ItemModalTemplate.tsx (~165 lines)
  * - Other similar modal templates
- * 
+ *
  * Benefits:
  * - Eliminates 40+ lines of duplicate backdrop/animation/portal logic
  * - Consistent modal behavior across all templates
@@ -55,16 +55,16 @@ export interface ModalAnimationConfig {
 export interface ModalLayoutConfig {
   /** Modal container classes */
   containerClass?: string;
-  
+
   /** Content container classes */
   contentClass?: string;
-  
+
   /** Enable form wrapper */
   enableForm?: boolean;
-  
+
   /** Enable card footer */
   enableFooter?: boolean;
-  
+
   /** Custom backdrop classes */
   backdropClass?: string;
 }
@@ -92,28 +92,28 @@ export interface FormActionConfig {
 export interface UnifiedModalProps {
   /** Modal visibility state */
   isOpen: boolean;
-  
+
   /** Modal closing animation state */
   isClosing: boolean;
-  
+
   /** Backdrop click handler */
   onBackdropClick: (e: React.MouseEvent) => void;
-  
+
   /** Form submit handler (when enableForm is true) */
   onSubmit?: (e: React.FormEvent) => void;
-  
+
   /** Modal content */
   children: ReactNode;
-  
+
   /** Animation configuration */
   animation?: ModalAnimationConfig;
-  
+
   /** Layout configuration */
   layout?: ModalLayoutConfig;
-  
+
   /** Form action configuration (when enableFooter is true) */
   formAction?: FormActionConfig;
-  
+
   /** Comparison mode offset (for side-by-side modals) */
   comparisonOffset?: boolean;
 }
@@ -147,9 +147,11 @@ const DEFAULT_ANIMATION: ModalAnimationConfig = {
  * Default layout configuration
  */
 const DEFAULT_LAYOUT: ModalLayoutConfig = {
-  containerClass: 'rounded-xl bg-white shadow-xl w-[75vw] max-h-[90vh] flex flex-col',
+  containerClass:
+    'rounded-xl bg-white shadow-xl w-[75vw] max-h-[90vh] flex flex-col',
   contentClass: 'flex-1 flex flex-col min-h-0',
-  backdropClass: 'fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 backdrop-blur-xs',
+  backdropClass:
+    'fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 backdrop-blur-xs',
   enableForm: false,
   enableFooter: false,
 };
@@ -160,7 +162,7 @@ const DEFAULT_LAYOUT: ModalLayoutConfig = {
 
 /**
  * Unified modal template component
- * 
+ *
  * Provides consistent modal behavior with flexible content patterns.
  * Can be configured for simple content modals or complex form modals.
  */
@@ -181,9 +183,9 @@ export function UnifiedModal({
     modal: { ...DEFAULT_ANIMATION.modal, ...animation.modal },
     content: { ...DEFAULT_ANIMATION.content, ...animation.content },
   };
-  
+
   const layoutConfig = { ...DEFAULT_LAYOUT, ...layout };
-  
+
   // Apply comparison offset to modal animation
   const modalVariants = {
     ...animationConfig.modal,
@@ -204,7 +206,7 @@ export function UnifiedModal({
           exit="exit"
           transition={{ duration: 0.15 }}
           className={layoutConfig.backdropClass}
-          onClick={(e) => {
+          onClick={e => {
             if (e.target === e.currentTarget && !isClosing) {
               onBackdropClick(e);
             }
@@ -218,7 +220,7 @@ export function UnifiedModal({
             exit="exit"
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className={layoutConfig.containerClass}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             {layoutConfig.enableForm ? (
               <motion.form
@@ -231,10 +233,8 @@ export function UnifiedModal({
                 onSubmit={onSubmit}
                 className={layoutConfig.contentClass}
               >
-                <div className="flex-1 overflow-y-auto">
-                  {children}
-                </div>
-                
+                <div className="flex-1 overflow-y-auto">{children}</div>
+
                 {layoutConfig.enableFooter && formAction && (
                   <CardFooter className="sticky bottom-0 z-10 py-6! px-6!">
                     <FormAction
@@ -313,12 +313,7 @@ export interface EntityModalProps {
 }
 
 export function EntityModal(props: EntityModalProps) {
-  return (
-    <UnifiedModal
-      {...props}
-      {...ENTITY_MODAL_CONFIG}
-    />
-  );
+  return <UnifiedModal {...props} {...ENTITY_MODAL_CONFIG} />;
 }
 
 /**

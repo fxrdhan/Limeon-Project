@@ -31,7 +31,10 @@ import {
   useColumnVisibility,
 } from '@/features/item-management/application/hooks/ui';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
-import { getOrderedSearchColumnsByEntity, getSearchColumnsByEntity } from '@/utils/searchColumns';
+import {
+  getOrderedSearchColumnsByEntity,
+  getSearchColumnsByEntity,
+} from '@/utils/searchColumns';
 
 // Entity management hooks
 import {
@@ -161,23 +164,21 @@ const ItemMasterNew = memo(() => {
 
   // Entity management (for entity tabs)
   const entityManager = useEntityManager({
-    activeEntityType: activeTab !== 'items' ? activeTab as EntityType : 'categories',
+    activeEntityType:
+      activeTab !== 'items' ? (activeTab as EntityType) : 'categories',
     searchInputRef: searchInputRef as React.RefObject<HTMLInputElement>,
   });
 
   // Memoize entity options to prevent unnecessary re-renders
   const entityManagementOptions = useMemo(
     () => ({
-      entityType: activeTab !== 'items' ? activeTab as EntityType : 'categories',
+      entityType:
+        activeTab !== 'items' ? (activeTab as EntityType) : 'categories',
       search: entityManager.search,
       itemsPerPage: entityManager.itemsPerPage,
       enabled: activeTab !== 'items',
     }),
-    [
-      activeTab,
-      entityManager.search,
-      entityManager.itemsPerPage,
-    ]
+    [activeTab, entityManager.search, entityManager.itemsPerPage]
   );
 
   // Generic entity data management
@@ -204,7 +205,10 @@ const ItemMasterNew = memo(() => {
 
   // Entity column visibility management
   const entityCurrentConfig = useMemo(
-    () => activeTab !== 'items' ? entityManager.entityConfigs[activeTab as EntityType] : null,
+    () =>
+      activeTab !== 'items'
+        ? entityManager.entityConfigs[activeTab as EntityType]
+        : null,
     [activeTab, entityManager.entityConfigs]
   );
 
@@ -248,7 +252,14 @@ const ItemMasterNew = memo(() => {
         headerName: entityCurrentConfig.nameColumnHeader || 'Nama',
         filter: 'agTextColumnFilter',
         filterParams: {
-          filterOptions: ['contains', 'notContains', 'equals', 'notEqual', 'startsWith', 'endsWith'],
+          filterOptions: [
+            'contains',
+            'notContains',
+            'equals',
+            'notEqual',
+            'startsWith',
+            'endsWith',
+          ],
           defaultOption: 'contains',
           suppressAndOrCondition: false,
           caseSensitive: false,
@@ -299,17 +310,23 @@ const ItemMasterNew = memo(() => {
           },
         }),
         suppressHeaderFilterButton: true,
-        pinned: getEntityColumnPinning(entityCurrentConfig.hasAddress ? 'address' : 'description') || undefined,
+        pinned:
+          getEntityColumnPinning(
+            entityCurrentConfig.hasAddress ? 'address' : 'description'
+          ) || undefined,
       },
     };
 
     // Default column order if not specified
     const defaultOrder = ['code', 'name'];
     if (entityCurrentConfig.hasNciCode) defaultOrder.push('nci_code');
-    defaultOrder.push(entityCurrentConfig.hasAddress ? 'address' : 'description');
+    defaultOrder.push(
+      entityCurrentConfig.hasAddress ? 'address' : 'description'
+    );
 
     // Use provided order or default order
-    const orderedColumns = entityOrderingState.length > 0 ? entityOrderingState : defaultOrder;
+    const orderedColumns =
+      entityOrderingState.length > 0 ? entityOrderingState : defaultOrder;
 
     // Create ordered column array
     const orderedColumnDefs = orderedColumns
@@ -324,8 +341,16 @@ const ItemMasterNew = memo(() => {
     });
 
     // Filter columns based on visibility
-    return orderedColumnDefs.filter(column => isEntityColumnVisible(column.field as string));
-  }, [activeTab, entityCurrentConfig, isEntityColumnVisible, getEntityColumnPinning, entityOrderingState]);
+    return orderedColumnDefs.filter(column =>
+      isEntityColumnVisible(column.field as string)
+    );
+  }, [
+    activeTab,
+    entityCurrentConfig,
+    isEntityColumnVisible,
+    getEntityColumnPinning,
+    entityOrderingState,
+  ]);
 
   // Memoize modal handlers
   const openAddItemModal = useCallback(
@@ -500,7 +525,8 @@ const ItemMasterNew = memo(() => {
         try {
           // Entity columns are simpler - mostly text filters
           // Special handling for 'code' and 'nci_code' which use multi-filter
-          const isMultiFilter = filterSearch.field === 'code' || filterSearch.field === 'nci_code';
+          const isMultiFilter =
+            filterSearch.field === 'code' || filterSearch.field === 'nci_code';
 
           if (isMultiFilter) {
             // For multi-filter columns (code, nci_code)
@@ -602,7 +628,6 @@ const ItemMasterNew = memo(() => {
     [handleColumnOrdering, unifiedGridApi]
   );
 
-
   const handleTabChange = useCallback(
     (_key: string, value: MasterDataType) => {
       if (value !== activeTab) {
@@ -622,65 +647,77 @@ const ItemMasterNew = memo(() => {
     [activeTab, navigate, isAddItemModalOpen, closeAddItemModal]
   );
 
-  // Unified handlers for MasterDataGrid  
-  const unifiedRowClickHandler = useCallback((data: ItemDataType | EntityData) => {
-    if (activeTab === 'items') {
-      // Convert back to base Item type for editing
-      const baseItem = data as ItemDataType;
-      handleItemEdit(baseItem);
-    } else {
-      entityManager.openEditModal(data as EntityData);
-    }
-  }, [activeTab, handleItemEdit, entityManager]);
-
-  const unifiedGridReadyHandler = useCallback((params: GridReadyEvent) => {
-    if (activeTab === 'items') {
-      enhancedItemOnGridReady(params);
-    } else {
-      entityOnGridReady(params);
-    }
-  }, [activeTab, enhancedItemOnGridReady, entityOnGridReady]);
-
-  const unifiedColumnPinnedHandler = useCallback((event: ColumnPinnedEvent) => {
-    if (activeTab === 'items') {
-      handleColumnPinned(event);
-    } else {
-      // Entity column pinning logic
-      if (event.column && handleEntityColumnPinning) {
-        const colId = event.column.getColId();
-        let pinned: 'left' | 'right' | null = null;
-        if (event.pinned === true || event.pinned === 'left') {
-          pinned = 'left';
-        } else if (event.pinned === 'right') {
-          pinned = 'right';
-        }
-        handleEntityColumnPinning(colId, pinned);
+  // Unified handlers for MasterDataGrid
+  const unifiedRowClickHandler = useCallback(
+    (data: ItemDataType | EntityData) => {
+      if (activeTab === 'items') {
+        // Convert back to base Item type for editing
+        const baseItem = data as ItemDataType;
+        handleItemEdit(baseItem);
+      } else {
+        entityManager.openEditModal(data as EntityData);
       }
-    }
-  }, [activeTab, handleColumnPinned, handleEntityColumnPinning]);
+    },
+    [activeTab, handleItemEdit, entityManager]
+  );
 
-  const unifiedColumnMovedHandler = useCallback((event: ColumnMovedEvent) => {
-    if (activeTab === 'items') {
-      handleColumnMoved(event);
-    } else {
-      // Entity column moved logic
-      if (event.finished && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-        try {
-          const allColumns = unifiedGridApi.getAllGridColumns();
-          const newOrder: string[] = [];
-          allColumns.forEach(column => {
-            const colId = column.getColId();
-            if (colId !== 'rowNumber') {
-              newOrder.push(colId);
-            }
-          });
-          handleEntityColumnOrdering(newOrder);
-        } catch (error) {
-          console.error('Failed to update entity column order:', error);
+  const unifiedGridReadyHandler = useCallback(
+    (params: GridReadyEvent) => {
+      if (activeTab === 'items') {
+        enhancedItemOnGridReady(params);
+      } else {
+        entityOnGridReady(params);
+      }
+    },
+    [activeTab, enhancedItemOnGridReady, entityOnGridReady]
+  );
+
+  const unifiedColumnPinnedHandler = useCallback(
+    (event: ColumnPinnedEvent) => {
+      if (activeTab === 'items') {
+        handleColumnPinned(event);
+      } else {
+        // Entity column pinning logic
+        if (event.column && handleEntityColumnPinning) {
+          const colId = event.column.getColId();
+          let pinned: 'left' | 'right' | null = null;
+          if (event.pinned === true || event.pinned === 'left') {
+            pinned = 'left';
+          } else if (event.pinned === 'right') {
+            pinned = 'right';
+          }
+          handleEntityColumnPinning(colId, pinned);
         }
       }
-    }
-  }, [activeTab, handleColumnMoved, handleEntityColumnOrdering, unifiedGridApi]);
+    },
+    [activeTab, handleColumnPinned, handleEntityColumnPinning]
+  );
+
+  const unifiedColumnMovedHandler = useCallback(
+    (event: ColumnMovedEvent) => {
+      if (activeTab === 'items') {
+        handleColumnMoved(event);
+      } else {
+        // Entity column moved logic
+        if (event.finished && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+          try {
+            const allColumns = unifiedGridApi.getAllGridColumns();
+            const newOrder: string[] = [];
+            allColumns.forEach(column => {
+              const colId = column.getColId();
+              if (colId !== 'rowNumber') {
+                newOrder.push(colId);
+              }
+            });
+            handleEntityColumnOrdering(newOrder);
+          } catch (error) {
+            console.error('Failed to update entity column order:', error);
+          }
+        }
+      }
+    },
+    [activeTab, handleColumnMoved, handleEntityColumnOrdering, unifiedGridApi]
+  );
 
   // No need for mouse handlers - handled by SlidingSelector
 
@@ -713,26 +750,58 @@ const ItemMasterNew = memo(() => {
         <div className="flex items-center pt-8">
           <div className="grow">
             <SearchToolbar
-              searchInputRef={searchInputRef as React.RefObject<HTMLInputElement>}
-              searchBarProps={activeTab === 'items' ? itemSearchBarProps : entitySearchBarProps}
-              search={activeTab === 'items' ? itemSearch : entitySearch}
-              placeholder={activeTab === 'items' ? 'Cari item...' : `${entityCurrentConfig?.searchPlaceholder || 'Cari'} atau ketik # untuk pencarian kolom spesifik`}
-              onAdd={activeTab === 'items' 
-                ? () => handleAddItem(undefined, itemSearch)
-                : entityManager.openAddModal
+              searchInputRef={
+                searchInputRef as React.RefObject<HTMLInputElement>
               }
-              items={activeTab === 'items' ? itemsManagement.data as ItemDataType[] : undefined}
-              onItemSelect={activeTab === 'items' ? (item: { id: string }) => handleItemSelect(item.id) : undefined}
-              columnOptions={activeTab === 'items' ? columnOptions : entityColumnOptions}
-              onColumnToggle={activeTab === 'items' ? handleColumnToggle : handleEntityColumnToggle}
+              searchBarProps={
+                activeTab === 'items'
+                  ? itemSearchBarProps
+                  : entitySearchBarProps
+              }
+              search={activeTab === 'items' ? itemSearch : entitySearch}
+              placeholder={
+                activeTab === 'items'
+                  ? 'Cari item...'
+                  : `${entityCurrentConfig?.searchPlaceholder || 'Cari'} atau ketik # untuk pencarian kolom spesifik`
+              }
+              onAdd={
+                activeTab === 'items'
+                  ? () => handleAddItem(undefined, itemSearch)
+                  : entityManager.openAddModal
+              }
+              items={
+                activeTab === 'items'
+                  ? (itemsManagement.data as ItemDataType[])
+                  : undefined
+              }
+              onItemSelect={
+                activeTab === 'items'
+                  ? (item: { id: string }) => handleItemSelect(item.id)
+                  : undefined
+              }
+              columnOptions={
+                activeTab === 'items' ? columnOptions : entityColumnOptions
+              }
+              onColumnToggle={
+                activeTab === 'items'
+                  ? handleColumnToggle
+                  : handleEntityColumnToggle
+              }
               gridApi={unifiedGridApi}
-              exportFilename={activeTab === 'items' ? 'daftar-item' : 
-                activeTab === 'categories' ? 'kategori-item' :
-                activeTab === 'types' ? 'jenis-item' :
-                activeTab === 'packages' ? 'kemasan-item' :
-                activeTab === 'dosages' ? 'sediaan-item' :
-                activeTab === 'manufacturers' ? 'produsen-item' :
-                'satuan-item'
+              exportFilename={
+                activeTab === 'items'
+                  ? 'daftar-item'
+                  : activeTab === 'categories'
+                    ? 'kategori-item'
+                    : activeTab === 'types'
+                      ? 'jenis-item'
+                      : activeTab === 'packages'
+                        ? 'kemasan-item'
+                        : activeTab === 'dosages'
+                          ? 'sediaan-item'
+                          : activeTab === 'manufacturers'
+                            ? 'produsen-item'
+                            : 'satuan-item'
               }
             />
           </div>
@@ -744,9 +813,21 @@ const ItemMasterNew = memo(() => {
             activeTab={activeTab}
             itemsData={itemsManagement.data as ItemDataType[]}
             entityData={entityData.data}
-            isLoading={activeTab === 'items' ? itemsManagement.isLoading : entityData.isLoading}
-            isError={activeTab === 'items' ? itemsManagement.isError : entityData.isError}
-            error={activeTab === 'items' ? itemsManagement.queryError : entityData.error}
+            isLoading={
+              activeTab === 'items'
+                ? itemsManagement.isLoading
+                : entityData.isLoading
+            }
+            isError={
+              activeTab === 'items'
+                ? itemsManagement.isError
+                : entityData.isError
+            }
+            error={
+              activeTab === 'items'
+                ? itemsManagement.queryError
+                : entityData.error
+            }
             search={activeTab === 'items' ? itemSearch : entitySearch}
             itemColumnDefs={itemColumnDefs}
             itemColumnsToAutoSize={columnsToAutoSize}
@@ -754,8 +835,16 @@ const ItemMasterNew = memo(() => {
             entityColumnDefs={entityColumnDefs}
             onRowClick={unifiedRowClickHandler}
             onGridReady={unifiedGridReadyHandler}
-            isExternalFilterPresent={activeTab === 'items' ? itemIsExternalFilterPresent : entityIsExternalFilterPresent}
-            doesExternalFilterPass={activeTab === 'items' ? itemDoesExternalFilterPass : entityDoesExternalFilterPass}
+            isExternalFilterPresent={
+              activeTab === 'items'
+                ? itemIsExternalFilterPresent
+                : entityIsExternalFilterPresent
+            }
+            doesExternalFilterPass={
+              activeTab === 'items'
+                ? itemDoesExternalFilterPass
+                : entityDoesExternalFilterPass
+            }
             onColumnPinned={unifiedColumnPinnedHandler}
             onColumnMoved={unifiedColumnMovedHandler}
             onGridApiReady={handleUnifiedGridApiReady}
@@ -779,26 +868,27 @@ const ItemMasterNew = memo(() => {
       )}
 
       {/* Entity Management Modal - only render for entity tabs */}
-      {activeTab !== 'items' && (entityManager.isAddModalOpen || entityManager.isEditModalOpen) && (
-        <EntityManagementModal
-          isOpen={true}
-          onClose={
-            entityManager.isEditModalOpen
-              ? entityManager.closeEditModal
-              : entityManager.closeAddModal
-          }
-          onSubmit={entityManager.handleSubmit}
-          initialData={entityManager.editingEntity}
-          onDelete={
-            entityManager.editingEntity
-              ? () => entityManager.handleDelete(entityManager.editingEntity!)
-              : undefined
-          }
-          isLoading={false}
-          isDeleting={false}
-          entityName={entityCurrentConfig?.entityName || 'Entity'}
-        />
-      )}
+      {activeTab !== 'items' &&
+        (entityManager.isAddModalOpen || entityManager.isEditModalOpen) && (
+          <EntityManagementModal
+            isOpen={true}
+            onClose={
+              entityManager.isEditModalOpen
+                ? entityManager.closeEditModal
+                : entityManager.closeAddModal
+            }
+            onSubmit={entityManager.handleSubmit}
+            initialData={entityManager.editingEntity}
+            onDelete={
+              entityManager.editingEntity
+                ? () => entityManager.handleDelete(entityManager.editingEntity!)
+                : undefined
+            }
+            isLoading={false}
+            isDeleting={false}
+            entityName={entityCurrentConfig?.entityName || 'Entity'}
+          />
+        )}
     </>
   );
 });

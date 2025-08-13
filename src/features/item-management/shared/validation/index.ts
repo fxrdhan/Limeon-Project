@@ -1,6 +1,6 @@
 /**
  * Centralized Validation Rules for Item Management
- * 
+ *
  * Replaces the over-engineered domain/entities validation system
  * with simple, focused validation functions.
  */
@@ -78,17 +78,18 @@ export const VALIDATION_CONFIGS = {
 /**
  * Generic validator for standard entities (with description)
  */
-function validateStandardEntity<T extends { name?: string; description?: string }>(
-  data: Partial<T>,
-  config: ValidationConfig
-): string[] {
+function validateStandardEntity<
+  T extends { name?: string; description?: string },
+>(data: Partial<T>, config: ValidationConfig): string[] {
   const errors: string[] = [];
 
   // Name validation
   if (!data.name?.trim()) {
     errors.push(`Nama ${config.entityDisplayName} wajib diisi`);
   } else if (data.name.length > config.maxNameLength) {
-    errors.push(`Nama ${config.entityDisplayName} maksimal ${config.maxNameLength} karakter`);
+    errors.push(
+      `Nama ${config.entityDisplayName} maksimal ${config.maxNameLength} karakter`
+    );
   }
 
   // Description validation
@@ -106,10 +107,9 @@ function validateStandardEntity<T extends { name?: string; description?: string 
 /**
  * Validator for entities with NCI code
  */
-function validateNciEntity<T extends { name?: string; description?: string; nci_code?: string }>(
-  data: Partial<T>,
-  config: ValidationConfig
-): string[] {
+function validateNciEntity<
+  T extends { name?: string; description?: string; nci_code?: string },
+>(data: Partial<T>, config: ValidationConfig): string[] {
   const errors = validateStandardEntity(data, config);
 
   // NCI code validation
@@ -137,7 +137,9 @@ function validateManufacturer(
   if (!data.name?.trim()) {
     errors.push(`Nama ${config.entityDisplayName} wajib diisi`);
   } else if (data.name.length > config.maxNameLength) {
-    errors.push(`Nama ${config.entityDisplayName} maksimal ${config.maxNameLength} karakter`);
+    errors.push(
+      `Nama ${config.entityDisplayName} maksimal ${config.maxNameLength} karakter`
+    );
   }
 
   // Address validation

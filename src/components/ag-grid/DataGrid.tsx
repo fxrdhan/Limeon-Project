@@ -193,18 +193,17 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
     }, []);
 
     // Context menu configuration - only show copy menu items by default
-    const getContextMenuItems: GetContextMenuItems = useCallback((params) => {
-      // Use custom implementation if provided, otherwise use default copy-only menu
-      if (customGetContextMenuItems) {
-        return customGetContextMenuItems(params);
-      }
-      
-      return [
-        'copy',
-        'copyWithHeaders', 
-        'copyWithGroupHeaders'
-      ];
-    }, [customGetContextMenuItems]);
+    const getContextMenuItems: GetContextMenuItems = useCallback(
+      params => {
+        // Use custom implementation if provided, otherwise use default copy-only menu
+        if (customGetContextMenuItems) {
+          return customGetContextMenuItems(params);
+        }
+
+        return ['copy', 'copyWithHeaders', 'copyWithGroupHeaders'];
+      },
+      [customGetContextMenuItems]
+    );
 
     return (
       <div className={className} style={style}>

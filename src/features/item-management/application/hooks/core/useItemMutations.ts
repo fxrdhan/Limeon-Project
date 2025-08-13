@@ -1,13 +1,13 @@
 /**
  * Item Mutations Hook - Refactored using Generic Factory System
- * 
+ *
  * This hook has been completely refactored to use the generic factory system and
  * extracted business logic utilities, eliminating 300+ lines of duplicated mutation code
  * while maintaining full backward compatibility.
- * 
+ *
  * Before: 6 identical entity mutations + complex item logic all mixed together
  * After: Factory-generated entity mutations + organized business logic utilities
- * 
+ *
  * Benefits:
  * - Eliminated 85%+ entity mutation duplication
  * - Extracted reusable business logic to utilities
@@ -37,7 +37,7 @@ interface UseAddItemMutationsProps {
 
 /**
  * Hook for managing all CRUD operations related to items
- * 
+ *
  * Now uses factory-generated mutations for entities and extracted utilities
  * for complex item business logic while maintaining exact same API.
  */
@@ -53,7 +53,7 @@ export const useAddItemMutations = ({
 
   /**
    * Factory-generated entity mutations with backward compatibility
-   * 
+   *
    * These replace 150+ lines of duplicated mutation code with configuration-driven approach
    */
   const entityMutations = {
@@ -66,28 +66,30 @@ export const useAddItemMutations = ({
 
   // Create mutations with proper success/error handling for backward compatibility
   const addCategoryMutation = entityMutations.categories.useCreate({
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
-    onError: (error) => console.error('Error adding category:', error),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['categories'] }),
+    onError: error => console.error('Error adding category:', error),
   });
 
   const addTypeMutation = entityMutations.types.useCreate({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['types'] }),
-    onError: (error) => console.error('Error adding type:', error),
+    onError: error => console.error('Error adding type:', error),
   });
 
   const addUnitMutation = entityMutations.units.useCreate({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['units'] }),
-    onError: (error) => console.error('Error adding unit:', error),
+    onError: error => console.error('Error adding unit:', error),
   });
 
   const addDosageMutation = entityMutations.dosages.useCreate({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dosages'] }),
-    onError: (error) => console.error('Error adding dosage:', error),
+    onError: error => console.error('Error adding dosage:', error),
   });
 
   const addManufacturerMutation = entityMutations.manufacturers.useCreate({
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['manufacturers'] }),
-    onError: (error) => console.error('Error adding manufacturer:', error),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['manufacturers'] }),
+    onError: error => console.error('Error adding manufacturer:', error),
   });
 
   // ============================================================================
@@ -126,7 +128,8 @@ export const useAddItemMutations = ({
     onSuccess: result => {
       // Show success message
       if (result.code) {
-        const actionText = result.action === 'create' ? 'ditambahkan' : 'diperbarui';
+        const actionText =
+          result.action === 'create' ? 'ditambahkan' : 'diperbarui';
         toast.success(`Item berhasil ${actionText}`);
       }
 
@@ -194,13 +197,13 @@ export const useAddItemMutations = ({
     saveDosage,
     saveManufacturer,
     prepareItemData, // From utilities
-    generateItemCode, // From utilities  
+    generateItemCode, // From utilities
     checkExistingCodes, // From utilities
 
     // Loading states
     isSaving: saveItemMutation.isPending,
     isDeleting: deleteItemMutation.isPending,
-    
+
     // Enhanced: Expose factory-generated mutations for advanced usage
     entityMutations,
   };

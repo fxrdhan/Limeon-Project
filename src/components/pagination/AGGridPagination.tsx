@@ -36,66 +36,82 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   });
 
   // Default values when no grid API
-  const currentPage = gridApi && !gridApi.isDestroyed() 
-    ? gridApi.paginationGetCurrentPage() + 1 
-    : 1;
+  const currentPage =
+    gridApi && !gridApi.isDestroyed()
+      ? gridApi.paginationGetCurrentPage() + 1
+      : 1;
 
   const { direction } = useAnimationDirection({
     currentPage,
   });
-  
+
   // Optimized handlers using AG Grid API (defined before early return)
-  const handlePageChange = useCallback((page: number) => {
-    if (!gridApi || gridApi.isDestroyed() || page === currentPage) return;
-    
-    const totalPages = gridApi.paginationGetTotalPages();
-    if (page === 1) {
-      gridApi.paginationGoToFirstPage();
-    } else if (page === totalPages) {
-      gridApi.paginationGoToLastPage();
-    } else {
-      gridApi.paginationGoToPage(page - 1);
-    }
-  }, [gridApi, currentPage]);
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (!gridApi || gridApi.isDestroyed() || page === currentPage) return;
 
-  const handlePageSizeChange = useCallback((newPageSize: number) => {
-    if (!gridApi || gridApi.isDestroyed()) return;
-    
-    const currentPageSize = gridApi.paginationGetPageSize();
-    if (newPageSize === currentPageSize) return;
-    
-    gridApi.setGridOption('paginationPageSize', newPageSize);
-    
-    // Call the callback to notify parent component
-    if (onPageSizeChange) {
-      onPageSizeChange(newPageSize);
-    }
-  }, [gridApi, onPageSizeChange]);
+      const totalPages = gridApi.paginationGetTotalPages();
+      if (page === 1) {
+        gridApi.paginationGoToFirstPage();
+      } else if (page === totalPages) {
+        gridApi.paginationGoToLastPage();
+      } else {
+        gridApi.paginationGoToPage(page - 1);
+      }
+    },
+    [gridApi, currentPage]
+  );
 
-  const handleItemsPerPageChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newPageSize = Number(event.target.value);
-    handlePageSizeChange(newPageSize);
-  }, [handlePageSizeChange]);
+  const handlePageSizeChange = useCallback(
+    (newPageSize: number) => {
+      if (!gridApi || gridApi.isDestroyed()) return;
 
-  const handleItemsPerPageClick = useCallback((value: number, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    handlePageSizeChange(value);
-  }, [handlePageSizeChange]);
-  
+      const currentPageSize = gridApi.paginationGetPageSize();
+      if (newPageSize === currentPageSize) return;
+
+      gridApi.setGridOption('paginationPageSize', newPageSize);
+
+      // Call the callback to notify parent component
+      if (onPageSizeChange) {
+        onPageSizeChange(newPageSize);
+      }
+    },
+    [gridApi, onPageSizeChange]
+  );
+
+  const handleItemsPerPageChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const newPageSize = Number(event.target.value);
+      handlePageSizeChange(newPageSize);
+    },
+    [handlePageSizeChange]
+  );
+
+  const handleItemsPerPageClick = useCallback(
+    (value: number, event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      handlePageSizeChange(value);
+    },
+    [handlePageSizeChange]
+  );
+
   // Listen to AG Grid pagination events for automatic updates
   useEffect(() => {
     if (!gridApi || gridApi.isDestroyed()) return;
-    
+
     const handlePaginationChanged = () => {
       setPaginationState(prev => prev + 1);
     };
-    
+
     gridApi.addEventListener('paginationChanged', handlePaginationChanged);
-    
+
     return () => {
       if (!gridApi.isDestroyed()) {
-        gridApi.removeEventListener('paginationChanged', handlePaginationChanged);
+        gridApi.removeEventListener(
+          'paginationChanged',
+          handlePaginationChanged
+        );
       }
     };
   }, [gridApi]);

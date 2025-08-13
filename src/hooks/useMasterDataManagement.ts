@@ -22,10 +22,7 @@ import {
   useDoctors,
 } from '@/hooks/queries';
 
-type MasterDataIdentity =
-  | Supplier
-  | Patient
-  | Doctor;
+type MasterDataIdentity = Supplier | Patient | Doctor;
 
 // Simplified hook selector - realtime always enabled for simplicity
 const getHooksForTable = (tableName: string) => {
@@ -69,7 +66,8 @@ export const useMasterDataManagement = (
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingIdentity, setEditingIdentity] = useState<MasterDataIdentity | null>(null);
+  const [editingIdentity, setEditingIdentity] =
+    useState<MasterDataIdentity | null>(null);
 
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -195,133 +193,130 @@ export const useMasterDataManagement = (
       // Standard filtering for master data (suppliers, patients, doctors)
       filteredData = filteredData
         .filter(identity => {
-            // Check for code field if it exists (all master data now uses 'code')
-            if (
-              'code' in identity &&
-              typeof identity.code === 'string' &&
-              fuzzyMatch(identity.code.toLowerCase(), searchTermLower)
-            )
-              return true;
-            if (identity.name && fuzzyMatch(identity.name, searchTermLower))
-              return true;
-            if (
-              'description' in identity &&
-              typeof identity.description === 'string' &&
-              fuzzyMatch(identity.description, searchTermLower)
-            )
-              return true;
-            if (
-              'address' in identity &&
-              typeof identity.address === 'string' &&
-              fuzzyMatch(identity.address, searchTermLower)
-            )
-              return true;
+          // Check for code field if it exists (all master data now uses 'code')
+          if (
+            'code' in identity &&
+            typeof identity.code === 'string' &&
+            fuzzyMatch(identity.code.toLowerCase(), searchTermLower)
+          )
+            return true;
+          if (identity.name && fuzzyMatch(identity.name, searchTermLower))
+            return true;
+          if (
+            'description' in identity &&
+            typeof identity.description === 'string' &&
+            fuzzyMatch(identity.description, searchTermLower)
+          )
+            return true;
+          if (
+            'address' in identity &&
+            typeof identity.address === 'string' &&
+            fuzzyMatch(identity.address, searchTermLower)
+          )
+            return true;
 
-            if (tableName === 'suppliers') {
-              const supplier = identity as Supplier;
-              if (
-                supplier.address &&
-                fuzzyMatch(supplier.address, searchTermLower)
-              )
-                return true;
-              if (supplier.phone && fuzzyMatch(supplier.phone, searchTermLower))
-                return true;
-              if (supplier.email && fuzzyMatch(supplier.email, searchTermLower))
-                return true;
-              if (
-                supplier.contact_person &&
-                fuzzyMatch(supplier.contact_person, searchTermLower)
-              )
-                return true;
-            } else if (tableName === 'patients') {
-              const patient = identity as Patient;
-              if (patient.gender && fuzzyMatch(patient.gender, searchTermLower))
-                return true;
-              if (
-                patient.address &&
-                fuzzyMatch(patient.address, searchTermLower)
-              )
-                return true;
-              if (patient.phone && fuzzyMatch(patient.phone, searchTermLower))
-                return true;
-              if (patient.email && fuzzyMatch(patient.email, searchTermLower))
-                return true;
-              if (
-                patient.birth_date &&
-                fuzzyMatch(patient.birth_date.toString(), searchTermLower)
-              )
-                return true;
-            } else if (tableName === 'doctors') {
-              const doctor = identity as Doctor;
-              if (
-                doctor.specialization &&
-                fuzzyMatch(doctor.specialization, searchTermLower)
-              )
-                return true;
-              if (
-                doctor.license_number &&
-                fuzzyMatch(doctor.license_number, searchTermLower)
-              )
-                return true;
-              if (doctor.phone && fuzzyMatch(doctor.phone, searchTermLower))
-                return true;
-              if (doctor.email && fuzzyMatch(doctor.email, searchTermLower))
-                return true;
-              if (
-                doctor.experience_years &&
-                fuzzyMatch(doctor.experience_years.toString(), searchTermLower)
-              )
-                return true;
-            }
-            return false;
-          })
-          .sort((a, b) => {
-            const getScore = (identityToSort: MasterDataIdentity) => {
-              // Check code field (all master data tables now use 'code')
-              if (
-                'code' in identityToSort &&
-                typeof identityToSort.code === 'string' &&
-                identityToSort.code.toLowerCase().startsWith(searchTermLower)
-              )
-                return 5;
-              if (
-                'code' in identityToSort &&
-                typeof identityToSort.code === 'string' &&
-                identityToSort.code.toLowerCase().includes(searchTermLower)
-              )
-                return 4;
-              // Then check name
-              if (
-                identityToSort.name &&
-                identityToSort.name.toLowerCase().startsWith(searchTermLower)
-              )
-                return 3;
-              if (
-                identityToSort.name &&
-                identityToSort.name.toLowerCase().includes(searchTermLower)
-              )
-                return 2;
-              if (
-                identityToSort.name &&
-                fuzzyMatch(identityToSort.name, searchTermLower)
-              )
-                return 1;
-              return 0;
-            };
-            const scoreA = getScore(a);
-            const scoreB = getScore(b);
-            if (scoreA !== scoreB) return scoreB - scoreA;
-            // Secondary sort by code if available, then name
+          if (tableName === 'suppliers') {
+            const supplier = identity as Supplier;
             if (
-              'code' in a &&
-              'code' in b &&
-              typeof a.code === 'string' &&
-              typeof b.code === 'string'
-            ) {
-              return a.code.localeCompare(b.code);
-            }
-            return a.name.localeCompare(b.name);
-          });
+              supplier.address &&
+              fuzzyMatch(supplier.address, searchTermLower)
+            )
+              return true;
+            if (supplier.phone && fuzzyMatch(supplier.phone, searchTermLower))
+              return true;
+            if (supplier.email && fuzzyMatch(supplier.email, searchTermLower))
+              return true;
+            if (
+              supplier.contact_person &&
+              fuzzyMatch(supplier.contact_person, searchTermLower)
+            )
+              return true;
+          } else if (tableName === 'patients') {
+            const patient = identity as Patient;
+            if (patient.gender && fuzzyMatch(patient.gender, searchTermLower))
+              return true;
+            if (patient.address && fuzzyMatch(patient.address, searchTermLower))
+              return true;
+            if (patient.phone && fuzzyMatch(patient.phone, searchTermLower))
+              return true;
+            if (patient.email && fuzzyMatch(patient.email, searchTermLower))
+              return true;
+            if (
+              patient.birth_date &&
+              fuzzyMatch(patient.birth_date.toString(), searchTermLower)
+            )
+              return true;
+          } else if (tableName === 'doctors') {
+            const doctor = identity as Doctor;
+            if (
+              doctor.specialization &&
+              fuzzyMatch(doctor.specialization, searchTermLower)
+            )
+              return true;
+            if (
+              doctor.license_number &&
+              fuzzyMatch(doctor.license_number, searchTermLower)
+            )
+              return true;
+            if (doctor.phone && fuzzyMatch(doctor.phone, searchTermLower))
+              return true;
+            if (doctor.email && fuzzyMatch(doctor.email, searchTermLower))
+              return true;
+            if (
+              doctor.experience_years &&
+              fuzzyMatch(doctor.experience_years.toString(), searchTermLower)
+            )
+              return true;
+          }
+          return false;
+        })
+        .sort((a, b) => {
+          const getScore = (identityToSort: MasterDataIdentity) => {
+            // Check code field (all master data tables now use 'code')
+            if (
+              'code' in identityToSort &&
+              typeof identityToSort.code === 'string' &&
+              identityToSort.code.toLowerCase().startsWith(searchTermLower)
+            )
+              return 5;
+            if (
+              'code' in identityToSort &&
+              typeof identityToSort.code === 'string' &&
+              identityToSort.code.toLowerCase().includes(searchTermLower)
+            )
+              return 4;
+            // Then check name
+            if (
+              identityToSort.name &&
+              identityToSort.name.toLowerCase().startsWith(searchTermLower)
+            )
+              return 3;
+            if (
+              identityToSort.name &&
+              identityToSort.name.toLowerCase().includes(searchTermLower)
+            )
+              return 2;
+            if (
+              identityToSort.name &&
+              fuzzyMatch(identityToSort.name, searchTermLower)
+            )
+              return 1;
+            return 0;
+          };
+          const scoreA = getScore(a);
+          const scoreB = getScore(b);
+          if (scoreA !== scoreB) return scoreB - scoreA;
+          // Secondary sort by code if available, then name
+          if (
+            'code' in a &&
+            'code' in b &&
+            typeof a.code === 'string' &&
+            typeof b.code === 'string'
+          ) {
+            return a.code.localeCompare(b.code);
+          }
+          return a.name.localeCompare(b.name);
+        });
     }
 
     // Apply pagination
@@ -364,7 +359,9 @@ export const useMasterDataManagement = (
             typeof updateMutation === 'object' &&
             'mutateAsync' in updateMutation
           ) {
-            const updateData: Record<string, unknown> = { name: identityData.name };
+            const updateData: Record<string, unknown> = {
+              name: identityData.name,
+            };
             if (identityData.description !== undefined) {
               updateData.description = identityData.description;
             }
@@ -402,7 +399,9 @@ export const useMasterDataManagement = (
             typeof createMutation === 'object' &&
             'mutateAsync' in createMutation
           ) {
-            const createData: Record<string, unknown> = { name: identityData.name };
+            const createData: Record<string, unknown> = {
+              name: identityData.name,
+            };
             if (identityData.description !== undefined) {
               createData.description = identityData.description;
             }
@@ -532,9 +531,10 @@ export const useMasterDataManagement = (
     newIdentitiesPerPage: number | React.ChangeEvent<HTMLSelectElement>
   ) => {
     // Handle both number and event for backward compatibility
-    const value = typeof newIdentitiesPerPage === 'number' 
-      ? newIdentitiesPerPage 
-      : Number(newIdentitiesPerPage.target.value);
+    const value =
+      typeof newIdentitiesPerPage === 'number'
+        ? newIdentitiesPerPage
+        : Number(newIdentitiesPerPage.target.value);
     setIdentitiesPerPage(value);
     setCurrentPage(1);
   };

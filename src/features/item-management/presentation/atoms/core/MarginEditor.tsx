@@ -1,12 +1,12 @@
 /**
  * MarginEditor - Refactored using GenericEditInPlaceFactory
- * 
+ *
  * This component maintains 100% backward compatibility with the original MarginEditor
  * while using the generic factory foundation to eliminate code duplication.
- * 
+ *
  * Before: 90 lines of duplicated edit-in-place logic
  * After: 25 lines using shared factory system
- * 
+ *
  * Benefits:
  * - Eliminates 70+ lines of duplicate code
  * - Consistent behavior across all edit-in-place components
@@ -31,7 +31,7 @@ interface LocalMarginEditorProps {
 
 /**
  * Refactored MarginEditor with identical API
- * 
+ *
  * Drop-in replacement for the original MarginEditor component.
  * All props and behavior remain exactly the same.
  */

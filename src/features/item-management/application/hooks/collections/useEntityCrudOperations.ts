@@ -1,12 +1,12 @@
 /**
  * Entity CRUD Operations Hook - Refactored using Configuration System
- * 
+ *
  * This hook has been completely refactored to use the centralized entity configuration
  * system, eliminating a 96-line switch statement while maintaining full backward compatibility.
- * 
+ *
  * Before: Massive switch statement mapping table names to hooks (96 lines)
  * After: Configuration-driven lookup with external hook integration (5 lines)
- * 
+ *
  * Benefits:
  * - Eliminated 90%+ switch statement duplication
  * - Type-safe entity operations
@@ -18,16 +18,16 @@
 import { useCallback } from 'react';
 import { useAlert } from '@/components/alert/hooks';
 import type { PostgrestError } from '@supabase/supabase-js';
-import { 
+import {
   getExternalHooks,
   isEntityTypeSupported,
-  type EntityTypeKey
+  type EntityTypeKey,
 } from '../core/GenericHookFactories';
 import { ENTITY_CONFIGURATIONS } from '../core/EntityHookConfigurations';
 
 /**
  * Get hooks for table using configuration system
- * 
+ *
  * Replaces the massive 96-line switch statement with a simple configuration lookup.
  */
 const getHooksForTable = (tableName: string) => {
