@@ -3,6 +3,7 @@ import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 import { DataGrid } from '@/components/ag-grid';
 import { TableSkeleton } from '@/components/skeleton';
 import { AGGridPagination } from '@/components/pagination';
+import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
 import {
   RowClickedEvent,
   ColDef,
@@ -45,8 +46,6 @@ interface ItemDataTableProps {
   onColumnMoved?: (event: ColumnMovedEvent) => void;
 }
 
-// Column display mode state type
-type ColumnDisplayMode = 'name' | 'code';
 
 const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   items,
@@ -73,35 +72,17 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage || 10);
 
-  // Column display mode state - tracks whether to show name or code for reference columns
-  const [columnDisplayModes, setColumnDisplayModes] = useState<
-    Record<string, ColumnDisplayMode>
-  >({
-    manufacturer: 'name',
-    'category.name': 'name',
-    'type.name': 'name',
-    'unit.name': 'name',
-    'dosage.name': 'name',
-  });
+  // Column display mode state - persistent across sessions
+  const {
+    displayModeState: columnDisplayModes,
+    isReferenceColumn,
+    toggleColumnDisplayMode: toggleDisplayMode,
+  } = useColumnDisplayMode();
 
-  // Helper to check if a column is a reference column
-  const isReferenceColumn = useCallback((colId: string) => {
-    return [
-      'manufacturer',
-      'category.name',
-      'type.name',
-      'unit.name',
-      'dosage.name',
-    ].includes(colId);
-  }, []);
-
-  // Toggle display mode for a column
+  // Toggle display mode for a column with auto-resize
   const toggleColumnDisplayMode = useCallback(
     (colId: string) => {
-      setColumnDisplayModes(prev => ({
-        ...prev,
-        [colId]: prev[colId] === 'name' ? 'code' : 'name',
-      }));
+      toggleDisplayMode(colId);
 
       // Auto trigger autosize after toggle untuk menyesuaikan lebar kolom dengan konten baru
       setTimeout(() => {
@@ -110,7 +91,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
         }
       }, 50);
     },
-    [gridApi]
+    [toggleDisplayMode, gridApi]
   );
 
   // SIMPLE SOLUTION: Show skeleton ONLY when truly no data exists
