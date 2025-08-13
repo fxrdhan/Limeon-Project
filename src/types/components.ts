@@ -53,7 +53,8 @@ export interface DropdownProps {
 }
 
 // Extended dropdown props for checkbox mode (multiple selection)
-export interface CheckboxDropdownProps extends Omit<DropdownProps, 'value' | 'onChange' | 'withRadio'> {
+export interface CheckboxDropdownProps
+  extends Omit<DropdownProps, 'value' | 'onChange' | 'withRadio'> {
   value: string[];
   onChange: (value: string[]) => void;
   withCheckbox: true;

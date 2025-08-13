@@ -8,7 +8,12 @@ import { ExportDropdown } from '@/components/export';
 import { FaPlus } from 'react-icons/fa';
 import { Card } from '@/components/card';
 import { DataGrid, createTextColumn } from '@/components/ag-grid';
-import { ColDef, RowClickedEvent, GridApi, GridReadyEvent } from 'ag-grid-community';
+import {
+  ColDef,
+  RowClickedEvent,
+  GridApi,
+  GridReadyEvent,
+} from 'ag-grid-community';
 import { useRef, useMemo, useCallback, useState } from 'react';
 import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 import type { Doctor as DoctorType, FieldConfig } from '@/types';
@@ -23,7 +28,7 @@ const DoctorListNew = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null
   ) as React.RefObject<HTMLInputElement>;
-  
+
   // Grid API state for AG Grid pagination
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(10);
@@ -84,23 +89,23 @@ const DoctorListNew = () => {
     onSearch: handleSearch,
     onClear: handleClear,
   });
-  
+
   // Enhanced onGridReady to capture grid API for AGGridPagination
   const handleGridReady = useCallback(
     (params: GridReadyEvent) => {
       setGridApi(params.api);
-      
+
       // Sync current page size with grid
       const gridPageSize = params.api.paginationGetPageSize();
       setCurrentPageSize(gridPageSize);
-      
+
       unifiedSearchOnGridReady(params);
     },
     [unifiedSearchOnGridReady]
   );
 
   const doctors = doctorsData || [];
-  
+
   // Use dynamic grid height hook
   const { gridHeight } = useDynamicGridHeight({
     data: doctors,
@@ -249,10 +254,7 @@ const DoctorListNew = () => {
             className="grow"
           />
           <div className="ml-4 mb-2">
-            <ExportDropdown
-              gridApi={gridApi}
-              filename="daftar-dokter"
-            />
+            <ExportDropdown gridApi={gridApi} filename="daftar-dokter" />
           </div>
           <Button
             variant="primary"
@@ -301,7 +303,7 @@ const DoctorListNew = () => {
               paginationPageSize={itemsPerPage || 10}
               suppressPaginationPanel={true} // Hide AG Grid's built-in pagination UI
             />
-            
+
             {/* Custom Pagination Component using AG Grid API */}
             <AGGridPagination
               gridApi={gridApi}

@@ -6,7 +6,11 @@ import {
   CSSProperties,
 } from 'react';
 import { DROPDOWN_CONSTANTS, DropDirection } from '../constants';
-import type { DropdownPortalWidth, DropdownPosition, DropdownOption } from '@/types';
+import type {
+  DropdownPortalWidth,
+  DropdownPosition,
+  DropdownOption,
+} from '@/types';
 
 export const useDropdownPosition = (
   isOpen: boolean,
@@ -32,7 +36,8 @@ export const useDropdownPosition = (
     if (!context) return 200;
 
     // Use typical dropdown font settings
-    context.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    context.font =
+      '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
     let maxWidth = 0;
     options.forEach(option => {
@@ -42,7 +47,7 @@ export const useDropdownPosition = (
 
     // Add padding for checkboxes, icons, and spacing (roughly 80px)
     const contentWidth = maxWidth + 80;
-    
+
     // Ensure minimum and maximum width
     return Math.max(120, Math.min(contentWidth, 400));
   }, [options]);
@@ -98,15 +103,22 @@ export const useDropdownPosition = (
     if (portalWidth === 'content') {
       dropdownWidth = calculateContentWidth();
     } else if (portalWidth !== 'auto') {
-      dropdownWidth = typeof portalWidth === 'number' ? portalWidth : parseInt(portalWidth as string, 10) || buttonRect.width;
+      dropdownWidth =
+        typeof portalWidth === 'number'
+          ? portalWidth
+          : parseInt(portalWidth as string, 10) || buttonRect.width;
     }
 
     // Right-align the dropdown to the button's right edge
     let leftPosition = buttonRect.right - dropdownWidth;
-    
+
     // Keep dropdown within viewport bounds
-    if (leftPosition + dropdownWidth > viewportWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN) {
-      leftPosition = viewportWidth - dropdownWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
+    if (
+      leftPosition + dropdownWidth >
+      viewportWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN
+    ) {
+      leftPosition =
+        viewportWidth - dropdownWidth - DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;
     }
     if (leftPosition < DROPDOWN_CONSTANTS.VIEWPORT_MARGIN) {
       leftPosition = DROPDOWN_CONSTANTS.VIEWPORT_MARGIN;

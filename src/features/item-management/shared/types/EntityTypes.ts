@@ -1,6 +1,6 @@
 /**
  * Entity Utility Types for Item Management
- * 
+ *
  * Replaces the over-engineered domain/entities system with simple utility types
  * based on existing database types. Provides the same functionality with 90% less code.
  */
@@ -28,7 +28,7 @@ export type ItemUnit = Unit;
 
 // These were already correct in database types, just alias them
 export type { ItemPackage };
-export type { ItemManufacturer }; 
+export type { ItemManufacturer };
 export type { ItemDosage };
 export type { Item };
 
@@ -49,7 +49,7 @@ export type ItemManufacturerEntity = ItemManufacturer;
 type CreateInputFor<T> = Omit<T, 'id' | 'created_at' | 'updated_at'>;
 
 /**
- * Generic utility to create "UpdateInput" types  
+ * Generic utility to create "UpdateInput" types
  * Omits created_at, updated_at and makes id required
  */
 type UpdateInputFor<T> = Omit<T, 'created_at' | 'updated_at'> & {
@@ -92,7 +92,7 @@ export type ItemManufacturerUpdateInput = UpdateInputFor<ItemManufacturer>;
 /**
  * Union of all entity types
  */
-export type AnyEntity = 
+export type AnyEntity =
   | ItemCategory
   | ItemType
   | ItemPackage
@@ -103,7 +103,7 @@ export type AnyEntity =
 /**
  * Union of all create input types
  */
-export type AnyCreateInput = 
+export type AnyCreateInput =
   | ItemCategoryCreateInput
   | ItemTypeCreateInput
   | ItemPackageCreateInput
@@ -114,7 +114,7 @@ export type AnyCreateInput =
 /**
  * Union of all update input types
  */
-export type AnyUpdateInput = 
+export type AnyUpdateInput =
   | ItemCategoryUpdateInput
   | ItemTypeUpdateInput
   | ItemPackageUpdateInput
@@ -129,7 +129,7 @@ export type AnyUpdateInput =
 /**
  * Entity type keys for configuration
  */
-export type EntityTypeKey = 
+export type EntityTypeKey =
   | 'categories'
   | 'types'
   | 'packages'
@@ -191,7 +191,7 @@ export interface BaseEntity {
 }
 
 // Export validation rules (moved to shared/validation)
-export { 
+export {
   ItemCategoryRules,
   ItemTypeRules,
   ItemPackageRules,

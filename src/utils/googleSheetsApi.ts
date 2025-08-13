@@ -17,9 +17,13 @@ declare global {
         init: (config: GapiInitConfig) => Promise<void>;
         sheets: {
           spreadsheets: {
-            create: (params: CreateSpreadsheetParams) => Promise<CreateSpreadsheetResponse>;
+            create: (
+              params: CreateSpreadsheetParams
+            ) => Promise<CreateSpreadsheetResponse>;
             values: {
-              update: (params: UpdateValuesParams) => Promise<UpdateValuesResponse>;
+              update: (
+                params: UpdateValuesParams
+              ) => Promise<UpdateValuesResponse>;
             };
           };
         };
@@ -103,7 +107,8 @@ class GoogleSheetsService {
         script.onload = () => {
           this.loadGapiClient(resolve, reject);
         };
-        script.onerror = () => reject(new Error('Failed to load Google Identity Services'));
+        script.onerror = () =>
+          reject(new Error('Failed to load Google Identity Services'));
         document.head.appendChild(script);
       } else {
         this.loadGapiClient(resolve, reject);
@@ -111,7 +116,10 @@ class GoogleSheetsService {
     });
   }
 
-  private loadGapiClient(resolve: () => void, reject: (error: Error) => void): void {
+  private loadGapiClient(
+    resolve: () => void,
+    reject: (error: Error) => void
+  ): void {
     // Load Google API client
     if (!window.gapi) {
       const script = document.createElement('script');
@@ -120,7 +128,9 @@ class GoogleSheetsService {
         window.gapi.load('client', async () => {
           try {
             await window.gapi.client.init({
-              discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+              discoveryDocs: [
+                'https://sheets.googleapis.com/$discovery/rest?version=v4',
+              ],
             });
             this.initializeTokenClient();
             resolve();
@@ -129,13 +139,16 @@ class GoogleSheetsService {
           }
         });
       };
-      script.onerror = () => reject(new Error('Failed to load Google API client'));
+      script.onerror = () =>
+        reject(new Error('Failed to load Google API client'));
       document.head.appendChild(script);
     } else {
       window.gapi.load('client', async () => {
         try {
           await window.gapi.client.init({
-            discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+            discoveryDocs: [
+              'https://sheets.googleapis.com/$discovery/rest?version=v4',
+            ],
           });
           this.initializeTokenClient();
           resolve();
@@ -190,13 +203,14 @@ class GoogleSheetsService {
 
     try {
       // Create the spreadsheet
-      const createResponse = await window.gapi.client.sheets.spreadsheets.create({
-        resource: {
-          properties: {
-            title,
+      const createResponse =
+        await window.gapi.client.sheets.spreadsheets.create({
+          resource: {
+            properties: {
+              title,
+            },
           },
-        },
-      });
+        });
 
       const spreadsheetId = createResponse.result.spreadsheetId;
       const spreadsheetUrl = createResponse.result.spreadsheetUrl;

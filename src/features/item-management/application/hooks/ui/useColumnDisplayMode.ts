@@ -40,13 +40,16 @@ export const useColumnDisplayMode = () => {
       // Merge DB state with defaults (for new columns)
       const mergedState: Record<string, ColumnDisplayMode> = {};
       const defaultModes = getDefaultDisplayModes();
-      
+
       Object.keys(defaultModes).forEach(key => {
         const dbValue = dbDisplayModes[key];
         // Validate DB value is either 'name' or 'code', fallback to default
-        mergedState[key] = (dbValue === 'name' || dbValue === 'code') ? dbValue : defaultModes[key];
+        mergedState[key] =
+          dbValue === 'name' || dbValue === 'code'
+            ? dbValue
+            : defaultModes[key];
       });
-      
+
       return mergedState;
     }
 

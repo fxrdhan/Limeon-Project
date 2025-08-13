@@ -1,12 +1,12 @@
 /**
  * MinStockEditor - Refactored using GenericEditInPlaceFactory
- * 
+ *
  * This component maintains 100% backward compatibility with the original MinStockEditor
  * while using the generic factory foundation to eliminate code duplication.
- * 
+ *
  * Before: 80 lines of duplicated edit-in-place logic
  * After: 25 lines using shared factory system
- * 
+ *
  * Benefits:
  * - Eliminates 55+ lines of duplicate code
  * - Consistent behavior across all edit-in-place components
@@ -31,7 +31,7 @@ interface LocalMinStockEditorProps {
 
 /**
  * Refactored MinStockEditor with identical API
- * 
+ *
  * Drop-in replacement for the original MinStockEditor component.
  * All props and behavior remain exactly the same.
  */

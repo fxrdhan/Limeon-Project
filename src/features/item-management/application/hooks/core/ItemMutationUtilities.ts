@@ -1,12 +1,12 @@
 /**
  * Item Mutation Utilities
- * 
+ *
  * Extracted business logic utilities for item-specific operations that are
  * too complex/domain-specific for the generic factory system.
- * 
+ *
  * This module handles:
  * - Item code generation
- * - Item data preparation  
+ * - Item data preparation
  * - Manufacturer name resolution
  * - Package conversion handling
  * - Complex item save/update logic
@@ -22,7 +22,7 @@ import { generateItemCodeWithSequence } from '../utils/useItemCodeGenerator';
 
 /**
  * Prepares item data for database insertion/update
- * 
+ *
  * Handles complex transformations like manufacturer name resolution,
  * package conversions, and field mapping for the items table.
  */
@@ -80,7 +80,9 @@ export const prepareItemData = async (
 /**
  * Helper function to check existing codes in database
  */
-export const checkExistingCodes = async (pattern: string): Promise<string[]> => {
+export const checkExistingCodes = async (
+  pattern: string
+): Promise<string[]> => {
   const { data, error } = await supabase
     .from('items')
     .select('code')
@@ -93,7 +95,9 @@ export const checkExistingCodes = async (pattern: string): Promise<string[]> => 
 /**
  * Generate item code based on form data
  */
-export const generateItemCode = async (formData: ItemFormData): Promise<string> => {
+export const generateItemCode = async (
+  formData: ItemFormData
+): Promise<string> => {
   // Fetch codes for all related entities
   const [categoryData, typeData, packageData, dosageData, manufacturerData] =
     await Promise.all([
@@ -171,7 +175,7 @@ export interface SaveItemResult {
 
 /**
  * Core item save business logic
- * 
+ *
  * Handles both create and update operations with all the complex
  * business rules like code generation, data preparation, etc.
  */
@@ -237,7 +241,7 @@ export const saveItemBusinessLogic = async ({
 
 /**
  * Helper functions for saving related entities (used by modal orchestrator)
- * 
+ *
  * These will be replaced by the generic factory system but kept here for
  * backward compatibility during transition.
  */
@@ -254,9 +258,9 @@ export const saveEntityHelpers = {
       .insert(categoryData)
       .select('id, code, name, description, created_at, updated_at')
       .single();
-    
+
     if (error) throw new Error('Gagal menyimpan kategori baru.');
-    
+
     const { data: updatedCategories } = await supabase
       .from('item_categories')
       .select('id, code, name, description, created_at, updated_at')
@@ -276,9 +280,9 @@ export const saveEntityHelpers = {
       .insert(typeData)
       .select('id, code, name, description, created_at, updated_at')
       .single();
-    
+
     if (error) throw new Error('Gagal menyimpan jenis item baru.');
-    
+
     const { data: updatedTypes } = await supabase
       .from('item_types')
       .select('id, code, name, description, created_at, updated_at')
@@ -297,9 +301,9 @@ export const saveEntityHelpers = {
       .insert(unitData)
       .select('id, code, name, description, created_at, updated_at')
       .single();
-    
+
     if (error) throw new Error('Gagal menyimpan satuan baru.');
-    
+
     const { data: updatedUnits } = await supabase
       .from('item_units')
       .select('id, code, name, description, created_at, updated_at')
@@ -319,9 +323,9 @@ export const saveEntityHelpers = {
       .insert(dosageData)
       .select('id, code, name, description, created_at, updated_at')
       .single();
-    
+
     if (error) throw new Error('Gagal menyimpan sediaan baru.');
-    
+
     const { data: updatedDosages } = await supabase
       .from('item_dosages')
       .select('id, code, name, description, created_at, updated_at')
@@ -340,9 +344,9 @@ export const saveEntityHelpers = {
       .insert(manufacturerData)
       .select('id, code, name, address, created_at, updated_at')
       .single();
-    
+
     if (error) throw new Error('Gagal menyimpan produsen baru.');
-    
+
     const { data: updatedManufacturers } = await supabase
       .from('item_manufacturers')
       .select('id, code, name, address, created_at, updated_at')

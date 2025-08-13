@@ -5,10 +5,10 @@ import type { Item } from '@/types/database';
 
 /**
  * Items Management Hook - Focused and Simple
- * 
+ *
  * Replaces the monolithic useMasterDataManagement for items-only usage.
  * This hook focuses solely on items data management with search functionality.
- * 
+ *
  * Benefits over useMasterDataManagement:
  * - 90%+ code reduction (809 lines → ~80 lines)
  * - Single responsibility (items only)
@@ -28,7 +28,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
 
   // Search state management
   const [search, setSearch] = useState(initialSearch);
-  
+
   // Simple pagination state (for potential future use with AG Grid)
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -62,20 +62,16 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
           (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
           (item.category?.name &&
             fuzzyMatch(item.category.name, searchTermLower)) ||
-          (item.type?.name &&
-            fuzzyMatch(item.type.name, searchTermLower)) ||
-          (item.unit?.name &&
-            fuzzyMatch(item.unit.name, searchTermLower)) ||
+          (item.type?.name && fuzzyMatch(item.type.name, searchTermLower)) ||
+          (item.unit?.name && fuzzyMatch(item.unit.name, searchTermLower)) ||
           (item.base_price &&
             fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
           (item.sell_price &&
             fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
-          (item.stock &&
-            fuzzyMatch(item.stock.toString(), searchTermLower)) ||
+          (item.stock && fuzzyMatch(item.stock.toString(), searchTermLower)) ||
           (item.package_conversions &&
             item.package_conversions.some(
-              uc =>
-                uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower)
+              uc => uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower)
             ))
         );
       })

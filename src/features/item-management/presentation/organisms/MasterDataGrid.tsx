@@ -11,7 +11,11 @@ import {
 } from 'ag-grid-community';
 
 // Components
-import { DataGrid, DataGridRef, getPinAndFilterMenuItems } from '@/components/ag-grid';
+import {
+  DataGrid,
+  DataGridRef,
+  getPinAndFilterMenuItems,
+} from '@/components/ag-grid';
 import { StandardPagination } from '../atoms';
 
 // Hooks
@@ -20,7 +24,10 @@ import { useColumnDisplayMode } from '@/features/item-management/application/hoo
 
 // Types
 import type { Item } from '@/types/database';
-import { EntityType, EntityData } from '../../application/hooks/collections/useEntityManager';
+import {
+  EntityType,
+  EntityData,
+} from '../../application/hooks/collections/useEntityManager';
 
 // Extended entity types with code property for display mode
 type EntityWithCode = {
@@ -29,9 +36,10 @@ type EntityWithCode = {
 };
 
 // Extended Item interface for column display mode transformations
-interface ItemWithExtendedEntities extends Omit<Item, 'category' | 'type' | 'unit' | 'dosage'> {
+interface ItemWithExtendedEntities
+  extends Omit<Item, 'category' | 'type' | 'unit' | 'dosage'> {
   category?: EntityWithCode;
-  type?: EntityWithCode;  
+  type?: EntityWithCode;
   unit?: EntityWithCode;
   dosage?: EntityWithCode;
 }
@@ -50,25 +58,25 @@ interface EntityConfig {
 
 interface MasterDataGridProps {
   activeTab: MasterDataType;
-  
+
   // Data
   itemsData?: Item[];
   entityData?: EntityData[];
-  
+
   // States
   isLoading: boolean;
   isError: boolean;
   error: Error | unknown;
   search: string;
-  
+
   // Grid config
   itemColumnDefs?: ColDef[];
   itemColumnsToAutoSize?: string[];
-  
+
   // Entity config
   entityConfig?: EntityConfig | null;
   entityColumnDefs?: ColDef[];
-  
+
   // Handlers
   onRowClick: (data: ItemWithExtendedEntities | EntityData) => void;
   onGridReady: (params: GridReadyEvent) => void;
@@ -77,7 +85,7 @@ interface MasterDataGridProps {
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
-  
+
   // Pagination (for items)
   currentPage?: number;
   itemsPerPage?: number;
@@ -125,7 +133,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     if (activeTab === 'items') {
       data = itemsData || [];
       columns = itemColumnDefs;
-      
+
       // Apply column display mode transformations for items
       data = (itemsData || []).map(item => {
         const modifiedItem: ItemWithExtendedEntities = { ...item };
@@ -141,7 +149,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
                 break;
               case 'category.name':
                 // Type guard: Check if category has code property
-                if (item.category && 'code' in item.category && typeof item.category.code === 'string') {
+                if (
+                  item.category &&
+                  'code' in item.category &&
+                  typeof item.category.code === 'string'
+                ) {
                   modifiedItem.category = {
                     name: item.category.code,
                     code: item.category.code,
@@ -150,7 +162,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
                 break;
               case 'type.name':
                 // Type guard: Check if type has code property
-                if (item.type && 'code' in item.type && typeof item.type.code === 'string') {
+                if (
+                  item.type &&
+                  'code' in item.type &&
+                  typeof item.type.code === 'string'
+                ) {
                   modifiedItem.type = {
                     name: item.type.code,
                     code: item.type.code,
@@ -159,7 +175,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
                 break;
               case 'unit.name':
                 // Type guard: Check if unit has code property
-                if (item.unit && 'code' in item.unit && typeof item.unit.code === 'string') {
+                if (
+                  item.unit &&
+                  'code' in item.unit &&
+                  typeof item.unit.code === 'string'
+                ) {
                   modifiedItem.unit = {
                     name: item.unit.code,
                     code: item.unit.code,
@@ -168,7 +188,11 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
                 break;
               case 'dosage.name':
                 // Type guard: Check if dosage has code property and exists
-                if (item.dosage && 'code' in item.dosage && typeof item.dosage.code === 'string') {
+                if (
+                  item.dosage &&
+                  'code' in item.dosage &&
+                  typeof item.dosage.code === 'string'
+                ) {
                   modifiedItem.dosage = {
                     name: item.dosage.code,
                     code: item.dosage.code,
@@ -187,7 +211,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
 
     return { rowData: data, columnDefs: columns };
-  }, [activeTab, itemsData, entityData, itemColumnDefs, entityColumnDefs, columnDisplayModes]);
+  }, [
+    activeTab,
+    itemsData,
+    entityData,
+    itemColumnDefs,
+    entityColumnDefs,
+    columnDisplayModes,
+  ]);
 
   // Call useDynamicGridHeight at top level (Rules of Hooks compliant)
   const { gridHeight } = useDynamicGridHeight({
@@ -204,7 +235,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       const timer = setTimeout(() => {
         gridApi.autoSizeAllColumns();
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
   }, [gridApi, activeTab, columnDefs]);
@@ -213,7 +244,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   const toggleColumnDisplayMode = useCallback(
     (colId: string) => {
       toggleDisplayMode(colId);
-      
+
       // Auto trigger autosize after toggle
       setTimeout(() => {
         if (gridApi) {
@@ -236,21 +267,21 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   const handleGridReady = useCallback(
     (params: GridReadyEvent) => {
       setGridApi(params.api);
-      
+
       // Sync current page size with grid
       const gridPageSize = params.api.paginationGetPageSize();
       setCurrentPageSize(gridPageSize);
-      
+
       // Set initial page if needed (for items)
       if (activeTab === 'items' && currentPage > 1) {
         params.api.paginationGoToPage(currentPage - 1);
       }
-      
+
       // Notify parent about grid API
       if (onGridApiReady) {
         onGridApiReady(params.api);
       }
-      
+
       onGridReady(params);
     },
     [onGridReady, activeTab, currentPage, onGridApiReady]
@@ -258,7 +289,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Custom menu items (items-specific features)
   const getMainMenuItems: GetMainMenuItems = useCallback(
-    (params) => {
+    params => {
       if (activeTab !== 'items' || !params.column) {
         return getPinAndFilterMenuItems(params);
       }
@@ -304,8 +335,10 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
       return '<span style="padding: 10px; color: #888;">Tidak ada data item yang ditemukan</span>';
     } else {
       // Entity overlay
-      const isBadgeMode = search.startsWith('#') && (search.includes(':') || search.includes(' #'));
-      
+      const isBadgeMode =
+        search.startsWith('#') &&
+        (search.includes(':') || search.includes(' #'));
+
       if (search && !isBadgeMode) {
         return `<span style="padding: 10px; color: #888;">${entityConfig?.searchNoDataMessage || 'Tidak ada data yang cocok dengan pencarian'} "${search}"</span>`;
       }
@@ -354,7 +387,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           suppressPaginationPanel={true}
         />
       </div>
-      
+
       {/* Custom Pagination Component using AG Grid API */}
       <StandardPagination
         gridApi={gridApi}

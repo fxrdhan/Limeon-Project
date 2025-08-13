@@ -172,7 +172,6 @@ export const ENTITY_ORDERING_PREFERENCE_KEY_MAP = {
   units: PREFERENCE_KEYS.UNIT_COLUMN_ORDER,
 } as const;
 
-
 export type UserPreferenceEntityType = keyof typeof ENTITY_PREFERENCE_KEY_MAP;
 
 /**
@@ -309,7 +308,9 @@ export const useColumnDisplayModePreference = () => {
 
   const { setPreference } = useUserPreferenceMutations();
 
-  const setColumnDisplayModes = async (modes: Record<string, 'name' | 'code'>) => {
+  const setColumnDisplayModes = async (
+    modes: Record<string, 'name' | 'code'>
+  ) => {
     await setPreference.mutateAsync({
       key: preferenceKey,
       value: modes,

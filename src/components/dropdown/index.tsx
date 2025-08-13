@@ -46,17 +46,22 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     hoverDetailDelay = 800,
     onFetchHoverDetail,
   } = allProps;
-  
+
   const withCheckbox = 'withCheckbox' in allProps && allProps.withCheckbox;
   const withRadio = 'withRadio' in allProps ? allProps.withRadio : false;
-  
+
   // Type guard for checkbox mode - memoized to prevent useCallback dependency changes
-  const isCheckboxMode = useCallback((props: DropdownProps | CheckboxDropdownProps): props is CheckboxDropdownProps => {
-    return 'withCheckbox' in props && props.withCheckbox === true;
-  }, []);
-  
+  const isCheckboxMode = useCallback(
+    (
+      props: DropdownProps | CheckboxDropdownProps
+    ): props is CheckboxDropdownProps => {
+      return 'withCheckbox' in props && props.withCheckbox === true;
+    },
+    []
+  );
+
   // For single selection (radio) mode
-  const selectedOption = !withCheckbox 
+  const selectedOption = !withCheckbox
     ? options.find(option => option?.id === value)
     : null;
 
@@ -100,7 +105,12 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   } = useDropdownValidation({
     validate,
     required,
-    value: typeof value === 'string' ? value : (Array.isArray(value) && value.length > 0 ? value[0] : ''),
+    value:
+      typeof value === 'string'
+        ? value
+        : Array.isArray(value) && value.length > 0
+          ? value[0]
+          : '',
     showValidationOnBlur,
     validationAutoHide,
     validationAutoHideDelay,
@@ -156,7 +166,14 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
         setTimeout(() => buttonRef.current?.focus(), 150);
       }
     },
-    [withCheckbox, allProps, actualCloseDropdown, handleCloseValidation, resetSearch, isCheckboxMode]
+    [
+      withCheckbox,
+      allProps,
+      actualCloseDropdown,
+      handleCloseValidation,
+      resetSearch,
+      isCheckboxMode,
+    ]
   );
 
   const {
@@ -407,6 +424,6 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
       </div>
     </DropdownProvider>
   );
-};
+}
 
 export default Dropdown;

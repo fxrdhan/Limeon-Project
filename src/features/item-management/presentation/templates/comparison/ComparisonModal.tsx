@@ -3,11 +3,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEntityModal } from '../../../shared/contexts/EntityModalContext';
 import type { VersionData } from '../../../shared/types';
-import {
-  useModalAnimation,
-  useComparisonData,
-  useAutoScroll,
-} from './hooks';
+import { useModalAnimation, useComparisonData, useAutoScroll } from './hooks';
 import {
   ComparisonHeader,
   DualModeContent,
@@ -68,7 +64,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     entityName,
   });
 
-
   useAutoScroll({
     isOpen,
     kodeRef,
@@ -76,7 +71,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     descriptionRef,
     compData,
   });
-
 
   // Early return for invalid states
   if (!isDualMode && !selectedVersion) return null;

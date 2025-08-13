@@ -1,14 +1,14 @@
 /**
  * Generic Edit-in-Place Component Factory
- * 
+ *
  * This factory eliminates duplication between MarginEditor, MinStockEditor, and similar
  * edit-in-place components by providing a configurable foundation for inline editing.
- * 
+ *
  * Replaces:
  * - MarginEditor.tsx (~80 lines)
- * - MinStockEditor.tsx (~80 lines)  
+ * - MinStockEditor.tsx (~80 lines)
  * - Other similar edit-in-place components
- * 
+ *
  * Benefits:
  * - Single source of truth for edit-in-place behavior
  * - Type-safe configuration system
@@ -30,7 +30,7 @@ import FormField from '@/components/form-field';
  * Display value formatter function
  */
 export type DisplayFormatter<T = unknown> = (
-  value: T, 
+  value: T,
   config?: EditInPlaceConfig<T>
 ) => string;
 
@@ -38,7 +38,7 @@ export type DisplayFormatter<T = unknown> = (
  * Value parser function - converts string input to typed value
  */
 export type ValueParser<T = unknown> = (
-  input: string, 
+  input: string,
   config?: EditInPlaceConfig<T>
 ) => T;
 
@@ -46,7 +46,7 @@ export type ValueParser<T = unknown> = (
  * Display style calculator - determines styling based on value
  */
 export type StyleCalculator<T = unknown> = (
-  value: T, 
+  value: T,
   config?: EditInPlaceConfig<T>
 ) => {
   textColor?: string;
@@ -59,28 +59,28 @@ export type StyleCalculator<T = unknown> = (
 export interface EditInPlaceConfig<T = unknown> {
   /** Field label */
   label: string;
-  
+
   /** Input type */
   inputType: 'number' | 'text' | 'currency';
-  
+
   /** Input constraints */
   inputProps?: {
     min?: string | number;
-    max?: string | number; 
+    max?: string | number;
     step?: string | number;
     placeholder?: string;
   };
-  
+
   /** Display formatting */
   display: {
     formatter: DisplayFormatter<T>;
     emptyDisplay?: string;
     styleCalculator?: StyleCalculator<T>;
   };
-  
+
   /** Input parsing */
   parser?: ValueParser<T>;
-  
+
   /** CSS classes */
   classes?: {
     container?: string;
@@ -88,7 +88,7 @@ export interface EditInPlaceConfig<T = unknown> {
     display?: string;
     label?: string;
   };
-  
+
   /** Accessibility */
   accessibility?: {
     editTitle?: string;
@@ -102,22 +102,22 @@ export interface EditInPlaceConfig<T = unknown> {
 export interface GenericEditInPlaceProps<T = unknown> {
   /** Whether currently in edit mode */
   isEditing: boolean;
-  
+
   /** Current typed value */
   value: T;
-  
+
   /** Current string representation for input */
   inputValue: string;
-  
+
   /** Tab index for keyboard navigation */
   tabIndex?: number;
-  
+
   /** Event handlers */
   onStartEdit: () => void;
   onStopEdit: () => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  
+
   /** Configuration */
   config: EditInPlaceConfig;
 }
@@ -128,7 +128,7 @@ export interface GenericEditInPlaceProps<T = unknown> {
 
 /**
  * Generic edit-in-place component that handles all common patterns
- * 
+ *
  * Provides focus management, keyboard handling, and consistent UI patterns
  * while allowing full customization through the configuration system.
  */
@@ -154,27 +154,30 @@ export function GenericEditInPlace<T = unknown>({
   }, [isEditing]);
 
   // Calculate display styling
-  const displayStyle = config.display.styleCalculator 
+  const displayStyle = config.display.styleCalculator
     ? config.display.styleCalculator(value, config)
     : {};
 
   // Format display value
   const displayValue = config.display.formatter(value, config);
-  const showEmpty = displayValue === '' || displayValue === null || displayValue === undefined;
-  const finalDisplayValue = showEmpty 
-    ? (config.display.emptyDisplay || '-') 
+  const showEmpty =
+    displayValue === '' || displayValue === null || displayValue === undefined;
+  const finalDisplayValue = showEmpty
+    ? config.display.emptyDisplay || '-'
     : displayValue;
 
   // Accessibility
-  const editTitle = config.accessibility?.editTitle || `Edit ${config.label.toLowerCase()}`;
-  const displayTitle = config.accessibility?.displayTitle || `Click to edit ${config.label.toLowerCase()}`;
+  const editTitle =
+    config.accessibility?.editTitle || `Edit ${config.label.toLowerCase()}`;
+  const displayTitle =
+    config.accessibility?.displayTitle ||
+    `Click to edit ${config.label.toLowerCase()}`;
 
   return (
-    <FormField 
-      label={config.label}
-      className={config.classes?.label}
-    >
-      <div className={`flex items-center focus:outline-hidden ${config.classes?.container || ''}`}>
+    <FormField label={config.label} className={config.classes?.label}>
+      <div
+        className={`flex items-center focus:outline-hidden ${config.classes?.container || ''}`}
+      >
         {isEditing ? (
           <div className="flex items-center focus:outline-hidden">
             <Input
@@ -187,9 +190,10 @@ export function GenericEditInPlace<T = unknown>({
               onKeyDown={onKeyDown}
               {...config.inputProps}
             />
-            {config.inputType === 'number' && config.label.toLowerCase().includes('margin') && (
-              <span className="ml-2 text-lg font-medium">%</span>
-            )}
+            {config.inputType === 'number' &&
+              config.label.toLowerCase().includes('margin') && (
+                <span className="ml-2 text-lg font-medium">%</span>
+              )}
           </div>
         ) : (
           <div
@@ -242,9 +246,12 @@ export const MARGIN_CONFIG: EditInPlaceConfig = {
       return `${numValue.toFixed(1)} %`;
     },
     styleCalculator: (value: unknown) => ({
-      textColor: (value as number | null) !== null 
-        ? ((value as number) >= 0 ? 'text-green-600' : 'text-red-600')
-        : 'text-gray-500',
+      textColor:
+        (value as number | null) !== null
+          ? (value as number) >= 0
+            ? 'text-green-600'
+            : 'text-red-600'
+          : 'text-gray-500',
     }),
     emptyDisplay: '-',
   },
@@ -285,16 +292,18 @@ export const MIN_STOCK_CONFIG: EditInPlaceConfig = {
 
 /**
  * Factory function to create specialized edit-in-place components
- * 
+ *
  * This allows creating backward-compatible components while using the generic foundation.
  */
 // eslint-disable-next-line react-refresh/only-export-components
 export function createEditInPlaceComponent<T>(
   defaultConfig: EditInPlaceConfig
 ) {
-  return function EditInPlaceComponent(props: Omit<GenericEditInPlaceProps<T>, 'config'> & {
-    config?: Partial<EditInPlaceConfig>;
-  }) {
+  return function EditInPlaceComponent(
+    props: Omit<GenericEditInPlaceProps<T>, 'config'> & {
+      config?: Partial<EditInPlaceConfig>;
+    }
+  ) {
     const mergedConfig = {
       ...defaultConfig,
       ...props.config,
@@ -316,12 +325,7 @@ export function createEditInPlaceComponent<T>(
       },
     } as EditInPlaceConfig;
 
-    return (
-      <GenericEditInPlace
-        {...props}
-        config={mergedConfig}
-      />
-    );
+    return <GenericEditInPlace {...props} config={mergedConfig} />;
   };
 }
 
@@ -335,6 +339,6 @@ export function createEditInPlaceComponent<T>(
 export const MarginEditInPlace = createEditInPlaceComponent(MARGIN_CONFIG);
 
 /**
- * Minimum stock editor component factory  
+ * Minimum stock editor component factory
  */
 export const MinStockEditInPlace = createEditInPlaceComponent(MIN_STOCK_CONFIG);

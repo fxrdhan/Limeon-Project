@@ -1,12 +1,12 @@
 /**
  * Generic Entity Management Hook - Refactored using Configuration System
- * 
+ *
  * This hook has been completely refactored to use the centralized entity configuration
  * system, eliminating another 42-line switch statement while maintaining all functionality.
- * 
+ *
  * Before: Duplicate switch statement mapping entity types to hooks (42 lines)
  * After: Configuration-driven lookup with external hook integration (3 lines)
- * 
+ *
  * Benefits:
  * - Eliminated 95%+ switch statement duplication
  * - Consistent with other refactored hooks
@@ -17,10 +17,10 @@
 import { useMemo } from 'react';
 import { fuzzyMatch } from '@/utils/search';
 import type { EntityData, EntityType } from './useEntityManager';
-import { 
+import {
   getExternalHooks,
   isEntityTypeSupported,
-  type EntityTypeKey
+  type EntityTypeKey,
 } from '../core/GenericHookFactories';
 
 export interface UseGenericEntityManagementOptions {
@@ -32,7 +32,7 @@ export interface UseGenericEntityManagementOptions {
 
 /**
  * Get hooks for entity type using configuration system
- * 
+ *
  * Replaces the 42-line switch statement with configuration-driven lookup.
  */
 const getHooksForEntityType = (entityType: EntityType) => {
