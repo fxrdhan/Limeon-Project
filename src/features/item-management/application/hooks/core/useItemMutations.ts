@@ -18,6 +18,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import toast from 'react-hot-toast';
 // ItemFormData and PackageConversion types are now used via SaveItemParams interface
 import { useEntityMutations } from './GenericHookFactories';
 import {
@@ -105,12 +106,13 @@ export const useAddItemMutations = ({
       if (error) throw error;
     },
     onSuccess: () => {
+      toast.success('Item berhasil dihapus');
       queryClient.invalidateQueries({ queryKey: ['items'] });
       onClose();
     },
     onError: error => {
       console.error('Error deleting item:', error);
-      alert('Gagal menghapus item. Silakan coba lagi.');
+      toast.error('Gagal menghapus item. Silakan coba lagi.');
     },
   });
 
@@ -122,10 +124,10 @@ export const useAddItemMutations = ({
       return await saveItemBusinessLogic(params);
     },
     onSuccess: result => {
-      // Show success message with item code
+      // Show success message
       if (result.code) {
-        const actionText = result.action === 'create' ? 'dibuat' : 'diperbarui';
-        alert(`Item berhasil ${actionText} dengan kode: ${result.code}`);
+        const actionText = result.action === 'create' ? 'ditambahkan' : 'diperbarui';
+        toast.success(`Item berhasil ${actionText}`);
       }
 
       // Invalidate and refetch items

@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { ConfirmDialogProvider } from '@/components/dialog-box';
+import { Toaster } from 'react-hot-toast';
 import ComingSoon from '@/pages/blank-page';
 import ErrorBoundary from '@/components/error-boundary';
 import {
@@ -48,6 +49,20 @@ function App() {
   return (
     <AlertProvider>
       <ConfirmDialogProvider>
+        <Toaster 
+          position="top-right" 
+          toastOptions={{
+            success: {
+              style: {
+                fontSize: '14px',
+                padding: '8px 12px',
+                width: 'auto',
+                minWidth: 'auto',
+                maxWidth: '400px'
+              },
+            },
+          }}
+        />
         <Routes>
           <Route
             path="/login"
