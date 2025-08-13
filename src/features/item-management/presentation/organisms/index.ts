@@ -1,6 +1,7 @@
 // Complex feature-complete components
 export { default as ItemDataTable } from './ItemDataTable';
 export { default as EntityMasterPage } from './EntityMasterPage';
+export { default as MasterDataGrid } from './MasterDataGrid';
 
 // Form organisms
 export { default as ItemBasicInfoForm } from './ItemBasicInfoForm';
