@@ -80,7 +80,11 @@ const getOverlayTemplate = (
   return `<span style="padding: 10px; color: #888;">${currentConfig?.noDataMessage || 'Tidak ada data'}</span>`;
 };
 
-const EntityMasterPage: React.FC = memo(() => {
+interface EntityMasterPageProps {
+  isVisible?: boolean;
+}
+
+const EntityMasterPage: React.FC<EntityMasterPageProps> = memo(({ isVisible = true }) => {
   const location = useLocation();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dataGridRef = useRef<DataGridRef>(null);
@@ -94,18 +98,23 @@ const EntityMasterPage: React.FC = memo(() => {
     return URL_TO_TAB_MAP[lastSegment] || 'items';
   }, []);
 
-  const [activeTab, setActiveTab] = useState<EntityType>(() =>
-    getTabFromPath(location.pathname)
-  );
+  const [activeTab, setActiveTab] = useState<EntityType>(() => {
+    const pathTab = getTabFromPath(location.pathname);
+    // EntityMasterPage should never handle 'items', default to 'categories'
+    return pathTab !== 'items' ? pathTab : 'categories';
+  });
 
   // Simple realtime for all item master data
   useItemMasterRealtime({ enabled: true });
 
-  // Update active tab when URL changes
+  // Update active tab when URL changes (skip if switching to/from items)
   useEffect(() => {
     const newTab = getTabFromPath(location.pathname);
-    setActiveTab(prev => (prev !== newTab ? newTab : prev));
-  }, [location.pathname, getTabFromPath]);
+    // Only update if newTab is not 'items' and different from current
+    if (newTab !== 'items' && newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [location.pathname, getTabFromPath, activeTab]);
 
   // Entity manager - only for entity types, not items
   const entityManager = useEntityManager({
@@ -121,12 +130,13 @@ const EntityMasterPage: React.FC = memo(() => {
       entityType: activeTab !== 'items' ? activeTab : 'categories',
       search: entityManager.search,
       itemsPerPage: entityManager.itemsPerPage,
-      enabled: activeTab !== 'items',
+      enabled: activeTab !== 'items' && isVisible, // Only enabled when visible
     }),
     [
       activeTab,
       entityManager.search,
       entityManager.itemsPerPage,
+      isVisible,
     ]
   );
 
