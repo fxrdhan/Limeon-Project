@@ -172,6 +172,7 @@ export const ENTITY_ORDERING_PREFERENCE_KEY_MAP = {
   units: PREFERENCE_KEYS.UNIT_COLUMN_ORDER,
 } as const;
 
+
 export type UserPreferenceEntityType = keyof typeof ENTITY_PREFERENCE_KEY_MAP;
 
 /**
@@ -292,4 +293,35 @@ export const useColumnPinningPreference = () => {
  */
 export const useColumnOrderingPreference = () => {
   return useEntityColumnOrderingPreference('items');
+};
+
+/**
+ * Hook for item column display mode preferences (kode/nama toggle)
+ */
+export const useColumnDisplayModePreference = () => {
+  const preferenceKey = PREFERENCE_KEYS.ITEM_COLUMN_DISPLAY_MODE;
+
+  const {
+    data: preference,
+    isLoading,
+    error,
+  } = useUserPreference(preferenceKey, { enabled: true });
+
+  const { setPreference } = useUserPreferenceMutations();
+
+  const setColumnDisplayModes = async (modes: Record<string, 'name' | 'code'>) => {
+    await setPreference.mutateAsync({
+      key: preferenceKey,
+      value: modes,
+    });
+  };
+
+  return {
+    columnDisplayModes: preference?.preference_value as
+      | Record<string, 'name' | 'code'>
+      | undefined,
+    isLoading: isLoading || setPreference.isPending,
+    error: error || setPreference.error,
+    setColumnDisplayModes,
+  };
 };

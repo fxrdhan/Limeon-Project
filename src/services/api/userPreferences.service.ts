@@ -215,6 +215,9 @@ export const PREFERENCE_KEYS = {
   MANUFACTURER_COLUMN_ORDER: 'manufacturer_column_order',
   UNIT_COLUMN_ORDER: 'unit_column_order',
 
+  // Column display mode preferences (kode/nama toggle) - hanya untuk item table
+  ITEM_COLUMN_DISPLAY_MODE: 'item_column_display_mode',
+
   // Other preferences
   THEME: 'theme',
   LANGUAGE: 'language',
