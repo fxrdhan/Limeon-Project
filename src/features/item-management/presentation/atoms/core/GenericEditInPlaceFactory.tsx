@@ -29,25 +29,25 @@ import FormField from '@/components/form-field';
 /**
  * Display value formatter function
  */
-export type DisplayFormatter = (
-  value: unknown, 
-  config?: EditInPlaceConfig
+export type DisplayFormatter<T = unknown> = (
+  value: T, 
+  config?: EditInPlaceConfig<T>
 ) => string;
 
 /**
  * Value parser function - converts string input to typed value
  */
-export type ValueParser = (
+export type ValueParser<T = unknown> = (
   input: string, 
-  config?: EditInPlaceConfig
-) => unknown;
+  config?: EditInPlaceConfig<T>
+) => T;
 
 /**
  * Display style calculator - determines styling based on value
  */
-export type StyleCalculator = (
-  value: unknown, 
-  config?: EditInPlaceConfig
+export type StyleCalculator<T = unknown> = (
+  value: T, 
+  config?: EditInPlaceConfig<T>
 ) => {
   textColor?: string;
   className?: string;
@@ -56,7 +56,7 @@ export type StyleCalculator = (
 /**
  * Edit-in-place field configuration
  */
-export interface EditInPlaceConfig {
+export interface EditInPlaceConfig<T = unknown> {
   /** Field label */
   label: string;
   
@@ -73,13 +73,13 @@ export interface EditInPlaceConfig {
   
   /** Display formatting */
   display: {
-    formatter: DisplayFormatter;
+    formatter: DisplayFormatter<T>;
     emptyDisplay?: string;
-    styleCalculator?: StyleCalculator;
+    styleCalculator?: StyleCalculator<T>;
   };
   
   /** Input parsing */
-  parser?: ValueParser;
+  parser?: ValueParser<T>;
   
   /** CSS classes */
   classes?: {

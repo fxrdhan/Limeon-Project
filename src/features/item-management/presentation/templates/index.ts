@@ -7,3 +7,4 @@ export { default as ItemModalContainer } from './containers/ItemModalContainer';
 // Template components
 export { default as ItemModalTemplate } from './ItemModalTemplate';
 export { default as EntityModalTemplate } from './EntityModalTemplate';
+export { ItemFormSections } from './ItemFormSections';

@@ -17,12 +17,14 @@
  * - Centralized dropdown patterns
  */
 
-// @ts-expect-error - React is used in JSX
 import React from 'react';
 import Dropdown from '@/components/dropdown';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import type { DropdownOption, HoverDetailData } from '@/types/components';
+
+// Type-safe dropdown props
+type DropdownProps = React.ComponentProps<typeof Dropdown>;
 
 // ============================================================================
 // CONFIGURATION TYPES
@@ -71,7 +73,7 @@ export interface DropdownFieldConfig {
   className?: string;
   
   /** Additional dropdown props */
-  dropdownProps?: Record<string, unknown>;
+  dropdownProps?: Partial<Omit<DropdownProps, 'name' | 'value' | 'onChange' | 'options'>>;
 }
 
 /**
