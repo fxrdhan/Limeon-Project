@@ -104,6 +104,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   );
 
 
+
   // Handle grid ready untuk capture API dan trigger original handler
   const handleGridReady = useCallback(
     (params: GridReadyEvent) => {
@@ -246,7 +247,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
     <>
       <div className="relative">
         <DataGrid
-          key="items-data-grid"
+          key="items-data-grid" // Stable key prevents recreation
           rowData={modifiedItems}
           columnDefs={columnDefs}
           onRowClicked={handleRowClicked}
