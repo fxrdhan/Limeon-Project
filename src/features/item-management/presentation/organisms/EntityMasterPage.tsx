@@ -14,7 +14,6 @@ import {
   createTextColumn,
   getPinAndFilterMenuItems,
 } from '@/components/ag-grid';
-import { AGGridPagination } from '@/components/pagination';
 import {
   ColDef,
   RowClickedEvent,
@@ -30,6 +29,7 @@ import {
   useEntityManager,
   useGenericEntityManagement,
 } from '../../application/hooks/collections';
+import { StandardPagination } from '../atoms';
 import { useEntityColumnVisibility } from '../../application/hooks/ui';
 import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
 import { EntityManagementModal } from '../templates/entity';
@@ -529,13 +529,7 @@ const EntityMasterPage: React.FC = memo(() => {
         </div>
       </div>
 
-      <div
-        className={
-          entityData.isFetching
-            ? 'opacity-75 transition-opacity duration-300'
-            : ''
-        }
-      >
+      <div>
         {entityData.isError ? (
           <div className="text-center p-6 text-red-500">
             Error: {entityData.error?.message || 'Gagal memuat data'}
@@ -575,11 +569,8 @@ const EntityMasterPage: React.FC = memo(() => {
               />
               
               {/* Custom Pagination Component using AG Grid API */}
-              <AGGridPagination
+              <StandardPagination
                 gridApi={gridApi}
-                pageSizeOptions={[10, 20, 50, 100]}
-                enableFloating={true}
-                hideFloatingWhenModalOpen={false}
                 onPageSizeChange={setCurrentPageSize}
               />
             </div>

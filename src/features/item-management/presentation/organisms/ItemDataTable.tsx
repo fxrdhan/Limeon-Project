@@ -1,8 +1,8 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 import { DataGrid } from '@/components/ag-grid';
-import { AGGridPagination } from '@/components/pagination';
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
+import { StandardPagination } from '../atoms';
 import {
   RowClickedEvent,
   ColDef,
@@ -277,11 +277,8 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
       </div>
       
       {/* Custom Pagination Component using AG Grid API */}
-      <AGGridPagination
+      <StandardPagination
         gridApi={gridApi}
-        pageSizeOptions={[10, 20, 50, 100]}
-        enableFloating={true}
-        hideFloatingWhenModalOpen={false}
         onPageSizeChange={setCurrentPageSize}
       />
     </>
