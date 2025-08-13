@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { DiffText } from '../../../molecules';
+import { DiffText } from '../molecules';
 
 interface DifferencesSummaryProps {
   compData: {
@@ -28,15 +28,6 @@ interface DifferencesSummaryProps {
   kodeRef: React.RefObject<HTMLDivElement | null>;
   nameRef: React.RefObject<HTMLDivElement | null>;
   descriptionRef: React.RefObject<HTMLDivElement | null>;
-  overflowStates: {
-    kode: boolean;
-    name: boolean;
-    description: boolean;
-  };
-  descriptionScrollPosition: {
-    isAtTop: boolean;
-    isAtBottom: boolean;
-  };
 }
 
 const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
@@ -48,8 +39,6 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
   kodeRef,
   nameRef,
   descriptionRef,
-  overflowStates,
-  descriptionScrollPosition,
 }) => {
   if (!compData) return null;
 
@@ -108,15 +97,6 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                           isFlipped={isFlipped}
                         />
                       </div>
-                      {/* Conditional gradient fade overlay - only when content overflows */}
-                      {overflowStates.kode && (
-                        <div className="absolute inset-0 pointer-events-none rounded">
-                          <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white via-white/60 to-transparent"></div>
-                          <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/60 to-transparent"></div>
-                          <div className="absolute top-0 bottom-0 left-0 w-4 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
-                          <div className="absolute top-0 bottom-0 right-0 w-4 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
-                        </div>
-                      )}
                     </div>
                   </motion.div>
                 )}
@@ -151,15 +131,6 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                           isFlipped={isFlipped}
                         />
                       </div>
-                      {/* Conditional gradient fade overlay - only when content overflows */}
-                      {overflowStates.name && (
-                        <div className="absolute inset-0 pointer-events-none rounded">
-                          <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white via-white/60 to-transparent"></div>
-                          <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/60 to-transparent"></div>
-                          <div className="absolute top-0 bottom-0 left-0 w-4 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
-                          <div className="absolute top-0 bottom-0 right-0 w-4 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
-                        </div>
-                      )}
                     </div>
                   </motion.div>
                 )}
@@ -174,13 +145,13 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="text-xs font-medium text-slate-700 mb-0">
+                    <div className="text-xs font-medium text-slate-700 mb-2">
                       {entityName === 'Produsen' ? 'Alamat:' : 'Deskripsi:'}
                     </div>
                     <div className="relative overflow-hidden">
                       <div
                         ref={descriptionRef}
-                        className="px-4 py-4 max-h-[150px] overflow-y-auto scrollbar-thin"
+                        className="px-4 pb-4 pt-2 max-h-[150px] overflow-y-auto scrollbar-thin"
                       >
                         <DiffText
                           oldText={
@@ -195,22 +166,6 @@ const DifferencesSummary: React.FC<DifferencesSummaryProps> = ({
                           isFlipped={isFlipped}
                         />
                       </div>
-                      {/* Conditional gradient fade overlay - only when content overflows */}
-                      {overflowStates.description && (
-                        <div className="absolute inset-0 pointer-events-none rounded">
-                          {/* Top fade - hide when scrolled to top */}
-                          {!descriptionScrollPosition.isAtTop && (
-                            <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white via-white/65 to-transparent"></div>
-                          )}
-                          {/* Bottom fade - hide when scrolled to bottom */}
-                          {!descriptionScrollPosition.isAtBottom && (
-                            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/65 to-transparent"></div>
-                          )}
-                          {/* Left and right fade - always show */}
-                          <div className="absolute top-0 bottom-0 left-0 w-5 bg-gradient-to-r from-white via-white/60 to-transparent"></div>
-                          <div className="absolute top-0 bottom-0 right-0 w-5 bg-gradient-to-l from-white via-white/60 to-transparent"></div>
-                        </div>
-                      )}
                     </div>
                   </motion.div>
                 )}
