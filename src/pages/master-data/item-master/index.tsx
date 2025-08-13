@@ -439,13 +439,7 @@ const ItemMasterNew = memo(() => {
               </div>
             </div>
 
-            <div
-              className={
-                itemsManagement.isFetching
-                  ? 'opacity-75 transition-opacity duration-300'
-                  : ''
-              }
-            >
+            <div>
               {itemsManagement.isError ? (
                 <div className="text-center p-6 text-red-500">
                   Error:{' '}
