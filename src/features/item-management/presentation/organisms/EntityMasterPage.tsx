@@ -14,7 +14,6 @@ import {
   createTextColumn,
   getPinAndFilterMenuItems,
 } from '@/components/ag-grid';
-import { TableSkeleton } from '@/components/skeleton';
 import { AGGridPagination } from '@/components/pagination';
 import {
   ColDef,
@@ -541,27 +540,8 @@ const EntityMasterPage: React.FC = memo(() => {
           <div className="text-center p-6 text-red-500">
             Error: {entityData.error?.message || 'Gagal memuat data'}
           </div>
-        ) : entityData.isLoading && entityData.totalItems === 0 ? (
-          <TableSkeleton
-            rows={entityManager.itemsPerPage || 10}
-            columns={
-              currentConfig?.hasNciCode ? 4 : currentConfig?.hasAddress ? 4 : 3
-            }
-            showPagination={true}
-            className="mt-4"
-          />
         ) : (
           <>
-            {/* Background loading indicator for realtime updates */}
-            {entityData.isLoading && entityData.totalItems > 0 && (
-              <div className="absolute top-0 right-0 z-10 mt-2 mr-4">
-                <div className="flex items-center space-x-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm shadow-sm">
-                  <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Memperbarui data...</span>
-                </div>
-              </div>
-            )}
-
             <div className="relative">
               <DataGrid
                 key={`entity-grid-${activeTab}`}
@@ -570,7 +550,7 @@ const EntityMasterPage: React.FC = memo(() => {
                 columnDefs={columnDefs}
                 onRowClicked={onRowClicked}
                 onGridReady={onGridReady}
-                loading={false}
+                loading={entityData.isLoading}
                 overlayNoRowsTemplate={getOverlayTemplate(
                   search,
                   currentConfig
@@ -586,9 +566,7 @@ const EntityMasterPage: React.FC = memo(() => {
                 style={{
                   ...GRID_STYLE,
                   height: `${gridHeight}px`, // Dynamic height based on pagination size
-                  opacity:
-                    entityData.isLoading && entityData.totalItems > 0 ? 0.8 : 1,
-                  transition: 'opacity 0.2s ease-in-out, height 0.3s ease-in-out',
+                  transition: 'height 0.3s ease-in-out',
                 }}
                 // AG Grid Pagination (hidden - we'll use custom component)
                 pagination={true}
