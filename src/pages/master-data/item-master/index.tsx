@@ -19,7 +19,7 @@ import {
 } from '@/components/shared/sliding-selector';
 
 // New unified entity management
-import { EntityMasterPage } from '@/features/item-management/presentation/pages';
+import { EntityMasterPage } from '@/features/item-management/presentation/organisms';
 
 // Simple realtime for all item master data
 import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
