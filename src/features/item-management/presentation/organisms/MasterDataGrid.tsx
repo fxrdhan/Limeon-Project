@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState, useRef } from 'react';
+import { memo, useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import {
   GridApi,
   GridReadyEvent,
@@ -19,7 +19,7 @@ import { useColumnDisplayMode } from '@/features/item-management/application/hoo
 
 // Types
 import type { Item } from '@/types/database';
-import { EntityType } from '../../application/hooks/collections/useEntityManager';
+import { EntityType, EntityData } from '../../application/hooks/collections/useEntityManager';
 
 type MasterDataType = 'items' | EntityType;
 
@@ -38,7 +38,7 @@ interface MasterDataGridProps {
   
   // Data
   itemsData?: Item[];
-  entityData?: any[];
+  entityData?: EntityData[];
   
   // States
   isLoading: boolean;
@@ -55,7 +55,7 @@ interface MasterDataGridProps {
   entityColumnDefs?: ColDef[];
   
   // Handlers
-  onRowClick: (data: any) => void;
+  onRowClick: (data: Item | EntityData) => void;
   onGridReady: (params: GridReadyEvent) => void;
   isExternalFilterPresent: () => boolean;
   doesExternalFilterPass: (node: IRowNode) => boolean;
@@ -104,7 +104,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Determine current data and column definitions based on active tab
   const { rowData, columnDefs } = useMemo(() => {
-    let data: any[] = [];
+    let data: (Item | EntityData)[] = [];
     let columns: ColDef[] = [];
 
     if (activeTab === 'items') {
@@ -120,38 +120,48 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           if (mode === 'code') {
             switch (colId) {
               case 'manufacturer':
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if (item.manufacturer_info && (item.manufacturer_info as any).code) {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   modifiedItem.manufacturer = (item.manufacturer_info as any).code;
                 }
                 break;
               case 'category.name':
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if (item.category && (item.category as any).code) {
                   modifiedItem.category = {
                     ...item.category,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     name: (item.category as any).code,
                   };
                 }
                 break;
               case 'type.name':
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if (item.type && (item.type as any).code) {
                   modifiedItem.type = {
                     ...item.type,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     name: (item.type as any).code,
                   };
                 }
                 break;
               case 'unit.name':
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if (item.unit && (item.unit as any).code) {
                   modifiedItem.unit = {
                     ...item.unit,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     name: (item.unit as any).code,
                   };
                 }
                 break;
               case 'dosage.name':
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if (item.dosage && (item.dosage as any).code) {
                   modifiedItem.dosage = {
                     ...item.dosage,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     name: (item.dosage as any).code,
                   };
                 }
@@ -177,6 +187,18 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     viewportOffset: 320,
     debug: false,
   });
+
+  // Auto trigger autosize when switching tabs or column definitions change
+  useEffect(() => {
+    if (gridApi && !gridApi.isDestroyed()) {
+      // Small delay to ensure grid has updated with new column definitions
+      const timer = setTimeout(() => {
+        gridApi.autoSizeAllColumns();
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [gridApi, activeTab, columnDefs]);
 
   // Toggle display mode for items reference columns
   const toggleColumnDisplayMode = useCallback(
@@ -227,12 +249,14 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Custom menu items (items-specific features)
   const getMainMenuItems = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (params: any) => {
       if (activeTab !== 'items' || !params.column) {
         return getPinAndFilterMenuItems(params);
       }
 
       const colId = params.column.getColId();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const baseMenuItems: (string | any)[] = [
         'columnFilter',
         'separator',

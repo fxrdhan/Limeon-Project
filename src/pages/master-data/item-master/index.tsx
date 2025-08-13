@@ -45,6 +45,7 @@ import type { Item as ItemDataType } from '@/types/database';
 import { FilterSearch } from '@/types/search';
 import {
   EntityType,
+  EntityData,
 } from '@/features/item-management/application/hooks/collections/useEntityManager';
 
 type MasterDataType =
@@ -622,11 +623,11 @@ const ItemMasterNew = memo(() => {
   );
 
   // Unified handlers for MasterDataGrid
-  const unifiedRowClickHandler = useCallback((data: any) => {
+  const unifiedRowClickHandler = useCallback((data: ItemDataType | EntityData) => {
     if (activeTab === 'items') {
-      handleItemEdit(data);
+      handleItemEdit(data as ItemDataType);
     } else {
-      entityManager.openEditModal(data);
+      entityManager.openEditModal(data as EntityData);
     }
   }, [activeTab, handleItemEdit, entityManager]);
 
