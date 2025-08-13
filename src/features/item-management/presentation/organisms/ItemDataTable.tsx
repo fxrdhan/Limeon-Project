@@ -1,7 +1,6 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useDynamicGridHeight } from '@/hooks/useDynamicGridHeight';
 import { DataGrid } from '@/components/ag-grid';
-import { TableSkeleton } from '@/components/skeleton';
 import { AGGridPagination } from '@/components/pagination';
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
 import {
@@ -57,7 +56,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
   search,
   currentPage,
   totalPages: _totalPages, // eslint-disable-line @typescript-eslint/no-unused-vars
-  totalItems,
+  totalItems: _totalItems, // eslint-disable-line @typescript-eslint/no-unused-vars
   itemsPerPage,
   onRowClick,
   onPageChange: _onPageChange, // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -94,14 +93,8 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
     [toggleDisplayMode, gridApi]
   );
 
-  // SIMPLE SOLUTION: Show skeleton ONLY when truly no data exists
-  // If totalItems > 0, NEVER show skeleton (data is cached/available)
-  const shouldShowSkeleton = isLoading && totalItems === 0;
-
-  // Skip complex useCacheFirstLoading - use direct simple logic
-  const showSkeleton = shouldShowSkeleton;
-  const showBackgroundLoading = isLoading && totalItems > 0;
-  const shouldSuppressOverlay = isLoading;
+  // Use AG-Grid built-in loading overlay instead of skeleton
+  const showAGGridLoading = isLoading;
 
   const handleRowClicked = useCallback(
     (event: RowClickedEvent) => {
@@ -248,29 +241,9 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
     );
   }
 
-  if (showSkeleton) {
-    return (
-      <TableSkeleton
-        rows={itemsPerPage || 10}
-        columns={5}
-        showPagination={true}
-        className="mt-4"
-      />
-    );
-  }
 
   return (
     <>
-      {/* Background loading indicator */}
-      {showBackgroundLoading && (
-        <div className="absolute top-0 right-0 z-10 mt-2 mr-4">
-          <div className="flex items-center space-x-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm shadow-sm">
-            <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <span>Memperbarui data...</span>
-          </div>
-        </div>
-      )}
-
       <div className="relative">
         <DataGrid
           key="items-data-grid"
@@ -278,8 +251,8 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
           columnDefs={columnDefs}
           onRowClicked={handleRowClicked}
           onGridReady={handleGridReady}
-          loading={false}
-          overlayNoRowsTemplate={shouldSuppressOverlay ? '' : overlayTemplate}
+          loading={showAGGridLoading}
+          overlayNoRowsTemplate={overlayTemplate}
           autoSizeColumns={columnsToAutoSize}
           onFirstDataRendered={undefined}
           isExternalFilterPresent={isExternalFilterPresent}
@@ -294,8 +267,7 @@ const ItemDataTable = memo<ItemDataTableProps>(function ItemDataTable({
             marginTop: '1rem',
             marginBottom: '1rem',
             height: `${gridHeight}px`, // Dynamic height based on pagination size
-            opacity: showBackgroundLoading ? 0.8 : 1,
-            transition: 'opacity 0.2s ease-in-out, height 0.3s ease-in-out',
+            transition: 'height 0.3s ease-in-out',
           }}
           // AG Grid Built-in Pagination (hidden - we'll use custom component)
           pagination={true}
