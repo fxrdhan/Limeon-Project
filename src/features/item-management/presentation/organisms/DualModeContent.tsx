@@ -1,5 +1,5 @@
 import React from 'react';
-import type { VersionData } from '../../../../shared/types';
+import type { VersionData } from '../../shared/types/ItemTypes';
 
 interface DualModeContentProps {
   isFlipped: boolean;

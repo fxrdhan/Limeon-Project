@@ -260,13 +260,12 @@ const EntityMasterPage: React.FC = memo(() => {
   );
 
 
-  // Cleanup grid API reference when activeTab changes or component unmounts
+  // Cleanup grid API reference on component unmount only
   useEffect(() => {
     return () => {
-      // Clear grid API reference on cleanup
       setGridApi(null);
     };
-  }, [activeTab]);
+  }, []);
 
   // Handle column pinning events
   const handleEntityColumnPinned = useCallback(
@@ -538,7 +537,7 @@ const EntityMasterPage: React.FC = memo(() => {
           <>
             <div className="relative">
               <DataGrid
-                key={`entity-grid-${activeTab}`}
+                key="entity-master-grid" // Stable key prevents recreation on tab changes
                 ref={dataGridRef}
                 rowData={entityData.data}
                 columnDefs={columnDefs}

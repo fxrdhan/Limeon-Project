@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaExchangeAlt } from 'react-icons/fa';
-import type { VersionData } from '../../../../shared/types';
+import type { VersionData } from '../../shared/types/ItemTypes';
 
 interface ComparisonHeaderProps {
   isDualMode: boolean;

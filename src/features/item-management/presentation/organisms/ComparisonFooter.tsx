@@ -1,6 +1,6 @@
 import React from 'react';
 import Button from '@/components/button';
-import type { VersionData } from '../../../../shared/types';
+import type { VersionData } from '../../shared/types/ItemTypes';
 
 interface ComparisonFooterProps {
   shouldShowRestore: boolean;

@@ -6,9 +6,7 @@ import type { VersionData } from '../../../shared/types';
 import {
   useModalAnimation,
   useComparisonData,
-  useOverflowDetection,
   useAutoScroll,
-  useScrollPosition,
 } from './hooks';
 import {
   ComparisonHeader,
@@ -70,17 +68,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     entityName,
   });
 
-  const { overflowStates } = useOverflowDetection({
-    isOpen,
-    isFlipped,
-    selectedVersion,
-    versionA,
-    versionB,
-    kodeRef,
-    nameRef,
-    descriptionRef,
-    compData,
-  });
 
   useAutoScroll({
     isOpen,
@@ -90,10 +77,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
     compData,
   });
 
-  const descriptionScrollPosition = useScrollPosition({
-    elementRef: descriptionRef,
-    isOpen,
-  });
 
   // Early return for invalid states
   if (!isDualMode && !selectedVersion) return null;
@@ -177,8 +160,6 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
                 kodeRef={kodeRef}
                 nameRef={nameRef}
                 descriptionRef={descriptionRef}
-                overflowStates={overflowStates}
-                descriptionScrollPosition={descriptionScrollPosition}
               />
             </div>
 
