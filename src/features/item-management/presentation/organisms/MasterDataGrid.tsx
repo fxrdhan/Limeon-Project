@@ -7,6 +7,7 @@ import {
   ColumnMovedEvent,
   ColDef,
   IRowNode,
+  GetMainMenuItems,
 } from 'ag-grid-community';
 
 // Components
@@ -20,6 +21,20 @@ import { useColumnDisplayMode } from '@/features/item-management/application/hoo
 // Types
 import type { Item } from '@/types/database';
 import { EntityType, EntityData } from '../../application/hooks/collections/useEntityManager';
+
+// Extended entity types with code property for display mode
+type EntityWithCode = {
+  name: string;
+  code?: string;
+};
+
+// Extended Item interface for column display mode transformations
+interface ItemWithExtendedEntities extends Omit<Item, 'category' | 'type' | 'unit' | 'dosage'> {
+  category?: EntityWithCode;
+  type?: EntityWithCode;  
+  unit?: EntityWithCode;
+  dosage?: EntityWithCode;
+}
 
 type MasterDataType = 'items' | EntityType;
 
@@ -55,7 +70,7 @@ interface MasterDataGridProps {
   entityColumnDefs?: ColDef[];
   
   // Handlers
-  onRowClick: (data: Item | EntityData) => void;
+  onRowClick: (data: ItemWithExtendedEntities | EntityData) => void;
   onGridReady: (params: GridReadyEvent) => void;
   isExternalFilterPresent: () => boolean;
   doesExternalFilterPass: (node: IRowNode) => boolean;
@@ -104,65 +119,59 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
   // Determine current data and column definitions based on active tab
   const { rowData, columnDefs } = useMemo(() => {
-    let data: (Item | EntityData)[] = [];
+    let data: (ItemWithExtendedEntities | EntityData)[] = [];
     let columns: ColDef[] = [];
 
     if (activeTab === 'items') {
-      data = itemsData;
+      data = itemsData || [];
       columns = itemColumnDefs;
       
       // Apply column display mode transformations for items
-      data = itemsData.map(item => {
-        const modifiedItem = { ...item };
+      data = (itemsData || []).map(item => {
+        const modifiedItem: ItemWithExtendedEntities = { ...item };
 
         // Apply display mode transformations
         Object.entries(columnDisplayModes).forEach(([colId, mode]) => {
           if (mode === 'code') {
             switch (colId) {
               case 'manufacturer':
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (item.manufacturer_info && (item.manufacturer_info as any).code) {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  modifiedItem.manufacturer = (item.manufacturer_info as any).code;
+                if (item.manufacturer_info?.code) {
+                  modifiedItem.manufacturer = item.manufacturer_info.code;
                 }
                 break;
               case 'category.name':
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (item.category && (item.category as any).code) {
+                // Type guard: Check if category has code property
+                if (item.category && 'code' in item.category && typeof item.category.code === 'string') {
                   modifiedItem.category = {
-                    ...item.category,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    name: (item.category as any).code,
+                    name: item.category.code,
+                    code: item.category.code,
                   };
                 }
                 break;
               case 'type.name':
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (item.type && (item.type as any).code) {
+                // Type guard: Check if type has code property
+                if (item.type && 'code' in item.type && typeof item.type.code === 'string') {
                   modifiedItem.type = {
-                    ...item.type,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    name: (item.type as any).code,
+                    name: item.type.code,
+                    code: item.type.code,
                   };
                 }
                 break;
               case 'unit.name':
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (item.unit && (item.unit as any).code) {
+                // Type guard: Check if unit has code property
+                if (item.unit && 'code' in item.unit && typeof item.unit.code === 'string') {
                   modifiedItem.unit = {
-                    ...item.unit,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    name: (item.unit as any).code,
+                    name: item.unit.code,
+                    code: item.unit.code,
                   };
                 }
                 break;
               case 'dosage.name':
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (item.dosage && (item.dosage as any).code) {
+                // Type guard: Check if dosage has code property and exists
+                if (item.dosage && 'code' in item.dosage && typeof item.dosage.code === 'string') {
                   modifiedItem.dosage = {
-                    ...item.dosage,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    name: (item.dosage as any).code,
+                    name: item.dosage.code,
+                    code: item.dosage.code,
                   };
                 }
                 break;
@@ -248,38 +257,40 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   );
 
   // Custom menu items (items-specific features)
-  const getMainMenuItems = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (params: any) => {
+  const getMainMenuItems: GetMainMenuItems = useCallback(
+    (params) => {
       if (activeTab !== 'items' || !params.column) {
         return getPinAndFilterMenuItems(params);
       }
 
       const colId = params.column.getColId();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const baseMenuItems: (string | any)[] = [
+      const baseMenuItems = [
         'columnFilter',
         'separator',
         'pinSubMenu',
         'separator',
         'autoSizeAll',
-      ];
+      ] as const;
 
       // Add toggle menu for reference columns only (items tab)
       if (isReferenceColumn(colId)) {
         const currentMode = columnDisplayModes[colId];
         const nextMode = currentMode === 'name' ? 'kode' : 'nama';
 
-        baseMenuItems.push('separator', {
-          name: `Tampilkan ${nextMode}`,
-          action: () => {
-            toggleColumnDisplayMode(colId);
+        return [
+          ...baseMenuItems,
+          'separator',
+          {
+            name: `Tampilkan ${nextMode}`,
+            action: () => {
+              toggleColumnDisplayMode(colId);
+            },
+            icon: currentMode === 'name' ? '#' : 'T',
           },
-          icon: currentMode === 'name' ? '#' : 'T',
-        });
+        ];
       }
 
-      return baseMenuItems;
+      return [...baseMenuItems];
     },
     [activeTab, isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]
   );

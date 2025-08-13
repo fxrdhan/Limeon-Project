@@ -622,10 +622,12 @@ const ItemMasterNew = memo(() => {
     [activeTab, navigate, isAddItemModalOpen, closeAddItemModal]
   );
 
-  // Unified handlers for MasterDataGrid
+  // Unified handlers for MasterDataGrid  
   const unifiedRowClickHandler = useCallback((data: ItemDataType | EntityData) => {
     if (activeTab === 'items') {
-      handleItemEdit(data as ItemDataType);
+      // Convert back to base Item type for editing
+      const baseItem = data as ItemDataType;
+      handleItemEdit(baseItem);
     } else {
       entityManager.openEditModal(data as EntityData);
     }
