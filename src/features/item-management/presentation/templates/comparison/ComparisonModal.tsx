@@ -13,10 +13,10 @@ import {
 import {
   ComparisonHeader,
   DualModeContent,
-  SingleModeContent,
   DifferencesSummary,
   ComparisonFooter,
-} from './components';
+} from '../../organisms';
+import { SingleModeContent } from '../../molecules';
 
 interface ComparisonModalProps {
   isOpen: boolean;

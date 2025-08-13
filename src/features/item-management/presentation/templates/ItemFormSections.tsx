@@ -10,11 +10,11 @@ import { usePackageConversionLogic } from '../../application/hooks/utils/usePack
 import { useInlineEditor } from '@/hooks/useInlineEditor';
 
 // Child components
-import { ItemFormHeader } from './';
-import ItemBasicInfoForm from './ItemBasicInfoForm';
-import ItemSettingsForm from './ItemSettingsForm';
-import ItemPricingForm from './ItemPricingForm';
-import ItemPackageConversionManager from './ItemPackageConversionForm';
+import { ItemFormHeader } from '../molecules';
+import ItemBasicInfoForm from '../organisms/ItemBasicInfoForm';
+import ItemSettingsForm from '../organisms/ItemSettingsForm';
+import ItemPricingForm from '../organisms/ItemPricingForm';
+import ItemPackageConversionManager from '../organisms/ItemPackageConversionForm';
 
 // Header Section
 // eslint-disable-next-line react-refresh/only-export-components

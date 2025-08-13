@@ -10,7 +10,7 @@ import { useItemManagement } from '../../../shared/contexts/useItemFormContext';
 
 // Template and Organisms
 import ItemModalTemplate from '../ItemModalTemplate';
-import { ItemFormSections } from '../../organisms/ItemFormSections';
+import { ItemFormSections } from '../ItemFormSections';
 import ItemModalContainer from '../containers/ItemModalContainer';
 import ItemHistoryContent from '../../organisms/ItemHistoryContent';
 
