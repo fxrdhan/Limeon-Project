@@ -1,59 +1,28 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box';
-import { fuzzyMatch, getScore } from '@/utils/search';
+import { fuzzyMatch } from '@/utils/search';
 import { useAlert } from '@/components/alert/hooks';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type {
-  Category,
-  ItemType,
-  Unit,
-  Item,
-  ItemManufacturer,
   Supplier,
   Patient,
   Doctor,
   UseMasterDataManagementOptions,
 } from '@/types';
-import type { ItemDosage } from '@/types/database';
-import type { ItemUnit } from '@/services/api/masterData.service';
 
 // Import regular query hooks (realtime handled at page level)
-import {
-  useCategories,
-  useMedicineTypes,
-  usePackages,
-  useItemUnits,
-} from '@/hooks/queries/useMasterData';
-import { useDosages } from '@/hooks/queries/useDosages';
-import { useManufacturers } from '@/hooks/queries/useManufacturers';
-import { useItems } from '@/hooks/queries/useItems';
 
 // Import other hooks
 import {
-  useCategoryMutations,
-  useMedicineTypeMutations,
-  usePackageMutations,
-  useItemUnitMutations,
   useSuppliers,
   useSupplierMutations,
-  useItemMutations,
   usePatientMutations,
   useDoctorMutations,
   usePatients,
   useDoctors,
 } from '@/hooks/queries';
 
-import { useDosageMutations } from '@/hooks/queries/useDosages';
-import { useManufacturerMutations } from '@/hooks/queries/useManufacturers';
-
-type MasterDataItem =
-  | Category
-  | ItemType
-  | Unit
-  | ItemUnit
-  | ItemDosage
-  | ItemManufacturer
-  | Item
+type MasterDataIdentity =
   | Supplier
   | Patient
   | Doctor;
@@ -67,45 +36,10 @@ const getHooksForTable = (tableName: string) => {
   }
 
   switch (tableName) {
-    case 'item_categories':
-      return {
-        useData: (options: QueryOptions) => useCategories(options),
-        useMutations: useCategoryMutations,
-      };
-    case 'item_types':
-      return {
-        useData: (options: QueryOptions) => useMedicineTypes(options),
-        useMutations: useMedicineTypeMutations,
-      };
-    case 'item_packages':
-      return {
-        useData: (options: QueryOptions) => usePackages(options),
-        useMutations: usePackageMutations,
-      };
-    case 'item_units':
-      return {
-        useData: (options: QueryOptions) => useItemUnits(options),
-        useMutations: useItemUnitMutations,
-      };
-    case 'item_dosages':
-      return {
-        useData: (options: QueryOptions) => useDosages(options),
-        useMutations: useDosageMutations,
-      };
-    case 'item_manufacturers':
-      return {
-        useData: (options: QueryOptions) => useManufacturers(options),
-        useMutations: useManufacturerMutations,
-      };
     case 'suppliers':
       return {
         useData: useSuppliers, // No realtime for suppliers yet
         useMutations: useSupplierMutations,
-      };
-    case 'items':
-      return {
-        useData: (options: QueryOptions) => useItems(options),
-        useMutations: useItemMutations,
       };
     case 'patients':
       return {
@@ -135,12 +69,12 @@ export const useMasterDataManagement = (
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<MasterDataItem | null>(null);
+  const [editingIdentity, setEditingIdentity] = useState<MasterDataIdentity | null>(null);
 
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [identitiesPerPage, setIdentitiesPerPage] = useState(10);
 
   const actualIsModalOpen =
     isCustomModalOpen ?? (isAddModalOpen || isEditModalOpen);
@@ -178,16 +112,16 @@ export const useMasterDataManagement = (
     return () => clearTimeout(timer);
   }, [search, debouncedSearch]);
 
-  // Clear editing item when modal closes
+  // Clear editing identity when modal closes
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (!isEditModalOpen && editingItem) {
+    if (!isEditModalOpen && editingIdentity) {
       timer = setTimeout(() => {
-        setEditingItem(null);
+        setEditingIdentity(null);
       }, 300);
     }
     return () => clearTimeout(timer);
-  }, [editingItem, isEditModalOpen]);
+  }, [editingIdentity, isEditModalOpen]);
 
   // Global keyboard handler for auto-focus search
   useEffect(() => {
@@ -251,74 +185,40 @@ export const useMasterDataManagement = (
   const mutations = hooks.useMutations();
 
   // Filter and paginate data locally
-  const { currentData, totalItems } = useMemo(() => {
-    let filteredData = allData as MasterDataItem[];
+  const { currentData, totalItems: totalEntities } = useMemo(() => {
+    let filteredData = allData as MasterDataIdentity[];
 
     // Apply search filter
     if (debouncedSearch) {
       const searchTermLower = debouncedSearch.toLowerCase();
 
-      if (tableName === 'items') {
-        // Special handling for items with complex search
-        filteredData = (allData as Item[])
-          .filter(item => {
-            return (
-              fuzzyMatch(item.name, searchTermLower) ||
-              (item.code && fuzzyMatch(item.code, searchTermLower)) ||
-              (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
-              (item.category?.name &&
-                fuzzyMatch(item.category.name, searchTermLower)) ||
-              (item.type?.name &&
-                fuzzyMatch(item.type.name, searchTermLower)) ||
-              (item.unit?.name &&
-                fuzzyMatch(item.unit.name, searchTermLower)) ||
-              (item.base_price &&
-                fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
-              (item.sell_price &&
-                fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
-              (item.stock &&
-                fuzzyMatch(item.stock.toString(), searchTermLower)) ||
-              (item.package_conversions &&
-                item.package_conversions.some(
-                  uc =>
-                    uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower)
-                ))
-            );
-          })
-          .sort((a, b) => {
-            const scoreA = getScore(a, searchTermLower);
-            const scoreB = getScore(b, searchTermLower);
-            if (scoreA !== scoreB) return scoreB - scoreA;
-            return a.name.localeCompare(b.name);
-          });
-      } else {
-        // Standard filtering for other master data
-        filteredData = filteredData
-          .filter(item => {
+      // Standard filtering for master data (suppliers, patients, doctors)
+      filteredData = filteredData
+        .filter(identity => {
             // Check for code field if it exists (all master data now uses 'code')
             if (
-              'code' in item &&
-              typeof item.code === 'string' &&
-              fuzzyMatch(item.code.toLowerCase(), searchTermLower)
+              'code' in identity &&
+              typeof identity.code === 'string' &&
+              fuzzyMatch(identity.code.toLowerCase(), searchTermLower)
             )
               return true;
-            if (item.name && fuzzyMatch(item.name, searchTermLower))
+            if (identity.name && fuzzyMatch(identity.name, searchTermLower))
               return true;
             if (
-              'description' in item &&
-              typeof item.description === 'string' &&
-              fuzzyMatch(item.description, searchTermLower)
+              'description' in identity &&
+              typeof identity.description === 'string' &&
+              fuzzyMatch(identity.description, searchTermLower)
             )
               return true;
             if (
-              'address' in item &&
-              typeof item.address === 'string' &&
-              fuzzyMatch(item.address, searchTermLower)
+              'address' in identity &&
+              typeof identity.address === 'string' &&
+              fuzzyMatch(identity.address, searchTermLower)
             )
               return true;
 
             if (tableName === 'suppliers') {
-              const supplier = item as Supplier;
+              const supplier = identity as Supplier;
               if (
                 supplier.address &&
                 fuzzyMatch(supplier.address, searchTermLower)
@@ -334,7 +234,7 @@ export const useMasterDataManagement = (
               )
                 return true;
             } else if (tableName === 'patients') {
-              const patient = item as Patient;
+              const patient = identity as Patient;
               if (patient.gender && fuzzyMatch(patient.gender, searchTermLower))
                 return true;
               if (
@@ -352,7 +252,7 @@ export const useMasterDataManagement = (
               )
                 return true;
             } else if (tableName === 'doctors') {
-              const doctor = item as Doctor;
+              const doctor = identity as Doctor;
               if (
                 doctor.specialization &&
                 fuzzyMatch(doctor.specialization, searchTermLower)
@@ -376,34 +276,34 @@ export const useMasterDataManagement = (
             return false;
           })
           .sort((a, b) => {
-            const getScore = (itemToSort: MasterDataItem) => {
+            const getScore = (identityToSort: MasterDataIdentity) => {
               // Check code field (all master data tables now use 'code')
               if (
-                'code' in itemToSort &&
-                typeof itemToSort.code === 'string' &&
-                itemToSort.code.toLowerCase().startsWith(searchTermLower)
+                'code' in identityToSort &&
+                typeof identityToSort.code === 'string' &&
+                identityToSort.code.toLowerCase().startsWith(searchTermLower)
               )
                 return 5;
               if (
-                'code' in itemToSort &&
-                typeof itemToSort.code === 'string' &&
-                itemToSort.code.toLowerCase().includes(searchTermLower)
+                'code' in identityToSort &&
+                typeof identityToSort.code === 'string' &&
+                identityToSort.code.toLowerCase().includes(searchTermLower)
               )
                 return 4;
               // Then check name
               if (
-                itemToSort.name &&
-                itemToSort.name.toLowerCase().startsWith(searchTermLower)
+                identityToSort.name &&
+                identityToSort.name.toLowerCase().startsWith(searchTermLower)
               )
                 return 3;
               if (
-                itemToSort.name &&
-                itemToSort.name.toLowerCase().includes(searchTermLower)
+                identityToSort.name &&
+                identityToSort.name.toLowerCase().includes(searchTermLower)
               )
                 return 2;
               if (
-                itemToSort.name &&
-                fuzzyMatch(itemToSort.name, searchTermLower)
+                identityToSort.name &&
+                fuzzyMatch(identityToSort.name, searchTermLower)
               )
                 return 1;
               return 0;
@@ -422,30 +322,29 @@ export const useMasterDataManagement = (
             }
             return a.name.localeCompare(b.name);
           });
-      }
     }
 
     // Apply pagination
-    const totalItems = filteredData.length;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+    const totalEntities = filteredData.length;
+    const startIndex = (currentPage - 1) * identitiesPerPage;
+    const endIndex = startIndex + identitiesPerPage;
     const paginatedData = filteredData.slice(startIndex, endIndex);
 
     return {
       currentData: paginatedData,
-      totalItems,
+      totalItems: totalEntities,
     };
-  }, [allData, debouncedSearch, currentPage, itemsPerPage, tableName]);
+  }, [allData, debouncedSearch, currentPage, identitiesPerPage, tableName]);
 
   const queryError = error instanceof Error ? error : null;
 
-  const handleEdit = useCallback((item: MasterDataItem) => {
-    setEditingItem(item);
+  const handleEdit = useCallback((identity: MasterDataIdentity) => {
+    setEditingIdentity(identity);
     setIsEditModalOpen(true);
   }, []);
 
   const handleModalSubmit = useCallback(
-    async (itemData: {
+    async (identityData: {
       id?: string;
       code?: string;
       name: string;
@@ -453,96 +352,67 @@ export const useMasterDataManagement = (
       address?: string;
     }) => {
       try {
-        if (itemData.id) {
-          // Update existing item
+        if (identityData.id) {
+          // Update existing identity
           const updateMutation =
-            ('updateCategory' in mutations && mutations.updateCategory) ||
-            ('updateMedicineType' in mutations &&
-              mutations.updateMedicineType) ||
-            ('updatePackage' in mutations && mutations.updatePackage) ||
-            ('updateItemUnit' in mutations && mutations.updateItemUnit) ||
             ('updateSupplier' in mutations && mutations.updateSupplier) ||
-            ('updateItem' in mutations && mutations.updateItem) ||
             ('updatePatient' in mutations && mutations.updatePatient) ||
-            ('updateDoctor' in mutations && mutations.updateDoctor) ||
-            ('updateMutation' in mutations && mutations.updateMutation);
+            ('updateDoctor' in mutations && mutations.updateDoctor);
 
           if (
             updateMutation &&
             typeof updateMutation === 'object' &&
             'mutateAsync' in updateMutation
           ) {
-            const updateData: Record<string, unknown> = { name: itemData.name };
-            if (itemData.description !== undefined) {
-              updateData.description = itemData.description;
+            const updateData: Record<string, unknown> = { name: identityData.name };
+            if (identityData.description !== undefined) {
+              updateData.description = identityData.description;
             }
-            if (itemData.address !== undefined) {
-              updateData.address = itemData.address;
+            if (identityData.address !== undefined) {
+              updateData.address = identityData.address;
             }
             // Handle code field properly for different tables
-            if (itemData.code !== undefined) {
+            if (identityData.code !== undefined) {
               // Since this hook is used by legacy components, keep the simple field assignment
-              updateData.code = itemData.code;
+              updateData.code = identityData.code;
             }
 
-            // Handle different parameter structures for different mutation types
-            if ('updateMutation' in mutations) {
-              // For generic mutations (like dosages), pass parameters directly
-              await (
-                updateMutation as unknown as {
-                  mutateAsync: (
-                    params: { id: string } & Record<string, unknown>
-                  ) => Promise<unknown>;
-                }
-              ).mutateAsync({
-                id: itemData.id!,
-                ...updateData,
-              });
-            } else {
-              // For specific mutations (categories, types, units, etc.), use nested data structure
-              await (
-                updateMutation as unknown as {
-                  mutateAsync: (params: {
-                    id: string;
-                    data: Record<string, unknown>;
-                  }) => Promise<unknown>;
-                }
-              ).mutateAsync({
-                id: itemData.id!,
-                data: updateData,
-              });
-            }
+            // For specific mutations (suppliers, patients, doctors), use nested data structure
+            await (
+              updateMutation as unknown as {
+                mutateAsync: (params: {
+                  id: string;
+                  data: Record<string, unknown>;
+                }) => Promise<unknown>;
+              }
+            ).mutateAsync({
+              id: identityData.id!,
+              data: updateData,
+            });
           }
         } else {
-          // Create new item
+          // Create new identity
           const createMutation =
-            ('createCategory' in mutations && mutations.createCategory) ||
-            ('createMedicineType' in mutations &&
-              mutations.createMedicineType) ||
-            ('createPackage' in mutations && mutations.createPackage) ||
-            ('createItemUnit' in mutations && mutations.createItemUnit) ||
             ('createSupplier' in mutations && mutations.createSupplier) ||
-            ('createItem' in mutations && mutations.createItem) ||
             ('createPatient' in mutations && mutations.createPatient) ||
-            ('createDoctor' in mutations && mutations.createDoctor) ||
-            ('createMutation' in mutations && mutations.createMutation);
+            ('createDoctor' in mutations && mutations.createDoctor);
 
           if (
             createMutation &&
             typeof createMutation === 'object' &&
             'mutateAsync' in createMutation
           ) {
-            const createData: Record<string, unknown> = { name: itemData.name };
-            if (itemData.description !== undefined) {
-              createData.description = itemData.description;
+            const createData: Record<string, unknown> = { name: identityData.name };
+            if (identityData.description !== undefined) {
+              createData.description = identityData.description;
             }
-            if (itemData.address !== undefined) {
-              createData.address = itemData.address;
+            if (identityData.address !== undefined) {
+              createData.address = identityData.address;
             }
             // Handle code field properly for different tables
-            if (itemData.code !== undefined) {
+            if (identityData.code !== undefined) {
               // Since this hook is used by legacy components, keep the simple field assignment
-              createData.code = itemData.code;
+              createData.code = identityData.code;
             }
             // Cast to unknown first to avoid type conflicts, then cast to mutation interface
             await (
@@ -557,7 +427,7 @@ export const useMasterDataManagement = (
 
         setIsAddModalOpen(false);
         setIsEditModalOpen(false);
-        setEditingItem(null);
+        setEditingIdentity(null);
 
         // Manually refetch to ensure current tab updates immediately after mutation
         refetch();
@@ -584,15 +454,15 @@ export const useMasterDataManagement = (
 
         const isDuplicateCodeError =
           errorCode === '23505' || // PostgreSQL unique violation code
-          errorMessage.includes('item_units_kode_key') ||
+          errorMessage.includes('unique constraint') ||
           errorMessage.includes('duplicate key value') ||
           errorMessage.includes('violates unique constraint') ||
           errorDetails.includes('already exists') ||
           errorMessage.includes('already exists') ||
           (errorMessage.includes('409') && errorMessage.includes('conflict'));
 
-        const action = itemData.id ? 'memperbarui' : 'menambahkan';
-        const codeValue = itemData.code;
+        const action = identityData.id ? 'memperbarui' : 'menambahkan';
+        const codeValue = identityData.code;
 
         if (isDuplicateCodeError && codeValue) {
           alert.error(
@@ -608,18 +478,12 @@ export const useMasterDataManagement = (
   );
 
   const handleDelete = useCallback(
-    async (itemId: string) => {
+    async (identityId: string) => {
       try {
         const deleteMutation =
-          ('deleteCategory' in mutations && mutations.deleteCategory) ||
-          ('deleteMedicineType' in mutations && mutations.deleteMedicineType) ||
-          ('deletePackage' in mutations && mutations.deletePackage) ||
-          ('deleteItemUnit' in mutations && mutations.deleteItemUnit) ||
           ('deleteSupplier' in mutations && mutations.deleteSupplier) ||
-          ('deleteItem' in mutations && mutations.deleteItem) ||
           ('deletePatient' in mutations && mutations.deletePatient) ||
-          ('deleteDoctor' in mutations && mutations.deleteDoctor) ||
-          ('deleteMutation' in mutations && mutations.deleteMutation);
+          ('deleteDoctor' in mutations && mutations.deleteDoctor);
 
         if (
           deleteMutation &&
@@ -631,11 +495,11 @@ export const useMasterDataManagement = (
             deleteMutation as unknown as {
               mutateAsync: (id: string) => Promise<unknown>;
             }
-          ).mutateAsync(itemId);
+          ).mutateAsync(identityId);
         }
 
         setIsEditModalOpen(false);
-        setEditingItem(null);
+        setEditingIdentity(null);
 
         // Manually refetch to ensure current tab updates immediately after mutation
         refetch();
@@ -664,14 +528,14 @@ export const useMasterDataManagement = (
 
   const handlePageChange = (newPage: number) => setCurrentPage(newPage);
 
-  const handleItemsPerPageChange = (
-    newItemsPerPage: number | React.ChangeEvent<HTMLSelectElement>
+  const handleIdentitiesPerPageChange = (
+    newIdentitiesPerPage: number | React.ChangeEvent<HTMLSelectElement>
   ) => {
     // Handle both number and event for backward compatibility
-    const value = typeof newItemsPerPage === 'number' 
-      ? newItemsPerPage 
-      : Number(newItemsPerPage.target.value);
-    setItemsPerPage(value);
+    const value = typeof newIdentitiesPerPage === 'number' 
+      ? newIdentitiesPerPage 
+      : Number(newIdentitiesPerPage.target.value);
+    setIdentitiesPerPage(value);
     setCurrentPage(1);
   };
 
@@ -681,8 +545,8 @@ export const useMasterDataManagement = (
         e.preventDefault();
 
         if (currentData.length > 0) {
-          const firstItem = currentData[0] as MasterDataItem;
-          handleEdit(firstItem);
+          const firstIdentity = currentData[0] as MasterDataIdentity;
+          handleEdit(firstIdentity);
         } else if (debouncedSearch.trim() !== '') {
           setIsAddModalOpen(true);
         }
@@ -691,7 +555,7 @@ export const useMasterDataManagement = (
     [currentData, handleEdit, debouncedSearch]
   );
 
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const totalPages = Math.ceil(totalEntities / identitiesPerPage);
 
   // Create mutation objects with consistent interface for backward compatibility
   const addMutation = {
@@ -753,8 +617,8 @@ export const useMasterDataManagement = (
   };
 
   const deleteMutation = {
-    mutate: (itemId: string) => handleDelete(itemId),
-    mutateAsync: (itemId: string) => handleDelete(itemId),
+    mutate: (identityId: string) => handleDelete(identityId),
+    mutateAsync: (identityId: string) => handleDelete(identityId),
     isLoading: Object.values(mutations).some((mutation: unknown) => {
       const m = mutation as { isLoading?: boolean; isPending?: boolean };
       return m?.isLoading || m?.isPending;
@@ -775,18 +639,18 @@ export const useMasterDataManagement = (
     setIsAddModalOpen,
     isEditModalOpen,
     setIsEditModalOpen,
-    editingItem,
-    setEditingItem,
+    editingItem: editingIdentity,
+    setEditingItem: setEditingIdentity,
     search,
     setSearch,
     debouncedSearch,
     setDebouncedSearch,
     currentPage,
     setCurrentPage,
-    itemsPerPage,
-    setItemsPerPage,
+    itemsPerPage: identitiesPerPage,
+    setItemsPerPage: setIdentitiesPerPage,
     data: currentData,
-    totalItems,
+    totalItems: totalEntities,
     totalPages,
     isLoading,
     isError,
@@ -799,7 +663,7 @@ export const useMasterDataManagement = (
     handleEdit,
     handleModalSubmit,
     handlePageChange,
-    handleItemsPerPageChange,
+    handleItemsPerPageChange: handleIdentitiesPerPageChange,
     handleKeyDown,
     openConfirmDialog,
     // Note: queryClient is not needed in new architecture as mutations handle cache updates

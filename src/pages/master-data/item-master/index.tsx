@@ -25,7 +25,7 @@ import {
 import { useItemMasterRealtime } from '@/hooks/realtime/useItemMasterRealtime';
 
 // Hooks and utilities
-import { useMasterDataManagement } from '@/hooks/useMasterDataManagement';
+import { useItemsManagement } from '@/hooks/useItemsManagement';
 import {
   useItemGridColumns,
   useColumnVisibility,
@@ -155,8 +155,8 @@ const ItemMasterNew = memo(() => {
   const [modalRenderId, setModalRenderId] = useState(0);
 
   // Items tab management (only for items tab)
-  const itemsManagement = useMasterDataManagement('items', 'Item', {
-    searchInputRef: searchInputRef as React.RefObject<HTMLInputElement>,
+  const itemsManagement = useItemsManagement({
+    enabled: true,
   });
 
   // Entity management (for entity tabs)
