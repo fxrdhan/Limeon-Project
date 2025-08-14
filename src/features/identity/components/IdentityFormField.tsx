@@ -5,7 +5,8 @@ import Calendar from '@/components/calendar';
 import Button from '@/components/button';
 import { FaPencilAlt, FaSave, FaBan } from 'react-icons/fa';
 import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
-import type { FieldConfig, CustomDateValueType } from '@/types';
+import type { FieldConfig } from '@/types';
+import type { CustomDateValueType } from '@/components/calendar/types';
 
 interface IdentityFormFieldProps {
   field: FieldConfig;
