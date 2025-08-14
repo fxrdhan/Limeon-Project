@@ -240,6 +240,24 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
   }, [gridApi, activeTab, columnDefs]);
 
+  // Reset grid state when switching tabs to prevent column pinning carryover
+  useEffect(() => {
+    if (gridApi && !gridApi.isDestroyed()) {
+      // Clear any existing column state (pinning, sorting, filtering)
+      gridApi.resetColumnState();
+      
+      // Clear filters
+      gridApi.setFilterModel(null);
+      
+      // Small delay to ensure clean state before autosize
+      const timer = setTimeout(() => {
+        gridApi.autoSizeAllColumns();
+      }, 50);
+
+      return () => clearTimeout(timer);
+    }
+  }, [gridApi, activeTab]);
+
   // Toggle display mode for items reference columns
   const toggleColumnDisplayMode = useCallback(
     (colId: string) => {
