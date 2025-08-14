@@ -618,6 +618,41 @@ const maxDate = new Date('2023-12-31');
 - **Datepicker mode**: `click` trigger (calendar opens when input is clicked)
 - **Inline mode**: `hover` trigger (calendar opens when trigger area is hovered)
 
+### Custom Trigger Elements
+
+```tsx
+// Custom trigger element with hover behavior
+<Calendar
+  mode="datepicker"
+  trigger="hover"
+  value={selectedDate}
+  onChange={setSelectedDate}
+>
+  <div className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-100 rounded cursor-pointer">
+    <CalendarIcon className="w-5 h-5" />
+    <span>Select Date</span>
+  </div>
+</Calendar>
+
+// Custom trigger for navbar/header components
+<Calendar
+  mode="datepicker"
+  trigger="hover"
+  size="md"
+  value={selectedDate}
+  onChange={setSelectedDate}
+>
+  <div className="inline-flex items-center space-x-3 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded-md transition-colors">
+    <span className="text-sm text-gray-600 font-medium">
+      {formatDate(selectedDate)}
+    </span>
+    <TbCalendarMonthFilled className="w-5 h-5 text-gray-600" />
+  </div>
+</Calendar>
+```
+
+**Note**: When `children` is provided, the Calendar component uses the children as a custom trigger element instead of the default input field. All hover/click logic is handled internally by the Calendar component.
+
 ### Using DaysGrid Component Directly
 
 ```tsx

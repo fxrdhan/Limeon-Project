@@ -16,12 +16,14 @@ const CalendarContent: React.FC<{
   inputClassName?: string;
   placeholder?: string;
   portalWidth?: string | number;
+  children?: React.ReactNode;
 }> = ({
   mode = 'datepicker',
   label,
   inputClassName,
   placeholder,
   portalWidth,
+  children,
 }) => {
   const {
     value,
@@ -30,6 +32,7 @@ const CalendarContent: React.FC<{
     minDate,
     maxDate,
     size,
+    trigger,
     navigateViewDate,
     triggerYearAnimation,
     triggerMonthAnimation,
@@ -37,6 +40,11 @@ const CalendarContent: React.FC<{
     setHighlightedDate,
     setDisplayDate,
     calculatePosition,
+    triggerInputRef,
+    handleTriggerClick,
+    handleInputKeyDown,
+    handleTriggerMouseEnter,
+    handleTriggerMouseLeave,
   } = useCalendarContext();
 
   const handleMonthChange = (month: number) => {
@@ -122,15 +130,31 @@ const CalendarContent: React.FC<{
     );
   }
 
-  // For datepicker mode, render button + portal
+  // For datepicker mode, render button/custom trigger + portal
   return (
     <>
-      <CalendarButton
-        value={value}
-        placeholder={placeholder}
-        inputClassName={inputClassName}
-        label={label}
-      />
+      {children ? (
+        // Custom trigger element with proper event handlers
+        <div
+          ref={triggerInputRef as React.RefObject<HTMLDivElement>}
+          onClick={trigger === 'click' ? handleTriggerClick : undefined}
+          onMouseEnter={trigger === 'hover' ? handleTriggerMouseEnter : undefined}
+          onMouseLeave={trigger === 'hover' ? handleTriggerMouseLeave : undefined}
+          onKeyDown={handleInputKeyDown}
+          tabIndex={0}
+          style={{ outline: 'none' }}
+        >
+          {children}
+        </div>
+      ) : (
+        // Default CalendarButton
+        <CalendarButton
+          value={value}
+          placeholder={placeholder}
+          inputClassName={inputClassName}
+          label={label}
+        />
+      )}
 
       <CalendarPortal>
         <CalendarHeader
@@ -158,6 +182,7 @@ const Calendar: React.FC<CalendarProps> = ({
   minDate,
   maxDate,
   portalWidth,
+  children,
 }) => {
   // Set default trigger based on mode: inline defaults to hover, datepicker defaults to click
   const effectiveTrigger = trigger || (mode === 'inline' ? 'hover' : 'click');
@@ -178,7 +203,9 @@ const Calendar: React.FC<CalendarProps> = ({
         inputClassName={inputClassName}
         placeholder={placeholder}
         portalWidth={portalWidth}
-      />
+      >
+        {children}
+      </CalendarContent>
     </CalendarProvider>
   );
 };
