@@ -210,7 +210,6 @@ export interface CheckboxProps {
   tabIndex?: number;
 }
 
-
 export interface PageTitleProps {
   title: string;
 }

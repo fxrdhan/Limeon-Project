@@ -50,8 +50,6 @@ const DateTimeDisplay = () => {
     return () => clearTimeout(timerId);
   }, []);
 
-
-
   return (
     <div className="flex items-center relative">
       {/* Date with Calendar */}

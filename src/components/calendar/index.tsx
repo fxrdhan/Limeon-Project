@@ -138,8 +138,12 @@ const CalendarContent: React.FC<{
         <div
           ref={triggerInputRef as React.RefObject<HTMLDivElement>}
           onClick={trigger === 'click' ? handleTriggerClick : undefined}
-          onMouseEnter={trigger === 'hover' ? handleTriggerMouseEnter : undefined}
-          onMouseLeave={trigger === 'hover' ? handleTriggerMouseLeave : undefined}
+          onMouseEnter={
+            trigger === 'hover' ? handleTriggerMouseEnter : undefined
+          }
+          onMouseLeave={
+            trigger === 'hover' ? handleTriggerMouseLeave : undefined
+          }
           onKeyDown={handleInputKeyDown}
           tabIndex={0}
           style={{ outline: 'none' }}
