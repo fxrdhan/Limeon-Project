@@ -251,7 +251,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
         // Just ensure modals stay open for user to retry or cancel
       }
     },
-    [currentConfig.entityName, crudOperations]
+    [crudOperations]
   );
 
   // Delete handler
