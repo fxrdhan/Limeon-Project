@@ -9,6 +9,7 @@ The Calendar component is a sophisticated date selection interface that can func
 **Key Features:**
 
 - **Two Operating Modes**: Interactive datepicker with input field or read-only inline calendar display
+- **Flexible Trigger Options**: Click (default for datepicker) or hover trigger for opening calendar
 - **Indonesian Localization**: Built-in Indonesian month names and date formatting
 - **Fixed-Width Positioning**: Consistent portal sizing using three size presets
 - **Keyboard Navigation**: Complete arrow key navigation with Enter/Escape support
@@ -71,14 +72,20 @@ CalendarProvider (Context Provider)
 - **Datepicker Mode**: Interactive input field that opens calendar overlay for date selection
 - **Inline Mode**: Read-only calendar widget displayed inline (navigation only, no date selection)
 
-### 2. Date Selection & Navigation
+### 2. Trigger Options
+
+- **Click Trigger** (default for datepicker mode): Calendar opens when input field is clicked
+- **Hover Trigger** (default for inline mode): Calendar opens when input field is hovered over
+- **Customizable**: Can override default trigger behavior for any mode
+
+### 3. Date Selection & Navigation
 
 - Single date selection with onChange callback
 - Month/year header navigation with dropdowns
 - Previous/next navigation buttons
 - Direct year selection through dropdown
 
-### 3. Keyboard Navigation
+### 4. Keyboard Navigation
 
 - `Arrow Keys`: Navigate through dates
 - `Enter`: Select highlighted date
@@ -86,21 +93,21 @@ CalendarProvider (Context Provider)
 - `Tab`: Focus management and close
 - `Page Up/Down`: Navigate months/years quickly
 
-### 4. Mouse Interactions
+### 5. Mouse Interactions
 
 - Click to select dates
 - Hover highlighting
 - Optional hover-to-open (configurable delay)
 - Click outside to close
 
-### 5. Positioning System
+### 6. Positioning System
 
 - Automatic position calculation relative to trigger
 - Viewport-aware positioning (up/down detection)
 - Fixed-width portal based on size presets
 - Consistent sizing regardless of input field width
 
-### 6. Size Presets
+### 7. Size Presets
 
 The calendar supports three fixed size presets for consistent UI:
 
@@ -110,15 +117,15 @@ The calendar supports three fixed size presets for consistent UI:
 
 All portal widths are fixed based on these presets, ensuring consistent appearance regardless of input field width.
 
-### 7. Animation System
+### 8. Animation System
 
-#### 7.1 Open/Close Transitions
+#### 8.1 Open/Close Transitions
 
 - Open/close transitions (200ms duration)
 - Smooth state transitions with intermediate states
 - Focus management during animations
 
-#### 7.2 Month/Year Navigation Animations (Framer Motion)
+#### 8.2 Month/Year Navigation Animations (Framer Motion)
 
 The calendar implements sophisticated swipe animations for month and year navigation using Framer Motion through the `DaysGrid` component with `animated={true}` prop:
 
@@ -215,13 +222,13 @@ const getExitDirection = () => {
 - `providers/CalendarContext.tsx`: Direction state management
 - `hooks/useCalendarNavigation.ts`: Navigation logic
 
-### 8. Date Validation
+### 9. Date Validation
 
 - Min/max date constraints
 - Range validation for dates, months, and years
 - Disabled state styling for invalid dates
 
-### 9. Indonesian Localization
+### 10. Indonesian Localization
 
 - Indonesian month names (Januari, Februari, etc.)
 - Indonesian day labels (Sen, Sel, Rab, etc.)
@@ -526,6 +533,19 @@ const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 />;
 ```
 
+### Datepicker with Hover Trigger
+
+```tsx
+<Calendar
+  mode="datepicker"
+  trigger="hover"
+  value={selectedDate}
+  onChange={setSelectedDate}
+  placeholder="Hover untuk membuka kalender"
+  label="Tanggal Lahir"
+/>
+```
+
 ### Inline Calendar (Read-Only)
 
 ```tsx
@@ -566,6 +586,37 @@ const maxDate = new Date('2023-12-31');
 ```
 
 **Note**: When `portalWidth` is explicitly set, it overrides the size preset width. Use size presets for consistency, portalWidth for special cases.
+
+### Trigger Options
+
+```tsx
+// Default behavior (datepicker: click, inline: hover)
+<Calendar
+  mode="datepicker" // Uses click trigger by default
+  value={selectedDate}
+  onChange={setSelectedDate}
+/>
+
+// Explicit trigger override
+<Calendar
+  mode="datepicker"
+  trigger="hover" // Override to use hover instead of click
+  value={selectedDate}
+  onChange={setSelectedDate}
+/>
+
+// Inline mode (hover is default, but you can override to click)
+<Calendar
+  mode="inline"
+  trigger="click" // Override to use click instead of hover
+  value={selectedDate}
+  onChange={setSelectedDate}
+/>
+```
+
+**Default Trigger Behavior:**
+- **Datepicker mode**: `click` trigger (calendar opens when input is clicked)
+- **Inline mode**: `hover` trigger (calendar opens when trigger area is hovered)
 
 ### Using DaysGrid Component Directly
 

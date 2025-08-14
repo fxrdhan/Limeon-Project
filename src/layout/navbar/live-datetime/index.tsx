@@ -4,6 +4,7 @@ import {
   TbMoonFilled,
   TbCalendarMonthFilled,
 } from 'react-icons/tb';
+import { motion, AnimatePresence } from 'framer-motion';
 import Calendar from '@/components/calendar';
 
 const DateTimeDisplay = () => {
@@ -12,8 +13,9 @@ const DateTimeDisplay = () => {
   const [minutes, setMinutes] = useState('');
   const [seconds, setSeconds] = useState('');
   const [isDayTime, setIsDayTime] = useState(true);
-  const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,7 +54,40 @@ const DateTimeDisplay = () => {
     return () => clearTimeout(timerId);
   }, []);
 
-  // Handle click outside to close calendar
+  // Hover handlers
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowCalendar(true);
+    }, 300); // 300ms hover delay
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (calendarRef.current && !calendarRef.current.matches(':hover')) {
+        setShowCalendar(false);
+      }
+    }, 300); // 300ms leave delay
+  };
+
+  const handleCalendarMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+  };
+
+  const handleCalendarMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setShowCalendar(false);
+    }, 300);
+  };
+
+  // Click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -86,12 +121,23 @@ const DateTimeDisplay = () => {
     };
   }, [showCalendar]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+
   return (
     <div className="flex items-center relative">
       {/* Date */}
       <div
         className="inline-flex items-center space-x-3 cursor-pointer hover:bg-gray-50 px-2 py-1 rounded-md transition-colors"
-        onClick={() => setShowCalendar(!showCalendar)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <span
           className="text-sm text-gray-600 tracking-tight font-medium"
@@ -128,19 +174,34 @@ const DateTimeDisplay = () => {
       </div>
 
       {/* Calendar Modal */}
-      {showCalendar && (
-        <div ref={calendarRef} className="absolute top-full -right-6 mt-4 z-50">
-          <Calendar
-            mode="inline"
-            size="md"
-            value={selectedDate}
-            onChange={date => {
-              setSelectedDate(date);
-              // Keep calendar open in inline mode - let user continue browsing
+      <AnimatePresence>
+        {showCalendar && (
+          <motion.div
+            ref={calendarRef}
+            className="absolute top-full -right-6 mt-4 z-50"
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{
+              type: 'tween',
+              ease: [0.4, 0.0, 0.2, 1],
+              duration: 0.2,
             }}
-          />
-        </div>
-      )}
+            onMouseEnter={handleCalendarMouseEnter}
+            onMouseLeave={handleCalendarMouseLeave}
+          >
+            <Calendar
+              mode="inline"
+              size="md"
+              value={selectedDate}
+              onChange={date => {
+                setSelectedDate(date);
+                // Keep calendar open in inline mode - let user continue browsing
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
