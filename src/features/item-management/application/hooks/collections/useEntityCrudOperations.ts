@@ -51,7 +51,6 @@ export const useEntityCrudOperations = (
   tableName: string,
   entityNameLabel: string
 ) => {
-
   // Get the appropriate hooks for this table
   const hooks = getHooksForTable(tableName);
 

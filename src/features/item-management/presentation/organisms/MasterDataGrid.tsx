@@ -245,16 +245,16 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     if (gridApi && !gridApi.isDestroyed()) {
       // Clear filters to prevent filter carryover between tabs
       gridApi.setFilterModel(null);
-      
+
       // ✅ NEW: Clear column pinning state without affecting order/visibility
       // Get current column state and remove pinning
       const columnState = gridApi.getColumnState();
       const unpinnedState = columnState.map(col => ({
         ...col,
-        pinned: null  // Clear pinning for all columns
+        pinned: null, // Clear pinning for all columns
       }));
       gridApi.applyColumnState({ state: unpinnedState });
-      
+
       // Small delay to ensure clean state before autosize
       const timer = setTimeout(() => {
         gridApi.autoSizeAllColumns();

@@ -147,7 +147,9 @@ export const useEntityModalLogic = ({
 
   const handleSubmit = useCallback(async () => {
     if (!isValid) {
-      toast.error(`Kode dan nama ${entityName.toLowerCase()} tidak boleh kosong.`);
+      toast.error(
+        `Kode dan nama ${entityName.toLowerCase()} tidak boleh kosong.`
+      );
       return;
     }
     const submitData: {

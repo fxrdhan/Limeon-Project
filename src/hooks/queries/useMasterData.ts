@@ -58,7 +58,7 @@ export const useCategoryMutations = () => {
       });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error creating category:', error);
       toast.error('Gagal menambahkan kategori');
     },
@@ -90,7 +90,7 @@ export const useCategoryMutations = () => {
       });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error updating category:', error);
       toast.error('Gagal memperbarui kategori');
     },
@@ -113,7 +113,7 @@ export const useCategoryMutations = () => {
       });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error deleting category:', error);
       toast.error('Gagal menghapus kategori');
     },
@@ -165,7 +165,7 @@ export const useMedicineTypeMutations = () => {
         queryKey: getInvalidationKeys.masterData.types(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error creating medicine type:', error);
       toast.error('Gagal menambahkan jenis obat');
     },
@@ -189,7 +189,7 @@ export const useMedicineTypeMutations = () => {
         queryKey: getInvalidationKeys.masterData.types(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error updating medicine type:', error);
       toast.error('Gagal memperbarui jenis obat');
     },
@@ -207,7 +207,7 @@ export const useMedicineTypeMutations = () => {
         queryKey: getInvalidationKeys.masterData.types(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error deleting medicine type:', error);
       toast.error('Gagal menghapus jenis obat');
     },
@@ -256,7 +256,7 @@ export const usePackageMutations = () => {
         queryKey: getInvalidationKeys.masterData.packages(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error creating package:', error);
       toast.error('Gagal menambahkan kemasan');
     },
@@ -280,7 +280,7 @@ export const usePackageMutations = () => {
         queryKey: getInvalidationKeys.masterData.packages(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error updating package:', error);
       toast.error('Gagal memperbarui kemasan');
     },
@@ -298,7 +298,7 @@ export const usePackageMutations = () => {
         queryKey: getInvalidationKeys.masterData.packages(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error deleting package:', error);
       toast.error('Gagal menghapus kemasan');
     },
@@ -348,7 +348,7 @@ export const useItemUnitMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error creating item unit:', error);
       toast.error('Gagal menambahkan satuan');
     },
@@ -373,7 +373,7 @@ export const useItemUnitMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error updating item unit:', error);
       toast.error('Gagal memperbarui satuan');
     },
@@ -392,7 +392,7 @@ export const useItemUnitMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error deleting item unit:', error);
       toast.error('Gagal menghapus satuan');
     },
@@ -460,7 +460,7 @@ export const useSupplierMutations = () => {
         queryKey: getInvalidationKeys.masterData.suppliers(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error creating supplier:', error);
       toast.error('Gagal menambahkan supplier');
     },
@@ -484,7 +484,7 @@ export const useSupplierMutations = () => {
         queryKey: getInvalidationKeys.masterData.suppliers(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error updating supplier:', error);
       toast.error('Gagal memperbarui supplier');
     },
@@ -502,7 +502,7 @@ export const useSupplierMutations = () => {
         queryKey: getInvalidationKeys.masterData.suppliers(),
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error deleting supplier:', error);
       toast.error('Gagal menghapus supplier');
     },

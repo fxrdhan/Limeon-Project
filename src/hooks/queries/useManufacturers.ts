@@ -75,7 +75,7 @@ export const useManufacturerMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error creating manufacturer:', error);
       toast.error('Gagal menambahkan manufaktur');
     },
@@ -104,7 +104,7 @@ export const useManufacturerMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error updating manufacturer:', error);
       toast.error('Gagal memperbarui manufaktur');
     },
@@ -127,7 +127,7 @@ export const useManufacturerMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error deleting manufacturer:', error);
       toast.error('Gagal menghapus manufaktur');
     },
