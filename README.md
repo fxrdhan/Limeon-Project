@@ -58,3 +58,4 @@ This project incorporates and builds upon several outstanding open-source librar
 | **classnames** | [GitHub](https://github.com/JedWatson/classnames) | Utility for conditionally joining CSS class names by Jed Watson                |
 | **jsdiff**     | [GitHub](https://github.com/kpdecker/jsdiff)      | Text diff implementation using Myers O(ND) algorithm by Kevin Decker           |
 | **fuzzysort**  | [GitHub](https://github.com/farzher/fuzzysort)    | Fast SublimeText-like fuzzy search with intelligent ranking by Stephen Kamenar |
+| **react-hot-toast** | [GitHub](https://github.com/timolins/react-hot-toast) | Smoking hot Notifications for React |

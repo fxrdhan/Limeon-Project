@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { formatDateTime } from '@/lib/formatters';
+import toast from 'react-hot-toast';
 import type {
   EntityModalContextValue,
   ModalMode,
@@ -146,7 +147,7 @@ export const useEntityModalLogic = ({
 
   const handleSubmit = useCallback(async () => {
     if (!isValid) {
-      alert(`Kode dan nama ${entityName.toLowerCase()} tidak boleh kosong.`);
+      toast.error(`Kode dan nama ${entityName.toLowerCase()} tidak boleh kosong.`);
       return;
     }
     const submitData: {
@@ -163,8 +164,10 @@ export const useEntityModalLogic = ({
       name: name.trim(),
     };
 
-    // Always include description field, even if empty, to ensure database updates
-    submitData.description = description.trim();
+    // Include description field only for entities that have it (not manufacturers)
+    if (entityName !== 'Produsen') {
+      submitData.description = description.trim();
+    }
 
     // Only include address field for Produsen (manufacturers)
     if (entityName === 'Produsen') {

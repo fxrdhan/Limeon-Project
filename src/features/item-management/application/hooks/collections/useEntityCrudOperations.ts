@@ -16,7 +16,7 @@
  */
 
 import { useCallback } from 'react';
-import { useAlert } from '@/components/alert/hooks';
+import toast from 'react-hot-toast';
 import type { PostgrestError } from '@supabase/supabase-js';
 import {
   getExternalHooks,
@@ -51,7 +51,6 @@ export const useEntityCrudOperations = (
   tableName: string,
   entityNameLabel: string
 ) => {
-  const alert = useAlert();
 
   // Get the appropriate hooks for this table
   const hooks = getHooksForTable(tableName);
@@ -232,17 +231,17 @@ export const useEntityCrudOperations = (
         const codeValue = itemData.code || itemData.kode;
 
         if (isDuplicateCodeError && codeValue) {
-          alert.error(
+          toast.error(
             `Kode "${codeValue}" sudah digunakan oleh ${entityNameLabel.toLowerCase()} lain. ` +
               `Silakan gunakan kode yang berbeda.`
           );
         } else {
-          alert.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
+          toast.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
         }
         throw error; // Re-throw to allow caller to handle
       }
     },
-    [mutations, entityNameLabel, alert, tableName, refetch]
+    [mutations, entityNameLabel, tableName, refetch]
   );
 
   // Handle delete operation
@@ -283,19 +282,19 @@ export const useEntityCrudOperations = (
             error.message.includes('still referenced'));
 
         if (isForeignKeyError) {
-          alert.error(
+          toast.error(
             `Tidak dapat menghapus ${entityNameLabel.toLowerCase()} karena masih digunakan di data lain. ` +
               `Hapus terlebih dahulu data yang menggunakannya.`
           );
         } else {
           const errorMessage =
             error instanceof Error ? error.message : 'Unknown error';
-          alert.error(`Gagal menghapus ${entityNameLabel}: ${errorMessage}`);
+          toast.error(`Gagal menghapus ${entityNameLabel}: ${errorMessage}`);
         }
         throw error; // Re-throw to allow caller to handle
       }
     },
-    [mutations, entityNameLabel, alert, refetch]
+    [mutations, entityNameLabel, refetch]
   );
 
   // Create deletion mutation object for compatibility with existing code

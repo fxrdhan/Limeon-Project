@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import toast from 'react-hot-toast';
 import type {
   ItemCategory,
   ItemTypeEntity,
@@ -141,7 +142,7 @@ export const useItemModalOrchestrator = ({
         formState.setIsAddEditModalOpen(false);
         clearSearchTerm();
       } catch {
-        alert('Gagal menyimpan kategori baru.');
+        toast.error('Gagal menyimpan kategori baru.');
       }
     },
     [mutations, formState, clearSearchTerm]
@@ -161,7 +162,7 @@ export const useItemModalOrchestrator = ({
         formState.setIsAddTypeModalOpen(false);
         clearSearchTerm();
       } catch {
-        alert('Gagal menyimpan jenis item baru.');
+        toast.error('Gagal menyimpan jenis item baru.');
       }
     },
     [mutations, formState, clearSearchTerm]
@@ -176,7 +177,7 @@ export const useItemModalOrchestrator = ({
         formState.setIsAddUnitModalOpen(false);
         clearSearchTerm();
       } catch {
-        alert('Gagal menyimpan satuan baru.');
+        toast.error('Gagal menyimpan satuan baru.');
       }
     },
     [mutations, formState, clearSearchTerm]
@@ -198,7 +199,7 @@ export const useItemModalOrchestrator = ({
         formState.setIsAddDosageModalOpen(false);
         clearSearchTerm();
       } catch {
-        alert('Gagal menyimpan sediaan baru.');
+        toast.error('Gagal menyimpan sediaan baru.');
       }
     },
     [mutations, formState, clearSearchTerm]
@@ -220,7 +221,7 @@ export const useItemModalOrchestrator = ({
         formState.setIsAddManufacturerModalOpen(false);
         clearSearchTerm();
       } catch {
-        alert('Gagal menyimpan produsen baru.');
+        toast.error('Gagal menyimpan produsen baru.');
       }
     },
     [mutations, formState, clearSearchTerm]

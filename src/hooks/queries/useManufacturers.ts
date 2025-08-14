@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import toast from 'react-hot-toast';
 import type { ItemManufacturer } from '@/types/database';
 
 // Query hook for manufacturers with realtime
@@ -67,11 +68,16 @@ export const useManufacturerMutations = () => {
       return data;
     },
     onSuccess: () => {
+      toast.success('Manufaktur berhasil ditambahkan');
       const keysToInvalidate =
         getInvalidationKeys.masterData.manufacturers?.() || [['manufacturers']];
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
+    },
+    onError: (error) => {
+      console.error('Error creating manufacturer:', error);
+      toast.error('Gagal menambahkan manufaktur');
     },
   });
 
@@ -91,11 +97,16 @@ export const useManufacturerMutations = () => {
       return data;
     },
     onSuccess: () => {
+      toast.success('Manufaktur berhasil diperbarui');
       const keysToInvalidate =
         getInvalidationKeys.masterData.manufacturers?.() || [['manufacturers']];
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
+    },
+    onError: (error) => {
+      console.error('Error updating manufacturer:', error);
+      toast.error('Gagal memperbarui manufaktur');
     },
   });
 
@@ -109,11 +120,16 @@ export const useManufacturerMutations = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      toast.success('Manufaktur berhasil dihapus');
       const keysToInvalidate =
         getInvalidationKeys.masterData.manufacturers?.() || [['manufacturers']];
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
+    },
+    onError: (error) => {
+      console.error('Error deleting manufacturer:', error);
+      toast.error('Gagal menghapus manufaktur');
     },
   });
 

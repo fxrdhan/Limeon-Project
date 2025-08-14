@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useEntityModal } from '../../shared/contexts/EntityModalContext';
+import toast from 'react-hot-toast';
 import { useEntityHistory } from '../../application/hooks/instances/useEntityHistory';
 import HistoryTimelineList, { HistoryItem } from './HistoryTimelineList';
 
@@ -58,7 +59,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
         uiActions.closeHistory();
         window.location.reload(); // Refresh to show restored data
       } catch (error) {
-        alert('Gagal mengembalikan versi: ' + error);
+        toast.error('Gagal mengembalikan versi: ' + error);
       }
     }
   };

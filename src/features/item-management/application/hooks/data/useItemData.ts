@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah } from '@/lib/formatters';
+import toast from 'react-hot-toast';
 import type {
   ItemFormData,
   DBPackageConversion,
@@ -125,7 +126,7 @@ export const useItemData = ({
         );
       } catch (error) {
         console.error('Error fetching item data:', error);
-        alert('Gagal memuat data item. Silakan coba lagi.');
+        toast.error('Gagal memuat data item. Silakan coba lagi.');
       } finally {
         formState.setLoading(false);
       }
