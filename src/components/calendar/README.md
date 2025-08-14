@@ -1,22 +1,23 @@
 # Calendar Component
 
-A powerful, accessible React calendar/datepicker component with Indonesian localization, keyboard navigation, hover interactions, and flexible positioning system.
+A powerful, accessible React calendar/datepicker component with Indonesian localization, keyboard navigation, hover interactions, and intelligent fixed-width positioning system.
 
 ## Overview
 
-The Calendar component is a sophisticated date selection interface that can function as both a standalone calendar and a datepicker with input field. It features smooth animations, comprehensive keyboard navigation, intelligent positioning, and full accessibility support with Indonesian language defaults.
+The Calendar component is a sophisticated date selection interface that can function as both an interactive datepicker with input field and a read-only inline calendar display. It features smooth animations, comprehensive keyboard navigation, intelligent fixed-width positioning, and full accessibility support with Indonesian language defaults.
 
 **Key Features:**
 
-- **Dual Modes**: Datepicker with input field or inline calendar
+- **Two Operating Modes**: Interactive datepicker with input field or read-only inline calendar display
 - **Indonesian Localization**: Built-in Indonesian month names and date formatting
-- **Smart Positioning**: Automatic up/down positioning based on viewport space
+- **Fixed-Width Positioning**: Consistent portal sizing using three size presets
 - **Keyboard Navigation**: Complete arrow key navigation with Enter/Escape support
-- **Hover Interactions**: Optional hover-to-open functionality
-- **Date Range Validation**: Min/max date constraints
+- **Selective Interactions**: Hover and navigation work in all modes, date selection only in datepicker mode
+- **Date Range Validation**: Min/max date constraints with visual disabled states
 - **Accessibility**: Full ARIA support and screen reader compatibility
-- **Animation System**: Smooth open/close transitions with state management
+- **Smooth Animations**: Open/close transitions and month/year navigation effects
 - **Portal Rendering**: Overlays render in React portals for proper z-index layering
+- **Simple API**: Three size presets (md, lg, xl) for consistent design
 
 ## Current Architecture
 
@@ -63,12 +64,12 @@ CalendarProvider (Context Provider)
     └── DaysGrid (Date Selection Grid)
 ```
 
-## Current Features
+## Features
 
-### 1. Mode Flexibility
+### 1. Operating Modes
 
-- **Datepicker Mode**: Input field that opens calendar overlay
-- **Inline Mode**: Standalone calendar widget displayed inline
+- **Datepicker Mode**: Interactive input field that opens calendar overlay for date selection
+- **Inline Mode**: Read-only calendar widget displayed inline (navigation only, no date selection)
 
 ### 2. Date Selection & Navigation
 
@@ -96,14 +97,18 @@ CalendarProvider (Context Provider)
 
 - Automatic position calculation relative to trigger
 - Viewport-aware positioning (up/down detection)
-- Configurable portal width
-- Resizable calendar support (with size constraints)
+- Fixed-width portal based on size presets
+- Consistent sizing regardless of input field width
 
 ### 6. Size Presets
 
-- **md**: 320x300px (min: 300x300, max: 380x380) - Default
-- **lg**: 380x360px (min: 340x320, max: 450x420)
-- **xl**: 450x400px (min: 400x360, max: 520x480)
+The calendar supports three fixed size presets for consistent UI:
+
+- **md**: 350x320px - Default size, optimal for most use cases
+- **lg**: 380x360px - Larger size for more comfortable viewing  
+- **xl**: 450x400px - Maximum size for spacious layouts
+
+All portal widths are fixed based on these presets, ensuring consistent appearance regardless of input field width.
 
 ### 7. Animation System
 
@@ -292,7 +297,7 @@ const { isOpen, isClosing, isOpening, openCalendar, closeCalendar } =
 - Measures trigger element position
 - Detects viewport space availability
 - Returns CSS styles and drop direction
-- Handles resizing and width constraints
+- Uses fixed width from size presets
 
 **utils/calendarUtils.ts**: Core date manipulation utilities:
 
@@ -362,7 +367,7 @@ const canInteract = isOpen && !isClosing && !isOpening;
 
 ### 4. Intelligent Positioning
 
-Portal positioning uses comprehensive viewport calculations:
+Portal positioning uses comprehensive viewport calculations with fixed-width sizing:
 
 ```tsx
 const calculatePosition = () => {
@@ -378,6 +383,7 @@ const calculatePosition = () => {
   return {
     position: 'fixed',
     left: trigger.left,
+    width: portalWidth || `${calendarWidth}px`, // Fixed width from size presets
     top:
       dropDirection === 'down'
         ? trigger.bottom + POSITION_MARGIN
@@ -520,16 +526,18 @@ const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 />;
 ```
 
-### Inline Calendar
+### Inline Calendar (Read-Only)
 
 ```tsx
 <Calendar
   mode="inline"
   size="lg"
   value={selectedDate}
-  onChange={setSelectedDate}
+  onChange={setSelectedDate} // Won't be called for date clicks, only for programmatic changes
 />
 ```
+
+**Note**: In inline mode, users can navigate between months/years and see hover effects, but cannot select dates by clicking. The calendar is purely for display and navigation.
 
 ### With Date Constraints
 
@@ -552,10 +560,12 @@ const maxDate = new Date('2023-12-31');
 <Calendar
   value={selectedDate}
   onChange={setSelectedDate}
-  portalWidth={400}
-  resizable={true}
+  portalWidth={400} // Overrides size preset
+  size="md" // Will be ignored if portalWidth is set
 />
 ```
+
+**Note**: When `portalWidth` is explicitly set, it overrides the size preset width. Use size presets for consistency, portalWidth for special cases.
 
 ### Using DaysGrid Component Directly
 
