@@ -44,8 +44,8 @@ This project is built with:
 | **Zustand**                 | [Website](https://zustand-demo.pmnd.rs/)       | Bear necessities for state management in React                   |
 | **Framer Motion**           | [Website](https://www.framer.com/motion/)      | Animation library for React components                           |
 | **Supabase Database**       | [Website](https://supabase.com/database)       | PostgreSQL database with real-time capabilities                  |
-| **Supabase Edge Functions** | [Website](https://supabase.com/edge-functions) | Serverless backend functions                                     |
-| **Supabase Storage**        | [Website](https://supabase.com/storage)        | File storage and management                                      |
+| **Supabase Edge Functions** | [Website](https://supabase.com/edge-functions) | Supabase's Deno serverless backend                                          |
+| **Supabase Storage**        | [Website](https://supabase.com/storage)        | Storing and serving files                                      |
 | **Upstash Redis**           | [Website](https://upstash.com/)                | Server-side caching                                              |
 
 ### Additional Libraries
@@ -57,5 +57,5 @@ This project incorporates and builds upon several outstanding open-source librar
 | **AG Grid**    | [Website](https://ag-grid.com/)                   | High-performance, feature rich, and fully customisable Data Grids              |
 | **classnames** | [GitHub](https://github.com/JedWatson/classnames) | Utility for conditionally joining CSS class names by Jed Watson                |
 | **jsdiff**     | [GitHub](https://github.com/kpdecker/jsdiff)      | Text diff implementation using Myers O(ND) algorithm by Kevin Decker           |
-| **fuzzysort**  | [GitHub](https://github.com/farzher/fuzzysort)    | Fast SublimeText-like fuzzy search with intelligent ranking by Stephen Kamenar |
-| **react-hot-toast** | [GitHub](https://github.com/timolins/react-hot-toast) | Smoking hot Notifications for React |
+| **fuzzysort**  | [GitHub](https://github.com/farzher/fuzzysort)    | Fast SublimeText-like fuzzy search with intelligent ranking by farzher |
+| **react-hot-toast** | [GitHub](https://github.com/timolins/react-hot-toast) | Smoking hot Notifications for React by Timo Lins |
