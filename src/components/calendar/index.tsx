@@ -15,7 +15,13 @@ const CalendarContent: React.FC<{
   inputClassName?: string;
   placeholder?: string;
   portalWidth?: string | number;
-}> = ({ mode = 'datepicker', label, inputClassName, placeholder, portalWidth }) => {
+}> = ({
+  mode = 'datepicker',
+  label,
+  inputClassName,
+  placeholder,
+  portalWidth,
+}) => {
   const {
     value,
     displayDate,
@@ -87,11 +93,11 @@ const CalendarContent: React.FC<{
   if (mode === 'inline') {
     const width = portalWidth || '280px';
     return (
-      <div 
+      <div
         className="bg-white rounded-xl border border-gray-200 p-4 shadow-xl"
-        style={{ 
+        style={{
           width: width,
-          minWidth: width
+          minWidth: width,
         }}
       >
         <CalendarHeader
