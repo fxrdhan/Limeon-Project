@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import { masterDataService } from '@/services/api/masterData.service';
+import toast from 'react-hot-toast';
 import type {
   Category,
   MedicineType,
@@ -47,6 +48,7 @@ export const useCategoryMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Kategori berhasil ditambahkan');
       // Local cache update
       queryClient.invalidateQueries({
         queryKey: QueryKeys.masterData.categories.all,
@@ -55,6 +57,10 @@ export const useCategoryMutations = () => {
         queryKey: QueryKeys.masterData.categories.all,
       });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+    },
+    onError: (error) => {
+      console.error('Error creating category:', error);
+      toast.error('Gagal menambahkan kategori');
     },
   });
 
@@ -74,6 +80,7 @@ export const useCategoryMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Kategori berhasil diperbarui');
       // Local cache update
       queryClient.invalidateQueries({
         queryKey: QueryKeys.masterData.categories.all,
@@ -82,6 +89,10 @@ export const useCategoryMutations = () => {
         queryKey: QueryKeys.masterData.categories.all,
       });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+    },
+    onError: (error) => {
+      console.error('Error updating category:', error);
+      toast.error('Gagal memperbarui kategori');
     },
   });
 
@@ -92,6 +103,7 @@ export const useCategoryMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Kategori berhasil dihapus');
       // Local cache update
       queryClient.invalidateQueries({
         queryKey: QueryKeys.masterData.categories.all,
@@ -100,6 +112,10 @@ export const useCategoryMutations = () => {
         queryKey: QueryKeys.masterData.categories.all,
       });
       queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+    },
+    onError: (error) => {
+      console.error('Error deleting category:', error);
+      toast.error('Gagal menghapus kategori');
     },
   });
 
@@ -144,9 +160,14 @@ export const useMedicineTypeMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Jenis obat berhasil ditambahkan');
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.types(),
       });
+    },
+    onError: (error) => {
+      console.error('Error creating medicine type:', error);
+      toast.error('Gagal menambahkan jenis obat');
     },
   });
 
@@ -163,9 +184,14 @@ export const useMedicineTypeMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Jenis obat berhasil diperbarui');
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.types(),
       });
+    },
+    onError: (error) => {
+      console.error('Error updating medicine type:', error);
+      toast.error('Gagal memperbarui jenis obat');
     },
   });
 
@@ -176,9 +202,14 @@ export const useMedicineTypeMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Jenis obat berhasil dihapus');
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.types(),
       });
+    },
+    onError: (error) => {
+      console.error('Error deleting medicine type:', error);
+      toast.error('Gagal menghapus jenis obat');
     },
   });
 
@@ -220,9 +251,14 @@ export const usePackageMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Kemasan berhasil ditambahkan');
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.packages(),
       });
+    },
+    onError: (error) => {
+      console.error('Error creating package:', error);
+      toast.error('Gagal menambahkan kemasan');
     },
   });
 
@@ -239,9 +275,14 @@ export const usePackageMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Kemasan berhasil diperbarui');
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.packages(),
       });
+    },
+    onError: (error) => {
+      console.error('Error updating package:', error);
+      toast.error('Gagal memperbarui kemasan');
     },
   });
 
@@ -252,9 +293,14 @@ export const usePackageMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Kemasan berhasil dihapus');
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.packages(),
       });
+    },
+    onError: (error) => {
+      console.error('Error deleting package:', error);
+      toast.error('Gagal menghapus kemasan');
     },
   });
 
@@ -296,10 +342,15 @@ export const useItemUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Satuan berhasil ditambahkan');
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
+    },
+    onError: (error) => {
+      console.error('Error creating item unit:', error);
+      toast.error('Gagal menambahkan satuan');
     },
   });
 
@@ -316,10 +367,15 @@ export const useItemUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Satuan berhasil diperbarui');
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
+    },
+    onError: (error) => {
+      console.error('Error updating item unit:', error);
+      toast.error('Gagal memperbarui satuan');
     },
   });
 
@@ -330,10 +386,15 @@ export const useItemUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Satuan berhasil dihapus');
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
+    },
+    onError: (error) => {
+      console.error('Error deleting item unit:', error);
+      toast.error('Gagal menghapus satuan');
     },
   });
 
@@ -394,9 +455,14 @@ export const useSupplierMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Supplier berhasil ditambahkan');
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.suppliers(),
       });
+    },
+    onError: (error) => {
+      console.error('Error creating supplier:', error);
+      toast.error('Gagal menambahkan supplier');
     },
   });
 
@@ -413,9 +479,14 @@ export const useSupplierMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Supplier berhasil diperbarui');
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.suppliers(),
       });
+    },
+    onError: (error) => {
+      console.error('Error updating supplier:', error);
+      toast.error('Gagal memperbarui supplier');
     },
   });
 
@@ -426,9 +497,14 @@ export const useSupplierMutations = () => {
       return result.data;
     },
     onSuccess: () => {
+      toast.success('Supplier berhasil dihapus');
       queryClient.invalidateQueries({
         queryKey: getInvalidationKeys.masterData.suppliers(),
       });
+    },
+    onError: (error) => {
+      console.error('Error deleting supplier:', error);
+      toast.error('Gagal menghapus supplier');
     },
   });
 

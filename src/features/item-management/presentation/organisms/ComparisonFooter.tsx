@@ -1,5 +1,6 @@
 import React from 'react';
 import Button from '@/components/button';
+import toast from 'react-hot-toast';
 import type { VersionData } from '../../shared/types/ItemTypes';
 
 interface ComparisonFooterProps {
@@ -27,7 +28,7 @@ const ComparisonFooter: React.FC<ComparisonFooterProps> = ({
         await onRestore(selectedVersion.version_number);
         onClose(); // Close modal after successful restore
       } catch (error) {
-        alert('Gagal mengembalikan versi: ' + error);
+        toast.error('Gagal mengembalikan versi: ' + error);
       }
     }
   };

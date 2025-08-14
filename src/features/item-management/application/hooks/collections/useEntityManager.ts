@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box';
-import { useAlert } from '@/components/alert/hooks';
 import { useEntityCrudOperations } from './useEntityCrudOperations';
 import type {
   ItemCategory,
@@ -137,7 +136,6 @@ export interface UseEntityManagerOptions {
 // Main entity manager hook
 export const useEntityManager = (options?: UseEntityManagerOptions) => {
   const { openConfirmDialog } = useConfirmDialog();
-  const alert = useAlert();
   const {
     activeEntityType = 'categories',
     searchInputRef,
@@ -246,15 +244,14 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
         setIsEditModalOpen(false);
         setEditingEntity(null);
 
-        alert.success(
-          `${currentConfig.entityName} berhasil ${formData.id ? 'diperbarui' : 'ditambahkan'}`
-        );
+        // Toast sudah ditangani oleh specific mutations (useMasterData, useDosages, useManufacturers)
+        // Tidak perlu duplicate toast di sini
       } catch {
         // Error is already handled and displayed by the CRUD operations hook
         // Just ensure modals stay open for user to retry or cancel
       }
     },
-    [currentConfig.entityName, alert, crudOperations]
+    [currentConfig.entityName, crudOperations]
   );
 
   // Delete handler
@@ -273,14 +270,15 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
             setIsEditModalOpen(false);
             setEditingEntity(null);
 
-            alert.success(`${currentConfig.entityName} berhasil dihapus`);
+            // Toast sudah ditangani oleh specific mutations (useMasterData, useDosages, useManufacturers)
+            // Tidak perlu duplicate toast di sini
           } catch {
             // Error is already handled and displayed by the CRUD operations hook
           }
         },
       });
     },
-    [currentConfig.entityName, openConfirmDialog, alert, crudOperations]
+    [currentConfig.entityName, openConfirmDialog, crudOperations]
   );
 
   // Search handler

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import toast from 'react-hot-toast';
 import type { ItemDosage } from '@/types/database';
 
 // Simple dosages hook without realtime
@@ -59,10 +60,15 @@ export const useDosageMutations = () => {
       return data;
     },
     onSuccess: () => {
+      toast.success('Dosis berhasil ditambahkan');
       const keysToInvalidate = getInvalidationKeys.masterData.dosages();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
+    },
+    onError: (error) => {
+      console.error('Error creating dosage:', error);
+      toast.error('Gagal menambahkan dosis');
     },
   });
 
@@ -82,10 +88,15 @@ export const useDosageMutations = () => {
       return data;
     },
     onSuccess: () => {
+      toast.success('Dosis berhasil diperbarui');
       const keysToInvalidate = getInvalidationKeys.masterData.dosages();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
+    },
+    onError: (error) => {
+      console.error('Error updating dosage:', error);
+      toast.error('Gagal memperbarui dosis');
     },
   });
 
@@ -99,10 +110,15 @@ export const useDosageMutations = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      toast.success('Dosis berhasil dihapus');
       const keysToInvalidate = getInvalidationKeys.masterData.dosages();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
+    },
+    onError: (error) => {
+      console.error('Error deleting dosage:', error);
+      toast.error('Gagal menghapus dosis');
     },
   });
 

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Button from '@/components/button';
+import toast from 'react-hot-toast';
 import { FaEye } from 'react-icons/fa';
 import { useEntityHistory } from '../../application/hooks/instances/useEntityHistory';
 import { formatDateTime } from '@/lib/formatters';
@@ -78,7 +79,7 @@ const ItemHistoryContent: React.FC<ItemHistoryContentProps> = ({
         uiActions.goBackToForm();
         window.location.reload(); // Refresh to show restored data
       } catch (error) {
-        alert('Gagal mengembalikan versi: ' + error);
+        toast.error('Gagal mengembalikan versi: ' + error);
       }
     }
   };

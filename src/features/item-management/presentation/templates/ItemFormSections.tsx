@@ -1,4 +1,5 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 import {
   useItemForm,
   useItemModal,
@@ -322,7 +323,7 @@ const PackageConversionSection: React.FC = () => {
     if (!result.success && result.error) {
       // Show validation errors to user - unit selection is now handled by dropdown validation
       if (result.error !== 'Silakan pilih kemasan!') {
-        alert(result.error);
+        toast.error(result.error);
       }
     }
   };

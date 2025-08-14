@@ -158,7 +158,7 @@ export const useAddItemMutations = ({
     },
     onError: error => {
       console.error('Error saving item:', error);
-      alert('Gagal menyimpan data item. Silakan coba lagi.');
+      toast.error('Gagal menyimpan data item. Silakan coba lagi.');
     },
   });
 
