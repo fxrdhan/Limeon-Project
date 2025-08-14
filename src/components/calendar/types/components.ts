@@ -20,6 +20,7 @@ export interface CalendarProps {
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
+  children?: React.ReactNode; // For custom trigger element
 }
 
 export interface DatepickerProps extends CalendarProps {
