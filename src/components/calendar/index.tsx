@@ -149,6 +149,7 @@ const CalendarContent: React.FC<{
 const Calendar: React.FC<CalendarProps> = ({
   mode = 'datepicker',
   size = 'md',
+  trigger,
   value,
   onChange,
   label,
@@ -158,10 +159,13 @@ const Calendar: React.FC<CalendarProps> = ({
   maxDate,
   portalWidth,
 }) => {
+  // Set default trigger based on mode: inline defaults to hover, datepicker defaults to click
+  const effectiveTrigger = trigger || (mode === 'inline' ? 'hover' : 'click');
   return (
     <CalendarProvider
       mode={mode}
       size={size}
+      trigger={effectiveTrigger}
       value={value}
       onChange={onChange}
       minDate={minDate}

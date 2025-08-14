@@ -213,10 +213,12 @@ export interface CheckboxProps {
 export type CustomDateValueType = Date | null;
 export type CalendarMode = 'datepicker' | 'inline';
 export type CalendarSize = 'md' | 'lg' | 'xl';
+export type CalendarTrigger = 'click' | 'hover';
 
 export interface CalendarProps {
   mode?: CalendarMode;
   size?: CalendarSize;
+  trigger?: CalendarTrigger;
   value: CustomDateValueType;
   onChange: (date: CustomDateValueType) => void;
   label?: string;

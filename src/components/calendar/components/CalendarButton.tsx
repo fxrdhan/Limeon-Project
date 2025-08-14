@@ -11,8 +11,14 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
   inputClassName,
   label,
 }) => {
-  const { triggerInputRef, handleTriggerClick, handleInputKeyDown } =
-    useCalendarContext();
+  const { 
+    triggerInputRef, 
+    handleTriggerClick, 
+    handleInputKeyDown,
+    handleTriggerMouseEnter,
+    handleTriggerMouseLeave,
+    trigger 
+  } = useCalendarContext();
 
   const formattedDisplayValue = () => {
     if (value) {
@@ -38,7 +44,9 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
           value={formattedDisplayValue()}
           placeholder={placeholder}
           className={classNames('cursor-pointer', inputClassName)}
-          onClick={handleTriggerClick}
+          onClick={trigger === 'click' ? handleTriggerClick : undefined}
+          onMouseEnter={trigger === 'hover' ? handleTriggerMouseEnter : undefined}
+          onMouseLeave={trigger === 'hover' ? handleTriggerMouseLeave : undefined}
           onKeyDown={handleInputKeyDown}
           onChange={e => e.preventDefault()}
         />

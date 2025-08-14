@@ -14,6 +14,9 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
     dropDirection,
     portalContentRef,
     handleCalendarKeyDown,
+    handleCalendarMouseEnter,
+    handleCalendarMouseLeave,
+    trigger,
   } = useCalendarContext();
 
   if (!isOpen && !isClosing) {
@@ -44,6 +47,8 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
         isClosing || isOpening ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
       )}
       onKeyDown={handleCalendarKeyDown}
+      onMouseEnter={trigger === 'hover' ? handleCalendarMouseEnter : undefined}
+      onMouseLeave={trigger === 'hover' ? handleCalendarMouseLeave : undefined}
     >
       {children}
     </div>,

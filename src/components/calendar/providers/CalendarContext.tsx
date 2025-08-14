@@ -12,6 +12,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   children,
   mode = 'datepicker',
   size = 'md',
+  trigger = mode === 'inline' ? 'hover' : 'click',
   value,
   onChange,
   minDate,
@@ -322,6 +323,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     // Configuration
     mode,
     size,
+    trigger,
     minDate,
     maxDate,
     portalWidth,

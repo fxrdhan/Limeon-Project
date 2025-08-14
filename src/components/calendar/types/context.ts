@@ -4,6 +4,7 @@ import {
   CustomDateValueType,
   CalendarMode,
   CalendarSize,
+  CalendarTrigger,
 } from './components';
 
 export interface CalendarContextState {
@@ -30,6 +31,7 @@ export interface CalendarContextState {
   // Configuration
   mode: CalendarMode;
   size: CalendarSize;
+  trigger: CalendarTrigger;
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
@@ -79,6 +81,7 @@ export interface CalendarProviderProps {
   children: React.ReactNode;
   mode?: CalendarMode;
   size?: CalendarSize;
+  trigger?: CalendarTrigger;
   value: CustomDateValueType;
   onChange: (date: CustomDateValueType) => void;
   minDate?: Date;
