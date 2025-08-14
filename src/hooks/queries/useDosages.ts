@@ -66,7 +66,7 @@ export const useDosageMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error creating dosage:', error);
       toast.error('Gagal menambahkan dosis');
     },
@@ -94,7 +94,7 @@ export const useDosageMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error updating dosage:', error);
       toast.error('Gagal memperbarui dosis');
     },
@@ -116,7 +116,7 @@ export const useDosageMutations = () => {
         queryClient.invalidateQueries({ queryKey: keySet });
       });
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Error deleting dosage:', error);
       toast.error('Gagal menghapus dosis');
     },

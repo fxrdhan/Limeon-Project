@@ -635,15 +635,15 @@ const ItemMasterNew = memo(() => {
         if (searchInputRef.current) {
           searchInputRef.current.value = '';
         }
-        
+
         // Clear all search states - useUnifiedSearch clearSearch already calls onClear callbacks
         clearItemSearch();
         clearEntitySearch();
-        
+
         // Clear all filter/badge states
         handleItemFilterSearch(null);
         handleEntityFilterSearch(null);
-        
+
         // Clear AG Grid filter model if available
         if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
           unifiedGridApi.setFilterModel(null);
@@ -656,7 +656,17 @@ const ItemMasterNew = memo(() => {
         }
       }
     },
-    [activeTab, navigate, isAddItemModalOpen, closeAddItemModal, clearItemSearch, clearEntitySearch, handleItemFilterSearch, handleEntityFilterSearch, unifiedGridApi]
+    [
+      activeTab,
+      navigate,
+      isAddItemModalOpen,
+      closeAddItemModal,
+      clearItemSearch,
+      clearEntitySearch,
+      handleItemFilterSearch,
+      handleEntityFilterSearch,
+      unifiedGridApi,
+    ]
   );
 
   // Unified handlers for MasterDataGrid
@@ -714,13 +724,15 @@ const ItemMasterNew = memo(() => {
         if (event.finished && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
           // 🚨 FIX: Prevent automatic saves during grid initialization
           // Only save if this is a real user drag (has source/toIndex changes)
-          const isUserDrag = event.column && 
-            (event.source === 'uiColumnMoved' || event.source === 'uiColumnDragged');
-          
+          const isUserDrag =
+            event.column &&
+            (event.source === 'uiColumnMoved' ||
+              event.source === 'uiColumnDragged');
+
           if (!isUserDrag) {
             return;
           }
-          
+
           try {
             const allColumns = unifiedGridApi.getAllGridColumns();
             const newOrder: string[] = [];
