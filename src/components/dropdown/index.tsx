@@ -41,6 +41,8 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     portalWidth = 'auto',
     // Position control
     position = 'auto',
+    // Alignment control
+    align = 'right',
     // Hover detail props
     enableHoverDetail = false,
     hoverDetailDelay = 800,
@@ -128,6 +130,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     dropdownMenuRef,
     portalWidth,
     position,
+    align,
     filteredOptions
   );
 

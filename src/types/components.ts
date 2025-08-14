@@ -23,6 +23,7 @@ export interface HoverDetailData {
 export type DropdownMode = 'input' | 'text';
 export type DropdownPortalWidth = 'auto' | 'content' | string | number;
 export type DropdownPosition = 'auto' | 'top' | 'bottom';
+export type DropdownAlign = 'left' | 'right';
 
 // Base dropdown props for single selection
 export interface DropdownProps {
@@ -46,6 +47,8 @@ export interface DropdownProps {
   portalWidth?: DropdownPortalWidth;
   // Position control
   position?: DropdownPosition;
+  // Alignment control
+  align?: DropdownAlign;
   // Hover detail functionality
   enableHoverDetail?: boolean;
   hoverDetailDelay?: number;

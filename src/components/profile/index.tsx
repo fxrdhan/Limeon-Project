@@ -85,7 +85,7 @@ const Profile = () => {
   const ProfileImage = ({ size = 'small', className = '' }) => {
     const sizeClass =
       size === 'small'
-        ? 'w-9 h-9'
+        ? 'w-11 h-11'
         : size === 'large'
           ? 'w-32 h-32'
           : 'w-24 h-24';
@@ -123,7 +123,7 @@ const Profile = () => {
     <div className="relative w-12 h-12 flex items-center justify-center">
       <button
         onClick={handleProfileClick}
-        className="flex items-center space-x-3 p-1 rounded-xl hover:bg-gray-50 transition-all duration-200 group"
+        className="flex items-center space-x-3 rounded-xl hover:bg-gray-50 transition-all duration-200 group"
         aria-expanded={portalOpen}
         aria-haspopup="true"
       >

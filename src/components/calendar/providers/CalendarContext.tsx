@@ -65,6 +65,11 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     },
   });
 
+  // For inline mode, calendar is always "open"
+  const effectiveIsOpen = mode === 'inline' ? true : isOpen;
+  const effectiveIsClosing = mode === 'inline' ? false : isClosing;
+  const effectiveIsOpening = mode === 'inline' ? false : isOpening;
+
   const { portalStyle, isPositionReady, dropDirection, calculatePosition } =
     useCalendarPosition({
       triggerRef: triggerInputRef,
@@ -151,13 +156,17 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
         0
       );
       onChange(selectedDate);
-      closeCalendar();
+      
+      // Don't close calendar in inline mode
+      if (mode !== 'inline') {
+        closeCalendar();
 
-      setTimeout(() => {
-        triggerInputRef.current?.focus();
-      }, 250);
+        setTimeout(() => {
+          triggerInputRef.current?.focus();
+        }, 250);
+      }
     },
-    [onChange, closeCalendar]
+    [onChange, closeCalendar, mode]
   );
 
   const handleMonthSelect = useCallback(
@@ -185,10 +194,13 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
       setHighlightedDate(newHighlight);
       setHighlightedMonth(null);
 
-      calculatePosition();
-      focusPortal();
+      // Skip position calculation and focus for inline mode
+      if (mode !== 'inline') {
+        calculatePosition();
+        focusPortal();
+      }
     },
-    [displayDate, value, calculatePosition, focusPortal]
+    [displayDate, value, calculatePosition, focusPortal, mode]
   );
 
   const handleYearSelect = useCallback(
@@ -203,10 +215,14 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
       setHighlightedMonth(
         value && value.getFullYear() === selectedYear ? value.getMonth() : 0
       );
-      calculatePosition();
-      focusPortal();
+      
+      // Skip position calculation and focus for inline mode
+      if (mode !== 'inline') {
+        calculatePosition();
+        focusPortal();
+      }
     },
-    [value, calculatePosition, focusPortal]
+    [value, calculatePosition, focusPortal, mode]
   );
 
   const {
@@ -256,8 +272,10 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     }
   }, [isOpen, isPositionReady, isOpening, setIsOpening]);
 
-  // Click outside handler
+  // Click outside handler (skip for inline mode)
   useEffect(() => {
+    if (mode === 'inline') return; // No click outside handling for inline mode
+
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
 
@@ -281,7 +299,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, closeCalendar]);
+  }, [isOpen, closeCalendar, mode]);
 
   const contextValue = {
     // Core state
@@ -289,10 +307,10 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     onChange,
 
     // Calendar state
-    isOpen,
-    isClosing,
-    isOpening,
-    isPositionReady,
+    isOpen: effectiveIsOpen,
+    isClosing: effectiveIsClosing,
+    isOpening: effectiveIsOpening,
+    isPositionReady: mode === 'inline' ? true : isPositionReady,
     displayDate,
     currentView,
     dropDirection,
