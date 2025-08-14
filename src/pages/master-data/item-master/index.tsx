@@ -481,6 +481,7 @@ const ItemMasterNew = memo(() => {
     isExternalFilterPresent: itemIsExternalFilterPresent,
     doesExternalFilterPass: itemDoesExternalFilterPass,
     searchBarProps: itemSearchBarProps,
+    clearSearch: clearItemSearch,
   } = useUnifiedSearch({
     columns: orderedSearchColumns,
     searchMode: 'hybrid',
@@ -564,6 +565,7 @@ const ItemMasterNew = memo(() => {
     isExternalFilterPresent: entityIsExternalFilterPresent,
     doesExternalFilterPass: entityDoesExternalFilterPass,
     searchBarProps: entitySearchBarProps,
+    clearSearch: clearEntitySearch,
   } = useUnifiedSearch({
     columns: entitySearchColumns,
     searchMode: 'hybrid',
@@ -633,9 +635,23 @@ const ItemMasterNew = memo(() => {
       if (value !== activeTab) {
         navigate(`/master-data/item-master/${value}`);
 
-        // Clear search when switching tabs
+        // Clear search when switching tabs - both DOM value and all React states
         if (searchInputRef.current) {
           searchInputRef.current.value = '';
+        }
+        
+        // Clear all search states - useUnifiedSearch clearSearch already calls onClear callbacks
+        clearItemSearch();
+        clearEntitySearch();
+        
+        // Clear all filter/badge states
+        handleItemFilterSearch(null);
+        handleEntityFilterSearch(null);
+        
+        // Clear AG Grid filter model if available
+        if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+          unifiedGridApi.setFilterModel(null);
+          unifiedGridApi.onFilterChanged();
         }
 
         // Reset item modal state when switching tabs
@@ -644,7 +660,7 @@ const ItemMasterNew = memo(() => {
         }
       }
     },
-    [activeTab, navigate, isAddItemModalOpen, closeAddItemModal]
+    [activeTab, navigate, isAddItemModalOpen, closeAddItemModal, clearItemSearch, clearEntitySearch, handleItemFilterSearch, handleEntityFilterSearch, unifiedGridApi]
   );
 
   // Unified handlers for MasterDataGrid
