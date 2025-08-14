@@ -194,8 +194,6 @@ const ItemMasterNew = memo(() => {
     handleColumnPinning,
     orderingState,
     handleColumnOrdering,
-    isLoading: isColumnPreferencesLoading, // ✅ Add loading state
-    error: columnPreferencesError,
   } = useColumnVisibility();
 
   const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns({
@@ -319,16 +317,12 @@ const ItemMasterNew = memo(() => {
       },
     };
 
-    // Default column order if not specified
-    const defaultOrder = ['code', 'name'];
-    if (entityCurrentConfig.hasNciCode) defaultOrder.push('nci_code');
-    defaultOrder.push(
-      entityCurrentConfig.hasAddress ? 'address' : 'description'
-    );
-
-    // Use provided order or default order
-    const orderedColumns =
-      entityOrderingState.length > 0 ? entityOrderingState : defaultOrder;
+    // Handle ordering state - if empty, use natural order from column definitions
+    let orderedColumns = entityOrderingState;
+    if (orderedColumns.length === 0) {
+      // Use natural order from columnDefinitionsMap keys (first time users)
+      orderedColumns = Object.keys(columnDefinitionsMap);
+    }
 
     // Create ordered column array
     const orderedColumnDefs = orderedColumns
@@ -718,6 +712,15 @@ const ItemMasterNew = memo(() => {
       } else {
         // Entity column moved logic
         if (event.finished && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+          // 🚨 FIX: Prevent automatic saves during grid initialization
+          // Only save if this is a real user drag (has source/toIndex changes)
+          const isUserDrag = event.column && 
+            (event.source === 'uiColumnMoved' || event.source === 'uiColumnDragged');
+          
+          if (!isUserDrag) {
+            return;
+          }
+          
           try {
             const allColumns = unifiedGridApi.getAllGridColumns();
             const newOrder: string[] = [];
@@ -833,7 +836,7 @@ const ItemMasterNew = memo(() => {
             entityData={entityData.data}
             isLoading={
               activeTab === 'items'
-                ? itemsManagement.isLoading || isColumnPreferencesLoading // ✅ Include column preferences loading
+                ? itemsManagement.isLoading
                 : entityData.isLoading
             }
             isError={
@@ -843,7 +846,7 @@ const ItemMasterNew = memo(() => {
             }
             error={
               activeTab === 'items'
-                ? itemsManagement.queryError || columnPreferencesError // ✅ Include column preferences error
+                ? itemsManagement.queryError
                 : entityData.error
             }
             search={activeTab === 'items' ? itemSearch : entitySearch}

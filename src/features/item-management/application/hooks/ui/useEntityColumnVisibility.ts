@@ -147,17 +147,15 @@ export const useEntityColumnVisibility = ({
     return dbColumnPinning || {};
   }, [dbColumnPinning, optimisticPinningState]);
 
-  // Column ordering state - get default order from column configs
-  const getDefaultOrder = (configs: ColumnVisibilityConfig[]): string[] => {
-    return configs.map(config => config.key);
-  };
-
+  // Column ordering state - pure database-driven, no hardcoded defaults
   const orderingState = useMemo(() => {
     if (optimisticOrderingState) {
       return optimisticOrderingState;
     }
-    return dbColumnOrder || getDefaultOrder(columnConfigs);
-  }, [dbColumnOrder, optimisticOrderingState, columnConfigs]);
+    // Return database order as-is, no fallback to hardcoded defaults
+    // If no order saved, return empty array (let component handle)
+    return dbColumnOrder || [];
+  }, [dbColumnOrder, optimisticOrderingState]);
 
   const columnOptions: ColumnOption[] = useMemo(() => {
     // Create a map of all column configs for quick lookup
