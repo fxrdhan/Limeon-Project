@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { EntityType, EntityConfig } from '../collections/useEntityManager';
 import {
   useEntityColumnVisibilityPreference,
@@ -119,6 +119,13 @@ export const useEntityColumnVisibility = ({
   const [optimisticOrderingState, setOptimisticOrderingState] = useState<
     string[] | null
   >(null);
+
+  // Clear optimistic states when entity type changes
+  useEffect(() => {
+    setOptimisticState(null);
+    setOptimisticPinningState(null);
+    setOptimisticOrderingState(null);
+  }, [entityType]);
 
   // Use optimistic state during saves, otherwise use DB state or defaults
   const visibilityState = useMemo(() => {

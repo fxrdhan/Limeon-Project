@@ -240,13 +240,20 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     }
   }, [gridApi, activeTab, columnDefs]);
 
-  // Reset grid state when switching tabs to prevent column pinning carryover
+  // Reset grid state when switching tabs to prevent state carryover
   useEffect(() => {
     if (gridApi && !gridApi.isDestroyed()) {
-      // ✅ SELECTIVE RESET - Only clear filters, preserve column order and state
-      // The main issue was resetColumnState() clearing column order
-      // Now we only clear filters to prevent filter carryover between tabs
+      // Clear filters to prevent filter carryover between tabs
       gridApi.setFilterModel(null);
+      
+      // ✅ NEW: Clear column pinning state without affecting order/visibility
+      // Get current column state and remove pinning
+      const columnState = gridApi.getColumnState();
+      const unpinnedState = columnState.map(col => ({
+        ...col,
+        pinned: null  // Clear pinning for all columns
+      }));
+      gridApi.applyColumnState({ state: unpinnedState });
       
       // Small delay to ensure clean state before autosize
       const timer = setTimeout(() => {
