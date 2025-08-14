@@ -10,11 +10,12 @@ import {
 import type { CalendarProps } from './types';
 
 const CalendarContent: React.FC<{
-  mode?: 'datepicker' | 'calendar';
+  mode?: 'datepicker' | 'calendar' | 'inline';
   label?: string;
   inputClassName?: string;
   placeholder?: string;
-}> = ({ mode = 'datepicker', label, inputClassName, placeholder }) => {
+  portalWidth?: string | number;
+}> = ({ mode = 'datepicker', label, inputClassName, placeholder, portalWidth }) => {
   const {
     value,
     displayDate,
@@ -82,6 +83,29 @@ const CalendarContent: React.FC<{
     />
   );
 
+  // For inline mode, render calendar directly without portal
+  if (mode === 'inline') {
+    const width = portalWidth || '280px';
+    return (
+      <div 
+        className="bg-white rounded-xl border border-gray-200 p-4 shadow-xl"
+        style={{ 
+          width: width,
+          minWidth: width
+        }}
+      >
+        <CalendarHeader
+          displayDate={displayDate}
+          onNavigatePrev={() => navigateViewDate('prev')}
+          onNavigateNext={() => navigateViewDate('next')}
+          onMonthChange={handleMonthChange}
+          onYearChange={handleYearChange}
+        />
+        {renderCalendarContent()}
+      </div>
+    );
+  }
+
   return (
     <>
       {mode === 'datepicker' && (
@@ -136,6 +160,7 @@ const Calendar: React.FC<CalendarProps> = ({
         label={label}
         inputClassName={inputClassName}
         placeholder={placeholder}
+        portalWidth={portalWidth}
       />
     </CalendarProvider>
   );

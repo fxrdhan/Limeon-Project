@@ -4,7 +4,7 @@ export type CalendarView = 'days' | 'months' | 'years';
 
 export type CustomDateValueType = Date | null;
 
-export type CalendarMode = 'datepicker' | 'calendar';
+export type CalendarMode = 'datepicker' | 'calendar' | 'inline';
 export type CalendarSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface CalendarProps {

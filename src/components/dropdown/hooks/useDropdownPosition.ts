@@ -9,6 +9,7 @@ import { DROPDOWN_CONSTANTS, DropDirection } from '../constants';
 import type {
   DropdownPortalWidth,
   DropdownPosition,
+  DropdownAlign,
   DropdownOption,
 } from '@/types';
 
@@ -18,6 +19,7 @@ export const useDropdownPosition = (
   dropdownMenuRef: RefObject<HTMLDivElement | null>,
   portalWidth: DropdownPortalWidth = 'auto',
   position: DropdownPosition = 'auto',
+  align: DropdownAlign = 'right',
   options: DropdownOption[] = []
 ) => {
   const [dropDirection, setDropDirection] = useState<DropDirection>('down');
@@ -109,8 +111,15 @@ export const useDropdownPosition = (
           : parseInt(portalWidth as string, 10) || buttonRect.width;
     }
 
-    // Right-align the dropdown to the button's right edge
-    let leftPosition = buttonRect.right - dropdownWidth;
+    // Align the dropdown based on align prop
+    let leftPosition: number;
+    if (align === 'left') {
+      // Left-align: dropdown starts at button's left edge
+      leftPosition = buttonRect.left;
+    } else {
+      // Right-align: dropdown ends at button's right edge
+      leftPosition = buttonRect.right - dropdownWidth;
+    }
 
     // Keep dropdown within viewport bounds
     if (
@@ -172,6 +181,7 @@ export const useDropdownPosition = (
     dropdownMenuRef,
     portalWidth,
     position,
+    align,
     calculateContentWidth,
   ]);
 

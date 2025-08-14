@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
@@ -12,10 +11,9 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
   // Ensure at least 1 user is shown when logged in
   const displayOnlineUsers = user ? Math.max(1, onlineUsers) : onlineUsers;
-  const navigate = useNavigate();
 
   return (
-    <nav className="bg-white px-6 py-3 sticky top-0 z-20">
+    <nav className="bg-white px-4 py-3 sticky top-0 z-20">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center">
         <div className="flex items-center h-8">
           <h1 className="flex items-center" style={{ minHeight: '2em' }}>
@@ -98,38 +96,20 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
             </AnimatePresence>
           </h1>
         </div>
-        <div className="flex items-center justify-center space-x-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 pb-3 w-10 rounded-full group active:scale-90 transition-transform duration-100"
-            aria-label="Go Back"
-            title="Go Back"
-          >
-            <span className="text-gray-600 font-bold text-lg inline-block group-hover:text-primary group-hover:scale-120 transition duration-150">
-              ←
-            </span>
-          </button>
-
+        <div></div>
+        <div className="relative flex justify-end items-center">
           <DateTimeDisplay />
 
-          <button
-            onClick={() => navigate(1)}
-            className="p-2 pb-3 w-10 rounded-full group active:scale-90 transition-transform duration-100"
-            aria-label="Go Forward"
-            title="Go Forward"
-          >
-            <span className="text-gray-600 font-bold text-lg inline-block group-hover:text-primary group-hover:scale-120 transition duration-150">
-              →
-            </span>
-          </button>
-        </div>
-        <div className="relative flex justify-end items-center space-x-3">
+          <div className="h-5 w-px bg-gray-300 mx-4"></div>
+
           <div
-            className="flex items-center space-x-1.5 bg-primary/10 px-3 py-1.5 rounded-full text-sm text-primary transition-colors cursor-default ring-2 ring-primary/50"
+            className="flex items-center text-sm text-gray-600 cursor-default"
             title={`${displayOnlineUsers} pengguna aktif`}
           >
-            <span className="font-semibold">{displayOnlineUsers} Online</span>
+            <span className="font-medium">{displayOnlineUsers} Online</span>
           </div>
+
+          <div className="h-5 w-px bg-gray-300 mx-5"></div>
 
           <Profile />
         </div>
