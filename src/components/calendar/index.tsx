@@ -77,6 +77,13 @@ const CalendarContent: React.FC<{
     calculatePosition?.();
   };
 
+  // Disable date selection for inline mode
+  const handleDateSelectWrapper = (date: Date) => {
+    if (mode !== 'inline') {
+      handleDateSelect(date);
+    }
+  };
+
   // Always render DaysGrid with slide animations
   const renderCalendarContent = () => (
     <DaysGrid
@@ -85,7 +92,7 @@ const CalendarContent: React.FC<{
       highlightedDate={highlightedDate}
       minDate={minDate}
       maxDate={maxDate}
-      onDateSelect={handleDateSelect}
+      onDateSelect={handleDateSelectWrapper}
       onDateHighlight={setHighlightedDate}
       animated={true}
     />
