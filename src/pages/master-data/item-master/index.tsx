@@ -194,6 +194,8 @@ const ItemMasterNew = memo(() => {
     handleColumnPinning,
     orderingState,
     handleColumnOrdering,
+    isLoading: isColumnPreferencesLoading, // ✅ Add loading state
+    error: columnPreferencesError,
   } = useColumnVisibility();
 
   const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns({
@@ -831,7 +833,7 @@ const ItemMasterNew = memo(() => {
             entityData={entityData.data}
             isLoading={
               activeTab === 'items'
-                ? itemsManagement.isLoading
+                ? itemsManagement.isLoading || isColumnPreferencesLoading // ✅ Include column preferences loading
                 : entityData.isLoading
             }
             isError={
@@ -841,7 +843,7 @@ const ItemMasterNew = memo(() => {
             }
             error={
               activeTab === 'items'
-                ? itemsManagement.queryError
+                ? itemsManagement.queryError || columnPreferencesError // ✅ Include column preferences error
                 : entityData.error
             }
             search={activeTab === 'items' ? itemSearch : entitySearch}
