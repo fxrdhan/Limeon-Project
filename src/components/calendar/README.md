@@ -112,7 +112,7 @@ CalendarProvider (Context Provider)
 The calendar supports three fixed size presets for consistent UI:
 
 - **md**: 350x320px - Default size, optimal for most use cases
-- **lg**: 380x360px - Larger size for more comfortable viewing  
+- **lg**: 380x360px - Larger size for more comfortable viewing
 - **xl**: 450x400px - Maximum size for spacious layouts
 
 All portal widths are fixed based on these presets, ensuring consistent appearance regardless of input field width.
@@ -615,6 +615,7 @@ const maxDate = new Date('2023-12-31');
 ```
 
 **Default Trigger Behavior:**
+
 - **Datepicker mode**: `click` trigger (calendar opens when input is clicked)
 - **Inline mode**: `hover` trigger (calendar opens when trigger area is hovered)
 
