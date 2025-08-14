@@ -17,7 +17,6 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   minDate,
   maxDate,
   portalWidth,
-  resizable = false,
 }) => {
   // Get size preset
   const sizeConfig = CALENDAR_SIZE_PRESETS[size];
@@ -37,8 +36,6 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
   const [yearNavigationDirection, setYearNavigationDirection] = useState<
     'prev' | 'next' | null
   >(null);
-  const [currentWidth] = useState(sizeConfig.width);
-  const [currentHeight] = useState(sizeConfig.height);
 
   // Custom hooks
   const {
@@ -75,10 +72,10 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
       triggerRef: triggerInputRef,
       portalRef: portalContentRef,
       isOpen,
-      portalWidth,
-      currentWidth,
-      currentHeight,
-      resizable,
+      // Always pass portalWidth or fallback to size preset width
+      portalWidth: portalWidth || sizeConfig.width,
+      calendarWidth: sizeConfig.width,
+      calendarHeight: sizeConfig.height,
     });
 
   const { navigateViewDate: originalNavigateViewDate, navigateYear } =
@@ -328,13 +325,6 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
     minDate,
     maxDate,
     portalWidth,
-    resizable,
-    currentWidth,
-    currentHeight,
-    minWidth: sizeConfig.minWidth,
-    minHeight: sizeConfig.minHeight,
-    maxWidth: sizeConfig.maxWidth,
-    maxHeight: sizeConfig.maxHeight,
 
     // Portal styling
     portalStyle,

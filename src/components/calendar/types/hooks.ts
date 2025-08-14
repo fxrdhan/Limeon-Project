@@ -27,9 +27,8 @@ export interface UseCalendarPositionParams {
   portalRef: React.RefObject<HTMLDivElement | null>;
   isOpen: boolean;
   portalWidth?: string | number;
-  currentWidth?: number;
-  currentHeight?: number;
-  resizable?: boolean;
+  calendarWidth?: number;
+  calendarHeight?: number;
 }
 
 export interface UseCalendarPositionReturn {

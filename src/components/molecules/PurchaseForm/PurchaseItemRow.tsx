@@ -91,7 +91,7 @@ const PurchaseItemRow: React.FC<PurchaseItemRowProps> = ({
           inputClassName="w-full text-center text-sm py-[3px]! px-1! bg-transparent border-0! border-b border-gray-300! focus:border-primary! focus:ring-0! rounded-none!"
           placeholder="Pilih ED"
           minDate={new Date()}
-          portalWidth="280px"
+          size="md"
         />
       </TableCell>
       <TableCell className="text-center">

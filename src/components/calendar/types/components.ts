@@ -4,8 +4,8 @@ export type CalendarView = 'days' | 'months' | 'years';
 
 export type CustomDateValueType = Date | null;
 
-export type CalendarMode = 'datepicker' | 'calendar' | 'inline';
-export type CalendarSize = 'sm' | 'md' | 'lg' | 'xl';
+export type CalendarMode = 'datepicker' | 'inline';
+export type CalendarSize = 'md' | 'lg' | 'xl';
 
 export interface CalendarProps {
   mode?: CalendarMode;
@@ -18,7 +18,6 @@ export interface CalendarProps {
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
-  resizable?: boolean;
 }
 
 export interface DatepickerProps extends CalendarProps {

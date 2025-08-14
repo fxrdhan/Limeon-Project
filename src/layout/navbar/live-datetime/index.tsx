@@ -132,12 +132,12 @@ const DateTimeDisplay = () => {
         <div ref={calendarRef} className="absolute top-full -right-6 mt-4 z-50">
           <Calendar
             mode="inline"
+            size="md"
             value={selectedDate}
             onChange={date => {
               setSelectedDate(date);
               // Keep calendar open in inline mode - let user continue browsing
             }}
-            portalWidth="320px"
           />
         </div>
       )}

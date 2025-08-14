@@ -211,8 +211,8 @@ export interface CheckboxProps {
 }
 
 export type CustomDateValueType = Date | null;
-export type CalendarMode = 'datepicker' | 'calendar';
-export type CalendarSize = 'sm' | 'md' | 'lg' | 'xl';
+export type CalendarMode = 'datepicker' | 'inline';
+export type CalendarSize = 'md' | 'lg' | 'xl';
 
 export interface CalendarProps {
   mode?: CalendarMode;
@@ -225,7 +225,6 @@ export interface CalendarProps {
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
-  resizable?: boolean;
 }
 
 // Backward compatibility alias
