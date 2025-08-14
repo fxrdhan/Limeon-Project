@@ -64,17 +64,9 @@ export const getYearsToDisplay = (year: number): number[] => {
 
 // Calendar size presets
 export const CALENDAR_SIZE_PRESETS = {
-  sm: {
-    width: 280,
-    height: 300,
-    minWidth: 260,
-    minHeight: 280,
-    maxWidth: 320,
-    maxHeight: 340,
-  },
   md: {
     width: 320,
-    height: 320,
+    height: 300,
     minWidth: 300,
     minHeight: 300,
     maxWidth: 380,

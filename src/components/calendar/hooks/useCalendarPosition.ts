@@ -12,8 +12,8 @@ export const useCalendarPosition = (
     triggerRef,
     isOpen,
     portalWidth,
-    currentHeight = CALENDAR_CONSTANTS.CALENDAR_HEIGHT,
-    resizable = false,
+    calendarWidth = CALENDAR_CONSTANTS.CALENDAR_WIDTH,
+    calendarHeight = CALENDAR_CONSTANTS.CALENDAR_HEIGHT,
   } = params;
 
   const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
@@ -24,9 +24,6 @@ export const useCalendarPosition = (
     if (!triggerRef.current) return;
 
     const buttonRect = triggerRef.current.getBoundingClientRect();
-    const calendarHeight = resizable
-      ? currentHeight
-      : CALENDAR_CONSTANTS.CALENDAR_HEIGHT;
     const viewportHeight = window.innerHeight;
 
     const margin = CALENDAR_CONSTANTS.POSITION_MARGIN;
@@ -46,7 +43,7 @@ export const useCalendarPosition = (
         ? typeof portalWidth === 'number'
           ? `${portalWidth}px`
           : portalWidth
-        : `${buttonRect.width}px`,
+        : `${calendarWidth}px`,
       zIndex: CALENDAR_CONSTANTS.PORTAL_Z_INDEX,
     };
 
@@ -60,7 +57,7 @@ export const useCalendarPosition = (
 
     setPortalStyle(newMenuStyle);
     setIsPositionReady(true);
-  }, [triggerRef, portalWidth, currentHeight, resizable]);
+  }, [triggerRef, portalWidth, calendarWidth, calendarHeight]);
 
   useEffect(() => {
     if (isOpen) {

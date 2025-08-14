@@ -91,7 +91,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
             onChange={newDate => handleDateChange('date', newDate)}
             inputClassName="w-full p-2.5 border rounded-lg text-sm"
             placeholder="Pilih tanggal pembelian"
-            portalWidth="280px"
+            size="md"
           />
         </div>
 
@@ -105,7 +105,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
             inputClassName="w-full p-2.5 border rounded-lg text-sm"
             minDate={formData.date ? new Date(formData.date) : undefined}
             placeholder="Pilih tanggal jatuh tempo"
-            portalWidth="280px"
+            size="md"
           />
         </div>
 

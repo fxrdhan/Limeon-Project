@@ -104,7 +104,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
           }}
           placeholder={`Pilih ${field.label.toLowerCase()}`}
           inputClassName="w-full p-2.5 border rounded-lg text-sm"
-          portalWidth="300px"
+          size="md"
         />
       );
     }

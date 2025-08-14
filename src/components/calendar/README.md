@@ -8,7 +8,7 @@ The Calendar component is a sophisticated date selection interface that can func
 
 **Key Features:**
 
-- **Dual Modes**: Datepicker with input field or standalone calendar
+- **Dual Modes**: Datepicker with input field or inline calendar
 - **Indonesian Localization**: Built-in Indonesian month names and date formatting
 - **Smart Positioning**: Automatic up/down positioning based on viewport space
 - **Keyboard Navigation**: Complete arrow key navigation with Enter/Escape support
@@ -68,7 +68,7 @@ CalendarProvider (Context Provider)
 ### 1. Mode Flexibility
 
 - **Datepicker Mode**: Input field that opens calendar overlay
-- **Calendar Mode**: Standalone calendar widget
+- **Inline Mode**: Standalone calendar widget displayed inline
 
 ### 2. Date Selection & Navigation
 
@@ -101,8 +101,7 @@ CalendarProvider (Context Provider)
 
 ### 6. Size Presets
 
-- **sm**: 280x300px (min: 260x280, max: 320x340)
-- **md**: 320x320px (min: 300x300, max: 380x380) - Default
+- **md**: 320x300px (min: 300x300, max: 380x380) - Default
 - **lg**: 380x360px (min: 340x320, max: 450x420)
 - **xl**: 450x400px (min: 400x360, max: 520x480)
 
@@ -395,14 +394,13 @@ Comprehensive TypeScript interfaces ensure type safety:
 ```tsx
 // All props are strictly typed
 interface CalendarProps {
-  mode?: 'datepicker' | 'calendar';
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  mode?: 'datepicker' | 'inline';
+  size?: 'md' | 'lg' | 'xl';
   value: Date | null;
   onChange: (date: Date | null) => void;
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
-  resizable?: boolean;
 }
 
 // Context state is fully typed
@@ -522,11 +520,11 @@ const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 />;
 ```
 
-### Standalone Calendar
+### Inline Calendar
 
 ```tsx
 <Calendar
-  mode="calendar"
+  mode="inline"
   size="lg"
   value={selectedDate}
   onChange={setSelectedDate}

@@ -7,10 +7,11 @@ import {
   CalendarHeader,
   DaysGrid,
 } from './components';
+import { CALENDAR_SIZE_PRESETS } from './constants';
 import type { CalendarProps } from './types';
 
 const CalendarContent: React.FC<{
-  mode?: 'datepicker' | 'calendar' | 'inline';
+  mode?: 'datepicker' | 'inline';
   label?: string;
   inputClassName?: string;
   placeholder?: string;
@@ -28,6 +29,7 @@ const CalendarContent: React.FC<{
     highlightedDate,
     minDate,
     maxDate,
+    size,
     navigateViewDate,
     triggerYearAnimation,
     triggerMonthAnimation,
@@ -91,7 +93,8 @@ const CalendarContent: React.FC<{
 
   // For inline mode, render calendar directly without portal
   if (mode === 'inline') {
-    const width = portalWidth || '280px';
+    const sizeConfig = CALENDAR_SIZE_PRESETS[size];
+    const width = portalWidth || `${sizeConfig.width}px`;
     return (
       <div
         className="bg-white rounded-xl border border-gray-200 p-4 shadow-xl"
@@ -112,16 +115,15 @@ const CalendarContent: React.FC<{
     );
   }
 
+  // For datepicker mode, render button + portal
   return (
     <>
-      {mode === 'datepicker' && (
-        <CalendarButton
-          value={value}
-          placeholder={placeholder}
-          inputClassName={inputClassName}
-          label={label}
-        />
-      )}
+      <CalendarButton
+        value={value}
+        placeholder={placeholder}
+        inputClassName={inputClassName}
+        label={label}
+      />
 
       <CalendarPortal>
         <CalendarHeader
@@ -148,7 +150,6 @@ const Calendar: React.FC<CalendarProps> = ({
   minDate,
   maxDate,
   portalWidth,
-  resizable = false,
 }) => {
   return (
     <CalendarProvider
@@ -159,7 +160,6 @@ const Calendar: React.FC<CalendarProps> = ({
       minDate={minDate}
       maxDate={maxDate}
       portalWidth={portalWidth}
-      resizable={resizable}
     >
       <CalendarContent
         mode={mode}

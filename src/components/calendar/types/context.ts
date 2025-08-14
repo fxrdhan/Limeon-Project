@@ -33,13 +33,6 @@ export interface CalendarContextState {
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
-  resizable: boolean;
-  currentWidth: number;
-  currentHeight: number;
-  minWidth: number;
-  minHeight: number;
-  maxWidth: number;
-  maxHeight: number;
 
   // Portal styling
   portalStyle: React.CSSProperties;
@@ -91,7 +84,6 @@ export interface CalendarProviderProps {
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
-  resizable?: boolean;
 }
 
 export interface DatepickerProviderProps extends CalendarProviderProps {
