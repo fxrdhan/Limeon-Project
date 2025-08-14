@@ -156,7 +156,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
         0
       );
       onChange(selectedDate);
-      
+
       // Don't close calendar in inline mode
       if (mode !== 'inline') {
         closeCalendar();
@@ -215,7 +215,7 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
       setHighlightedMonth(
         value && value.getFullYear() === selectedYear ? value.getMonth() : 0
       );
-      
+
       // Skip position calculation and focus for inline mode
       if (mode !== 'inline') {
         calculatePosition();

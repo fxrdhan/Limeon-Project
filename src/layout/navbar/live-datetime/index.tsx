@@ -56,21 +56,23 @@ const DateTimeDisplay = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      
+
       // Check if click is inside calendar
       if (calendarRef.current?.contains(target)) return;
-      
+
       // Check if click is inside dropdown menu (for month/year selectors)
       const dropdownMenu = (target as Element).closest('[role="menu"]');
       if (dropdownMenu) return;
-      
+
       // Check if target itself is a dropdown menu
       if ((target as Element).getAttribute?.('role') === 'menu') return;
-      
+
       // Check if click is inside any dropdown portal
-      const dropdownPortal = (target as Element).closest('[data-dropdown-portal]');
+      const dropdownPortal = (target as Element).closest(
+        '[data-dropdown-portal]'
+      );
       if (dropdownPortal) return;
-      
+
       // If none of the above, close calendar
       setShowCalendar(false);
     };
