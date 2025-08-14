@@ -4,7 +4,8 @@ import Button from '@/components/button';
 import Calendar from '@/components/calendar';
 import { FaTrash } from 'react-icons/fa';
 import { formatRupiah, extractNumericValue } from '@/lib/formatters';
-import type { PurchaseItem, CustomDateValueType } from '@/types';
+import type { PurchaseItem } from '@/types';
+import type { CustomDateValueType } from '@/components/calendar/types';
 
 interface PurchaseItemRowProps {
   item: PurchaseItem;

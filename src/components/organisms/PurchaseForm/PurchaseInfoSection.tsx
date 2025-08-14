@@ -4,7 +4,7 @@ import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import Calendar from '@/components/calendar';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
-import type { CustomDateValueType } from '@/types';
+import type { CustomDateValueType } from '@/components/calendar/types';
 
 interface PurchaseInfoSectionProps {
   formData: {
