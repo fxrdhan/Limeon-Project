@@ -15,6 +15,7 @@ import {
   ColumnMovedEvent,
   PaginationChangedEvent,
   ColumnRowGroupChangedEvent,
+  RowGroupOpenedEvent,
 } from 'ag-grid-community';
 
 export interface ColumnConfig {
@@ -64,7 +65,8 @@ export interface DataGridProps {
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
   onColumnRowGroupChanged?: (event: ColumnRowGroupChangedEvent) => void;
-  onRowGroupOpened?: (event: any) => void;
+  onRowGroupOpened?: (event: RowGroupOpenedEvent) => void;
+  onColumnVisible?: () => void;
   rowNumbers?: boolean;
   suppressHeaderFilterButton?: boolean;
   // Pagination props

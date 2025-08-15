@@ -220,7 +220,8 @@ const ItemMasterNew = memo(() => {
     handleColumnPinning,
     orderingState,
     handleColumnOrdering,
-  } = useColumnVisibility();
+    handleColumnVisibilityChangedFromGrid,
+  } = useColumnVisibility({ gridApi: unifiedGridApi });
 
   const { columnDefs: itemColumnDefs, columnsToAutoSize } = useItemGridColumns({
     visibleColumns,
@@ -925,6 +926,7 @@ const ItemMasterNew = memo(() => {
             }
             onColumnPinned={unifiedColumnPinnedHandler}
             onColumnMoved={unifiedColumnMovedHandler}
+            onColumnVisible={handleColumnVisibilityChangedFromGrid}
             onGridApiReady={handleUnifiedGridApiReady}
             currentPage={itemsManagement.currentPage}
             itemsPerPage={itemsManagement.itemsPerPage}

@@ -8,6 +8,7 @@ import {
   ColDef,
   IRowNode,
   GetMainMenuItems,
+  RowGroupOpenedEvent,
 } from 'ag-grid-community';
 
 // Components
@@ -87,6 +88,7 @@ interface MasterDataGridProps {
   doesExternalFilterPass: (node: IRowNode) => boolean;
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
+  onColumnVisible?: () => void;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
 
   // Pagination (for items)
@@ -115,6 +117,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   doesExternalFilterPass,
   onColumnPinned,
   onColumnMoved,
+  onColumnVisible,
   onGridApiReady,
   currentPage = 1,
   itemsPerPage = 10,
@@ -347,7 +350,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   );
 
   // Handle row group opened/closed - scroll child rows into view
-  const handleRowGroupOpened = useCallback((event: any) => {
+  const handleRowGroupOpened = useCallback((event: RowGroupOpenedEvent) => {
     // Only for items tab when row grouping is enabled
     if (activeTab !== 'items' || !isRowGroupingEnabled) {
       return;
@@ -355,14 +358,18 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
 
     if (event.expanded && gridApi && !gridApi.isDestroyed()) {
       const rowNodeIndex = event.node.rowIndex;
-      // Factor in child nodes so we can scroll to correct position
-      const childCount = event.node.childrenAfterSort 
-        ? event.node.childrenAfterSort.length 
-        : 0;
-      const newIndex = rowNodeIndex + childCount;
       
-      // Ensure the expanded group and its children are visible
-      gridApi.ensureIndexVisible(newIndex);
+      // Check if rowIndex is valid
+      if (rowNodeIndex !== null && rowNodeIndex !== undefined) {
+        // Factor in child nodes so we can scroll to correct position
+        const childCount = event.node.childrenAfterSort 
+          ? event.node.childrenAfterSort.length 
+          : 0;
+        const newIndex = rowNodeIndex + childCount;
+        
+        // Ensure the expanded group and its children are visible
+        gridApi.ensureIndexVisible(newIndex);
+      }
     }
   }, [activeTab, isRowGroupingEnabled, gridApi]);
 
@@ -469,6 +476,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           mainMenuItems={getMainMenuItems}
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
+          onColumnVisible={onColumnVisible}
           rowNumbers={true}
           domLayout="normal"
           style={{
