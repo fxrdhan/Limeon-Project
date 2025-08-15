@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { GridApi } from 'ag-grid-community';
 import { EntityType, EntityConfig } from '../collections/useEntityManager';
 import {
   useEntityColumnVisibilityPreference,
@@ -59,6 +60,7 @@ const ENTITY_COLUMN_CONFIGS: Record<EntityType, ColumnVisibilityConfig[]> = {
 interface UseEntityColumnVisibilityProps {
   entityType: EntityType;
   currentConfig?: EntityConfig | null;
+  gridApi?: GridApi | null;
 }
 
 const getDefaultVisibility = (
@@ -74,6 +76,7 @@ const getDefaultVisibility = (
 export const useEntityColumnVisibility = ({
   entityType,
   currentConfig,
+  gridApi,
 }: UseEntityColumnVisibilityProps) => {
   // Get column configs for current entity type
   const columnConfigs = useMemo(() => {
@@ -164,6 +167,50 @@ export const useEntityColumnVisibility = ({
     return dbColumnOrder || [];
   }, [dbColumnOrder, optimisticOrderingState]);
 
+  // Track if initial sync has been done to prevent loops
+  const initialSyncDone = useRef(false);
+
+  // Restore column state to AG Grid when grid API is available and state is loaded
+  useEffect(() => {
+    if (
+      gridApi &&
+      !gridApi.isDestroyed() &&
+      !isDbLoading &&
+      !initialSyncDone.current
+    ) {
+      // Apply visibility state to AG Grid
+      const columnsToHide: string[] = [];
+      const columnsToShow: string[] = [];
+
+      Object.entries(visibilityState).forEach(([columnKey, visible]) => {
+        if (visible) {
+          columnsToShow.push(columnKey);
+        } else {
+          columnsToHide.push(columnKey);
+        }
+      });
+
+      try {
+        // Apply visibility state
+        if (columnsToHide.length > 0) {
+          gridApi.setColumnsVisible(columnsToHide, false);
+        }
+        if (columnsToShow.length > 0) {
+          gridApi.setColumnsVisible(columnsToShow, true);
+        }
+
+        initialSyncDone.current = true;
+      } catch (error) {
+        console.error('Failed to restore entity column state to AG Grid:', error);
+      }
+    }
+  }, [gridApi, visibilityState, isDbLoading]);
+
+  // Reset sync flag when grid API changes
+  useEffect(() => {
+    initialSyncDone.current = false;
+  }, [gridApi]);
+
   const columnOptions: ColumnOption[] = useMemo(() => {
     // Create a map of all column configs for quick lookup
     const configMap: Record<string, ColumnVisibilityConfig> = {};
@@ -225,6 +272,18 @@ export const useEntityColumnVisibility = ({
       // Set optimistic state for immediate UI update
       setOptimisticState(newVisibilityState);
 
+      // Sync with AG Grid Column API immediately
+      if (gridApi && !gridApi.isDestroyed()) {
+        try {
+          gridApi.setColumnsVisible([columnKey], visible);
+        } catch (error) {
+          console.error(
+            'Failed to sync entity column visibility with AG Grid:',
+            error
+          );
+        }
+      }
+
       try {
         // Save to database
         await setDbColumnVisibility(newVisibilityState);
@@ -239,9 +298,21 @@ export const useEntityColumnVisibility = ({
 
         // Revert optimistic state on error
         setOptimisticState(null);
+
+        // Revert AG Grid state too
+        if (gridApi && !gridApi.isDestroyed()) {
+          try {
+            gridApi.setColumnsVisible([columnKey], !visible);
+          } catch (revertError) {
+            console.error(
+              'Failed to revert AG Grid entity column visibility:',
+              revertError
+            );
+          }
+        }
       }
     },
-    [visibilityState, setDbColumnVisibility]
+    [visibilityState, setDbColumnVisibility, gridApi]
   );
 
   const handleColumnPinning = useCallback(
@@ -315,6 +386,58 @@ export const useEntityColumnVisibility = ({
     [setDbColumnOrder]
   );
 
+  // Handle column visibility changes from AG Grid (reverse sync)
+  const handleColumnVisibilityChangedFromGrid = useCallback(async () => {
+    if (!gridApi || gridApi.isDestroyed()) return;
+
+    try {
+      // Get current visibility state from AG Grid
+      const allColumns = gridApi.getAllGridColumns();
+      const newVisibilityState: Record<string, boolean> = {
+        ...visibilityState,
+      };
+      let hasChanges = false;
+
+      allColumns.forEach(column => {
+        const colId = column.getColId();
+        const isVisible = column.isVisible();
+
+        // Only update if this is a column we track and visibility changed
+        if (
+          Object.prototype.hasOwnProperty.call(newVisibilityState, colId) &&
+          newVisibilityState[colId] !== isVisible
+        ) {
+          newVisibilityState[colId] = isVisible;
+          hasChanges = true;
+        }
+      });
+
+      // Only update if there are actual changes
+      if (hasChanges) {
+        // Set optimistic state for immediate UI update
+        setOptimisticState(newVisibilityState);
+
+        try {
+          // Save to database
+          await setDbColumnVisibility(newVisibilityState);
+
+          // Clear optimistic state after successful save
+          setOptimisticState(null);
+        } catch (error) {
+          console.error(
+            'Failed to save entity column visibility from grid changes:',
+            error
+          );
+
+          // Revert optimistic state on error
+          setOptimisticState(null);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to sync entity column visibility from AG Grid:', error);
+    }
+  }, [gridApi, visibilityState, setDbColumnVisibility]);
+
   // Get auto-size columns (only visible ones)
   const autoSizeColumns = useMemo(() => {
     const baseColumns = ['code', 'name'];
@@ -340,6 +463,7 @@ export const useEntityColumnVisibility = ({
     handleColumnPinning,
     orderingState,
     handleColumnOrdering,
+    handleColumnVisibilityChangedFromGrid, // New reverse sync function
     isLoading: isDbLoading || isPinningLoading || isOrderingLoading,
     error: dbError || pinningError || orderingError,
   };

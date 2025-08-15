@@ -243,9 +243,11 @@ const ItemMasterNew = memo(() => {
     handleColumnPinning: handleEntityColumnPinning,
     orderingState: entityOrderingState,
     handleColumnOrdering: handleEntityColumnOrdering,
+    handleColumnVisibilityChangedFromGrid: handleEntityColumnVisibilityChangedFromGrid,
   } = useEntityColumnVisibility({
     entityType: activeTab as EntityType,
     currentConfig: entityCurrentConfig,
+    gridApi: unifiedGridApi,
   });
 
   // Entity column definitions (similar to EntityMasterPage logic)
@@ -922,7 +924,11 @@ const ItemMasterNew = memo(() => {
             }
             onColumnPinned={unifiedColumnPinnedHandler}
             onColumnMoved={unifiedColumnMovedHandler}
-            onColumnVisible={handleColumnVisibilityChangedFromGrid}
+            onColumnVisible={
+              activeTab === 'items'
+                ? handleColumnVisibilityChangedFromGrid
+                : handleEntityColumnVisibilityChangedFromGrid
+            }
             onGridApiReady={handleUnifiedGridApiReady}
             currentPage={itemsManagement.currentPage}
             itemsPerPage={itemsManagement.itemsPerPage}
