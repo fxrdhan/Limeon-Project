@@ -218,6 +218,9 @@ export const PREFERENCE_KEYS = {
   // Column display mode preferences (kode/nama toggle) - hanya untuk item table
   ITEM_COLUMN_DISPLAY_MODE: 'item_column_display_mode',
 
+  // Row grouping preferences
+  ITEM_ROW_GROUPING: 'item_row_grouping',
+
   // Other preferences
   THEME: 'theme',
   LANGUAGE: 'language',

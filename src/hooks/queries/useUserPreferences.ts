@@ -326,3 +326,49 @@ export const useColumnDisplayModePreference = () => {
     setColumnDisplayModes,
   };
 };
+
+/**
+ * Row grouping preference interface (simplified)
+ */
+export interface RowGroupingState {
+  enabled: boolean;
+  groupedColumns: string[];
+  [key: string]: unknown; // Allow additional properties
+}
+
+/**
+ * Hook for item row grouping preferences
+ */
+export const useRowGroupingPreference = () => {
+  const preferenceKey = PREFERENCE_KEYS.ITEM_ROW_GROUPING;
+
+  const {
+    data: preference,
+    isLoading,
+    error,
+  } = useUserPreference(preferenceKey, { enabled: true });
+
+  const { setPreference } = useUserPreferenceMutations();
+
+  const setRowGroupingState = async (state: RowGroupingState) => {
+    await setPreference.mutateAsync({
+      key: preferenceKey,
+      value: state,
+    });
+  };
+
+  // Default row grouping state (simplified)
+  const defaultState: RowGroupingState = {
+    enabled: false,
+    groupedColumns: ['category.name'],
+  };
+
+  return {
+    rowGroupingState: preference?.preference_value 
+      ? (preference.preference_value as RowGroupingState)
+      : defaultState,
+    isLoading: isLoading || setPreference.isPending,
+    error: error || setPreference.error,
+    setRowGroupingState,
+  };
+};

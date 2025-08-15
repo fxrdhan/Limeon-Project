@@ -29,6 +29,7 @@ import { useItemsManagement } from '@/hooks/useItemsManagement';
 import {
   useItemGridColumns,
   useColumnVisibility,
+  useRowGrouping,
 } from '@/features/item-management/application/hooks/ui';
 import { useUnifiedSearch } from '@/hooks/useUnifiedSearch';
 import {
@@ -161,16 +162,24 @@ const ItemMasterNew = memo(() => {
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
 
-  // Row grouping state (only for items tab)
-  const [isRowGroupingEnabled, setIsRowGroupingEnabled] = useState(false);
+  // Row grouping state (persistent, only for items tab)
+  const {
+    isRowGroupingEnabled,
+    groupedColumns,
+    defaultExpanded,
+    showGroupPanel,
+    toggleRowGrouping,
+  } = useRowGrouping();
 
-  // Handle row grouping toggle
-  const handleRowGroupingToggle = useCallback(() => {
-    const newGroupingState = !isRowGroupingEnabled;
-    setIsRowGroupingEnabled(newGroupingState);
+  // Handle row grouping toggle with persistence
+  const handleRowGroupingToggle = useCallback(async () => {
+    const willBeEnabled = !isRowGroupingEnabled;
+    
+    // Toggle the persistent state
+    await toggleRowGrouping();
     
     // Clear grouping immediately when disabling
-    if (!newGroupingState && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+    if (!willBeEnabled && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
       // Clear all row group columns
       unifiedGridApi.setRowGroupColumns([]);
       // Reset column state to remove grouping
@@ -188,7 +197,7 @@ const ItemMasterNew = memo(() => {
         }
       }, 50);
     }
-  }, [isRowGroupingEnabled, unifiedGridApi]);
+  }, [isRowGroupingEnabled, toggleRowGrouping, unifiedGridApi]);
 
   // Items tab management (only for items tab)
   const itemsManagement = useItemsManagement({
@@ -665,21 +674,21 @@ const ItemMasterNew = memo(() => {
       if (value !== activeTab) {
         navigate(`/master-data/item-master/${value}`);
 
-        // Clear row grouping when leaving items tab
-        if (activeTab === 'items' && isRowGroupingEnabled && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-          unifiedGridApi.setRowGroupColumns([]);
-          const columnState = unifiedGridApi.getColumnState();
-          const resetState = columnState.map(col => ({
-            ...col,
-            rowGroup: false,
-            rowGroupIndex: null,
-          }));
-          unifiedGridApi.applyColumnState({ state: resetState, applyOrder: true });
-        }
-
-        // Reset grouping state when leaving items tab
+        // Clear row grouping when leaving items tab (UI only, don't change user preference)
         if (activeTab === 'items' && isRowGroupingEnabled) {
-          setIsRowGroupingEnabled(false);
+          // Clear grid grouping state immediately (visual only)
+          if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+            unifiedGridApi.setRowGroupColumns([]);
+            const columnState = unifiedGridApi.getColumnState();
+            const resetState = columnState.map(col => ({
+              ...col,
+              rowGroup: false,
+              rowGroupIndex: null,
+            }));
+            unifiedGridApi.applyColumnState({ state: resetState, applyOrder: true });
+          }
+          
+          // DON'T call disableRowGrouping() - preserve user preference!
         }
 
         // Clear search when switching tabs - both DOM value and all React states
@@ -718,7 +727,6 @@ const ItemMasterNew = memo(() => {
       handleEntityFilterSearch,
       unifiedGridApi,
       isRowGroupingEnabled,
-      setIsRowGroupingEnabled,
     ]
   );
 
@@ -953,6 +961,9 @@ const ItemMasterNew = memo(() => {
             currentPage={itemsManagement.currentPage}
             itemsPerPage={itemsManagement.itemsPerPage}
             isRowGroupingEnabled={activeTab === 'items' ? isRowGroupingEnabled : false}
+            groupedColumns={activeTab === 'items' ? groupedColumns : []}
+            defaultExpanded={activeTab === 'items' ? defaultExpanded : 1}
+            showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
           />
         </div>
       </Card>
