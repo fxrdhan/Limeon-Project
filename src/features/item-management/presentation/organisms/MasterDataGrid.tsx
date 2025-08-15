@@ -346,6 +346,26 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
     [onGridReady, activeTab, currentPage, onGridApiReady]
   );
 
+  // Handle row group opened/closed - scroll child rows into view
+  const handleRowGroupOpened = useCallback((event: any) => {
+    // Only for items tab when row grouping is enabled
+    if (activeTab !== 'items' || !isRowGroupingEnabled) {
+      return;
+    }
+
+    if (event.expanded && gridApi && !gridApi.isDestroyed()) {
+      const rowNodeIndex = event.node.rowIndex;
+      // Factor in child nodes so we can scroll to correct position
+      const childCount = event.node.childrenAfterSort 
+        ? event.node.childrenAfterSort.length 
+        : 0;
+      const newIndex = rowNodeIndex + childCount;
+      
+      // Ensure the expanded group and its children are visible
+      gridApi.ensureIndexVisible(newIndex);
+    }
+  }, [activeTab, isRowGroupingEnabled, gridApi]);
+
   // Custom menu items (items-specific features)
   const getMainMenuItems: GetMainMenuItems = useCallback(
     params => {
@@ -467,6 +487,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           groupDefaultExpanded={activeTab === 'items' && isRowGroupingEnabled ? defaultExpanded : undefined}
           autoGroupColumnDef={autoGroupColumnDef}
           groupDisplayType="singleColumn"
+          onRowGroupOpened={handleRowGroupOpened}
         />
       </div>
 

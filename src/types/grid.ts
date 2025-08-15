@@ -64,6 +64,7 @@ export interface DataGridProps {
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
   onColumnRowGroupChanged?: (event: ColumnRowGroupChangedEvent) => void;
+  onRowGroupOpened?: (event: any) => void;
   rowNumbers?: boolean;
   suppressHeaderFilterButton?: boolean;
   // Pagination props
