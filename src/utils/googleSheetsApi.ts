@@ -96,11 +96,9 @@ class GoogleSheetsService {
 
   constructor(clientId: string) {
     this.clientId = clientId;
-    // Restore token from session storage if available
-    this.accessToken = sessionStorage.getItem(this.tokenStorageKey);
-    if (this.accessToken) {
-      console.log('🔄 Restored Google Sheets token from session storage');
-    }
+    // Don't auto-restore token - force fresh authentication each session
+    // This prevents using expired tokens that cause 401 errors
+    this.accessToken = null;
   }
 
   // Initialize Google APIs
@@ -183,7 +181,7 @@ class GoogleSheetsService {
         return;
       }
 
-      // Only create new token client if we don't have one or need new token
+      // Only request new authentication if we don't have a token in memory
       if (!this.accessToken) {
         this.tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: this.clientId,
@@ -202,7 +200,7 @@ class GoogleSheetsService {
 
         this.tokenClient.requestAccessToken();
       } else {
-        // Already have token, resolve immediately
+        // Already have token in memory, resolve immediately
         resolve(this.accessToken);
       }
     });
@@ -264,6 +262,8 @@ class GoogleSheetsService {
 
   // Check if user is authorized
   isAuthorized(): boolean {
+    // Check if we have a token in memory (valid for current session)
+    // Note: we don't auto-restore from sessionStorage to avoid expired tokens
     return !!this.accessToken;
   }
 

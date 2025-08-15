@@ -242,10 +242,10 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         console.log('📝 Initializing Google Sheets service...');
         await googleSheetsService.initialize();
 
-        // Check if already authorized
+        // Check if already authorized (token exists in memory for current session)
         if (googleSheetsService.isAuthorized()) {
           console.log(
-            '✅ Already authorized (token found in session), proceeding directly to export...'
+            '✅ Already authorized (token in memory), proceeding directly to export...'
           );
 
           // Open placeholder tab and start export
