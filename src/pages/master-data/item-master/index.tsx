@@ -51,6 +51,10 @@ import {
   EntityData,
 } from '@/features/item-management/application/hooks/collections/useEntityManager';
 
+// Testing utilities for random item generation
+import { RandomItemFloatingButton } from '@/utils/testing';
+import { config } from '@/config';
+
 type MasterDataType =
   | 'items'
   | 'categories'
@@ -161,6 +165,7 @@ const ItemMasterNew = memo(() => {
   const itemsManagement = useItemsManagement({
     enabled: true,
   });
+
 
   // Entity management (for entity tabs)
   const entityManager = useEntityManager({
@@ -886,6 +891,11 @@ const ItemMasterNew = memo(() => {
           />
         </div>
       </Card>
+
+      {/* Floating Random Item Generator Button - only for items tab */}
+      <RandomItemFloatingButton 
+        enabled={activeTab === 'items' && config.random_item_generator_enabled} 
+      />
 
       {/* Item Management Modal - only render for items tab */}
       {activeTab === 'items' && (
