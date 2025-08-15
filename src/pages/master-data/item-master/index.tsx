@@ -140,6 +140,9 @@ const ItemMasterNew = memo(() => {
 
   // Unified Grid API reference from MasterDataGrid
   const [unifiedGridApi, setUnifiedGridApi] = useState<GridApi | null>(null);
+  
+  // Flag to ignore programmatic row group changes (to prevent saving to DB)
+  const [ignoringRowGroupEvents, setIgnoringRowGroupEvents] = useState(false);
 
   // ✅ REALTIME WORKING! Use postgres_changes approach
   useItemMasterRealtime({ enabled: true });
@@ -182,6 +185,9 @@ const ItemMasterNew = memo(() => {
     
     // Clear grouping immediately when disabling
     if (!willBeEnabled && unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+      // Set flag to ignore subsequent events
+      setIgnoringRowGroupEvents(true);
+      
       // Clear all row group columns
       unifiedGridApi.setRowGroupColumns([]);
       // Reset column state to remove grouping
@@ -197,20 +203,23 @@ const ItemMasterNew = memo(() => {
         if (!unifiedGridApi.isDestroyed()) {
           unifiedGridApi.refreshCells();
         }
+        // Re-enable event handling after operations complete
+        setIgnoringRowGroupEvents(false);
       }, 50);
     }
-  }, [isRowGroupingEnabled, toggleRowGrouping, unifiedGridApi]);
+  }, [isRowGroupingEnabled, toggleRowGrouping, unifiedGridApi, setIgnoringRowGroupEvents]);
 
   // Handle column row group changes from AG Grid (drag-drop, menu actions)
   const handleColumnRowGroupChangedEvent = useCallback((event: ColumnRowGroupChangedEvent) => {
     if (activeTab !== 'items') return; // Only for items tab
+    if (ignoringRowGroupEvents) return; // Skip programmatic changes
     
     // Get currently grouped column IDs
     const groupedColumnIds = event.columns?.map(col => col.getColId()) || [];
     
     // Save to database via hook
     handleColumnRowGroupChanged(groupedColumnIds);
-  }, [activeTab, handleColumnRowGroupChanged]);
+  }, [activeTab, handleColumnRowGroupChanged, ignoringRowGroupEvents]);
 
   // Items tab management (only for items tab)
   const itemsManagement = useItemsManagement({
@@ -692,6 +701,9 @@ const ItemMasterNew = memo(() => {
         if (activeTab === 'items' && isRowGroupingEnabled) {
           // Clear grid grouping state immediately (visual only)
           if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
+            // Set flag to ignore subsequent events (preserve user preference!)
+            setIgnoringRowGroupEvents(true);
+            
             unifiedGridApi.setRowGroupColumns([]);
             const columnState = unifiedGridApi.getColumnState();
             const resetState = columnState.map(col => ({
@@ -700,6 +712,11 @@ const ItemMasterNew = memo(() => {
               rowGroupIndex: null,
             }));
             unifiedGridApi.applyColumnState({ state: resetState, applyOrder: true });
+            
+            // Re-enable event handling after a short delay
+            setTimeout(() => {
+              setIgnoringRowGroupEvents(false);
+            }, 100);
           }
           
           // DON'T call disableRowGrouping() - preserve user preference!
@@ -741,6 +758,7 @@ const ItemMasterNew = memo(() => {
       handleEntityFilterSearch,
       unifiedGridApi,
       isRowGroupingEnabled,
+      setIgnoringRowGroupEvents,
     ]
   );
 
