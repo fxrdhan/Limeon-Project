@@ -191,7 +191,10 @@ class GoogleSheetsService {
           callback: (tokenResponse: TokenResponse) => {
             this.accessToken = tokenResponse.access_token;
             // Store token in session storage for reuse
-            sessionStorage.setItem(this.tokenStorageKey, tokenResponse.access_token);
+            sessionStorage.setItem(
+              this.tokenStorageKey,
+              tokenResponse.access_token
+            );
             console.log('💾 Saved Google Sheets token to session storage');
             resolve(tokenResponse.access_token);
           },
@@ -211,7 +214,6 @@ class GoogleSheetsService {
     sessionStorage.removeItem(this.tokenStorageKey);
     console.log('🗑️ Cleared Google Sheets token');
   }
-
 
   // Create a new spreadsheet with data
   async createSpreadsheetWithData(
@@ -290,17 +292,22 @@ class GoogleSheetsService {
       return result.spreadsheetUrl;
     } catch (error) {
       console.error('Error exporting to Google Sheets:', error);
-      
+
       // If error might be due to expired/invalid token, clear it and retry once
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('401') || errorMessage.includes('unauthorized') || errorMessage.includes('invalid')) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (
+        errorMessage.includes('401') ||
+        errorMessage.includes('unauthorized') ||
+        errorMessage.includes('invalid')
+      ) {
         console.log('🔄 Token might be expired, clearing and retrying...');
         this.clearToken();
-        
+
         // Don't auto-retry to avoid infinite loop - let caller handle retry
         throw new Error('Authentication token expired. Please try again.');
       }
-      
+
       throw error;
     }
   }
