@@ -81,6 +81,10 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
       paginationAutoPageSize = false,
       suppressPaginationPanel = false,
       onPaginationChanged,
+      // Row grouping props
+      rowGroupPanelShow = 'never',
+      groupDefaultExpanded,
+      suppressRowGroupHidesColumns = false,
     },
     ref
   ) => {
@@ -247,6 +251,10 @@ const DataGrid = forwardRef<DataGridRef, DataGridProps>(
           paginationAutoPageSize={paginationAutoPageSize}
           suppressPaginationPanel={suppressPaginationPanel}
           onPaginationChanged={onPaginationChanged}
+          // Row grouping props
+          rowGroupPanelShow={rowGroupPanelShow}
+          groupDefaultExpanded={groupDefaultExpanded}
+          suppressRowGroupHidesColumns={suppressRowGroupHidesColumns}
         />
       </div>
     );

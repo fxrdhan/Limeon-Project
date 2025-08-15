@@ -161,6 +161,9 @@ const ItemMasterNew = memo(() => {
   >(undefined);
   const [modalRenderId, setModalRenderId] = useState(0);
 
+  // Row grouping state (only for items tab)
+  const [isRowGroupingEnabled, setIsRowGroupingEnabled] = useState(false);
+
   // Items tab management (only for items tab)
   const itemsManagement = useItemsManagement({
     enabled: true,
@@ -205,6 +208,7 @@ const ItemMasterNew = memo(() => {
     isColumnVisible,
     getColumnPinning,
     columnOrder: orderingState,
+    enableRowGrouping: isRowGroupingEnabled,
   });
 
   // Entity column visibility management
@@ -842,6 +846,22 @@ const ItemMasterNew = memo(() => {
               }
             />
           </div>
+          
+          {/* Row Grouping Toggle Button - Only for Items Tab */}
+          {activeTab === 'items' && (
+            <div className="ml-4">
+              <button
+                onClick={() => setIsRowGroupingEnabled(!isRowGroupingEnabled)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isRowGroupingEnabled
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {isRowGroupingEnabled ? '🗂️ Grouping ON' : '🗂️ Grouping OFF'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Unified MasterDataGrid */}
@@ -887,6 +907,7 @@ const ItemMasterNew = memo(() => {
             onGridApiReady={handleUnifiedGridApiReady}
             currentPage={itemsManagement.currentPage}
             itemsPerPage={itemsManagement.itemsPerPage}
+            isRowGroupingEnabled={activeTab === 'items' ? isRowGroupingEnabled : false}
           />
         </div>
       </Card>

@@ -14,10 +14,11 @@ interface UseItemGridColumnsProps {
   isColumnVisible?: (columnKey: string) => boolean;
   getColumnPinning?: (columnKey: string) => 'left' | 'right' | null;
   columnOrder?: string[];
+  enableRowGrouping?: boolean;
 }
 
 export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
-  const { isColumnVisible, getColumnPinning, columnOrder } = props;
+  const { isColumnVisible, getColumnPinning, columnOrder, enableRowGrouping = false } = props;
 
   const columnDefs: ColDef[] = useMemo(() => {
     // Create column definitions map for ordering
@@ -35,7 +36,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         ...createTextColumn({
           field: 'manufacturer',
           headerName: 'Produsen',
-          valueGetter: params => params.data.manufacturer || '-',
+          valueGetter: params => params.data?.manufacturer || '-',
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -50,6 +51,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         },
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('manufacturer') || undefined,
+        enableRowGroup: enableRowGrouping,
       },
       code: {
         ...createTextColumn({
@@ -75,7 +77,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           field: 'barcode',
           headerName: 'Barcode',
 
-          valueGetter: params => params.data.barcode || '-',
+          valueGetter: params => params.data?.barcode || '-',
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -109,6 +111,8 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         },
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('category.name') || undefined,
+        enableRowGroup: enableRowGrouping,
+        rowGroup: enableRowGrouping,
       },
       'type.name': {
         ...createWrapTextColumn({
@@ -128,6 +132,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         },
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('type.name') || undefined,
+        enableRowGroup: enableRowGrouping,
       },
       'unit.name': {
         ...createTextColumn({
@@ -147,13 +152,14 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         },
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('unit.name') || undefined,
+        enableRowGroup: enableRowGrouping,
       },
       'dosage.name': {
         ...createTextColumn({
           field: 'dosage.name',
           headerName: 'Sediaan',
 
-          valueGetter: params => params.data.dosage?.name || '-',
+          valueGetter: params => params.data?.dosage?.name || '-',
         }),
         filter: 'agMultiColumnFilter',
         filterParams: {
@@ -168,6 +174,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         },
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('dosage.name') || undefined,
+        enableRowGroup: enableRowGrouping,
       },
       package_conversions: {
         ...createTextColumn({
@@ -175,7 +182,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
           headerName: 'Kemasan Turunan',
 
           valueGetter: params => {
-            const conversions = params.data.package_conversions;
+            const conversions = params.data?.package_conversions;
             if (conversions && conversions.length > 0) {
               return conversions
                 .map((uc: PackageConversion) => uc.unit_name || 'N/A')
@@ -281,7 +288,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
     }
 
     return allColumns;
-  }, [isColumnVisible, getColumnPinning, columnOrder]);
+  }, [isColumnVisible, getColumnPinning, columnOrder, enableRowGrouping]);
 
   const columnsToAutoSize = useMemo(() => {
     const allColumnsToAutoSize = [

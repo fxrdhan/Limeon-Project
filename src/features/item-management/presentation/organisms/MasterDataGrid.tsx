@@ -72,6 +72,7 @@ interface MasterDataGridProps {
   // Grid config
   itemColumnDefs?: ColDef[];
   itemColumnsToAutoSize?: string[];
+  isRowGroupingEnabled?: boolean;
 
   // Entity config
   entityConfig?: EntityConfig | null;
@@ -101,6 +102,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   search,
   itemColumnDefs = [],
   itemColumnsToAutoSize = [],
+  isRowGroupingEnabled = false,
   entityConfig,
   entityColumnDefs = [],
   onRowClick,
@@ -422,6 +424,10 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           pagination={true}
           paginationPageSize={itemsPerPage}
           suppressPaginationPanel={true}
+          // Row Grouping configuration (only for items tab)
+          rowGroupPanelShow={activeTab === 'items' && isRowGroupingEnabled ? 'always' : 'never'}
+          groupDefaultExpanded={activeTab === 'items' && isRowGroupingEnabled ? 1 : undefined}
+          suppressRowGroupHidesColumns={activeTab === 'items' && isRowGroupingEnabled}
         />
       </div>
 
