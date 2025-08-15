@@ -151,26 +151,33 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               />
             </FormField>
 
-            <FormField label="Produsen" className="md:col-span-2">
-              {loading && manufacturers.length === 0 ? (
-                <Input value="Memuat produsen..." readOnly disabled />
-              ) : (
-                <Dropdown
-                  name="manufacturer_id"
-                  tabIndex={3}
-                  value={formData.manufacturer_id}
-                  onChange={value => onDropdownChange('manufacturer_id', value)}
-                  options={manufacturers}
-                  placeholder="Pilih Produsen"
-                  onAddNew={onAddNewManufacturer}
-                  enableHoverDetail={true}
-                  hoverDetailDelay={400}
-                  onFetchHoverDetail={optimizedManufacturerDetailFetcher}
-                />
-              )}
+            <FormField
+              label="Jenis Produk"
+              className="md:col-span-2"
+              required={true}
+            >
+              <Dropdown
+                name="is_medicine"
+                tabIndex={3}
+                value={formData.is_medicine ? 'obat' : 'non-obat'}
+                onChange={value => {
+                  if (value === 'obat') {
+                    onFieldChange('is_medicine', true);
+                  } else {
+                    onFieldChange('is_medicine', false);
+                    onFieldChange('has_expiry_date', false);
+                  }
+                }}
+                options={[
+                  { id: 'obat', name: 'Obat' },
+                  { id: 'non-obat', name: 'Non-Obat' },
+                ]}
+                withRadio
+                searchList={false}
+              />
             </FormField>
 
-            <FormField label="Jumlah" className="md:col-span-1">
+            <FormField label="Nilai" className="md:col-span-1">
               <Input
                 name="quantity"
                 type="number"
@@ -178,7 +185,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 tabIndex={4}
                 onChange={onChange}
                 className="w-full"
-                placeholder="Masukkan jumlah"
+                placeholder="Masukkan nilai"
                 min="0"
                 step="1"
               />
@@ -204,30 +211,23 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            <FormField
-              label="Jenis Produk"
-              className="md:col-span-1"
-              required={true}
-            >
-              <Dropdown
-                name="is_medicine"
-                tabIndex={6}
-                value={formData.is_medicine ? 'obat' : 'non-obat'}
-                onChange={value => {
-                  if (value === 'obat') {
-                    onFieldChange('is_medicine', true);
-                  } else {
-                    onFieldChange('is_medicine', false);
-                    onFieldChange('has_expiry_date', false);
-                  }
-                }}
-                options={[
-                  { id: 'obat', name: 'Obat' },
-                  { id: 'non-obat', name: 'Non-Obat' },
-                ]}
-                withRadio
-                searchList={false}
-              />
+            <FormField label="Produsen" className="md:col-span-1">
+              {loading && manufacturers.length === 0 ? (
+                <Input value="Memuat produsen..." readOnly disabled />
+              ) : (
+                <Dropdown
+                  name="manufacturer_id"
+                  tabIndex={6}
+                  value={formData.manufacturer_id}
+                  onChange={value => onDropdownChange('manufacturer_id', value)}
+                  options={manufacturers}
+                  placeholder="Pilih Produsen"
+                  onAddNew={onAddNewManufacturer}
+                  enableHoverDetail={true}
+                  hoverDetailDelay={400}
+                  onFetchHoverDetail={optimizedManufacturerDetailFetcher}
+                />
+              )}
             </FormField>
 
             <FormField label="Kategori" required={true}>
