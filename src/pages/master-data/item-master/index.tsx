@@ -5,6 +5,7 @@ import {
   GridReadyEvent,
   ColumnPinnedEvent,
   ColumnMovedEvent,
+  ColumnRowGroupChangedEvent,
   ColDef,
 } from 'ag-grid-community';
 import { createTextColumn } from '@/components/ag-grid';
@@ -169,6 +170,7 @@ const ItemMasterNew = memo(() => {
     defaultExpanded,
     showGroupPanel,
     toggleRowGrouping,
+    handleColumnRowGroupChanged,
   } = useRowGrouping();
 
   // Handle row grouping toggle with persistence
@@ -198,6 +200,17 @@ const ItemMasterNew = memo(() => {
       }, 50);
     }
   }, [isRowGroupingEnabled, toggleRowGrouping, unifiedGridApi]);
+
+  // Handle column row group changes from AG Grid (drag-drop, menu actions)
+  const handleColumnRowGroupChangedEvent = useCallback((event: ColumnRowGroupChangedEvent) => {
+    if (activeTab !== 'items') return; // Only for items tab
+    
+    // Get currently grouped column IDs
+    const groupedColumnIds = event.columns?.map(col => col.getColId()) || [];
+    
+    // Save to database via hook
+    handleColumnRowGroupChanged(groupedColumnIds);
+  }, [activeTab, handleColumnRowGroupChanged]);
 
   // Items tab management (only for items tab)
   const itemsManagement = useItemsManagement({
@@ -244,6 +257,7 @@ const ItemMasterNew = memo(() => {
     getColumnPinning,
     columnOrder: orderingState,
     enableRowGrouping: isRowGroupingEnabled,
+    groupedColumns,
   });
 
   // Entity column visibility management
@@ -957,6 +971,7 @@ const ItemMasterNew = memo(() => {
             }
             onColumnPinned={unifiedColumnPinnedHandler}
             onColumnMoved={unifiedColumnMovedHandler}
+            onColumnRowGroupChanged={handleColumnRowGroupChangedEvent}
             onGridApiReady={handleUnifiedGridApiReady}
             currentPage={itemsManagement.currentPage}
             itemsPerPage={itemsManagement.itemsPerPage}

@@ -360,7 +360,7 @@ export const useRowGroupingPreference = () => {
   // Default row grouping state (simplified)
   const defaultState: RowGroupingState = {
     enabled: false,
-    groupedColumns: ['category.name'],
+    groupedColumns: [], // Empty by default - let users choose what to group by
   };
 
   return {

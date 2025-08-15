@@ -14,6 +14,7 @@ import {
   ColumnPinnedEvent,
   ColumnMovedEvent,
   PaginationChangedEvent,
+  ColumnRowGroupChangedEvent,
 } from 'ag-grid-community';
 
 export interface ColumnConfig {
@@ -62,6 +63,7 @@ export interface DataGridProps {
   getContextMenuItems?: GetContextMenuItems;
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
+  onColumnRowGroupChanged?: (event: ColumnRowGroupChangedEvent) => void;
   rowNumbers?: boolean;
   suppressHeaderFilterButton?: boolean;
   // Pagination props

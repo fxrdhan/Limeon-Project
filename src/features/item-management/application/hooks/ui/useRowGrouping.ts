@@ -97,6 +97,31 @@ export const useRowGrouping = () => {
     }
   }, [currentState, setDbRowGroupingState]);
 
+  // Handle column row group changes from AG Grid (drag-drop, menu actions)
+  const handleColumnRowGroupChanged = useCallback(async (groupedColumnIds: string[]) => {
+    const newState: RowGroupingState = {
+      ...currentState,
+      enabled: groupedColumnIds.length > 0, // Auto-enable if columns are grouped
+      groupedColumns: groupedColumnIds,
+    };
+
+    // Set optimistic state for immediate UI update
+    setOptimisticState(newState);
+
+    try {
+      // Save to database
+      await setDbRowGroupingState(newState);
+      
+      // Clear optimistic state after successful save
+      setOptimisticState(null);
+    } catch (error) {
+      console.error('Failed to save row grouping state to database:', error);
+      
+      // Revert optimistic state on error
+      setOptimisticState(null);
+    }
+  }, [currentState, setDbRowGroupingState]);
+
   return {
     // State
     isRowGroupingEnabled: currentState.enabled,
@@ -110,6 +135,7 @@ export const useRowGrouping = () => {
     toggleRowGrouping,
     setGroupedColumns,
     disableRowGrouping,
+    handleColumnRowGroupChanged,
     
     // Meta
     isLoading: isDbLoading,
