@@ -71,6 +71,10 @@ export interface DataGridProps {
   paginationAutoPageSize?: boolean;
   suppressPaginationPanel?: boolean;
   onPaginationChanged?: (event: PaginationChangedEvent) => void;
+  // Row grouping props
+  rowGroupPanelShow?: 'always' | 'onlyWhenGrouping' | 'never';
+  groupDefaultExpanded?: number;
+  suppressRowGroupHidesColumns?: boolean;
 }
 
 export interface DataGridRef {
