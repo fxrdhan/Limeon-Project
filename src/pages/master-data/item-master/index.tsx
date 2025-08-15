@@ -166,7 +166,6 @@ const ItemMasterNew = memo(() => {
     enabled: true,
   });
 
-
   // Entity management (for entity tabs)
   const entityManager = useEntityManager({
     activeEntityType:
@@ -893,8 +892,8 @@ const ItemMasterNew = memo(() => {
       </Card>
 
       {/* Floating Random Item Generator Button - only for items tab */}
-      <RandomItemFloatingButton 
-        enabled={activeTab === 'items' && config.random_item_generator_enabled} 
+      <RandomItemFloatingButton
+        enabled={activeTab === 'items' && config.random_item_generator_enabled}
       />
 
       {/* Item Management Modal - only render for items tab */}

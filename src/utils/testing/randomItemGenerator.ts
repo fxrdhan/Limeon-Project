@@ -1,6 +1,6 @@
 /**
  * Random Item Generator Utility
- * 
+ *
  * Generates random item data for testing purposes using existing master data entities.
  * This utility creates realistic item data by randomly selecting from available
  * categories, types, packages, dosages, and manufacturers.
@@ -32,29 +32,51 @@ export interface GeneratedRandomItem {
  * Drug names library for random selection
  */
 const DRUG_NAMES = [
-  'Paracetamol', 'Amoxicillin', 'Cetirizine', 'Metformin', 'Simvastatin',
-  'Omeprazole', 'Amlodipine', 'Losartan', 'Atorvastatin', 'Levothyroxine',
-  'Gabapentin', 'Sertraline', 'Montelukast', 'Pantoprazole', 'Furosemide',
-  'Ibuprofen', 'Aspirin', 'Dexamethasone', 'Prednisolone', 'Diclofenac'
+  'Paracetamol',
+  'Amoxicillin',
+  'Cetirizine',
+  'Metformin',
+  'Simvastatin',
+  'Omeprazole',
+  'Amlodipine',
+  'Losartan',
+  'Atorvastatin',
+  'Levothyroxine',
+  'Gabapentin',
+  'Sertraline',
+  'Montelukast',
+  'Pantoprazole',
+  'Furosemide',
+  'Ibuprofen',
+  'Aspirin',
+  'Dexamethasone',
+  'Prednisolone',
+  'Diclofenac',
 ];
 
 /**
  * Validates that all required entities are available for random generation
  */
-export function validateEntitiesForGeneration(entities: RandomItemEntities): boolean {
+export function validateEntitiesForGeneration(
+  entities: RandomItemEntities
+): boolean {
   const { categories, types, packages, dosages, manufacturers } = entities;
-  
-  return categories.length > 0 && 
-         types.length > 0 && 
-         packages.length > 0 && 
-         dosages.length > 0 && 
-         manufacturers.length > 0;
+
+  return (
+    categories.length > 0 &&
+    types.length > 0 &&
+    packages.length > 0 &&
+    dosages.length > 0 &&
+    manufacturers.length > 0
+  );
 }
 
 /**
  * Generates random item data using provided master data entities
  */
-export function generateRandomItemData(entities: RandomItemEntities): GeneratedRandomItem {
+export function generateRandomItemData(
+  entities: RandomItemEntities
+): GeneratedRandomItem {
   const { categories, types, packages, dosages, manufacturers } = entities;
 
   // Validate entities are available
@@ -64,11 +86,13 @@ export function generateRandomItemData(entities: RandomItemEntities): GeneratedR
 
   // Random selections
   const randomName = DRUG_NAMES[Math.floor(Math.random() * DRUG_NAMES.length)];
-  const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+  const randomCategory =
+    categories[Math.floor(Math.random() * categories.length)];
   const randomType = types[Math.floor(Math.random() * types.length)];
   const randomPackage = packages[Math.floor(Math.random() * packages.length)];
   const randomDosage = dosages[Math.floor(Math.random() * dosages.length)];
-  const randomManufacturer = manufacturers[Math.floor(Math.random() * manufacturers.length)];
+  const randomManufacturer =
+    manufacturers[Math.floor(Math.random() * manufacturers.length)];
 
   // Generate realistic pricing
   const basePrice = Math.floor(Math.random() * 100000) + 1000; // 1000 - 101000
@@ -111,9 +135,11 @@ export function getEntitiesLoadingStatus(entities: {
   dosagesLoading: boolean;
   manufacturersLoading: boolean;
 }): boolean {
-  return entities.categoriesLoading || 
-         entities.typesLoading || 
-         entities.packagesLoading || 
-         entities.dosagesLoading || 
-         entities.manufacturersLoading;
+  return (
+    entities.categoriesLoading ||
+    entities.typesLoading ||
+    entities.packagesLoading ||
+    entities.dosagesLoading ||
+    entities.manufacturersLoading
+  );
 }
