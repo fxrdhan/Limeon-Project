@@ -15,10 +15,11 @@ interface UseItemGridColumnsProps {
   getColumnPinning?: (columnKey: string) => 'left' | 'right' | null;
   columnOrder?: string[];
   enableRowGrouping?: boolean;
+  groupedColumns?: string[];
 }
 
 export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
-  const { isColumnVisible, getColumnPinning, columnOrder, enableRowGrouping = false } = props;
+  const { isColumnVisible, getColumnPinning, columnOrder, enableRowGrouping = false, groupedColumns = [] } = props;
 
   const columnDefs: ColDef[] = useMemo(() => {
     // Create column definitions map for ordering
@@ -112,7 +113,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
         suppressHeaderFilterButton: true,
         pinned: getColumnPinning?.('category.name') || undefined,
         enableRowGroup: true, // Always enable for groupable columns
-        rowGroup: enableRowGrouping, // Only set as active group when enabled
+        rowGroup: enableRowGrouping && groupedColumns.includes('category.name'), // Only group if explicitly selected
       },
       'type.name': {
         ...createWrapTextColumn({
@@ -288,7 +289,7 @@ export const useItemGridColumns = (props: UseItemGridColumnsProps = {}) => {
     }
 
     return allColumns;
-  }, [isColumnVisible, getColumnPinning, columnOrder, enableRowGrouping]);
+  }, [isColumnVisible, getColumnPinning, columnOrder, enableRowGrouping, groupedColumns]);
 
   const columnsToAutoSize = useMemo(() => {
     const allColumnsToAutoSize = [

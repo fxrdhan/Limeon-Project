@@ -5,6 +5,7 @@ import {
   RowClickedEvent,
   ColumnPinnedEvent,
   ColumnMovedEvent,
+  ColumnRowGroupChangedEvent,
   ColDef,
   IRowNode,
   GetMainMenuItems,
@@ -88,6 +89,7 @@ interface MasterDataGridProps {
   doesExternalFilterPass: (node: IRowNode) => boolean;
   onColumnPinned?: (event: ColumnPinnedEvent) => void;
   onColumnMoved?: (event: ColumnMovedEvent) => void;
+  onColumnRowGroupChanged?: (event: ColumnRowGroupChangedEvent) => void;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
 
   // Pagination (for items)
@@ -117,6 +119,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
   doesExternalFilterPass,
   onColumnPinned,
   onColumnMoved,
+  onColumnRowGroupChanged,
   onGridApiReady,
   currentPage = 1,
   itemsPerPage = 10,
@@ -463,6 +466,7 @@ const MasterDataGrid = memo<MasterDataGridProps>(function MasterDataGrid({
           mainMenuItems={getMainMenuItems}
           onColumnPinned={onColumnPinned}
           onColumnMoved={onColumnMoved}
+          onColumnRowGroupChanged={onColumnRowGroupChanged}
           rowNumbers={true}
           domLayout="normal"
           style={{
